@@ -13,4 +13,6 @@ public sealed record UserRegisteredIntegrationEvent(
     public const string RoutingKey = "identity.user.registered.v1";
 
     public const string QueueName = "fookbase.users.user-registered.v1";
+
+    public const string FriendsQueueName = "fookbase.friends.user-registered.v1";
 }
