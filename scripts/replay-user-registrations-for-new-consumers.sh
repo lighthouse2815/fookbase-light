@@ -17,4 +17,4 @@ docker compose exec -T postgres sh -lc '
             \"LastError\" = NULL
         WHERE \"Type\" = '\''identity.user.registered.v1'\'';"'
 
-echo "UserRegistered messages were requeued. Keep Identity, Users, Friends and RabbitMQ running until all projections catch up."
+echo "UserRegistered messages were requeued. Keep Identity, Users, Friends, Posts and RabbitMQ running until all projections catch up."

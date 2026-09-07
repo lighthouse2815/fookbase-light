@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Foundation cho mạng xã hội theo kiến trúc microservices. Milestone hiện tại gồm React frontend, YARP API Gateway, Identity Service với JWT/refresh-token rotation, Users Service quản lý social profile, Friends Service quản lý quan hệ xã hội và hạ tầng PostgreSQL, RabbitMQ, Redis, MinIO. Mỗi service sở hữu database riêng; dữ liệu cross-service được đồng bộ bất đồng bộ qua Transactional Outbox, RabbitMQ và consumer idempotent.
+Foundation cho mạng xã hội theo kiến trúc microservices. Milestone hiện tại gồm React frontend, YARP API Gateway, Identity Service với JWT/refresh-token rotation, Users Service quản lý social profile, Friends Service quản lý quan hệ xã hội, Posts Service quản lý bài viết/bình luận/reaction và hạ tầng PostgreSQL, RabbitMQ, Redis, MinIO. Mỗi service sở hữu database riêng; dữ liệu cross-service được đồng bộ bất đồng bộ qua Transactional Outbox, RabbitMQ và consumer idempotent.
 
 ## Yêu cầu trên Linux
 
@@ -114,13 +114,24 @@ dotnet run --project services/Friends/Fookbase.Friends.Api
 
 Friends chạy tại <http://localhost:5003>; health check: <http://localhost:5003/health>.
 
+Ở terminal khác, nạp cùng `.env` và chạy Posts Service:
+
+```bash
+set -a
+source .env
+set +a
+dotnet run --project services/Posts/Fookbase.Posts.Api
+```
+
+Posts chạy tại <http://localhost:5004>; health check: <http://localhost:5004/health>.
+
 Ở terminal khác, chạy Gateway:
 
 ```bash
 dotnet run --project services/Gateway/Fookbase.Gateway
 ```
 
-Gateway chạy tại <http://localhost:5000>; health check: <http://localhost:5000/health>. Các request `/api/auth/**`, `/api/users/**` và `/api/friends/**` lần lượt được chuyển tiếp tới Identity `:5001`, Users `:5002` và Friends `:5003`.
+Gateway chạy tại <http://localhost:5000>; health check: <http://localhost:5000/health>. Các request `/api/auth/**`, `/api/users/**`, `/api/friends/**` và `/api/posts/**` lần lượt được chuyển tiếp tới Identity `:5001`, Users `:5002`, Friends `:5003` và Posts `:5004`.
 
 Chạy React frontend:
 
@@ -213,6 +224,33 @@ RabbitMQ topology của Friends:
 - Queue consume registration: `fookbase.friends.user-registered.v1` (durable)
 - Message: persistent; consumer manual ACK
 
+## Posts Service
+
+Posts Service sở hữu `posts_db`, lưu bài viết, bình luận và reaction. Service không query database của Identity/Friends; thay vào đó nó consume integration event để project `KnownUsers`, `FriendEdges` và `BlockedEdges`. Các projection giữ `LastChangedAtUtc` nên event cũ đến muộn không ghi đè trạng thái mới.
+
+| Method | Endpoint | Authentication | Kết quả chính |
+| --- | --- | --- | --- |
+| POST | `/api/posts` | Bearer JWT | Tạo bài viết (`201`) |
+| PUT | `/api/posts/{postId}` | Bearer JWT, tác giả | Sửa nội dung/privacy (`200`) |
+| DELETE | `/api/posts/{postId}` | Bearer JWT, tác giả | Soft-delete bài viết (`204`) |
+| GET | `/api/posts/{postId}` | Tùy chọn | Đọc bài viết nếu có quyền (`200`) |
+| GET | `/api/posts/feed?offset=0&limit=20` | Bearer JWT | Feed public, bạn bè và của chính mình (`200`) |
+| GET | `/api/posts/users/{userId}` | Tùy chọn | Danh sách bài viết được phép xem (`200`) |
+| POST | `/api/posts/{postId}/comments` | Bearer JWT | Tạo comment/reply (`201`) |
+| GET | `/api/posts/{postId}/comments` | Tùy chọn | Danh sách comment (`200`) |
+| PUT/DELETE | `/api/posts/comments/{commentId}` | Bearer JWT, tác giả | Sửa/xóa comment (`200`/`204`) |
+| PUT/DELETE | `/api/posts/{postId}/reaction` | Bearer JWT | Đặt/đổi/gỡ reaction (`200`) |
+
+Privacy hợp lệ gồm `public`, `friends` và `onlyMe`; reaction gồm `like`, `love`, `haha`, `wow`, `sad`, `angry`. Feed và collection dùng offset pagination với `limit` tối đa `100`. Bài viết/comment dùng soft-delete. Mỗi user chỉ có một reaction trên một bài viết; gọi PUT lần nữa sẽ đổi reaction hiện tại.
+
+Block theo một trong hai chiều ẩn toàn bộ bài viết giữa hai user và chặn comment/reaction. Bài viết `friends` chỉ hiển thị khi `FriendEdges` đang active. API trả `404` cho bài viết không được phép đọc để không làm lộ sự tồn tại, `403` cho mutation không thuộc quyền sở hữu và `409` khi interaction bị block.
+
+Posts ghi event tạo/sửa/xóa bài viết, tạo comment và đổi reaction vào transactional outbox. Consumer dùng hai durable queue riêng:
+
+- `fookbase.posts.user-registered.v1` nhận `identity.user.registered.v1`.
+- `fookbase.posts.friend-events.v1` nhận friend accepted/removed và user blocked/unblocked.
+- Exchange publish: `fookbase.posts.events`; delivery at-least-once, Inbox xử lý idempotent.
+
 ## Register → profile event flow
 
 Khi `/api/auth/register` thành công, Identity ghi user, refresh token và `UserRegisteredIntegrationEvent` vào `identity_db` trong cùng transaction. API trả `201` ngay sau database commit, không phụ thuộc RabbitMQ đang online.
@@ -225,7 +263,7 @@ RabbitMQ topology:
 
 - Exchange: `fookbase.identity.events` (durable topic)
 - Routing key/event type: `identity.user.registered.v1`
-- Queues: `fookbase.users.user-registered.v1` và `fookbase.friends.user-registered.v1` (durable)
+- Queues: `fookbase.users.user-registered.v1`, `fookbase.friends.user-registered.v1` và `fookbase.posts.user-registered.v1` (durable)
 - Message: persistent
 
 Event chỉ chứa `EventId`, `UserId`, `Username` và `OccurredAtUtc`; email không được copy sang social profile.
@@ -250,6 +288,10 @@ dotnet tool run dotnet-ef database update \
 dotnet tool run dotnet-ef database update \
   --project services/Friends/Fookbase.Friends.Infrastructure \
   --startup-project services/Friends/Fookbase.Friends.Api
+
+dotnet tool run dotnet-ef database update \
+  --project services/Posts/Fookbase.Posts.Infrastructure \
+  --startup-project services/Posts/Fookbase.Posts.Api
 ```
 
 Tạo migration mới khi model thay đổi:
@@ -269,12 +311,17 @@ dotnet tool run dotnet-ef migrations add MigrationName \
   --project services/Friends/Fookbase.Friends.Infrastructure \
   --startup-project services/Friends/Fookbase.Friends.Api \
   --output-dir Persistence/Migrations
+
+dotnet tool run dotnet-ef migrations add MigrationName \
+  --project services/Posts/Fookbase.Posts.Infrastructure \
+  --startup-project services/Posts/Fookbase.Posts.Api \
+  --output-dir Persistence/Migrations
 ```
 
-PostgreSQL init script tự tạo `users_db` và `friends_db` trên volume mới. Với volume development đã tồn tại từ trước các milestone này, tạo database còn thiếu một lần mà không reset volume:
+PostgreSQL init script tự tạo `users_db`, `friends_db` và `posts_db` trên volume mới. Với volume development đã tồn tại từ trước các milestone này, tạo database còn thiếu một lần mà không reset volume:
 
 ```bash
-for database in users_db friends_db; do
+for database in users_db friends_db posts_db; do
   docker compose exec -T postgres sh -lc '
     database="$1"
     psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
@@ -284,7 +331,7 @@ for database in users_db friends_db; do
 done
 ```
 
-Integration tests dùng ba PostgreSQL database development, vì vậy cần chạy `docker compose up -d postgres`, apply cả ba migration và nạp `.env` trước khi `dotnet test`.
+Integration tests dùng bốn PostgreSQL database development, vì vậy cần chạy `docker compose up -d postgres`, apply đủ migration và nạp `.env` trước khi `dotnet test`.
 
 Nếu `identity_db` đã có user trước khi Friends queue tồn tại, chạy explicit development backfill sau khi cả RabbitMQ và Friends đang hoạt động:
 
@@ -292,7 +339,15 @@ Nếu `identity_db` đã có user trước khi Friends queue tồn tại, chạy
 ./scripts/replay-user-registrations-for-new-consumers.sh --confirm
 ```
 
-Script chỉ reset trạng thái publish của các `identity.user.registered.v1` Outbox records để Identity phát lại. Inbox của Users/Friends loại duplicate nên thao tác an toàn cho development; đây không phải runtime cross-database dependency của Friends.
+Script chỉ reset trạng thái publish của các `identity.user.registered.v1` Outbox records để Identity phát lại. Inbox của Users/Friends/Posts loại duplicate nên thao tác an toàn cho development; đây không phải runtime cross-database dependency.
+
+Nếu Posts được thêm sau khi đã có user và quan hệ xã hội, chạy backfill dành riêng cho consumer mới sau khi Identity, Friends, Posts và RabbitMQ đều hoạt động:
+
+```bash
+./scripts/replay-events-for-posts-consumer.sh --confirm
+```
+
+Script phát lại registration cùng các event friend accepted/removed và block/unblock. `InboxMessages.EventId` chống duplicate; `LastChangedAtUtc` ngăn event quan hệ cũ ghi đè trạng thái mới. Script chỉ dành cho development.
 
 ## E2E và failure recovery
 
@@ -332,9 +387,31 @@ curl -i http://localhost:5000/api/friends/status/<B_USER_ID> \
   -H 'Authorization: Bearer <A_ACCESS_TOKEN>'
 ```
 
+Tạo bài viết, đọc feed, comment và reaction qua Gateway:
+
+```bash
+curl -i -X POST http://localhost:5000/api/posts \
+  -H 'Authorization: Bearer <A_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Hello Fookbase","privacy":"friends"}'
+
+curl -i http://localhost:5000/api/posts/feed \
+  -H 'Authorization: Bearer <B_ACCESS_TOKEN>'
+
+curl -i -X POST http://localhost:5000/api/posts/<POST_ID>/comments \
+  -H 'Authorization: Bearer <B_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Chào bạn!","parentCommentId":null}'
+
+curl -i -X PUT http://localhost:5000/api/posts/<POST_ID>/reaction \
+  -H 'Authorization: Bearer <B_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"love"}'
+```
+
 Kiểm tra Outbox recovery: `docker compose stop rabbitmq`, register hoặc thực hiện friend operation qua Gateway và xác nhận request vẫn commit (`201`/`204`); record tương ứng trong Outbox của service phải còn `ProcessedAtUtc = NULL`. Sau `docker compose start rabbitmq`, worker reconnect, publish event và đánh dấu record processed. Với registration, poll `/api/users/<USER_ID>` hoặc thử friend request tới user mới cho tới khi projection xuất hiện.
 
-Kiểm tra queue recovery: dừng Users Service, register qua Gateway, xác nhận queue durable có message trong RabbitMQ Management. Khởi động lại Users và poll profile. Gửi lại cùng payload với cùng `EventId` để xác nhận `InboxMessages` và `UserProfiles` vẫn chỉ có một record.
+Kiểm tra queue recovery: dừng Users hoặc Posts Service, register qua Gateway, xác nhận queue durable tương ứng có message trong RabbitMQ Management. Khởi động lại service và poll profile/feed. Gửi lại cùng payload với cùng `EventId` để xác nhận projection và `InboxMessages` vẫn chỉ có một record.
 
 ## Port
 
@@ -345,11 +422,12 @@ Kiểm tra queue recovery: dừng Users Service, register qua Gateway, xác nh�
 | Identity Service | 5001 |
 | Users Service | 5002 |
 | Friends Service | 5003 |
-| PostgreSQL (`identity_db`, `users_db`, `friends_db`) | 5432 |
+| Posts Service | 5004 |
+| PostgreSQL (`identity_db`, `users_db`, `friends_db`, `posts_db`) | 5432 |
 | RabbitMQ AMQP | 5672 |
 | RabbitMQ Management | 15672 |
 | Redis | 6379 |
 | MinIO API | 9000 |
 | MinIO Console | 9001 |
 
-Identity, Users và Friends lần lượt là chủ sở hữu duy nhất của `identity_db`, `users_db` và `friends_db`. Các service có thể dùng chung PostgreSQL server trong development nhưng không truy cập database của nhau.
+Identity, Users, Friends và Posts lần lượt là chủ sở hữu duy nhất của `identity_db`, `users_db`, `friends_db` và `posts_db`. Các service có thể dùng chung PostgreSQL server trong development nhưng không truy cập database của nhau.
