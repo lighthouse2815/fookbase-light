@@ -7,4 +7,6 @@ psql -v ON_ERROR_STOP=1 \
   --set=db_owner="$POSTGRES_USER" <<-'EOSQL'
 SELECT format('CREATE DATABASE users_db OWNER %I', :'db_owner')
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'users_db')\gexec
+SELECT format('CREATE DATABASE friends_db OWNER %I', :'db_owner')
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'friends_db')\gexec
 EOSQL
