@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Foundation cho mạng xã hội theo kiến trúc microservices. Milestone hiện tại gồm React frontend, YARP API Gateway, Identity Service với JWT/refresh-token rotation, Users Service quản lý social profile, Friends Service quản lý quan hệ xã hội, Posts Service quản lý bài viết/bình luận/reaction và hạ tầng PostgreSQL, RabbitMQ, Redis, MinIO. Mỗi service sở hữu database riêng; dữ liệu cross-service được đồng bộ bất đồng bộ qua Transactional Outbox, RabbitMQ và consumer idempotent.
+Foundation cho mạng xã hội theo kiến trúc microservices. Milestone hiện tại gồm React frontend, YARP API Gateway, Identity Service với JWT/refresh-token rotation, Users Service quản lý social profile, Friends Service quản lý quan hệ xã hội, Posts Service quản lý bài viết/bình luận/reaction, Media Service lưu ảnh trên MinIO và hạ tầng PostgreSQL, RabbitMQ, Redis. Mỗi service sở hữu database riêng; dữ liệu cross-service được đồng bộ bất đồng bộ qua Transactional Outbox, RabbitMQ và consumer idempotent.
 
 ## Yêu cầu trên Linux
 
@@ -125,13 +125,24 @@ dotnet run --project services/Posts/Fookbase.Posts.Api
 
 Posts chạy tại <http://localhost:5004>; health check: <http://localhost:5004/health>.
 
+Ở terminal khác, nạp cùng `.env` và chạy Media Service:
+
+```bash
+set -a
+source .env
+set +a
+dotnet run --project services/Media/Fookbase.Media.Api
+```
+
+Media chạy tại <http://localhost:5005>; health check: <http://localhost:5005/health>.
+
 Ở terminal khác, chạy Gateway:
 
 ```bash
 dotnet run --project services/Gateway/Fookbase.Gateway
 ```
 
-Gateway chạy tại <http://localhost:5000>; health check: <http://localhost:5000/health>. Các request `/api/auth/**`, `/api/users/**`, `/api/friends/**` và `/api/posts/**` lần lượt được chuyển tiếp tới Identity `:5001`, Users `:5002`, Friends `:5003` và Posts `:5004`.
+Gateway chạy tại <http://localhost:5000>; health check: <http://localhost:5000/health>. Các request `/api/auth/**`, `/api/users/**`, `/api/friends/**`, `/api/posts/**` và `/api/media/**` lần lượt được chuyển tiếp tới Identity `:5001`, Users `:5002`, Friends `:5003`, Posts `:5004` và Media `:5005`.
 
 Chạy React frontend:
 
@@ -181,7 +192,7 @@ Users Service giữ social profile trong `users_db`, độc lập hoàn toàn v�
 | GET | `/api/users/me` | Bearer JWT | Trả profile của claim `sub` (`200`) |
 | PATCH | `/api/users/me` | Bearer JWT | Sửa display name, bio, ngày sinh và thành phố (`200`) |
 
-Users tự validate JWT bằng issuer, audience và signing key từ environment; service không gọi HTTP sang Identity cho mỗi request. Username vẫn do Identity sở hữu và không thể đổi qua Users API. `AvatarUrl` và `CoverUrl` mới chỉ là fields dành cho Media milestone sau.
+Users tự validate JWT bằng issuer, audience và signing key từ environment; service không gọi HTTP sang Identity cho mỗi request. Username vẫn do Identity sở hữu và không thể đổi qua Users API. `AvatarUrl` và `CoverUrl` đã có trong profile model nhưng luồng tự động gắn Media vào profile chưa nằm trong milestone này.
 
 ## Friends Service
 
@@ -251,6 +262,18 @@ Posts ghi event tạo/sửa/xóa bài viết, tạo comment và đổi reaction 
 - `fookbase.posts.friend-events.v1` nhận friend accepted/removed và user blocked/unblocked.
 - Exchange publish: `fookbase.posts.events`; delivery at-least-once, Inbox xử lý idempotent.
 
+## Media Service
+
+Media Service sở hữu `media_db` để lưu metadata và bucket private `fookbase-media` trên MinIO để lưu object. Client không nhận credential hoặc đường dẫn object nội bộ; URL public ổn định đi qua Gateway. Hiện service chỉ nhận ảnh JPEG, PNG, WebP và GIF, kích thước tối đa 25 MB.
+
+| Method | Endpoint | Authentication | Kết quả chính |
+| --- | --- | --- | --- |
+| POST | `/api/media` | Bearer JWT | Upload multipart `file` + `purpose`, trả metadata (`201`) |
+| GET | `/api/media/{mediaId}` | Không | Stream ảnh chưa bị xóa (`200`) |
+| DELETE | `/api/media/{mediaId}` | Bearer JWT, chủ sở hữu | Soft-delete metadata và xóa object (`204`) |
+
+`purpose` hợp lệ gồm `avatar`, `cover` và `post`. Object name được service sinh từ owner ID/media ID, không dùng file name do client cung cấp. File name được loại bỏ path và giới hạn 255 ký tự. Metadata đã soft-delete trả `404`; user khác cố xóa trả `403`.
+
 ## Register → profile event flow
 
 Khi `/api/auth/register` thành công, Identity ghi user, refresh token và `UserRegisteredIntegrationEvent` vào `identity_db` trong cùng transaction. API trả `201` ngay sau database commit, không phụ thuộc RabbitMQ đang online.
@@ -292,6 +315,10 @@ dotnet tool run dotnet-ef database update \
 dotnet tool run dotnet-ef database update \
   --project services/Posts/Fookbase.Posts.Infrastructure \
   --startup-project services/Posts/Fookbase.Posts.Api
+
+dotnet tool run dotnet-ef database update \
+  --project services/Media/Fookbase.Media.Infrastructure \
+  --startup-project services/Media/Fookbase.Media.Api
 ```
 
 Tạo migration mới khi model thay đổi:
@@ -316,12 +343,17 @@ dotnet tool run dotnet-ef migrations add MigrationName \
   --project services/Posts/Fookbase.Posts.Infrastructure \
   --startup-project services/Posts/Fookbase.Posts.Api \
   --output-dir Persistence/Migrations
+
+dotnet tool run dotnet-ef migrations add MigrationName \
+  --project services/Media/Fookbase.Media.Infrastructure \
+  --startup-project services/Media/Fookbase.Media.Api \
+  --output-dir Persistence/Migrations
 ```
 
-PostgreSQL init script tự tạo `users_db`, `friends_db` và `posts_db` trên volume mới. Với volume development đã tồn tại từ trước các milestone này, tạo database còn thiếu một lần mà không reset volume:
+PostgreSQL init script tự tạo `users_db`, `friends_db`, `posts_db` và `media_db` trên volume mới. Với volume development đã tồn tại từ trước các milestone này, tạo database còn thiếu một lần mà không reset volume:
 
 ```bash
-for database in users_db friends_db posts_db; do
+for database in users_db friends_db posts_db media_db; do
   docker compose exec -T postgres sh -lc '
     database="$1"
     psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
@@ -331,7 +363,7 @@ for database in users_db friends_db posts_db; do
 done
 ```
 
-Integration tests dùng bốn PostgreSQL database development, vì vậy cần chạy `docker compose up -d postgres`, apply đủ migration và nạp `.env` trước khi `dotnet test`.
+Integration tests dùng năm PostgreSQL database development, vì vậy cần chạy `docker compose up -d postgres`, apply đủ migration và nạp `.env` trước khi `dotnet test`. Media integration tests thay MinIO bằng object storage in-memory; test không ghi object vào bucket development.
 
 Nếu `identity_db` đã có user trước khi Friends queue tồn tại, chạy explicit development backfill sau khi cả RabbitMQ và Friends đang hoạt động:
 
@@ -409,6 +441,20 @@ curl -i -X PUT http://localhost:5000/api/posts/<POST_ID>/reaction \
   -d '{"type":"love"}'
 ```
 
+Upload, đọc và xóa ảnh qua Gateway:
+
+```bash
+curl -i -X POST http://localhost:5000/api/media \
+  -H 'Authorization: Bearer <ACCESS_TOKEN>' \
+  -F 'purpose=avatar' \
+  -F 'file=@/path/to/avatar.png;type=image/png'
+
+curl -f http://localhost:5000/api/media/<MEDIA_ID> --output downloaded-image.png
+
+curl -i -X DELETE http://localhost:5000/api/media/<MEDIA_ID> \
+  -H 'Authorization: Bearer <ACCESS_TOKEN>'
+```
+
 Kiểm tra Outbox recovery: `docker compose stop rabbitmq`, register hoặc thực hiện friend operation qua Gateway và xác nhận request vẫn commit (`201`/`204`); record tương ứng trong Outbox của service phải còn `ProcessedAtUtc = NULL`. Sau `docker compose start rabbitmq`, worker reconnect, publish event và đánh dấu record processed. Với registration, poll `/api/users/<USER_ID>` hoặc thử friend request tới user mới cho tới khi projection xuất hiện.
 
 Kiểm tra queue recovery: dừng Users hoặc Posts Service, register qua Gateway, xác nhận queue durable tương ứng có message trong RabbitMQ Management. Khởi động lại service và poll profile/feed. Gửi lại cùng payload với cùng `EventId` để xác nhận projection và `InboxMessages` vẫn chỉ có một record.
@@ -423,11 +469,12 @@ Kiểm tra queue recovery: dừng Users hoặc Posts Service, register qua Gatew
 | Users Service | 5002 |
 | Friends Service | 5003 |
 | Posts Service | 5004 |
-| PostgreSQL (`identity_db`, `users_db`, `friends_db`, `posts_db`) | 5432 |
+| Media Service | 5005 |
+| PostgreSQL (`identity_db`, `users_db`, `friends_db`, `posts_db`, `media_db`) | 5432 |
 | RabbitMQ AMQP | 5672 |
 | RabbitMQ Management | 15672 |
 | Redis | 6379 |
 | MinIO API | 9000 |
 | MinIO Console | 9001 |
 
-Identity, Users, Friends và Posts lần lượt là chủ sở hữu duy nhất của `identity_db`, `users_db`, `friends_db` và `posts_db`. Các service có thể dùng chung PostgreSQL server trong development nhưng không truy cập database của nhau.
+Identity, Users, Friends, Posts và Media lần lượt là chủ sở hữu duy nhất của `identity_db`, `users_db`, `friends_db`, `posts_db` và `media_db`. Các service có thể dùng chung PostgreSQL server trong development nhưng không truy cập database của nhau.
