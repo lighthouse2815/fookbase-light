@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Foundation cho mạng xã hội theo kiến trúc microservices. Milestone hiện tại gồm React frontend, YARP API Gateway, Identity Service skeleton và hạ tầng PostgreSQL, RabbitMQ, Redis, MinIO. Chưa có Register/Login hoặc các service nghiệp vụ khác.
+Foundation cho mạng xã hội theo kiến trúc microservices. Milestone hiện tại gồm React frontend, YARP API Gateway, Identity Service với JWT/refresh-token rotation và hạ tầng PostgreSQL, RabbitMQ, Redis, MinIO. Chưa có UI authentication hoặc các service nghiệp vụ khác.
 
 ## Yêu cầu trên Linux
 
@@ -21,6 +21,7 @@ Các giá trị trong `.env.example` chỉ dành cho máy development. Hãy thay
 ```bash
 dotnet restore FookbaseLight.sln
 dotnet build FookbaseLight.sln --no-restore
+dotnet test FookbaseLight.sln --no-build
 ```
 
 Nếu máy chưa cài .NET SDK 10, có thể build bằng SDK image chính thức:
@@ -122,6 +123,45 @@ docker run --rm --user "$(id -u):$(id -g)" \
   -v "$PWD/frontend/web:/workspace" -w /workspace \
   node:24-bookworm-slim npm run dev
 ```
+
+## Authentication API
+
+| Method | Endpoint | Authentication | Kết quả chính |
+| --- | --- | --- | --- |
+| POST | `/api/auth/register` | Không | Tạo user và trả access/refresh token (`201`) |
+| POST | `/api/auth/login` | Không | Đăng nhập và trả token pair (`200`) |
+| POST | `/api/auth/refresh` | Không | Rotate refresh token và trả token pair mới (`200`) |
+| POST | `/api/auth/logout` | Bearer JWT | Revoke refresh token hiện tại (`204`) |
+| GET | `/api/auth/me` | Bearer JWT | Trả id, email, username (`200`) |
+
+Các endpoint trả `400` khi request không hợp lệ, `401` khi credential/token không hợp lệ và `409` khi email hoặc username đã tồn tại. Qua Gateway, dùng base URL `http://localhost:5000`; Identity trực tiếp dùng `http://localhost:5001`.
+
+JWT signing key chỉ được đọc từ `Jwt__SigningKey` trong environment. Refresh token raw chỉ trả cho client; database lưu SHA-256 hash. Access token mặc định hết hạn sau 15 phút và refresh token sau 30 ngày.
+
+## EF Core migrations
+
+Khôi phục local tool và apply migration hiện có:
+
+```bash
+set -a
+source .env
+set +a
+dotnet tool restore
+dotnet tool run dotnet-ef database update \
+  --project services/Identity/Fookbase.Identity.Infrastructure \
+  --startup-project services/Identity/Fookbase.Identity.Api
+```
+
+Tạo migration mới khi model thay đổi:
+
+```bash
+dotnet tool run dotnet-ef migrations add MigrationName \
+  --project services/Identity/Fookbase.Identity.Infrastructure \
+  --startup-project services/Identity/Fookbase.Identity.Api \
+  --output-dir Persistence/Migrations
+```
+
+Integration tests dùng PostgreSQL development, vì vậy cần chạy `docker compose up -d postgres` và nạp `.env` trước khi chạy `dotnet test`.
 
 ## Port
 
