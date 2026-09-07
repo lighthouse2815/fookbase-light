@@ -51,7 +51,7 @@ public interface IPostsStore
         Guid postId,
         CancellationToken cancellationToken = default);
 
-    Task<PagedResponse<PostResponse>> GetFeedAsync(
+    Task<PostsStoreResult<PagedResponse<PostResponse>>> GetFeedAsync(
         Guid viewerUserId,
         int offset,
         int limit,

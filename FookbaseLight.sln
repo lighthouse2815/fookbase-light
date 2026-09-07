@@ -63,6 +63,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Posts.Domain", "se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Posts.Application", "services\Posts\Fookbase.Posts.Application\Fookbase.Posts.Application.csproj", "{E625665A-DB5F-4AB9-ADEC-3207D5E77474}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Posts.Infrastructure", "services\Posts\Fookbase.Posts.Infrastructure\Fookbase.Posts.Infrastructure.csproj", "{748D03CD-032B-445C-A7F6-1A7811258513}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -301,6 +303,18 @@ Global
 		{E625665A-DB5F-4AB9-ADEC-3207D5E77474}.Release|x64.Build.0 = Release|Any CPU
 		{E625665A-DB5F-4AB9-ADEC-3207D5E77474}.Release|x86.ActiveCfg = Release|Any CPU
 		{E625665A-DB5F-4AB9-ADEC-3207D5E77474}.Release|x86.Build.0 = Release|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Debug|x64.Build.0 = Debug|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Debug|x86.Build.0 = Debug|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Release|Any CPU.Build.0 = Release|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Release|x64.ActiveCfg = Release|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Release|x64.Build.0 = Release|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Release|x86.ActiveCfg = Release|Any CPU
+		{748D03CD-032B-445C-A7F6-1A7811258513}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -333,5 +347,6 @@ Global
 		{1A74326A-BAB3-4C72-76C9-FB2911D3BDC0} = {5854FF58-B8C5-05C6-5BF2-ACE42193F22B}
 		{AF6562F2-8E13-43F6-996E-037D2A73A9F2} = {1A74326A-BAB3-4C72-76C9-FB2911D3BDC0}
 		{E625665A-DB5F-4AB9-ADEC-3207D5E77474} = {1A74326A-BAB3-4C72-76C9-FB2911D3BDC0}
+		{748D03CD-032B-445C-A7F6-1A7811258513} = {1A74326A-BAB3-4C72-76C9-FB2911D3BDC0}
 	EndGlobalSection
 EndGlobal

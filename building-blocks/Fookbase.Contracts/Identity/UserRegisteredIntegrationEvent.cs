@@ -15,4 +15,6 @@ public sealed record UserRegisteredIntegrationEvent(
     public const string QueueName = "fookbase.users.user-registered.v1";
 
     public const string FriendsQueueName = "fookbase.friends.user-registered.v1";
+
+    public const string PostsQueueName = "fookbase.posts.user-registered.v1";
 }

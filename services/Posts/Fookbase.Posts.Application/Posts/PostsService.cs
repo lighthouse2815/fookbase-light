@@ -82,8 +82,7 @@ public sealed class PostsService(IPostsStore store) : IPostsService
             return ApplicationResult<PagedResponse<PostResponse>>.Failure(error);
         }
 
-        return ApplicationResult<PagedResponse<PostResponse>>.Success(
-            await store.GetFeedAsync(actorUserId, offset, limit, cancellationToken));
+        return Map(await store.GetFeedAsync(actorUserId, offset, limit, cancellationToken));
     }
 
     public async Task<ApplicationResult<PagedResponse<PostResponse>>> GetUserPostsAsync(
