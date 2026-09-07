@@ -18,8 +18,16 @@ public sealed class InMemoryObjectStorage : IObjectStorage
             ? new StoredObjectInfo(value.Content.LongLength, value.ContentType) : null);
 
     public Task<byte[]> ReadPrefixAsync(string objectKey, int length,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(objects[objectKey].Content.Take(length).ToArray());
+        CancellationToken cancellationToken = default)
+    {
+        var content = objects[objectKey].Content;
+        if (length > content.Length)
+        {
+            throw new InvalidOperationException("A ranged read cannot extend beyond the stored object.");
+        }
+
+        return Task.FromResult(content.Take(length).ToArray());
+    }
 
     public Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default)
     {

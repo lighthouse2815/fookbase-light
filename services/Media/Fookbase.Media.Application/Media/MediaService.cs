@@ -119,7 +119,8 @@ public sealed class MediaService(
                 "The uploaded object size does not match the declared size.");
         }
 
-        var prefix = await objectStorage.ReadPrefixAsync(asset.ObjectKey, 32, cancellationToken);
+        var prefixLength = checked((int)Math.Min(32L, storedObject.SizeBytes));
+        var prefix = await objectStorage.ReadPrefixAsync(asset.ObjectKey, prefixLength, cancellationToken);
         var detectedContentType = DetectContentType(prefix);
         if (!string.Equals(detectedContentType, asset.ContentType, StringComparison.OrdinalIgnoreCase))
         {
