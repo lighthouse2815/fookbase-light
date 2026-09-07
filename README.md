@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Foundation cho mạng xã hội theo kiến trúc microservices. Milestone hiện tại gồm React frontend, YARP API Gateway, Identity Service với JWT/refresh-token rotation và hạ tầng PostgreSQL, RabbitMQ, Redis, MinIO. Chưa có UI authentication hoặc các service nghiệp vụ khác.
+Foundation cho mạng xã hội theo kiến trúc microservices. Milestone hiện tại gồm React frontend, YARP API Gateway, Identity Service với JWT/refresh-token rotation, Users Service quản lý social profile và hạ tầng PostgreSQL, RabbitMQ, Redis, MinIO. Identity và Users sở hữu database riêng; profile được tạo bất đồng bộ qua Transactional Outbox và RabbitMQ.
 
 ## Yêu cầu trên Linux
 
@@ -92,13 +92,24 @@ dotnet run --project services/Identity/Fookbase.Identity.Api
 
 Identity chạy tại <http://localhost:5001>; health check: <http://localhost:5001/health>.
 
+Ở terminal khác, nạp cùng `.env` và chạy Users Service:
+
+```bash
+set -a
+source .env
+set +a
+dotnet run --project services/Users/Fookbase.Users.Api
+```
+
+Users chạy tại <http://localhost:5002>; health check: <http://localhost:5002/health>.
+
 Ở terminal khác, chạy Gateway:
 
 ```bash
 dotnet run --project services/Gateway/Fookbase.Gateway
 ```
 
-Gateway chạy tại <http://localhost:5000>; health check: <http://localhost:5000/health>. Các request `/api/auth/**` được chuyển tiếp tới Identity Service tại port `5001`.
+Gateway chạy tại <http://localhost:5000>; health check: <http://localhost:5000/health>. Các request `/api/auth/**` được chuyển tiếp tới Identity tại port `5001`, còn `/api/users/**` được chuyển tiếp tới Users tại port `5002`.
 
 Chạy React frontend:
 
@@ -138,6 +149,35 @@ Các endpoint trả `400` khi request không hợp lệ, `401` khi credential/to
 
 JWT signing key chỉ được đọc từ `Jwt__SigningKey` trong environment. Refresh token raw chỉ trả cho client; database lưu SHA-256 hash. Access token mặc định hết hạn sau 15 phút và refresh token sau 30 ngày.
 
+## Users Service
+
+Users Service giữ social profile trong `users_db`, độc lập hoàn toàn với `identity_db`. `UserId` là global identifier do Identity phát hành; không có foreign key cross-database. Users không lưu password hash, refresh token, JWT, authentication email hoặc secret.
+
+| Method | Endpoint | Authentication | Kết quả chính |
+| --- | --- | --- | --- |
+| GET | `/api/users/{userId}` | Không | Trả public profile (`200`) hoặc `404` |
+| GET | `/api/users/me` | Bearer JWT | Trả profile của claim `sub` (`200`) |
+| PATCH | `/api/users/me` | Bearer JWT | Sửa display name, bio, ngày sinh và thành phố (`200`) |
+
+Users tự validate JWT bằng issuer, audience và signing key từ environment; service không gọi HTTP sang Identity cho mỗi request. Username vẫn do Identity sở hữu và không thể đổi qua Users API. `AvatarUrl` và `CoverUrl` mới chỉ là fields dành cho Media milestone sau.
+
+## Register → profile event flow
+
+Khi `/api/auth/register` thành công, Identity ghi user, refresh token và `UserRegisteredIntegrationEvent` vào `identity_db` trong cùng transaction. API trả `201` ngay sau database commit, không phụ thuộc RabbitMQ đang online.
+
+Outbox worker đọc message chưa xử lý, publish persistent message lên durable RabbitMQ topology rồi mới đánh dấu `ProcessedAtUtc`. Publish failure tăng `RetryCount`, lưu `LastError` và retry có backoff; record không bị xóa để hỗ trợ audit. Delivery là at-least-once.
+
+Users consumer dùng manual ACK. Trong một transaction của `users_db`, consumer tạo `UserProfile` mặc định và ghi `InboxMessages`. `InboxMessages.EventId` và `UserProfiles.UserId` là unique/primary key, vì vậy cùng một event được deliver nhiều lần vẫn chỉ tạo một profile. ACK chỉ xảy ra sau commit.
+
+RabbitMQ topology:
+
+- Exchange: `fookbase.identity.events` (durable topic)
+- Routing key/event type: `identity.user.registered.v1`
+- Queue: `fookbase.users.user-registered.v1` (durable)
+- Message: persistent
+
+Event chỉ chứa `EventId`, `UserId`, `Username` và `OccurredAtUtc`; email không được copy sang social profile.
+
 ## EF Core migrations
 
 Khôi phục local tool và apply migration hiện có:
@@ -150,6 +190,10 @@ dotnet tool restore
 dotnet tool run dotnet-ef database update \
   --project services/Identity/Fookbase.Identity.Infrastructure \
   --startup-project services/Identity/Fookbase.Identity.Api
+
+dotnet tool run dotnet-ef database update \
+  --project services/Users/Fookbase.Users.Infrastructure \
+  --startup-project services/Users/Fookbase.Users.Api
 ```
 
 Tạo migration mới khi model thay đổi:
@@ -159,9 +203,46 @@ dotnet tool run dotnet-ef migrations add MigrationName \
   --project services/Identity/Fookbase.Identity.Infrastructure \
   --startup-project services/Identity/Fookbase.Identity.Api \
   --output-dir Persistence/Migrations
+
+dotnet tool run dotnet-ef migrations add MigrationName \
+  --project services/Users/Fookbase.Users.Infrastructure \
+  --startup-project services/Users/Fookbase.Users.Api \
+  --output-dir Persistence/Migrations
 ```
 
-Integration tests dùng PostgreSQL development, vì vậy cần chạy `docker compose up -d postgres` và nạp `.env` trước khi chạy `dotnet test`.
+PostgreSQL init script tự tạo `users_db` trên volume mới. Với volume development đã tồn tại từ trước milestone Users, tạo database một lần mà không reset volume:
+
+```bash
+docker compose exec postgres sh -lc '
+  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+    "SELECT 1 FROM pg_database WHERE datname = '\''users_db'\''" | grep -q 1 ||
+  createdb -U "$POSTGRES_USER" -O "$POSTGRES_USER" users_db'
+```
+
+Integration tests dùng hai PostgreSQL database development, vì vậy cần chạy `docker compose up -d postgres`, apply cả hai migration và nạp `.env` trước khi `dotnet test`.
+
+## E2E và failure recovery
+
+Gọi register qua Gateway, sau đó poll public profile vì đây là eventual consistency:
+
+```bash
+curl -i http://localhost:5000/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"user@example.com","username":"user123","password":"Password123!"}'
+
+curl -i http://localhost:5000/api/users/<USER_ID>
+curl -i http://localhost:5000/api/users/me \
+  -H 'Authorization: Bearer <ACCESS_TOKEN>'
+
+curl -i -X PATCH http://localhost:5000/api/users/me \
+  -H 'Authorization: Bearer <ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"displayName":"User 123","bio":"Hello","dateOfBirth":"2000-01-02","currentCity":"Da Nang"}'
+```
+
+Kiểm tra Outbox recovery: `docker compose stop rabbitmq`, register qua Gateway và xác nhận request vẫn trả `201`; record tương ứng trong `OutboxMessages` phải còn `ProcessedAtUtc = NULL`. Sau `docker compose start rabbitmq`, poll `/api/users/<USER_ID>` cho tới khi trả `200`; Outbox được đánh dấu processed.
+
+Kiểm tra queue recovery: dừng Users Service, register qua Gateway, xác nhận queue durable có message trong RabbitMQ Management. Khởi động lại Users và poll profile. Gửi lại cùng payload với cùng `EventId` để xác nhận `InboxMessages` và `UserProfiles` vẫn chỉ có một record.
 
 ## Port
 
@@ -170,11 +251,12 @@ Integration tests dùng PostgreSQL development, vì vậy cần chạy `docker c
 | React frontend | 5173 |
 | YARP Gateway | 5000 |
 | Identity Service | 5001 |
-| PostgreSQL (`identity_db`) | 5432 |
+| Users Service | 5002 |
+| PostgreSQL (`identity_db`, `users_db`) | 5432 |
 | RabbitMQ AMQP | 5672 |
 | RabbitMQ Management | 15672 |
 | Redis | 6379 |
 | MinIO API | 9000 |
 | MinIO Console | 9001 |
 
-Identity Service là service duy nhất sở hữu database `identity_db`. Mỗi microservice được thêm ở các milestone sau sẽ có database riêng.
+Identity là service duy nhất sở hữu `identity_db`; Users là service duy nhất sở hữu `users_db`. Hai service có thể dùng chung PostgreSQL server trong development nhưng không truy cập database của nhau.
