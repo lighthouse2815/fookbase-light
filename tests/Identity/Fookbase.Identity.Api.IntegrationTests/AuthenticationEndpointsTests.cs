@@ -53,12 +53,19 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var user = await dbContext.Users.SingleAsync(item => item.Id == authentication.User.Id);
         var refreshToken = await dbContext.RefreshTokens
             .SingleAsync(item => item.UserId == authentication.User.Id);
+        var outboxMessages = await dbContext.OutboxMessages.AsNoTracking().ToListAsync();
+        var outboxMessage = outboxMessages.Single(
+            item => item.Payload.Contains(authentication.User.Id.ToString(), StringComparison.Ordinal));
 
         Assert.NotEqual(account.Password, user.PasswordHash);
         Assert.Equal(account.Email.ToUpperInvariant(), user.NormalizedEmail);
         Assert.Equal(account.Username.ToUpperInvariant(), user.NormalizedUserName);
         Assert.NotEqual(authentication.RefreshToken, refreshToken.TokenHash);
         Assert.Equal(Hash(authentication.RefreshToken), refreshToken.TokenHash);
+        Assert.Equal("identity.user.registered.v1", outboxMessage.Type);
+        Assert.Contains(authentication.User.Id.ToString(), outboxMessage.Payload);
+        Assert.Null(outboxMessage.ProcessedAtUtc);
+        Assert.Equal(0, outboxMessage.RetryCount);
     }
 
     [Fact]

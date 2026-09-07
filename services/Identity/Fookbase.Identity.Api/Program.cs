@@ -3,6 +3,7 @@ using Fookbase.Identity.Api.Endpoints;
 using Fookbase.Identity.Api.ErrorHandling;
 using Fookbase.Identity.Infrastructure;
 using Fookbase.Identity.Infrastructure.Authentication;
+using Fookbase.Identity.Infrastructure.IntegrationEvents;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -16,8 +17,20 @@ var jwtOptions = builder.Configuration
     .GetSection(JwtOptions.SectionName)
     .Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is required.");
+var rabbitMqOptions = builder.Configuration
+    .GetSection(RabbitMqOptions.SectionName)
+    .Get<RabbitMqOptions>()
+    ?? throw new InvalidOperationException("RabbitMQ configuration is required.");
+var outboxOptions = builder.Configuration
+    .GetSection(OutboxOptions.SectionName)
+    .Get<OutboxOptions>()
+    ?? new OutboxOptions();
 
-builder.Services.AddIdentityInfrastructure(identityConnectionString, jwtOptions);
+builder.Services.AddIdentityInfrastructure(
+    identityConnectionString,
+    jwtOptions,
+    rabbitMqOptions,
+    outboxOptions);
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

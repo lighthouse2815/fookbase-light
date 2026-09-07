@@ -12,6 +12,7 @@ public sealed class IdentityApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting("Outbox:PublisherEnabled", "false");
     }
 
     protected override IHost CreateHost(IHostBuilder builder)

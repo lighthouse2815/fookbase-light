@@ -1,11 +1,13 @@
 using Fookbase.Identity.Application.Abstractions;
 using Fookbase.Identity.Application.Common;
 using Fookbase.Identity.Domain.Entities;
+using Fookbase.Contracts.Identity;
 
 namespace Fookbase.Identity.Application.Authentication;
 
 public sealed class AuthenticationService(
     IUserAccountService userAccountService,
+    IUserRegistrationStore userRegistrationStore,
     IRefreshTokenRepository refreshTokenRepository,
     ITokenService tokenService,
     TimeProvider timeProvider) : IAuthenticationService
@@ -39,7 +41,19 @@ public sealed class AuthenticationService(
 
         var now = timeProvider.GetUtcNow();
         var user = new User(Guid.NewGuid(), email, userName, now);
-        var creationResult = await userAccountService.CreateAsync(user, request.Password!);
+        var accessToken = tokenService.CreateAccessToken(user, now);
+        var refreshToken = tokenService.CreateRefreshToken(user.Id, now);
+        var integrationEvent = new UserRegisteredIntegrationEvent(
+            Guid.NewGuid(),
+            user.Id,
+            userName,
+            now);
+        var creationResult = await userRegistrationStore.CreateAsync(
+            user,
+            request.Password!,
+            refreshToken.RefreshToken,
+            integrationEvent,
+            cancellationToken);
 
         if (!creationResult.Succeeded)
         {
@@ -60,7 +74,8 @@ public sealed class AuthenticationService(
             return ValidationFailure<AuthenticationResponse>(creationResult.Errors);
         }
 
-        return await IssueNewTokenPairAsync(user, now, cancellationToken);
+        return ApplicationResult<AuthenticationResponse>.Success(
+            BuildResponse(user, accessToken, refreshToken));
     }
 
     public async Task<ApplicationResult<AuthenticationResponse>> LoginAsync(

@@ -3,6 +3,7 @@ using Fookbase.Identity.Application.Authentication;
 using Fookbase.Identity.Domain.Entities;
 using Fookbase.Identity.Infrastructure.Authentication;
 using Fookbase.Identity.Infrastructure.Identity;
+using Fookbase.Identity.Infrastructure.IntegrationEvents;
 using Fookbase.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,9 +16,13 @@ public static class DependencyInjection
     public static IServiceCollection AddIdentityInfrastructure(
         this IServiceCollection services,
         string connectionString,
-        JwtOptions jwtOptions)
+        JwtOptions jwtOptions,
+        RabbitMqOptions rabbitMqOptions,
+        OutboxOptions outboxOptions)
     {
         jwtOptions.Validate();
+        rabbitMqOptions.Validate();
+        outboxOptions.Validate();
 
         services.AddDbContext<IdentityDbContext>(options =>
             options.UseNpgsql(connectionString));
@@ -37,11 +42,16 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<IdentityDbContext>();
 
         services.AddSingleton(jwtOptions);
+        services.AddSingleton(rabbitMqOptions);
+        services.AddSingleton(outboxOptions);
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IUserAccountService, IdentityUserAccountService>();
+        services.AddScoped<IUserRegistrationStore, UserRegistrationStore>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<ITokenService, JwtTokenService>();
+        services.AddScoped<IIntegrationEventPublisher, RabbitMqIntegrationEventPublisher>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddHostedService<OutboxPublisherWorker>();
 
         return services;
     }

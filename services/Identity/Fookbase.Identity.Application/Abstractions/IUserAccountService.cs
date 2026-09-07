@@ -10,8 +10,6 @@ public interface IUserAccountService
 
     Task<User?> FindByIdAsync(Guid userId);
 
-    Task<UserCreationResult> CreateAsync(User user, string password);
-
     Task<bool> CheckPasswordAsync(User user, string password);
 }
 
