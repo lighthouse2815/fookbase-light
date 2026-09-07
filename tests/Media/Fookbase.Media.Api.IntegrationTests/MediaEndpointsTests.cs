@@ -54,7 +54,9 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
             (await client.PostAsync($"/api/media/{missing.MediaId}/complete", null)).StatusCode);
 
         var oversized = await CreateIntentAsync(client, Png.Length);
-        PutObject(oversized.MediaId, [.. Png, 0x04]);
+        var oversizedBytes = new byte[20 * 1024 * 1024 + 1];
+        Png.CopyTo(oversizedBytes, 0);
+        PutObject(oversized.MediaId, oversizedBytes);
         Assert.Equal(HttpStatusCode.BadRequest,
             (await client.PostAsync($"/api/media/{oversized.MediaId}/complete", null)).StatusCode);
 
