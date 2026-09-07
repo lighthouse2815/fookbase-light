@@ -23,6 +23,8 @@ public static class PostEndpoints
         group.MapDelete("/comments/{commentId:guid}", DeleteCommentAsync).RequireAuthorization();
         group.MapPut("/{postId:guid}/reaction", SetReactionAsync).RequireAuthorization();
         group.MapDelete("/{postId:guid}/reaction", RemoveReactionAsync).RequireAuthorization();
+        group.MapGet("/{postId:guid}/media/{mediaId:guid}/access", GetMediaAccessAsync)
+            .RequireAuthorization();
 
         return endpoints;
     }
@@ -39,7 +41,7 @@ public static class PostEndpoints
         }
 
         var result = await service.CreatePostAsync(
-            actorUserId, request.Content, request.Privacy, cancellationToken);
+            actorUserId, request.Content, request.Privacy, request.MediaIds ?? [], cancellationToken);
         return result.Succeeded
             ? Results.Created($"/api/posts/{result.Value!.Id}", result.Value)
             : result.Error!.ToHttpResult();
@@ -58,7 +60,7 @@ public static class PostEndpoints
         }
 
         var result = await service.UpdatePostAsync(
-            actorUserId, postId, request.Content, request.Privacy, cancellationToken);
+            actorUserId, postId, request.Content, request.Privacy, request.MediaIds ?? [], cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
@@ -215,6 +217,15 @@ public static class PostEndpoints
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
+    private static async Task<IResult> GetMediaAccessAsync(
+        Guid postId, Guid mediaId, ClaimsPrincipal principal, IPostsService service,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId)) return InvalidAccessToken();
+        var result = await service.GetMediaAccessAsync(actorUserId, postId, mediaId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
     private static async Task<IResult> ExecuteCommandAsync(
         ClaimsPrincipal principal,
         Func<Guid, Task<ApplicationResult>> command)
@@ -247,9 +258,9 @@ public static class PostEndpoints
     private static IResult InvalidAccessToken() => Results.Unauthorized();
 }
 
-public sealed record CreatePostRequest(string Content, string Privacy);
+public sealed record CreatePostRequest(string Content, string Privacy, IReadOnlyList<Guid>? MediaIds = null);
 
-public sealed record UpdatePostRequest(string Content, string Privacy);
+public sealed record UpdatePostRequest(string Content, string Privacy, IReadOnlyList<Guid>? MediaIds = null);
 
 public sealed record CreateCommentRequest(string Content, Guid? ParentCommentId);
 

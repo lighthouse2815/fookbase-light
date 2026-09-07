@@ -4,6 +4,8 @@ using Fookbase.Posts.Api.ErrorHandling;
 using Fookbase.Posts.Infrastructure;
 using Fookbase.Posts.Infrastructure.Authentication;
 using Fookbase.Posts.Infrastructure.IntegrationEvents;
+using Fookbase.Posts.Infrastructure.Media;
+using Fookbase.Posts.Application.Posts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -21,9 +23,14 @@ var rabbitMqOptions = builder.Configuration.GetSection(RabbitMqOptions.SectionNa
 var outboxOptions = builder.Configuration.GetSection(OutboxOptions.SectionName)
     .Get<OutboxOptions>()
     ?? new OutboxOptions();
+var postsOptions = builder.Configuration.GetSection(PostsOptions.SectionName)
+    .Get<PostsOptions>() ?? new PostsOptions();
+var mediaServiceOptions = builder.Configuration.GetSection(MediaServiceOptions.SectionName)
+    .Get<MediaServiceOptions>() ?? throw new InvalidOperationException("Media service configuration is required.");
 
 jwtOptions.Validate();
-builder.Services.AddPostsInfrastructure(connectionString, rabbitMqOptions, outboxOptions);
+builder.Services.AddPostsInfrastructure(connectionString, rabbitMqOptions, outboxOptions,
+    postsOptions, mediaServiceOptions);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

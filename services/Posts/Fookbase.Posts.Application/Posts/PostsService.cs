@@ -4,7 +4,10 @@ using Fookbase.Posts.Domain.Entities;
 
 namespace Fookbase.Posts.Application.Posts;
 
-public sealed class PostsService(IPostsStore store) : IPostsService
+public sealed class PostsService(
+    IPostsStore store,
+    IMediaReadUrlClient mediaReadUrlClient,
+    PostsOptions options) : IPostsService
 {
     private const int MaximumLimit = 100;
 
@@ -12,9 +15,10 @@ public sealed class PostsService(IPostsStore store) : IPostsService
         Guid actorUserId,
         string content,
         string privacy,
+        IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default)
     {
-        var error = ValidateContent(content, Post.MaximumContentLength, "post");
+        var error = ValidatePost(content, mediaIds);
         if (error is not null)
         {
             return ApplicationResult<PostResponse>.Failure(error);
@@ -29,6 +33,7 @@ public sealed class PostsService(IPostsStore store) : IPostsService
             actorUserId,
             content,
             parsedPrivacy,
+            mediaIds,
             cancellationToken));
     }
 
@@ -37,9 +42,10 @@ public sealed class PostsService(IPostsStore store) : IPostsService
         Guid postId,
         string content,
         string privacy,
+        IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default)
     {
-        var error = ValidateContent(content, Post.MaximumContentLength, "post");
+        var error = ValidatePost(content, mediaIds);
         if (error is not null)
         {
             return ApplicationResult<PostResponse>.Failure(error);
@@ -55,6 +61,7 @@ public sealed class PostsService(IPostsStore store) : IPostsService
             postId,
             content,
             parsedPrivacy,
+            mediaIds,
             cancellationToken));
     }
 
@@ -197,6 +204,20 @@ public sealed class PostsService(IPostsStore store) : IPostsService
         CancellationToken cancellationToken = default) =>
         Map(await store.RemoveReactionAsync(actorUserId, postId, cancellationToken));
 
+    public async Task<ApplicationResult<MediaAccessResponse>> GetMediaAccessAsync(
+        Guid actorUserId, Guid postId, Guid mediaId, CancellationToken cancellationToken = default)
+    {
+        var access = await store.AuthorizeMediaAccessAsync(actorUserId, postId, mediaId, cancellationToken);
+        if (access != PostsStoreError.None)
+            return ApplicationResult<MediaAccessResponse>.Failure(ToApplicationError(access));
+        var url = await mediaReadUrlClient.CreateReadUrlAsync(mediaId, cancellationToken);
+        return url is null
+            ? ApplicationResult<MediaAccessResponse>.Failure(new ApplicationError(
+                "media_unavailable", "The attached media is unavailable.", ApplicationErrorType.NotFound))
+            : ApplicationResult<MediaAccessResponse>.Success(
+                new MediaAccessResponse(url.MediaId, url.Url, url.ExpiresAtUtc));
+    }
+
     private static bool TryParsePrivacy(string privacy, out PostPrivacy parsedPrivacy) =>
         Enum.TryParse(privacy, true, out parsedPrivacy) && Enum.IsDefined(parsedPrivacy);
 
@@ -216,6 +237,21 @@ public sealed class PostsService(IPostsStore store) : IPostsService
                 ApplicationErrorType.Validation);
         }
 
+        return null;
+    }
+
+    private ApplicationError? ValidatePost(string? content, IReadOnlyList<Guid> mediaIds)
+    {
+        if (string.IsNullOrWhiteSpace(content) && mediaIds.Count == 0)
+            return new ApplicationError("empty_post", "A post requires content or media.", ApplicationErrorType.Validation);
+        if ((content?.Trim().Length ?? 0) > Post.MaximumContentLength)
+            return new ApplicationError("invalid_post_content",
+                $"Post content cannot exceed {Post.MaximumContentLength} characters.", ApplicationErrorType.Validation);
+        if (mediaIds.Count > options.MaximumAttachments)
+            return new ApplicationError("too_many_attachments",
+                $"A post can contain at most {options.MaximumAttachments} media attachments.", ApplicationErrorType.Validation);
+        if (mediaIds.Count != mediaIds.Distinct().Count())
+            return new ApplicationError("duplicate_attachment", "Media attachments cannot be duplicated.", ApplicationErrorType.Validation);
         return null;
     }
 
@@ -258,6 +294,12 @@ public sealed class PostsService(IPostsStore store) : IPostsService
             "relationship_unavailable", "This interaction is unavailable.", ApplicationErrorType.Conflict),
         PostsStoreError.InvalidParentComment => new(
             "invalid_parent_comment", "A reply can only target a top-level comment on the same post.", ApplicationErrorType.Validation),
+        PostsStoreError.InvalidMedia => new(
+            "invalid_media", "Every attachment must be ready.", ApplicationErrorType.Conflict),
+        PostsStoreError.MediaNotOwned => new(
+            "media_not_owned", "Only the media owner can attach it.", ApplicationErrorType.Forbidden),
+        PostsStoreError.MediaNotAttached => new(
+            "media_not_attached", "The media is not attached to this post.", ApplicationErrorType.NotFound),
         _ => throw new ArgumentOutOfRangeException(nameof(error), error, null)
     };
 }

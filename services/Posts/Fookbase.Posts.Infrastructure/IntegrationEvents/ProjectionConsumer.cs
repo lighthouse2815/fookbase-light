@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Fookbase.Contracts.Friends;
 using Fookbase.Contracts.Identity;
+using Fookbase.Contracts.Media;
 using Fookbase.Posts.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -64,6 +65,7 @@ internal sealed class ProjectionConsumer(
         await using var connection = await factory.CreateConnectionAsync(cancellationToken);
         await using var identityChannel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
         await using var friendsChannel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+        await using var mediaChannel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
         await identityChannel.ExchangeDeclareAsync(
             UserRegisteredIntegrationEvent.ExchangeName,
@@ -110,10 +112,21 @@ internal sealed class ProjectionConsumer(
                 cancellationToken: cancellationToken);
         }
 
+        await mediaChannel.ExchangeDeclareAsync(MediaIntegrationEventTopology.ExchangeName,
+            ExchangeType.Topic, durable: true, autoDelete: false, cancellationToken: cancellationToken);
+        await mediaChannel.QueueDeclareAsync(MediaIntegrationEventTopology.PostsQueueName,
+            durable: true, exclusive: false, autoDelete: false, cancellationToken: cancellationToken);
+        foreach (var eventType in new[]
+                 { MediaReadyIntegrationEvent.EventType, MediaDeletedIntegrationEvent.EventType })
+            await mediaChannel.QueueBindAsync(MediaIntegrationEventTopology.PostsQueueName,
+                MediaIntegrationEventTopology.ExchangeName, eventType, cancellationToken: cancellationToken);
+
         await identityChannel.BasicQosAsync(0, 1, false, cancellationToken);
         await friendsChannel.BasicQosAsync(0, 1, false, cancellationToken);
+        await mediaChannel.BasicQosAsync(0, 1, false, cancellationToken);
         var identityConsumer = CreateConsumer(identityChannel, cancellationToken);
         var friendsConsumer = CreateConsumer(friendsChannel, cancellationToken);
+        var mediaConsumer = CreateConsumer(mediaChannel, cancellationToken);
         await identityChannel.BasicConsumeAsync(
             UserRegisteredIntegrationEvent.PostsQueueName,
             autoAck: false,
@@ -124,6 +137,8 @@ internal sealed class ProjectionConsumer(
             autoAck: false,
             friendsConsumer,
             cancellationToken);
+        await mediaChannel.BasicConsumeAsync(MediaIntegrationEventTopology.PostsQueueName,
+            autoAck: false, mediaConsumer, cancellationToken);
         await Task.Delay(Timeout.InfiniteTimeSpan, timeProvider, cancellationToken);
     }
 
@@ -194,6 +209,10 @@ internal sealed class ProjectionConsumer(
                 Deserialize<UserBlockedIntegrationEvent>(payload), cancellationToken),
             UserUnblockedIntegrationEvent.EventType => await store.ProjectAsync(
                 Deserialize<UserUnblockedIntegrationEvent>(payload), cancellationToken),
+            MediaReadyIntegrationEvent.EventType => await store.ProjectAsync(
+                Deserialize<MediaReadyIntegrationEvent>(payload), cancellationToken),
+            MediaDeletedIntegrationEvent.EventType => await store.ProjectAsync(
+                Deserialize<MediaDeletedIntegrationEvent>(payload), cancellationToken),
             _ => throw new JsonException($"Unsupported integration event type '{eventType}'.")
         };
     }

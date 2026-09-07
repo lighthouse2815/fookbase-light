@@ -12,7 +12,10 @@ public enum PostsStoreError
     ParentCommentNotFound,
     Forbidden,
     RelationshipBlocked,
-    InvalidParentComment
+    InvalidParentComment,
+    InvalidMedia,
+    MediaNotOwned,
+    MediaNotAttached
 }
 
 public sealed record PostsStoreResult<T>(T? Value, PostsStoreError Error)
@@ -32,6 +35,7 @@ public interface IPostsStore
         Guid authorUserId,
         string content,
         PostPrivacy privacy,
+        IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default);
 
     Task<PostsStoreResult<PostResponse>> UpdatePostAsync(
@@ -39,6 +43,7 @@ public interface IPostsStore
         Guid postId,
         string content,
         PostPrivacy privacy,
+        IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default);
 
     Task<PostsStoreError> DeletePostAsync(
@@ -98,5 +103,11 @@ public interface IPostsStore
     Task<PostsStoreResult<PostResponse>> RemoveReactionAsync(
         Guid actorUserId,
         Guid postId,
+        CancellationToken cancellationToken = default);
+
+    Task<PostsStoreError> AuthorizeMediaAccessAsync(
+        Guid viewerUserId,
+        Guid postId,
+        Guid mediaId,
         CancellationToken cancellationToken = default);
 }

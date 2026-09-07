@@ -1,5 +1,6 @@
 using Fookbase.Contracts.Friends;
 using Fookbase.Contracts.Identity;
+using Fookbase.Contracts.Media;
 using Fookbase.Posts.Domain.Entities;
 using Fookbase.Posts.Domain.Relationships;
 using Microsoft.EntityFrameworkCore;
@@ -76,6 +77,33 @@ internal sealed class EventProjectionStore(
             isActive: false,
             integrationEvent.OccurredAtUtc,
             cancellationToken);
+
+    public Task<bool> ProjectAsync(MediaReadyIntegrationEvent integrationEvent,
+        CancellationToken cancellationToken) => ProjectOnceAsync(
+        integrationEvent.EventId, MediaReadyIntegrationEvent.EventType, async () =>
+        {
+            var media = await dbContext.KnownMedia.SingleOrDefaultAsync(
+                x => x.MediaId == integrationEvent.MediaId, cancellationToken);
+            if (media is null)
+                dbContext.KnownMedia.Add(KnownMedia.Create(integrationEvent.MediaId,
+                    integrationEvent.OwnerUserId, integrationEvent.MediaType, integrationEvent.ContentType,
+                    integrationEvent.SizeBytes, integrationEvent.OccurredAtUtc));
+            else
+                media.MarkReady(integrationEvent.OwnerUserId, integrationEvent.MediaType,
+                    integrationEvent.ContentType, integrationEvent.SizeBytes, integrationEvent.OccurredAtUtc);
+        }, cancellationToken);
+
+    public Task<bool> ProjectAsync(MediaDeletedIntegrationEvent integrationEvent,
+        CancellationToken cancellationToken) => ProjectOnceAsync(
+        integrationEvent.EventId, MediaDeletedIntegrationEvent.EventType, async () =>
+        {
+            var media = await dbContext.KnownMedia.SingleOrDefaultAsync(
+                x => x.MediaId == integrationEvent.MediaId, cancellationToken);
+            if (media is null)
+                dbContext.KnownMedia.Add(KnownMedia.CreateDeleted(integrationEvent.MediaId,
+                    integrationEvent.OwnerUserId, integrationEvent.OccurredAtUtc));
+            else media.MarkDeleted(integrationEvent.OccurredAtUtc);
+        }, cancellationToken);
 
     private Task<bool> ProjectFriendshipAsync(
         Guid eventId,

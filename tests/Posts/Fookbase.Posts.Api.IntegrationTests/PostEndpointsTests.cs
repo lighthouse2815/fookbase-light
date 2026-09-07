@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using Fookbase.Contracts.Friends;
 using Fookbase.Contracts.Identity;
+using Fookbase.Contracts.Media;
 using Fookbase.Contracts.Posts;
 using Fookbase.Posts.Application.Posts;
 using Fookbase.Posts.Infrastructure.Persistence;
@@ -197,6 +198,131 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             removedAt.AddMilliseconds(1));
     }
 
+    [Fact]
+    public async Task Media_projection_is_idempotent_and_deleted_media_is_rejected()
+    {
+        var owner = (await CreateKnownUsersAsync(1))[0];
+        var ready = ReadyMedia(owner);
+        Assert.True(await ProjectAsync(ready));
+        Assert.False(await ProjectAsync(ready));
+        var deleted = new MediaDeletedIntegrationEvent(
+            Guid.NewGuid(), ready.MediaId, owner, ready.OccurredAtUtc.AddSeconds(1));
+        await ProjectAsync(deleted);
+
+        using var client = CreateAuthenticatedClient(owner);
+        var response = await client.PostAsJsonAsync("/api/posts",
+            new { content = "deleted media", privacy = "public", mediaIds = new[] { ready.MediaId } });
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        Assert.False((await db.KnownMedia.SingleAsync(x => x.MediaId == ready.MediaId)).IsReady);
+        Assert.Equal(2, await db.InboxMessages.CountAsync(x =>
+            x.EventId == ready.EventId || x.EventId == deleted.EventId));
+    }
+
+    [Fact]
+    public async Task Attachments_validate_owner_duplicates_maximum_and_allow_image_only_post()
+    {
+        var users = await CreateKnownUsersAsync(2);
+        var own = ReadyMedia(users[0]);
+        var foreign = ReadyMedia(users[1]);
+        await ProjectAsync(own);
+        await ProjectAsync(foreign);
+        using var author = CreateAuthenticatedClient(users[0]);
+
+        var imageOnlyResponse = await author.PostAsJsonAsync("/api/posts",
+            new { content = "", privacy = "public", mediaIds = new[] { own.MediaId } });
+        var imageOnly = await ReadAsync<PostResponse>(imageOnlyResponse);
+        Assert.Equal(new[] { own.MediaId }, imageOnly.MediaIds);
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await author.PostAsJsonAsync("/api/posts",
+            new { content = "foreign", privacy = "public", mediaIds = new[] { foreign.MediaId } })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await author.PostAsJsonAsync("/api/posts",
+            new { content = "duplicate", privacy = "public", mediaIds = new[] { own.MediaId, own.MediaId } })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await author.PostAsJsonAsync("/api/posts",
+            new { content = "pending", privacy = "public", mediaIds = new[] { Guid.NewGuid() } })).StatusCode);
+
+        var eleven = new List<Guid>();
+        for (var index = 0; index < 11; index++)
+        {
+            var media = ReadyMedia(users[0]);
+            await ProjectAsync(media);
+            eleven.Add(media.MediaId);
+        }
+        Assert.Equal(HttpStatusCode.BadRequest, (await author.PostAsJsonAsync("/api/posts",
+            new { content = "too many", privacy = "public", mediaIds = eleven })).StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        Assert.True(await db.PostMedia.AnyAsync(x => x.PostId == imageOnly.Id && x.MediaId == own.MediaId));
+        var attachedEvents = await db.OutboxMessages
+            .Where(x => x.Type == PostMediaAttachedIntegrationEvent.EventType).ToListAsync();
+        Assert.Contains(attachedEvents, x => x.Payload.Contains(own.MediaId.ToString()));
+    }
+
+    [Fact]
+    public async Task Post_privacy_and_blocks_gate_signed_media_access()
+    {
+        var users = await CreateKnownUsersAsync(3);
+        var authorId = users[0]; var friendId = users[1]; var strangerId = users[2];
+        await ProjectAsync(new FriendRequestAcceptedIntegrationEvent(
+            Guid.NewGuid(), Guid.NewGuid(), Min(authorId, friendId), Max(authorId, friendId), DateTimeOffset.UtcNow));
+        var media = ReadyMedia(authorId);
+        await ProjectAsync(media);
+        using var author = CreateAuthenticatedClient(authorId);
+        using var friend = CreateAuthenticatedClient(friendId);
+        using var stranger = CreateAuthenticatedClient(strangerId);
+
+        var friendsPost = await CreatePostAsync(author, "friends media", "friends", [media.MediaId]);
+        Assert.Equal(HttpStatusCode.OK,
+            (await friend.GetAsync($"/api/posts/{friendsPost.Id}/media/{media.MediaId}/access")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await stranger.GetAsync($"/api/posts/{friendsPost.Id}/media/{media.MediaId}/access")).StatusCode);
+
+        await ProjectAsync(new UserBlockedIntegrationEvent(
+            Guid.NewGuid(), authorId, friendId, DateTimeOffset.UtcNow.AddSeconds(1)));
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await friend.GetAsync($"/api/posts/{friendsPost.Id}/media/{media.MediaId}/access")).StatusCode);
+
+        var onlyMe = await CreatePostAsync(author, "private", "onlyMe", [media.MediaId]);
+        Assert.Equal(HttpStatusCode.OK,
+            (await author.GetAsync($"/api/posts/{onlyMe.Id}/media/{media.MediaId}/access")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await stranger.GetAsync($"/api/posts/{onlyMe.Id}/media/{media.MediaId}/access")).StatusCode);
+
+        var publicPost = await CreatePostAsync(author, "public", "public", [media.MediaId]);
+        var publicAccess = await stranger.GetAsync($"/api/posts/{publicPost.Id}/media/{media.MediaId}/access");
+        var access = await ReadAsync<MediaAccessResponse>(publicAccess);
+        Assert.Contains("signed=1", access.Url);
+    }
+
+    [Fact]
+    public async Task Updating_attachments_emits_attach_and_detach_events_atomically()
+    {
+        var owner = (await CreateKnownUsersAsync(1))[0];
+        var first = ReadyMedia(owner); var second = ReadyMedia(owner);
+        await ProjectAsync(first); await ProjectAsync(second);
+        using var client = CreateAuthenticatedClient(owner);
+        var post = await CreatePostAsync(client, "with first", "public", [first.MediaId]);
+
+        var updated = await ReadAsync<PostResponse>(await client.PutAsJsonAsync($"/api/posts/{post.Id}",
+            new { content = "with second", privacy = "public", mediaIds = new[] { second.MediaId } }));
+        Assert.Equal(new[] { second.MediaId }, updated.MediaIds);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        Assert.False(await db.PostMedia.AnyAsync(x => x.PostId == post.Id && x.MediaId == first.MediaId));
+        Assert.True(await db.PostMedia.AnyAsync(x => x.PostId == post.Id && x.MediaId == second.MediaId));
+        var events = await db.OutboxMessages.Where(x =>
+            x.Type == PostMediaAttachedIntegrationEvent.EventType ||
+            x.Type == PostMediaDetachedIntegrationEvent.EventType).ToListAsync();
+        Assert.Contains(events, x => x.Type == PostMediaDetachedIntegrationEvent.EventType &&
+            x.Payload.Contains(first.MediaId.ToString()));
+        Assert.Contains(events, x => x.Type == PostMediaAttachedIntegrationEvent.EventType &&
+            x.Payload.Contains(second.MediaId.ToString()));
+    }
+
     private async Task<Guid[]> CreateKnownUsersAsync(int count)
     {
         var userIds = new Guid[count];
@@ -214,9 +340,10 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         return userIds;
     }
 
-    private async Task<PostResponse> CreatePostAsync(HttpClient client, string content, string privacy)
+    private async Task<PostResponse> CreatePostAsync(
+        HttpClient client, string content, string privacy, IReadOnlyList<Guid>? mediaIds = null)
     {
-        var response = await client.PostAsJsonAsync("/api/posts", new { content, privacy });
+        var response = await client.PostAsJsonAsync("/api/posts", new { content, privacy, mediaIds });
         return await ReadAsync<PostResponse>(response);
     }
 
@@ -230,6 +357,8 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             FriendRequestAcceptedIntegrationEvent value => await store.ProjectAsync(value, default),
             FriendshipRemovedIntegrationEvent value => await store.ProjectAsync(value, default),
             UserBlockedIntegrationEvent value => await store.ProjectAsync(value, default),
+            MediaReadyIntegrationEvent value => await store.ProjectAsync(value, default),
+            MediaDeletedIntegrationEvent value => await store.ProjectAsync(value, default),
             _ => throw new ArgumentOutOfRangeException(nameof(integrationEvent))
         };
     }
@@ -268,4 +397,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     private static Guid Min(Guid first, Guid second) => first.CompareTo(second) < 0 ? first : second;
 
     private static Guid Max(Guid first, Guid second) => first.CompareTo(second) > 0 ? first : second;
+
+    private static MediaReadyIntegrationEvent ReadyMedia(Guid ownerId) => new(
+        Guid.NewGuid(), Guid.NewGuid(), ownerId, "image", "image/png", 11, DateTimeOffset.UtcNow);
 }

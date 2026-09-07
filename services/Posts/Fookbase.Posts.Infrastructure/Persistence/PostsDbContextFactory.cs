@@ -7,8 +7,12 @@ public sealed class PostsDbContextFactory : IDesignTimeDbContextFactory<PostsDbC
 {
     public PostsDbContext CreateDbContext(string[] args)
     {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__PostsDatabase");
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException(
+                "ConnectionStrings__PostsDatabase is required for Posts design-time operations.");
         var options = new DbContextOptionsBuilder<PostsDbContext>()
-            .UseNpgsql("Host=localhost;Database=posts_db")
+            .UseNpgsql(connectionString)
             .Options;
         return new PostsDbContext(options);
     }

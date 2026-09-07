@@ -7,6 +7,7 @@ public sealed record PostResponse(
     string Privacy,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc,
+    IReadOnlyList<Guid> MediaIds,
     int CommentCount,
     IReadOnlyDictionary<string, int> ReactionCounts,
     string? ViewerReaction);
@@ -25,3 +26,5 @@ public sealed record PagedResponse<T>(
     int Offset,
     int Limit,
     int Total);
+
+public sealed record MediaAccessResponse(Guid MediaId, string Url, DateTimeOffset ExpiresAtUtc);

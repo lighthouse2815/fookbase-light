@@ -76,10 +76,10 @@ public sealed class Post
     private static string NormalizeContent(string content)
     {
         var normalized = content.Trim();
-        if (normalized.Length is 0 or > MaximumContentLength)
+        if (normalized.Length > MaximumContentLength)
         {
             throw new ArgumentException(
-                $"Post content must contain between 1 and {MaximumContentLength} characters.");
+                $"Post content cannot exceed {MaximumContentLength} characters.");
         }
 
         return normalized;
