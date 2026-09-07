@@ -37,11 +37,20 @@ internal sealed class MinioObjectStorage(IMinioClient client, MinioOptions optio
     public async Task<byte[]> ReadPrefixAsync(string objectKey, int length,
         CancellationToken cancellationToken = default)
     {
-        using var destination = new MemoryStream(length);
+        var prefix = new byte[length];
+        var bytesRead = 0;
         await client.GetObjectAsync(new GetObjectArgs().WithBucket(options.BucketName)
-            .WithObject(objectKey).WithOffsetAndLength(0, length)
-            .WithCallbackStream((source, token) => source.CopyToAsync(destination, token)), cancellationToken);
-        return destination.ToArray();
+            .WithObject(objectKey)
+            .WithCallbackStream(async (source, token) =>
+            {
+                while (bytesRead < prefix.Length)
+                {
+                    var read = await source.ReadAsync(prefix.AsMemory(bytesRead), token);
+                    if (read == 0) break;
+                    bytesRead += read;
+                }
+            }), cancellationToken);
+        return prefix[..bytesRead];
     }
 
     public Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default) =>
