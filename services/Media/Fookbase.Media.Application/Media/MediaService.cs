@@ -1,3 +1,4 @@
+using Fookbase.Contracts.Media;
 using Fookbase.Media.Application.Abstractions;
 using Fookbase.Media.Application.Common;
 using Fookbase.Media.Domain.Entities;
@@ -7,82 +8,162 @@ namespace Fookbase.Media.Application.Media;
 public sealed class MediaService(
     IMediaRepository repository,
     IObjectStorage objectStorage,
+    MediaOptions options,
     TimeProvider timeProvider) : IMediaService
 {
-    public const long MaximumFileSize = 25 * 1024 * 1024;
+    private sealed record SupportedFormat(MediaType MediaType, string Extension);
 
-    private static readonly IReadOnlyDictionary<string, string> AllowedContentTypes =
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly IReadOnlyDictionary<string, SupportedFormat> SupportedFormats =
+        new Dictionary<string, SupportedFormat>(StringComparer.OrdinalIgnoreCase)
         {
-            ["image/jpeg"] = ".jpg",
-            ["image/png"] = ".png",
-            ["image/webp"] = ".webp",
-            ["image/gif"] = ".gif"
+            ["image/jpeg"] = new(MediaType.Image, ".jpg"),
+            ["image/png"] = new(MediaType.Image, ".png"),
+            ["image/webp"] = new(MediaType.Image, ".webp"),
+            ["video/mp4"] = new(MediaType.Video, ".mp4"),
+            ["video/webm"] = new(MediaType.Video, ".webm")
         };
 
-    public async Task<ApplicationResult<MediaResponse>> UploadAsync(
+    public async Task<ApplicationResult<UploadIntentResponse>> CreateUploadAsync(
         Guid ownerUserId,
-        Stream content,
-        string fileName,
-        string contentType,
-        long length,
-        string purpose,
+        CreateUploadRequest request,
         CancellationToken cancellationToken = default)
     {
-        fileName = Path.GetFileName(fileName);
-        var validationError = ValidateUpload(fileName, contentType, length, purpose, out var parsedPurpose);
-        if (validationError is not null)
+        var fileName = Path.GetFileName(request.FileName ?? string.Empty);
+        var contentType = request.ContentType?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length > 255)
         {
-            return ApplicationResult<MediaResponse>.Failure(validationError);
+            return Failure<UploadIntentResponse>("invalid_file_name",
+                "A file name containing at most 255 characters is required.");
         }
 
+        if (!SupportedFormats.TryGetValue(contentType, out var format))
+        {
+            return Failure<UploadIntentResponse>("unsupported_media_type",
+                "Supported media types are JPEG, PNG, WebP, MP4 and WebM.");
+        }
+
+        var maximumSize = format.MediaType == MediaType.Image
+            ? options.MaximumImageSizeBytes
+            : options.MaximumVideoSizeBytes;
+        if (request.SizeBytes <= 0 || request.SizeBytes > maximumSize)
+        {
+            return Failure<UploadIntentResponse>("invalid_file_size",
+                $"The declared {format.MediaType.ToString().ToLowerInvariant()} size is invalid.");
+        }
+
+        if (!await repository.UserExistsAsync(ownerUserId, cancellationToken))
+        {
+            return ApplicationResult<UploadIntentResponse>.Failure(new ApplicationError(
+                "user_not_found", "The media owner is not known.", ApplicationErrorType.NotFound));
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var expiresAt = now.AddMinutes(options.UploadUrlExpiryMinutes);
         var id = Guid.NewGuid();
-        var objectName = $"{ownerUserId:N}/{id:N}{AllowedContentTypes[contentType]}";
-        var createdAt = timeProvider.GetUtcNow();
-        var asset = MediaAsset.Create(
-            id,
-            ownerUserId,
-            objectName,
-            fileName,
-            contentType.ToLowerInvariant(),
-            length,
-            parsedPurpose,
-            createdAt);
+        var objectKey = $"{ownerUserId:N}/{id:N}{format.Extension}";
+        var asset = MediaAsset.CreatePending(
+            id, ownerUserId, format.MediaType, objectKey, fileName, contentType,
+            request.SizeBytes, now, expiresAt);
+        await repository.AddPendingAsync(asset, cancellationToken);
 
-        await objectStorage.PutAsync(
-            objectName,
-            content,
-            length,
-            asset.ContentType,
-            cancellationToken);
+        var uploadUrl = await objectStorage.CreatePresignedPutUrlAsync(
+            objectKey, TimeSpan.FromMinutes(options.UploadUrlExpiryMinutes), cancellationToken);
+        return ApplicationResult<UploadIntentResponse>.Success(
+            new UploadIntentResponse(id, uploadUrl, expiresAt));
+    }
 
-        try
+    public async Task<ApplicationResult<MediaResponse>> CompleteAsync(
+        Guid ownerUserId,
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await repository.FindAsync(mediaId, trackChanges: true, cancellationToken);
+        var accessError = CheckOwner(asset, ownerUserId);
+        if (accessError is not null)
         {
-            await repository.AddAsync(asset, cancellationToken);
-            await repository.SaveChangesAsync(cancellationToken);
-        }
-        catch
-        {
-            await TryDeleteObjectAsync(objectName, CancellationToken.None);
-            throw;
+            return ApplicationResult<MediaResponse>.Failure(accessError);
         }
 
+        if (asset!.Status == MediaStatus.Ready)
+        {
+            return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
+        }
+
+        if (asset.Status != MediaStatus.PendingUpload)
+        {
+            return Conflict<MediaResponse>("invalid_media_status", "The upload cannot be completed.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        if (asset.UploadExpiresAtUtc <= now)
+        {
+            asset.MarkFailed();
+            await repository.SaveFailedAsync(asset, cancellationToken);
+            return Conflict<MediaResponse>("upload_expired", "The upload intent has expired.");
+        }
+
+        var storedObject = await objectStorage.GetInfoAsync(asset.ObjectKey, cancellationToken);
+        if (storedObject is null)
+        {
+            return Conflict<MediaResponse>("upload_object_missing", "The uploaded object was not found.");
+        }
+
+        var maximumSize = asset.MediaType == MediaType.Image
+            ? options.MaximumImageSizeBytes
+            : options.MaximumVideoSizeBytes;
+        if (storedObject.SizeBytes != asset.DeclaredSizeBytes || storedObject.SizeBytes > maximumSize)
+        {
+            asset.MarkFailed();
+            await repository.SaveFailedAsync(asset, cancellationToken);
+            return Failure<MediaResponse>("uploaded_size_mismatch",
+                "The uploaded object size does not match the declared size.");
+        }
+
+        var prefix = await objectStorage.ReadPrefixAsync(asset.ObjectKey, 32, cancellationToken);
+        var detectedContentType = DetectContentType(prefix);
+        if (!string.Equals(detectedContentType, asset.ContentType, StringComparison.OrdinalIgnoreCase))
+        {
+            asset.MarkFailed();
+            await repository.SaveFailedAsync(asset, cancellationToken);
+            return Failure<MediaResponse>("invalid_file_signature",
+                "The uploaded object signature does not match its declared content type.");
+        }
+
+        asset.MarkReady(storedObject.SizeBytes, now);
+        var integrationEvent = new MediaReadyIntegrationEvent(
+            Guid.NewGuid(), asset.Id, asset.OwnerUserId,
+            asset.MediaType.ToString().ToLowerInvariant(), asset.ContentType,
+            storedObject.SizeBytes, now);
+        await repository.SaveReadyAsync(asset, integrationEvent, cancellationToken);
         return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
     }
 
-    public async Task<ApplicationResult<MediaDownload>> DownloadAsync(
+    public async Task<ApplicationResult<MediaResponse>> GetMetadataAsync(
+        Guid ownerUserId,
         Guid mediaId,
         CancellationToken cancellationToken = default)
     {
         var asset = await repository.FindAsync(mediaId, cancellationToken: cancellationToken);
-        if (asset is null || asset.DeletedAt is not null)
+        var accessError = CheckOwner(asset, ownerUserId);
+        return accessError is null
+            ? ApplicationResult<MediaResponse>.Success(ToResponse(asset!))
+            : ApplicationResult<MediaResponse>.Failure(accessError);
+    }
+
+    public async Task<ApplicationResult<MediaReadUrlResponse>> CreateReadUrlAsync(
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await repository.FindAsync(mediaId, cancellationToken: cancellationToken);
+        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
         {
-            return ApplicationResult<MediaDownload>.Failure(NotFound());
+            return ApplicationResult<MediaReadUrlResponse>.Failure(NotFound());
         }
 
-        var stream = await objectStorage.OpenReadAsync(asset.ObjectName, cancellationToken);
-        return ApplicationResult<MediaDownload>.Success(
-            new MediaDownload(stream, asset.ContentType, asset.OriginalFileName));
+        var expiry = TimeSpan.FromMinutes(options.DownloadUrlExpiryMinutes);
+        var url = await objectStorage.CreatePresignedGetUrlAsync(asset.ObjectKey, expiry, cancellationToken);
+        return ApplicationResult<MediaReadUrlResponse>.Success(
+            new MediaReadUrlResponse(asset.Id, url, timeProvider.GetUtcNow().Add(expiry)));
     }
 
     public async Task<ApplicationResult> DeleteAsync(
@@ -90,102 +171,79 @@ public sealed class MediaService(
         Guid mediaId,
         CancellationToken cancellationToken = default)
     {
-        var asset = await repository.FindAsync(
-            mediaId,
-            trackChanges: true,
-            cancellationToken);
-        if (asset is null || asset.DeletedAt is not null)
+        var asset = await repository.FindAsync(mediaId, trackChanges: true, cancellationToken);
+        var accessError = CheckOwner(asset, ownerUserId);
+        if (accessError is not null)
         {
-            return ApplicationResult.Failure(NotFound());
+            return ApplicationResult.Failure(accessError);
         }
 
-        if (asset.OwnerUserId != ownerUserId)
+        if (asset!.Status == MediaStatus.Deleted)
         {
-            return ApplicationResult.Failure(
-                new ApplicationError(
-                    "media_forbidden",
-                    "Only the media owner can delete this file.",
-                    ApplicationErrorType.Forbidden));
+            return ApplicationResult.Success();
         }
 
-        asset.Delete(timeProvider.GetUtcNow());
-        await repository.SaveChangesAsync(cancellationToken);
-        await objectStorage.DeleteAsync(asset.ObjectName, cancellationToken);
+        if (asset.Status != MediaStatus.Ready)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_media_status", "Only ready media can be deleted.", ApplicationErrorType.Conflict));
+        }
+
+        if (await repository.HasActiveReferencesAsync(mediaId, cancellationToken))
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.Conflict));
+        }
+
+        var now = timeProvider.GetUtcNow();
+        asset.Delete(now);
+        var integrationEvent = new MediaDeletedIntegrationEvent(
+            Guid.NewGuid(), asset.Id, asset.OwnerUserId, now);
+        await repository.SaveDeletedAsync(asset, integrationEvent, cancellationToken);
         return ApplicationResult.Success();
     }
 
-    private async Task TryDeleteObjectAsync(
-        string objectName,
-        CancellationToken cancellationToken)
+    private static ApplicationError? CheckOwner(MediaAsset? asset, Guid ownerUserId)
     {
-        try
+        if (asset is null)
         {
-            await objectStorage.DeleteAsync(objectName, cancellationToken);
+            return NotFound();
         }
-        catch
-        {
-            // Preserve the original metadata persistence failure.
-        }
+
+        return asset.OwnerUserId == ownerUserId
+            ? null
+            : new ApplicationError("media_forbidden", "Only the media owner may access this metadata.",
+                ApplicationErrorType.Forbidden);
     }
 
-    private static ApplicationError? ValidateUpload(
-        string fileName,
-        string contentType,
-        long length,
-        string purpose,
-        out MediaPurpose parsedPurpose)
+    private static string? DetectContentType(ReadOnlySpan<byte> bytes)
     {
-        parsedPurpose = default;
-
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length > 255)
-        {
-            return Validation(
-                "invalid_file_name",
-                "A file name containing at most 255 characters is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(contentType) || !AllowedContentTypes.ContainsKey(contentType))
-        {
-            return Validation(
-                "unsupported_media_type",
-                "Only JPEG, PNG, WebP and GIF images are supported.");
-        }
-
-        if (length <= 0 || length > MaximumFileSize)
-        {
-            return Validation(
-                "invalid_file_size",
-                $"The image must contain data and cannot exceed {MaximumFileSize / 1024 / 1024} MB.");
-        }
-
-        if (!Enum.TryParse(purpose, ignoreCase: true, out parsedPurpose) ||
-            !Enum.IsDefined(parsedPurpose))
-        {
-            return Validation(
-                "invalid_media_purpose",
-                "Purpose must be avatar, cover or post.");
-        }
-
+        if (bytes.Length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff)
+            return "image/jpeg";
+        if (bytes.Length >= 8 && bytes[..8].SequenceEqual(new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a }))
+            return "image/png";
+        if (bytes.Length >= 12 && bytes[..4].SequenceEqual("RIFF"u8) && bytes[8..12].SequenceEqual("WEBP"u8))
+            return "image/webp";
+        if (bytes.Length >= 12 && bytes[4..8].SequenceEqual("ftyp"u8))
+            return "video/mp4";
+        if (bytes.Length >= 4 && bytes[..4].SequenceEqual(new byte[] { 0x1a, 0x45, 0xdf, 0xa3 }))
+            return "video/webm";
         return null;
     }
 
-    private static ApplicationError Validation(string code, string message) =>
-        new(code, message, ApplicationErrorType.Validation);
+    private static MediaResponse ToResponse(MediaAsset asset) => new(
+        asset.Id, asset.OwnerUserId,
+        asset.MediaType.ToString().ToLowerInvariant(),
+        asset.Status.ToString(), asset.OriginalFileName, asset.ContentType,
+        asset.DeclaredSizeBytes, asset.ActualSizeBytes, asset.CreatedAtUtc,
+        asset.UploadExpiresAtUtc, asset.UploadedAtUtc, asset.DeletedAtUtc);
 
     private static ApplicationError NotFound() =>
-        new(
-            "media_not_found",
-            "The media file was not found.",
-            ApplicationErrorType.NotFound);
+        new("media_not_found", "The media asset was not found.", ApplicationErrorType.NotFound);
 
-    private static MediaResponse ToResponse(MediaAsset asset) =>
-        new(
-            asset.Id,
-            asset.OwnerUserId,
-            asset.OriginalFileName,
-            asset.ContentType,
-            asset.Size,
-            asset.Purpose.ToString().ToLowerInvariant(),
-            $"/api/media/{asset.Id}",
-            asset.CreatedAt);
+    private static ApplicationResult<T> Failure<T>(string code, string message) =>
+        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
+
+    private static ApplicationResult<T> Conflict<T>(string code, string message) =>
+        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Conflict));
 }

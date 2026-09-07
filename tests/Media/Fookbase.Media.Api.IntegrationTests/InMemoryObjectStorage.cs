@@ -5,37 +5,28 @@ namespace Fookbase.Media.Api.IntegrationTests;
 
 public sealed class InMemoryObjectStorage : IObjectStorage
 {
-    private readonly ConcurrentDictionary<string, byte[]> objects = new();
+    private readonly ConcurrentDictionary<string, (byte[] Content, string ContentType)> objects = new();
 
-    public async Task PutAsync(
-        string objectName,
-        Stream content,
-        long length,
-        string contentType,
-        CancellationToken cancellationToken = default)
+    public Task<string> CreatePresignedPutUrlAsync(string objectKey, TimeSpan expiry,
+        CancellationToken cancellationToken = default) => Task.FromResult($"https://storage.test/{objectKey}?put=1");
+
+    public Task<string> CreatePresignedGetUrlAsync(string objectKey, TimeSpan expiry,
+        CancellationToken cancellationToken = default) => Task.FromResult($"https://storage.test/{objectKey}?get=1");
+
+    public Task<StoredObjectInfo?> GetInfoAsync(string objectKey, CancellationToken cancellationToken = default) =>
+        Task.FromResult(objects.TryGetValue(objectKey, out var value)
+            ? new StoredObjectInfo(value.Content.LongLength, value.ContentType) : null);
+
+    public Task<byte[]> ReadPrefixAsync(string objectKey, int length,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(objects[objectKey].Content.Take(length).ToArray());
+
+    public Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default)
     {
-        await using var destination = new MemoryStream();
-        await content.CopyToAsync(destination, cancellationToken);
-        objects[objectName] = destination.ToArray();
-    }
-
-    public Task<Stream> OpenReadAsync(
-        string objectName,
-        CancellationToken cancellationToken = default)
-    {
-        if (!objects.TryGetValue(objectName, out var content))
-        {
-            throw new FileNotFoundException("The object was not found.", objectName);
-        }
-
-        return Task.FromResult<Stream>(new MemoryStream(content, writable: false));
-    }
-
-    public Task DeleteAsync(
-        string objectName,
-        CancellationToken cancellationToken = default)
-    {
-        objects.TryRemove(objectName, out _);
+        objects.TryRemove(objectKey, out _);
         return Task.CompletedTask;
     }
+
+    public void Put(string objectKey, byte[] content, string contentType) =>
+        objects[objectKey] = (content, contentType);
 }

@@ -58,3 +58,24 @@ public sealed record PostReactionChangedIntegrationEvent(
 {
     public const string EventType = "posts.reaction.changed.v1";
 }
+
+public sealed record PostMediaAttachedIntegrationEvent(
+    Guid EventId,
+    Guid PostId,
+    Guid MediaId,
+    Guid AuthorUserId,
+    int SortOrder,
+    DateTimeOffset OccurredAtUtc)
+{
+    public const string EventType = "posts.media.attached.v1";
+}
+
+public sealed record PostMediaDetachedIntegrationEvent(
+    Guid EventId,
+    Guid PostId,
+    Guid MediaId,
+    Guid AuthorUserId,
+    DateTimeOffset OccurredAtUtc)
+{
+    public const string EventType = "posts.media.detached.v1";
+}

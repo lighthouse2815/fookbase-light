@@ -12,6 +12,7 @@ internal static class ApplicationResultExtensions
             ApplicationErrorType.Validation => StatusCodes.Status400BadRequest,
             ApplicationErrorType.Forbidden => StatusCodes.Status403Forbidden,
             ApplicationErrorType.NotFound => StatusCodes.Status404NotFound,
+            ApplicationErrorType.Conflict => StatusCodes.Status409Conflict,
             _ => StatusCodes.Status500InternalServerError
         };
         var problem = new ProblemDetails

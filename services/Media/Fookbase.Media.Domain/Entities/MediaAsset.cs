@@ -1,77 +1,116 @@
 namespace Fookbase.Media.Domain.Entities;
 
-public enum MediaPurpose
+public enum MediaType
 {
-    Avatar,
-    Cover,
-    Post
+    Image,
+    Video
+}
+
+public enum MediaStatus
+{
+    PendingUpload,
+    Ready,
+    Failed,
+    Deleted
 }
 
 public sealed class MediaAsset
 {
-    private MediaAsset()
-    {
-    }
+    private MediaAsset() { }
 
     private MediaAsset(
         Guid id,
         Guid ownerUserId,
-        string objectName,
+        MediaType mediaType,
+        string objectKey,
         string originalFileName,
         string contentType,
-        long size,
-        MediaPurpose purpose,
-        DateTimeOffset createdAt)
+        long declaredSizeBytes,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset uploadExpiresAtUtc)
     {
         Id = id;
         OwnerUserId = ownerUserId;
-        ObjectName = objectName;
+        MediaType = mediaType;
+        Status = MediaStatus.PendingUpload;
+        ObjectKey = objectKey;
         OriginalFileName = originalFileName;
         ContentType = contentType;
-        Size = size;
-        Purpose = purpose;
-        CreatedAt = createdAt;
+        DeclaredSizeBytes = declaredSizeBytes;
+        CreatedAtUtc = createdAtUtc;
+        UploadExpiresAtUtc = uploadExpiresAtUtc;
     }
 
     public Guid Id { get; private set; }
-
     public Guid OwnerUserId { get; private set; }
-
-    public string ObjectName { get; private set; } = string.Empty;
-
+    public MediaType MediaType { get; private set; }
+    public MediaStatus Status { get; private set; }
+    public string ObjectKey { get; private set; } = string.Empty;
     public string OriginalFileName { get; private set; } = string.Empty;
-
     public string ContentType { get; private set; } = string.Empty;
+    public long DeclaredSizeBytes { get; private set; }
+    public long? ActualSizeBytes { get; private set; }
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+    public DateTimeOffset? UploadExpiresAtUtc { get; private set; }
+    public DateTimeOffset? UploadedAtUtc { get; private set; }
+    public DateTimeOffset? DeletedAtUtc { get; private set; }
 
-    public long Size { get; private set; }
-
-    public MediaPurpose Purpose { get; private set; }
-
-    public DateTimeOffset CreatedAt { get; private set; }
-
-    public DateTimeOffset? DeletedAt { get; private set; }
-
-    public static MediaAsset Create(
+    public static MediaAsset CreatePending(
         Guid id,
         Guid ownerUserId,
-        string objectName,
+        MediaType mediaType,
+        string objectKey,
         string originalFileName,
         string contentType,
-        long size,
-        MediaPurpose purpose,
-        DateTimeOffset createdAt) =>
-        new(
-            id,
-            ownerUserId,
-            objectName,
-            originalFileName,
-            contentType,
-            size,
-            purpose,
-            createdAt);
+        long declaredSizeBytes,
+        DateTimeOffset createdAtUtc,
+        DateTimeOffset uploadExpiresAtUtc) =>
+        new(id, ownerUserId, mediaType, objectKey, originalFileName, contentType,
+            declaredSizeBytes, createdAtUtc, uploadExpiresAtUtc);
 
-    public void Delete(DateTimeOffset deletedAt)
+    public bool MarkReady(long actualSizeBytes, DateTimeOffset uploadedAtUtc)
     {
-        DeletedAt ??= deletedAt;
+        if (Status == MediaStatus.Ready)
+        {
+            return false;
+        }
+
+        if (Status != MediaStatus.PendingUpload)
+        {
+            throw new InvalidOperationException("Only a pending upload can become ready.");
+        }
+
+        ActualSizeBytes = actualSizeBytes;
+        UploadedAtUtc = uploadedAtUtc;
+        Status = MediaStatus.Ready;
+        return true;
+    }
+
+    public bool MarkFailed()
+    {
+        if (Status != MediaStatus.PendingUpload)
+        {
+            return false;
+        }
+
+        Status = MediaStatus.Failed;
+        return true;
+    }
+
+    public bool Delete(DateTimeOffset deletedAtUtc)
+    {
+        if (Status == MediaStatus.Deleted)
+        {
+            return false;
+        }
+
+        if (Status != MediaStatus.Ready)
+        {
+            throw new InvalidOperationException("Only ready media can be deleted.");
+        }
+
+        Status = MediaStatus.Deleted;
+        DeletedAtUtc = deletedAtUtc;
+        return true;
     }
 }

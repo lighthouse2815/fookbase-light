@@ -1,19 +1,29 @@
 namespace Fookbase.Media.Application.Abstractions;
 
+public sealed record StoredObjectInfo(long SizeBytes, string ContentType);
+
 public interface IObjectStorage
 {
-    Task PutAsync(
-        string objectName,
-        Stream content,
-        long length,
-        string contentType,
+    Task<string> CreatePresignedPutUrlAsync(
+        string objectKey,
+        TimeSpan expiry,
         CancellationToken cancellationToken = default);
 
-    Task<Stream> OpenReadAsync(
-        string objectName,
+    Task<string> CreatePresignedGetUrlAsync(
+        string objectKey,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default);
+
+    Task<StoredObjectInfo?> GetInfoAsync(
+        string objectKey,
+        CancellationToken cancellationToken = default);
+
+    Task<byte[]> ReadPrefixAsync(
+        string objectKey,
+        int length,
         CancellationToken cancellationToken = default);
 
     Task DeleteAsync(
-        string objectName,
+        string objectKey,
         CancellationToken cancellationToken = default);
 }
