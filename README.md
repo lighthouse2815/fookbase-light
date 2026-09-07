@@ -251,28 +251,35 @@ Posts Service sở hữu `posts_db`, lưu bài viết, bình luận và reaction
 | GET | `/api/posts/{postId}/comments` | Tùy chọn | Danh sách comment (`200`) |
 | PUT/DELETE | `/api/posts/comments/{commentId}` | Bearer JWT, tác giả | Sửa/xóa comment (`200`/`204`) |
 | PUT/DELETE | `/api/posts/{postId}/reaction` | Bearer JWT | Đặt/đổi/gỡ reaction (`200`) |
+| GET | `/api/posts/{postId}/media/{mediaId}/access` | Bearer JWT, có quyền xem post | Cấp presigned GET ngắn hạn (`200`) |
 
 Privacy hợp lệ gồm `public`, `friends` và `onlyMe`; reaction gồm `like`, `love`, `haha`, `wow`, `sad`, `angry`. Feed và collection dùng offset pagination với `limit` tối đa `100`. Bài viết/comment dùng soft-delete. Mỗi user chỉ có một reaction trên một bài viết; gọi PUT lần nữa sẽ đổi reaction hiện tại.
 
 Block theo một trong hai chiều ẩn toàn bộ bài viết giữa hai user và chặn comment/reaction. Bài viết `friends` chỉ hiển thị khi `FriendEdges` đang active. API trả `404` cho bài viết không được phép đọc để không làm lộ sự tồn tại, `403` cho mutation không thuộc quyền sở hữu và `409` khi interaction bị block.
 
-Posts ghi event tạo/sửa/xóa bài viết, tạo comment và đổi reaction vào transactional outbox. Consumer dùng hai durable queue riêng:
+Posts ghi event tạo/sửa/xóa bài viết, tạo comment và đổi reaction vào transactional outbox. Consumer dùng ba durable queue riêng:
 
 - `fookbase.posts.user-registered.v1` nhận `identity.user.registered.v1`.
 - `fookbase.posts.friend-events.v1` nhận friend accepted/removed và user blocked/unblocked.
+- `fookbase.posts.media-events.v1` nhận media ready/deleted.
 - Exchange publish: `fookbase.posts.events`; delivery at-least-once, Inbox xử lý idempotent.
 
 ## Media Service
 
-Media Service sở hữu `media_db` để lưu metadata và bucket private `fookbase-media` trên MinIO để lưu object. Client không nhận credential hoặc đường dẫn object nội bộ; URL public ổn định đi qua Gateway. Hiện service chỉ nhận ảnh JPEG, PNG, WebP và GIF, kích thước tối đa 25 MB.
+Media Service sở hữu `media_db` và bucket private `fookbase-media`. Upload chính là direct-to-MinIO bằng presigned PUT; client không nhận storage credential hoặc object key. Ảnh JPEG/PNG/WebP tối đa mặc định 20 MB, video MP4/WebM tối đa mặc định 500 MB. Upload URL hết hạn sau 15 phút và read URL sau 5 phút.
 
 | Method | Endpoint | Authentication | Kết quả chính |
 | --- | --- | --- | --- |
-| POST | `/api/media` | Bearer JWT | Upload multipart `file` + `purpose`, trả metadata (`201`) |
-| GET | `/api/media/{mediaId}` | Không | Stream ảnh chưa bị xóa (`200`) |
-| DELETE | `/api/media/{mediaId}` | Bearer JWT, chủ sở hữu | Soft-delete metadata và xóa object (`204`) |
+| POST | `/api/media/uploads` | Bearer JWT | Tạo `PendingUpload` và presigned PUT (`201`) |
+| POST | `/api/media/{mediaId}/complete` | Bearer JWT, chủ sở hữu | Verify object/signature rồi chuyển `Ready` (`200`) |
+| GET | `/api/media/{mediaId}` | Bearer JWT, chủ sở hữu | Đọc metadata; không stream object (`200`) |
+| DELETE | `/api/media/{mediaId}` | Bearer JWT, chủ sở hữu | Từ chối media đang được tham chiếu, nếu không soft-delete (`204`) |
 
-`purpose` hợp lệ gồm `avatar`, `cover` và `post`. Object name được service sinh từ owner ID/media ID, không dùng file name do client cung cấp. File name được loại bỏ path và giới hạn 255 ký tự. Metadata đã soft-delete trả `404`; user khác cố xóa trả `403`.
+`complete` stat object trên MinIO, so sánh kích thước khai báo/thực tế và kiểm tra magic signature; MIME header của client không được tin cậy riêng lẻ. Complete idempotent và chỉ tạo một `media.asset.ready.v1` Outbox event. Delete tạo `media.asset.deleted.v1` và durable object-deletion job trong cùng transaction. Worker retry object deletion và dọn `PendingUpload` hết hạn mà không xóa media Ready/referenced.
+
+Posts project `KnownMedia` từ Media events, lưu attachment trong `PostMedia` và phát `posts.media.attached.v1`/`posts.media.detached.v1`. Posts kiểm tra privacy/block/attachment trước khi gọi endpoint nội bộ `POST /internal/media/{id}/read-url` bằng `InternalServices__Token`. Gateway không route `/internal/**`; kể cả public post vẫn trả presigned GET ngắn hạn vì bucket không public.
+
+Migration corrective đánh dấu metadata legacy không thể chứng minh object tồn tại thành `Failed`; record đã soft-delete thành `Deleted`. Đây là reconciliation bảo toàn dữ liệu, không fake object và không reset volume.
 
 ## Register → profile event flow
 
@@ -286,7 +293,7 @@ RabbitMQ topology:
 
 - Exchange: `fookbase.identity.events` (durable topic)
 - Routing key/event type: `identity.user.registered.v1`
-- Queues: `fookbase.users.user-registered.v1`, `fookbase.friends.user-registered.v1` và `fookbase.posts.user-registered.v1` (durable)
+- Queues: `fookbase.users.user-registered.v1`, `fookbase.friends.user-registered.v1`, `fookbase.posts.user-registered.v1` và `fookbase.media.user-registered.v1` (durable)
 - Message: persistent
 
 Event chỉ chứa `EventId`, `UserId`, `Username` và `OccurredAtUtc`; email không được copy sang social profile.
@@ -371,7 +378,7 @@ Nếu `identity_db` đã có user trước khi Friends queue tồn tại, chạy
 ./scripts/replay-user-registrations-for-new-consumers.sh --confirm
 ```
 
-Script chỉ reset trạng thái publish của các `identity.user.registered.v1` Outbox records để Identity phát lại. Inbox của Users/Friends/Posts loại duplicate nên thao tác an toàn cho development; đây không phải runtime cross-database dependency.
+Script chỉ reset trạng thái publish của các `identity.user.registered.v1` Outbox records để Identity phát lại. Inbox của Users/Friends/Posts/Media loại duplicate nên thao tác an toàn cho development; chạy sau khi Media đã tạo queue để backfill `KnownUsers`. Đây không phải runtime cross-database dependency.
 
 Nếu Posts được thêm sau khi đã có user và quan hệ xã hội, chạy backfill dành riêng cho consumer mới sau khi Identity, Friends, Posts và RabbitMQ đều hoạt động:
 
@@ -441,19 +448,29 @@ curl -i -X PUT http://localhost:5000/api/posts/<POST_ID>/reaction \
   -d '{"type":"love"}'
 ```
 
-Upload, đọc và xóa ảnh qua Gateway:
+Tạo upload intent qua Gateway, PUT trực tiếp vào URL trả về, complete và đọc metadata:
 
 ```bash
-curl -i -X POST http://localhost:5000/api/media \
+curl -i -X POST http://localhost:5000/api/media/uploads \
   -H 'Authorization: Bearer <ACCESS_TOKEN>' \
-  -F 'purpose=avatar' \
-  -F 'file=@/path/to/avatar.png;type=image/png'
+  -H 'Content-Type: application/json' \
+  -d '{"fileName":"avatar.png","contentType":"image/png","sizeBytes":<FILE_SIZE>}'
 
-curl -f http://localhost:5000/api/media/<MEDIA_ID> --output downloaded-image.png
+curl -i -X PUT '<UPLOAD_URL>' -H 'Content-Type: image/png' --data-binary @/path/to/avatar.png
+
+curl -i -X POST http://localhost:5000/api/media/<MEDIA_ID>/complete \
+  -H 'Authorization: Bearer <ACCESS_TOKEN>'
+
+curl -i http://localhost:5000/api/media/<MEDIA_ID> \
+  -H 'Authorization: Bearer <ACCESS_TOKEN>'
 
 curl -i -X DELETE http://localhost:5000/api/media/<MEDIA_ID> \
   -H 'Authorization: Bearer <ACCESS_TOKEN>'
 ```
+
+MinIO dùng các tag đã pin `RELEASE.2025-09-07T16-13-09Z` và `mc RELEASE.2025-08-13T08-35-41Z`. `minio-bootstrap` tạo bucket, tắt anonymous policy và fail nếu bootstrap lỗi. `minio-cors` chỉ trả preflight PUT cho `http://localhost:5173`; MinIO Community không hỗ trợ bucket `PutBucketCors` ở release này nên proxy CORS development là enforcement point.
+
+Khi MinIO tạm dừng, API đang chạy vẫn giữ state `PendingUpload`; PUT/complete trả lỗi dependency và không chuyển nhầm sang Ready. Khởi động MinIO và CORS proxy lại để retry upload/complete. Nếu outage xảy ra sau soft-delete, `ObjectDeletions` giữ job chưa xử lý để worker retry.
 
 Kiểm tra Outbox recovery: `docker compose stop rabbitmq`, register hoặc thực hiện friend operation qua Gateway và xác nhận request vẫn commit (`201`/`204`); record tương ứng trong Outbox của service phải còn `ProcessedAtUtc = NULL`. Sau `docker compose start rabbitmq`, worker reconnect, publish event và đánh dấu record processed. Với registration, poll `/api/users/<USER_ID>` hoặc thử friend request tới user mới cho tới khi projection xuất hiện.
 
