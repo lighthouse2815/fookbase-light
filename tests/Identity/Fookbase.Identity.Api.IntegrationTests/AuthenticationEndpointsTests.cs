@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 using Fookbase.Identity.Application.Authentication;
 using Fookbase.Identity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,12 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal(account.Username, authentication.User.Username);
         Assert.False(string.IsNullOrWhiteSpace(authentication.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(authentication.RefreshToken));
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(authentication.AccessToken);
+        Assert.Equal(authentication.User.Id.ToString(), jwt.Subject);
+        Assert.Equal(account.Email, jwt.Claims.Single(claim => claim.Type == JwtRegisteredClaimNames.Email).Value);
+        Assert.Equal(account.Username, jwt.Claims.Single(claim => claim.Type == JwtRegisteredClaimNames.UniqueName).Value);
+        Assert.False(string.IsNullOrWhiteSpace(jwt.Id));
 
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
