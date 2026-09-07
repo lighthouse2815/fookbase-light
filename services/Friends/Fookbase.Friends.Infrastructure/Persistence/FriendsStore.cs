@@ -270,7 +270,15 @@ internal sealed class FriendsStore(
             cancellationToken);
         if (block is not null)
         {
+            var now = timeProvider.GetUtcNow();
+            var integrationEvent = new UserUnblockedIntegrationEvent(
+                Guid.NewGuid(), actorUserId, blockedUserId, now);
             dbContext.BlockedUsers.Remove(block);
+            AddOutbox(
+                integrationEvent.EventId,
+                UserUnblockedIntegrationEvent.EventType,
+                integrationEvent,
+                now);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 

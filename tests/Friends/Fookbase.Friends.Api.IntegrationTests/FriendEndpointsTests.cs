@@ -253,6 +253,13 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.Equal("none", status!.Status);
         var friends = await clientA.GetFromJsonAsync<PagedResponse<FriendResponse>>("/api/friends");
         Assert.DoesNotContain(friends!.Items, item => item.UserId == userB);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        Assert.Contains(await dbContext.OutboxMessages.ToListAsync(),
+            item => item.Type == UserUnblockedIntegrationEvent.EventType &&
+                    item.Payload.Contains(userA.ToString()) &&
+                    item.Payload.Contains(userB.ToString()));
     }
 
     [Fact]

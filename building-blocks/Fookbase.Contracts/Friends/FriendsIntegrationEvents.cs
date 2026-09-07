@@ -42,3 +42,12 @@ public sealed record UserBlockedIntegrationEvent(
 {
     public const string EventType = "friends.user.blocked.v1";
 }
+
+public sealed record UserUnblockedIntegrationEvent(
+    Guid EventId,
+    Guid BlockerUserId,
+    Guid BlockedUserId,
+    DateTimeOffset OccurredAtUtc)
+{
+    public const string EventType = "friends.user.unblocked.v1";
+}
