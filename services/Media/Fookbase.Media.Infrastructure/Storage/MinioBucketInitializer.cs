@@ -10,6 +10,11 @@ internal sealed class MinioBucketInitializer(
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        if (!options.BucketInitializationEnabled)
+        {
+            return;
+        }
+
         var exists = await client.BucketExistsAsync(
             new BucketExistsArgs().WithBucket(options.BucketName),
             cancellationToken);

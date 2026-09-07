@@ -79,6 +79,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Media.Application"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Media.Infrastructure", "services\Media\Fookbase.Media.Infrastructure\Fookbase.Media.Infrastructure.csproj", "{1F167E96-DECA-4BEB-B62C-6F1F9A18F7BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Media.Api", "services\Media\Fookbase.Media.Api\Fookbase.Media.Api.csproj", "{FD50F525-1C1F-4529-AC5B-86BC1D57B848}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -389,6 +391,18 @@ Global
 		{1F167E96-DECA-4BEB-B62C-6F1F9A18F7BF}.Release|x64.Build.0 = Release|Any CPU
 		{1F167E96-DECA-4BEB-B62C-6F1F9A18F7BF}.Release|x86.ActiveCfg = Release|Any CPU
 		{1F167E96-DECA-4BEB-B62C-6F1F9A18F7BF}.Release|x86.Build.0 = Release|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Debug|x64.Build.0 = Debug|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Debug|x86.Build.0 = Debug|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Release|x64.ActiveCfg = Release|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Release|x64.Build.0 = Release|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Release|x86.ActiveCfg = Release|Any CPU
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -429,5 +443,6 @@ Global
 		{6708C8BB-F196-4347-9FC1-070F2C01B05E} = {CD52D1DB-F69B-63E9-D5FD-9E1F5357CDE4}
 		{86A522DE-6812-4CD6-8EC8-1A2129DE6B48} = {CD52D1DB-F69B-63E9-D5FD-9E1F5357CDE4}
 		{1F167E96-DECA-4BEB-B62C-6F1F9A18F7BF} = {CD52D1DB-F69B-63E9-D5FD-9E1F5357CDE4}
+		{FD50F525-1C1F-4529-AC5B-86BC1D57B848} = {CD52D1DB-F69B-63E9-D5FD-9E1F5357CDE4}
 	EndGlobalSection
 EndGlobal

@@ -14,6 +14,8 @@ public sealed class MinioOptions
 
     public bool Secure { get; init; }
 
+    public bool BucketInitializationEnabled { get; init; } = true;
+
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Endpoint))
