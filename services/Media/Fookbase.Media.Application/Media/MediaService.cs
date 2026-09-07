@@ -29,6 +29,7 @@ public sealed class MediaService(
         string purpose,
         CancellationToken cancellationToken = default)
     {
+        fileName = Path.GetFileName(fileName);
         var validationError = ValidateUpload(fileName, contentType, length, purpose, out var parsedPurpose);
         if (validationError is not null)
         {
@@ -42,7 +43,7 @@ public sealed class MediaService(
             id,
             ownerUserId,
             objectName,
-            Path.GetFileName(fileName),
+            fileName,
             contentType.ToLowerInvariant(),
             length,
             parsedPurpose,
@@ -62,7 +63,7 @@ public sealed class MediaService(
         }
         catch
         {
-            await TryDeleteObjectAsync(objectName, cancellationToken);
+            await TryDeleteObjectAsync(objectName, CancellationToken.None);
             throw;
         }
 
@@ -136,12 +137,14 @@ public sealed class MediaService(
     {
         parsedPurpose = default;
 
-        if (string.IsNullOrWhiteSpace(fileName))
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length > 255)
         {
-            return Validation("file_required", "A file name is required.");
+            return Validation(
+                "invalid_file_name",
+                "A file name containing at most 255 characters is required.");
         }
 
-        if (!AllowedContentTypes.ContainsKey(contentType))
+        if (string.IsNullOrWhiteSpace(contentType) || !AllowedContentTypes.ContainsKey(contentType))
         {
             return Validation(
                 "unsupported_media_type",

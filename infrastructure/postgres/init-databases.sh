@@ -11,4 +11,6 @@ SELECT format('CREATE DATABASE friends_db OWNER %I', :'db_owner')
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'friends_db')\gexec
 SELECT format('CREATE DATABASE posts_db OWNER %I', :'db_owner')
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'posts_db')\gexec
+SELECT format('CREATE DATABASE media_db OWNER %I', :'db_owner')
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'media_db')\gexec
 EOSQL
