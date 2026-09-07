@@ -14,6 +14,17 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     : IClassFixture<IdentityApiFactory>
 {
     [Fact]
+    public async Task Register_with_malformed_json_returns_bad_request()
+    {
+        using var client = factory.CreateClient();
+        using var content = new StringContent("{", Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync("/api/auth/register", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Register_succeeds_and_stores_only_hashed_secrets()
     {
         var account = CreateUniqueAccount();
