@@ -1,9 +1,9 @@
 using System.Text;
-using Fookbase.Contracts.Identity;
-using Fookbase.Identity.Application.Abstractions;
+using Fookbase.Contracts.Friends;
+using Fookbase.Friends.Application.Abstractions;
 using RabbitMQ.Client;
 
-namespace Fookbase.Identity.Infrastructure.IntegrationEvents;
+namespace Fookbase.Friends.Infrastructure.IntegrationEvents;
 
 internal sealed class RabbitMqIntegrationEventPublisher(RabbitMqOptions options)
     : IIntegrationEventPublisher
@@ -19,7 +19,7 @@ internal sealed class RabbitMqIntegrationEventPublisher(RabbitMqOptions options)
             UserName = options.UserName,
             Password = options.Password,
             VirtualHost = options.VirtualHost,
-            ClientProvidedName = "fookbase-identity-outbox"
+            ClientProvidedName = "fookbase-friends-outbox"
         };
 
         await using var connection = await factory.CreateConnectionAsync(cancellationToken);
@@ -29,34 +29,11 @@ internal sealed class RabbitMqIntegrationEventPublisher(RabbitMqOptions options)
         await using var channel = await connection.CreateChannelAsync(
             channelOptions,
             cancellationToken);
-
         await channel.ExchangeDeclareAsync(
-            UserRegisteredIntegrationEvent.ExchangeName,
+            FriendsIntegrationEventTopology.ExchangeName,
             ExchangeType.Topic,
             durable: true,
             autoDelete: false,
-            cancellationToken: cancellationToken);
-        await channel.QueueDeclareAsync(
-            UserRegisteredIntegrationEvent.QueueName,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            cancellationToken: cancellationToken);
-        await channel.QueueBindAsync(
-            UserRegisteredIntegrationEvent.QueueName,
-            UserRegisteredIntegrationEvent.ExchangeName,
-            UserRegisteredIntegrationEvent.RoutingKey,
-            cancellationToken: cancellationToken);
-        await channel.QueueDeclareAsync(
-            UserRegisteredIntegrationEvent.FriendsQueueName,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            cancellationToken: cancellationToken);
-        await channel.QueueBindAsync(
-            UserRegisteredIntegrationEvent.FriendsQueueName,
-            UserRegisteredIntegrationEvent.ExchangeName,
-            UserRegisteredIntegrationEvent.RoutingKey,
             cancellationToken: cancellationToken);
 
         var properties = new BasicProperties
@@ -67,11 +44,10 @@ internal sealed class RabbitMqIntegrationEventPublisher(RabbitMqOptions options)
             MessageId = message.Id.ToString(),
             Timestamp = new AmqpTimestamp(message.OccurredAtUtc.ToUnixTimeSeconds())
         };
-
         await channel.BasicPublishAsync(
-            UserRegisteredIntegrationEvent.ExchangeName,
-            UserRegisteredIntegrationEvent.RoutingKey,
-            mandatory: true,
+            FriendsIntegrationEventTopology.ExchangeName,
+            message.Type,
+            mandatory: false,
             basicProperties: properties,
             body: Encoding.UTF8.GetBytes(message.Payload),
             cancellationToken);

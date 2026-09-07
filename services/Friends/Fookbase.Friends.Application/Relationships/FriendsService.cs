@@ -5,7 +5,6 @@ namespace Fookbase.Friends.Application.Relationships;
 
 public sealed class FriendsService(IFriendsStore store) : IFriendsService
 {
-    private const int DefaultLimit = 20;
     private const int MaximumLimit = 100;
 
     public async Task<ApplicationResult<FriendRequestResponse>> SendRequestAsync(
@@ -146,7 +145,7 @@ public sealed class FriendsService(IFriendsStore store) : IFriendsService
             actorUserId,
             otherUserId,
             offset,
-            limit == 0 ? DefaultLimit : limit,
+            limit,
             cancellationToken));
     }
 
@@ -162,12 +161,12 @@ public sealed class FriendsService(IFriendsStore store) : IFriendsService
         }
 
         return ApplicationResult<PagedResponse<T>>.Success(
-            await reader(offset, limit == 0 ? DefaultLimit : limit));
+            await reader(offset, limit));
     }
 
     private static ApplicationError? ValidatePagination(int offset, int limit)
     {
-        if (offset < 0 || limit < 0 || limit > MaximumLimit)
+        if (offset < 0 || limit < 1 || limit > MaximumLimit)
         {
             return new ApplicationError(
                 "invalid_pagination",
