@@ -1,16 +1,13 @@
 import { useState } from 'react'
 import { TRENDING_TOPICS, USERS, formatNumber } from '../../data/mockData'
 
-const badgeColors: Record<string, string> = {
-  root:   'text-cyber-danger  border-[rgba(255,0,64,0.4)]  bg-[rgba(255,0,64,0.08)]',
-  anon:   'text-cyber-green   border-[rgba(0,255,65,0.4)]  bg-[rgba(0,255,65,0.08)]',
-  cyborg: 'text-cyber-purple  border-[rgba(189,0,255,0.4)] bg-[rgba(189,0,255,0.08)]',
-  neural: 'text-cyber-cyan    border-[rgba(0,255,255,0.4)] bg-[rgba(0,255,255,0.08)]',
-  ghost:  'text-cyber-yellow  border-[rgba(255,215,0,0.4)] bg-[rgba(255,215,0,0.08)]',
+const badgeClass: Record<string, string> = {
+  root: 'badge-root', anon: 'badge-anon',
+  cyborg: 'badge-cyborg', neural: 'badge-neural', ghost: 'badge-ghost',
 }
 
 export default function ExplorePage() {
-  const [query, setQuery] = useState('')
+  const [query, setQuery]     = useState('')
   const [following, setFollowing] = useState<Set<string>>(new Set())
 
   const toggleFollow = (id: string) => {
@@ -24,153 +21,107 @@ export default function ExplorePage() {
   const suggestedUsers = USERS.filter((u) => u.id !== 'u1')
 
   return (
-    <div className="max-w-[760px] mx-auto p-4 flex flex-col gap-6" style={{ animation: 'fade-in 0.3s ease both' }}>
+    <div className="p-4 xl:p-6 flex flex-col gap-6 min-h-screen bg-bg"
+         style={{ animation: 'fade-in 0.25s ease both' }}>
 
-      {/* ── Header ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 py-2">
-        <span className="font-mono text-[10px] text-cyber-cyan tracking-widest">◉</span>
-        <h1 className="font-mono text-[13px] text-text-bright tracking-widest">EXPLORE // SCAN_NETWORK</h1>
+      {/* ── Header ─────────────────────────────────────── */}
+      <div className="flex items-center gap-3 pt-1">
+        <h1 className="font-heading font-bold text-[22px] text-text">Explore</h1>
       </div>
 
-      {/* ── Search bar ─────────────────────────────────────── */}
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-[13px] text-cyber-cyan">
-          &gt;_
-        </span>
+      {/* ── Search bar ─────────────────────────────────── */}
+      <div className="relative max-w-xl">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-light">🔍</span>
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="search handles, tags, exploits..."
-          className="w-full bg-bg-input border border-[rgba(0,255,255,0.2)] text-text-bright
-                     font-mono text-[13px] pl-9 pr-4 py-2.5 rounded-[2px] outline-none
-                     placeholder:text-text-dim transition-all duration-200
-                     focus:border-cyber-cyan focus:shadow-[0_0_10px_rgba(0,255,255,0.15)]"
+          placeholder="Search people, topics, posts..."
+          className="w-full bg-surface border border-border rounded-full
+                     text-[14px] text-text pl-11 pr-4 py-3 outline-none
+                     focus:input-focus transition-all placeholder:text-text-light
+                     card-shadow"
         />
-        {query && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-text-dim">
-            [esc]
-          </span>
-        )}
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_300px] gap-5">
+      <div className="grid lg:grid-cols-[1fr_340px] 2xl:grid-cols-[1fr_380px_340px] gap-5 items-start">
 
-        {/* ── Trending Topics ─────────────────────────────── */}
+        {/* ── Trending Topics ──────────────────────────── */}
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="font-mono text-[11px] text-text-bright tracking-widest">TRENDING_VECTORS</h2>
-            <div className="flex-1 h-px bg-[rgba(0,255,255,0.1)]" />
-          </div>
-
-          <div className="border border-[rgba(0,255,255,0.12)] rounded-[4px] bg-bg-card overflow-hidden">
+          <h2 className="font-heading font-bold text-[17px] text-text mb-4">Trending Topics</h2>
+          <div className="bg-surface rounded-2xl card-shadow border border-border overflow-hidden">
             {TRENDING_TOPICS.map((topic, i) => (
-              <div
-                key={topic.id}
-                className="group flex items-center gap-3 px-4 py-3 cursor-pointer
-                           border-b border-[rgba(0,255,255,0.07)] last:border-0
-                           transition-all duration-200 hover:bg-[rgba(0,255,255,0.04)]"
-                style={{ animation: `fade-in 0.3s ease ${i * 0.04}s both` }}
-              >
-                {/* Rank */}
-                <span className="font-mono text-[11px] text-text-dim w-5 text-right shrink-0">
-                  {i + 1}
-                </span>
+              <div key={topic.id}
+                className="group flex items-center gap-4 px-5 py-4 cursor-pointer
+                           border-b border-border last:border-0 transition-colors
+                           hover:bg-surface-hover"
+                style={{ animation: `fade-in 0.3s ease ${i * 0.04}s both` }}>
 
-                {/* Trend icon */}
-                <span className={`text-[13px] shrink-0 ${
-                  topic.trend === 'hot' ? 'text-cyber-danger' :
-                  topic.trend === 'up'  ? 'text-cyber-green'  : 'text-text-dim'
-                }`}>
-                  {topic.trend === 'hot' ? '🔥' : topic.trend === 'up' ? '▲' : '▼'}
-                </span>
+                <span className="text-[15px] text-text-light font-medium w-5 shrink-0">{i + 1}</span>
 
-                {/* Tag + count */}
                 <div className="flex-1">
-                  <div className="font-mono text-[13px] text-cyber-cyan tracking-wide
-                                  group-hover:[text-shadow:0_0_8px_rgba(0,255,255,0.4)] transition-all">
+                  <div className="text-[14px] font-semibold text-text group-hover:text-primary transition-colors">
                     {topic.tag}
                   </div>
-                  <div className="font-mono text-[9px] text-text-dim">
-                    {formatNumber(topic.posts)} signals intercepted
+                  <div className="text-[12px] text-text-muted">
+                    {formatNumber(topic.posts)} posts
                   </div>
                 </div>
 
-                {/* Infiltrate button */}
-                <button
-                  type="button"
-                  className="opacity-0 group-hover:opacity-100 px-2.5 py-1 font-mono text-[9px]
-                             tracking-widest uppercase border rounded-[2px] transition-all duration-200
-                             border-[rgba(0,255,255,0.3)] text-cyber-cyan bg-[rgba(0,255,255,0.05)]
-                             hover:border-cyber-cyan hover:bg-[rgba(0,255,255,0.1)] cursor-pointer"
-                >
-                  INFILTRATE
-                </button>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">
+                    {topic.trend === 'hot' ? '🔥' : topic.trend === 'up' ? '📈' : '📉'}
+                  </span>
+                  <button type="button"
+                    className="opacity-0 group-hover:opacity-100 px-3 py-1 rounded-full text-[12px]
+                               font-semibold text-primary border border-[rgba(108,99,255,0.3)]
+                               bg-surface-hover hover:gradient-primary hover:text-white hover:border-transparent
+                               transition-all duration-200 cursor-pointer">
+                    Follow
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ── User Suggestions ────────────────────────────── */}
+        {/* ── Suggested Users ──────────────────────────── */}
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="font-mono text-[11px] text-text-bright tracking-widest">KNOWN_AGENTS</h2>
-            <div className="flex-1 h-px bg-[rgba(0,255,255,0.1)]" />
-          </div>
-
-          <div className="flex flex-col gap-2">
+          <h2 className="font-heading font-bold text-[17px] text-text mb-4">Who to follow</h2>
+          <div className="flex flex-col gap-3">
             {suggestedUsers.map((user, i) => {
               const isFollowing = following.has(user.id)
               return (
-                <div
-                  key={user.id}
-                  className="border border-[rgba(0,255,255,0.12)] bg-bg-card rounded-[4px] p-3
-                             flex items-start gap-3 transition-all duration-200
-                             hover:border-[rgba(0,255,255,0.25)] hover:shadow-[0_0_10px_rgba(0,255,255,0.05)]"
-                  style={{ animation: `slide-in-left 0.3s ease ${i * 0.06}s both` }}
-                >
-                  {/* Avatar */}
-                  <div
-                    className={`w-9 h-9 rounded-[2px] flex items-center justify-center font-mono
-                                text-[10px] text-cyber-cyan border border-[rgba(0,255,255,0.3)] shrink-0
-                                ${user.isOnline ? 'avatar-online' : ''}`}
-                    style={{ background: user.avatarColor }}
-                  >
+                <div key={user.id}
+                  className="bg-surface rounded-2xl border border-border card-shadow p-4
+                             flex items-start gap-3 transition-all duration-200 hover:card-shadow-hover"
+                  style={{ animation: `slide-in-left 0.3s ease ${i * 0.06}s both` }}>
+
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-[12px]
+                                   font-bold text-white shrink-0
+                                   ${user.isOnline ? 'avatar-online' : ''} ${user.avatarColor}`}>
                     {user.avatar}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap gap-1 mb-0.5">
-                      <span className="font-mono text-[11px] text-text-bright">{user.displayName}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                      <span className="text-[13px] font-semibold text-text">{user.displayName}</span>
                       {user.badges.slice(0, 1).map((b) => (
-                        <span
-                          key={b}
-                          className={`font-mono text-[8px] tracking-widest uppercase px-1 border rounded-[2px] ${badgeColors[b] ?? ''}`}
-                        >
-                          {b}
-                        </span>
+                        <span key={b} className={`badge-pill ${badgeClass[b] ?? ''}`}>{b}</span>
                       ))}
                     </div>
-                    <p className="font-mono text-[9px] text-text-dim mb-1">@{user.handle}</p>
-                    <p className="font-mono text-[9px] text-text-dim">
-                      {formatNumber(user.followers)} followers
-                    </p>
+                    <p className="text-[12px] text-text-muted">@{user.handle}</p>
+                    <p className="text-[12px] text-text-muted">{formatNumber(user.followers)} followers</p>
                   </div>
 
-                  {/* Follow button */}
-                  <button
-                    type="button"
-                    onClick={() => toggleFollow(user.id)}
+                  <button type="button" onClick={() => toggleFollow(user.id)}
                     className={[
-                      'px-2.5 py-1 font-mono text-[9px] tracking-widest uppercase rounded-[2px]',
-                      'border transition-all duration-200 cursor-pointer shrink-0',
+                      'px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 cursor-pointer shrink-0 border-none',
                       isFollowing
-                        ? 'border-[rgba(0,255,255,0.2)] text-text-dim bg-transparent hover:border-cyber-danger hover:text-cyber-danger'
-                        : 'border-[rgba(0,255,255,0.3)] text-cyber-cyan bg-[rgba(0,255,255,0.05)] hover:bg-[rgba(0,255,255,0.1)] hover:border-cyber-cyan hover:shadow-[0_0_8px_rgba(0,255,255,0.15)]',
-                    ].join(' ')}
-                  >
-                    {isFollowing ? 'UNLINK' : 'CONNECT'}
+                        ? 'bg-surface-2 text-text-muted hover:bg-red-50 hover:text-danger'
+                        : 'gradient-primary text-white hover:opacity-90 hover:shadow-[0_4px_12px_rgba(108,99,255,0.3)]',
+                    ].join(' ')}>
+                    {isFollowing ? 'Following' : 'Follow'}
                   </button>
                 </div>
               )

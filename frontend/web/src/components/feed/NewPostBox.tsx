@@ -9,7 +9,7 @@ const MAX_CHARS = 280
 
 export default function NewPostBox({ onPost }: NewPostBoxProps) {
   const [content, setContent] = useState('')
-  const remaining = MAX_CHARS - content.length
+  const remaining   = MAX_CHARS - content.length
   const isOverLimit = remaining < 0
   const isNearLimit = remaining <= 30 && !isOverLimit
 
@@ -19,74 +19,82 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
     setContent('')
   }
 
-  return (
-    <div className="border border-[rgba(0,255,255,0.15)] bg-bg-card rounded-[4px]
-                    transition-all duration-200 hover:border-[rgba(0,255,255,0.25)]
-                    hover:shadow-[0_0_16px_rgba(0,255,255,0.06)]
-                    p-4 flex gap-3" style={{ animation: 'fade-in 0.3s ease both' }}>
+  // Circle progress for char counter
+  const pct     = Math.min((content.length / MAX_CHARS) * 100, 100)
+  const radius  = 10
+  const circ    = 2 * Math.PI * radius
+  const offset  = circ - (pct / 100) * circ
 
+  return (
+    <div className="bg-surface rounded-2xl card-shadow border border-border p-4 flex gap-3">
       {/* Avatar */}
-      <div
-        className="avatar-online w-10 h-10 rounded-[2px] flex items-center justify-center
-                   text-[11px] font-mono text-cyber-cyan border border-[rgba(0,255,255,0.3)] shrink-0"
-        style={{ background: CURRENT_USER.avatarColor }}
-      >
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px]
+                       font-bold text-white shrink-0 ${CURRENT_USER.avatarColor}`}>
         {CURRENT_USER.avatar}
       </div>
 
       {/* Input area */}
       <div className="flex-1 flex flex-col gap-3">
-        {/* Terminal header */}
-        <div className="flex items-center gap-2 font-mono text-[10px] text-text-dim tracking-widest">
-          <span className="text-cyber-green">&gt;</span>
-          <span>BROADCAST_INPUT</span>
-          <span className="cursor-blink" />
-        </div>
-
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="// enter your signal..."
+          placeholder="What's on your mind?"
           rows={3}
           className="w-full bg-transparent border-none outline-none resize-none
-                     font-cyber text-[14px] text-text-bright leading-relaxed
-                     placeholder:text-text-dim placeholder:font-mono placeholder:text-[12px]"
+                     text-[15px] text-text leading-relaxed
+                     placeholder:text-text-light"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit()
           }}
         />
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-[rgba(0,255,255,0.1)]">
-          <div className="flex items-center gap-3">
-            {/* Tag hint */}
-            <span className="font-mono text-[10px] text-text-dim tracking-wide">
-              #tags  [ctrl+enter]
-            </span>
+        {/* Divider + actions */}
+        <div className="flex items-center justify-between pt-2 border-t border-border">
+          {/* Media actions */}
+          <div className="flex items-center gap-1 text-primary">
+            {['🖼️', '😊', '📍', '🔗'].map((icon) => (
+              <button key={icon} type="button"
+                className="w-8 h-8 flex items-center justify-center rounded-full
+                           hover:bg-purple-50 transition-colors cursor-pointer bg-transparent border-none text-base">
+                {icon}
+              </button>
+            ))}
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Char counter */}
-            <span className={`font-mono text-[11px] tabular-nums ${
-              isOverLimit ? 'text-cyber-danger' :
-              isNearLimit ? 'text-cyber-warning' :
-              'text-text-dim'
-            }`}>
-              {remaining}
-            </span>
+            {/* Circular char counter */}
+            {content.length > 0 && (
+              <div className="relative w-6 h-6">
+                <svg className="w-6 h-6 -rotate-90" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r={radius} fill="none"
+                    stroke="#e2e8f0" strokeWidth="2.5" />
+                  <circle cx="12" cy="12" r={radius} fill="none"
+                    stroke={isOverLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : '#6c63ff'}
+                    strokeWidth="2.5"
+                    strokeDasharray={circ}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round" />
+                </svg>
+                {isNearLimit && (
+                  <span className={`absolute inset-0 flex items-center justify-center text-[9px] font-bold
+                                   ${isOverLimit ? 'text-danger' : 'text-warning'}`}>
+                    {remaining}
+                  </span>
+                )}
+              </div>
+            )}
 
             <button
               type="button"
               onClick={handleSubmit}
               disabled={!content.trim() || isOverLimit}
-              className="flex items-center gap-1.5 px-4 py-1.5 font-mono text-[11px]
-                         tracking-[0.12em] uppercase rounded-[2px] border transition-all duration-200
-                         disabled:opacity-30 disabled:cursor-not-allowed
-                         border-[rgba(0,255,255,0.3)] text-cyber-cyan bg-[rgba(0,255,255,0.05)]
-                         hover:enabled:border-cyber-cyan hover:enabled:bg-[rgba(0,255,255,0.1)]
-                         hover:enabled:shadow-[0_0_16px_rgba(0,255,255,0.2)] cursor-pointer"
+              className="px-5 py-1.5 rounded-full text-[14px] font-semibold text-white
+                         gradient-primary transition-all duration-200 cursor-pointer
+                         disabled:opacity-40 disabled:cursor-not-allowed
+                         hover:enabled:opacity-90 hover:enabled:shadow-[0_4px_12px_rgba(108,99,255,0.35)]
+                         border-none"
             >
-              ▶ BROADCAST
+              Post
             </button>
           </div>
         </div>

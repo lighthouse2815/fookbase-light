@@ -1,52 +1,47 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
 @import "tailwindcss";
 
 /* ============================================================
-   HACKERNET — Tailwind v4 Theme + Custom Cyberpunk Tokens
+   SOCIALAPP — Tailwind v4 Theme (Modern Colorful Gradient)
    ============================================================ */
 
 @theme {
-  /* Cyberpunk color palette */
-  --color-bg-deep:    #03060a;
-  --color-bg-card:    #0a0e14;
-  --color-bg-panel:   #0d1117;
-  --color-bg-input:   #111827;
+  /* ── Backgrounds ── */
+  --color-bg:         #f0f2f5;
+  --color-surface:    #ffffff;
+  --color-surface-2:  #f8f9fa;
+  --color-surface-3:  #f1f3f5;
+  --color-surface-hover: #f8f0ff;
 
-  --color-cyber-cyan:    #00ffff;
-  --color-cyber-cyan-dim:#00bcd4;
-  --color-cyber-green:   #00ff41;
-  --color-cyber-green-dim:#00c032;
-  --color-cyber-purple:  #bd00ff;
-  --color-cyber-yellow:  #ffd700;
-  --color-cyber-danger:  #ff0040;
-  --color-cyber-warning: #ff8c00;
+  /* ── Brand ── */
+  --color-primary:        #6c63ff;
+  --color-primary-light:  #8b85ff;
+  --color-primary-dark:   #5a52d5;
+  --color-secondary:      #ff6584;
+  --color-accent:         #43e97b;
+  --color-accent-2:       #38f9d7;
 
-  --color-text-dim:    #7a8a9a;
-  --color-text-mid:    #a0aec0;
-  --color-text-bright: #e2e8f0;
+  /* ── Semantic ── */
+  --color-like:     #ef4444;
+  --color-repost:   #22c55e;
+  --color-info:     #3b82f6;
+  --color-warning:  #f59e0b;
+  --color-danger:   #ef4444;
 
-  /* Fonts */
-  --font-mono: 'Share Tech Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
-  --font-cyber: 'Rajdhani', system-ui, -apple-system, sans-serif;
+  /* ── Text ── */
+  --color-text:       #1a1a2e;
+  --color-text-muted: #64748b;
+  --color-text-light: #94a3b8;
+  --color-text-inv:   #ffffff;
 
-  /* Sidebar width */
-  --spacing-sidebar: 240px;
-  --spacing-sidebar-sm: 60px;
+  /* ── Border ── */
+  --color-border:       #e2e8f0;
+  --color-border-focus: #6c63ff;
 
-  /* Custom border widths */
-  --border-width-cyber: 1px;
-
-  /* Keyframes */
-  --animate-glitch-1: glitch-1 3s infinite linear;
-  --animate-glitch-2: glitch-2 3s infinite linear;
-  --animate-flicker:  flicker 6s infinite;
-  --animate-pulse-glow: pulse-glow 2s infinite;
-  --animate-fade-in:  fade-in 0.3s ease both;
-  --animate-slide-in: slide-in-left 0.3s ease both;
-  --animate-blink:    blink 1s step-end infinite;
-  --animate-spin-slow: spin 4s linear infinite;
+  /* ── Fonts ── */
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
 }
-
 
 /* ============================================================
    BASE RESET & GLOBAL
@@ -60,91 +55,57 @@ html {
 }
 
 body {
-  background-color: var(--color-bg-deep);
-  color: var(--color-text-mid);
-  font-family: var(--font-cyber);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* CRT Scanlines */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.06) 2px,
-    rgba(0, 0, 0, 0.06) 4px
-  );
-  pointer-events: none;
-  z-index: 9998;
-}
-
-/* Vignette */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
-  pointer-events: none;
-  z-index: 9997;
 }
 
 #root { width: 100%; min-height: 100vh; }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--color-bg-deep); }
-::-webkit-scrollbar-thumb { background: var(--color-cyber-cyan-dim); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-cyber-cyan); }
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--color-surface-2); }
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* Selection */
+/* ── Selection ── */
 ::selection {
-  background: rgba(0, 255, 255, 0.2);
-  color: var(--color-cyber-cyan);
+  background: rgba(108, 99, 255, 0.15);
+  color: var(--color-primary);
 }
 
 /* ============================================================
    KEYFRAMES
    ============================================================ */
-@keyframes glitch-1 {
-  0%, 100% { clip-path: inset(0 0 96% 0); transform: translateX(-4px); }
-  20%  { clip-path: inset(50% 0 30% 0); transform: translateX(4px); }
-  40%  { clip-path: inset(20% 0 60% 0); transform: translateX(-2px); }
-  60%  { clip-path: inset(80% 0 5% 0);  transform: translateX(2px); }
-  80%  { clip-path: inset(5% 0 80% 0);  transform: translateX(-3px); }
-}
-
-@keyframes glitch-2 {
-  0%, 100% { clip-path: inset(90% 0 0% 0); transform: translateX(4px); }
-  20%  { clip-path: inset(30% 0 50% 0); transform: translateX(-4px); }
-  40%  { clip-path: inset(60% 0 20% 0); transform: translateX(2px); }
-  60%  { clip-path: inset(5% 0 80% 0);  transform: translateX(-2px); }
-  80%  { clip-path: inset(80% 0 5% 0);  transform: translateX(3px); }
-}
-
-@keyframes flicker {
-  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; }
-  20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.6; }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(0,255,255,0.15); }
-  50%       { box-shadow: 0 0 20px rgba(0,255,255,0.3), 0 0 40px rgba(0,255,255,0.08); }
-}
-
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-16px); }
+  from { opacity: 0; transform: translateX(-12px); }
   to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.3); opacity: 0.7; }
 }
 
 @keyframes blink {
@@ -152,72 +113,30 @@ body::before {
   50%       { opacity: 0; }
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@keyframes matrix-fall {
-  from { transform: translateY(-100%); }
-  to   { transform: translateY(100vh); }
-}
-
 /* ============================================================
-   GLITCH TEXT  (needs ::before/::after — can't do in Tailwind)
-   ============================================================ */
-.glitch-text {
-  position: relative;
-  display: inline-block;
-  font-family: var(--font-mono);
-}
-
-.glitch-text::before,
-.glitch-text::after {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.glitch-text::before {
-  color: var(--color-cyber-danger);
-  animation: var(--animate-glitch-1);
-  opacity: 0.7;
-}
-
-.glitch-text::after {
-  color: var(--color-cyber-cyan);
-  animation: var(--animate-glitch-2);
-  opacity: 0.7;
-}
-
-/* ============================================================
-   SHARED UTILITY CLASSES  (too complex for inline Tailwind)
+   SHARED UTILITIES  (too complex / repetitive for inline Tailwind)
    ============================================================ */
 
-/* Neon glow text */
-.neon-cyan {
-  color: var(--color-cyber-cyan);
-  text-shadow:
-    0 0 10px rgba(0,255,255,0.4),
-    0 0 20px rgba(0,255,255,0.2);
+/* Gradient primary: purple → pink */
+.gradient-primary {
+  background: linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
 }
 
-.neon-green {
-  color: var(--color-cyber-green);
-  text-shadow: 0 0 10px rgba(0,255,65,0.4);
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Neon box glow */
-.neon-border {
-  border: 1px solid rgba(0,255,255,0.4);
-  box-shadow:
-    0 0 12px rgba(0,255,255,0.15),
-    inset 0 0 12px rgba(0,255,255,0.04);
+/* Card shadow */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
 }
 
-.neon-border:hover {
-  border-color: rgba(0,255,255,0.7);
-  box-shadow:
-    0 0 20px rgba(0,255,255,0.25),
-    inset 0 0 16px rgba(0,255,255,0.06);
+.card-shadow-hover {
+  box-shadow: 0 4px 20px rgba(108,99,255,0.12), 0 2px 8px rgba(0,0,0,0.06);
 }
 
 /* Avatar online dot */
@@ -227,93 +146,84 @@ body::before {
 .avatar-online::after {
   content: '';
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 8px;
-  height: 8px;
-  background: var(--color-cyber-green);
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
   border-radius: 50%;
-  border: 1px solid var(--color-bg-card);
-  box-shadow: 0 0 6px rgba(0,255,65,0.5);
+  border: 2px solid white;
 }
 
-/* Sidebar active indicator */
-.sidebar-active-indicator::before {
-  content: '';
-  position: absolute;
-  left: -1px;
-  top: 20%;
-  height: 60%;
-  width: 2px;
-  background: var(--color-cyber-cyan);
-  box-shadow: 0 0 8px var(--color-cyber-cyan);
-  border-radius: 0 2px 2px 0;
+/* Sidebar active item */
+.sidebar-item-active {
+  background: linear-gradient(135deg, rgba(108,99,255,0.12) 0%, rgba(255,101,132,0.08) 100%);
+  border-left: 3px solid #6c63ff;
 }
 
-/* Code block terminal */
-.code-block {
-  background: rgba(0,0,0,0.6);
-  border: 1px solid rgba(0,255,255,0.15);
-  border-left: 3px solid var(--color-cyber-cyan);
-  border-radius: 2px;
-  padding: 12px 14px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--color-cyber-green);
-  line-height: 1.7;
-  overflow-x: auto;
-  white-space: pre;
-  position: relative;
-}
+/* Gradient avatar backgrounds */
+.avatar-grad-1 { background: linear-gradient(135deg, #6c63ff, #ff6584); }
+.avatar-grad-2 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+.avatar-grad-3 { background: linear-gradient(135deg, #fa709a, #fee140); }
+.avatar-grad-4 { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+.avatar-grad-5 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+.avatar-grad-6 { background: linear-gradient(135deg, #f093fb, #f5576c); }
 
-.code-block::before {
-  content: attr(data-lang);
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  font-size: 9px;
-  color: rgba(0,255,255,0.4);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-/* Chat bubble encrypted */
-.msg-encrypted {
-  font-style: italic;
-  color: rgba(0,255,255,0.5) !important;
-  border-left: 2px solid rgba(255,0,64,0.4) !important;
-}
-
-/* Typing cursor */
-.cursor-blink::after {
-  content: '█';
-  animation: var(--animate-blink);
-  color: var(--color-cyber-cyan);
-}
-
-/* Profile hero matrix overlay */
-.matrix-bg {
-  background:
-    linear-gradient(180deg, rgba(0,255,65,0.03) 0%, transparent 100%),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 30px,
-      rgba(0,255,65,0.02) 30px,
-      rgba(0,255,65,0.02) 31px
-    ),
-    repeating-linear-gradient(
-      180deg,
-      transparent,
-      transparent 30px,
-      rgba(0,255,65,0.02) 30px,
-      rgba(0,255,65,0.02) 31px
-    );
-}
-
-/* Scrollable containers */
-.scroll-cyber {
+/* Scrollable */
+.scroll-smooth {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--color-cyber-cyan-dim) var(--color-bg-deep);
+  scrollbar-color: #cbd5e1 #f8f9fa;
 }
+
+/* Chat bubble — mine */
+.bubble-mine {
+  background: linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+}
+
+/* Chat bubble — theirs */
+.bubble-theirs {
+  background: #f1f3f5;
+  color: var(--color-text);
+  border-radius: 18px 18px 18px 4px;
+}
+
+/* Active nav dot */
+.pulse-dot {
+  animation: pulse-dot 2s infinite;
+}
+
+/* Input focus ring */
+.input-focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+  border-color: var(--color-primary);
+}
+
+/* Tag pill */
+.tag-pill {
+  background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(255,101,132,0.08));
+  color: var(--color-primary);
+  border: 1px solid rgba(108,99,255,0.2);
+}
+.tag-pill:hover {
+  background: linear-gradient(135deg, rgba(108,99,255,0.18), rgba(255,101,132,0.14));
+  border-color: rgba(108,99,255,0.4);
+}
+
+/* Badge pill */
+.badge-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.03em;
+}
+
+.badge-root   { background: #fef2f2; color: #ef4444; }
+.badge-anon   { background: #f0fdf4; color: #22c55e; }
+.badge-cyborg { background: #faf5ff; color: #a855f7; }
+.badge-neural { background: #eff6ff; color: #3b82f6; }
+.badge-ghost  { background: #fefce8; color: #ca8a04; }
