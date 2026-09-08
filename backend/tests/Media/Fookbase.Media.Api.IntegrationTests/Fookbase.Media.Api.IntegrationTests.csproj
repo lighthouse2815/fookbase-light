@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Fookbase.Api\Fookbase.Api.csproj" />
+    <ProjectReference Include="..\..\..\Fookbase.Api\Fookbase.Api.csproj" />
   </ItemGroup>
 
 </Project>
