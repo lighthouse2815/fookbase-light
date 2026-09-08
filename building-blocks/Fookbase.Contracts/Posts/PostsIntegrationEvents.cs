@@ -1,10 +1,5 @@
 namespace Fookbase.Contracts.Posts;
 
-public static class PostsIntegrationEventTopology
-{
-    public const string ExchangeName = "fookbase.posts.events";
-}
-
 public sealed record PostCreatedIntegrationEvent(
     Guid EventId,
     Guid PostId,

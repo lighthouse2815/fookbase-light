@@ -1,10 +1,5 @@
 namespace Fookbase.Contracts.Friends;
 
-public static class FriendsIntegrationEventTopology
-{
-    public const string ExchangeName = "fookbase.friends.events";
-}
-
 public sealed record FriendRequestSentIntegrationEvent(
     Guid EventId,
     Guid RequestId,

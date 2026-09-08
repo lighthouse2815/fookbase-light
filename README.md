@@ -4,6 +4,8 @@ Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Ident
 
 Code nghiệp vụ vẫn được chia theo module và các layer Domain/Application/Infrastructure để giữ ranh giới rõ ràng. Các module trao đổi event trực tiếp trong process. Transactional outbox và inbox vẫn được giữ để event bền vững, retry được và idempotent, nhưng không cần message broker.
 
+Chi tiết về ranh giới module, quyết định giữ projection/outbox-inbox và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
+
 ## Kiến trúc
 
 ```text

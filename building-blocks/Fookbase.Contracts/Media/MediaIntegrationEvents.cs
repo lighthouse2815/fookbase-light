@@ -1,11 +1,5 @@
 namespace Fookbase.Contracts.Media;
 
-public static class MediaIntegrationEventTopology
-{
-    public const string ExchangeName = "fookbase.media.events";
-    public const string PostsQueueName = "fookbase.posts.media-events.v1";
-}
-
 public sealed record MediaReadyIntegrationEvent(
     Guid EventId,
     Guid MediaId,
