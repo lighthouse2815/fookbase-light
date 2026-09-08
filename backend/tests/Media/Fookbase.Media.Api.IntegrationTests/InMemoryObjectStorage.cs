@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Fookbase.Media.Application.Abstractions;
+using Fookbase.Api.Modules.Media.Services.Abstractions;
 
 namespace Fookbase.Media.Api.IntegrationTests;
 

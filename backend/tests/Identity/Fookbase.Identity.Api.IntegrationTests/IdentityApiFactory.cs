@@ -1,4 +1,4 @@
-using Fookbase.Identity.Infrastructure.Persistence;
+using Fookbase.Api.Modules.Identity.Repositories;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;

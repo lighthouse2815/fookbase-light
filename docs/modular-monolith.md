@@ -4,13 +4,13 @@
 
 Fookbase runs as one ASP.NET Core process, `Fookbase.Api`, on port 5000. Identity, Users, Friends, Posts, and Media remain independent code modules, but they are not independently deployed services.
 
-`Fookbase.Api` is the sole composition root. It registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddPostsModule`, and `AddMediaModule`. HTTP endpoints are only in `backend/src/Fookbase.Api/Endpoints`.
+`Fookbase.Api` is the sole composition root and the only backend project. It registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddPostsModule`, and `AddMediaModule`. Module code is organized under `backend/src/Fookbase.Api/Modules/<Module>`; HTTP endpoints live in each module's `Endpoints` folder.
 
 External local dependencies are PostgreSQL and MinIO. There is no API gateway, RabbitMQ, service discovery, distributed transaction, or HTTP communication between application modules.
 
 ## Module boundaries and communication
 
-Each module retains Domain, Application, and Infrastructure projects. A module must not access another module's `DbContext` or `DbSet`.
+Each module retains feature-local `Entities`, `Services`, `Repositories`, and `Endpoints` folders inside the single API project. A module must not access another module's `DbContext` or `DbSet`.
 
 Cross-module communication uses explicit application abstractions or typed integration-event contracts. The current Posts-to-Media read URL path is an in-process call: `DirectMediaReadUrlClient` adapts Posts' `IMediaReadUrlClient` to Media's `IMediaService`; it does not create an HTTP request or use an internal service token.
 

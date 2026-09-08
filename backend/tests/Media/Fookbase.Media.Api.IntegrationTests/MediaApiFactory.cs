@@ -1,5 +1,5 @@
-using Fookbase.Media.Application.Abstractions;
-using Fookbase.Media.Infrastructure.Persistence;
+using Fookbase.Api.Modules.Media.Services.Abstractions;
+using Fookbase.Api.Modules.Media.Repositories;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;

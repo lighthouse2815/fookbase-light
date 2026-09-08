@@ -2,7 +2,7 @@
 
 Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
-Code nghiệp vụ vẫn được chia theo module và các layer Domain/Application/Infrastructure để giữ ranh giới rõ ràng. Các module trao đổi event trực tiếp trong process. Transactional outbox và inbox vẫn được giữ để event bền vững, retry được và idempotent, nhưng không cần message broker.
+Code nghiệp vụ được chia theo feature module trong một project backend duy nhất: `Modules/<Module>/Entities`, `Services`, `Repositories`, `Endpoints` và `Shared`. Các module trao đổi event trực tiếp trong process. Transactional outbox và inbox vẫn được giữ để event bền vững, retry được và idempotent, nhưng không cần message broker.
 
 Chi tiết về ranh giới module, quyết định giữ projection/outbox-inbox và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
 
@@ -60,10 +60,11 @@ source .env
 set +a
 dotnet tool restore
 
-for module in Identity Users Friends Posts Media; do
+for context in IdentityDbContext UsersDbContext FriendsDbContext PostsDbContext MediaDbContext; do
   dotnet tool run dotnet-ef database update \
-    --project "backend/src/$module/Fookbase.$module.Infrastructure" \
-    --startup-project backend/src/Fookbase.Api
+    --project backend/src/Fookbase.Api \
+    --startup-project backend/src/Fookbase.Api \
+    --context "$context"
 done
 ```
 
@@ -201,9 +202,10 @@ Các luồng chính:
 
 ```bash
 dotnet tool run dotnet-ef migrations add MigrationName \
-  --project backend/src/Posts/Fookbase.Posts.Infrastructure \
+  --project backend/src/Fookbase.Api \
   --startup-project backend/src/Fookbase.Api \
-  --output-dir Persistence/Migrations
+  --context PostsDbContext \
+  --output-dir Modules/Posts/Repositories/Migrations
 ```
 
-Thay `Posts` bằng module cần cập nhật. PostgreSQL init script tự tạo các database module còn thiếu khi volume được tạo lần đầu.
+Thay `PostsDbContext` và output directory bằng module cần cập nhật. PostgreSQL init script tự tạo các database module còn thiếu khi volume được tạo lần đầu.

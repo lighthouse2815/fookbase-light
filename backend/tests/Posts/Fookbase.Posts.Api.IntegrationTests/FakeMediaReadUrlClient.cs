@@ -1,4 +1,4 @@
-using Fookbase.Posts.Application.Abstractions;
+using Fookbase.Api.Modules.Posts.Services.Abstractions;
 
 namespace Fookbase.Posts.Api.IntegrationTests;
 
