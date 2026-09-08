@@ -1,21 +1,18 @@
 using Fookbase.Api.Shared.IntegrationEvents;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Identity;
-using Fookbase.Api.Modules.Identity.Services.Authentication;
-using Fookbase.Api.Modules.Media.Services.Media;
+using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media;
-using Fookbase.Api.Modules.Media.Services.Storage;
-using Fookbase.Api.Modules.Posts.Services.Abstractions;
-using Fookbase.Api.Modules.Posts.Services.Posts;
 using Fookbase.Api.Modules.Posts;
 using Fookbase.Api.Modules.Users;
 using Fookbase.Api.Modules.Friends;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using FriendsOutboxOptions = Fookbase.Api.Modules.Friends.Services.IntegrationEvents.OutboxOptions;
-using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Services.IntegrationEvents.OutboxOptions;
-using MediaOutboxOptions = Fookbase.Api.Modules.Media.Services.IntegrationEvents.OutboxOptions;
-using PostsOutboxOptions = Fookbase.Api.Modules.Posts.Services.IntegrationEvents.OutboxOptions;
+using FriendsOutboxOptions = Fookbase.Api.Modules.Friends.Services.OutboxOptions;
+using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Services.OutboxOptions;
+using MediaOutboxOptions = Fookbase.Api.Modules.Media.Services.OutboxOptions;
+using PostsOutboxOptions = Fookbase.Api.Modules.Posts.Services.OutboxOptions;
 
 namespace Fookbase.Api;
 
@@ -77,13 +74,13 @@ internal static class ModuleServiceCollectionExtensions
     public static IServiceCollection AddInProcessModuleCommunication(this IServiceCollection services)
     {
         services.AddScoped<InProcessIntegrationEventPublisher>();
-        services.AddScoped<Fookbase.Api.Modules.Identity.Services.Abstractions.IIntegrationEventPublisher>(
+        services.AddScoped<Fookbase.Api.Modules.Identity.Services.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
-        services.AddScoped<Fookbase.Api.Modules.Friends.Services.Abstractions.IIntegrationEventPublisher>(
+        services.AddScoped<Fookbase.Api.Modules.Friends.Services.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
-        services.AddScoped<Fookbase.Api.Modules.Posts.Services.Abstractions.IIntegrationEventPublisher>(
+        services.AddScoped<Fookbase.Api.Modules.Posts.Services.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
-        services.AddScoped<Fookbase.Api.Modules.Media.Services.Abstractions.IIntegrationEventPublisher>(
+        services.AddScoped<Fookbase.Api.Modules.Media.Services.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
         services.AddScoped<IMediaReadUrlClient, DirectMediaReadUrlClient>();
 

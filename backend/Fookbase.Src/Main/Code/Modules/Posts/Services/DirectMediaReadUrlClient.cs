@@ -1,5 +1,5 @@
-using Fookbase.Api.Modules.Media.Services.Media;
-using Fookbase.Api.Modules.Posts.Services.Abstractions;
+using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Posts.Services;
 
 namespace Fookbase.Api.Modules.Posts.Services;
 

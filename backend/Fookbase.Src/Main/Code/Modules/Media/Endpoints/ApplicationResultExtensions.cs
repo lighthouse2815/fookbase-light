@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Media.Services.Common;
+using Fookbase.Api.Modules.Media.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fookbase.Api.Modules.Media.Endpoints;

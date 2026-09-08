@@ -1,7 +1,5 @@
-using Fookbase.Api.Modules.Posts.Services.Abstractions;
-using Fookbase.Api.Modules.Posts.Services.Posts;
-using Fookbase.Api.Modules.Posts.Services.IntegrationEvents;
-using Fookbase.Api.Modules.Posts.Repositories;
+using Fookbase.Api.Modules.Posts.Services;
+using Fookbase.Api.Modules.Posts.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,9 +1,5 @@
-using Fookbase.Api.Modules.Media.Services.Abstractions;
-using Fookbase.Api.Modules.Media.Services.Media;
-using Fookbase.Api.Modules.Media.Services.Cleanup;
-using Fookbase.Api.Modules.Media.Services.IntegrationEvents;
-using Fookbase.Api.Modules.Media.Repositories;
-using Fookbase.Api.Modules.Media.Services.Storage;
+using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Media.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Minio;

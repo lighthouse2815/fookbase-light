@@ -4,8 +4,8 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
-using Fookbase.Api.Modules.Identity.Services.Authentication;
-using Fookbase.Api.Modules.Identity.Repositories;
+using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

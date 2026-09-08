@@ -1,9 +1,6 @@
-using Fookbase.Api.Modules.Identity.Services.Abstractions;
-using Fookbase.Api.Modules.Identity.Services.Authentication;
-using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Modules.Identity.Services.Identity;
-using Fookbase.Api.Modules.Identity.Services.IntegrationEvents;
-using Fookbase.Api.Modules.Identity.Repositories;
+using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Identity.Models;
+using Fookbase.Api.Modules.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

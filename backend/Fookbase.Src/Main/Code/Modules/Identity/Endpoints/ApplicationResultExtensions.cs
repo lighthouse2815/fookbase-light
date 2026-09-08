@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Identity.Services.Common;
+using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fookbase.Api.Modules.Identity.Endpoints;

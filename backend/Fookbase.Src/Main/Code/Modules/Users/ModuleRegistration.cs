@@ -1,7 +1,5 @@
-using Fookbase.Api.Modules.Users.Services.Abstractions;
-using Fookbase.Api.Modules.Users.Services.Profiles;
-using Fookbase.Api.Modules.Users.Services.Registrations;
-using Fookbase.Api.Modules.Users.Repositories;
+using Fookbase.Api.Modules.Users.Services;
+using Fookbase.Api.Modules.Users.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

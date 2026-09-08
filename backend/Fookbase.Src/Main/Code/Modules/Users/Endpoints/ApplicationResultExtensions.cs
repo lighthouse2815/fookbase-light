@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Users.Services.Common;
+using Fookbase.Api.Modules.Users.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fookbase.Api.Modules.Users.Endpoints;

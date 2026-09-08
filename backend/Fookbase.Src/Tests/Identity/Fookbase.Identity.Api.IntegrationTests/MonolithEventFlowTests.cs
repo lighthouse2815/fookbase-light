@@ -1,11 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
-using Fookbase.Api.Modules.Friends.Repositories;
-using Fookbase.Api.Modules.Identity.Services.Authentication;
-using Fookbase.Api.Modules.Identity.Repositories;
-using Fookbase.Api.Modules.Media.Repositories;
-using Fookbase.Api.Modules.Posts.Repositories;
-using Fookbase.Api.Modules.Users.Repositories;
+using Fookbase.Api.Modules.Friends.Data;
+using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Modules.Posts.Data;
+using Fookbase.Api.Modules.Users.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;

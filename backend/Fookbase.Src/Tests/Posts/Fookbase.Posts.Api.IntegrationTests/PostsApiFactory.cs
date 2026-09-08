@@ -1,5 +1,5 @@
-using Fookbase.Api.Modules.Posts.Repositories;
-using Fookbase.Api.Modules.Posts.Services.Abstractions;
+using Fookbase.Api.Modules.Posts.Data;
+using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;

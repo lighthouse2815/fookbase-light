@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Fookbase.Api.Modules.Friends.Services.Common;
-using Fookbase.Api.Modules.Friends.Services.Relationships;
+using Fookbase.Api.Modules.Friends.Services;
 
 namespace Fookbase.Api.Modules.Friends.Endpoints;
 

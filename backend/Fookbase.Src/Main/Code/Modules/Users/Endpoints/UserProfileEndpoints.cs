@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Fookbase.Api.Modules.Users.Services.Profiles;
+using Fookbase.Api.Modules.Users.Services;
 
 namespace Fookbase.Api.Modules.Users.Endpoints;
 

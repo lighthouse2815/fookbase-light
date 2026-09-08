@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Fookbase.Api.Modules.Media.Services.Media;
+using Fookbase.Api.Modules.Media.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fookbase.Api.Modules.Media.Endpoints;

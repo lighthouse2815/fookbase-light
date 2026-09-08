@@ -1,8 +1,5 @@
-using Fookbase.Api.Modules.Friends.Services.Abstractions;
-using Fookbase.Api.Modules.Friends.Services.Registrations;
-using Fookbase.Api.Modules.Friends.Services.Relationships;
-using Fookbase.Api.Modules.Friends.Services.IntegrationEvents;
-using Fookbase.Api.Modules.Friends.Repositories;
+using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Friends.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
