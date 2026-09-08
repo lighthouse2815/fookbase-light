@@ -17,7 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Identity", "Identity", "{391CE2F5-AE47-7A9A-F474-4847BE99435E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Identity.Api.IntegrationTests", "tests\Identity\Fookbase.Identity.Api.IntegrationTests\Fookbase.Identity.Api.IntegrationTests.csproj", "{7E246ACA-0B5F-4A52-96FD-5B594AA8ECE6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Identity.Api.IntegrationTests", "backend\tests\Identity\Fookbase.Identity.Api.IntegrationTests\Fookbase.Identity.Api.IntegrationTests.csproj", "{7E246ACA-0B5F-4A52-96FD-5B594AA8ECE6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "building-blocks", "building-blocks", "{31CBEB51-93DC-9CA1-DA8D-67643319BEE1}"
 EndProject
@@ -33,7 +33,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Users.Infrastructu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Users", "Users", "{553D81D4-666B-BE26-75F9-480CB214ACEE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Users.Api.IntegrationTests", "tests\Users\Fookbase.Users.Api.IntegrationTests\Fookbase.Users.Api.IntegrationTests.csproj", "{5087F3E7-E8D8-4CD8-970E-7C833E3A3380}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Users.Api.IntegrationTests", "backend\tests\Users\Fookbase.Users.Api.IntegrationTests\Fookbase.Users.Api.IntegrationTests.csproj", "{5087F3E7-E8D8-4CD8-970E-7C833E3A3380}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Friends", "Friends", "{73978B14-D726-0E5C-7F6F-820BCF9611CB}"
 EndProject
@@ -45,7 +45,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Friends.Infrastruc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Friends", "Friends", "{B6CBE589-FE79-976B-F5C1-0CA663667027}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Friends.Api.IntegrationTests", "tests\Friends\Fookbase.Friends.Api.IntegrationTests\Fookbase.Friends.Api.IntegrationTests.csproj", "{538B49A7-D2EA-4DAB-9B4A-E523D9329EE2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Friends.Api.IntegrationTests", "backend\tests\Friends\Fookbase.Friends.Api.IntegrationTests\Fookbase.Friends.Api.IntegrationTests.csproj", "{538B49A7-D2EA-4DAB-9B4A-E523D9329EE2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Posts", "Posts", "{1A74326A-BAB3-4C72-76C9-FB2911D3BDC0}"
 EndProject
@@ -57,7 +57,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Posts.Infrastructu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Posts", "Posts", "{B689F0DD-7DE0-7A43-B677-B5FAD634ACD9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Posts.Api.IntegrationTests", "tests\Posts\Fookbase.Posts.Api.IntegrationTests\Fookbase.Posts.Api.IntegrationTests.csproj", "{C1532150-98BD-42CE-BBE2-FE902E7F6EFD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Posts.Api.IntegrationTests", "backend\tests\Posts\Fookbase.Posts.Api.IntegrationTests\Fookbase.Posts.Api.IntegrationTests.csproj", "{C1532150-98BD-42CE-BBE2-FE902E7F6EFD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Media", "Media", "{CD52D1DB-F69B-63E9-D5FD-9E1F5357CDE4}"
 EndProject
@@ -69,11 +69,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Media.Infrastructu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Media", "Media", "{3B2F0712-A699-5FC4-7338-1D489CF4D61D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Media.Api.IntegrationTests", "tests\Media\Fookbase.Media.Api.IntegrationTests\Fookbase.Media.Api.IntegrationTests.csproj", "{C3FED25F-A8A0-4EE5-9799-F4BFECCDD8CF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Media.Api.IntegrationTests", "backend\tests\Media\Fookbase.Media.Api.IntegrationTests\Fookbase.Media.Api.IntegrationTests.csproj", "{C3FED25F-A8A0-4EE5-9799-F4BFECCDD8CF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Api", "src\Fookbase.Api\Fookbase.Api.csproj", "{092DD534-9CAB-4840-88C6-324D729AF825}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Api", "backend\src\Fookbase.Api\Fookbase.Api.csproj", "{092DD534-9CAB-4840-88C6-324D729AF825}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
