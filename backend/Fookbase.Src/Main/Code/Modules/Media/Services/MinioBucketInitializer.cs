@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Config;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Minio;

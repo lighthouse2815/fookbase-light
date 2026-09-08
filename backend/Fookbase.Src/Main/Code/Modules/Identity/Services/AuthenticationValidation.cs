@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Identity.DTOs;
 using System.ComponentModel.DataAnnotations;
 
 namespace Fookbase.Api.Modules.Identity.Services;

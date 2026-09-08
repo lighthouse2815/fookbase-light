@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Identity.Models;
+using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace Fookbase.Api.Modules.Identity.Services;

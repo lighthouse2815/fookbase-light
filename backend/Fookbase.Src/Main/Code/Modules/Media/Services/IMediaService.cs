@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.DTOs;
 using Fookbase.Api.Modules.Media.Services;
 
 namespace Fookbase.Api.Modules.Media.Services;

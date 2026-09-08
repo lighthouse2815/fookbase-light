@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Services;
 using Minio;
 using Minio.DataModel.Args;

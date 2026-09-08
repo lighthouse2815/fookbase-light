@@ -1,6 +1,7 @@
+using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Media.Models;
-using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Media.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

@@ -1,5 +1,5 @@
 using Fookbase.Api.Shared.Contracts.Media;
-using Fookbase.Api.Modules.Media.Models;
+using Fookbase.Api.Modules.Media.Entities;
 
 namespace Fookbase.Api.Modules.Media.Services;
 

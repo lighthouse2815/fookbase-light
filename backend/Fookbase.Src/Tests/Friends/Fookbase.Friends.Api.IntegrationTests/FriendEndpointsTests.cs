@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Friends.DTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -7,8 +8,8 @@ using System.Text;
 using Fookbase.Api.Shared.Contracts.Friends;
 using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Modules.Friends.Services;
-using Fookbase.Api.Modules.Friends.Models;
-using Fookbase.Api.Modules.Friends.Data;
+using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Friends.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,5 +1,5 @@
 using Fookbase.Api.Shared.Contracts.Identity;
-using Fookbase.Api.Modules.Friends.Models;
+using Fookbase.Api.Modules.Friends.Entities;
 
 namespace Fookbase.Api.Modules.Friends.Services;
 

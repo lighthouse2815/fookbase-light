@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Posts.DTOs;
 using Fookbase.Api.Modules.Posts.Services;
 
 namespace Fookbase.Api.Modules.Posts.Services;

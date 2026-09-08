@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Identity.Models;
+using Fookbase.Api.Modules.Identity.Entities;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 

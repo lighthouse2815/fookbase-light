@@ -1,6 +1,6 @@
 using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Modules.Users.Services;
-using Fookbase.Api.Modules.Users.Models;
+using Fookbase.Api.Modules.Users.Entities;
 
 namespace Fookbase.Api.Modules.Users.Services;
 

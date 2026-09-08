@@ -1,9 +1,10 @@
+using Fookbase.Api.Modules.Identity.Config;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Identity.Models;
+using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Fookbase.Api.Modules.Identity.Services;

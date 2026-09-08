@@ -4,7 +4,7 @@ using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Shared.Contracts.Posts;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Posts.Data;
+using Fookbase.Api.Modules.Posts.Repositories;
 using FriendsEventMessage = Fookbase.Api.Modules.Friends.Services.IntegrationEventMessage;
 using FriendsEventPublisher = Fookbase.Api.Modules.Friends.Services.IIntegrationEventPublisher;
 using FriendsRegistrationHandler = Fookbase.Api.Modules.Friends.Services.IUserRegisteredEventHandler;

@@ -1,5 +1,6 @@
+using Fookbase.Api.Modules.Identity.DTOs;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Identity.Models;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Shared.Contracts.Identity;
 
 namespace Fookbase.Api.Modules.Identity.Services;

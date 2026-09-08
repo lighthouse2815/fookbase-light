@@ -1,18 +1,17 @@
 using Fookbase.Api.Shared.IntegrationEvents;
 using Fookbase.Api.Modules.Posts.Services;
-using Fookbase.Api.Modules.Identity;
+using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Media;
-using Fookbase.Api.Modules.Posts;
-using Fookbase.Api.Modules.Users;
-using Fookbase.Api.Modules.Friends;
+using Fookbase.Api.Modules.Media.Config;
+using Fookbase.Api.Modules.Posts.Config;
+using Fookbase.Api.Modules.Friends.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using FriendsOutboxOptions = Fookbase.Api.Modules.Friends.Services.OutboxOptions;
-using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Services.OutboxOptions;
-using MediaOutboxOptions = Fookbase.Api.Modules.Media.Services.OutboxOptions;
-using PostsOutboxOptions = Fookbase.Api.Modules.Posts.Services.OutboxOptions;
+using FriendsOutboxOptions = Fookbase.Api.Modules.Friends.Config.OutboxOptions;
+using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Config.OutboxOptions;
+using MediaOutboxOptions = Fookbase.Api.Modules.Media.Config.OutboxOptions;
+using PostsOutboxOptions = Fookbase.Api.Modules.Posts.Config.OutboxOptions;
 
 namespace Fookbase.Api;
 

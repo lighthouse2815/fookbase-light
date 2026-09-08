@@ -1,5 +1,7 @@
+using Fookbase.Api.Modules.Posts.Config;
+using Fookbase.Api.Modules.Posts.DTOs;
 using Fookbase.Api.Modules.Posts.Services;
-using Fookbase.Api.Modules.Posts.Models;
+using Fookbase.Api.Modules.Posts.Entities;
 
 namespace Fookbase.Api.Modules.Posts.Services;
 

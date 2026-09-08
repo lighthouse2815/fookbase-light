@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Identity.DTOs;
 using Fookbase.Api.Modules.Identity.Services;
 
 namespace Fookbase.Api.Modules.Identity.Services;

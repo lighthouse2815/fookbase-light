@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.DTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -7,8 +8,8 @@ using System.Text;
 using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Media.Models;
-using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Media.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
