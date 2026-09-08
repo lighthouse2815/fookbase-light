@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Main\Fookbase.Api\Fookbase.Api.csproj" />
+    <ProjectReference Include="..\..\..\Main\Fookbase.Api.csproj" />
   </ItemGroup>
 
 </Project>

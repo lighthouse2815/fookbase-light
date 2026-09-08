@@ -23,7 +23,7 @@ Fookbase.Api :5000
       `-- MinIO
 ```
 
-Backend chỉ có một entry point: `backend/Fookbase.Src/Main/Fookbase.Api`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
+Backend chỉ có một entry point: `backend/Fookbase.Src/Main`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
 
 Năm database module hiện tại được giữ để migration và dữ liệu development cũ tiếp tục tương thích. Đây chỉ là ranh giới lưu trữ nội bộ của cùng một ứng dụng, không phải các service triển khai độc lập.
 
@@ -62,8 +62,8 @@ dotnet tool restore
 
 for context in IdentityDbContext UsersDbContext FriendsDbContext PostsDbContext MediaDbContext; do
   dotnet tool run dotnet-ef database update \
-    --project backend/Fookbase.Src/Main/Fookbase.Api \
-    --startup-project backend/Fookbase.Src/Main/Fookbase.Api \
+    --project backend/Fookbase.Src/Main \
+    --startup-project backend/Fookbase.Src/Main \
     --context "$context"
 done
 ```
@@ -74,7 +74,7 @@ Chạy backend monolith:
 set -a
 source .env
 set +a
-dotnet run --project backend/Fookbase.Src/Main/Fookbase.Api
+dotnet run --project backend/Fookbase.Src/Main
 ```
 
 API chạy tại <http://localhost:5000>, health check tại <http://localhost:5000/health>.
@@ -202,8 +202,8 @@ Các luồng chính:
 
 ```bash
 dotnet tool run dotnet-ef migrations add MigrationName \
-  --project backend/Fookbase.Src/Main/Fookbase.Api \
-  --startup-project backend/Fookbase.Src/Main/Fookbase.Api \
+  --project backend/Fookbase.Src/Main \
+  --startup-project backend/Fookbase.Src/Main \
   --context PostsDbContext \
   --output-dir Modules/Posts/Repositories/Migrations
 ```

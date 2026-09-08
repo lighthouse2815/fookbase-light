@@ -25,7 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Media", "Media", "{3B2F0712
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Media.Api.IntegrationTests", "backend\Fookbase.Src\Tests\Media\Fookbase.Media.Api.IntegrationTests\Fookbase.Media.Api.IntegrationTests.csproj", "{C3FED25F-A8A0-4EE5-9799-F4BFECCDD8CF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Api", "backend\Fookbase.Src\Main\Fookbase.Api\Fookbase.Api.csproj", "{092DD534-9CAB-4840-88C6-324D729AF825}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Api", "backend\Fookbase.Src\Main\Fookbase.Api.csproj", "{092DD534-9CAB-4840-88C6-324D729AF825}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
