@@ -21,8 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\services\Posts\Fookbase.Posts.Api\Fookbase.Posts.Api.csproj" />
-    <ProjectReference Include="..\..\..\services\Posts\Fookbase.Posts.Infrastructure\Fookbase.Posts.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Fookbase.Api\Fookbase.Api.csproj" />
+    <ProjectReference Include="..\..\..\modules\Posts\Fookbase.Posts.Infrastructure\Fookbase.Posts.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

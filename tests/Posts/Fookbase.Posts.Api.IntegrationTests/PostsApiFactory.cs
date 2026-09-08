@@ -13,10 +13,15 @@ public sealed class PostsApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__PostsDatabase")
+            ?? throw new InvalidOperationException("Posts development database connection string is required.");
         builder.UseEnvironment("Testing");
-        builder.UseSetting("RabbitMq:ConsumerEnabled", "false");
+        ConfigureModuleConnections(builder, connectionString);
         builder.UseSetting("Outbox:PublisherEnabled", "false");
-        builder.UseSetting("MediaService:InternalToken", "integration-tests-internal-token-32-chars");
+        builder.UseSetting("Minio:AccessKey", "integration-tests");
+        builder.UseSetting("Minio:SecretKey", "integration-tests");
+        builder.UseSetting("Minio:BucketInitializationEnabled", "false");
+        builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IMediaReadUrlClient>();
@@ -33,5 +38,13 @@ public sealed class PostsApiFactory : WebApplicationFactory<Program>
         dbContext.Database.Migrate();
 
         return host;
+    }
+
+    private static void ConfigureModuleConnections(IWebHostBuilder builder, string connectionString)
+    {
+        foreach (var module in new[] { "Identity", "Users", "Friends", "Posts", "Media" })
+        {
+            builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
+        }
     }
 }

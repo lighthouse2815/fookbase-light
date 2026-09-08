@@ -87,7 +87,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Metadata_is_owner_only_and_internal_read_url_requires_service_token()
+    public async Task Metadata_is_owner_only_and_internal_http_route_is_not_exposed()
     {
         var ownerId = await CreateKnownUserAsync();
         using var owner = CreateAuthenticatedClient(ownerId);
@@ -98,12 +98,8 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
 
         Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync($"/api/media/{intent.MediaId}")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync($"/api/media/{intent.MediaId}")).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized,
+        Assert.Equal(HttpStatusCode.NotFound,
             (await owner.PostAsync($"/internal/media/{intent.MediaId}/read-url", null)).StatusCode);
-        owner.DefaultRequestHeaders.Add("X-Internal-Service-Token", "integration-tests-internal-token-32-chars");
-        var readUrl = await ReadAsync<MediaReadUrlResponse>(
-            await owner.PostAsync($"/internal/media/{intent.MediaId}/read-url", null));
-        Assert.Contains("get=1", readUrl.Url);
     }
 
     [Fact]

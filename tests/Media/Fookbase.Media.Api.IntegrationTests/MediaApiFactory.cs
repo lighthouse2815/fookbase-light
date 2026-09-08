@@ -28,15 +28,11 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
         }
 
         builder.UseEnvironment("Testing");
-        builder.UseSetting("ConnectionStrings:MediaDatabase", mediaConnectionString);
+        ConfigureModuleConnections(builder, mediaConnectionString);
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
-        builder.UseSetting("RabbitMq:UserName", "integration-tests");
-        builder.UseSetting("RabbitMq:Password", "integration-tests");
-        builder.UseSetting("RabbitMq:ConsumerEnabled", "false");
         builder.UseSetting("Outbox:PublisherEnabled", "false");
-        builder.UseSetting("InternalServices:Token", "integration-tests-internal-token-32-chars");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.ConfigureServices(services =>
         {
@@ -56,5 +52,13 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
         dbContext.Database.Migrate();
 
         return host;
+    }
+
+    private static void ConfigureModuleConnections(IWebHostBuilder builder, string connectionString)
+    {
+        foreach (var module in new[] { "Identity", "Users", "Friends", "Posts", "Media" })
+        {
+            builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
+        }
     }
 }

@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\services\Identity\Fookbase.Identity.Api\Fookbase.Identity.Api.csproj" />
-    <ProjectReference Include="..\..\..\services\Identity\Fookbase.Identity.Infrastructure\Fookbase.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Fookbase.Api\Fookbase.Api.csproj" />
+    <ProjectReference Include="..\..\..\modules\Identity\Fookbase.Identity.Infrastructure\Fookbase.Identity.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
