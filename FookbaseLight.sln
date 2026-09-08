@@ -19,9 +19,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Identity", "Identity", "{39
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Identity.Api.IntegrationTests", "backend\tests\Identity\Fookbase.Identity.Api.IntegrationTests\Fookbase.Identity.Api.IntegrationTests.csproj", "{7E246ACA-0B5F-4A52-96FD-5B594AA8ECE6}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "building-blocks", "building-blocks", "{31CBEB51-93DC-9CA1-DA8D-67643319BEE1}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{31CBEB51-93DC-9CA1-DA8D-67643319BEE1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Contracts", "building-blocks\Fookbase.Contracts\Fookbase.Contracts.csproj", "{C1BFAB80-FD37-4EDA-BF0A-DB853B65D8DB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Contracts", "backend\shared\Fookbase.Contracts\Fookbase.Contracts.csproj", "{C1BFAB80-FD37-4EDA-BF0A-DB853B65D8DB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Users", "Users", "{7F5E4303-C61D-8574-96A4-AEBE3E9C691B}"
 EndProject

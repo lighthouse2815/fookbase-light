@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Fookbase.Media.Domain\Fookbase.Media.Domain.csproj" />
-    <ProjectReference Include="..\..\..\..\building-blocks\Fookbase.Contracts\Fookbase.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\shared\Fookbase.Contracts\Fookbase.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
