@@ -4,7 +4,7 @@
 
 Fookbase runs as one ASP.NET Core process, `Fookbase.Api`, on port 5000. Identity, Users, Friends, Posts, and Media remain independent code modules, but they are not independently deployed services.
 
-`Fookbase.Api` is the sole composition root and the only backend project. It registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddPostsModule`, and `AddMediaModule`. Module code is organized under `backend/Fookbase.Api/Modules/<Module>`; HTTP endpoints live in each module's `Endpoints` folder.
+`Fookbase.Api` is the sole composition root and the only backend project. It registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddPostsModule`, and `AddMediaModule`. Module code is organized under `backend/Fookbase.Src/Main/Fookbase.Api/Modules/<Module>`; HTTP endpoints live in each module's `Endpoints` folder.
 
 External local dependencies are PostgreSQL and MinIO. There is no API gateway, RabbitMQ, service discovery, distributed transaction, or HTTP communication between application modules.
 
