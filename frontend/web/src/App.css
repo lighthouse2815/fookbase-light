@@ -1,6 +1,5 @@
-/* App.css — Layout only (Tailwind handles the rest) */
+/* App.css — minimal layout only */
 .app-layout {
   display: flex;
   min-height: 100vh;
-  position: relative;
 }

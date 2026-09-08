@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import './App.css'
 import Sidebar, { type PageId } from './components/Sidebar'
-import ParticleCanvas from './components/effects/ParticleCanvas'
-import FeedPage    from './components/feed/FeedPage'
-import ProfilePage from './components/profile/ProfilePage'
-import ExplorePage from './components/explore/ExplorePage'
+import FeedPage     from './components/feed/FeedPage'
+import ProfilePage  from './components/profile/ProfilePage'
+import ExplorePage  from './components/explore/ExplorePage'
 import MessagesPage from './components/messages/MessagesPage'
 
 function App() {
@@ -20,18 +19,15 @@ function App() {
   }
 
   return (
-    <div className="app-layout relative">
-      {/* Particle background */}
-      <ParticleCanvas />
-
+    <div className="flex min-h-screen bg-bg">
       {/* Sidebar */}
       <Sidebar activePage={activePage} onNavigate={setActivePage} />
 
       {/* Main content */}
       <main
         key={activePage}
-        className="ml-[240px] min-h-screen relative z-10
-                   max-sm:ml-[60px]"
+        className="ml-[240px] min-h-screen flex-1 max-sm:ml-[64px]"
+        style={{ animation: 'fade-in 0.25s ease both' }}
       >
         {renderPage()}
       </main>

@@ -8,85 +8,78 @@ interface PostCardProps {
   style?: React.CSSProperties
 }
 
+const badgeClass: Record<string, string> = {
+  root:   'badge-root',
+  anon:   'badge-anon',
+  cyborg: 'badge-cyborg',
+  neural: 'badge-neural',
+  ghost:  'badge-ghost',
+}
+
 export default function PostCard({ post, author, style }: PostCardProps) {
-  const [liked, setLiked]     = useState(post.isLiked)
+  const [liked,    setLiked]    = useState(post.isLiked)
   const [reposted, setReposted] = useState(post.isReposted)
-  const [likeCount, setLikeCount]     = useState(post.likes)
+  const [likeCount,   setLikeCount]   = useState(post.likes)
   const [repostCount, setRepostCount] = useState(post.reposts)
 
   const handleLike = () => {
     setLiked((v) => !v)
     setLikeCount((n) => liked ? n - 1 : n + 1)
   }
-
   const handleRepost = () => {
     setReposted((v) => !v)
     setRepostCount((n) => reposted ? n - 1 : n + 1)
   }
 
-  const badgeColors: Record<string, string> = {
-    root:   'text-cyber-danger   border-[rgba(255,0,64,0.4)]   bg-[rgba(255,0,64,0.08)]',
-    anon:   'text-cyber-green   border-[rgba(0,255,65,0.4)]   bg-[rgba(0,255,65,0.08)]',
-    cyborg: 'text-cyber-purple  border-[rgba(189,0,255,0.4)]  bg-[rgba(189,0,255,0.08)]',
-    neural: 'text-cyber-cyan    border-[rgba(0,255,255,0.4)]  bg-[rgba(0,255,255,0.08)]',
-    ghost:  'text-cyber-yellow  border-[rgba(255,215,0,0.4)]  bg-[rgba(255,215,0,0.08)]',
-  }
-
   return (
     <article
       style={style}
-      className="group border border-[rgba(0,255,255,0.12)] bg-bg-card rounded-[4px]
+      className="bg-surface rounded-2xl card-shadow border border-border
                  p-4 flex gap-3 transition-all duration-200
-                 hover:border-[rgba(0,255,255,0.28)] hover:shadow-[0_0_16px_rgba(0,255,255,0.06)]"
+                 hover:card-shadow-hover hover:border-[rgba(108,99,255,0.2)]"
     >
-      {/* Avatar */}
+      {/* ── Avatar ─────────────────────────────────────── */}
       <div className="shrink-0">
-        <div
-          className={`w-10 h-10 rounded-[2px] flex items-center justify-center
-                      font-mono text-[11px] text-cyber-cyan border border-[rgba(0,255,255,0.3)]
-                      ${author.isOnline ? 'avatar-online' : ''}`}
-          style={{ background: author.avatarColor }}
-        >
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center
+                         text-[12px] font-bold text-white
+                         ${author.isOnline ? 'avatar-online' : ''}
+                         ${author.avatarColor}`}>
           {author.avatar}
         </div>
       </div>
 
-      {/* Content */}
+      {/* ── Content ────────────────────────────────────── */}
       <div className="flex-1 min-w-0">
+
         {/* Header */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
-          <span className="font-mono text-[13px] text-cyber-cyan tracking-wide">
-            {author.displayName}
-          </span>
-          <span className="font-mono text-[11px] text-text-dim">@{author.handle}</span>
-
-          {/* Badges */}
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mb-1.5">
+          <span className="font-semibold text-[14px] text-text">{author.displayName}</span>
+          <span className="text-[13px] text-text-muted">@{author.handle}</span>
           {author.badges.map((b) => (
-            <span
-              key={b}
-              className={`font-mono text-[9px] tracking-widest uppercase px-1.5 py-px border rounded-[2px] ${badgeColors[b] ?? ''}`}
-            >
-              {b}
-            </span>
+            <span key={b} className={`badge-pill ${badgeClass[b] ?? ''}`}>{b}</span>
           ))}
-
-          <span className="font-mono text-[10px] text-text-dim ml-auto">
-            {formatTimestamp(post.timestamp)}
-          </span>
+          <span className="text-[12px] text-text-light ml-auto">{formatTimestamp(post.timestamp)}</span>
         </div>
 
         {/* Post text */}
-        <p className="text-[14px] text-text-mid leading-relaxed mb-3 whitespace-pre-wrap font-cyber">
+        <p className="text-[14px] text-text leading-relaxed mb-3 whitespace-pre-wrap">
           {post.content}
         </p>
 
         {/* Code snippet */}
         {post.codeSnippet && (
-          <div
-            className="code-block mb-3 text-[12px]"
-            data-lang={post.codeSnippet.lang}
-          >
-            {post.codeSnippet.code}
+          <div className="relative mb-3 rounded-xl overflow-hidden border border-border bg-surface-2">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface-3">
+              <div className="flex gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+              </div>
+              <span className="text-[11px] text-text-muted ml-auto font-medium">{post.codeSnippet.lang}</span>
+            </div>
+            <pre className="px-4 py-3 text-[12px] text-text font-mono leading-relaxed overflow-x-auto whitespace-pre">
+              {post.codeSnippet.code}
+            </pre>
           </div>
         )}
 
@@ -94,14 +87,7 @@ export default function PostCard({ post, author, style }: PostCardProps) {
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="font-mono text-[11px] text-cyber-cyan-dim px-2 py-px
-                           border border-[rgba(0,188,212,0.3)] bg-[rgba(0,188,212,0.06)]
-                           rounded-[2px] cursor-pointer transition-all duration-200
-                           hover:text-cyber-cyan hover:border-[rgba(0,255,255,0.5)]
-                           hover:shadow-[0_0_6px_rgba(0,255,255,0.1)]"
-              >
+              <span key={tag} className="tag-pill text-[12px] px-2.5 py-0.5 rounded-full cursor-pointer transition-all duration-200">
                 {tag}
               </span>
             ))}
@@ -109,49 +95,51 @@ export default function PostCard({ post, author, style }: PostCardProps) {
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-5 pt-2 border-t border-[rgba(0,255,255,0.07)]">
+        <div className="flex items-center gap-1 pt-2.5 border-t border-border -mx-1">
           {/* Like */}
           <button
             type="button"
             onClick={handleLike}
-            className={`flex items-center gap-1.5 font-mono text-[11px] transition-all duration-200 cursor-pointer bg-transparent border-none ${
-              liked
-                ? 'text-cyber-danger [text-shadow:0_0_8px_rgba(255,0,64,0.5)]'
-                : 'text-text-dim hover:text-cyber-danger'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px]
+                        font-medium transition-all duration-200 cursor-pointer bg-transparent border-none
+                        ${liked
+                          ? 'text-like bg-red-50'
+                          : 'text-text-muted hover:text-like hover:bg-red-50'}`}
           >
-            {liked ? '♥' : '♡'} {formatNumber(likeCount)}
+            {liked ? '❤️' : '🤍'} {formatNumber(likeCount)}
           </button>
 
           {/* Repost */}
           <button
             type="button"
             onClick={handleRepost}
-            className={`flex items-center gap-1.5 font-mono text-[11px] transition-all duration-200 cursor-pointer bg-transparent border-none ${
-              reposted
-                ? 'text-cyber-green [text-shadow:0_0_8px_rgba(0,255,65,0.5)]'
-                : 'text-text-dim hover:text-cyber-green'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px]
+                        font-medium transition-all duration-200 cursor-pointer bg-transparent border-none
+                        ${reposted
+                          ? 'text-repost bg-green-50'
+                          : 'text-text-muted hover:text-repost hover:bg-green-50'}`}
           >
-            ⇄ {formatNumber(repostCount)}
+            🔁 {formatNumber(repostCount)}
           </button>
 
           {/* Comment */}
           <button
             type="button"
-            className="flex items-center gap-1.5 font-mono text-[11px] text-text-dim
-                       hover:text-cyber-cyan transition-colors duration-200 cursor-pointer bg-transparent border-none"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px]
+                       font-medium text-text-muted hover:text-info hover:bg-blue-50
+                       transition-all duration-200 cursor-pointer bg-transparent border-none"
           >
-            ◇ {formatNumber(post.comments)}
+            💬 {formatNumber(post.comments)}
           </button>
 
           {/* Share */}
           <button
             type="button"
-            className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-text-dim
-                       hover:text-cyber-cyan transition-colors duration-200 cursor-pointer bg-transparent border-none"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px]
+                       font-medium text-text-muted hover:text-primary hover:bg-purple-50
+                       transition-all duration-200 cursor-pointer bg-transparent border-none ml-auto"
           >
-            ↗ SHARE
+            ↗ Share
           </button>
         </div>
       </div>

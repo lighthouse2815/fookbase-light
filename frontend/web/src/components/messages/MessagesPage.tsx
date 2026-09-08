@@ -15,24 +15,22 @@ export default function MessagesPage() {
   const activeConv = conversations.find((c) => c.id === activeConvId)!
   const partner    = getUserById(activeConv.participantId)!
 
-  // Auto-scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [activeConv.messages])
 
-  // Simulate partner typing then replying
   const simulateReply = (convId: string) => {
     setIsTyping(true)
     setTimeout(() => {
       setIsTyping(false)
       const replies = [
-        'ack. processing...',
-        'copy that. standby.',
-        '[ENCRYPTED_MSG:a4f2...] — key exchange pending',
-        'interesting. tell me more.',
-        'understood. initiating countermeasures.',
-        'nice find. patching my exploit db.',
-        'that\'s a clean PoC. respect.',
+        'Got it! 👍',
+        'Sounds good, thanks!',
+        'Interesting, tell me more.',
+        'On it, will check shortly.',
+        'Haha nice one! 😄',
+        'Yeah totally agree.',
+        'Let me look into that.',
       ]
       const content = replies[Math.floor(Math.random() * replies.length)]
       const newMsg: Message = {
@@ -40,7 +38,6 @@ export default function MessagesPage() {
         senderId: activeConv.participantId,
         content,
         timestamp: new Date(),
-        isEncrypted: content.startsWith('[ENCRYPTED'),
         isRead: true,
       }
       setConversations((prev) =>
@@ -50,7 +47,7 @@ export default function MessagesPage() {
             : c
         )
       )
-    }, 1500 + Math.random() * 1000)
+    }, 1200 + Math.random() * 800)
   }
 
   const handleSend = () => {
@@ -75,82 +72,72 @@ export default function MessagesPage() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (typingTimeout.current) clearTimeout(typingTimeout.current)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
   const unreadCount = (conv: Conversation) =>
     conv.messages.filter((m) => m.senderId !== CURRENT_USER.id && !m.isRead).length
 
   return (
-    <div className="flex h-screen" style={{ animation: 'fade-in 0.3s ease both' }}>
+    <div className="flex h-screen bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
 
-      {/* ── Conversation List ──────────────────────────────── */}
-      <aside className="w-[260px] shrink-0 border-r border-[rgba(0,255,255,0.12)]
-                        flex flex-col h-full max-sm:w-[60px]">
+      {/* ── Conversation List ─────────────────────────────── */}
+      <aside className="w-[280px] shrink-0 border-r border-border bg-surface flex flex-col h-full max-sm:w-16">
 
         {/* Header */}
-        <div className="px-4 py-3 border-b border-[rgba(0,255,255,0.12)]
-                        bg-[rgba(10,14,20,0.9)] backdrop-blur-md flex items-center gap-2">
-          <span className="font-mono text-[10px] text-cyber-cyan tracking-widest">◎</span>
-          <h1 className="font-mono text-[12px] text-text-bright tracking-widest max-sm:hidden">
-            SECURE_COMMS
-          </h1>
+        <div className="px-4 py-4 border-b border-border flex items-center justify-between">
+          <h1 className="font-heading font-bold text-[17px] text-text max-sm:hidden">Messages</h1>
+          <button type="button"
+            className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center
+                       text-text-muted hover:bg-surface-3 transition-colors cursor-pointer border-none">
+            ✏️
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="px-3 py-2 border-b border-border max-sm:hidden">
+          <input type="text" placeholder="Search messages..."
+            className="w-full bg-surface-2 rounded-full text-[12px] text-text px-3 py-2
+                       outline-none placeholder:text-text-light border border-border
+                       focus:input-focus transition-all" />
         </div>
 
         {/* Conversations */}
-        <div className="flex-1 scroll-cyber overflow-y-auto">
+        <div className="flex-1 scroll-smooth overflow-y-auto">
           {conversations.map((conv) => {
-            const p     = getUserById(conv.participantId)!
+            const p      = getUserById(conv.participantId)!
             const unread = unreadCount(conv)
             const isActive = conv.id === activeConvId
-            const lastMsg = conv.messages[conv.messages.length - 1]
+            const lastMsg  = conv.messages[conv.messages.length - 1]
 
             return (
-              <button
-                key={conv.id}
-                type="button"
-                onClick={() => setActiveConvId(conv.id)}
+              <button key={conv.id} type="button" onClick={() => setActiveConvId(conv.id)}
                 className={[
-                  'w-full text-left flex items-center gap-3 px-3 py-3',
-                  'border-b border-[rgba(0,255,255,0.07)] transition-all duration-200',
-                  'cursor-pointer bg-transparent',
-                  isActive
-                    ? 'bg-[rgba(0,255,255,0.06)] border-l-2 border-l-cyber-cyan'
-                    : 'hover:bg-[rgba(0,255,255,0.03)]',
-                ].join(' ')}
-              >
-                {/* Avatar */}
-                <div
-                  className={`w-9 h-9 rounded-[2px] flex items-center justify-center font-mono
-                              text-[10px] text-cyber-cyan border border-[rgba(0,255,255,0.3)] shrink-0
-                              ${p.isOnline ? 'avatar-online' : ''}`}
-                  style={{ background: p.avatarColor }}
-                >
+                  'w-full text-left flex items-center gap-3 px-4 py-3',
+                  'border-b border-border transition-colors cursor-pointer bg-transparent',
+                  isActive ? 'bg-surface-hover border-l-2 border-l-primary' : 'hover:bg-surface-2',
+                ].join(' ')}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px]
+                                 font-bold text-white shrink-0
+                                 ${p.isOnline ? 'avatar-online' : ''} ${p.avatarColor}`}>
                   {p.avatar}
                 </div>
-
-                {/* Info */}
                 <div className="flex-1 min-w-0 max-sm:hidden">
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="font-mono text-[11px] text-text-bright truncate">
+                    <span className={`text-[13px] truncate ${unread > 0 ? 'font-semibold text-text' : 'font-medium text-text'}`}>
                       {p.displayName}
                     </span>
-                    <span className="font-mono text-[9px] text-text-dim shrink-0 ml-1">
+                    <span className="text-[11px] text-text-light shrink-0 ml-1">
                       {formatTimestamp(conv.lastMessageTime)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className={`font-mono text-[10px] truncate ${
-                      lastMsg?.isEncrypted ? 'text-cyber-danger opacity-60 italic' : 'text-text-dim'
-                    }`}>
-                      {lastMsg?.isEncrypted ? '[encrypted]' : lastMsg?.content}
+                    <p className={`text-[12px] truncate ${lastMsg?.isEncrypted ? 'italic text-text-light' : 'text-text-muted'}`}>
+                      {lastMsg?.isEncrypted ? '🔒 Encrypted message' : lastMsg?.content}
                     </p>
                     {unread > 0 && (
-                      <span className="ml-1 w-4 h-4 rounded-[2px] bg-cyber-danger font-mono text-[9px]
-                                       text-white flex items-center justify-center shrink-0">
+                      <span className="ml-1 min-w-[18px] h-[18px] rounded-full gradient-primary
+                                       text-[10px] font-bold text-white flex items-center justify-center px-1 shrink-0">
                         {unread}
                       </span>
                     )}
@@ -162,72 +149,59 @@ export default function MessagesPage() {
         </div>
       </aside>
 
-      {/* ── Chat Window ────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
+      {/* ── Chat Window ───────────────────────────────────── */}
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-bg">
 
         {/* Chat header */}
-        <div className="px-4 py-3 border-b border-[rgba(0,255,255,0.12)]
-                        bg-[rgba(10,14,20,0.9)] backdrop-blur-md flex items-center gap-3">
-          <div
-            className={`w-8 h-8 rounded-[2px] flex items-center justify-center font-mono text-[10px]
-                        text-cyber-cyan border border-[rgba(0,255,255,0.3)]
-                        ${partner.isOnline ? 'avatar-online' : ''}`}
-            style={{ background: partner.avatarColor }}
-          >
+        <div className="px-5 py-4 border-b border-border bg-surface flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px]
+                           font-bold text-white shrink-0
+                           ${partner.isOnline ? 'avatar-online' : ''} ${partner.avatarColor}`}>
             {partner.avatar}
           </div>
           <div>
-            <div className="font-mono text-[12px] text-text-bright">{partner.displayName}</div>
-            <div className={`font-mono text-[9px] ${partner.isOnline ? 'text-cyber-green neon-green' : 'text-text-dim'}`}>
-              {partner.isOnline ? '● ONLINE' : '○ OFFLINE'}
+            <div className="text-[14px] font-semibold text-text">{partner.displayName}</div>
+            <div className={`text-[12px] ${partner.isOnline ? 'text-repost font-medium' : 'text-text-light'}`}>
+              {partner.isOnline ? '● Active now' : '○ Offline'}
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <span className="font-mono text-[9px] text-text-dim tracking-widest">E2E_ENCRYPTED ✓</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-cyber-green shadow-[0_0_6px_rgba(0,255,65,0.5)]" />
+            {['📞', '📹', 'ℹ️'].map((icon) => (
+              <button key={icon} type="button"
+                className="w-9 h-9 rounded-full bg-surface-2 flex items-center justify-center
+                           hover:bg-surface-3 transition-colors cursor-pointer border-none text-base">
+                {icon}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 scroll-cyber overflow-y-auto p-4 flex flex-col gap-3">
+        <div className="flex-1 scroll-smooth overflow-y-auto p-5 flex flex-col gap-3">
           {activeConv.messages.map((msg, i) => {
             const isMine = msg.senderId === CURRENT_USER.id
             return (
-              <div
-                key={msg.id}
+              <div key={msg.id}
                 className={`flex gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
-                style={{ animation: `fade-in 0.2s ease ${i * 0.02}s both` }}
-              >
-                {/* Avatar */}
+                style={{ animation: `scale-in 0.2s ease ${i * 0.015}s both` }}>
+
                 {!isMine && (
-                  <div
-                    className="w-7 h-7 rounded-[2px] flex items-center justify-center font-mono
-                               text-[9px] text-cyber-cyan border border-[rgba(0,255,255,0.3)] shrink-0 mt-1"
-                    style={{ background: partner.avatarColor }}
-                  >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px]
+                                   font-bold text-white shrink-0 mt-1 ${partner.avatarColor}`}>
                     {partner.avatar}
                   </div>
                 )}
 
-                {/* Bubble */}
-                <div className={`max-w-[65%] ${isMine ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}>
                   <div className={[
-                    'px-3 py-2 rounded-[3px] font-mono text-[12px] leading-relaxed',
-                    isMine
-                      ? 'bg-[rgba(0,255,255,0.08)] border border-[rgba(0,255,255,0.25)] text-text-bright'
-                      : 'bg-bg-card border border-[rgba(0,255,255,0.12)] text-text-mid',
-                    msg.isEncrypted ? 'msg-encrypted' : '',
+                    'px-4 py-2.5 text-[14px] leading-relaxed',
+                    isMine ? 'bubble-mine' : 'bubble-theirs',
+                    msg.isEncrypted ? 'opacity-70 italic' : '',
                   ].join(' ')}>
-                    {msg.isEncrypted && (
-                      <span className="text-cyber-danger text-[9px] tracking-widest block mb-1">
-                        🔒 ENCRYPTED
-                      </span>
-                    )}
+                    {msg.isEncrypted && <span className="text-[11px] block mb-1 not-italic">🔒 Encrypted</span>}
                     {msg.content}
                   </div>
-                  <span className="font-mono text-[9px] text-text-dim">
-                    {formatTimestamp(msg.timestamp)}
-                  </span>
+                  <span className="text-[11px] text-text-light px-1">{formatTimestamp(msg.timestamp)}</span>
                 </div>
               </div>
             )
@@ -235,60 +209,59 @@ export default function MessagesPage() {
 
           {/* Typing indicator */}
           {isTyping && (
-            <div className="flex items-center gap-2">
-              <div
-                className="w-7 h-7 rounded-[2px] flex items-center justify-center font-mono
-                           text-[9px] text-cyber-cyan border border-[rgba(0,255,255,0.3)] shrink-0"
-                style={{ background: partner.avatarColor }}
-              >
+            <div className="flex items-end gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px]
+                               font-bold text-white shrink-0 ${partner.avatarColor}`}>
                 {partner.avatar}
               </div>
-              <div className="px-3 py-2 bg-bg-card border border-[rgba(0,255,255,0.12)] rounded-[3px]">
-                <span className="font-mono text-[11px] text-text-dim tracking-widest">
-                  encrypting<span style={{ animation: 'blink 1s step-end infinite' }}>...</span>
-                </span>
+              <div className="bubble-theirs px-4 py-3 flex items-center gap-1">
+                {[0, 1, 2].map((dot) => (
+                  <span key={dot}
+                    className="w-2 h-2 rounded-full bg-text-muted inline-block"
+                    style={{ animation: `pulse-dot 1.2s ease ${dot * 0.2}s infinite` }} />
+                ))}
               </div>
             </div>
           )}
-
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="p-3 border-t border-[rgba(0,255,255,0.12)]
-                        bg-[rgba(10,14,20,0.8)] backdrop-blur-md">
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 relative">
-              <span className="absolute left-3 top-3 font-mono text-[11px] text-cyber-cyan">&gt;</span>
-              <textarea
-                rows={1}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="type encrypted message..."
-                className="w-full bg-bg-input border border-[rgba(0,255,255,0.2)] text-text-bright
-                           font-mono text-[12px] pl-7 pr-3 py-2.5 rounded-[2px] outline-none resize-none
-                           placeholder:text-text-dim transition-all duration-200
-                           focus:border-cyber-cyan focus:shadow-[0_0_8px_rgba(0,255,255,0.15)]"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!draft.trim()}
-              className="px-3 py-2.5 font-mono text-[11px] tracking-widest border rounded-[2px]
-                         transition-all duration-200 cursor-pointer
-                         disabled:opacity-30 disabled:cursor-not-allowed
-                         border-[rgba(0,255,255,0.3)] text-cyber-cyan bg-[rgba(0,255,255,0.05)]
-                         hover:enabled:border-cyber-cyan hover:enabled:bg-[rgba(0,255,255,0.12)]
-                         hover:enabled:shadow-[0_0_12px_rgba(0,255,255,0.2)]"
-            >
-              ▶
+        {/* Input bar */}
+        <div className="px-4 py-3 border-t border-border bg-surface">
+          <div className="flex items-end gap-3 bg-surface-2 rounded-2xl px-4 py-2 border border-border">
+            <button type="button"
+              className="text-primary text-xl cursor-pointer bg-transparent border-none shrink-0 pb-1">
+              😊
             </button>
+            <textarea
+              rows={1}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message..."
+              className="flex-1 bg-transparent border-none text-[14px] text-text outline-none
+                         resize-none placeholder:text-text-light py-1"
+              style={{ maxHeight: 120 }}
+            />
+            {draft.trim() ? (
+              <button type="button" onClick={handleSend}
+                className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center
+                           text-white cursor-pointer border-none shrink-0 mb-0.5
+                           hover:opacity-90 hover:shadow-[0_4px_12px_rgba(108,99,255,0.35)] transition-all">
+                ▶
+              </button>
+            ) : (
+              <div className="flex items-center gap-1 shrink-0 mb-0.5">
+                {['🖼️', '🎙️', '❤️'].map((icon) => (
+                  <button key={icon} type="button"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted
+                               hover:bg-surface-3 transition-colors cursor-pointer border-none text-base">
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <p className="font-mono text-[9px] text-text-dim mt-1.5 tracking-wide">
-            // enter to send · shift+enter for newline · end-to-end encrypted
-          </p>
         </div>
       </main>
     </div>
