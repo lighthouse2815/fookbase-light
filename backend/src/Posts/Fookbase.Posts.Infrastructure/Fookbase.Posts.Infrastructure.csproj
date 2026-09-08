@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Fookbase.Media.Application\Fookbase.Media.Application.csproj" />
-    <ProjectReference Include="..\..\..\building-blocks\Fookbase.Contracts\Fookbase.Contracts.csproj" />
+    <ProjectReference Include="..\Fookbase.Posts.Application\Fookbase.Posts.Application.csproj" />
+    <ProjectReference Include="..\..\..\..\building-blocks\Fookbase.Contracts\Fookbase.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -13,7 +13,6 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
-    <PackageReference Include="Minio" Version="7.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 

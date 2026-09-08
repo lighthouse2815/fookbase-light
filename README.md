@@ -62,7 +62,7 @@ dotnet tool restore
 
 for module in Identity Users Friends Posts Media; do
   dotnet tool run dotnet-ef database update \
-    --project "modules/$module/Fookbase.$module.Infrastructure" \
+    --project "backend/src/$module/Fookbase.$module.Infrastructure" \
     --startup-project backend/src/Fookbase.Api
 done
 ```
@@ -201,7 +201,7 @@ Các luồng chính:
 
 ```bash
 dotnet tool run dotnet-ef migrations add MigrationName \
-  --project modules/Posts/Fookbase.Posts.Infrastructure \
+  --project backend/src/Posts/Fookbase.Posts.Infrastructure \
   --startup-project backend/src/Fookbase.Api \
   --output-dir Persistence/Migrations
 ```

@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Fookbase.Api\Fookbase.Api.csproj" />
-    <ProjectReference Include="..\..\..\..\modules\Media\Fookbase.Media.Infrastructure\Fookbase.Media.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Media\Fookbase.Media.Infrastructure\Fookbase.Media.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

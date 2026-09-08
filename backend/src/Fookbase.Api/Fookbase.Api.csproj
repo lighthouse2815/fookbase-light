@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\modules\Identity\Fookbase.Identity.Infrastructure\Fookbase.Identity.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\modules\Users\Fookbase.Users.Infrastructure\Fookbase.Users.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\modules\Friends\Fookbase.Friends.Infrastructure\Fookbase.Friends.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\modules\Posts\Fookbase.Posts.Infrastructure\Fookbase.Posts.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\modules\Media\Fookbase.Media.Infrastructure\Fookbase.Media.Infrastructure.csproj" />
+    <ProjectReference Include="..\Identity\Fookbase.Identity.Infrastructure\Fookbase.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Users\Fookbase.Users.Infrastructure\Fookbase.Users.Infrastructure.csproj" />
+    <ProjectReference Include="..\Friends\Fookbase.Friends.Infrastructure\Fookbase.Friends.Infrastructure.csproj" />
+    <ProjectReference Include="..\Posts\Fookbase.Posts.Infrastructure\Fookbase.Posts.Infrastructure.csproj" />
+    <ProjectReference Include="..\Media\Fookbase.Media.Infrastructure\Fookbase.Media.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

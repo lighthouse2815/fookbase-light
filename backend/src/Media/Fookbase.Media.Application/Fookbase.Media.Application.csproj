@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Fookbase.Friends.Domain\Fookbase.Friends.Domain.csproj" />
-    <ProjectReference Include="..\..\..\building-blocks\Fookbase.Contracts\Fookbase.Contracts.csproj" />
+    <ProjectReference Include="..\Fookbase.Media.Domain\Fookbase.Media.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\building-blocks\Fookbase.Contracts\Fookbase.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
