@@ -16,12 +16,29 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen" style={{ animation: 'fade-in 0.25s ease both' }}>
 
-      {/* ── Hero Banner ──────────────────────────────────── */}
-      <div className="h-48 gradient-primary relative">
-        {/* Decorative circles */}
-        <div className="absolute right-12 top-8 w-24 h-24 rounded-full bg-white/10" />
-        <div className="absolute right-32 bottom-4 w-12 h-12 rounded-full bg-white/10" />
-        <div className="absolute left-1/3 top-6 w-8 h-8 rounded-full bg-white/10" />
+      {/* ── Hero Banner + Avatar ─────────────────────── */}
+      <div className="relative">
+        <div className="h-48 gradient-primary">
+          {/* Decorative circles */}
+          <div className="absolute right-12 top-8 w-24 h-24 rounded-full bg-white/10" />
+          <div className="absolute right-32 bottom-4 w-12 h-12 rounded-full bg-white/10" />
+          <div className="absolute left-1/3 top-6 w-8 h-8 rounded-full bg-white/10" />
+        </div>
+
+        {/* Avatar + edit — sits on top of banner */}
+        <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 px-5 flex items-end justify-between z-10">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl
+                           font-bold text-white border-4 border-surface shadow-lg
+                           ${user.avatarColor}`}>
+            {user.avatar}
+          </div>
+          <button type="button"
+            className="px-4 py-1.5 rounded-full text-[13px] font-semibold
+                       border-2 border-primary text-primary bg-white
+                       hover:bg-primary hover:text-white transition-all duration-200 cursor-pointer">
+            Edit profile
+          </button>
+        </div>
       </div>
 
       {/* ── Body ─────────────────────────────────────────── */}
@@ -30,22 +47,7 @@ export default function ProfilePage() {
         {/* ── LEFT — Profile info ───────────────────────── */}
         <div className="xl:w-[340px] 2xl:w-[400px] shrink-0 xl:sticky xl:top-0 xl:h-screen
                         xl:overflow-y-auto scroll-smooth xl:border-r xl:border-border
-                        px-5 pb-6 flex flex-col gap-4 bg-surface">
-
-          {/* Avatar + edit button */}
-          <div className="flex items-end justify-between -mt-12 pt-0 mb-1">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl
-                             font-bold text-white border-4 border-surface shadow-lg
-                             ${user.avatarColor}`}>
-              {user.avatar}
-            </div>
-            <button type="button"
-              className="px-4 py-1.5 mt-16 rounded-full text-[13px] font-semibold
-                         border-2 border-primary text-primary bg-white
-                         hover:bg-primary hover:text-white transition-all duration-200 cursor-pointer">
-              Edit profile
-            </button>
-          </div>
+                        px-5 pb-6 pt-12 flex flex-col gap-4 bg-surface">
 
           {/* Name */}
           <div>
@@ -74,7 +76,7 @@ export default function ProfilePage() {
             {[
               { label: 'Followers', value: user.followers },
               { label: 'Following', value: user.following },
-              { label: 'Posts',     value: user.posts },
+              { label: 'Posts', value: user.posts },
             ].map(({ label, value }) => (
               <div key={label}
                 className="bg-surface-2 rounded-xl p-3 text-center cursor-pointer
