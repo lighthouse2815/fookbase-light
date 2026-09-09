@@ -9,7 +9,6 @@ using Fookbase.Api.Modules.Friends;
 using Fookbase.Api.Modules.Users.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using FriendsOutboxOptions = Fookbase.Api.Modules.Friends.OutboxOptions;
 using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Config.OutboxOptions;
 using MediaOutboxOptions = Fookbase.Api.Modules.Media.Config.OutboxOptions;
 using PostsOutboxOptions = Fookbase.Api.Modules.Posts.Config.OutboxOptions;
@@ -40,10 +39,7 @@ internal static class ModuleServiceCollectionExtensions
     public static IServiceCollection AddFriendsModule(
         this IServiceCollection services,
         IConfiguration configuration) =>
-        services.AddFriendsInfrastructure(
-            RequiredConnectionString(configuration, "FriendsDatabase"),
-            configuration.GetSection(FriendsOutboxOptions.SectionName).Get<FriendsOutboxOptions>()
-                ?? new FriendsOutboxOptions());
+        services.AddFriendsInfrastructure(RequiredConnectionString(configuration, "FriendsDatabase"));
 
     public static IServiceCollection AddPostsModule(
         this IServiceCollection services,
@@ -75,8 +71,6 @@ internal static class ModuleServiceCollectionExtensions
     {
         services.AddScoped<InProcessIntegrationEventPublisher>();
         services.AddScoped<Fookbase.Api.Modules.Identity.Services.IIntegrationEventPublisher>(
-            provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
-        services.AddScoped<Fookbase.Api.Modules.Friends.Messaging.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
         services.AddScoped<Fookbase.Api.Modules.Posts.Services.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());

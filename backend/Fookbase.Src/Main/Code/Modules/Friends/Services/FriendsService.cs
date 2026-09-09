@@ -1,7 +1,5 @@
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Common;
-using System.Text.Json;
-using Fookbase.Api.Shared.Contracts.Friends;
 using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Friends.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -165,14 +163,6 @@ public sealed class FriendsService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await AcquirePairLockAsync(pair, cancellationToken);
 
-        if (!await UsersExistAsync(senderUserId, receiverUserId, cancellationToken))
-        {
-            return await RollbackFailureAsync<FriendRequestResponse>(
-                transaction,
-                FriendsOperationError.UserNotFound,
-                cancellationToken);
-        }
-
         if (await IsBlockedAsync(senderUserId, receiverUserId, cancellationToken))
         {
             return await RollbackFailureAsync<FriendRequestResponse>(
@@ -199,10 +189,7 @@ public sealed class FriendsService(
 
         var now = timeProvider.GetUtcNow();
         var request = FriendRequest.Create(Guid.NewGuid(), senderUserId, receiverUserId, now);
-        var integrationEvent = new FriendRequestSentIntegrationEvent(
-            Guid.NewGuid(), request.Id, senderUserId, receiverUserId, now);
         dbContext.FriendRequests.Add(request);
-        AddOutbox(integrationEvent.EventId, FriendRequestSentIntegrationEvent.EventType, integrationEvent, now);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -263,14 +250,7 @@ public sealed class FriendsService(
         var now = timeProvider.GetUtcNow();
         request.Accept(actorUserId, now);
         var friendship = Friendship.Create(Guid.NewGuid(), pair.UserId1, pair.UserId2, now);
-        var integrationEvent = new FriendRequestAcceptedIntegrationEvent(
-            Guid.NewGuid(), request.Id, pair.UserId1, pair.UserId2, now);
         dbContext.Friendships.Add(friendship);
-        AddOutbox(
-            integrationEvent.EventId,
-            FriendRequestAcceptedIntegrationEvent.EventType,
-            integrationEvent,
-            now);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -323,15 +303,7 @@ public sealed class FriendsService(
             return FriendsOperationError.Forbidden;
         }
 
-        var now = timeProvider.GetUtcNow();
-        var integrationEvent = new FriendshipRemovedIntegrationEvent(
-            Guid.NewGuid(), pair.UserId1, pair.UserId2, now);
         dbContext.Friendships.Remove(friendship);
-        AddOutbox(
-            integrationEvent.EventId,
-            FriendshipRemovedIntegrationEvent.EventType,
-            integrationEvent,
-            now);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return FriendsOperationError.None;
@@ -345,12 +317,6 @@ public sealed class FriendsService(
         var pair = UserPair.Create(actorUserId, blockedUserId);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await AcquirePairLockAsync(pair, cancellationToken);
-
-        if (!await UsersExistAsync(actorUserId, blockedUserId, cancellationToken))
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            return FriendsOperationError.UserNotFound;
-        }
 
         if (await dbContext.BlockedUsers.AnyAsync(
                 block => block.BlockerUserId == actorUserId && block.BlockedUserId == blockedUserId,
@@ -369,13 +335,6 @@ public sealed class FriendsService(
         if (friendship is not null)
         {
             dbContext.Friendships.Remove(friendship);
-            var removedEvent = new FriendshipRemovedIntegrationEvent(
-                Guid.NewGuid(), pair.UserId1, pair.UserId2, now);
-            AddOutbox(
-                removedEvent.EventId,
-                FriendshipRemovedIntegrationEvent.EventType,
-                removedEvent,
-                now);
         }
 
         var pendingRequests = await dbContext.FriendRequests
@@ -389,13 +348,6 @@ public sealed class FriendsService(
             pendingRequest.CancelBecauseBlocked(now);
         }
 
-        var blockedEvent = new UserBlockedIntegrationEvent(
-            Guid.NewGuid(), actorUserId, blockedUserId, now);
-        AddOutbox(
-            blockedEvent.EventId,
-            UserBlockedIntegrationEvent.EventType,
-            blockedEvent,
-            now);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return FriendsOperationError.None;
@@ -414,15 +366,7 @@ public sealed class FriendsService(
             cancellationToken);
         if (block is not null)
         {
-            var now = timeProvider.GetUtcNow();
-            var integrationEvent = new UserUnblockedIntegrationEvent(
-                Guid.NewGuid(), actorUserId, blockedUserId, now);
             dbContext.BlockedUsers.Remove(block);
-            AddOutbox(
-                integrationEvent.EventId,
-                UserUnblockedIntegrationEvent.EventType,
-                integrationEvent,
-                now);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -499,12 +443,6 @@ public sealed class FriendsService(
         Guid otherUserId,
         CancellationToken cancellationToken = default)
     {
-        if (!await dbContext.KnownUsers.AnyAsync(user => user.UserId == otherUserId, cancellationToken))
-        {
-            return FriendsOperationResult<RelationshipStatusResponse>.Failure(
-                FriendsOperationError.UserNotFound);
-        }
-
         var pair = UserPair.Create(userId, otherUserId);
         if (await IsBlockedAsync(userId, otherUserId, cancellationToken))
         {
@@ -545,11 +483,6 @@ public sealed class FriendsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!await dbContext.KnownUsers.AnyAsync(user => user.UserId == otherUserId, cancellationToken))
-        {
-            return FriendsOperationResult<MutualFriendsResponse>.Failure(FriendsOperationError.UserNotFound);
-        }
-
         var firstFriends = FriendIds(userId);
         var secondFriends = FriendIds(otherUserId);
         var mutual = firstFriends.Intersect(secondFriends);
@@ -634,14 +567,6 @@ public sealed class FriendsService(
                 ? friendship.UserId2
                 : friendship.UserId1);
 
-    private async Task<bool> UsersExistAsync(
-        Guid firstUserId,
-        Guid secondUserId,
-        CancellationToken cancellationToken) =>
-        await dbContext.KnownUsers.CountAsync(
-            user => user.UserId == firstUserId || user.UserId == secondUserId,
-            cancellationToken) == 2;
-
     private Task<bool> IsBlockedAsync(
         Guid firstUserId,
         Guid secondUserId,
@@ -673,18 +598,6 @@ public sealed class FriendsService(
 
     private static string PairLockKey(UserPair pair) =>
         $"{pair.UserId1:N}:{pair.UserId2:N}";
-
-    private void AddOutbox(
-        Guid eventId,
-        string eventType,
-        object integrationEvent,
-        DateTimeOffset occurredAtUtc) =>
-        dbContext.OutboxMessages.Add(
-            OutboxMessage.Create(
-                eventId,
-                eventType,
-                JsonSerializer.Serialize(integrationEvent, integrationEvent.GetType()),
-                occurredAtUtc));
 
     private static FriendRequestResponse ToResponse(FriendRequest request) =>
         new(
@@ -743,8 +656,6 @@ public sealed class FriendsService(
 
     private static ApplicationError ToApplicationError(FriendsOperationError error) => error switch
     {
-        FriendsOperationError.UserNotFound => new(
-            "user_not_found", "The target user was not found.", ApplicationErrorType.NotFound),
         FriendsOperationError.RequestNotFound => new(
             "request_not_found", "The friend request was not found.", ApplicationErrorType.NotFound),
         FriendsOperationError.FriendshipNotFound => new(
@@ -774,7 +685,6 @@ public sealed class FriendsService(
     private enum FriendsOperationError
     {
         None,
-        UserNotFound,
         RequestNotFound,
         FriendshipNotFound,
         Forbidden,

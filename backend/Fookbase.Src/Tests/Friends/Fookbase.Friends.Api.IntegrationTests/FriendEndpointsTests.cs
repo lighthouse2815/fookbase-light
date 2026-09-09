@@ -5,10 +5,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using Fookbase.Api.Shared.Contracts.Friends;
-using Fookbase.Api.Shared.Contracts.Identity;
-using Fookbase.Api.Modules.Friends.Services;
-using Fookbase.Api.Modules.Friends.Messaging;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Friends.Data;
 using Microsoft.EntityFrameworkCore;
@@ -34,7 +30,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     [Fact]
     public async Task Send_request_rejects_self_duplicate_and_reverse_pending_request()
     {
-        var users = await CreateKnownUsersAsync(2);
+        var users = CreateUserIds(2);
         var userA = users[0];
         var userB = users[1];
         using var clientA = CreateAuthenticatedClient(userA);
@@ -58,16 +54,12 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             item => item.UserId1 == Min(userA, userB) &&
                     item.UserId2 == Max(userA, userB) &&
                     item.Status == FriendRequestStatus.Pending));
-        var outboxMessages = await dbContext.OutboxMessages.AsNoTracking().ToListAsync();
-        Assert.Equal(1, outboxMessages.Count(
-            item => item.Type == FriendRequestSentIntegrationEvent.EventType &&
-                    item.Payload.Contains(request.Id.ToString(), StringComparison.Ordinal)));
     }
 
     [Fact]
     public async Task Concurrent_reverse_requests_create_only_one_pending_relationship()
     {
-        var users = await CreateKnownUsersAsync(2);
+        var users = CreateUserIds(2);
         var userA = users[0];
         var userB = users[1];
         using var clientA = CreateAuthenticatedClient(userA);
@@ -90,7 +82,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     [Fact]
     public async Task Only_receiver_can_accept_and_concurrent_accept_creates_one_friendship()
     {
-        var users = await CreateKnownUsersAsync(3);
+        var users = CreateUserIds(3);
         var userA = users[0];
         var userB = users[1];
         var userC = users[2];
@@ -119,16 +111,12 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
         Assert.Equal(1, await dbContext.Friendships.CountAsync(
             item => item.UserId1 == Min(userA, userB) && item.UserId2 == Max(userA, userB)));
-        var outboxMessages = await dbContext.OutboxMessages.AsNoTracking().ToListAsync();
-        Assert.Equal(1, outboxMessages.Count(
-            item => item.Type == FriendRequestAcceptedIntegrationEvent.EventType &&
-                    item.Payload.Contains(request.Id.ToString(), StringComparison.Ordinal)));
     }
 
     [Fact]
     public async Task Receiver_can_decline_and_sender_can_cancel()
     {
-        var users = await CreateKnownUsersAsync(3);
+        var users = CreateUserIds(3);
         var declinedRequest = await SendRequestAsync(users[0], users[1]);
         var cancelledRequest = await SendRequestAsync(users[0], users[2]);
         using var receiver = CreateAuthenticatedClient(users[1]);
@@ -153,7 +141,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     [Fact]
     public async Task Lists_and_status_reflect_pending_friendship_and_unfriend()
     {
-        var users = await CreateKnownUsersAsync(2);
+        var users = CreateUserIds(2);
         var userA = users[0];
         var userB = users[1];
         var request = await SendRequestAsync(userA, userB);
@@ -187,16 +175,12 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             $"/api/friends/status/{userB}"))!.Status);
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
-        Assert.Contains(await dbContext.OutboxMessages.ToListAsync(),
-            item => item.Type == FriendshipRemovedIntegrationEvent.EventType &&
-                    item.Payload.Contains(userA.ToString()) &&
-                    item.Payload.Contains(userB.ToString()));
     }
 
     [Fact]
     public async Task Block_removes_friendship_cancels_pending_and_prevents_both_directions()
     {
-        var users = await CreateKnownUsersAsync(3);
+        var users = CreateUserIds(3);
         var userA = users[0];
         var userB = users[1];
         var userC = users[2];
@@ -231,15 +215,12 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             item => item.UserId1 == Min(userA, userB) && item.UserId2 == Max(userA, userB)));
         Assert.Equal(FriendRequestStatus.Cancelled,
             (await dbContext.FriendRequests.FindAsync(pending.Id))!.Status);
-        Assert.Contains(await dbContext.OutboxMessages.ToListAsync(),
-            item => item.Type == UserBlockedIntegrationEvent.EventType &&
-                    item.Payload.Contains(userB.ToString()));
     }
 
     [Fact]
     public async Task Unblock_does_not_restore_friendship()
     {
-        var users = await CreateKnownUsersAsync(2);
+        var users = CreateUserIds(2);
         var userA = users[0];
         var userB = users[1];
         await BecomeFriendsAsync(userA, userB);
@@ -257,16 +238,12 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
 
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
-        Assert.Contains(await dbContext.OutboxMessages.ToListAsync(),
-            item => item.Type == UserUnblockedIntegrationEvent.EventType &&
-                    item.Payload.Contains(userA.ToString()) &&
-                    item.Payload.Contains(userB.ToString()));
     }
 
     [Fact]
     public async Task Mutual_friends_returns_intersection_from_friends_database()
     {
-        var users = await CreateKnownUsersAsync(4);
+        var users = CreateUserIds(4);
         var userA = users[0];
         var userB = users[1];
         var mutual1 = users[2];
@@ -287,31 +264,9 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     }
 
     [Fact]
-    public async Task Known_user_projection_is_idempotent()
-    {
-        var integrationEvent = new UserRegisteredIntegrationEvent(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            $"known_{Guid.NewGuid():N}"[..20],
-            DateTimeOffset.UtcNow);
-
-        var first = await HandleUserRegisteredAsync(integrationEvent);
-        var duplicate = await HandleUserRegisteredAsync(integrationEvent);
-
-        Assert.True(first);
-        Assert.False(duplicate);
-        using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
-        Assert.Equal(1, await dbContext.KnownUsers.CountAsync(
-            user => user.UserId == integrationEvent.UserId));
-        Assert.Equal(1, await dbContext.InboxMessages.CountAsync(
-            message => message.EventId == integrationEvent.EventId));
-    }
-
-    [Fact]
     public async Task Pagination_rejects_excessive_limit()
     {
-        var user = (await CreateKnownUsersAsync(1))[0];
+        var user = CreateUserIds(1)[0];
         using var client = CreateAuthenticatedClient(user);
 
         var response = await client.GetAsync("/api/friends?limit=101");
@@ -338,30 +293,8 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         response.EnsureSuccessStatusCode();
     }
 
-    private async Task<Guid[]> CreateKnownUsersAsync(int count)
-    {
-        var userIds = new Guid[count];
-        for (var index = 0; index < count; index++)
-        {
-            var integrationEvent = new UserRegisteredIntegrationEvent(
-                Guid.NewGuid(),
-                Guid.NewGuid(),
-                $"user_{Guid.NewGuid():N}"[..21],
-                DateTimeOffset.UtcNow);
-            await HandleUserRegisteredAsync(integrationEvent);
-            userIds[index] = integrationEvent.UserId;
-        }
-
-        return userIds;
-    }
-
-    private async Task<bool> HandleUserRegisteredAsync(
-        UserRegisteredIntegrationEvent integrationEvent)
-    {
-        using var scope = factory.Services.CreateScope();
-        var handler = scope.ServiceProvider.GetRequiredService<UserRegisteredEventHandler>();
-        return await handler.HandleAsync(integrationEvent);
-    }
+    private static Guid[] CreateUserIds(int count) =>
+        Enumerable.Range(0, count).Select(_ => Guid.NewGuid()).ToArray();
 
     private HttpClient CreateAuthenticatedClient(Guid userId)
     {

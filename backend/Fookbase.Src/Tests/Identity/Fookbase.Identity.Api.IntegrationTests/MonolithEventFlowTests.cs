@@ -19,7 +19,7 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
     : IClassFixture<MonolithApiFactory>
 {
     [Fact]
-    public async Task Registration_is_projected_to_every_module_without_a_message_broker()
+    public async Task Registration_is_projected_to_modules_that_require_user_data()
     {
         using var client = factory.CreateClient();
         var suffix = Guid.NewGuid().ToString("N")[..16];
@@ -40,8 +40,6 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
                 .OutboxMessages.AsNoTracking().ToListAsync();
             return await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
                        .UserProfiles.AnyAsync(item => item.UserId == userId) &&
-                   await scope.ServiceProvider.GetRequiredService<FriendsDbContext>()
-                       .KnownUsers.AnyAsync(item => item.UserId == userId) &&
                    await scope.ServiceProvider.GetRequiredService<PostsDbContext>()
                        .KnownUsers.AnyAsync(item => item.UserId == userId) &&
                    await scope.ServiceProvider.GetRequiredService<MediaDbContext>()
