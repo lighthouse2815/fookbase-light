@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
 import { CONVERSATIONS, CURRENT_USER, getUserById, formatTimestamp } from '../../data/mockData'
 import type { Message, Conversation } from '../../data/mockData'
 
@@ -6,14 +6,14 @@ let nextMsgId = 200
 
 export default function MessagesPage() {
   const [conversations, setConversations] = useState(CONVERSATIONS)
-  const [activeConvId, setActiveConvId]   = useState<string>(CONVERSATIONS[0].id)
-  const [draft, setDraft]                 = useState('')
-  const [isTyping, setIsTyping]           = useState(false)
+  const [activeConvId, setActiveConvId] = useState<string>(CONVERSATIONS[0].id)
+  const [draft, setDraft] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const typingTimeout  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const activeConv = conversations.find((c) => c.id === activeConvId)!
-  const partner    = getUserById(activeConv.participantId)!
+  const partner = getUserById(activeConv.participantId)!
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -70,9 +70,12 @@ export default function MessagesPage() {
     simulateReply(activeConvId)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (typingTimeout.current) clearTimeout(typingTimeout.current)
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
   }
 
   const unreadCount = (conv: Conversation) =>
@@ -80,10 +83,8 @@ export default function MessagesPage() {
 
   return (
     <div className="flex h-[calc(100vh-56px)] bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
-
       {/* ── Conversation List ─────────────────────────────── */}
       <aside className="w-[280px] shrink-0 border-r border-border bg-surface flex flex-col h-full max-sm:w-16">
-
         {/* Header */}
         <div className="px-4 py-4 border-b border-border flex items-center justify-between">
           <h1 className="font-heading font-bold text-[17px] text-text max-sm:hidden">Messages</h1>
@@ -111,10 +112,10 @@ export default function MessagesPage() {
         {/* Conversations */}
         <div className="flex-1 scroll-smooth overflow-y-auto">
           {conversations.map((conv) => {
-            const p      = getUserById(conv.participantId)!
+            const p = getUserById(conv.participantId)!
             const unread = unreadCount(conv)
             const isActive = conv.id === activeConvId
-            const lastMsg  = conv.messages[conv.messages.length - 1]
+            const lastMsg = conv.messages[conv.messages.length - 1]
 
             return (
               <button
@@ -139,9 +140,8 @@ export default function MessagesPage() {
                 <div className="flex-1 min-w-0 max-sm:hidden">
                   <div className="flex items-center justify-between mb-0.5">
                     <span
-                      className={`text-[13px] truncate ${
-                        unread > 0 ? 'font-semibold text-text' : 'font-medium text-text'
-                      }`}
+                      className={`text-[13px] truncate ${unread > 0 ? 'font-semibold text-text' : 'font-medium text-text'
+                        }`}
                     >
                       {p.displayName}
                     </span>
@@ -151,13 +151,12 @@ export default function MessagesPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <p
-                      className={`text-[12px] truncate ${
-                        lastMsg?.isEncrypted
+                      className={`text-[12px] truncate ${lastMsg?.isEncrypted
                           ? 'italic text-text-light'
                           : unread > 0
-                          ? 'text-text font-medium'
-                          : 'text-text-muted'
-                      }`}
+                            ? 'text-text font-medium'
+                            : 'text-text-muted'
+                        }`}
                     >
                       {lastMsg?.isEncrypted ? '🔒 Encrypted message' : lastMsg?.content}
                     </p>
@@ -179,7 +178,6 @@ export default function MessagesPage() {
 
       {/* ── Chat Window ───────────────────────────────────── */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-bg">
-
         {/* Chat header */}
         <div className="px-5 py-4 border-b border-border bg-surface flex items-center gap-3">
           <div
@@ -325,3 +323,4 @@ export default function MessagesPage() {
     </div>
   )
 }
+

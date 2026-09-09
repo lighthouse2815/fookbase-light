@@ -1,8 +1,10 @@
+import type { CSSProperties } from 'react'
+
 interface GlitchTextProps {
   text: string
   className?: string
   tag?: 'h1' | 'h2' | 'h3' | 'span' | 'div' | 'p'
-  style?: React.CSSProperties
+  style?: CSSProperties
 }
 
 export default function GlitchText({
@@ -21,3 +23,4 @@ export default function GlitchText({
     </Tag>
   )
 }
+
