@@ -9,7 +9,7 @@ using Fookbase.Api.Shared.Contracts.Friends;
 using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Friends.Entities;
-using Fookbase.Api.Modules.Friends.Repositories;
+using Fookbase.Api.Modules.Friends.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

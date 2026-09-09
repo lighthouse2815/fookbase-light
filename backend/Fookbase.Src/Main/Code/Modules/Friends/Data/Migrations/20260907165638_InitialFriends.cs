@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Fookbase.Api.Modules.Friends.Repositories.Migrations
+namespace Fookbase.Api.Modules.Friends.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialFriends : Migration

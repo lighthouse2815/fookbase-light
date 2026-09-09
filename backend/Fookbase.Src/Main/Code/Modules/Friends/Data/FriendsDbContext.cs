@@ -1,7 +1,7 @@
 using Fookbase.Api.Modules.Friends.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Friends.Repositories;
+namespace Fookbase.Api.Modules.Friends.Data;
 
 public sealed class FriendsDbContext(DbContextOptions<FriendsDbContext> options)
     : DbContext(options)
@@ -23,7 +23,7 @@ public sealed class FriendsDbContext(DbContextOptions<FriendsDbContext> options)
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(FriendsDbContext).Assembly,
             type => type.Namespace?.StartsWith(
-                "Fookbase.Api.Modules.Friends.Config",
+                "Fookbase.Api.Modules.Friends.Data.Configurations",
                 StringComparison.Ordinal) == true);
     }
 }

@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Friends.Config;
+namespace Fookbase.Api.Modules.Friends;
 
 public sealed class OutboxOptions
 {

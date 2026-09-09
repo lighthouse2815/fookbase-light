@@ -1,7 +1,7 @@
 using Fookbase.Api.Modules.Identity.DTOs;
 using System.Net;
 using System.Net.Http.Json;
-using Fookbase.Api.Modules.Friends.Repositories;
+using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Repositories;
 using Fookbase.Api.Modules.Media.Repositories;

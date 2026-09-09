@@ -1,6 +1,6 @@
-using Fookbase.Api.Modules.Friends.Config;
+using Fookbase.Api.Modules.Friends;
 using Fookbase.Api.Modules.Friends.Services;
-using Fookbase.Api.Modules.Friends.Repositories;
+using Fookbase.Api.Modules.Friends.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
