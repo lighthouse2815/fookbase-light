@@ -3,6 +3,7 @@ using Fookbase.Api.Shared.Contracts.Friends;
 using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Shared.Contracts.Posts;
+using Fookbase.Api.Modules.Media.Repositories;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Posts.Repositories;
 using FriendsEventMessage = Fookbase.Api.Modules.Friends.Services.IntegrationEventMessage;

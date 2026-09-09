@@ -6,6 +6,7 @@ using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Friends.Config;
+using Fookbase.Api.Modules.Users.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using FriendsOutboxOptions = Fookbase.Api.Modules.Friends.Config.OutboxOptions;
