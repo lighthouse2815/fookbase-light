@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Posts.Services;
+namespace Fookbase.Api.Modules.Posts.Common;
 
 public enum ApplicationErrorType
 {

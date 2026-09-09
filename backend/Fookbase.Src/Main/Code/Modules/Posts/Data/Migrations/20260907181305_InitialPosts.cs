@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Fookbase.Api.Modules.Posts.Repositories.Migrations
+namespace Fookbase.Api.Modules.Posts.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialPosts : Migration

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Fookbase.Api.Modules.Posts.Repositories;
+namespace Fookbase.Api.Modules.Posts.Data;
 
 public sealed class PostsDbContextFactory : IDesignTimeDbContextFactory<PostsDbContext>
 {

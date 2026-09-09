@@ -4,13 +4,13 @@ using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Shared.Contracts.Posts;
 using Fookbase.Api.Modules.Media.Repositories;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Posts.Repositories;
+using Fookbase.Api.Modules.Posts.Messaging;
 using IdentityEventMessage = Fookbase.Api.Modules.Identity.Messaging.IntegrationEventMessage;
 using IdentityEventPublisher = Fookbase.Api.Modules.Identity.Messaging.IIntegrationEventPublisher;
 using MediaEventMessage = Fookbase.Api.Modules.Media.Services.IntegrationEventMessage;
 using MediaEventPublisher = Fookbase.Api.Modules.Media.Services.IIntegrationEventPublisher;
-using PostsEventMessage = Fookbase.Api.Modules.Posts.Services.IntegrationEventMessage;
-using PostsEventPublisher = Fookbase.Api.Modules.Posts.Services.IIntegrationEventPublisher;
+using PostsEventMessage = Fookbase.Api.Modules.Posts.Messaging.IntegrationEventMessage;
+using PostsEventPublisher = Fookbase.Api.Modules.Posts.Messaging.IIntegrationEventPublisher;
 using UsersRegistrationHandler = Fookbase.Api.Modules.Users.Messaging.UserRegisteredEventHandler;
 
 namespace Fookbase.Api.Shared.IntegrationEvents;

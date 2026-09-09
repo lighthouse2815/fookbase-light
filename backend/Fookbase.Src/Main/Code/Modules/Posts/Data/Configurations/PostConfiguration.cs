@@ -2,7 +2,7 @@ using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Fookbase.Api.Modules.Posts.Config;
+namespace Fookbase.Api.Modules.Posts.Data.Configurations;
 
 internal sealed class PostConfiguration : IEntityTypeConfiguration<Post>
 {

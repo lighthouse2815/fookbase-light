@@ -1,10 +1,11 @@
 using Fookbase.Api.Shared.Contracts.Friends;
 using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Media;
+using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Posts.Repositories;
+namespace Fookbase.Api.Modules.Posts.Messaging;
 
 public sealed class EventProjectionStore(
     PostsDbContext dbContext,

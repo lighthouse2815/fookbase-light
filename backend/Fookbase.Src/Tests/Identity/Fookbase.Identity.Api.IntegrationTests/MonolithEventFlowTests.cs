@@ -6,7 +6,7 @@ using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Media.Repositories;
-using Fookbase.Api.Modules.Posts.Repositories;
+using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Users.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

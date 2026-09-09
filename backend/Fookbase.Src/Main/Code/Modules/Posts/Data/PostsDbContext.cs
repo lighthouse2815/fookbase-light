@@ -1,7 +1,7 @@
 using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Posts.Repositories;
+namespace Fookbase.Api.Modules.Posts.Data;
 
 public sealed class PostsDbContext(DbContextOptions<PostsDbContext> options) : DbContext(options)
 {
@@ -21,7 +21,7 @@ public sealed class PostsDbContext(DbContextOptions<PostsDbContext> options) : D
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(PostsDbContext).Assembly,
             type => type.Namespace?.StartsWith(
-                "Fookbase.Api.Modules.Posts.Config",
+                "Fookbase.Api.Modules.Posts.Data.Configurations",
                 StringComparison.Ordinal) == true);
     }
 }

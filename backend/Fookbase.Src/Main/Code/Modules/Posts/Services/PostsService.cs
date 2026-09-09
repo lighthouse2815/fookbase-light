@@ -1,6 +1,7 @@
 using System.Text.Json;
+using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Config;
-using Fookbase.Api.Modules.Posts.Repositories;
+using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Posts.DTOs;
 using Fookbase.Api.Shared.Contracts.Posts;
 using Fookbase.Api.Modules.Posts.Services;

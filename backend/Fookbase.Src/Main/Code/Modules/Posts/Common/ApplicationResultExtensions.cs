@@ -1,7 +1,7 @@
-using Fookbase.Api.Modules.Posts.Services;
+using Fookbase.Api.Modules.Posts.Common;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fookbase.Api.Modules.Posts.Controllers;
+namespace Fookbase.Api.Modules.Posts.Common;
 
 internal static class ApplicationResultExtensions
 {
