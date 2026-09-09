@@ -3,7 +3,7 @@ using System.Security.Claims;
 using Fookbase.Api.Modules.Friends.Common;
 using Fookbase.Api.Modules.Friends.Services;
 
-namespace Fookbase.Api.Modules.Friends.Controllers;
+namespace Fookbase.Api.Modules.Friends.Endpoints;
 
 public static class FriendEndpoints
 {

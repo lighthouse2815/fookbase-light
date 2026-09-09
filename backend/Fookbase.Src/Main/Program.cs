@@ -2,7 +2,7 @@ using Fookbase.Api.Modules.Identity.Config;
 using System.Text;
 using Fookbase.Api;
 using Fookbase.Api.Shared.ErrorHandling;
-using Fookbase.Api.Modules.Friends.Controllers;
+using Fookbase.Api.Modules.Friends.Endpoints;
 using Fookbase.Api.Modules.Identity.Controllers;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Controllers;

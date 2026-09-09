@@ -1,7 +1,6 @@
-using Fookbase.Api.Modules.Friends.Common;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fookbase.Api.Modules.Friends.Controllers;
+namespace Fookbase.Api.Modules.Friends.Common;
 
 internal static class ApplicationResultExtensions
 {
