@@ -10,8 +10,11 @@ export default function ExplorePage() {
   const [query, setQuery] = useState('')
   const { session } = useAuth()
   const [users, setUsers] = useState<UserProfile[]>([])
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [nextUserOffset, setNextUserOffset] = useState(0)
   const [userSearchError, setUserSearchError] = useState<string | null>(null)
   const [isSearchingUsers, setIsSearchingUsers] = useState(true)
+  const [isLoadingMoreUsers, setIsLoadingMoreUsers] = useState(false)
 
   const trimmedQuery = query.trim().toLowerCase()
 
@@ -24,7 +27,11 @@ export default function ExplorePage() {
       setIsSearchingUsers(true)
       setUserSearchError(null)
       void usersApi.search(query)
-        .then((page) => setUsers(page.items.filter((user) => user.userId !== session!.user.id)))
+        .then((page) => {
+          setUsers(page.items.filter((user) => user.userId !== session!.user.id))
+          setTotalUsers(page.total)
+          setNextUserOffset(page.offset + page.items.length)
+        })
         .catch((error: unknown) => {
           setUserSearchError(error instanceof ApiError ? error.message : 'Không thể tìm người dùng.')
         })
@@ -33,6 +40,25 @@ export default function ExplorePage() {
 
     return () => window.clearTimeout(timeoutId)
   }, [query, session])
+
+  const loadMoreUsers = async () => {
+    setIsLoadingMoreUsers(true)
+    setUserSearchError(null)
+
+    try {
+      const page = await usersApi.search(query, nextUserOffset)
+      setUsers((currentUsers) => [
+        ...currentUsers,
+        ...page.items.filter((user) => user.userId !== session!.user.id && !currentUsers.some((item) => item.userId === user.userId)),
+      ])
+      setTotalUsers(page.total)
+      setNextUserOffset(page.offset + page.items.length)
+    } catch (error) {
+      setUserSearchError(error instanceof ApiError ? error.message : 'Không thể tìm người dùng.')
+    } finally {
+      setIsLoadingMoreUsers(false)
+    }
+  }
 
   return (
     <div
@@ -152,6 +178,16 @@ export default function ExplorePage() {
                     <Link to={`/profile/${user.userId}`} className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 shrink-0 no-underline bg-primary text-white hover:bg-primary-dark">View</Link>
                   </div>
               ))
+            )}
+            {nextUserOffset < totalUsers && (
+              <button
+                type="button"
+                onClick={() => void loadMoreUsers()}
+                disabled={isLoadingMoreUsers}
+                className="rounded-lg border border-border bg-surface-2 hover:bg-surface-hover disabled:opacity-60 py-2 text-sm font-semibold text-text cursor-pointer"
+              >
+                {isLoadingMoreUsers ? 'Loading...' : 'Load more users'}
+              </button>
             )}
           </div>
         </section>

@@ -15,14 +15,20 @@ export default function FeedPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [authors, setAuthors] = useState<Record<string, UserProfile>>({})
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [totalPosts, setTotalPosts] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  const loadFeed = async () => {
-    setIsLoading(true)
+  const loadFeed = async (offset = 0, append = false) => {
+    if (append) {
+      setIsLoadingMore(true)
+    } else {
+      setIsLoading(true)
+    }
     setError(null)
 
     try {
-      const page = await postsApi.getFeed()
+      const page = await postsApi.getFeed(offset)
       const userIds = [...new Set(page.items.map((post) => post.authorUserId))]
       const profileResults = await Promise.allSettled(userIds.map((userId) => usersApi.getById(userId)))
       const profiles: Record<string, UserProfile> = {}
@@ -30,12 +36,19 @@ export default function FeedPage() {
         if (result.status === 'fulfilled') profiles[userIds[index]] = result.value
       })
 
-      setPosts(page.items)
-      setAuthors(profiles)
+      setPosts((currentPosts) => append
+        ? [...currentPosts, ...page.items.filter((post) => !currentPosts.some((item) => item.id === post.id))]
+        : page.items)
+      setAuthors((currentAuthors) => append ? { ...currentAuthors, ...profiles } : profiles)
+      setTotalPosts(page.total)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải bảng tin.')
     } finally {
-      setIsLoading(false)
+      if (append) {
+        setIsLoadingMore(false)
+      } else {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -51,6 +64,7 @@ export default function FeedPage() {
     const mediaIds = file ? [await mediaApi.uploadFile(file)] : []
     const post = await postsApi.create({ content, privacy: 'public', mediaIds })
     setPosts((currentPosts) => [post, ...currentPosts])
+    setTotalPosts((currentTotal) => currentTotal + 1)
     if (!authors[post.authorUserId]) {
       const profile = await usersApi.getById(post.authorUserId)
       setAuthors((currentAuthors) => ({ ...currentAuthors, [post.authorUserId]: profile }))
@@ -104,6 +118,16 @@ export default function FeedPage() {
               onPostDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))}
             />
           ))}
+          {posts.length < totalPosts && (
+            <button
+              type="button"
+              onClick={() => void loadFeed(posts.length, true)}
+              disabled={isLoadingMore}
+              className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
+            >
+              {isLoadingMore ? 'Loading...' : 'Load more posts'}
+            </button>
+          )}
         </div>
       </div>
 

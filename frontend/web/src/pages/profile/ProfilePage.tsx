@@ -88,6 +88,7 @@ export default function ProfilePage() {
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([])
   const [friendProfiles, setFriendProfiles] = useState<Record<string, UserProfile>>({})
   const [isRelationshipsLoading, setIsRelationshipsLoading] = useState(true)
+  const [isLoadingMoreFriends, setIsLoadingMoreFriends] = useState(false)
   const [relationshipError, setRelationshipError] = useState<string | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
   const [relationshipUserId, setRelationshipUserId] = useState('')
@@ -121,7 +122,7 @@ export default function ProfilePage() {
 
     try {
       const [friendsPage, incomingPage, outgoingPage, blockedPage] = await Promise.all([
-        friendsApi.getFriends(),
+        friendsApi.getFriends(0, 20),
         friendsApi.getIncomingRequests(),
         friendsApi.getOutgoingRequests(),
         friendsApi.getBlockedUsers(),
@@ -190,6 +191,35 @@ export default function ProfilePage() {
       )
     } finally {
       setActionId(null)
+    }
+  }
+
+  const loadMoreFriends = async () => {
+    setIsLoadingMoreFriends(true)
+    setRelationshipError(null)
+
+    try {
+      const page = await friendsApi.getFriends(friends.items.length, 20)
+      const profileResults = await Promise.allSettled(
+        page.items.map((friend) => usersApi.getById(friend.userId)),
+      )
+      const profiles: Record<string, UserProfile> = {}
+      profileResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') profiles[page.items[index].userId] = result.value
+      })
+
+      setFriends((currentFriends) => ({
+        ...page,
+        items: [
+          ...currentFriends.items,
+          ...page.items.filter((friend) => !currentFriends.items.some((item) => item.userId === friend.userId)),
+        ],
+      }))
+      setFriendProfiles((currentProfiles) => ({ ...currentProfiles, ...profiles }))
+    } catch (error) {
+      setRelationshipError(error instanceof ApiError ? error.message : 'Không thể tải thêm bạn bè.')
+    } finally {
+      setIsLoadingMoreFriends(false)
     }
   }
 
@@ -848,6 +878,16 @@ export default function ProfilePage() {
                 )
               })}
             </div>
+            {friends.items.length < friends.total && (
+              <button
+                type="button"
+                onClick={() => void loadMoreFriends()}
+                disabled={isLoadingMoreFriends}
+                className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
+              >
+                {isLoadingMoreFriends ? 'Loading...' : 'Load more friends'}
+              </button>
+            )}
           </div>
         )}
 
