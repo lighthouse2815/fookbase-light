@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { friendsApi } from '../../api/friends'
-import type { Friend, FriendRequest, PagedResponse } from '../../api/friends'
+import type { BlockedUser, Friend, FriendRequest, PagedResponse, RelationshipStatus } from '../../api/friends'
 import { usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
+import { useAuth } from '../../auth/useAuth'
 import { CURRENT_USER, POSTS, getUserById, formatNumber } from '../../data/mockData'
 import type { Post } from '../../data/mockData'
 import PostCard from '../feed/components/PostCard'
@@ -79,15 +80,35 @@ function getProfileName(profile: UserProfile | undefined, userId: string) {
 }
 
 export default function ProfilePage() {
+  const { session } = useAuth()
   const [tab, setTab] = useState<ProfileTab>('posts')
   const [friends, setFriends] = useState<PagedResponse<Friend>>(emptyFriendPage)
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([])
   const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([])
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([])
   const [friendProfiles, setFriendProfiles] = useState<Record<string, UserProfile>>({})
   const [isRelationshipsLoading, setIsRelationshipsLoading] = useState(true)
   const [relationshipError, setRelationshipError] = useState<string | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
-  const user = CURRENT_USER
+  const [relationshipUserId, setRelationshipUserId] = useState('')
+  const [relationshipStatus, setRelationshipStatus] = useState<RelationshipStatus | null>(null)
+  const [mutualFriendCount, setMutualFriendCount] = useState<number | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [isProfileEditing, setIsProfileEditing] = useState(false)
+  const [displayNameDraft, setDisplayNameDraft] = useState('')
+  const [bioDraft, setBioDraft] = useState('')
+  const [cityDraft, setCityDraft] = useState('')
+  const user = profile ? {
+    ...CURRENT_USER,
+    id: profile.userId,
+    handle: profile.username,
+    displayName: profile.displayName,
+    avatar: profile.displayName.slice(0, 2).toUpperCase(),
+    bio: profile.bio ?? '',
+    location: profile.currentCity ?? 'Not set',
+    joinDate: new Date(profile.createdAt).toLocaleDateString(),
+  } : CURRENT_USER
 
   const myPosts = POSTS.filter((p) => p.authorId === user.id)
   const postsToShow = myPosts.length > 0 ? myPosts : defaultUserPosts
@@ -99,15 +120,17 @@ export default function ProfilePage() {
     }
 
     try {
-      const [friendsPage, incomingPage, outgoingPage] = await Promise.all([
+      const [friendsPage, incomingPage, outgoingPage, blockedPage] = await Promise.all([
         friendsApi.getFriends(),
         friendsApi.getIncomingRequests(),
         friendsApi.getOutgoingRequests(),
+        friendsApi.getBlockedUsers(),
       ])
       const profileIds = [...new Set([
         ...friendsPage.items.map((friend) => friend.userId),
         ...incomingPage.items.map((request) => request.senderUserId),
         ...outgoingPage.items.map((request) => request.receiverUserId),
+        ...blockedPage.items.map((blockedUser) => blockedUser.userId),
       ])]
       const profileResults = await Promise.allSettled(
         profileIds.map((userId) => usersApi.getById(userId)),
@@ -123,6 +146,7 @@ export default function ProfilePage() {
       setFriends(friendsPage)
       setIncomingRequests(incomingPage.items)
       setOutgoingRequests(outgoingPage.items)
+      setBlockedUsers(blockedPage.items)
       setFriendProfiles(profiles)
     } catch (error) {
       setRelationshipError(
@@ -141,6 +165,18 @@ export default function ProfilePage() {
     return () => window.clearTimeout(timeoutId)
   }, [])
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void usersApi.getCurrent()
+        .then(setProfile)
+        .catch((error: unknown) => {
+          setProfileError(error instanceof ApiError ? error.message : 'Không thể tải hồ sơ.')
+        })
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [])
+
   const runRelationshipAction = async (id: string, action: () => Promise<unknown>) => {
     setActionId(id)
     setRelationshipError(null)
@@ -154,6 +190,45 @@ export default function ProfilePage() {
       )
     } finally {
       setActionId(null)
+    }
+  }
+
+  const lookupRelationship = async () => {
+    if (!relationshipUserId.trim()) return
+    setRelationshipError(null)
+
+    try {
+      const [status, mutualFriends] = await Promise.all([
+        friendsApi.getStatus(relationshipUserId.trim()),
+        friendsApi.getMutualFriends(relationshipUserId.trim()),
+      ])
+      setRelationshipStatus(status)
+      setMutualFriendCount(mutualFriends.count)
+    } catch (error) {
+      setRelationshipError(error instanceof ApiError ? error.message : 'Không thể tra cứu quan hệ.')
+    }
+  }
+
+  const openProfileEditor = () => {
+    setDisplayNameDraft(profile?.displayName ?? session!.user.username)
+    setBioDraft(profile?.bio ?? '')
+    setCityDraft(profile?.currentCity ?? '')
+    setIsProfileEditing(true)
+  }
+
+  const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setProfileError(null)
+
+    try {
+      setProfile(await usersApi.updateCurrent({
+        displayName: displayNameDraft,
+        bio: bioDraft,
+        currentCity: cityDraft,
+      }))
+      setIsProfileEditing(false)
+    } catch (error) {
+      setProfileError(error instanceof ApiError ? error.message : 'Không thể cập nhật hồ sơ.')
     }
   }
 
@@ -257,6 +332,7 @@ export default function ProfilePage() {
               {/* Message button */}
               <button
                 type="button"
+                onClick={openProfileEditor}
                 className="px-4 py-2 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
               >
                 <span>💬</span>
@@ -282,6 +358,25 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
+
+          {profileError && <p className="mb-3 rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 px-3 py-2 text-sm text-[#ff8a9b]">{profileError}</p>}
+          {isProfileEditing && (
+            <form onSubmit={(event) => void saveProfile(event)} className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-border bg-surface-2/60 p-4">
+              <label className="flex flex-col gap-1 text-sm text-text">Display name
+                <input value={displayNameDraft} onChange={(event) => setDisplayNameDraft(event.target.value)} required className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-text">Current city
+                <input value={cityDraft} onChange={(event) => setCityDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
+              </label>
+              <label className="sm:col-span-2 flex flex-col gap-1 text-sm text-text">Bio
+                <textarea value={bioDraft} onChange={(event) => setBioDraft(event.target.value)} rows={3} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none resize-y" />
+              </label>
+              <div className="sm:col-span-2 flex justify-end gap-2">
+                <button type="button" onClick={() => setIsProfileEditing(false)} className="px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text text-sm cursor-pointer">Cancel</button>
+                <button className="px-3 py-2 rounded-lg bg-primary hover:bg-primary-dark border-none text-white text-sm cursor-pointer">Save profile</button>
+              </div>
+            </form>
+          )}
 
           {/* 4. Tabs below: Posts | About | Friends | Photos */}
           <div className="border-t border-border mt-2" />
@@ -396,6 +491,7 @@ export default function ProfilePage() {
                 </p>
                 <button
                   type="button"
+                  onClick={openProfileEditor}
                   className="w-full py-2 px-3 bg-surface-2 hover:bg-surface-hover text-text text-sm font-semibold rounded-lg transition-colors cursor-pointer border-none"
                 >
                   Edit bio
@@ -441,6 +537,7 @@ export default function ProfilePage() {
 
                 <button
                   type="button"
+                  onClick={openProfileEditor}
                   className="w-full py-2 px-3 bg-surface-2 hover:bg-surface-hover text-text text-sm font-semibold rounded-lg transition-colors cursor-pointer border-none mt-1"
                 >
                   Edit details
@@ -591,6 +688,34 @@ export default function ProfilePage() {
               </div>
             )}
 
+            <section className="rounded-xl border border-border bg-surface-2/40 p-4 flex flex-col gap-3">
+              <div>
+                <h3 className="font-heading font-bold text-base text-text">Manage relationship</h3>
+                <p className="text-xs text-text-muted">Enter a user ID to send a request, check status, mutual friends, or block.</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  value={relationshipUserId}
+                  onChange={(event) => {
+                    setRelationshipUserId(event.target.value)
+                    setRelationshipStatus(null)
+                    setMutualFriendCount(null)
+                  }}
+                  placeholder="User ID (UUID)"
+                  className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text outline-none"
+                />
+                <button type="button" onClick={() => void lookupRelationship()} className="px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text text-sm cursor-pointer">Check</button>
+              </div>
+              {relationshipStatus && (
+                <div className="flex flex-wrap items-center gap-2 text-sm text-text">
+                  <span>Status: <strong>{relationshipStatus.status}</strong></span>
+                  {mutualFriendCount !== null && <span className="text-text-muted">· {mutualFriendCount} mutual friends</span>}
+                  <button type="button" onClick={() => void runRelationshipAction(relationshipUserId, () => friendsApi.sendRequest(relationshipUserId))} className="px-2.5 py-1 rounded-lg bg-primary text-white border-none cursor-pointer text-xs">Add friend</button>
+                  <button type="button" onClick={() => void runRelationshipAction(relationshipUserId, () => friendsApi.block(relationshipUserId))} className="px-2.5 py-1 rounded-lg bg-surface border border-border text-text cursor-pointer text-xs">Block</button>
+                </div>
+              )}
+            </section>
+
             {incomingRequests.length > 0 && (
               <section className="flex flex-col gap-3">
                 <h3 className="font-heading font-bold text-lg text-text">Friend requests</h3>
@@ -652,6 +777,28 @@ export default function ProfilePage() {
                         >
                           Cancel
                         </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            {blockedUsers.length > 0 && (
+              <section className="flex flex-col gap-3">
+                <h3 className="font-heading font-bold text-lg text-text">Blocked users</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {blockedUsers.map((blockedUser) => {
+                    const profile = friendProfiles[blockedUser.userId]
+                    const isPending = actionId === blockedUser.userId
+
+                    return (
+                      <div key={blockedUser.userId} className="flex items-center justify-between gap-3 rounded-lg bg-surface-2/60 border border-border p-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-text truncate">{getProfileName(profile, blockedUser.userId)}</p>
+                          <p className="text-xs text-text-muted truncate">@{profile?.username ?? blockedUser.userId.slice(0, 8)}</p>
+                        </div>
+                        <button type="button" onClick={() => void runRelationshipAction(blockedUser.userId, () => friendsApi.unblock(blockedUser.userId))} disabled={isPending} className="px-3 py-1.5 rounded-lg bg-surface border border-border text-text text-xs cursor-pointer disabled:opacity-60">Unblock</button>
                       </div>
                     )
                   })}

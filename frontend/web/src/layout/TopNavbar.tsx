@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
-import { CURRENT_USER } from '../data/mockData'
+import { useAuth } from '../auth/useAuth'
 
 interface NavItem {
   path: string
@@ -15,6 +15,9 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export default function TopNavbar() {
+  const { session, signOut } = useAuth()
+  const initials = session!.user.username.slice(0, 2).toUpperCase()
+
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center px-4 z-50">
       {/* ── Left: Logo + Search ──────────────────────── */}
@@ -70,10 +73,11 @@ export default function TopNavbar() {
         {/* Grid menu */}
         <button
           type="button"
+          onClick={() => void signOut()}
           className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none text-sm"
-          title="Menu"
+          title="Sign out"
         >
-          ⊞
+          ↪
         </button>
         {/* Notifications */}
         <button
@@ -89,13 +93,12 @@ export default function TopNavbar() {
         {/* User avatar link to profile */}
         <Link
           to="/profile"
-          className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline ${CURRENT_USER.avatarColor}`}
-          title={`${CURRENT_USER.displayName}'s Profile`}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline bg-primary"
+          title={`${session!.user.username}'s Profile`}
         >
-          {CURRENT_USER.avatar}
+          {initials}
         </Link>
       </div>
     </header>
   )
 }
-

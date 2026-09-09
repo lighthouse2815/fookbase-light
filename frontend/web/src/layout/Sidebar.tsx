@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
-import { CURRENT_USER } from '../data/mockData'
+import { useAuth } from '../auth/useAuth'
 
 interface NavItem {
   path: string
@@ -29,6 +29,9 @@ const SHORTCUTS: ShortcutItem[] = [
 ]
 
 export default function Sidebar() {
+  const { session } = useAuth()
+  const initials = session!.user.username.slice(0, 2).toUpperCase()
+
   return (
     <aside className="fixed top-14 left-0 w-[280px] h-[calc(100vh-56px)] flex flex-col bg-bg z-40 max-lg:hidden overflow-y-auto scroll-smooth">
       {/* ── Navigation ───────────────────────────────────── */}
@@ -39,12 +42,12 @@ export default function Sidebar() {
           className="group flex items-center gap-3 px-2 py-2 rounded-lg w-full text-left transition-all duration-200 cursor-pointer border-0 bg-transparent hover:bg-surface-2 no-underline"
         >
           <div
-            className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ${CURRENT_USER.avatarColor}`}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 bg-primary"
           >
-            {CURRENT_USER.avatar}
+            {initials}
           </div>
           <span className="font-semibold text-[15px] text-text">
-            {CURRENT_USER.displayName}
+            {session!.user.username}
           </span>
         </Link>
 
@@ -121,4 +124,3 @@ export default function Sidebar() {
     </aside>
   )
 }
-
