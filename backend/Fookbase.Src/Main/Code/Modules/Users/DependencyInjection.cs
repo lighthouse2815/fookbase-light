@@ -3,7 +3,7 @@ using Fookbase.Api.Modules.Users.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Fookbase.Api.Modules.Users.Config;
+namespace Fookbase.Api.Modules.Users;
 
 public static class DependencyInjection
 {

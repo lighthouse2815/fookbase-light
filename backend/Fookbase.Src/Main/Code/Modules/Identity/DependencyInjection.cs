@@ -1,11 +1,12 @@
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Modules.Identity.Config;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Fookbase.Api.Modules.Identity.Config;
+namespace Fookbase.Api.Modules.Identity;
 
 public static class DependencyInjection
 {

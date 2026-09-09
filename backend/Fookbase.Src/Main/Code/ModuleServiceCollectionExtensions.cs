@@ -1,6 +1,7 @@
 using Fookbase.Api.Application;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Identity.Config;
+using Fookbase.Api.Modules.Identity;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media;
@@ -8,7 +9,7 @@ using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Posts;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Friends;
-using Fookbase.Api.Modules.Users.Config;
+using Fookbase.Api.Modules.Users;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
