@@ -58,6 +58,26 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     }
 
     [Fact]
+    public async Task Search_returns_matching_profiles_with_pagination()
+    {
+        var searchTerm = $"security_{Guid.NewGuid():N}";
+        var matchingUser = new UserSeed(Guid.NewGuid(), searchTerm);
+        var otherUser = new UserSeed(Guid.NewGuid(), $"frontend_{Guid.NewGuid():N}");
+        await EnsureProfileAsync(matchingUser);
+        await EnsureProfileAsync(otherUser);
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/users/search?query={searchTerm}&offset=0&limit=20");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = await response.Content.ReadFromJsonAsync<PagedResponse<UserProfileResponse>>();
+        Assert.NotNull(page);
+        Assert.Equal(1, page.Total);
+        Assert.Single(page.Items);
+        Assert.Equal(matchingUser.Id, page.Items[0].UserId);
+    }
+
+    [Fact]
     public async Task Get_me_without_access_token_returns_unauthorized()
     {
         using var client = factory.CreateClient();

@@ -13,11 +13,25 @@ public static class UserProfileEndpoints
     {
         var group = endpoints.MapGroup("/api/users");
 
+        group.MapGet("/search", SearchAsync).AllowAnonymous();
         group.MapGet("/{userId:guid}", GetByIdAsync).AllowAnonymous();
         group.MapGet("/me", GetCurrentAsync).RequireAuthorization();
         group.MapPatch("/me", UpdateCurrentAsync).RequireAuthorization();
 
         return endpoints;
+    }
+
+    private static async Task<IResult> SearchAsync(
+        string? query,
+        UserProfileService profileService,
+        CancellationToken cancellationToken,
+        int offset = 0,
+        int limit = 20)
+    {
+        var result = await profileService.SearchAsync(query, offset, limit, cancellationToken);
+        return result.Succeeded
+            ? Results.Ok(result.Value)
+            : result.Error!.ToHttpResult();
     }
 
     private static async Task<IResult> GetByIdAsync(

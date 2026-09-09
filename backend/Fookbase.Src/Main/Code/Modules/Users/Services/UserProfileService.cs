@@ -11,6 +11,8 @@ public sealed class UserProfileService(
     UsersDbContext dbContext,
     TimeProvider timeProvider)
 {
+    private const int MaximumSearchLimit = 50;
+
     public async Task EnsureCreatedAsync(
         Guid userId,
         string username,
@@ -46,6 +48,42 @@ public sealed class UserProfileService(
         return profile is null
             ? NotFound()
             : ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
+    }
+
+    public async Task<ApplicationResult<PagedResponse<UserProfileResponse>>> SearchAsync(
+        string? query,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        if (offset < 0 || limit is < 1 or > MaximumSearchLimit)
+        {
+            return ApplicationResult<PagedResponse<UserProfileResponse>>.Failure(
+                new ApplicationError(
+                    "invalid_pagination",
+                    $"Offset must be non-negative and limit must be between 1 and {MaximumSearchLimit}.",
+                    ApplicationErrorType.Validation));
+        }
+
+        var normalizedQuery = query?.Trim().ToLowerInvariant();
+        var profiles = dbContext.UserProfiles.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            profiles = profiles.Where(profile =>
+                profile.Username.ToLower().Contains(normalizedQuery) ||
+                profile.DisplayName.ToLower().Contains(normalizedQuery));
+        }
+
+        var total = await profiles.CountAsync(cancellationToken);
+        var items = await profiles
+            .OrderBy(profile => profile.Username)
+            .Skip(offset)
+            .Take(limit)
+            .Select(profile => ToResponse(profile))
+            .ToListAsync(cancellationToken);
+
+        return ApplicationResult<PagedResponse<UserProfileResponse>>.Success(
+            new PagedResponse<UserProfileResponse>(items, offset, limit, total));
     }
 
     public async Task<ApplicationResult<UserProfileResponse>> UpdateAsync(
