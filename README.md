@@ -2,7 +2,9 @@
 
 Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
-Code nghiệp vụ vẫn được chia theo module và các layer Domain/Application/Infrastructure để giữ ranh giới rõ ràng. Các module trao đổi event trực tiếp trong process. Transactional outbox và inbox vẫn được giữ để event bền vững, retry được và idempotent, nhưng không cần message broker.
+Code nghiệp vụ được chia theo feature module trong một project backend duy nhất: `Modules/<Module>/Entities`, `Services`, `Repositories`, `Endpoints` và `Shared`. Các module trao đổi event trực tiếp trong process. Transactional outbox và inbox vẫn được giữ để event bền vững, retry được và idempotent, nhưng không cần message broker.
+
+Chi tiết về ranh giới module, quyết định giữ projection/outbox-inbox và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
 
 ## Kiến trúc
 
@@ -21,7 +23,7 @@ Fookbase.Api :5000
       `-- MinIO
 ```
 
-Backend chỉ có một entry point: `src/Fookbase.Api`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
+Backend chỉ có một entry point: `backend/Fookbase.Src/Main`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
 
 Năm database module hiện tại được giữ để migration và dữ liệu development cũ tiếp tục tương thích. Đây chỉ là ranh giới lưu trữ nội bộ của cùng một ứng dụng, không phải các service triển khai độc lập.
 
@@ -58,10 +60,11 @@ source .env
 set +a
 dotnet tool restore
 
-for module in Identity Users Friends Posts Media; do
+for context in IdentityDbContext UsersDbContext FriendsDbContext PostsDbContext MediaDbContext; do
   dotnet tool run dotnet-ef database update \
-    --project "modules/$module/Fookbase.$module.Infrastructure" \
-    --startup-project src/Fookbase.Api
+    --project backend/Fookbase.Src/Main \
+    --startup-project backend/Fookbase.Src/Main \
+    --context "$context"
 done
 ```
 
@@ -71,7 +74,7 @@ Chạy backend monolith:
 set -a
 source .env
 set +a
-dotnet run --project src/Fookbase.Api
+dotnet run --project backend/Fookbase.Src/Main
 ```
 
 API chạy tại <http://localhost:5000>, health check tại <http://localhost:5000/health>.
@@ -199,9 +202,10 @@ Các luồng chính:
 
 ```bash
 dotnet tool run dotnet-ef migrations add MigrationName \
-  --project modules/Posts/Fookbase.Posts.Infrastructure \
-  --startup-project src/Fookbase.Api \
-  --output-dir Persistence/Migrations
+  --project backend/Fookbase.Src/Main \
+  --startup-project backend/Fookbase.Src/Main \
+  --context PostsDbContext \
+  --output-dir Modules/Posts/Repositories/Migrations
 ```
 
-Thay `Posts` bằng module cần cập nhật. PostgreSQL init script tự tạo các database module còn thiếu khi volume được tạo lần đầu.
+Thay `PostsDbContext` và output directory bằng module cần cập nhật. PostgreSQL init script tự tạo các database module còn thiếu khi volume được tạo lần đầu.
