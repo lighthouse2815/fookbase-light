@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Application;
 using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Modules.Posts.DTOs.Requests;
 
 namespace Fookbase.Api.Modules.Posts.Endpoints;
 
@@ -257,13 +258,3 @@ public static class PostEndpoints
 
     private static IResult InvalidAccessToken() => Results.Unauthorized();
 }
-
-public sealed record CreatePostRequest(string Content, string Privacy, IReadOnlyList<Guid>? MediaIds = null);
-
-public sealed record UpdatePostRequest(string Content, string Privacy, IReadOnlyList<Guid>? MediaIds = null);
-
-public sealed record CreateCommentRequest(string Content, Guid? ParentCommentId);
-
-public sealed record UpdateCommentRequest(string Content);
-
-public sealed record SetReactionRequest(string Type);

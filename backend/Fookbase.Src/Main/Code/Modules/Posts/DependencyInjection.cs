@@ -1,10 +1,10 @@
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Posts.Data;
+using Fookbase.Api.Modules.Posts.Config;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Fookbase.Api.Modules.Posts.Config;
-using Fookbase.Api.Modules.Posts.Data;
+namespace Fookbase.Api.Modules.Posts;
 
 public static class DependencyInjection
 {

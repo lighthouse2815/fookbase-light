@@ -1,7 +1,7 @@
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Posts.Data;
-using Fookbase.Api.Modules.Posts.DTOs;
+using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Posts.DTOs;
+using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
