@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CURRENT_USER } from '../../../data/mockData'
+import { useAuth } from '../../../auth/useAuth'
 
 interface NewPostBoxProps {
   onPost: (
@@ -12,6 +12,9 @@ interface NewPostBoxProps {
 const MAX_CHARS = 280
 
 export default function NewPostBox({ onPost }: NewPostBoxProps) {
+  const { session } = useAuth()
+  const username = session!.user.username
+  const initials = username.slice(0, 2).toUpperCase()
   const [isExpanded, setIsExpanded] = useState(false)
   const [content, setContent] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -70,11 +73,8 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
         <>
           {/* Collapsed state: Facebook single-line look */}
           <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px]
-                          font-bold text-white shrink-0 ${CURRENT_USER.avatarColor}`}
-            >
-              {CURRENT_USER.avatar}
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">
+              {initials}
             </div>
             <button
               type="button"
@@ -83,7 +83,7 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
                          rounded-full px-4 py-2.5 text-[14px] cursor-pointer transition-colors
                          border-none outline-none"
             >
-              What's on your mind, {CURRENT_USER.displayName}?
+              What's on your mind, {username}?
             </button>
           </div>
 
@@ -128,14 +128,11 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
           {/* Expanded header */}
           <div className="flex items-center justify-between pb-1 border-b border-border">
             <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px]
-                            font-bold text-white shrink-0 ${CURRENT_USER.avatarColor}`}
-              >
-                {CURRENT_USER.avatar}
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">
+                {initials}
               </div>
               <div>
-                <div className="text-[14px] font-semibold text-text">{CURRENT_USER.displayName}</div>
+                <div className="text-[14px] font-semibold text-text">{username}</div>
                 <div className="text-[12px] text-text-muted">Public</div>
               </div>
             </div>
@@ -163,7 +160,7 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
             autoFocus
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={`What's on your mind, ${CURRENT_USER.displayName}?`}
+            placeholder={`What's on your mind, ${username}?`}
             rows={4}
             className="w-full bg-transparent border-none outline-none resize-none
                        text-[15px] text-text leading-relaxed placeholder:text-text-light"
