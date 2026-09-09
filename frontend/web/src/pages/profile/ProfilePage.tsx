@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { friendsApi } from '../../api/friends'
 import type { BlockedUser, Friend, FriendRequest, PagedResponse, RelationshipStatus } from '../../api/friends'
+import { mediaApi } from '../../api/media'
+import { postsApi } from '../../api/posts'
+import type { Post as ApiPost } from '../../api/posts'
 import { usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
-import { CURRENT_USER, POSTS, getUserById, formatNumber } from '../../data/mockData'
-import type { Post } from '../../data/mockData'
-import PostCard from '../feed/components/PostCard'
+import { CURRENT_USER, formatNumber } from '../../data/mockData'
+import LivePostCard from '../feed/components/LivePostCard'
+import NewPostBox from '../feed/components/NewPostBox'
 
 type ProfileTab = 'posts' | 'about' | 'friends' | 'photos'
 
@@ -24,36 +27,6 @@ const TABS: { id: ProfileTab; label: string }[] = [
   { id: 'about', label: 'About' },
   { id: 'friends', label: 'Friends' },
   { id: 'photos', label: 'Photos' },
-]
-
-// Fallback sample posts authored by current user if none found in mock data
-const defaultUserPosts: Post[] = [
-  {
-    id: 'user-post-1',
-    authorId: 'u1',
-    content:
-      'Working on a new static analysis tool for uncovering memory safety bugs before they hit production. Excited to open source the first preview next week! 🚀💻',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4),
-    likes: 342,
-    reposts: 58,
-    comments: 24,
-    tags: ['#security', '#opensource', '#rust', '#dev'],
-    isLiked: false,
-    isReposted: false,
-  },
-  {
-    id: 'user-post-2',
-    authorId: 'u1',
-    content:
-      'Always sanitize your inputs and never assume memory state across context switches. Simplicity is the ultimate security patch.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 28),
-    likes: 819,
-    reposts: 172,
-    comments: 63,
-    tags: ['#kernel', '#infosec', '#bestpractices'],
-    isLiked: true,
-    isReposted: false,
-  },
 ]
 
 const emptyFriendPage: PagedResponse<Friend> = {
@@ -96,6 +69,10 @@ export default function ProfilePage() {
   const [mutualFriendCount, setMutualFriendCount] = useState<number | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileError, setProfileError] = useState<string | null>(null)
+  const [profilePosts, setProfilePosts] = useState<ApiPost[]>([])
+  const [profilePostsTotal, setProfilePostsTotal] = useState(0)
+  const [isProfilePostsLoading, setIsProfilePostsLoading] = useState(true)
+  const [isLoadingMoreProfilePosts, setIsLoadingMoreProfilePosts] = useState(false)
   const [isProfileEditing, setIsProfileEditing] = useState(false)
   const [displayNameDraft, setDisplayNameDraft] = useState('')
   const [bioDraft, setBioDraft] = useState('')
@@ -111,8 +88,42 @@ export default function ProfilePage() {
     joinDate: new Date(profile.createdAt).toLocaleDateString(),
   } : CURRENT_USER
 
-  const myPosts = POSTS.filter((p) => p.authorId === user.id)
-  const postsToShow = myPosts.length > 0 ? myPosts : defaultUserPosts
+  const loadProfilePosts = useCallback(async (
+    userId: string,
+    offset = 0,
+    append = false,
+  ) => {
+    if (append) {
+      setIsLoadingMoreProfilePosts(true)
+    } else {
+      setIsProfilePostsLoading(true)
+    }
+
+    try {
+      const page = await postsApi.getByUser(userId, offset)
+      setProfilePosts((currentPosts) => append
+        ? [...currentPosts, ...page.items.filter((post) => !currentPosts.some((item) => item.id === post.id))]
+        : page.items)
+      setProfilePostsTotal(page.total)
+    } finally {
+      if (append) {
+        setIsLoadingMoreProfilePosts(false)
+      } else {
+        setIsProfilePostsLoading(false)
+      }
+    }
+  }, [])
+
+  const loadCurrentProfile = useCallback(async () => {
+    try {
+      const currentProfile = await usersApi.getCurrent()
+      setProfile(currentProfile)
+      await loadProfilePosts(currentProfile.userId)
+    } catch (error) {
+      setProfileError(error instanceof ApiError ? error.message : 'Không thể tải hồ sơ.')
+      setIsProfilePostsLoading(false)
+    }
+  }, [loadProfilePosts])
 
   const loadRelationships = async (showLoading = true) => {
     if (showLoading) {
@@ -168,15 +179,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      void usersApi.getCurrent()
-        .then(setProfile)
-        .catch((error: unknown) => {
-          setProfileError(error instanceof ApiError ? error.message : 'Không thể tải hồ sơ.')
-        })
+      void loadCurrentProfile()
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
-  }, [])
+  }, [loadCurrentProfile])
 
   const runRelationshipAction = async (id: string, action: () => Promise<unknown>) => {
     setActionId(id)
@@ -262,6 +269,17 @@ export default function ProfilePage() {
     }
   }
 
+  const createProfilePost = async (
+    content: string,
+    file: File | null,
+    onUploadProgress: (progress: number) => void,
+  ) => {
+    const mediaIds = file ? [await mediaApi.uploadFile(file, onUploadProgress)] : []
+    const post = await postsApi.create({ content, privacy: 'public', mediaIds })
+    setProfilePosts((currentPosts) => [post, ...currentPosts])
+    setProfilePostsTotal((currentTotal) => currentTotal + 1)
+  }
+
   return (
     <div className="min-h-screen bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
       {/* ── Top Section: Cover + Header + Tabs ─────────────────────── */}
@@ -343,7 +361,7 @@ export default function ProfilePage() {
                 </span>
                 <span className="text-text-light font-bold">•</span>
                 <span>
-                  <strong className="font-semibold text-text">{formatNumber(user.posts)}</strong> posts
+                  <strong className="font-semibold text-text">{formatNumber(profilePostsTotal)}</strong> posts
                 </span>
               </div>
             </div>
@@ -442,42 +460,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             {/* ── Left column (posts) ── */}
             <div className="order-2 lg:order-1 lg:col-span-7 xl:col-span-7 2xl:col-span-8 flex flex-col gap-4">
-              {/* Create post box */}
-              <div className="bg-surface rounded-xl card-shadow border border-border p-4 flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0 ${user.avatarColor || 'bg-surface-2'}`}
-                  >
-                    {user.avatar}
-                  </div>
-                  <div className="flex-1 bg-surface-2 hover:bg-surface-hover transition-colors rounded-full px-4 py-2.5 text-text-muted text-sm cursor-pointer select-none">
-                    What's on your mind?
-                  </div>
-                </div>
-                <div className="border-t border-border pt-2.5 flex items-center justify-around text-xs sm:text-[13px] font-semibold text-text-muted">
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 py-1.5 px-3 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer border-none text-text-muted hover:text-text"
-                  >
-                    <span className="text-base">🎥</span>
-                    <span>Live video</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 py-1.5 px-3 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer border-none text-text-muted hover:text-text"
-                  >
-                    <span className="text-base">🖼️</span>
-                    <span>Photo/video</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 py-1.5 px-3 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer border-none text-text-muted hover:text-text"
-                  >
-                    <span className="text-base">😊</span>
-                    <span>Feeling/activity</span>
-                  </button>
-                </div>
-              </div>
+              <NewPostBox onPost={createProfilePost} />
 
               {/* Manage posts header */}
               <div className="bg-surface rounded-xl card-shadow border border-border p-3.5 px-4 flex items-center justify-between">
@@ -493,19 +476,32 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* 5. Post grid below tabs - show the user's posts using PostCard */}
               <div className="flex flex-col gap-3">
-                {postsToShow.map((post, i) => {
-                  const author = getUserById(post.authorId) || user
-                  return (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      author={author}
-                      style={{ animation: `fade-in 0.3s ease ${i * 0.05}s both` }}
-                    />
-                  )
-                })}
+                {isProfilePostsLoading && <p className="text-sm text-text-muted">Loading posts...</p>}
+                {!isProfilePostsLoading && profilePosts.length === 0 && <p className="text-sm text-text-muted">No posts yet.</p>}
+                {profile && profilePosts.map((post) => (
+                  <LivePostCard
+                    key={post.id}
+                    post={post}
+                    author={profile}
+                    currentUserId={session!.user.id}
+                    onPostUpdated={(updatedPost) => setProfilePosts((currentPosts) => currentPosts.map((item) => item.id === updatedPost.id ? updatedPost : item))}
+                    onPostDeleted={(postId) => {
+                      setProfilePosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))
+                      setProfilePostsTotal((currentTotal) => Math.max(0, currentTotal - 1))
+                    }}
+                  />
+                ))}
+                {profile && profilePosts.length < profilePostsTotal && (
+                  <button
+                    type="button"
+                    onClick={() => void loadProfilePosts(profile.userId, profilePosts.length, true)}
+                    disabled={isLoadingMoreProfilePosts}
+                    className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
+                  >
+                    {isLoadingMoreProfilePosts ? 'Loading...' : 'Load more posts'}
+                  </button>
+                )}
               </div>
             </div>
 
