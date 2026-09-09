@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Application;
 
 namespace Fookbase.Api.Modules.Identity.Endpoints;
 
@@ -25,10 +26,10 @@ public static class AuthenticationEndpoints
 
     private static async Task<IResult> RegisterAsync(
         RegisterRequest request,
-        AuthenticationService authenticationService,
+        RegistrationUseCase registrationUseCase,
         CancellationToken cancellationToken)
     {
-        var result = await authenticationService.RegisterAsync(request, cancellationToken);
+        var result = await registrationUseCase.ExecuteAsync(request, cancellationToken);
 
         return result.Succeeded
             ? Results.Created("/api/auth/me", result.Value)

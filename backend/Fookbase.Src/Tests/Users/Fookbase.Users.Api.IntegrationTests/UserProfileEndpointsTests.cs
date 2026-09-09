@@ -8,7 +8,7 @@ using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Modules.Users.Data;
-using Fookbase.Api.Modules.Users.Messaging;
+using Fookbase.Api.Modules.Users.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +20,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     : IClassFixture<UsersApiFactory>
 {
     [Fact]
-    public async Task User_registered_event_creates_profile_and_duplicate_is_idempotent()
+    public async Task Profile_creation_is_idempotent()
     {
         var integrationEvent = CreateEvent();
 
@@ -38,8 +38,6 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Equal(integrationEvent.Username, profile.Username);
         Assert.Equal(integrationEvent.Username, profile.DisplayName);
         Assert.Null(profile.Bio);
-        Assert.Equal(1, await dbContext.InboxMessages.CountAsync(
-            item => item.EventId == integrationEvent.EventId));
         Assert.Equal(1, await dbContext.UserProfiles.CountAsync(
             item => item.UserId == integrationEvent.UserId));
     }
@@ -121,8 +119,11 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     private async Task<bool> HandleAsync(UserRegisteredIntegrationEvent integrationEvent)
     {
         using var scope = factory.Services.CreateScope();
-        var handler = scope.ServiceProvider.GetRequiredService<UserRegisteredEventHandler>();
-        return await handler.HandleAsync(integrationEvent);
+        var service = scope.ServiceProvider.GetRequiredService<UserProfileService>();
+        var existed = await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
+            .UserProfiles.AnyAsync(profile => profile.UserId == integrationEvent.UserId);
+        await service.EnsureCreatedAsync(integrationEvent.UserId, integrationEvent.Username);
+        return !existed;
     }
 
     private HttpClient CreateAuthenticatedClient(Guid userId)

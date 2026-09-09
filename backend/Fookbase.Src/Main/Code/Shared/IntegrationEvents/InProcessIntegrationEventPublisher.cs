@@ -11,12 +11,10 @@ using MediaEventMessage = Fookbase.Api.Modules.Media.Services.IntegrationEventMe
 using MediaEventPublisher = Fookbase.Api.Modules.Media.Services.IIntegrationEventPublisher;
 using PostsEventMessage = Fookbase.Api.Modules.Posts.Messaging.IntegrationEventMessage;
 using PostsEventPublisher = Fookbase.Api.Modules.Posts.Messaging.IIntegrationEventPublisher;
-using UsersRegistrationHandler = Fookbase.Api.Modules.Users.Messaging.UserRegisteredEventHandler;
 
 namespace Fookbase.Api.Shared.IntegrationEvents;
 
 internal sealed class InProcessIntegrationEventPublisher(
-    UsersRegistrationHandler usersRegistrationHandler,
     EventProjectionStore postsProjectionStore,
     MediaProjectionStore mediaProjectionStore)
     : IdentityEventPublisher, PostsEventPublisher, MediaEventPublisher
@@ -46,7 +44,6 @@ internal sealed class InProcessIntegrationEventPublisher(
             case UserRegisteredIntegrationEvent.EventType:
             {
                 var message = Deserialize<UserRegisteredIntegrationEvent>(payload);
-                await usersRegistrationHandler.HandleAsync(message, cancellationToken);
                 await postsProjectionStore.ProjectAsync(message, cancellationToken);
                 await mediaProjectionStore.ProjectAsync(message, cancellationToken);
                 break;

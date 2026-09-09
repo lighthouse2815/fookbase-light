@@ -1,4 +1,5 @@
 using Fookbase.Api.Shared.IntegrationEvents;
+using Fookbase.Api.Application;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Services;
@@ -69,6 +70,7 @@ internal static class ModuleServiceCollectionExtensions
 
     public static IServiceCollection AddInProcessModuleCommunication(this IServiceCollection services)
     {
+        services.AddScoped<RegistrationUseCase>();
         services.AddScoped<InProcessIntegrationEventPublisher>();
         services.AddScoped<Fookbase.Api.Modules.Identity.Messaging.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());

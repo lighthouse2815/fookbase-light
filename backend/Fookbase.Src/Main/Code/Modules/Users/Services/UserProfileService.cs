@@ -11,6 +11,31 @@ public sealed class UserProfileService(
     UsersDbContext dbContext,
     TimeProvider timeProvider)
 {
+    public async Task EnsureCreatedAsync(
+        Guid userId,
+        string username,
+        CancellationToken cancellationToken = default)
+    {
+        if (await dbContext.UserProfiles.AnyAsync(profile => profile.UserId == userId, cancellationToken))
+        {
+            return;
+        }
+
+        dbContext.UserProfiles.Add(UserProfile.Create(userId, username, timeProvider.GetUtcNow()));
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            dbContext.ChangeTracker.Clear();
+            if (!await dbContext.UserProfiles.AnyAsync(profile => profile.UserId == userId, cancellationToken))
+            {
+                throw;
+            }
+        }
+    }
+
     public async Task<ApplicationResult<UserProfileResponse>> GetAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
