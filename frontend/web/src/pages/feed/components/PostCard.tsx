@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import type { Post, User } from '../../data/mockData'
-import { formatNumber, formatTimestamp } from '../../data/mockData'
-import LikeButton from './LikeButton'
+import { useState, type CSSProperties } from 'react'
+import type { Post, User } from '../../../data/mockData'
+import { formatNumber, formatTimestamp } from '../../../data/mockData'
+import LikeButton from '../../../shared/components/LikeButton'
 
 interface PostCardProps {
   post: Post
   author: User
-  style?: React.CSSProperties
+  style?: CSSProperties
 }
 
 const badgeClass: Record<string, string> = {
@@ -62,9 +62,9 @@ export default function PostCard({ post, author, style }: PostCardProps) {
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-1 text-[12px] text-text-light">
+          <div className="flex items-center gap-2 text-[12px] text-text-muted">
             <span>@{author.handle}</span>
-            <span>·</span>
+            <span>•</span>
             <span>{formatTimestamp(post.timestamp)}</span>
           </div>
         </div>
@@ -72,31 +72,30 @@ export default function PostCard({ post, author, style }: PostCardProps) {
         <button
           type="button"
           className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted
-                     hover:bg-surface-2 transition-colors cursor-pointer border-none bg-transparent"
+                     hover:bg-surface-2 hover:text-text transition-colors cursor-pointer border-none"
+          title="More options"
         >
           •••
         </button>
       </div>
 
-      {/* ── Post Text ── */}
-      <p className="text-[14px] text-text leading-relaxed whitespace-pre-wrap">
-        {post.content}
-      </p>
+      {/* ── Post Content ── */}
+      <p className="text-[14px] text-text leading-relaxed whitespace-pre-wrap">{post.content}</p>
 
-      {/* ── Code Snippet (dark-themed) ── */}
+      {/* ── Code snippet (if any) ── */}
       {post.codeSnippet && (
         <div className="relative rounded-xl overflow-hidden border border-border bg-surface-2">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-surface-3">
             <div className="flex gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-              <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
-              <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
             </div>
-            <span className="text-[11px] text-text-muted ml-auto font-medium">
+            <span className="text-[11px] text-text-muted ml-auto font-mono font-medium">
               {post.codeSnippet.lang}
             </span>
           </div>
-          <pre className="px-4 py-3 text-[12px] text-text font-mono leading-relaxed overflow-x-auto whitespace-pre">
+          <pre className="p-3 text-[12px] text-text font-mono leading-relaxed overflow-x-auto whitespace-pre">
             {post.codeSnippet.code}
           </pre>
         </div>
@@ -136,7 +135,7 @@ export default function PostCard({ post, author, style }: PostCardProps) {
         </div>
       )}
 
-      {/* ── Actions Row: 👍 Like, 💬 Comment, ↗️ Share - Facebook style, full-width buttons separated by borders ── */}
+      {/* ── Actions Row: 👍 Like, 💬 Comment, ↗️ Share ── */}
       <div className="grid grid-cols-3 border-t border-border pt-1 mt-1 divide-x divide-border">
         {/* Like */}
         <LikeButton liked={liked} onToggle={handleLike} />
@@ -168,3 +167,4 @@ export default function PostCard({ post, author, style }: PostCardProps) {
     </article>
   )
 }
+

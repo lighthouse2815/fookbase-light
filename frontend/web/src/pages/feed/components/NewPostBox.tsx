@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CURRENT_USER } from '../../data/mockData'
+import { CURRENT_USER } from '../../../data/mockData'
 
 interface NewPostBoxProps {
   onPost: (content: string) => void
@@ -206,3 +206,4 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
     </div>
   )
 }
+

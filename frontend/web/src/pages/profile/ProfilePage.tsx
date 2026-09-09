@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CURRENT_USER, POSTS, USERS, getUserById, formatNumber } from '../../data/mockData'
 import type { Post } from '../../data/mockData'
-import PostCard from '../feed/PostCard'
+import PostCard from '../feed/components/PostCard'
 
 type ProfileTab = 'posts' | 'about' | 'friends' | 'photos'
 

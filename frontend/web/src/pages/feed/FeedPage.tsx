@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { POSTS, TRENDING_TOPICS, USERS, getUserById, formatNumber } from '../../data/mockData'
-import PostCard from './PostCard'
-import NewPostBox from './NewPostBox'
 import type { Post } from '../../data/mockData'
+import PostCard from './components/PostCard'
+import NewPostBox from './components/NewPostBox'
 
 let nextId = 100
 
@@ -27,10 +27,8 @@ export default function FeedPage() {
 
   return (
     <div className="flex justify-center gap-6 min-h-screen px-2 sm:px-4 py-4">
-
       {/* ── Center Feed Column (max-w-[680px], centered) ── */}
       <div className="w-full max-w-[680px] min-w-0 flex flex-col gap-4">
-
         {/* New post area */}
         <NewPostBox onPost={handleNewPost} />
 
@@ -79,7 +77,6 @@ export default function FeedPage() {
       {/* ── Right Sidebar — Trending ──────────────────────── */}
       <aside className="w-[300px] xl:w-[340px] shrink-0 hidden lg:flex flex-col">
         <div className="sticky top-14 p-2 flex flex-col gap-5 h-[calc(100vh-56px)] scroll-smooth overflow-y-auto">
-
           {/* Search bar */}
           <div className="relative mt-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light text-sm">🔍</span>
@@ -128,16 +125,18 @@ export default function FeedPage() {
         <div className="sticky top-14 p-2 flex flex-col gap-5 h-[calc(100vh-56px)] scroll-smooth overflow-y-auto">
           <h2 className="font-heading font-bold text-[15px] text-text mt-1">People you may know</h2>
           <div className="flex flex-col gap-3">
-            {USERS.filter(u => u.id !== 'u1').map((user, i) => (
+            {USERS.filter((u) => u.id !== 'u1').map((user, i) => (
               <div
                 key={user.id}
                 className="bg-surface rounded-xl border border-border p-3
                            flex items-center gap-3 transition-all duration-200 hover:bg-surface-2"
                 style={{ animation: `slide-in-left 0.3s ease ${i * 0.06}s both` }}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px]
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px]
                                  font-bold text-white shrink-0 ${user.isOnline ? 'avatar-online' : ''}
-                                 ${user.avatarColor}`}>
+                                 ${user.avatarColor}`}
+                >
                   {user.avatar}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -158,7 +157,7 @@ export default function FeedPage() {
           </div>
         </div>
       </aside>
-
     </div>
   )
 }
+

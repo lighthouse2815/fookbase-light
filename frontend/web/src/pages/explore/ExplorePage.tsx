@@ -16,7 +16,11 @@ export default function ExplorePage() {
   const toggleFollow = (id: string) => {
     setFollowing((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
       return next
     })
   }
@@ -117,11 +121,10 @@ export default function ExplorePage() {
                           e.stopPropagation()
                           toggleFollow(topic.id)
                         }}
-                        className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-all duration-200 cursor-pointer border-none ${
-                          isTopicFollowing
+                        className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-all duration-200 cursor-pointer border-none ${isTopicFollowing
                             ? 'opacity-100 bg-surface-2 text-text-muted hover:bg-surface-3 hover:text-text'
                             : 'opacity-0 group-hover:opacity-100 bg-primary text-white hover:bg-primary-dark'
-                        }`}
+                          }`}
                       >
                         {isTopicFollowing ? 'Following' : 'Follow'}
                       </button>
@@ -179,11 +182,10 @@ export default function ExplorePage() {
                     <button
                       type="button"
                       onClick={() => toggleFollow(user.id)}
-                      className={`px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 cursor-pointer shrink-0 border-none ${
-                        isFollowing
+                      className={`px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 cursor-pointer shrink-0 border-none ${isFollowing
                           ? 'bg-surface-2 text-text-muted hover:bg-surface-3 hover:text-text'
                           : 'bg-primary text-white hover:bg-primary-dark'
-                      }`}
+                        }`}
                     >
                       {isFollowing ? 'Following' : 'Follow'}
                     </button>
