@@ -20,8 +20,7 @@ public static class DependencyInjection
         services.AddSingleton(outboxOptions);
         services.AddSingleton(postsOptions);
         services.AddSingleton(TimeProvider.System);
-        services.AddScoped<IPostsStore, PostsStore>();
-        services.AddScoped<IPostsService, PostsService>();
+        services.AddScoped<PostsService>();
         services.AddScoped<EventProjectionStore>();
         services.AddHostedService<OutboxPublisherWorker>();
         return services;

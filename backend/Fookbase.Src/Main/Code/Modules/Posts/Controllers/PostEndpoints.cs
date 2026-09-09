@@ -31,7 +31,7 @@ public static class PostEndpoints
     private static async Task<IResult> CreatePostAsync(
         CreatePostRequest request,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -50,7 +50,7 @@ public static class PostEndpoints
         Guid postId,
         UpdatePostRequest request,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -66,7 +66,7 @@ public static class PostEndpoints
     private static Task<IResult> DeletePostAsync(
         Guid postId,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
@@ -75,7 +75,7 @@ public static class PostEndpoints
     private static async Task<IResult> GetPostAsync(
         Guid postId,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetViewerUserId(principal, out var viewerUserId))
@@ -89,7 +89,7 @@ public static class PostEndpoints
 
     private static async Task<IResult> GetFeedAsync(
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -106,7 +106,7 @@ public static class PostEndpoints
     private static async Task<IResult> GetUserPostsAsync(
         Guid authorUserId,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -125,7 +125,7 @@ public static class PostEndpoints
         Guid postId,
         CreateCommentRequest request,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -144,7 +144,7 @@ public static class PostEndpoints
         Guid commentId,
         UpdateCommentRequest request,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -160,7 +160,7 @@ public static class PostEndpoints
     private static Task<IResult> DeleteCommentAsync(
         Guid commentId,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
@@ -169,7 +169,7 @@ public static class PostEndpoints
     private static async Task<IResult> GetCommentsAsync(
         Guid postId,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -188,7 +188,7 @@ public static class PostEndpoints
         Guid postId,
         SetReactionRequest request,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -204,7 +204,7 @@ public static class PostEndpoints
     private static async Task<IResult> RemoveReactionAsync(
         Guid postId,
         ClaimsPrincipal principal,
-        IPostsService service,
+        PostsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -217,7 +217,7 @@ public static class PostEndpoints
     }
 
     private static async Task<IResult> GetMediaAccessAsync(
-        Guid postId, Guid mediaId, ClaimsPrincipal principal, IPostsService service,
+        Guid postId, Guid mediaId, ClaimsPrincipal principal, PostsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId)) return InvalidAccessToken();
