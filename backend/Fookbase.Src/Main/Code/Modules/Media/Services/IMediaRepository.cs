@@ -5,8 +5,6 @@ namespace Fookbase.Api.Modules.Media.Services;
 
 public interface IMediaRepository
 {
-    Task<bool> UserExistsAsync(Guid userId, CancellationToken cancellationToken = default);
-
     Task<MediaAsset?> FindAsync(
         Guid mediaId,
         bool trackChanges = false,

@@ -29,7 +29,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.PostAsJsonAsync("/api/media/uploads",
             new CreateUploadRequest("photo.png", "image/png", Png.Length))).StatusCode);
 
-        var userId = await CreateKnownUserAsync();
+        var userId = CreateUserId();
         using var client = CreateAuthenticatedClient(userId);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/media/uploads",
             new CreateUploadRequest("file.txt", "text/plain", 10))).StatusCode);
@@ -46,7 +46,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     [Fact]
     public async Task Complete_rejects_missing_size_mismatch_and_invalid_signature()
     {
-        var userId = await CreateKnownUserAsync();
+        var userId = CreateUserId();
         using var client = CreateAuthenticatedClient(userId);
 
         var missing = await CreateIntentAsync(client, Png.Length);
@@ -69,7 +69,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     [Fact]
     public async Task Valid_completion_is_idempotent_and_writes_one_ready_outbox_event()
     {
-        var userId = await CreateKnownUserAsync();
+        var userId = CreateUserId();
         using var client = CreateAuthenticatedClient(userId);
         var intent = await CreateIntentAsync(client, Png.Length);
         PutObject(intent.MediaId, Png);
@@ -89,9 +89,9 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     [Fact]
     public async Task Metadata_is_owner_only_and_internal_http_route_is_not_exposed()
     {
-        var ownerId = await CreateKnownUserAsync();
+        var ownerId = CreateUserId();
         using var owner = CreateAuthenticatedClient(ownerId);
-        using var other = CreateAuthenticatedClient(await CreateKnownUserAsync());
+        using var other = CreateAuthenticatedClient(CreateUserId());
         var intent = await CreateIntentAsync(owner, Png.Length);
         PutObject(intent.MediaId, Png);
         await owner.PostAsync($"/api/media/{intent.MediaId}/complete", null);
@@ -105,7 +105,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     [Fact]
     public async Task Delete_is_blocked_by_reference_and_unreferenced_delete_uses_outbox_and_cleanup_queue()
     {
-        var ownerId = await CreateKnownUserAsync();
+        var ownerId = CreateUserId();
         using var owner = CreateAuthenticatedClient(ownerId);
         var referenced = await ReadyAsync(owner);
         using (var scope = factory.Services.CreateScope())
@@ -130,20 +130,6 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         Assert.True(await verifyDb.ObjectDeletions.AnyAsync(x => x.MediaId == unreferenced));
     }
 
-    [Fact]
-    public async Task User_projection_inbox_is_idempotent()
-    {
-        var message = new UserRegisteredIntegrationEvent(
-            Guid.NewGuid(), Guid.NewGuid(), "media-user", DateTimeOffset.UtcNow);
-        using var scope = factory.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<MediaProjectionStore>();
-        Assert.True(await store.ProjectAsync(message));
-        Assert.False(await store.ProjectAsync(message));
-        var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
-        Assert.Equal(1, await db.InboxMessages.CountAsync(x => x.EventId == message.EventId));
-        Assert.Equal(1, await db.KnownUsers.CountAsync(x => x.UserId == message.UserId));
-    }
-
     private async Task<Guid> ReadyAsync(HttpClient owner)
     {
         var intent = await CreateIntentAsync(owner, Png.Length);
@@ -164,15 +150,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         scope.ServiceProvider.GetRequiredService<InMemoryObjectStorage>().Put(key, bytes, "image/png");
     }
 
-    private async Task<Guid> CreateKnownUserAsync()
-    {
-        var id = Guid.NewGuid();
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
-        db.KnownUsers.Add(KnownUser.Create(id, $"user-{id:N}"[..30], DateTimeOffset.UtcNow));
-        await db.SaveChangesAsync();
-        return id;
-    }
+    private static Guid CreateUserId() => Guid.NewGuid();
 
     private HttpClient CreateAuthenticatedClient(Guid userId)
     {

@@ -43,8 +43,6 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
                        .UserProfiles.AnyAsync(item => item.UserId == userId) &&
                    await scope.ServiceProvider.GetRequiredService<PostsDbContext>()
                        .KnownUsers.AnyAsync(item => item.UserId == userId) &&
-                   await scope.ServiceProvider.GetRequiredService<MediaDbContext>()
-                       .KnownUsers.AnyAsync(item => item.UserId == userId) &&
                    identityOutbox.Any(item =>
                        item.Payload.Contains(userId.ToString()) && item.ProcessedAtUtc != null);
         });

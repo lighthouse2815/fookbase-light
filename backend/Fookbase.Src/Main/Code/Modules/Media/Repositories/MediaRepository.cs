@@ -8,9 +8,6 @@ namespace Fookbase.Api.Modules.Media.Repositories;
 
 internal sealed class MediaRepository(MediaDbContext dbContext) : IMediaRepository
 {
-    public Task<bool> UserExistsAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        dbContext.KnownUsers.AnyAsync(x => x.UserId == userId, cancellationToken);
-
     public Task<MediaAsset?> FindAsync(Guid mediaId, bool trackChanges = false,
         CancellationToken cancellationToken = default)
     {

@@ -45,7 +45,6 @@ internal sealed class InProcessIntegrationEventPublisher(
             {
                 var message = Deserialize<UserRegisteredIntegrationEvent>(payload);
                 await postsProjectionStore.ProjectAsync(message, cancellationToken);
-                await mediaProjectionStore.ProjectAsync(message, cancellationToken);
                 break;
             }
             case MediaReadyIntegrationEvent.EventType:

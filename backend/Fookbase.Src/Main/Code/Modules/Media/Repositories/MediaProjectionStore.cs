@@ -1,4 +1,3 @@
-using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Posts;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Repositories;
@@ -8,13 +7,6 @@ namespace Fookbase.Api.Modules.Media.Repositories;
 
 public sealed class MediaProjectionStore(MediaDbContext db, TimeProvider timeProvider)
 {
-    public Task<bool> ProjectAsync(UserRegisteredIntegrationEvent message, CancellationToken token = default) =>
-        ProcessAsync(message.EventId, UserRegisteredIntegrationEvent.EventType, async () =>
-        {
-            if (!await db.KnownUsers.AnyAsync(x => x.UserId == message.UserId, token))
-                db.KnownUsers.Add(KnownUser.Create(message.UserId, message.Username, message.OccurredAtUtc));
-        }, token);
-
     public Task<bool> ProjectAsync(PostMediaAttachedIntegrationEvent message, CancellationToken token = default) =>
         ProcessAsync(message.EventId, PostMediaAttachedIntegrationEvent.EventType, async () =>
         {

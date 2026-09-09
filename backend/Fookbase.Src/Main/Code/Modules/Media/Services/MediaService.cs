@@ -52,12 +52,6 @@ public sealed class MediaService(
                 $"The declared {format.MediaType.ToString().ToLowerInvariant()} size is invalid.");
         }
 
-        if (!await repository.UserExistsAsync(ownerUserId, cancellationToken))
-        {
-            return ApplicationResult<UploadIntentResponse>.Failure(new ApplicationError(
-                "user_not_found", "The media owner is not known.", ApplicationErrorType.NotFound));
-        }
-
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.AddMinutes(options.UploadUrlExpiryMinutes);
         var id = Guid.NewGuid();
