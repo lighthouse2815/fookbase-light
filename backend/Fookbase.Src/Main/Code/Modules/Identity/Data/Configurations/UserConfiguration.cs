@@ -2,7 +2,7 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Fookbase.Api.Modules.Identity.Config;
+namespace Fookbase.Api.Modules.Identity.Data.Configurations;
 
 internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {

@@ -9,7 +9,7 @@ using Fookbase.Api.Modules.Friends;
 using Fookbase.Api.Modules.Users.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Config.OutboxOptions;
+using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Messaging.OutboxOptions;
 using MediaOutboxOptions = Fookbase.Api.Modules.Media.Config.OutboxOptions;
 using PostsOutboxOptions = Fookbase.Api.Modules.Posts.Config.OutboxOptions;
 
@@ -70,7 +70,7 @@ internal static class ModuleServiceCollectionExtensions
     public static IServiceCollection AddInProcessModuleCommunication(this IServiceCollection services)
     {
         services.AddScoped<InProcessIntegrationEventPublisher>();
-        services.AddScoped<Fookbase.Api.Modules.Identity.Services.IIntegrationEventPublisher>(
+        services.AddScoped<Fookbase.Api.Modules.Identity.Messaging.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
         services.AddScoped<Fookbase.Api.Modules.Posts.Services.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());

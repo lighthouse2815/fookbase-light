@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Identity.DTOs;
+using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using System.ComponentModel.DataAnnotations;
 
 namespace Fookbase.Api.Modules.Identity.Services;

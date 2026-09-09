@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Identity.Repositories;
+namespace Fookbase.Api.Modules.Identity.Data;
 
 public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> options)
     : IdentityDbContext<User, IdentityRole<Guid>, Guid>(options)
@@ -18,7 +18,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
         builder.ApplyConfigurationsFromAssembly(
             typeof(IdentityDbContext).Assembly,
             type => type.Namespace?.StartsWith(
-                "Fookbase.Api.Modules.Identity.Config",
+                "Fookbase.Api.Modules.Identity.Data.Configurations",
                 StringComparison.Ordinal) == true);
     }
 }

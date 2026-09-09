@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Fookbase.Api.Modules.Identity.Repositories.Migrations
+namespace Fookbase.Api.Modules.Identity.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialIdentity : Migration

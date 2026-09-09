@@ -1,9 +1,10 @@
-using Fookbase.Api.Modules.Identity.DTOs;
+using Fookbase.Api.Modules.Identity.DTOs.Requests;
+using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using System.Net;
 using System.Net.Http.Json;
 using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Identity.Repositories;
+using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Media.Repositories;
 using Fookbase.Api.Modules.Posts.Repositories;
 using Fookbase.Api.Modules.Users.Repositories;

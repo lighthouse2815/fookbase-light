@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Identity.Config;
+namespace Fookbase.Api.Modules.Identity.Messaging;
 
 public sealed class OutboxOptions
 {

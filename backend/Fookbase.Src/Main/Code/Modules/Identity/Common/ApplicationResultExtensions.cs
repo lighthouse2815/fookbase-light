@@ -1,7 +1,7 @@
-using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Identity.Common;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fookbase.Api.Modules.Identity.Controllers;
+namespace Fookbase.Api.Modules.Identity.Common;
 
 internal static class ApplicationResultExtensions
 {

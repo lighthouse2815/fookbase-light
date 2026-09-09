@@ -1,6 +1,7 @@
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Modules.Identity.Repositories;
+using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Modules.Identity.Messaging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,11 +39,8 @@ public static class DependencyInjection
         services.AddSingleton(jwtOptions);
         services.AddSingleton(outboxOptions);
         services.AddSingleton(TimeProvider.System);
-        services.AddScoped<IUserAccountService, IdentityUserAccountService>();
-        services.AddScoped<IUserRegistrationStore, UserRegistrationStore>();
-        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-        services.AddScoped<ITokenService, JwtTokenService>();
-        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<JwtTokenService>();
+        services.AddScoped<AuthenticationService>();
         services.AddHostedService<OutboxPublisherWorker>();
 
         return services;

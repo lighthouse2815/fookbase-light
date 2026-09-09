@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Fookbase.Api.Modules.Identity.Repositories.Migrations
+namespace Fookbase.Api.Modules.Identity.Data.Migrations
 {
     /// <inheritdoc />
     public partial class AddRegistrationOutbox : Migration

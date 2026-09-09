@@ -1,9 +1,11 @@
-using Fookbase.Api.Modules.Identity.DTOs;
+using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Modules.Identity.DTOs.Requests;
+using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Identity.Services;
 
-namespace Fookbase.Api.Modules.Identity.Controllers;
+namespace Fookbase.Api.Modules.Identity.Endpoints;
 
 public static class AuthenticationEndpoints
 {
@@ -23,7 +25,7 @@ public static class AuthenticationEndpoints
 
     private static async Task<IResult> RegisterAsync(
         RegisterRequest request,
-        IAuthenticationService authenticationService,
+        AuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
         var result = await authenticationService.RegisterAsync(request, cancellationToken);
@@ -35,7 +37,7 @@ public static class AuthenticationEndpoints
 
     private static async Task<IResult> LoginAsync(
         LoginRequest request,
-        IAuthenticationService authenticationService,
+        AuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
         var result = await authenticationService.LoginAsync(request, cancellationToken);
@@ -47,7 +49,7 @@ public static class AuthenticationEndpoints
 
     private static async Task<IResult> RefreshAsync(
         RefreshRequest request,
-        IAuthenticationService authenticationService,
+        AuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
         var result = await authenticationService.RefreshAsync(request, cancellationToken);
@@ -60,7 +62,7 @@ public static class AuthenticationEndpoints
     private static async Task<IResult> LogoutAsync(
         LogoutRequest request,
         ClaimsPrincipal principal,
-        IAuthenticationService authenticationService,
+        AuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(principal, out var userId))
@@ -80,7 +82,7 @@ public static class AuthenticationEndpoints
 
     private static async Task<IResult> GetCurrentUserAsync(
         ClaimsPrincipal principal,
-        IAuthenticationService authenticationService,
+        AuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(principal, out var userId))

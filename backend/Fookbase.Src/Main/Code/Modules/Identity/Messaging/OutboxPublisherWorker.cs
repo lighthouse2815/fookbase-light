@@ -1,12 +1,10 @@
-using Fookbase.Api.Modules.Identity.Config;
-using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Identity.Repositories;
+using Fookbase.Api.Modules.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Fookbase.Api.Modules.Identity.Services;
+namespace Fookbase.Api.Modules.Identity.Messaging;
 
 internal sealed class OutboxPublisherWorker(
     IServiceScopeFactory scopeFactory,

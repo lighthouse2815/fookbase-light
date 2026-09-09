@@ -3,13 +3,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
-internal sealed class JwtTokenService(JwtOptions options) : ITokenService
+public sealed class JwtTokenService(JwtOptions options)
 {
     public AccessTokenResult CreateAccessToken(User user, DateTimeOffset now)
     {
@@ -55,3 +54,7 @@ internal sealed class JwtTokenService(JwtOptions options) : ITokenService
     public string HashRefreshToken(string rawToken) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
 }
+
+public sealed record AccessTokenResult(string Token, DateTimeOffset ExpiresAt);
+
+public sealed record RefreshTokenResult(string RawToken, RefreshToken RefreshToken);
