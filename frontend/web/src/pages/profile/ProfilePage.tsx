@@ -1,5 +1,10 @@
-import { useState } from 'react'
-import { CURRENT_USER, POSTS, USERS, getUserById, formatNumber } from '../../data/mockData'
+import { useEffect, useState } from 'react'
+import { ApiError } from '../../api/client'
+import { friendsApi } from '../../api/friends'
+import type { Friend, FriendRequest, PagedResponse } from '../../api/friends'
+import { usersApi } from '../../api/users'
+import type { UserProfile } from '../../api/users'
+import { CURRENT_USER, POSTS, getUserById, formatNumber } from '../../data/mockData'
 import type { Post } from '../../data/mockData'
 import PostCard from '../feed/components/PostCard'
 
@@ -50,12 +55,107 @@ const defaultUserPosts: Post[] = [
   },
 ]
 
+const emptyFriendPage: PagedResponse<Friend> = {
+  items: [],
+  offset: 0,
+  limit: 100,
+  total: 0,
+}
+
+function getInitials(profile: UserProfile | undefined) {
+  if (!profile) return '?'
+
+  return profile.displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+}
+
+function getProfileName(profile: UserProfile | undefined, userId: string) {
+  return profile?.displayName || `User ${userId.slice(0, 8)}`
+}
+
 export default function ProfilePage() {
   const [tab, setTab] = useState<ProfileTab>('posts')
+  const [friends, setFriends] = useState<PagedResponse<Friend>>(emptyFriendPage)
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([])
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([])
+  const [friendProfiles, setFriendProfiles] = useState<Record<string, UserProfile>>({})
+  const [isRelationshipsLoading, setIsRelationshipsLoading] = useState(true)
+  const [relationshipError, setRelationshipError] = useState<string | null>(null)
+  const [actionId, setActionId] = useState<string | null>(null)
   const user = CURRENT_USER
 
   const myPosts = POSTS.filter((p) => p.authorId === user.id)
   const postsToShow = myPosts.length > 0 ? myPosts : defaultUserPosts
+
+  const loadRelationships = async (showLoading = true) => {
+    if (showLoading) {
+      setIsRelationshipsLoading(true)
+      setRelationshipError(null)
+    }
+
+    try {
+      const [friendsPage, incomingPage, outgoingPage] = await Promise.all([
+        friendsApi.getFriends(),
+        friendsApi.getIncomingRequests(),
+        friendsApi.getOutgoingRequests(),
+      ])
+      const profileIds = [...new Set([
+        ...friendsPage.items.map((friend) => friend.userId),
+        ...incomingPage.items.map((request) => request.senderUserId),
+        ...outgoingPage.items.map((request) => request.receiverUserId),
+      ])]
+      const profileResults = await Promise.allSettled(
+        profileIds.map((userId) => usersApi.getById(userId)),
+      )
+      const profiles: Record<string, UserProfile> = {}
+
+      profileResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          profiles[profileIds[index]] = result.value
+        }
+      })
+
+      setFriends(friendsPage)
+      setIncomingRequests(incomingPage.items)
+      setOutgoingRequests(outgoingPage.items)
+      setFriendProfiles(profiles)
+    } catch (error) {
+      setRelationshipError(
+        error instanceof ApiError ? error.message : 'Không thể tải dữ liệu bạn bè.',
+      )
+    } finally {
+      setIsRelationshipsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadRelationships(false)
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [])
+
+  const runRelationshipAction = async (id: string, action: () => Promise<unknown>) => {
+    setActionId(id)
+    setRelationshipError(null)
+
+    try {
+      await action()
+      await loadRelationships()
+    } catch (error) {
+      setRelationshipError(
+        error instanceof ApiError ? error.message : 'Không thể cập nhật mối quan hệ.',
+      )
+    } finally {
+      setActionId(null)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
@@ -383,7 +483,7 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="font-heading font-bold text-[18px] text-text">Friends</h2>
-                    <p className="text-xs text-text-muted">{formatNumber(user.followers)} friends</p>
+                    <p className="text-xs text-text-muted">{formatNumber(friends.total)} friends</p>
                   </div>
                   <button
                     type="button"
@@ -394,18 +494,29 @@ export default function ProfilePage() {
                   </button>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {USERS.filter((u) => u.id !== user.id).slice(0, 6).map((friend) => (
-                    <div key={friend.id} className="flex flex-col items-center text-center cursor-pointer group">
-                      <div
-                        className={`w-full aspect-square rounded-lg flex items-center justify-center text-base font-bold text-white mb-1.5 shadow-sm transition-transform group-hover:scale-[1.02] ${friend.avatarColor}`}
-                      >
-                        {friend.avatar}
+                  {friends.items.slice(0, 6).map((friend) => {
+                    const profile = friendProfiles[friend.userId]
+
+                    return (
+                      <div key={friend.userId} className="flex flex-col items-center text-center group">
+                        <div className="w-full aspect-square rounded-lg overflow-hidden flex items-center justify-center text-base font-bold text-white mb-1.5 shadow-sm transition-transform group-hover:scale-[1.02] bg-primary">
+                          {profile?.avatarUrl ? (
+                            <img
+                              src={profile.avatarUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : getInitials(profile)}
+                        </div>
+                        <span className="text-[12px] font-medium text-text truncate w-full group-hover:underline">
+                          {getProfileName(profile, friend.userId)}
+                        </span>
                       </div>
-                      <span className="text-[12px] font-medium text-text truncate w-full group-hover:underline">
-                        {friend.displayName}
-                      </span>
-                    </div>
-                  ))}
+                    )
+                  })}
+                  {!isRelationshipsLoading && friends.items.length === 0 && !relationshipError && (
+                    <p className="col-span-3 text-xs text-text-muted">Chưa có bạn bè.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -462,37 +573,133 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
                 <h2 className="font-heading font-bold text-xl text-text">Friends</h2>
-                <p className="text-sm text-text-muted">{formatNumber(user.followers)} friends</p>
+                <p className="text-sm text-text-muted">{formatNumber(friends.total)} friends</p>
               </div>
+              <button
+                type="button"
+                onClick={() => void loadRelationships()}
+                disabled={isRelationshipsLoading}
+                className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
+              >
+                {isRelationshipsLoading ? 'Loading...' : 'Refresh'}
+              </button>
             </div>
+
+            {relationshipError && (
+              <div className="rounded-lg border border-[#e41e3f]/40 bg-[#e41e3f]/10 px-3 py-2 text-sm text-[#ff8a9b]">
+                {relationshipError}
+              </div>
+            )}
+
+            {incomingRequests.length > 0 && (
+              <section className="flex flex-col gap-3">
+                <h3 className="font-heading font-bold text-lg text-text">Friend requests</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {incomingRequests.map((request) => {
+                    const profile = friendProfiles[request.senderUserId]
+                    const isPending = actionId === request.id
+
+                    return (
+                      <div key={request.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface-2/60 border border-border">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-text text-sm truncate">{getProfileName(profile, request.senderUserId)}</p>
+                          <p className="text-xs text-text-muted truncate">@{profile?.username ?? request.senderUserId.slice(0, 8)}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => void runRelationshipAction(request.id, () => friendsApi.acceptRequest(request.id))}
+                            disabled={isPending}
+                            className="px-3 py-1.5 bg-primary hover:bg-primary-dark disabled:opacity-60 text-white rounded-lg text-xs font-semibold border-none cursor-pointer transition-colors"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void runRelationshipAction(request.id, () => friendsApi.declineRequest(request.id))}
+                            disabled={isPending}
+                            className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            {outgoingRequests.length > 0 && (
+              <section className="flex flex-col gap-3">
+                <h3 className="font-heading font-bold text-lg text-text">Sent requests</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {outgoingRequests.map((request) => {
+                    const profile = friendProfiles[request.receiverUserId]
+                    const isPending = actionId === request.id
+
+                    return (
+                      <div key={request.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface-2/60 border border-border">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-text text-sm truncate">{getProfileName(profile, request.receiverUserId)}</p>
+                          <p className="text-xs text-text-muted truncate">@{profile?.username ?? request.receiverUserId.slice(0, 8)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void runRelationshipAction(request.id, () => friendsApi.cancelRequest(request.id))}
+                          disabled={isPending}
+                          className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors shrink-0"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            {!isRelationshipsLoading && friends.items.length === 0 && !relationshipError && (
+              <p className="text-sm text-text-muted">Chưa có bạn bè.</p>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {USERS.filter((u) => u.id !== user.id).map((friend) => (
+              {friends.items.map((friend) => {
+                const profile = friendProfiles[friend.userId]
+                const isPending = actionId === friend.userId
+
+                return (
                 <div
-                  key={friend.id}
+                  key={friend.userId}
                   className="flex items-center justify-between p-3 rounded-lg bg-surface-2/60 border border-border hover:bg-surface-2 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`w-14 h-14 rounded-lg flex items-center justify-center font-bold text-white text-lg ${friend.avatarColor}`}
-                    >
-                      {friend.avatar}
+                    <div className="w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center font-bold text-white text-lg bg-primary">
+                      {profile?.avatarUrl ? (
+                        <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      ) : getInitials(profile)}
                     </div>
                     <div>
                       <p className="font-semibold text-text text-sm hover:underline cursor-pointer">
-                        {friend.displayName}
+                        {getProfileName(profile, friend.userId)}
                       </p>
-                      <p className="text-xs text-text-muted">@{friend.handle}</p>
-                      <p className="text-xs text-text-light mt-0.5">{formatNumber(friend.followers)} followers</p>
+                      <p className="text-xs text-text-muted">@{profile?.username ?? friend.userId.slice(0, 8)}</p>
+                      <p className="text-xs text-text-light mt-0.5">
+                        Friends since {new Date(friend.friendsSinceUtc).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
+                    onClick={() => void runRelationshipAction(friend.userId, () => friendsApi.unfriend(friend.userId))}
+                    disabled={isPending}
+                    className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
                   >
-                    Message
+                    {isPending ? 'Updating...' : 'Unfriend'}
                   </button>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
