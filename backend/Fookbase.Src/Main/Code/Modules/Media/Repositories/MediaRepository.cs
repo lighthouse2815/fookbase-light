@@ -1,5 +1,3 @@
-using System.Text.Json;
-using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -24,10 +22,8 @@ internal sealed class MediaRepository(MediaDbContext dbContext) : IMediaReposito
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task SaveReadyAsync(MediaAsset asset, MediaReadyIntegrationEvent integrationEvent,
-        CancellationToken cancellationToken = default) =>
-        SaveWithOutboxAsync(integrationEvent.EventId, MediaReadyIntegrationEvent.EventType,
-            integrationEvent, integrationEvent.OccurredAtUtc, cancellationToken);
+    public Task SaveReadyAsync(CancellationToken cancellationToken = default) =>
+        dbContext.SaveChangesAsync(cancellationToken);
 
     public async Task SaveFailedAsync(MediaAsset asset, CancellationToken cancellationToken = default)
     {
@@ -35,28 +31,40 @@ internal sealed class MediaRepository(MediaDbContext dbContext) : IMediaReposito
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SaveDeletedAsync(MediaAsset asset, MediaDeletedIntegrationEvent integrationEvent,
+    public async Task SaveDeletedAsync(MediaAsset asset,
+        DateTimeOffset deletedAtUtc,
         CancellationToken cancellationToken = default)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        AddOutbox(integrationEvent.EventId, MediaDeletedIntegrationEvent.EventType,
-            integrationEvent, integrationEvent.OccurredAtUtc);
         dbContext.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.ObjectKey,
-            integrationEvent.OccurredAtUtc));
+            deletedAtUtc));
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
     }
 
-    private async Task SaveWithOutboxAsync(Guid id, string type, object payload,
-        DateTimeOffset occurredAtUtc, CancellationToken cancellationToken)
+    public async Task SynchronizePostReferencesAsync(
+        Guid postId,
+        IReadOnlyCollection<Guid> mediaIds,
+        DateTimeOffset changedAtUtc,
+        CancellationToken cancellationToken = default)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        AddOutbox(id, type, payload, occurredAtUtc);
+        var currentReferences = await dbContext.MediaReferences
+            .Where(reference => reference.PostId == postId)
+            .ToListAsync(cancellationToken);
+        var desiredMediaIds = mediaIds.ToHashSet();
+
+        dbContext.MediaReferences.RemoveRange(
+            currentReferences.Where(reference => !desiredMediaIds.Contains(reference.MediaId)));
+        foreach (var mediaId in desiredMediaIds.Except(currentReferences.Select(reference => reference.MediaId)))
+        {
+            dbContext.MediaReferences.Add(MediaReference.Create(mediaId, postId, changedAtUtc));
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
     }
 
-    private void AddOutbox(Guid id, string type, object payload, DateTimeOffset occurredAtUtc) =>
-        dbContext.OutboxMessages.Add(OutboxMessage.Create(id, type,
-            JsonSerializer.Serialize(payload, payload.GetType()), occurredAtUtc));
+    public async Task RemovePostReferencesAsync(Guid postId, CancellationToken cancellationToken = default)
+    {
+        await dbContext.MediaReferences
+            .Where(reference => reference.PostId == postId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
 }

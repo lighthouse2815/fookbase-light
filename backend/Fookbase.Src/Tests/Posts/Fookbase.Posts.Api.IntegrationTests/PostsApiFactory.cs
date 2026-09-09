@@ -1,5 +1,7 @@
+using Fookbase.Api.Modules.Friends.Data;
+using Fookbase.Api.Modules.Media.Repositories;
+using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Posts.Data;
-using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -17,15 +19,14 @@ public sealed class PostsApiFactory : WebApplicationFactory<Program>
             ?? throw new InvalidOperationException("Posts development database connection string is required.");
         builder.UseEnvironment("Testing");
         ConfigureModuleConnections(builder, connectionString);
-        builder.UseSetting("Outbox:PublisherEnabled", "false");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.ConfigureServices(services =>
         {
-            services.RemoveAll<IMediaReadUrlClient>();
-            services.AddSingleton<IMediaReadUrlClient, FakeMediaReadUrlClient>();
+            services.RemoveAll<IObjectStorage>();
+            services.AddSingleton<IObjectStorage, FakeObjectStorage>();
         });
     }
 
@@ -36,6 +37,8 @@ public sealed class PostsApiFactory : WebApplicationFactory<Program>
         using var scope = host.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
         dbContext.Database.Migrate();
+        scope.ServiceProvider.GetRequiredService<FriendsDbContext>().Database.Migrate();
+        scope.ServiceProvider.GetRequiredService<MediaDbContext>().Database.Migrate();
 
         return host;
     }

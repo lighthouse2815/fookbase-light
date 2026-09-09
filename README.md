@@ -2,9 +2,9 @@
 
 Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
-Code nghiệp vụ được chia theo feature module trong một project backend duy nhất: `Modules/<Module>/Entities`, `Services`, `Repositories`, `Endpoints` và `Shared`. Các module trao đổi event trực tiếp trong process. Transactional outbox và inbox vẫn được giữ để event bền vững, retry được và idempotent, nhưng không cần message broker.
+Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> Application use case (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
 
-Chi tiết về ranh giới module, quyết định giữ projection/outbox-inbox và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
+Chi tiết về ranh giới module và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
 
 ## Kiến trúc
 
@@ -16,7 +16,8 @@ Fookbase.Api :5000
   |-- Identity module
   |-- Users module
   |-- Friends module
-  |-- Posts module ---- gọi trực tiếp ----> Media module
+  |-- Application use cases
+  |-- Posts module
   `-- Media module
       |
       |-- PostgreSQL
@@ -187,16 +188,9 @@ Privacy hợp lệ gồm `public`, `friends`, `onlyMe`; reaction gồm `like`, `
 
 Upload dùng presigned PUT trực tiếp tới bucket private. Posts lấy read URL bằng lời gọi C# trực tiếp tới Media module; endpoint HTTP nội bộ và shared service token cũ đã được loại bỏ.
 
-## Event nội bộ
+## Phối hợp module
 
-Các mutation vẫn ghi event và business state trong cùng transaction. Outbox worker của cùng process chuyển event tới projection handler của module đích rồi mới đánh dấu `ProcessedAtUtc`. Nếu handler lỗi, `RetryCount` và `LastError` được cập nhật để worker retry. Inbox giữ tính idempotent khi event được xử lý lại.
-
-Các luồng chính:
-
-- Identity registration → Users, Friends, Posts và Media.
-- Friends accepted/removed/blocked/unblocked → Posts.
-- Media ready/deleted → Posts.
-- Posts media attached/detached → Media.
+Khi một API cần nhiều service, endpoint gọi một application use case. Ví dụ đăng ký gọi `RegistrationUseCase` để tạo Identity và profile; Posts gọi `PostsUseCase` để lấy quan hệ hiện tại từ Friends và đồng bộ attachment với Media. Không có endpoint nào truy cập `DbContext` trực tiếp hoặc điều phối nhiều service.
 
 ## Tạo migration mới
 

@@ -1,10 +1,7 @@
-using System.Text.Json;
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Posts.DTOs;
-using Fookbase.Api.Shared.Contracts.Posts;
-using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +10,6 @@ namespace Fookbase.Api.Modules.Posts.Services;
 public sealed class PostsService(
     PostsDbContext dbContext,
     TimeProvider timeProvider,
-    IMediaReadUrlClient mediaReadUrlClient,
     PostsOptions options)
 {
     private const int MaximumLimit = 100;
@@ -25,16 +21,13 @@ public sealed class PostsService(
         IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default)
     {
-        var error = ValidatePost(content, mediaIds);
-        if (error is not null)
+        var validation = ValidatePostRequest(content, privacy, mediaIds);
+        if (!validation.Succeeded)
         {
-            return ApplicationResult<PostResponse>.Failure(error);
+            return ApplicationResult<PostResponse>.Failure(validation.Error!);
         }
 
-        if (!TryParsePrivacy(privacy, out var parsedPrivacy))
-        {
-            return ApplicationResult<PostResponse>.Failure(InvalidPrivacy());
-        }
+        TryParsePrivacy(privacy, out var parsedPrivacy);
 
         return Map(await CreatePostCoreAsync(
             actorUserId,
@@ -52,16 +45,13 @@ public sealed class PostsService(
         IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default)
     {
-        var error = ValidatePost(content, mediaIds);
-        if (error is not null)
+        var validation = ValidatePostRequest(content, privacy, mediaIds);
+        if (!validation.Succeeded)
         {
-            return ApplicationResult<PostResponse>.Failure(error);
+            return ApplicationResult<PostResponse>.Failure(validation.Error!);
         }
 
-        if (!TryParsePrivacy(privacy, out var parsedPrivacy))
-        {
-            return ApplicationResult<PostResponse>.Failure(InvalidPrivacy());
-        }
+        TryParsePrivacy(privacy, out var parsedPrivacy);
 
         return Map(await UpdatePostCoreAsync(
             actorUserId,
@@ -78,14 +68,48 @@ public sealed class PostsService(
         CancellationToken cancellationToken = default) =>
         Map(await DeletePostCoreAsync(actorUserId, postId, cancellationToken));
 
+    public ApplicationResult ValidatePostRequest(
+        string content,
+        string privacy,
+        IReadOnlyList<Guid> mediaIds)
+    {
+        var error = ValidatePost(content, mediaIds);
+        if (error is not null)
+        {
+            return ApplicationResult.Failure(error);
+        }
+
+        return TryParsePrivacy(privacy, out _)
+            ? ApplicationResult.Success()
+            : ApplicationResult.Failure(InvalidPrivacy());
+    }
+
+    public async Task<ApplicationResult> EnsurePostOwnerAsync(
+        Guid actorUserId,
+        Guid postId,
+        CancellationToken cancellationToken = default)
+    {
+        var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == postId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (post is null)
+        {
+            return ApplicationResult.Failure(ToApplicationError(PostsServiceError.PostNotFound));
+        }
+
+        return post.AuthorUserId == actorUserId
+            ? ApplicationResult.Success()
+            : ApplicationResult.Failure(ToApplicationError(PostsServiceError.Forbidden));
+    }
+
     public async Task<ApplicationResult<PostResponse>> GetPostAsync(
-        Guid? viewerUserId,
+        PostViewerContext? viewer,
         Guid postId,
         CancellationToken cancellationToken = default) =>
-        Map(await GetPostCoreAsync(viewerUserId, postId, cancellationToken));
+        Map(await GetPostCoreAsync(viewer, postId, cancellationToken));
 
     public async Task<ApplicationResult<PagedResponse<PostResponse>>> GetFeedAsync(
-        Guid actorUserId,
+        PostViewerContext viewer,
         int offset,
         int limit,
         CancellationToken cancellationToken = default)
@@ -96,11 +120,11 @@ public sealed class PostsService(
             return ApplicationResult<PagedResponse<PostResponse>>.Failure(error);
         }
 
-        return Map(await GetFeedCoreAsync(actorUserId, offset, limit, cancellationToken));
+        return Map(await GetFeedCoreAsync(viewer, offset, limit, cancellationToken));
     }
 
     public async Task<ApplicationResult<PagedResponse<PostResponse>>> GetUserPostsAsync(
-        Guid? viewerUserId,
+        PostViewerContext? viewer,
         Guid authorUserId,
         int offset,
         int limit,
@@ -113,7 +137,7 @@ public sealed class PostsService(
         }
 
         return Map(await GetUserPostsCoreAsync(
-            viewerUserId,
+            viewer,
             authorUserId,
             offset,
             limit,
@@ -121,7 +145,7 @@ public sealed class PostsService(
     }
 
     public async Task<ApplicationResult<CommentResponse>> CreateCommentAsync(
-        Guid actorUserId,
+        PostViewerContext actor,
         Guid postId,
         Guid? parentCommentId,
         string content,
@@ -134,10 +158,11 @@ public sealed class PostsService(
         }
 
         return Map(await CreateCommentCoreAsync(
-            actorUserId,
+            actor.UserId,
             postId,
             parentCommentId,
             content,
+            actor,
             cancellationToken));
     }
 
@@ -163,7 +188,7 @@ public sealed class PostsService(
         Map(await DeleteCommentCoreAsync(actorUserId, commentId, cancellationToken));
 
     public async Task<ApplicationResult<PagedResponse<CommentResponse>>> GetCommentsAsync(
-        Guid? viewerUserId,
+        PostViewerContext? viewer,
         Guid postId,
         int offset,
         int limit,
@@ -176,7 +201,7 @@ public sealed class PostsService(
         }
 
         return Map(await GetCommentsCoreAsync(
-            viewerUserId,
+            viewer,
             postId,
             offset,
             limit,
@@ -184,7 +209,7 @@ public sealed class PostsService(
     }
 
     public async Task<ApplicationResult<PostResponse>> SetReactionAsync(
-        Guid actorUserId,
+        PostViewerContext actor,
         Guid postId,
         string reactionType,
         CancellationToken cancellationToken = default)
@@ -199,30 +224,24 @@ public sealed class PostsService(
         }
 
         return Map(await SetReactionCoreAsync(
-            actorUserId,
+            actor.UserId,
             postId,
             parsedReaction,
+            actor,
             cancellationToken));
     }
 
     public async Task<ApplicationResult<PostResponse>> RemoveReactionAsync(
-        Guid actorUserId,
+        PostViewerContext actor,
         Guid postId,
         CancellationToken cancellationToken = default) =>
-        Map(await RemoveReactionCoreAsync(actorUserId, postId, cancellationToken));
+        Map(await RemoveReactionCoreAsync(actor.UserId, postId, actor, cancellationToken));
 
-    public async Task<ApplicationResult<MediaAccessResponse>> GetMediaAccessAsync(
-        Guid actorUserId, Guid postId, Guid mediaId, CancellationToken cancellationToken = default)
+    public async Task<ApplicationResult> AuthorizeMediaAccessAsync(
+        PostViewerContext viewer, Guid postId, Guid mediaId, CancellationToken cancellationToken = default)
     {
-        var access = await AuthorizeMediaAccessCoreAsync(actorUserId, postId, mediaId, cancellationToken);
-        if (access != PostsServiceError.None)
-            return ApplicationResult<MediaAccessResponse>.Failure(ToApplicationError(access));
-        var url = await mediaReadUrlClient.CreateReadUrlAsync(mediaId, cancellationToken);
-        return url is null
-            ? ApplicationResult<MediaAccessResponse>.Failure(new ApplicationError(
-                "media_unavailable", "The attached media is unavailable.", ApplicationErrorType.NotFound))
-            : ApplicationResult<MediaAccessResponse>.Success(
-                new MediaAccessResponse(url.MediaId, url.Url, url.ExpiresAtUtc));
+        var access = await AuthorizeMediaAccessCoreAsync(viewer, postId, mediaId, cancellationToken);
+        return Map(access);
     }
 
     private static bool TryParsePrivacy(string privacy, out PostPrivacy parsedPrivacy) =>
@@ -299,10 +318,6 @@ public sealed class PostsService(
             "relationship_unavailable", "This interaction is unavailable.", ApplicationErrorType.Conflict),
         PostsServiceError.InvalidParentComment => new(
             "invalid_parent_comment", "A reply can only target a top-level comment on the same post.", ApplicationErrorType.Validation),
-        PostsServiceError.InvalidMedia => new(
-            "invalid_media", "Every attachment must be ready.", ApplicationErrorType.Conflict),
-        PostsServiceError.MediaNotOwned => new(
-            "media_not_owned", "Only the media owner can attach it.", ApplicationErrorType.Forbidden),
         PostsServiceError.MediaNotAttached => new(
             "media_not_attached", "The media is not attached to this post.", ApplicationErrorType.NotFound),
         _ => throw new ArgumentOutOfRangeException(nameof(error), error, null)
@@ -315,24 +330,14 @@ public sealed class PostsService(
         IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default)
     {
-        var mediaError = await ValidateMediaAsync(authorUserId, mediaIds, cancellationToken);
-        if (mediaError != PostsServiceError.None)
-            return PostsServiceResult<PostResponse>.Failure(mediaError);
-
         var now = timeProvider.GetUtcNow();
         var post = Post.Create(Guid.NewGuid(), authorUserId, content, privacy, now);
-        var integrationEvent = new PostCreatedIntegrationEvent(
-            Guid.NewGuid(), post.Id, post.AuthorUserId, PrivacyName(post.Privacy), post.Content, now);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Posts.Add(post);
-        AddOutbox(integrationEvent.EventId, PostCreatedIntegrationEvent.EventType, integrationEvent, now);
         for (var index = 0; index < mediaIds.Count; index++)
         {
             dbContext.PostMedia.Add(PostMedia.Create(post.Id, mediaIds[index], index));
-            var attached = new PostMediaAttachedIntegrationEvent(
-                Guid.NewGuid(), post.Id, mediaIds[index], authorUserId, index, now);
-            AddOutbox(attached.EventId, PostMediaAttachedIntegrationEvent.EventType, attached, now);
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -360,10 +365,6 @@ public sealed class PostsService(
             return PostsServiceResult<PostResponse>.Failure(PostsServiceError.Forbidden);
         }
 
-        var mediaError = await ValidateMediaAsync(actorUserId, mediaIds, cancellationToken);
-        if (mediaError != PostsServiceError.None)
-            return PostsServiceResult<PostResponse>.Failure(mediaError);
-
         var now = timeProvider.GetUtcNow();
         var mediaOrder = mediaIds.Select((id, index) => new { id, index })
             .ToDictionary(x => x.id, x => x.index);
@@ -371,25 +372,16 @@ public sealed class PostsService(
         var removed = existingMedia.Where(x => !mediaIds.Contains(x.MediaId)).ToList();
         var added = mediaIds.Where(id => existingMedia.All(x => x.MediaId != id)).ToList();
         post.Update(content, privacy, now);
-        var integrationEvent = new PostUpdatedIntegrationEvent(
-            Guid.NewGuid(), post.Id, post.AuthorUserId, PrivacyName(post.Privacy), post.Content, now);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        AddOutbox(integrationEvent.EventId, PostUpdatedIntegrationEvent.EventType, integrationEvent, now);
         foreach (var item in removed)
         {
             dbContext.PostMedia.Remove(item);
-            var detached = new PostMediaDetachedIntegrationEvent(
-                Guid.NewGuid(), post.Id, item.MediaId, actorUserId, now);
-            AddOutbox(detached.EventId, PostMediaDetachedIntegrationEvent.EventType, detached, now);
         }
         foreach (var mediaId in added)
         {
             var order = mediaOrder[mediaId];
             dbContext.PostMedia.Add(PostMedia.Create(post.Id, mediaId, order));
-            var attached = new PostMediaAttachedIntegrationEvent(
-                Guid.NewGuid(), post.Id, mediaId, actorUserId, order, now);
-            AddOutbox(attached.EventId, PostMediaAttachedIntegrationEvent.EventType, attached, now);
         }
         foreach (var item in existingMedia.Except(removed))
             item.ChangeSortOrder(mediaOrder[item.MediaId]);
@@ -420,17 +412,11 @@ public sealed class PostsService(
         var now = timeProvider.GetUtcNow();
         var attachments = await dbContext.PostMedia.Where(x => x.PostId == postId).ToListAsync(cancellationToken);
         post.Delete(now);
-        var integrationEvent = new PostDeletedIntegrationEvent(
-            Guid.NewGuid(), post.Id, post.AuthorUserId, now);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        AddOutbox(integrationEvent.EventId, PostDeletedIntegrationEvent.EventType, integrationEvent, now);
         foreach (var attachment in attachments)
         {
             dbContext.PostMedia.Remove(attachment);
-            var detached = new PostMediaDetachedIntegrationEvent(
-                Guid.NewGuid(), post.Id, attachment.MediaId, actorUserId, now);
-            AddOutbox(detached.EventId, PostMediaDetachedIntegrationEvent.EventType, detached, now);
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -438,11 +424,11 @@ public sealed class PostsService(
     }
 
     public async Task<PostsServiceResult<PostResponse>> GetPostCoreAsync(
-        Guid? viewerUserId,
+        PostViewerContext? viewer,
         Guid postId,
         CancellationToken cancellationToken = default)
     {
-        var post = await VisiblePosts(viewerUserId)
+        var post = await VisiblePosts(viewer)
             .SingleOrDefaultAsync(item => item.Id == postId, cancellationToken);
         if (post is null)
         {
@@ -450,16 +436,16 @@ public sealed class PostsService(
         }
 
         return PostsServiceResult<PostResponse>.Success(
-            (await LoadResponsesAsync([post], viewerUserId, cancellationToken))[0]);
+            (await LoadResponsesAsync([post], viewer?.UserId, cancellationToken))[0]);
     }
 
     public async Task<PostsServiceResult<PagedResponse<PostResponse>>> GetFeedCoreAsync(
-        Guid viewerUserId,
+        PostViewerContext viewer,
         int offset,
         int limit,
         CancellationToken cancellationToken = default)
     {
-        var query = VisiblePosts(viewerUserId);
+        var query = VisiblePosts(viewer);
         var total = await query.CountAsync(cancellationToken);
         var posts = await query
             .OrderByDescending(post => post.CreatedAtUtc)
@@ -467,19 +453,19 @@ public sealed class PostsService(
             .Skip(offset)
             .Take(limit)
             .ToListAsync(cancellationToken);
-        var items = await LoadResponsesAsync(posts, viewerUserId, cancellationToken);
+        var items = await LoadResponsesAsync(posts, viewer.UserId, cancellationToken);
         return PostsServiceResult<PagedResponse<PostResponse>>.Success(
             new PagedResponse<PostResponse>(items, offset, limit, total));
     }
 
     public async Task<PostsServiceResult<PagedResponse<PostResponse>>> GetUserPostsCoreAsync(
-        Guid? viewerUserId,
+        PostViewerContext? viewer,
         Guid authorUserId,
         int offset,
         int limit,
         CancellationToken cancellationToken = default)
     {
-        var query = VisiblePosts(viewerUserId).Where(post => post.AuthorUserId == authorUserId);
+        var query = VisiblePosts(viewer).Where(post => post.AuthorUserId == authorUserId);
         var total = await query.CountAsync(cancellationToken);
         var posts = await query
             .OrderByDescending(post => post.CreatedAtUtc)
@@ -487,7 +473,7 @@ public sealed class PostsService(
             .Skip(offset)
             .Take(limit)
             .ToListAsync(cancellationToken);
-        var items = await LoadResponsesAsync(posts, viewerUserId, cancellationToken);
+        var items = await LoadResponsesAsync(posts, viewer?.UserId, cancellationToken);
         return PostsServiceResult<PagedResponse<PostResponse>>.Success(
             new PagedResponse<PostResponse>(items, offset, limit, total));
     }
@@ -497,6 +483,7 @@ public sealed class PostsService(
         Guid postId,
         Guid? parentCommentId,
         string content,
+        PostViewerContext actor,
         CancellationToken cancellationToken = default)
     {
         var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
@@ -507,7 +494,7 @@ public sealed class PostsService(
             return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.PostNotFound);
         }
 
-        var accessError = await GetInteractionAccessErrorAsync(authorUserId, post, cancellationToken);
+        var accessError = GetInteractionAccessError(actor, post);
         if (accessError != PostsServiceError.None)
         {
             return PostsServiceResult<CommentResponse>.Failure(accessError);
@@ -531,12 +518,9 @@ public sealed class PostsService(
 
         var now = timeProvider.GetUtcNow();
         var comment = Comment.Create(Guid.NewGuid(), postId, authorUserId, parentCommentId, content, now);
-        var integrationEvent = new CommentCreatedIntegrationEvent(
-            Guid.NewGuid(), comment.Id, post.Id, post.AuthorUserId, authorUserId, parentCommentId, now);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Comments.Add(comment);
-        AddOutbox(integrationEvent.EventId, CommentCreatedIntegrationEvent.EventType, integrationEvent, now);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return PostsServiceResult<CommentResponse>.Success(ToResponse(comment));
@@ -597,13 +581,13 @@ public sealed class PostsService(
     }
 
     public async Task<PostsServiceResult<PagedResponse<CommentResponse>>> GetCommentsCoreAsync(
-        Guid? viewerUserId,
+        PostViewerContext? viewer,
         Guid postId,
         int offset,
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!await VisiblePosts(viewerUserId).AnyAsync(post => post.Id == postId, cancellationToken))
+        if (!await VisiblePosts(viewer).AnyAsync(post => post.Id == postId, cancellationToken))
         {
             return PostsServiceResult<PagedResponse<CommentResponse>>.Failure(PostsServiceError.PostNotFound);
         }
@@ -625,21 +609,23 @@ public sealed class PostsService(
         Guid actorUserId,
         Guid postId,
         ReactionType reactionType,
+        PostViewerContext actor,
         CancellationToken cancellationToken = default)
     {
-        return await ChangeReactionAsync(actorUserId, postId, reactionType, cancellationToken);
+        return await ChangeReactionAsync(actorUserId, postId, reactionType, actor, cancellationToken);
     }
 
     public async Task<PostsServiceResult<PostResponse>> RemoveReactionCoreAsync(
         Guid actorUserId,
         Guid postId,
+        PostViewerContext actor,
         CancellationToken cancellationToken = default) =>
-        await ChangeReactionAsync(actorUserId, postId, null, cancellationToken);
+        await ChangeReactionAsync(actorUserId, postId, null, actor, cancellationToken);
 
     public async Task<PostsServiceError> AuthorizeMediaAccessCoreAsync(
-        Guid viewerUserId, Guid postId, Guid mediaId, CancellationToken cancellationToken = default)
+        PostViewerContext viewer, Guid postId, Guid mediaId, CancellationToken cancellationToken = default)
     {
-        var post = await VisiblePosts(viewerUserId)
+        var post = await VisiblePosts(viewer)
             .SingleOrDefaultAsync(x => x.Id == postId, cancellationToken);
         if (post is null) return PostsServiceError.PostNotFound;
         return await dbContext.PostMedia.AnyAsync(
@@ -652,6 +638,7 @@ public sealed class PostsService(
         Guid actorUserId,
         Guid postId,
         ReactionType? reactionType,
+        PostViewerContext actor,
         CancellationToken cancellationToken)
     {
         var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
@@ -662,7 +649,7 @@ public sealed class PostsService(
             return PostsServiceResult<PostResponse>.Failure(PostsServiceError.PostNotFound);
         }
 
-        var accessError = await GetInteractionAccessErrorAsync(actorUserId, post, cancellationToken);
+        var accessError = GetInteractionAccessError(actor, post);
         if (accessError != PostsServiceError.None)
         {
             return PostsServiceResult<PostResponse>.Failure(accessError);
@@ -688,54 +675,41 @@ public sealed class PostsService(
             reaction.ChangeTo(reactionType.Value, now);
         }
 
-        var integrationEvent = new PostReactionChangedIntegrationEvent(
-            Guid.NewGuid(), post.Id, post.AuthorUserId, actorUserId,
-            reactionType?.ToString().ToLowerInvariant(), now);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        AddOutbox(
-            integrationEvent.EventId,
-            PostReactionChangedIntegrationEvent.EventType,
-            integrationEvent,
-            now);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return PostsServiceResult<PostResponse>.Success(
             (await LoadResponsesAsync([post], actorUserId, cancellationToken))[0]);
     }
 
-    private IQueryable<Post> VisiblePosts(Guid? viewerUserId)
+    private IQueryable<Post> VisiblePosts(PostViewerContext? viewer)
     {
         var query = dbContext.Posts.AsNoTracking().Where(post => post.DeletedAtUtc == null);
-        if (viewerUserId is null)
+        if (viewer is null)
         {
             return query.Where(post => post.Privacy == PostPrivacy.Public);
         }
 
-        var viewer = viewerUserId.Value;
+        var viewerUserId = viewer.UserId;
+        var friendUserIds = viewer.FriendUserIds;
+        var blockedUserIds = viewer.BlockedUserIds;
         return query.Where(post =>
-            post.AuthorUserId == viewer ||
-            (!dbContext.BlockedEdges.Any(edge =>
-                    edge.IsActive &&
-                    ((edge.BlockerUserId == viewer && edge.BlockedUserId == post.AuthorUserId) ||
-                     (edge.BlockerUserId == post.AuthorUserId && edge.BlockedUserId == viewer))) &&
+            post.AuthorUserId == viewerUserId ||
+            (!blockedUserIds.Contains(post.AuthorUserId) &&
              (post.Privacy == PostPrivacy.Public ||
-              (post.Privacy == PostPrivacy.Friends && dbContext.FriendEdges.Any(edge =>
-                  edge.IsActive &&
-                  ((edge.UserId1 == viewer && edge.UserId2 == post.AuthorUserId) ||
-                   (edge.UserId1 == post.AuthorUserId && edge.UserId2 == viewer)))))));
+              (post.Privacy == PostPrivacy.Friends && friendUserIds.Contains(post.AuthorUserId)))));
     }
 
-    private async Task<PostsServiceError> GetInteractionAccessErrorAsync(
-        Guid actorUserId,
-        Post post,
-        CancellationToken cancellationToken)
+    private static PostsServiceError GetInteractionAccessError(
+        PostViewerContext actor,
+        Post post)
     {
-        if (actorUserId == post.AuthorUserId)
+        if (actor.UserId == post.AuthorUserId)
         {
             return PostsServiceError.None;
         }
 
-        if (await IsBlockedAsync(actorUserId, post.AuthorUserId, cancellationToken))
+        if (actor.BlockedUserIds.Contains(post.AuthorUserId))
         {
             return PostsServiceError.RelationshipBlocked;
         }
@@ -746,7 +720,7 @@ public sealed class PostsService(
         }
 
         if (post.Privacy == PostPrivacy.Friends &&
-            await AreFriendsAsync(actorUserId, post.AuthorUserId, cancellationToken))
+            actor.FriendUserIds.Contains(post.AuthorUserId))
         {
             return PostsServiceError.None;
         }
@@ -802,44 +776,6 @@ public sealed class PostsService(
             viewerReactions.GetValueOrDefault(post.Id))).ToList();
     }
 
-    private async Task<PostsServiceError> ValidateMediaAsync(
-        Guid ownerUserId, IReadOnlyList<Guid> mediaIds, CancellationToken cancellationToken)
-    {
-        if (mediaIds.Count == 0) return PostsServiceError.None;
-        var media = await dbContext.KnownMedia.AsNoTracking()
-            .Where(x => mediaIds.Contains(x.MediaId)).ToListAsync(cancellationToken);
-        if (media.Count != mediaIds.Count || media.Any(x => !x.IsReady))
-            return PostsServiceError.InvalidMedia;
-        return media.Any(x => x.OwnerUserId != ownerUserId)
-            ? PostsServiceError.MediaNotOwned
-            : PostsServiceError.None;
-    }
-
-    private Task<bool> IsBlockedAsync(Guid firstUserId, Guid secondUserId, CancellationToken cancellationToken) =>
-        dbContext.BlockedEdges.AnyAsync(edge =>
-            edge.IsActive &&
-            ((edge.BlockerUserId == firstUserId && edge.BlockedUserId == secondUserId) ||
-             (edge.BlockerUserId == secondUserId && edge.BlockedUserId == firstUserId)),
-            cancellationToken);
-
-    private Task<bool> AreFriendsAsync(Guid firstUserId, Guid secondUserId, CancellationToken cancellationToken) =>
-        dbContext.FriendEdges.AnyAsync(edge =>
-            edge.IsActive &&
-            ((edge.UserId1 == firstUserId && edge.UserId2 == secondUserId) ||
-             (edge.UserId1 == secondUserId && edge.UserId2 == firstUserId)),
-            cancellationToken);
-
-    private void AddOutbox(
-        Guid eventId,
-        string eventType,
-        object integrationEvent,
-        DateTimeOffset occurredAtUtc) =>
-        dbContext.OutboxMessages.Add(OutboxMessage.Create(
-            eventId,
-            eventType,
-            JsonSerializer.Serialize(integrationEvent, integrationEvent.GetType()),
-            occurredAtUtc));
-
     private static PostResponse EmptySummary(Post post, IReadOnlyList<Guid> mediaIds) =>
         new(
             post.Id,
@@ -871,3 +807,8 @@ public sealed class PostsService(
         _ => throw new ArgumentOutOfRangeException(nameof(privacy), privacy, null)
     };
 }
+
+public sealed record PostViewerContext(
+    Guid UserId,
+    IReadOnlySet<Guid> FriendUserIds,
+    IReadOnlySet<Guid> BlockedUserIds);

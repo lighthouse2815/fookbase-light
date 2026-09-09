@@ -24,6 +24,19 @@ public interface IMediaService
         Guid mediaId,
         CancellationToken cancellationToken = default);
 
+    Task<ApplicationResult> ValidatePostMediaAsync(
+        Guid ownerUserId,
+        IReadOnlyCollection<Guid> mediaIds,
+        CancellationToken cancellationToken = default);
+
+    Task<ApplicationResult> SynchronizePostReferencesAsync(
+        Guid ownerUserId,
+        Guid postId,
+        IReadOnlyCollection<Guid> mediaIds,
+        CancellationToken cancellationToken = default);
+
+    Task RemovePostReferencesAsync(Guid postId, CancellationToken cancellationToken = default);
+
     Task<ApplicationResult> DeleteAsync(
         Guid ownerUserId,
         Guid mediaId,

@@ -5,7 +5,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Repositories;
@@ -66,7 +65,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Valid_completion_is_idempotent_and_writes_one_ready_outbox_event()
+    public async Task Valid_completion_is_idempotent()
     {
         var userId = CreateUserId();
         using var client = CreateAuthenticatedClient(userId);
@@ -78,11 +77,6 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
 
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
-        var readyEvents = await db.OutboxMessages.AsNoTracking()
-            .Where(x => x.Type == MediaReadyIntegrationEvent.EventType).ToListAsync();
-        Assert.Equal(1, readyEvents.Count(x => x.Payload.Contains(intent.MediaId.ToString())));
     }
 
     [Fact]
@@ -102,7 +96,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Delete_is_blocked_by_reference_and_unreferenced_delete_uses_outbox_and_cleanup_queue()
+    public async Task Delete_is_blocked_by_reference_and_unreferenced_delete_queues_cleanup()
     {
         var ownerId = CreateUserId();
         using var owner = CreateAuthenticatedClient(ownerId);
@@ -123,9 +117,6 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         var verifyDb = verification.ServiceProvider.GetRequiredService<MediaDbContext>();
         Assert.Equal(MediaStatus.Deleted,
             (await verifyDb.MediaAssets.AsNoTracking().SingleAsync(x => x.Id == unreferenced)).Status);
-        var deletedEvents = await verifyDb.OutboxMessages.AsNoTracking()
-            .Where(x => x.Type == MediaDeletedIntegrationEvent.EventType).ToListAsync();
-        Assert.Contains(deletedEvents, x => x.Payload.Contains(unreferenced.ToString()));
         Assert.True(await verifyDb.ObjectDeletions.AnyAsync(x => x.MediaId == unreferenced));
     }
 

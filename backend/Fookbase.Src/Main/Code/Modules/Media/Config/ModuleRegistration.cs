@@ -12,16 +12,13 @@ public static class DependencyInjection
         this IServiceCollection services,
         string connectionString,
         MinioOptions minioOptions,
-        OutboxOptions outboxOptions,
         MediaOptions mediaOptions)
     {
         minioOptions.Validate();
-        outboxOptions.Validate();
         mediaOptions.Validate();
 
         services.AddDbContext<MediaDbContext>(options => options.UseNpgsql(connectionString));
         services.AddSingleton(minioOptions);
-        services.AddSingleton(outboxOptions);
         services.AddSingleton(mediaOptions);
         services.AddSingleton<IMinioClient>(_ =>
         {
@@ -39,9 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
         services.AddScoped<IMediaService, MediaService>();
-        services.AddScoped<MediaProjectionStore>();
         services.AddHostedService<MinioBucketInitializer>();
-        services.AddHostedService<OutboxPublisherWorker>();
         services.AddHostedService<PendingUploadCleanupWorker>();
         services.AddHostedService<ObjectDeletionWorker>();
         return services;

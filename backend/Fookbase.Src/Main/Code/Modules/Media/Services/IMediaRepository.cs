@@ -1,4 +1,3 @@
-using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Modules.Media.Entities;
 
 namespace Fookbase.Api.Modules.Media.Services;
@@ -14,10 +13,7 @@ public interface IMediaRepository
 
     Task AddPendingAsync(MediaAsset asset, CancellationToken cancellationToken = default);
 
-    Task SaveReadyAsync(
-        MediaAsset asset,
-        MediaReadyIntegrationEvent integrationEvent,
-        CancellationToken cancellationToken = default);
+    Task SaveReadyAsync(CancellationToken cancellationToken = default);
 
     Task SaveFailedAsync(
         MediaAsset asset,
@@ -25,6 +21,14 @@ public interface IMediaRepository
 
     Task SaveDeletedAsync(
         MediaAsset asset,
-        MediaDeletedIntegrationEvent integrationEvent,
+        DateTimeOffset deletedAtUtc,
         CancellationToken cancellationToken = default);
+
+    Task SynchronizePostReferencesAsync(
+        Guid postId,
+        IReadOnlyCollection<Guid> mediaIds,
+        DateTimeOffset changedAtUtc,
+        CancellationToken cancellationToken = default);
+
+    Task RemovePostReferencesAsync(Guid postId, CancellationToken cancellationToken = default);
 }

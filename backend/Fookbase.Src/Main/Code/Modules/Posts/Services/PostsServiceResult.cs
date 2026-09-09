@@ -9,8 +9,6 @@ public enum PostsServiceError
     Forbidden,
     RelationshipBlocked,
     InvalidParentComment,
-    InvalidMedia,
-    MediaNotOwned,
     MediaNotAttached
 }
 

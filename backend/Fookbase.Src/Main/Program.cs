@@ -21,7 +21,7 @@ builder.Services.AddUsersModule(builder.Configuration);
 builder.Services.AddFriendsModule(builder.Configuration);
 builder.Services.AddPostsModule(builder.Configuration);
 builder.Services.AddMediaModule(builder.Configuration);
-builder.Services.AddInProcessModuleCommunication();
+builder.Services.AddApplicationUseCases();
 
 jwtOptions.Validate();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

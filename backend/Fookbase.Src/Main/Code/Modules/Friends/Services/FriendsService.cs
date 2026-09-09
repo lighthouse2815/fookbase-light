@@ -128,6 +128,26 @@ public sealed class FriendsService(
         return Map(await GetStatusCoreAsync(actorUserId, otherUserId, cancellationToken));
     }
 
+    public async Task<RelationshipAccessSnapshot> GetAccessSnapshotAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var friendUserIds = await dbContext.Friendships.AsNoTracking()
+            .Where(friendship => friendship.UserId1 == userId || friendship.UserId2 == userId)
+            .Select(friendship => friendship.UserId1 == userId
+                ? friendship.UserId2
+                : friendship.UserId1)
+            .ToHashSetAsync(cancellationToken);
+        var blockedUserIds = await dbContext.BlockedUsers.AsNoTracking()
+            .Where(block => block.BlockerUserId == userId || block.BlockedUserId == userId)
+            .Select(block => block.BlockerUserId == userId
+                ? block.BlockedUserId
+                : block.BlockerUserId)
+            .ToHashSetAsync(cancellationToken);
+
+        return new RelationshipAccessSnapshot(friendUserIds, blockedUserIds);
+    }
+
     public async Task<ApplicationResult<MutualFriendsResponse>> GetMutualFriendsAsync(
         Guid actorUserId,
         Guid otherUserId,
@@ -705,3 +725,7 @@ public sealed class FriendsService(
             new(default, error);
     }
 }
+
+public sealed record RelationshipAccessSnapshot(
+    IReadOnlySet<Guid> FriendUserIds,
+    IReadOnlySet<Guid> BlockedUserIds);

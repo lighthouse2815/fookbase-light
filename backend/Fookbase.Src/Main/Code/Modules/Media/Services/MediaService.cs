@@ -1,6 +1,5 @@
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.DTOs;
-using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
 
@@ -126,11 +125,7 @@ public sealed class MediaService(
         }
 
         asset.MarkReady(storedObject.SizeBytes, now);
-        var integrationEvent = new MediaReadyIntegrationEvent(
-            Guid.NewGuid(), asset.Id, asset.OwnerUserId,
-            asset.MediaType.ToString().ToLowerInvariant(), asset.ContentType,
-            storedObject.SizeBytes, now);
-        await repository.SaveReadyAsync(asset, integrationEvent, cancellationToken);
+        await repository.SaveReadyAsync(cancellationToken);
         return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
     }
 
@@ -161,6 +156,53 @@ public sealed class MediaService(
         return ApplicationResult<MediaReadUrlResponse>.Success(
             new MediaReadUrlResponse(asset.Id, url, timeProvider.GetUtcNow().Add(expiry)));
     }
+
+    public async Task<ApplicationResult> ValidatePostMediaAsync(
+        Guid ownerUserId,
+        IReadOnlyCollection<Guid> mediaIds,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (var mediaId in mediaIds)
+        {
+            var asset = await repository.FindAsync(mediaId, cancellationToken: cancellationToken);
+            if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+            {
+                return ApplicationResult.Failure(new ApplicationError(
+                    "invalid_media", "Every attachment must be ready.", ApplicationErrorType.Conflict));
+            }
+
+            if (asset.OwnerUserId != ownerUserId)
+            {
+                return ApplicationResult.Failure(new ApplicationError(
+                    "media_not_owned", "Only the media owner can attach it.", ApplicationErrorType.Forbidden));
+            }
+        }
+
+        return ApplicationResult.Success();
+    }
+
+    public async Task<ApplicationResult> SynchronizePostReferencesAsync(
+        Guid ownerUserId,
+        Guid postId,
+        IReadOnlyCollection<Guid> mediaIds,
+        CancellationToken cancellationToken = default)
+    {
+        var validation = await ValidatePostMediaAsync(ownerUserId, mediaIds, cancellationToken);
+        if (!validation.Succeeded)
+        {
+            return validation;
+        }
+
+        await repository.SynchronizePostReferencesAsync(
+            postId,
+            mediaIds,
+            timeProvider.GetUtcNow(),
+            cancellationToken);
+        return ApplicationResult.Success();
+    }
+
+    public Task RemovePostReferencesAsync(Guid postId, CancellationToken cancellationToken = default) =>
+        repository.RemovePostReferencesAsync(postId, cancellationToken);
 
     public async Task<ApplicationResult> DeleteAsync(
         Guid ownerUserId,
@@ -193,9 +235,7 @@ public sealed class MediaService(
 
         var now = timeProvider.GetUtcNow();
         asset.Delete(now);
-        var integrationEvent = new MediaDeletedIntegrationEvent(
-            Guid.NewGuid(), asset.Id, asset.OwnerUserId, now);
-        await repository.SaveDeletedAsync(asset, integrationEvent, cancellationToken);
+        await repository.SaveDeletedAsync(asset, now, cancellationToken);
         return ApplicationResult.Success();
     }
 

@@ -32,7 +32,6 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
-        builder.UseSetting("Outbox:PublisherEnabled", "false");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.ConfigureServices(services =>
         {
