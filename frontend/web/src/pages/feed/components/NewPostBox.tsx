@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CURRENT_USER } from '../../../data/mockData'
 
 interface NewPostBoxProps {
-  onPost: (content: string, file: File | null) => Promise<void>
+  onPost: (
+    content: string,
+    file: File | null,
+    onUploadProgress: (progress: number) => void,
+  ) => Promise<void>
 }
 
 const MAX_CHARS = 280
@@ -11,21 +15,41 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [content, setContent] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const remaining = MAX_CHARS - content.length
   const isOverLimit = remaining < 0
   const isNearLimit = remaining <= 30 && !isOverLimit
 
+  useEffect(() => {
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.addEventListener('load', () => {
+      if (typeof reader.result === 'string') setPreviewUrl(reader.result)
+    })
+    reader.readAsDataURL(file)
+    return () => reader.abort()
+  }, [file])
+
+  const selectFile = (nextFile: File | null) => {
+    setPreviewUrl(null)
+    setFile(nextFile)
+  }
+
   const handleSubmit = async () => {
     if (!content.trim() || isOverLimit) return
     setIsSubmitting(true)
+    setUploadProgress(0)
     setError(null)
 
     try {
-      await onPost(content.trim(), file)
+      await onPost(content.trim(), file, setUploadProgress)
       setContent('')
       setFile(null)
+      setUploadProgress(0)
       setIsExpanded(false)
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Không thể tạo bài viết.')
@@ -148,6 +172,32 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
             }}
           />
 
+          {file && (
+            <div className="relative rounded-lg border border-border bg-surface-2 overflow-hidden">
+              {previewUrl && file.type.startsWith('image/') && <img src={previewUrl} alt="Attachment preview" className="max-h-72 w-full object-cover" />}
+              {previewUrl && file.type.startsWith('video/') && <video src={previewUrl} controls className="max-h-72 w-full" />}
+              {!file.type.startsWith('image/') && !file.type.startsWith('video/') && <p className="p-3 text-sm text-text">{file.name}</p>}
+              <button
+                type="button"
+                onClick={() => setFile(null)}
+                disabled={isSubmitting}
+                className="absolute right-2 top-2 w-7 h-7 rounded-full bg-surface/90 hover:bg-surface text-text border border-border cursor-pointer disabled:opacity-60"
+                title="Remove attachment"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {isSubmitting && file && (
+            <div className="flex items-center gap-3 text-xs text-text-muted">
+              <div className="h-2 flex-1 rounded-full bg-surface-3 overflow-hidden">
+                <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${uploadProgress}%` }} />
+              </div>
+              <span>{uploadProgress}%</span>
+            </div>
+          )}
+
           {/* Action buttons + Char counter row */}
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <div className="flex items-center gap-1">
@@ -167,7 +217,7 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
               >
                 <span className="text-base">🖼️</span>
                 <span className="hidden sm:inline">{file ? file.name : 'Photo/video'}</span>
-                <input type="file" accept="image/*,video/*" className="hidden" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+                <input type="file" accept="image/*,video/*" className="hidden" onChange={(event) => selectFile(event.target.files?.[0] ?? null)} />
               </label>
               <button
                 type="button"
