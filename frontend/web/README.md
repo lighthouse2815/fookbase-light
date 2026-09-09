@@ -8,7 +8,7 @@ This template provides a minimal setup to get React working in Vite with HMR and
 Set `VITE_API_PROXY_TARGET` to use another backend URL. For a separately deployed frontend,
 set `VITE_API_BASE_URL` to the API origin instead.
 
-Authenticated requests use the JWT stored in `localStorage` under `fookbase.accessToken`.
+The sign-in flow stores the JWT session in local storage and refreshes an expired access token automatically.
 
 Currently, two official plugins are available:
 
