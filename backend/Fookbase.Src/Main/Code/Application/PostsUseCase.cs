@@ -2,7 +2,7 @@ using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Posts.DTOs;
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Services;
-using MediaApplicationError = Fookbase.Api.Modules.Media.Services.ApplicationError;
+using MediaApplicationError = Fookbase.Api.Modules.Media.Common.ApplicationError;
 
 namespace Fookbase.Api.Application;
 

@@ -2,7 +2,7 @@ using Fookbase.Api.Modules.Media.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Fookbase.Api.Modules.Media.Config;
+namespace Fookbase.Api.Modules.Media.Data.Configurations;
 
 internal sealed class MediaReferenceConfiguration : IEntityTypeConfiguration<MediaReference>
 {

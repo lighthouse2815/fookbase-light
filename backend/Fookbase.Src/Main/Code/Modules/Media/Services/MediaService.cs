@@ -1,7 +1,9 @@
 using Fookbase.Api.Modules.Media.Config;
-using Fookbase.Api.Modules.Media.DTOs;
+using Fookbase.Api.Modules.Media.Common;
+using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Modules.Media.DTOs.Requests;
+using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
-using Fookbase.Api.Modules.Media.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Services;

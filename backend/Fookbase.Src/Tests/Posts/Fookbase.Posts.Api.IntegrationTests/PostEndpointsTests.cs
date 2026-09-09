@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.Entities;
-using Fookbase.Api.Modules.Media.Repositories;
+using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Posts.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

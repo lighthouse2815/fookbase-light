@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Fookbase.Api.Modules.Media.Repositories;
+namespace Fookbase.Api.Modules.Media.Data;
 
 public sealed class MediaDbContextFactory : IDesignTimeDbContextFactory<MediaDbContext>
 {

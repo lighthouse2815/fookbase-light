@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Fookbase.Api.Modules.Media.Repositories.Migrations
+namespace Fookbase.Api.Modules.Media.Data.Migrations
 {
     /// <inheritdoc />
     public partial class RemoveMediaMessaging : Migration

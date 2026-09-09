@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Friends.Data;
-using Fookbase.Api.Modules.Media.Repositories;
+using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Posts.Data;
 using Microsoft.AspNetCore.Hosting;

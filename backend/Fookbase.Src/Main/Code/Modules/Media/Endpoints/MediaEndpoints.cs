@@ -1,10 +1,11 @@
-using Fookbase.Api.Modules.Media.DTOs;
+using Fookbase.Api.Modules.Media.Common;
+using Fookbase.Api.Modules.Media.DTOs.Requests;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Media.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fookbase.Api.Modules.Media.Controllers;
+namespace Fookbase.Api.Modules.Media.Endpoints;
 
 public static class MediaEndpoints
 {

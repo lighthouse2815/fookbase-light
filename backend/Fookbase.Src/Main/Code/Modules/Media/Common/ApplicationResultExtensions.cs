@@ -1,7 +1,7 @@
-using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Media.Common;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fookbase.Api.Modules.Media.Controllers;
+namespace Fookbase.Api.Modules.Media.Common;
 
 internal static class ApplicationResultExtensions
 {

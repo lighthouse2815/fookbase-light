@@ -5,7 +5,7 @@ using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Modules.Friends.Endpoints;
 using Fookbase.Api.Modules.Identity.Endpoints;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Media.Controllers;
+using Fookbase.Api.Modules.Media.Endpoints;
 using Fookbase.Api.Modules.Posts.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

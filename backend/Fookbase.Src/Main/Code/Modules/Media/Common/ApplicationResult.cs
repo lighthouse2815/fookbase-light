@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Media.Services;
+namespace Fookbase.Api.Modules.Media.Common;
 
 public enum ApplicationErrorType
 {

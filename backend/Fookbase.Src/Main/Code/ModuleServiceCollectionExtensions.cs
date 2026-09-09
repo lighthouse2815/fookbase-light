@@ -3,6 +3,7 @@ using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Media;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Friends;

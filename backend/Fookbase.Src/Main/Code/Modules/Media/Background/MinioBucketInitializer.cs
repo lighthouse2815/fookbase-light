@@ -5,7 +5,7 @@ using Minio;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
 
-namespace Fookbase.Api.Modules.Media.Services;
+namespace Fookbase.Api.Modules.Media.Background;
 
 internal sealed class MinioBucketInitializer(
     IMinioClient client, MinioOptions options, ILogger<MinioBucketInitializer> logger) : IHostedService

@@ -1,10 +1,12 @@
+using Fookbase.Api.Modules.Media.Background;
+using Fookbase.Api.Modules.Media.Config;
+using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Media.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Minio;
 
-namespace Fookbase.Api.Modules.Media.Config;
+namespace Fookbase.Api.Modules.Media;
 
 public static class DependencyInjection
 {

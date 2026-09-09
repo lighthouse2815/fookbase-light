@@ -1,7 +1,7 @@
 using Fookbase.Api.Modules.Media.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Media.Repositories;
+namespace Fookbase.Api.Modules.Media.Data;
 
 public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : DbContext(options)
 {
@@ -14,7 +14,7 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : D
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(MediaDbContext).Assembly,
             type => type.Namespace?.StartsWith(
-                "Fookbase.Api.Modules.Media.Config",
+                "Fookbase.Api.Modules.Media.Data.Configurations",
                 StringComparison.Ordinal) == true);
     }
 }
