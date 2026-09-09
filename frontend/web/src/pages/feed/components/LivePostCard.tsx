@@ -86,6 +86,32 @@ export default function LivePostCard({
     }
   }
 
+  const editComment = async (comment: Comment) => {
+    const content = window.prompt('Edit comment', comment.content)
+    if (content === null || !content.trim()) return
+
+    try {
+      const updatedComment = await postsApi.updateComment(comment.id, content.trim())
+      setComments((currentComments) => currentComments.map((item) =>
+        item.id === updatedComment.id ? updatedComment : item,
+      ))
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Không thể sửa bình luận.')
+    }
+  }
+
+  const deleteComment = async (comment: Comment) => {
+    if (!window.confirm('Delete this comment?')) return
+
+    try {
+      await postsApi.deleteComment(comment.id)
+      setComments((currentComments) => currentComments.filter((item) => item.id !== comment.id))
+      onPostUpdated({ ...post, commentCount: Math.max(0, post.commentCount - 1) })
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Không thể xóa bình luận.')
+    }
+  }
+
   const editPost = async () => {
     const content = window.prompt('Edit post', post.content)
     if (content === null || !content.trim()) return
@@ -152,7 +178,17 @@ export default function LivePostCard({
       </div>
       {showComments && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
-          {comments.map((comment) => <p key={comment.id} className="text-sm text-text bg-surface-2 rounded-lg px-3 py-2">{comment.content}</p>)}
+          {comments.map((comment) => (
+            <div key={comment.id} className="flex items-start gap-2 bg-surface-2 rounded-lg px-3 py-2">
+              <p className="flex-1 text-sm text-text whitespace-pre-wrap">{comment.content}</p>
+              {comment.authorUserId === currentUserId && (
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => void editComment(comment)} className="bg-transparent border-none text-xs text-text-muted hover:text-text cursor-pointer">Edit</button>
+                  <button type="button" onClick={() => void deleteComment(comment)} className="bg-transparent border-none text-xs text-[#ff8a9b] cursor-pointer">Delete</button>
+                </div>
+              )}
+            </div>
+          ))}
           <form onSubmit={(event) => void createComment(event)} className="flex gap-2">
             <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Write a comment" className="min-w-0 flex-1 bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text outline-none" />
             <button className="px-3 rounded-lg bg-primary text-white border-none cursor-pointer text-sm">Send</button>
