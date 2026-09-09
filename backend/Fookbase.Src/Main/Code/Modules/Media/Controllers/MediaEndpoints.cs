@@ -19,7 +19,7 @@ public static class MediaEndpoints
     }
 
     private static async Task<IResult> CreateUploadAsync(
-        CreateUploadRequest request, ClaimsPrincipal principal, IMediaService service,
+        CreateUploadRequest request, ClaimsPrincipal principal, MediaService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var ownerUserId)) return Results.Unauthorized();
@@ -30,7 +30,7 @@ public static class MediaEndpoints
     }
 
     private static async Task<IResult> CompleteAsync(
-        Guid mediaId, ClaimsPrincipal principal, IMediaService service, CancellationToken cancellationToken)
+        Guid mediaId, ClaimsPrincipal principal, MediaService service, CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var ownerUserId)) return Results.Unauthorized();
         var result = await service.CompleteAsync(ownerUserId, mediaId, cancellationToken);
@@ -38,7 +38,7 @@ public static class MediaEndpoints
     }
 
     private static async Task<IResult> GetMetadataAsync(
-        Guid mediaId, ClaimsPrincipal principal, IMediaService service, CancellationToken cancellationToken)
+        Guid mediaId, ClaimsPrincipal principal, MediaService service, CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var ownerUserId)) return Results.Unauthorized();
         var result = await service.GetMetadataAsync(ownerUserId, mediaId, cancellationToken);
@@ -46,7 +46,7 @@ public static class MediaEndpoints
     }
 
     private static async Task<IResult> DeleteAsync(
-        Guid mediaId, ClaimsPrincipal principal, IMediaService service, CancellationToken cancellationToken)
+        Guid mediaId, ClaimsPrincipal principal, MediaService service, CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var ownerUserId)) return Results.Unauthorized();
         var result = await service.DeleteAsync(ownerUserId, mediaId, cancellationToken);

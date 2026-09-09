@@ -1,15 +1,16 @@
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.DTOs;
-using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Media.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Services;
 
 public sealed class MediaService(
-    IMediaRepository repository,
+    MediaDbContext dbContext,
     IObjectStorage objectStorage,
     MediaOptions options,
-    TimeProvider timeProvider) : IMediaService
+    TimeProvider timeProvider)
 {
     private sealed record SupportedFormat(MediaType MediaType, string Extension);
 
@@ -58,7 +59,8 @@ public sealed class MediaService(
         var asset = MediaAsset.CreatePending(
             id, ownerUserId, format.MediaType, objectKey, fileName, contentType,
             request.SizeBytes, now, expiresAt);
-        await repository.AddPendingAsync(asset, cancellationToken);
+        dbContext.MediaAssets.Add(asset);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         var uploadUrl = await objectStorage.CreatePresignedPutUrlAsync(
             objectKey, TimeSpan.FromMinutes(options.UploadUrlExpiryMinutes), cancellationToken);
@@ -71,7 +73,9 @@ public sealed class MediaService(
         Guid mediaId,
         CancellationToken cancellationToken = default)
     {
-        var asset = await repository.FindAsync(mediaId, trackChanges: true, cancellationToken);
+        var asset = await dbContext.MediaAssets.SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
         var accessError = CheckOwner(asset, ownerUserId);
         if (accessError is not null)
         {
@@ -92,7 +96,7 @@ public sealed class MediaService(
         if (asset.UploadExpiresAtUtc <= now)
         {
             asset.MarkFailed();
-            await repository.SaveFailedAsync(asset, cancellationToken);
+            await SaveFailedAsync(asset, cancellationToken);
             return Conflict<MediaResponse>("upload_expired", "The upload intent has expired.");
         }
 
@@ -108,7 +112,7 @@ public sealed class MediaService(
         if (storedObject.SizeBytes != asset.DeclaredSizeBytes || storedObject.SizeBytes > maximumSize)
         {
             asset.MarkFailed();
-            await repository.SaveFailedAsync(asset, cancellationToken);
+            await SaveFailedAsync(asset, cancellationToken);
             return Failure<MediaResponse>("uploaded_size_mismatch",
                 "The uploaded object size does not match the declared size.");
         }
@@ -119,13 +123,13 @@ public sealed class MediaService(
         if (!string.Equals(detectedContentType, asset.ContentType, StringComparison.OrdinalIgnoreCase))
         {
             asset.MarkFailed();
-            await repository.SaveFailedAsync(asset, cancellationToken);
+            await SaveFailedAsync(asset, cancellationToken);
             return Failure<MediaResponse>("invalid_file_signature",
                 "The uploaded object signature does not match its declared content type.");
         }
 
         asset.MarkReady(storedObject.SizeBytes, now);
-        await repository.SaveReadyAsync(cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
     }
 
@@ -134,7 +138,9 @@ public sealed class MediaService(
         Guid mediaId,
         CancellationToken cancellationToken = default)
     {
-        var asset = await repository.FindAsync(mediaId, cancellationToken: cancellationToken);
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
         var accessError = CheckOwner(asset, ownerUserId);
         return accessError is null
             ? ApplicationResult<MediaResponse>.Success(ToResponse(asset!))
@@ -145,7 +151,9 @@ public sealed class MediaService(
         Guid mediaId,
         CancellationToken cancellationToken = default)
     {
-        var asset = await repository.FindAsync(mediaId, cancellationToken: cancellationToken);
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
         if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
         {
             return ApplicationResult<MediaReadUrlResponse>.Failure(NotFound());
@@ -164,7 +172,9 @@ public sealed class MediaService(
     {
         foreach (var mediaId in mediaIds)
         {
-            var asset = await repository.FindAsync(mediaId, cancellationToken: cancellationToken);
+            var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+                item => item.Id == mediaId,
+                cancellationToken);
             if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
             {
                 return ApplicationResult.Failure(new ApplicationError(
@@ -193,23 +203,34 @@ public sealed class MediaService(
             return validation;
         }
 
-        await repository.SynchronizePostReferencesAsync(
-            postId,
-            mediaIds,
-            timeProvider.GetUtcNow(),
-            cancellationToken);
+        var currentReferences = await dbContext.MediaReferences
+            .Where(reference => reference.PostId == postId)
+            .ToListAsync(cancellationToken);
+        var desiredMediaIds = mediaIds.ToHashSet();
+        dbContext.MediaReferences.RemoveRange(
+            currentReferences.Where(reference => !desiredMediaIds.Contains(reference.MediaId)));
+        foreach (var mediaId in desiredMediaIds.Except(currentReferences.Select(reference => reference.MediaId)))
+        {
+            dbContext.MediaReferences.Add(MediaReference.Create(mediaId, postId, timeProvider.GetUtcNow()));
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult.Success();
     }
 
     public Task RemovePostReferencesAsync(Guid postId, CancellationToken cancellationToken = default) =>
-        repository.RemovePostReferencesAsync(postId, cancellationToken);
+        dbContext.MediaReferences
+            .Where(reference => reference.PostId == postId)
+            .ExecuteDeleteAsync(cancellationToken);
 
     public async Task<ApplicationResult> DeleteAsync(
         Guid ownerUserId,
         Guid mediaId,
         CancellationToken cancellationToken = default)
     {
-        var asset = await repository.FindAsync(mediaId, trackChanges: true, cancellationToken);
+        var asset = await dbContext.MediaAssets.SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
         var accessError = CheckOwner(asset, ownerUserId);
         if (accessError is not null)
         {
@@ -227,7 +248,7 @@ public sealed class MediaService(
                 "invalid_media_status", "Only ready media can be deleted.", ApplicationErrorType.Conflict));
         }
 
-        if (await repository.HasActiveReferencesAsync(mediaId, cancellationToken))
+        if (await dbContext.MediaReferences.AnyAsync(reference => reference.MediaId == mediaId, cancellationToken))
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.Conflict));
@@ -235,7 +256,8 @@ public sealed class MediaService(
 
         var now = timeProvider.GetUtcNow();
         asset.Delete(now);
-        await repository.SaveDeletedAsync(asset, now, cancellationToken);
+        dbContext.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.ObjectKey, now));
+        await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult.Success();
     }
 
@@ -250,6 +272,15 @@ public sealed class MediaService(
             ? null
             : new ApplicationError("media_forbidden", "Only the media owner may access this metadata.",
                 ApplicationErrorType.Forbidden);
+    }
+
+    private async Task SaveFailedAsync(MediaAsset asset, CancellationToken cancellationToken)
+    {
+        dbContext.ObjectDeletions.Add(ObjectDeletion.Create(
+            asset.Id,
+            asset.ObjectKey,
+            timeProvider.GetUtcNow()));
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private static string? DetectContentType(ReadOnlySpan<byte> bytes)

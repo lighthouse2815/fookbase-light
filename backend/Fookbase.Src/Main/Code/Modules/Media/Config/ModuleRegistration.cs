@@ -33,9 +33,8 @@ public static class DependencyInjection
             return client.Build();
         });
         services.AddSingleton(TimeProvider.System);
-        services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
-        services.AddScoped<IMediaService, MediaService>();
+        services.AddScoped<MediaService>();
         services.AddHostedService<MinioBucketInitializer>();
         services.AddHostedService<PendingUploadCleanupWorker>();
         services.AddHostedService<ObjectDeletionWorker>();

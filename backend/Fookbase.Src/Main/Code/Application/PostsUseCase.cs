@@ -9,7 +9,7 @@ namespace Fookbase.Api.Application;
 public sealed class PostsUseCase(
     PostsService postsService,
     FriendsService friendsService,
-    Fookbase.Api.Modules.Media.Services.IMediaService mediaService)
+    Fookbase.Api.Modules.Media.Services.MediaService mediaService)
 {
     public async Task<ApplicationResult<PostResponse>> CreatePostAsync(
         Guid actorUserId,
