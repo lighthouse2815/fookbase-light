@@ -15,4 +15,17 @@ export interface UserProfile {
 
 export const usersApi = {
   getById: (userId: string) => apiRequest<UserProfile>(`/api/users/${userId}`),
+  getCurrent: () => apiRequest<UserProfile>('/api/users/me'),
+  updateCurrent: (details: UpdateUserProfileDetails) =>
+    apiRequest<UserProfile>('/api/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(details),
+    }),
+}
+
+export interface UpdateUserProfileDetails {
+  displayName?: string | null
+  bio?: string | null
+  dateOfBirth?: string | null
+  currentCity?: string | null
 }

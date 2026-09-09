@@ -43,6 +43,8 @@ export const friendsApi = {
     apiRequest<PagedResponse<FriendRequest>>(`/api/friends/requests/outgoing${pageQuery(offset, limit)}`),
   getStatus: (userId: string) =>
     apiRequest<RelationshipStatus>(`/api/friends/status/${userId}`),
+  getMutualFriends: (userId: string, offset = 0, limit = 100) =>
+    apiRequest<MutualFriends>(`/api/friends/mutual/${userId}${pageQuery(offset, limit)}`),
   sendRequest: (userId: string) =>
     apiRequest<FriendRequest>(`/api/friends/requests/${userId}`, { method: 'POST' }),
   acceptRequest: (requestId: string) =>
@@ -59,4 +61,11 @@ export const friendsApi = {
     apiRequest<void>(`/api/friends/blocks/${userId}`, { method: 'POST' }),
   unblock: (userId: string) =>
     apiRequest<void>(`/api/friends/blocks/${userId}`, { method: 'DELETE' }),
+}
+
+export interface MutualFriends {
+  count: number
+  userIds: string[]
+  offset: number
+  limit: number
 }

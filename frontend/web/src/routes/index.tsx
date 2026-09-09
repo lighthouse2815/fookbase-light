@@ -4,8 +4,13 @@ import FeedPage from '../pages/feed/FeedPage'
 import ExplorePage from '../pages/explore/ExplorePage'
 import MessagesPage from '../pages/messages/MessagesPage'
 import ProfilePage from '../pages/profile/ProfilePage'
+import LoginPage from '../pages/auth/LoginPage'
 
 export const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
   {
     path: '/',
     element: <MainLayout />,
@@ -37,4 +42,3 @@ export const router = createBrowserRouter([
     ],
   },
 ])
-
