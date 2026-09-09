@@ -1,20 +1,22 @@
-using Fookbase.Api.Modules.Users.DTOs;
-using Fookbase.Api.Modules.Users.Services;
+using Fookbase.Api.Modules.Users.Common;
+using Fookbase.Api.Modules.Users.Data;
+using Fookbase.Api.Modules.Users.DTOs.Requests;
+using Fookbase.Api.Modules.Users.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Services;
 
 public sealed class UserProfileService(
-    IUserProfileRepository repository,
-    TimeProvider timeProvider) : IUserProfileService
+    UsersDbContext dbContext,
+    TimeProvider timeProvider)
 {
     public async Task<ApplicationResult<UserProfileResponse>> GetAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        var profile = await repository.FindByIdAsync(
-            userId,
-            cancellationToken: cancellationToken);
+        var profile = await dbContext.UserProfiles.AsNoTracking()
+            .SingleOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
 
         return profile is null
             ? NotFound()
@@ -37,10 +39,8 @@ public sealed class UserProfileService(
                     errors));
         }
 
-        var profile = await repository.FindByIdAsync(
-            userId,
-            trackChanges: true,
-            cancellationToken);
+        var profile = await dbContext.UserProfiles
+            .SingleOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
         if (profile is null)
         {
             return NotFound();
@@ -52,7 +52,7 @@ public sealed class UserProfileService(
             request.DateOfBirth,
             request.CurrentCity,
             timeProvider.GetUtcNow());
-        await repository.SaveChangesAsync(cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         return ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
     }

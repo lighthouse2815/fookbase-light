@@ -7,7 +7,7 @@ using Fookbase.Api.Modules.Identity.Endpoints;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Controllers;
 using Fookbase.Api.Modules.Posts.Controllers;
-using Fookbase.Api.Modules.Users.Controllers;
+using Fookbase.Api.Modules.Users.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;

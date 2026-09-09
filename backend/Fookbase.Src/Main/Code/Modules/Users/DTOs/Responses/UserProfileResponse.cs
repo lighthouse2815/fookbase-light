@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Users.DTOs;
+namespace Fookbase.Api.Modules.Users.DTOs.Responses;
 
 public sealed record UserProfileResponse(
     Guid UserId,
@@ -11,9 +11,3 @@ public sealed record UserProfileResponse(
     string? CurrentCity,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
-
-public sealed record UpdateUserProfileRequest(
-    string? DisplayName,
-    string? Bio,
-    DateOnly? DateOfBirth,
-    string? CurrentCity);

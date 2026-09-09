@@ -1,5 +1,6 @@
 using Fookbase.Api.Modules.Users.Services;
-using Fookbase.Api.Modules.Users.Repositories;
+using Fookbase.Api.Modules.Users.Data;
+using Fookbase.Api.Modules.Users.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,10 +15,8 @@ public static class DependencyInjection
         services.AddDbContext<UsersDbContext>(options =>
             options.UseNpgsql(connectionString));
         services.AddSingleton(TimeProvider.System);
-        services.AddScoped<IUserProfileRepository, UserProfileRepository>();
-        services.AddScoped<IUserRegistrationStore, UserRegistrationStore>();
-        services.AddScoped<IUserProfileService, UserProfileService>();
-        services.AddScoped<IUserRegisteredEventHandler, UserRegisteredEventHandler>();
+        services.AddScoped<UserProfileService>();
+        services.AddScoped<UserRegisteredEventHandler>();
 
         return services;
     }

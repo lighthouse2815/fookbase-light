@@ -11,7 +11,7 @@ using MediaEventMessage = Fookbase.Api.Modules.Media.Services.IntegrationEventMe
 using MediaEventPublisher = Fookbase.Api.Modules.Media.Services.IIntegrationEventPublisher;
 using PostsEventMessage = Fookbase.Api.Modules.Posts.Services.IntegrationEventMessage;
 using PostsEventPublisher = Fookbase.Api.Modules.Posts.Services.IIntegrationEventPublisher;
-using UsersRegistrationHandler = Fookbase.Api.Modules.Users.Services.IUserRegisteredEventHandler;
+using UsersRegistrationHandler = Fookbase.Api.Modules.Users.Messaging.UserRegisteredEventHandler;
 
 namespace Fookbase.Api.Shared.IntegrationEvents;
 

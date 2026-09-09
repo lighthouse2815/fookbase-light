@@ -1,9 +1,10 @@
-using Fookbase.Api.Modules.Users.DTOs;
+using Fookbase.Api.Modules.Users.Common;
+using Fookbase.Api.Modules.Users.DTOs.Requests;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Users.Services;
 
-namespace Fookbase.Api.Modules.Users.Controllers;
+namespace Fookbase.Api.Modules.Users.Endpoints;
 
 public static class UserProfileEndpoints
 {
@@ -21,7 +22,7 @@ public static class UserProfileEndpoints
 
     private static async Task<IResult> GetByIdAsync(
         Guid userId,
-        IUserProfileService profileService,
+        UserProfileService profileService,
         CancellationToken cancellationToken)
     {
         var result = await profileService.GetAsync(userId, cancellationToken);
@@ -32,7 +33,7 @@ public static class UserProfileEndpoints
 
     private static async Task<IResult> GetCurrentAsync(
         ClaimsPrincipal principal,
-        IUserProfileService profileService,
+        UserProfileService profileService,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(principal, out var userId))
@@ -49,7 +50,7 @@ public static class UserProfileEndpoints
     private static async Task<IResult> UpdateCurrentAsync(
         UpdateUserProfileRequest request,
         ClaimsPrincipal principal,
-        IUserProfileService profileService,
+        UserProfileService profileService,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(principal, out var userId))

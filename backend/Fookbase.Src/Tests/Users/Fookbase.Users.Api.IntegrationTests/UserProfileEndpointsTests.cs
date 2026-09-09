@@ -1,4 +1,5 @@
-using Fookbase.Api.Modules.Users.DTOs;
+using Fookbase.Api.Modules.Users.DTOs.Requests;
+using Fookbase.Api.Modules.Users.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -6,8 +7,8 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Shared.Contracts.Identity;
-using Fookbase.Api.Modules.Users.Services;
-using Fookbase.Api.Modules.Users.Repositories;
+using Fookbase.Api.Modules.Users.Data;
+using Fookbase.Api.Modules.Users.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -120,7 +121,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     private async Task<bool> HandleAsync(UserRegisteredIntegrationEvent integrationEvent)
     {
         using var scope = factory.Services.CreateScope();
-        var handler = scope.ServiceProvider.GetRequiredService<IUserRegisteredEventHandler>();
+        var handler = scope.ServiceProvider.GetRequiredService<UserRegisteredEventHandler>();
         return await handler.HandleAsync(integrationEvent);
     }
 

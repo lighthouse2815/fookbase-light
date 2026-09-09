@@ -1,7 +1,7 @@
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Users.Repositories;
+namespace Fookbase.Api.Modules.Users.Data;
 
 public sealed class UsersDbContext(DbContextOptions<UsersDbContext> options)
     : DbContext(options)
@@ -15,7 +15,7 @@ public sealed class UsersDbContext(DbContextOptions<UsersDbContext> options)
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(UsersDbContext).Assembly,
             type => type.Namespace?.StartsWith(
-                "Fookbase.Api.Modules.Users.Config",
+                "Fookbase.Api.Modules.Users.Data.Configurations",
                 StringComparison.Ordinal) == true);
     }
 }

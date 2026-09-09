@@ -2,7 +2,7 @@ using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Fookbase.Api.Modules.Users.Config;
+namespace Fookbase.Api.Modules.Users.Data.Configurations;
 
 internal sealed class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
 {
