@@ -10,7 +10,6 @@ using Fookbase.Api.Modules.Friends;
 using Fookbase.Api.Modules.Users.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Messaging.OutboxOptions;
 using MediaOutboxOptions = Fookbase.Api.Modules.Media.Config.OutboxOptions;
 using PostsOutboxOptions = Fookbase.Api.Modules.Posts.Config.OutboxOptions;
 
@@ -27,9 +26,7 @@ internal static class ModuleServiceCollectionExtensions
 
         return services.AddIdentityInfrastructure(
             RequiredConnectionString(configuration, "IdentityDatabase"),
-            jwtOptions,
-            configuration.GetSection(IdentityOutboxOptions.SectionName).Get<IdentityOutboxOptions>()
-                ?? new IdentityOutboxOptions());
+            jwtOptions);
     }
 
     public static IServiceCollection AddUsersModule(
@@ -72,8 +69,6 @@ internal static class ModuleServiceCollectionExtensions
     {
         services.AddScoped<RegistrationUseCase>();
         services.AddScoped<InProcessIntegrationEventPublisher>();
-        services.AddScoped<Fookbase.Api.Modules.Identity.Messaging.IIntegrationEventPublisher>(
-            provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
         services.AddScoped<Fookbase.Api.Modules.Posts.Messaging.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
         services.AddScoped<Fookbase.Api.Modules.Media.Services.IIntegrationEventPublisher>(

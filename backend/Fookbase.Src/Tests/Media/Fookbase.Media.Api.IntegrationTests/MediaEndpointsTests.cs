@@ -5,7 +5,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;

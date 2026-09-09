@@ -1,10 +1,8 @@
-using System.Text.Json;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Shared.Contracts.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,16 +45,10 @@ public sealed class AuthenticationService(
         var user = new User(Guid.NewGuid(), email, userName, now);
         var accessToken = tokenService.CreateAccessToken(user, now);
         var refreshToken = tokenService.CreateRefreshToken(user.Id, now);
-        var integrationEvent = new UserRegisteredIntegrationEvent(
-            Guid.NewGuid(),
-            user.Id,
-            userName,
-            now);
         var creationResult = await CreateUserAsync(
             user,
             request.Password!,
             refreshToken.RefreshToken,
-            integrationEvent,
             cancellationToken);
 
         if (!creationResult.Succeeded)
@@ -227,7 +219,6 @@ public sealed class AuthenticationService(
         User user,
         string password,
         RefreshToken refreshToken,
-        UserRegisteredIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -240,11 +231,6 @@ public sealed class AuthenticationService(
         }
 
         dbContext.RefreshTokens.Add(refreshToken);
-        dbContext.OutboxMessages.Add(OutboxMessage.Create(
-            integrationEvent.EventId,
-            UserRegisteredIntegrationEvent.EventType,
-            JsonSerializer.Serialize(integrationEvent),
-            integrationEvent.OccurredAtUtc));
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return result;

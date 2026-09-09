@@ -1,12 +1,9 @@
 using System.Text.Json;
-using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Shared.Contracts.Posts;
 using Fookbase.Api.Modules.Media.Repositories;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Posts.Messaging;
-using IdentityEventMessage = Fookbase.Api.Modules.Identity.Messaging.IntegrationEventMessage;
-using IdentityEventPublisher = Fookbase.Api.Modules.Identity.Messaging.IIntegrationEventPublisher;
 using MediaEventMessage = Fookbase.Api.Modules.Media.Services.IntegrationEventMessage;
 using MediaEventPublisher = Fookbase.Api.Modules.Media.Services.IIntegrationEventPublisher;
 using PostsEventMessage = Fookbase.Api.Modules.Posts.Messaging.IntegrationEventMessage;
@@ -17,13 +14,8 @@ namespace Fookbase.Api.Shared.IntegrationEvents;
 internal sealed class InProcessIntegrationEventPublisher(
     EventProjectionStore postsProjectionStore,
     MediaProjectionStore mediaProjectionStore)
-    : IdentityEventPublisher, PostsEventPublisher, MediaEventPublisher
+    : PostsEventPublisher, MediaEventPublisher
 {
-    Task IdentityEventPublisher.PublishAsync(
-        IdentityEventMessage message,
-        CancellationToken cancellationToken) =>
-        DispatchAsync(message.Type, message.Payload, cancellationToken);
-
     Task PostsEventPublisher.PublishAsync(
         PostsEventMessage message,
         CancellationToken cancellationToken) =>

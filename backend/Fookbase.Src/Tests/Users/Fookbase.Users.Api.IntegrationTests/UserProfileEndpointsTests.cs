@@ -6,7 +6,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Modules.Users.Data;
 using Fookbase.Api.Modules.Users.Services;
 using Microsoft.EntityFrameworkCore;
@@ -22,10 +21,10 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     [Fact]
     public async Task Profile_creation_is_idempotent()
     {
-        var integrationEvent = CreateEvent();
+        var user = CreateUser();
 
-        var firstCreated = await HandleAsync(integrationEvent);
-        var duplicateCreated = await HandleAsync(integrationEvent);
+        var firstCreated = await EnsureProfileAsync(user);
+        var duplicateCreated = await EnsureProfileAsync(user);
 
         Assert.True(firstCreated);
         Assert.False(duplicateCreated);
@@ -33,29 +32,29 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
         var profile = await dbContext.UserProfiles.SingleAsync(
-            item => item.UserId == integrationEvent.UserId);
+            item => item.UserId == user.Id);
 
-        Assert.Equal(integrationEvent.Username, profile.Username);
-        Assert.Equal(integrationEvent.Username, profile.DisplayName);
+        Assert.Equal(user.Username, profile.Username);
+        Assert.Equal(user.Username, profile.DisplayName);
         Assert.Null(profile.Bio);
         Assert.Equal(1, await dbContext.UserProfiles.CountAsync(
-            item => item.UserId == integrationEvent.UserId));
+            item => item.UserId == user.Id));
     }
 
     [Fact]
     public async Task Get_by_id_returns_public_profile()
     {
-        var integrationEvent = CreateEvent();
-        await HandleAsync(integrationEvent);
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync($"/api/users/{integrationEvent.UserId}");
+        var response = await client.GetAsync($"/api/users/{user.Id}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var profile = await response.Content.ReadFromJsonAsync<UserProfileResponse>();
         Assert.NotNull(profile);
-        Assert.Equal(integrationEvent.UserId, profile.UserId);
-        Assert.Equal(integrationEvent.Username, profile.DisplayName);
+        Assert.Equal(user.Id, profile.UserId);
+        Assert.Equal(user.Username, profile.DisplayName);
     }
 
     [Fact]
@@ -71,26 +70,26 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     [Fact]
     public async Task Get_me_with_valid_access_token_returns_own_profile()
     {
-        var integrationEvent = CreateEvent();
-        await HandleAsync(integrationEvent);
-        using var client = CreateAuthenticatedClient(integrationEvent.UserId);
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var client = CreateAuthenticatedClient(user.Id);
 
         var response = await client.GetAsync("/api/users/me");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var profile = await response.Content.ReadFromJsonAsync<UserProfileResponse>();
         Assert.NotNull(profile);
-        Assert.Equal(integrationEvent.UserId, profile.UserId);
+        Assert.Equal(user.Id, profile.UserId);
     }
 
     [Fact]
     public async Task Patch_me_updates_only_authenticated_users_profile()
     {
-        var userA = CreateEvent();
-        var userB = CreateEvent();
-        await HandleAsync(userA);
-        await HandleAsync(userB);
-        using var client = CreateAuthenticatedClient(userA.UserId);
+        var userA = CreateUser();
+        var userB = CreateUser();
+        await EnsureProfileAsync(userA);
+        await EnsureProfileAsync(userB);
+        using var client = CreateAuthenticatedClient(userA.Id);
         var request = new UpdateUserProfileRequest(
             "User A Display",
             "User A bio",
@@ -102,7 +101,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var updated = await response.Content.ReadFromJsonAsync<UserProfileResponse>();
         Assert.NotNull(updated);
-        Assert.Equal(userA.UserId, updated.UserId);
+        Assert.Equal(userA.Id, updated.UserId);
         Assert.Equal(request.DisplayName, updated.DisplayName);
         Assert.Equal(request.Bio, updated.Bio);
         Assert.Equal(request.DateOfBirth, updated.DateOfBirth);
@@ -111,18 +110,18 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
         var otherProfile = await dbContext.UserProfiles.AsNoTracking().SingleAsync(
-            item => item.UserId == userB.UserId);
+            item => item.UserId == userB.Id);
         Assert.Equal(userB.Username, otherProfile.DisplayName);
         Assert.Null(otherProfile.Bio);
     }
 
-    private async Task<bool> HandleAsync(UserRegisteredIntegrationEvent integrationEvent)
+    private async Task<bool> EnsureProfileAsync(UserSeed user)
     {
         using var scope = factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<UserProfileService>();
         var existed = await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
-            .UserProfiles.AnyAsync(profile => profile.UserId == integrationEvent.UserId);
-        await service.EnsureCreatedAsync(integrationEvent.UserId, integrationEvent.Username);
+            .UserProfiles.AnyAsync(profile => profile.UserId == user.Id);
+        await service.EnsureCreatedAsync(user.Id, user.Username);
         return !existed;
     }
 
@@ -154,13 +153,11 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         return client;
     }
 
-    private static UserRegisteredIntegrationEvent CreateEvent()
+    private static UserSeed CreateUser()
     {
         var suffix = Guid.NewGuid().ToString("N")[..16];
-        return new UserRegisteredIntegrationEvent(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            $"user_{suffix}",
-            DateTimeOffset.UtcNow);
+        return new UserSeed(Guid.NewGuid(), $"user_{suffix}");
     }
+
+    private sealed record UserSeed(Guid Id, string Username);
 }

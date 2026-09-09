@@ -20,7 +20,7 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
     : IClassFixture<MonolithApiFactory>
 {
     [Fact]
-    public async Task Registration_is_projected_to_modules_that_require_user_data()
+    public async Task Registration_creates_the_user_profile_directly()
     {
         using var client = factory.CreateClient();
         var suffix = Guid.NewGuid().ToString("N")[..16];
@@ -32,33 +32,9 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
         var authentication = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
         Assert.NotNull(authentication);
 
-        await WaitUntilAsync(async () =>
-        {
-            using var scope = factory.Services.CreateScope();
-            var userId = authentication.User.Id;
-            var identityOutbox = await scope.ServiceProvider
-                .GetRequiredService<IdentityDbContext>()
-                .OutboxMessages.AsNoTracking().ToListAsync();
-            return await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
-                       .UserProfiles.AnyAsync(item => item.UserId == userId) &&
-                   identityOutbox.Any(item => item.Payload.Contains(userId.ToString()));
-        });
-    }
-
-    private static async Task WaitUntilAsync(Func<Task<bool>> condition)
-    {
-        var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(15);
-        while (DateTimeOffset.UtcNow < timeoutAt)
-        {
-            if (await condition())
-            {
-                return;
-            }
-
-            await Task.Delay(100);
-        }
-
-        Assert.Fail("The registration event was not projected to every module in time.");
+        using var scope = factory.Services.CreateScope();
+        Assert.True(await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
+            .UserProfiles.AnyAsync(item => item.UserId == authentication.User.Id));
     }
 }
 
@@ -67,8 +43,6 @@ public sealed class MonolithApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.UseSetting("Outbox:PublisherEnabled", "true");
-        builder.UseSetting("Outbox:PollingIntervalSeconds", "1");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
