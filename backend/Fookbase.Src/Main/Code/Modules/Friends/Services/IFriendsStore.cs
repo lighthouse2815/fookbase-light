@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Friends.DTOs;
+using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Services;
 
 namespace Fookbase.Api.Modules.Friends.Services;

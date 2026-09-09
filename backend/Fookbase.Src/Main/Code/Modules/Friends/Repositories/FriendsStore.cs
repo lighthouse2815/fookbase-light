@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Friends.DTOs;
+using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using System.Text.Json;
 using Fookbase.Api.Shared.Contracts.Friends;
 using Fookbase.Api.Modules.Friends.Services;
