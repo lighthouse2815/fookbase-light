@@ -1,28 +1,60 @@
-import { useState } from 'react'
-import { POSTS, TRENDING_TOPICS, USERS, getUserById, formatNumber } from '../../data/mockData'
-import type { Post } from '../../data/mockData'
-import PostCard from './components/PostCard'
+import { useEffect, useState } from 'react'
+import { ApiError } from '../../api/client'
+import { mediaApi } from '../../api/media'
+import { postsApi } from '../../api/posts'
+import type { Post } from '../../api/posts'
+import { usersApi } from '../../api/users'
+import type { UserProfile } from '../../api/users'
+import { useAuth } from '../../auth/useAuth'
+import { TRENDING_TOPICS, USERS, formatNumber } from '../../data/mockData'
+import LivePostCard from './components/LivePostCard'
 import NewPostBox from './components/NewPostBox'
 
-let nextId = 100
-
 export default function FeedPage() {
-  const [posts, setPosts] = useState<Post[]>(POSTS)
+  const { session } = useAuth()
+  const [posts, setPosts] = useState<Post[]>([])
+  const [authors, setAuthors] = useState<Record<string, UserProfile>>({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleNewPost = (content: string) => {
-    const newPost: Post = {
-      id: `new-${nextId++}`,
-      authorId: 'u1',
-      content,
-      timestamp: new Date(),
-      likes: 0,
-      reposts: 0,
-      comments: 0,
-      tags: [],
-      isLiked: false,
-      isReposted: false,
+  const loadFeed = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const page = await postsApi.getFeed()
+      const userIds = [...new Set(page.items.map((post) => post.authorUserId))]
+      const profileResults = await Promise.allSettled(userIds.map((userId) => usersApi.getById(userId)))
+      const profiles: Record<string, UserProfile> = {}
+      profileResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') profiles[userIds[index]] = result.value
+      })
+
+      setPosts(page.items)
+      setAuthors(profiles)
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải bảng tin.')
+    } finally {
+      setIsLoading(false)
     }
-    setPosts((prev) => [newPost, ...prev])
+  }
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadFeed()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [])
+
+  const handleNewPost = async (content: string, file: File | null) => {
+    const mediaIds = file ? [await mediaApi.uploadFile(file)] : []
+    const post = await postsApi.create({ content, privacy: 'public', mediaIds })
+    setPosts((currentPosts) => [post, ...currentPosts])
+    if (!authors[post.authorUserId]) {
+      const profile = await usersApi.getById(post.authorUserId)
+      setAuthors((currentAuthors) => ({ ...currentAuthors, [post.authorUserId]: profile }))
+    }
   }
 
   return (
@@ -59,18 +91,19 @@ export default function FeedPage() {
 
         {/* Posts */}
         <div className="flex flex-col gap-4">
-          {posts.map((post, i) => {
-            const author = getUserById(post.authorId)
-            if (!author) return null
-            return (
-              <PostCard
-                key={post.id}
-                post={post}
-                author={author}
-                style={{ animation: `fade-in 0.3s ease ${i * 0.04}s both` }}
-              />
-            )
-          })}
+          {error && <p className="rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]">{error}</p>}
+          {isLoading && <p className="text-sm text-text-muted">Loading feed...</p>}
+          {!isLoading && posts.length === 0 && !error && <p className="text-sm text-text-muted">No posts yet.</p>}
+          {posts.map((post) => (
+            <LivePostCard
+              key={post.id}
+              post={post}
+              author={authors[post.authorUserId]}
+              currentUserId={session!.user.id}
+              onPostUpdated={(updatedPost) => setPosts((currentPosts) => currentPosts.map((item) => item.id === updatedPost.id ? updatedPost : item))}
+              onPostDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))}
+            />
+          ))}
         </div>
       </div>
 
@@ -160,4 +193,3 @@ export default function FeedPage() {
     </div>
   )
 }
-

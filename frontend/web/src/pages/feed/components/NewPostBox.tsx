@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CURRENT_USER } from '../../../data/mockData'
 
 interface NewPostBoxProps {
-  onPost: (content: string) => void
+  onPost: (content: string, file: File | null) => Promise<void>
 }
 
 const MAX_CHARS = 280
@@ -10,15 +10,28 @@ const MAX_CHARS = 280
 export default function NewPostBox({ onPost }: NewPostBoxProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [content, setContent] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const remaining = MAX_CHARS - content.length
   const isOverLimit = remaining < 0
   const isNearLimit = remaining <= 30 && !isOverLimit
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!content.trim() || isOverLimit) return
-    onPost(content.trim())
-    setContent('')
-    setIsExpanded(false)
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      await onPost(content.trim(), file)
+      setContent('')
+      setFile(null)
+      setIsExpanded(false)
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Không thể tạo bài viết.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // Circle progress for char counter
@@ -131,7 +144,7 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
             className="w-full bg-transparent border-none outline-none resize-none
                        text-[15px] text-text leading-relaxed placeholder:text-text-light"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit()
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void handleSubmit()
             }}
           />
 
@@ -147,15 +160,15 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
                 <span className="text-base">📹</span>
                 <span className="hidden sm:inline">Live video</span>
               </button>
-              <button
-                type="button"
+              <label
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-surface-2
                            text-text-muted hover:text-text transition-colors cursor-pointer
                            bg-transparent border-none text-[13px]"
               >
                 <span className="text-base">🖼️</span>
-                <span className="hidden sm:inline">Photo/video</span>
-              </button>
+                <span className="hidden sm:inline">{file ? file.name : 'Photo/video'}</span>
+                <input type="file" accept="image/*,video/*" className="hidden" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+              </label>
               <button
                 type="button"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-surface-2
@@ -190,20 +203,21 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
             )}
           </div>
 
+          {error && <p className="text-xs text-[#ff8a9b]">{error}</p>}
+
           {/* Post button */}
           <button
             type="button"
-            onClick={handleSubmit}
-            disabled={!content.trim() || isOverLimit}
+            onClick={() => void handleSubmit()}
+            disabled={!content.trim() || isOverLimit || isSubmitting}
             className="w-full py-2 rounded-lg text-[14px] font-semibold text-white
                        bg-primary hover:brightness-110 transition-all duration-200 cursor-pointer
                        disabled:opacity-40 disabled:cursor-not-allowed border-none"
           >
-            Post
+            {isSubmitting ? 'Posting...' : 'Post'}
           </button>
         </div>
       )}
     </div>
   )
 }
-
