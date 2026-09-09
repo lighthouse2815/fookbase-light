@@ -1,12 +1,11 @@
 using Fookbase.Api.Modules.Friends;
-using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Friends.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Fookbase.Api.Modules.Friends.Services;
+namespace Fookbase.Api.Modules.Friends.Messaging;
 
 internal sealed class OutboxPublisherWorker(
     IServiceScopeFactory scopeFactory,

@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Friends.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fookbase.Api.Modules.Friends.Controllers;

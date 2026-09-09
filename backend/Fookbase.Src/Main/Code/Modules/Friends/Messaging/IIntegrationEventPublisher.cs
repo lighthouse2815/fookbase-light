@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Friends.Services;
+namespace Fookbase.Api.Modules.Friends.Messaging;
 
 public interface IIntegrationEventPublisher
 {

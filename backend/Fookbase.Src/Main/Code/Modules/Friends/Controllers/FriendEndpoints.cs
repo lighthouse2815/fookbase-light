@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Fookbase.Api.Modules.Friends.Common;
 using Fookbase.Api.Modules.Friends.Services;
 
 namespace Fookbase.Api.Modules.Friends.Controllers;
@@ -30,7 +31,7 @@ public static class FriendEndpoints
     private static async Task<IResult> SendRequestAsync(
         Guid userId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -47,7 +48,7 @@ public static class FriendEndpoints
     private static async Task<IResult> AcceptRequestAsync(
         Guid requestId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -62,7 +63,7 @@ public static class FriendEndpoints
     private static Task<IResult> DeclineRequestAsync(
         Guid requestId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
@@ -71,7 +72,7 @@ public static class FriendEndpoints
     private static Task<IResult> CancelRequestAsync(
         Guid requestId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
@@ -80,7 +81,7 @@ public static class FriendEndpoints
     private static Task<IResult> UnfriendAsync(
         Guid userId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
@@ -89,7 +90,7 @@ public static class FriendEndpoints
     private static Task<IResult> BlockAsync(
         Guid userId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
@@ -98,7 +99,7 @@ public static class FriendEndpoints
     private static Task<IResult> UnblockAsync(
         Guid userId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
@@ -106,7 +107,7 @@ public static class FriendEndpoints
 
     private static async Task<IResult> GetFriendsAsync(
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -122,7 +123,7 @@ public static class FriendEndpoints
 
     private static async Task<IResult> GetIncomingRequestsAsync(
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -138,7 +139,7 @@ public static class FriendEndpoints
 
     private static async Task<IResult> GetOutgoingRequestsAsync(
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -154,7 +155,7 @@ public static class FriendEndpoints
 
     private static async Task<IResult> GetBlockedUsersAsync(
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -171,7 +172,7 @@ public static class FriendEndpoints
     private static async Task<IResult> GetStatusAsync(
         Guid userId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -186,7 +187,7 @@ public static class FriendEndpoints
     private static async Task<IResult> GetMutualFriendsAsync(
         Guid userId,
         ClaimsPrincipal principal,
-        IFriendsService service,
+        FriendsService service,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)

@@ -76,7 +76,7 @@ internal static class ModuleServiceCollectionExtensions
         services.AddScoped<InProcessIntegrationEventPublisher>();
         services.AddScoped<Fookbase.Api.Modules.Identity.Services.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
-        services.AddScoped<Fookbase.Api.Modules.Friends.Services.IIntegrationEventPublisher>(
+        services.AddScoped<Fookbase.Api.Modules.Friends.Messaging.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
         services.AddScoped<Fookbase.Api.Modules.Posts.Services.IIntegrationEventPublisher>(
             provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());

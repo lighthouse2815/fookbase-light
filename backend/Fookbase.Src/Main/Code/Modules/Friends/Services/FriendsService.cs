@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
+using Fookbase.Api.Modules.Friends.Common;
 using System.Text.Json;
 using Fookbase.Api.Shared.Contracts.Friends;
 using Fookbase.Api.Modules.Friends.Data;
@@ -9,7 +10,7 @@ namespace Fookbase.Api.Modules.Friends.Services;
 
 public sealed class FriendsService(
     FriendsDbContext dbContext,
-    TimeProvider timeProvider) : IFriendsService
+    TimeProvider timeProvider)
 {
     private const int MaximumLimit = 100;
 

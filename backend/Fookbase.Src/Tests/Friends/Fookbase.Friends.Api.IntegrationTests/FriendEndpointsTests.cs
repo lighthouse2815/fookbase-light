@@ -8,6 +8,7 @@ using System.Text;
 using Fookbase.Api.Shared.Contracts.Friends;
 using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Friends.Messaging;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Friends.Data;
 using Microsoft.EntityFrameworkCore;
@@ -358,7 +359,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         UserRegisteredIntegrationEvent integrationEvent)
     {
         using var scope = factory.Services.CreateScope();
-        var handler = scope.ServiceProvider.GetRequiredService<IUserRegisteredEventHandler>();
+        var handler = scope.ServiceProvider.GetRequiredService<UserRegisteredEventHandler>();
         return await handler.HandleAsync(integrationEvent);
     }
 

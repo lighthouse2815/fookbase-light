@@ -1,5 +1,6 @@
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Friends.Data;
+using Fookbase.Api.Modules.Friends.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,8 +19,7 @@ public static class DependencyInjection
         services.AddSingleton(outboxOptions);
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<FriendsService>();
-        services.AddScoped<IFriendsService>(provider => provider.GetRequiredService<FriendsService>());
-        services.AddScoped<IUserRegisteredEventHandler, UserRegisteredEventHandler>();
+        services.AddScoped<UserRegisteredEventHandler>();
         services.AddHostedService<OutboxPublisherWorker>();
 
         return services;

@@ -3,12 +3,11 @@ using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Friends.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Friends.Services;
+namespace Fookbase.Api.Modules.Friends.Messaging;
 
 public sealed class UserRegisteredEventHandler(
     FriendsDbContext dbContext,
     TimeProvider timeProvider)
-    : IUserRegisteredEventHandler
 {
     public async Task<bool> HandleAsync(
         UserRegisteredIntegrationEvent integrationEvent,
