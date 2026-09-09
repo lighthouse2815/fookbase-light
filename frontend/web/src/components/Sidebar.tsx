@@ -10,10 +10,23 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'feed',     emoji: '🏠', label: 'Feed' },
-  { id: 'explore',  emoji: '🔍', label: 'Explore' },
+  { id: 'feed', emoji: '🏠', label: 'Feed' },
+  { id: 'explore', emoji: '🔍', label: 'Explore' },
   { id: 'messages', emoji: '💬', label: 'Messages', badge: 2 },
-  { id: 'profile',  emoji: '👤', label: 'Profile' },
+  { id: 'profile', emoji: '👤', label: 'Profile' },
+]
+
+interface ShortcutItem {
+  emoji: string
+  label: string
+}
+
+const SHORTCUTS: ShortcutItem[] = [
+  { emoji: '🛡️', label: 'Security Hub' },
+  { emoji: '🎮', label: 'Hack Kingdom Club' },
+  { emoji: '🏆', label: 'CTF Championship' },
+  { emoji: '🎯', label: 'Bug Bounty Group' },
+  { emoji: '💻', label: 'Dev Community' },
 ]
 
 interface SidebarProps {
@@ -23,22 +36,28 @@ interface SidebarProps {
 
 export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
   return (
-    <aside className="fixed top-0 left-0 w-[240px] h-screen flex flex-col
-                      bg-surface border-r border-border z-50
-                      max-sm:w-16">
-
-      {/* ── Logo ─────────────────────────────────────────── */}
-      <div className="px-5 py-5 flex items-center gap-2.5 border-b border-border">
-        <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-          <span className="text-white text-sm font-bold">S</span>
-        </div>
-        <span className="font-heading font-bold text-[17px] gradient-text max-sm:hidden">
-          SocialApp
-        </span>
-      </div>
+    <aside className="fixed top-14 left-0 w-[280px] h-[calc(100vh-56px)] flex flex-col
+                      bg-bg z-40 max-lg:hidden overflow-y-auto scroll-smooth">
 
       {/* ── Navigation ───────────────────────────────────── */}
-      <nav className="flex flex-col gap-1 px-3 py-4 flex-1">
+      <nav className="flex flex-col gap-0.5 px-2 py-3">
+        {/* User profile link */}
+        <button
+          type="button"
+          onClick={() => onNavigate('profile')}
+          className="group flex items-center gap-3 px-2 py-2 rounded-lg w-full text-left
+                     transition-all duration-200 cursor-pointer border-0
+                     bg-transparent hover:bg-surface-2"
+        >
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center
+                           text-[11px] font-bold text-white shrink-0 ${CURRENT_USER.avatarColor}`}>
+            {CURRENT_USER.avatar}
+          </div>
+          <span className="font-semibold text-[15px] text-text">
+            {CURRENT_USER.displayName}
+          </span>
+        </button>
+
         {NAV_ITEMS.map((item) => {
           const isActive = activePage === item.id
           return (
@@ -47,26 +66,30 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
               type="button"
               onClick={() => onNavigate(item.id)}
               className={[
-                'group flex items-center gap-3 px-3 py-2.5 rounded-xl w-full text-left',
-                'transition-all duration-200 cursor-pointer border-0 relative',
-                'max-sm:justify-center max-sm:px-0',
+                'group flex items-center gap-3 px-2 py-2 rounded-lg w-full text-left',
+                'transition-all duration-200 cursor-pointer border-0',
                 isActive
-                  ? 'sidebar-item-active'
+                  ? 'bg-surface-2'
                   : 'bg-transparent hover:bg-surface-2',
               ].join(' ')}
             >
-              <span className="text-xl shrink-0">{item.emoji}</span>
+              <span className={[
+                'w-9 h-9 rounded-full flex items-center justify-center text-xl shrink-0',
+                isActive ? 'bg-primary text-white' : 'bg-surface-2 text-text',
+              ].join(' ')}>
+                {item.emoji}
+              </span>
 
               <span className={[
-                'font-semibold text-[14px] transition-colors max-sm:hidden',
-                isActive ? 'text-primary' : 'text-text-muted group-hover:text-text',
+                'font-semibold text-[15px] transition-colors',
+                isActive ? 'text-text' : 'text-text-muted group-hover:text-text',
               ].join(' ')}>
                 {item.label}
               </span>
 
               {item.badge && (
                 <span className="ml-auto text-[11px] font-bold px-1.5 py-0.5 rounded-full
-                                 gradient-primary text-white min-w-[20px] text-center max-sm:hidden">
+                                 bg-[#e41e3f] text-white min-w-[20px] text-center">
                   {item.badge}
                 </span>
               )}
@@ -76,26 +99,35 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
       </nav>
 
       {/* ── Divider ──────────────────────────────────────── */}
-      <div className="h-px bg-border mx-4 mb-3" />
+      <div className="h-px bg-border mx-4 my-1" />
 
-      {/* ── Current User ─────────────────────────────────── */}
-      <div className="px-4 pb-5">
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-2
-                        cursor-pointer transition-colors duration-200 max-sm:justify-center">
-          <div className={`avatar-online w-9 h-9 rounded-full flex items-center justify-center
-                           text-[12px] font-bold text-white shrink-0 ${CURRENT_USER.avatarColor}`}>
-            {CURRENT_USER.avatar}
-          </div>
-          <div className="min-w-0 max-sm:hidden">
-            <div className="text-[13px] font-semibold text-text truncate">
-              {CURRENT_USER.displayName}
-            </div>
-            <div className="text-[11px] text-text-muted truncate">
-              @{CURRENT_USER.handle}
-            </div>
-          </div>
-          <span className="ml-auto text-text-light text-lg max-sm:hidden">···</span>
+      {/* ── Shortcuts ────────────────────────────────────── */}
+      <div className="px-2 py-2">
+        <h3 className="text-[13px] font-semibold text-text-muted px-2 mb-1">Your shortcuts</h3>
+        <div className="flex flex-col gap-0.5">
+          {SHORTCUTS.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className="flex items-center gap-3 px-2 py-2 rounded-lg w-full text-left
+                         transition-colors duration-200 cursor-pointer border-0
+                         bg-transparent hover:bg-surface-2"
+            >
+              <span className="w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center
+                               text-lg shrink-0">
+                {item.emoji}
+              </span>
+              <span className="text-[14px] text-text-muted font-medium">{item.label}</span>
+            </button>
+          ))}
         </div>
+      </div>
+
+      {/* ── Footer ───────────────────────────────────────── */}
+      <div className="mt-auto px-4 pb-4 pt-2">
+        <p className="text-[11px] text-text-light leading-relaxed">
+          Privacy · Terms · Advertising · Cookies · © 2026 Fookbase
+        </p>
       </div>
     </aside>
   )

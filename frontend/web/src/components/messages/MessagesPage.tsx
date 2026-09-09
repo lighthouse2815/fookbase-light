@@ -79,7 +79,7 @@ export default function MessagesPage() {
     conv.messages.filter((m) => m.senderId !== CURRENT_USER.id && !m.isRead).length
 
   return (
-    <div className="flex h-screen bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
+    <div className="flex h-[calc(100vh-56px)] bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
 
       {/* ── Conversation List ─────────────────────────────── */}
       <aside className="w-[280px] shrink-0 border-r border-border bg-surface flex flex-col h-full max-sm:w-16">
@@ -87,19 +87,25 @@ export default function MessagesPage() {
         {/* Header */}
         <div className="px-4 py-4 border-b border-border flex items-center justify-between">
           <h1 className="font-heading font-bold text-[17px] text-text max-sm:hidden">Messages</h1>
-          <button type="button"
+          <button
+            type="button"
             className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center
-                       text-text-muted hover:bg-surface-3 transition-colors cursor-pointer border-none">
+                       text-text-muted hover:bg-surface-3 transition-colors cursor-pointer border-none"
+            title="New message"
+          >
             ✏️
           </button>
         </div>
 
         {/* Search */}
         <div className="px-3 py-2 border-b border-border max-sm:hidden">
-          <input type="text" placeholder="Search messages..."
-            className="w-full bg-surface-2 rounded-full text-[12px] text-text px-3 py-2
+          <input
+            type="text"
+            placeholder="Search messages..."
+            className="w-full bg-surface-2 rounded-full text-[13px] text-text px-3.5 py-2
                        outline-none placeholder:text-text-light border border-border
-                       focus:input-focus transition-all" />
+                       focus:input-focus transition-all"
+          />
         </div>
 
         {/* Conversations */}
@@ -111,20 +117,32 @@ export default function MessagesPage() {
             const lastMsg  = conv.messages[conv.messages.length - 1]
 
             return (
-              <button key={conv.id} type="button" onClick={() => setActiveConvId(conv.id)}
+              <button
+                key={conv.id}
+                type="button"
+                onClick={() => setActiveConvId(conv.id)}
                 className={[
                   'w-full text-left flex items-center gap-3 px-4 py-3',
-                  'border-b border-border transition-colors cursor-pointer bg-transparent',
-                  isActive ? 'bg-surface-hover border-l-2 border-l-primary' : 'hover:bg-surface-2',
-                ].join(' ')}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px]
-                                 font-bold text-white shrink-0
-                                 ${p.isOnline ? 'avatar-online' : ''} ${p.avatarColor}`}>
+                  'border-b border-border transition-colors cursor-pointer',
+                  isActive
+                    ? 'bg-surface-2 border-l-2 border-l-primary'
+                    : 'bg-transparent border-l-2 border-l-transparent hover:bg-surface-2',
+                ].join(' ')}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px]
+                             font-bold text-white shrink-0
+                             ${p.isOnline ? 'avatar-online' : ''} ${p.avatarColor}`}
+                >
                   {p.avatar}
                 </div>
                 <div className="flex-1 min-w-0 max-sm:hidden">
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className={`text-[13px] truncate ${unread > 0 ? 'font-semibold text-text' : 'font-medium text-text'}`}>
+                    <span
+                      className={`text-[13px] truncate ${
+                        unread > 0 ? 'font-semibold text-text' : 'font-medium text-text'
+                      }`}
+                    >
                       {p.displayName}
                     </span>
                     <span className="text-[11px] text-text-light shrink-0 ml-1">
@@ -132,12 +150,22 @@ export default function MessagesPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className={`text-[12px] truncate ${lastMsg?.isEncrypted ? 'italic text-text-light' : 'text-text-muted'}`}>
+                    <p
+                      className={`text-[12px] truncate ${
+                        lastMsg?.isEncrypted
+                          ? 'italic text-text-light'
+                          : unread > 0
+                          ? 'text-text font-medium'
+                          : 'text-text-muted'
+                      }`}
+                    >
                       {lastMsg?.isEncrypted ? '🔒 Encrypted message' : lastMsg?.content}
                     </p>
                     {unread > 0 && (
-                      <span className="ml-1 min-w-[18px] h-[18px] rounded-full gradient-primary
-                                       text-[10px] font-bold text-white flex items-center justify-center px-1 shrink-0">
+                      <span
+                        className="ml-1 min-w-[18px] h-[18px] rounded-full bg-[#e41e3f]
+                                   text-[10px] font-bold text-white flex items-center justify-center px-1.5 shrink-0"
+                      >
                         {unread}
                       </span>
                     )}
@@ -154,22 +182,27 @@ export default function MessagesPage() {
 
         {/* Chat header */}
         <div className="px-5 py-4 border-b border-border bg-surface flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px]
-                           font-bold text-white shrink-0
-                           ${partner.isOnline ? 'avatar-online' : ''} ${partner.avatarColor}`}>
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px]
+                       font-bold text-white shrink-0
+                       ${partner.isOnline ? 'avatar-online' : ''} ${partner.avatarColor}`}
+          >
             {partner.avatar}
           </div>
           <div>
             <div className="text-[14px] font-semibold text-text">{partner.displayName}</div>
-            <div className={`text-[12px] ${partner.isOnline ? 'text-repost font-medium' : 'text-text-light'}`}>
+            <div className={`text-[12px] ${partner.isOnline ? 'text-[#31a24c] font-medium' : 'text-text-light'}`}>
               {partner.isOnline ? '● Active now' : '○ Offline'}
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
             {['📞', '📹', 'ℹ️'].map((icon) => (
-              <button key={icon} type="button"
+              <button
+                key={icon}
+                type="button"
                 className="w-9 h-9 rounded-full bg-surface-2 flex items-center justify-center
-                           hover:bg-surface-3 transition-colors cursor-pointer border-none text-base">
+                           hover:bg-surface-3 transition-colors cursor-pointer border-none text-base text-text"
+              >
                 {icon}
               </button>
             ))}
@@ -181,27 +214,38 @@ export default function MessagesPage() {
           {activeConv.messages.map((msg, i) => {
             const isMine = msg.senderId === CURRENT_USER.id
             return (
-              <div key={msg.id}
+              <div
+                key={msg.id}
                 className={`flex gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
-                style={{ animation: `scale-in 0.2s ease ${i * 0.015}s both` }}>
-
+                style={{ animation: `scale-in 0.2s ease ${i * 0.015}s both` }}
+              >
                 {!isMine && (
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px]
-                                   font-bold text-white shrink-0 mt-1 ${partner.avatarColor}`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px]
+                               font-bold text-white shrink-0 mt-1 ${partner.avatarColor}`}
+                  >
                     {partner.avatar}
                   </div>
                 )}
 
                 <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}>
-                  <div className={[
-                    'px-4 py-2.5 text-[14px] leading-relaxed',
-                    isMine ? 'bubble-mine' : 'bubble-theirs',
-                    msg.isEncrypted ? 'opacity-70 italic' : '',
-                  ].join(' ')}>
-                    {msg.isEncrypted && <span className="text-[11px] block mb-1 not-italic">🔒 Encrypted</span>}
+                  <div
+                    className={[
+                      'px-4 py-2.5 text-[14px] leading-relaxed',
+                      isMine ? 'bubble-mine' : 'bubble-theirs',
+                      msg.isEncrypted ? 'opacity-75 italic' : '',
+                    ].join(' ')}
+                  >
+                    {msg.isEncrypted && (
+                      <span className="text-[11px] block mb-1 not-italic font-medium opacity-80">
+                        🔒 Encrypted
+                      </span>
+                    )}
                     {msg.content}
                   </div>
-                  <span className="text-[11px] text-text-light px-1">{formatTimestamp(msg.timestamp)}</span>
+                  <span className="text-[11px] text-text-light px-1">
+                    {formatTimestamp(msg.timestamp)}
+                  </span>
                 </div>
               </div>
             )
@@ -210,15 +254,19 @@ export default function MessagesPage() {
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex items-end gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px]
-                               font-bold text-white shrink-0 ${partner.avatarColor}`}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px]
+                           font-bold text-white shrink-0 ${partner.avatarColor}`}
+              >
                 {partner.avatar}
               </div>
               <div className="bubble-theirs px-4 py-3 flex items-center gap-1">
                 {[0, 1, 2].map((dot) => (
-                  <span key={dot}
+                  <span
+                    key={dot}
                     className="w-2 h-2 rounded-full bg-text-muted inline-block"
-                    style={{ animation: `pulse-dot 1.2s ease ${dot * 0.2}s infinite` }} />
+                    style={{ animation: `pulse-dot 1.2s ease ${dot * 0.2}s infinite` }}
+                  />
                 ))}
               </div>
             </div>
@@ -228,9 +276,12 @@ export default function MessagesPage() {
 
         {/* Input bar */}
         <div className="px-4 py-3 border-t border-border bg-surface">
-          <div className="flex items-end gap-3 bg-surface-2 rounded-2xl px-4 py-2 border border-border">
-            <button type="button"
-              className="text-primary text-xl cursor-pointer bg-transparent border-none shrink-0 pb-1">
+          <div className="flex items-center gap-3 bg-surface-2 rounded-full px-4 py-2 border border-border focus-within:border-border-focus transition-colors">
+            <button
+              type="button"
+              className="text-primary text-xl cursor-pointer bg-transparent border-none shrink-0 hover:opacity-80 transition-opacity"
+              title="Add emoji"
+            >
               😊
             </button>
             <textarea
@@ -240,22 +291,29 @@ export default function MessagesPage() {
               onKeyDown={handleKeyDown}
               placeholder="Message..."
               className="flex-1 bg-transparent border-none text-[14px] text-text outline-none
-                         resize-none placeholder:text-text-light py-1"
+                         resize-none placeholder:text-text-light py-1 leading-normal"
               style={{ maxHeight: 120 }}
             />
             {draft.trim() ? (
-              <button type="button" onClick={handleSend}
-                className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center
-                           text-white cursor-pointer border-none shrink-0 mb-0.5
-                           hover:opacity-90 hover:shadow-[0_4px_12px_rgba(108,99,255,0.35)] transition-all">
+              <button
+                type="button"
+                onClick={handleSend}
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center
+                           text-white cursor-pointer border-none shrink-0
+                           hover:bg-primary-dark transition-all"
+                title="Send message"
+              >
                 ▶
               </button>
             ) : (
-              <div className="flex items-center gap-1 shrink-0 mb-0.5">
+              <div className="flex items-center gap-1 shrink-0">
                 {['🖼️', '🎙️', '❤️'].map((icon) => (
-                  <button key={icon} type="button"
+                  <button
+                    key={icon}
+                    type="button"
                     className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted
-                               hover:bg-surface-3 transition-colors cursor-pointer border-none text-base">
+                               hover:bg-surface-3 transition-colors cursor-pointer border-none text-base"
+                  >
                     {icon}
                   </button>
                 ))}
