@@ -8,19 +8,11 @@ import type { Post as ApiPost } from '../../api/posts'
 import { usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
-import { CURRENT_USER, formatNumber } from '../../data/mockData'
+import { formatNumber } from '../../data/mockData'
 import LivePostCard from '../feed/components/LivePostCard'
 import NewPostBox from '../feed/components/NewPostBox'
 
 type ProfileTab = 'posts' | 'about' | 'friends' | 'photos'
-
-const badgeClass: Record<string, string> = {
-  root: 'badge-root',
-  anon: 'badge-anon',
-  cyborg: 'badge-cyborg',
-  neural: 'badge-neural',
-  ghost: 'badge-ghost',
-}
 
 const TABS: { id: ProfileTab; label: string }[] = [
   { id: 'posts', label: 'Posts' },
@@ -77,16 +69,12 @@ export default function ProfilePage() {
   const [displayNameDraft, setDisplayNameDraft] = useState('')
   const [bioDraft, setBioDraft] = useState('')
   const [cityDraft, setCityDraft] = useState('')
-  const user = profile ? {
-    ...CURRENT_USER,
-    id: profile.userId,
-    handle: profile.username,
-    displayName: profile.displayName,
-    avatar: profile.displayName.slice(0, 2).toUpperCase(),
-    bio: profile.bio ?? '',
-    location: profile.currentCity ?? 'Not set',
-    joinDate: new Date(profile.createdAt).toLocaleDateString(),
-  } : CURRENT_USER
+  const displayName = profile?.displayName ?? session!.user.username
+  const username = profile?.username ?? session!.user.username
+  const initials = displayName.slice(0, 2).toUpperCase()
+  const bio = profile?.bio ?? ''
+  const location = profile?.currentCity ?? 'Not set'
+  const joinedDate = profile ? new Date(profile.createdAt).toLocaleDateString() : '—'
 
   const loadProfilePosts = useCallback(async (
     userId: string,
@@ -293,12 +281,8 @@ export default function ProfilePage() {
           {/* 2. Avatar: Large circle overlapping the bottom of cover photo */}
           <div className="absolute -bottom-[84px] left-1/2 -translate-x-1/2 md:translate-x-0 md:left-8 z-20">
             <div className="relative group">
-              <div
-                className={`w-[168px] h-[168px] rounded-full flex items-center justify-center text-5xl
-                           font-bold text-white border-4 border-surface shadow-2xl
-                           ${user.avatarColor || 'bg-surface-2'}`}
-              >
-                {user.avatar}
+              <div className="w-[168px] h-[168px] rounded-full flex items-center justify-center text-5xl font-bold text-white border-4 border-surface shadow-2xl bg-primary">
+                {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" /> : initials}
               </div>
               {/* Camera icon button */}
               <button
@@ -333,31 +317,22 @@ export default function ProfilePage() {
               {/* Name & Badges */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
                 <h1 className="font-heading font-bold text-2xl sm:text-3xl text-text leading-tight">
-                  {user.displayName}
+                  {displayName}
                 </h1>
-                <div className="flex flex-wrap gap-1.5">
-                  {user.badges.map((b) => (
-                    <span key={b} className={`badge-pill ${badgeClass[b] ?? ''}`}>{b}</span>
-                  ))}
-                </div>
               </div>
 
               {/* Handle */}
-              <p className="text-[14px] text-text-muted font-medium mt-0.5">@{user.handle}</p>
+              <p className="text-[14px] text-text-muted font-medium mt-0.5">@{username}</p>
 
               {/* Bio text */}
               <p className="text-[14px] text-text mt-2 max-w-xl leading-relaxed whitespace-pre-line">
-                {user.bio}
+                {bio}
               </p>
 
               {/* Stats row: followers, following, posts - inline with dot separators */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-[14px] text-text-muted mt-2.5">
                 <span>
-                  <strong className="font-semibold text-text">{formatNumber(user.followers)}</strong> followers
-                </span>
-                <span className="text-text-light font-bold">•</span>
-                <span>
-                  <strong className="font-semibold text-text">{formatNumber(user.following)}</strong> following
+                  <strong className="font-semibold text-text">{formatNumber(friends.total)}</strong> friends
                 </span>
                 <span className="text-text-light font-bold">•</span>
                 <span>
@@ -368,28 +343,19 @@ export default function ProfilePage() {
 
             {/* Action buttons */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 shrink-0 mt-2 xl:mt-0">
-              {/* Add Friend button */}
               <button
                 type="button"
+                onClick={() => setTab('friends')}
                 className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
               >
                 <span>👥</span>
-                <span>Add Friend</span>
-              </button>
-
-              {/* Message button */}
-              <button
-                type="button"
-                onClick={openProfileEditor}
-                className="px-4 py-2 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
-              >
-                <span>💬</span>
-                <span>Message</span>
+                <span>Friends</span>
               </button>
 
               {/* Edit profile button: bg-surface-2 text-text rounded-lg, not a pill button */}
               <button
                 type="button"
+                onClick={openProfileEditor}
                 className="px-4 py-2 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
               >
                 <span>✏️</span>
@@ -513,7 +479,7 @@ export default function ProfilePage() {
 
                 {/* Bio text */}
                 <p className="text-[14px] text-text text-center py-0.5 leading-relaxed whitespace-pre-wrap">
-                  {user.bio}
+                  {bio || 'No bio yet.'}
                 </p>
                 <button
                   type="button"
@@ -529,37 +495,17 @@ export default function ProfilePage() {
                 <div className="flex flex-col gap-3 text-sm">
                   <div className="flex items-center gap-3 text-text">
                     <span className="text-text-muted text-base shrink-0">📍</span>
-                    <span>Lives in <strong className="font-semibold text-text">{user.location}</strong></span>
+                    <span>Lives in <strong className="font-semibold text-text">{location}</strong></span>
                   </div>
                   <div className="flex items-center gap-3 text-text">
                     <span className="text-text-muted text-base shrink-0">📅</span>
-                    <span>Joined <strong className="font-semibold text-text">{user.joinDate}</strong></span>
+                    <span>Joined <strong className="font-semibold text-text">{joinedDate}</strong></span>
                   </div>
                   <div className="flex items-center gap-3 text-text">
                     <span className="text-text-muted text-base shrink-0">👥</span>
-                    <span>Followed by <strong className="font-semibold text-text">{formatNumber(user.followers)}</strong> people</span>
+                    <span><strong className="font-semibold text-text">{formatNumber(friends.total)}</strong> friends</span>
                   </div>
-                  {user.isOnline && (
-                    <div className="flex items-center gap-3 text-text">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#31a24c] shrink-0 ml-0.5" />
-                      <span className="text-[#31a24c] font-medium text-[13px]">Active now</span>
-                    </div>
-                  )}
                 </div>
-
-                {/* Badges */}
-                {user.badges && user.badges.length > 0 && (
-                  <div className="flex flex-col gap-2 pt-2 border-t border-border">
-                    <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-                      Badges
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {user.badges.map((b) => (
-                        <span key={b} className={`badge-pill ${badgeClass[b] ?? ''}`}>{b}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <button
                   type="button"
@@ -582,23 +528,7 @@ export default function ProfilePage() {
                     See all photos
                   </button>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5 rounded-lg overflow-hidden">
-                  {[
-                    'bg-surface-3',
-                    'bg-surface-2',
-                    'bg-surface-3',
-                    'bg-surface-2',
-                    'bg-surface-3',
-                    'bg-surface-2',
-                  ].map((bg, idx) => (
-                    <div
-                      key={idx}
-                      className={`${bg} aspect-square flex items-center justify-center text-text-muted hover:opacity-90 cursor-pointer transition-opacity text-xl`}
-                    >
-                      {['💻', '⚡', '🔐', '🌐', '🛡️', '⚙️'][idx]}
-                    </div>
-                  ))}
-                </div>
+                <p className="text-sm text-text-muted">Photo albums are not available yet.</p>
               </div>
 
               {/* Friends Preview Card */}
@@ -656,35 +586,23 @@ export default function ProfilePage() {
                 <div className="flex items-start gap-3">
                   <span className="text-xl">📍</span>
                   <div>
-                    <p className="text-sm font-semibold text-text">Lives in {user.location}</p>
+                    <p className="text-sm font-semibold text-text">Lives in {location}</p>
                     <p className="text-xs text-text-muted">Current City</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="text-xl">📅</span>
                   <div>
-                    <p className="text-sm font-semibold text-text">Joined {user.joinDate}</p>
+                    <p className="text-sm font-semibold text-text">Joined {joinedDate}</p>
                     <p className="text-xs text-text-muted">Member Since</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-xl">💼</span>
-                  <div>
-                    <p className="text-sm font-semibold text-text">Security Researcher</p>
-                    <p className="text-xs text-text-muted">Specialization</p>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col gap-4">
-                <h3 className="font-semibold text-text-muted text-xs uppercase tracking-wider">Bio & Badges</h3>
+                <h3 className="font-semibold text-text-muted text-xs uppercase tracking-wider">Bio</h3>
                 <p className="text-sm text-text leading-relaxed whitespace-pre-line bg-surface-2 p-3.5 rounded-lg border border-border">
-                  {user.bio}
+                  {bio || 'No bio yet.'}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {user.badges.map((b) => (
-                    <span key={b} className={`badge-pill ${badgeClass[b] ?? ''} text-xs py-1 px-3`}>{b}</span>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
@@ -894,26 +812,7 @@ export default function ProfilePage() {
               <h2 className="font-heading font-bold text-xl text-text">Photos</h2>
               <p className="text-sm text-text-muted">All media and photos</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {[
-                { icon: '💻', title: 'Kernel Exploit PoC' },
-                { icon: '⚡', title: 'Assembly Debug' },
-                { icon: '🔐', title: 'Cryptographic Hash' },
-                { icon: '🌐', title: 'Network Topology' },
-                { icon: '🛡️', title: 'Firewall Policy' },
-                { icon: '⚙️', title: 'Buffer Analysis' },
-                { icon: '📡', title: 'Packet Capture' },
-                { icon: '🔍', title: 'Memory Dump' },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="aspect-square bg-surface-2 rounded-lg border border-border flex flex-col items-center justify-center p-3 gap-2 hover:bg-surface-hover cursor-pointer transition-colors"
-                >
-                  <span className="text-4xl">{item.icon}</span>
-                  <span className="text-xs font-medium text-text-muted text-center">{item.title}</span>
-                </div>
-              ))}
-            </div>
+            <p className="text-sm text-text-muted">Photo albums are not available yet.</p>
           </div>
         )}
       </div>
