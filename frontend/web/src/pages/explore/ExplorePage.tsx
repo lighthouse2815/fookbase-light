@@ -1,31 +1,17 @@
-import { useState } from 'react'
-import { TRENDING_TOPICS, USERS, formatNumber } from '../../data/mockData'
-
-const badgeClass: Record<string, string> = {
-  root: 'badge-root',
-  anon: 'badge-anon',
-  cyborg: 'badge-cyborg',
-  neural: 'badge-neural',
-  ghost: 'badge-ghost',
-}
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ApiError } from '../../api/client'
+import { usersApi } from '../../api/users'
+import type { UserProfile } from '../../api/users'
+import { useAuth } from '../../auth/useAuth'
+import { TRENDING_TOPICS, formatNumber } from '../../data/mockData'
 
 export default function ExplorePage() {
   const [query, setQuery] = useState('')
-  const [following, setFollowing] = useState<Set<string>>(new Set())
-
-  const toggleFollow = (id: string) => {
-    setFollowing((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }
-
-  const suggestedUsers = USERS.filter((u) => u.id !== 'u1')
+  const { session } = useAuth()
+  const [users, setUsers] = useState<UserProfile[]>([])
+  const [userSearchError, setUserSearchError] = useState<string | null>(null)
+  const [isSearchingUsers, setIsSearchingUsers] = useState(true)
 
   const trimmedQuery = query.trim().toLowerCase()
 
@@ -33,12 +19,20 @@ export default function ExplorePage() {
     !trimmedQuery || topic.tag.toLowerCase().includes(trimmedQuery)
   )
 
-  const filteredUsers = suggestedUsers.filter(
-    (user) =>
-      !trimmedQuery ||
-      user.displayName.toLowerCase().includes(trimmedQuery) ||
-      user.handle.toLowerCase().includes(trimmedQuery)
-  )
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setIsSearchingUsers(true)
+      setUserSearchError(null)
+      void usersApi.search(query)
+        .then((page) => setUsers(page.items.filter((user) => user.userId !== session!.user.id)))
+        .catch((error: unknown) => {
+          setUserSearchError(error instanceof ApiError ? error.message : 'Không thể tìm người dùng.')
+        })
+        .finally(() => setIsSearchingUsers(false))
+    }, 250)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [query, session])
 
   return (
     <div
@@ -89,7 +83,6 @@ export default function ExplorePage() {
               </div>
             ) : (
               filteredTopics.map((topic, i) => {
-                const isTopicFollowing = following.has(topic.id)
                 return (
                   <div
                     key={topic.id}
@@ -115,19 +108,6 @@ export default function ExplorePage() {
                       <span className="text-lg select-none">
                         {topic.trend === 'hot' ? '🔥' : topic.trend === 'up' ? '📈' : '📉'}
                       </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleFollow(topic.id)
-                        }}
-                        className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-all duration-200 cursor-pointer border-none ${isTopicFollowing
-                            ? 'opacity-100 bg-surface-2 text-text-muted hover:bg-surface-3 hover:text-text'
-                            : 'opacity-0 group-hover:opacity-100 bg-primary text-white hover:bg-primary-dark'
-                          }`}
-                      >
-                        {isTopicFollowing ? 'Following' : 'Follow'}
-                      </button>
                     </div>
                   </div>
                 )
@@ -140,58 +120,38 @@ export default function ExplorePage() {
         <section>
           <h2 className="font-heading font-bold text-[17px] text-text mb-4">Who to follow</h2>
           <div className="flex flex-col gap-3">
-            {filteredUsers.length === 0 ? (
+            {userSearchError && <div className="bg-[#e41e3f]/10 border border-[#e41e3f]/40 rounded-2xl p-4 text-sm text-[#ff8a9b]">{userSearchError}</div>}
+            {isSearchingUsers ? (
+              <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">Searching users...</div>
+            ) : users.length === 0 && !userSearchError ? (
               <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">
                 No users found matching &ldquo;{query}&rdquo;
               </div>
             ) : (
-              filteredUsers.map((user, i) => {
-                const isFollowing = following.has(user.id)
-                return (
+              users.map((user, i) => (
                   <div
-                    key={user.id}
+                    key={user.userId}
                     className="bg-surface rounded-2xl border border-border p-4
                                flex items-start gap-3 transition-all duration-200 hover:card-shadow-hover"
                     style={{ animation: `slide-in-left 0.3s ease ${i * 0.06}s both` }}
                   >
-                    <div
-                      className={`w-11 h-11 rounded-full flex items-center justify-center text-[12px]
-                                 font-bold text-white shrink-0
-                                 ${user.isOnline ? 'avatar-online' : ''} ${user.avatarColor}`}
-                    >
-                      {user.avatar}
+                    <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">
+                      {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                         <span className="text-[13px] font-semibold text-text truncate">
-                          {user.displayName}
-                        </span>
-                        {user.badges.slice(0, 1).map((b) => (
-                          <span key={b} className={`badge-pill ${badgeClass[b] ?? ''}`}>
-                            {b}
-                          </span>
-                        ))}
+                        {user.displayName}
+                      </span>
                       </div>
-                      <p className="text-[12px] text-text-muted truncate">@{user.handle}</p>
-                      <p className="text-[12px] text-text-muted">
-                        {formatNumber(user.followers)} followers
-                      </p>
+                      <p className="text-[12px] text-text-muted truncate">@{user.username}</p>
+                      {user.currentCity && <p className="text-[12px] text-text-muted">{user.currentCity}</p>}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => toggleFollow(user.id)}
-                      className={`px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 cursor-pointer shrink-0 border-none ${isFollowing
-                          ? 'bg-surface-2 text-text-muted hover:bg-surface-3 hover:text-text'
-                          : 'bg-primary text-white hover:bg-primary-dark'
-                        }`}
-                    >
-                      {isFollowing ? 'Following' : 'Follow'}
-                    </button>
+                    <Link to={`/profile/${user.userId}`} className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 shrink-0 no-underline bg-primary text-white hover:bg-primary-dark">View</Link>
                   </div>
-                )
-              })
+              ))
             )}
           </div>
         </section>

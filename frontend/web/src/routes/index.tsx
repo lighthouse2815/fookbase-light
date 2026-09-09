@@ -4,6 +4,7 @@ import FeedPage from '../pages/feed/FeedPage'
 import ExplorePage from '../pages/explore/ExplorePage'
 import MessagesPage from '../pages/messages/MessagesPage'
 import ProfilePage from '../pages/profile/ProfilePage'
+import UserProfilePage from '../pages/profile/UserProfilePage'
 import LoginPage from '../pages/auth/LoginPage'
 
 export const router = createBrowserRouter([
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <ProfilePage />,
+      },
+      {
+        path: 'profile/:userId',
+        element: <UserProfilePage />,
       },
       {
         path: '*',
