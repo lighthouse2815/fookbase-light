@@ -6,7 +6,6 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Shared.Contracts.Friends;
-using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Shared.Contracts.Posts;
 using Fookbase.Api.Modules.Posts.Services;
@@ -36,7 +35,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Author_can_create_update_and_soft_delete_post()
     {
-        var users = await CreateKnownUsersAsync(2);
+        var users = await CreateUserIdsAsync(2);
         using var author = CreateAuthenticatedClient(users[0]);
         using var other = CreateAuthenticatedClient(users[1]);
 
@@ -80,7 +79,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Privacy_feed_and_block_projection_control_visibility()
     {
-        var users = await CreateKnownUsersAsync(3);
+        var users = await CreateUserIdsAsync(3);
         var authorId = users[0];
         var friendId = users[1];
         var strangerId = users[2];
@@ -124,7 +123,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Comments_and_reactions_enforce_access_and_return_summaries()
     {
-        var users = await CreateKnownUsersAsync(2);
+        var users = await CreateUserIdsAsync(2);
         using var author = CreateAuthenticatedClient(users[0]);
         using var reader = CreateAuthenticatedClient(users[1]);
         var post = await CreatePostAsync(author, "discussion", "public");
@@ -171,28 +170,20 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Projections_are_idempotent_and_ignore_older_relationship_events()
     {
-        var userEvent = new UserRegisteredIntegrationEvent(
-            Guid.NewGuid(), Guid.NewGuid(), "projected_user", DateTimeOffset.UtcNow);
-        Assert.True(await ProjectAsync(userEvent));
-        Assert.False(await ProjectAsync(userEvent));
-
+        var firstUserId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();
-        await ProjectAsync(new UserRegisteredIntegrationEvent(
-            Guid.NewGuid(), otherUserId, "other_user", DateTimeOffset.UtcNow));
         var acceptedAt = DateTimeOffset.UtcNow;
         var removedAt = acceptedAt.AddSeconds(2);
         await ProjectAsync(new FriendshipRemovedIntegrationEvent(
-            Guid.NewGuid(), Min(userEvent.UserId, otherUserId), Max(userEvent.UserId, otherUserId), removedAt));
+            Guid.NewGuid(), Min(firstUserId, otherUserId), Max(firstUserId, otherUserId), removedAt));
         await ProjectAsync(new FriendRequestAcceptedIntegrationEvent(
-            Guid.NewGuid(), Guid.NewGuid(), Min(userEvent.UserId, otherUserId), Max(userEvent.UserId, otherUserId), acceptedAt));
+            Guid.NewGuid(), Guid.NewGuid(), Min(firstUserId, otherUserId), Max(firstUserId, otherUserId), acceptedAt));
 
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
-        Assert.Equal(1, await dbContext.KnownUsers.CountAsync(user => user.UserId == userEvent.UserId));
-        Assert.Equal(1, await dbContext.InboxMessages.CountAsync(message => message.EventId == userEvent.EventId));
         var edge = await dbContext.FriendEdges.AsNoTracking().SingleAsync(item =>
-            item.UserId1 == Min(userEvent.UserId, otherUserId) &&
-            item.UserId2 == Max(userEvent.UserId, otherUserId));
+            item.UserId1 == Min(firstUserId, otherUserId) &&
+            item.UserId2 == Max(firstUserId, otherUserId));
         Assert.False(edge.IsActive);
         Assert.InRange(
             edge.LastChangedAtUtc,
@@ -203,7 +194,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Media_projection_is_idempotent_and_deleted_media_is_rejected()
     {
-        var owner = (await CreateKnownUsersAsync(1))[0];
+        var owner = (await CreateUserIdsAsync(1))[0];
         var ready = ReadyMedia(owner);
         Assert.True(await ProjectAsync(ready));
         Assert.False(await ProjectAsync(ready));
@@ -226,7 +217,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Attachments_validate_owner_duplicates_maximum_and_allow_image_only_post()
     {
-        var users = await CreateKnownUsersAsync(2);
+        var users = await CreateUserIdsAsync(2);
         var own = ReadyMedia(users[0]);
         var foreign = ReadyMedia(users[1]);
         await ProjectAsync(own);
@@ -266,7 +257,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Post_privacy_and_blocks_gate_signed_media_access()
     {
-        var users = await CreateKnownUsersAsync(3);
+        var users = await CreateUserIdsAsync(3);
         var authorId = users[0]; var friendId = users[1]; var strangerId = users[2];
         await ProjectAsync(new FriendRequestAcceptedIntegrationEvent(
             Guid.NewGuid(), Guid.NewGuid(), Min(authorId, friendId), Max(authorId, friendId), DateTimeOffset.UtcNow));
@@ -302,7 +293,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Updating_attachments_emits_attach_and_detach_events_atomically()
     {
-        var owner = (await CreateKnownUsersAsync(1))[0];
+        var owner = (await CreateUserIdsAsync(1))[0];
         var first = ReadyMedia(owner); var second = ReadyMedia(owner);
         await ProjectAsync(first); await ProjectAsync(second);
         using var client = CreateAuthenticatedClient(owner);
@@ -325,22 +316,8 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             x.Payload.Contains(second.MediaId.ToString()));
     }
 
-    private async Task<Guid[]> CreateKnownUsersAsync(int count)
-    {
-        var userIds = new Guid[count];
-        for (var index = 0; index < count; index++)
-        {
-            var integrationEvent = new UserRegisteredIntegrationEvent(
-                Guid.NewGuid(),
-                Guid.NewGuid(),
-                $"user_{Guid.NewGuid():N}"[..21],
-                DateTimeOffset.UtcNow);
-            await ProjectAsync(integrationEvent);
-            userIds[index] = integrationEvent.UserId;
-        }
-
-        return userIds;
-    }
+    private static Task<Guid[]> CreateUserIdsAsync(int count) =>
+        Task.FromResult(Enumerable.Range(0, count).Select(_ => Guid.NewGuid()).ToArray());
 
     private async Task<PostResponse> CreatePostAsync(
         HttpClient client, string content, string privacy, IReadOnlyList<Guid>? mediaIds = null)
@@ -355,7 +332,6 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var store = scope.ServiceProvider.GetRequiredService<EventProjectionStore>();
         return integrationEvent switch
         {
-            UserRegisteredIntegrationEvent value => await store.ProjectAsync(value, default),
             FriendRequestAcceptedIntegrationEvent value => await store.ProjectAsync(value, default),
             FriendshipRemovedIntegrationEvent value => await store.ProjectAsync(value, default),
             UserBlockedIntegrationEvent value => await store.ProjectAsync(value, default),

@@ -1,5 +1,4 @@
 using Fookbase.Api.Shared.Contracts.Friends;
-using Fookbase.Api.Shared.Contracts.Identity;
 using Fookbase.Api.Shared.Contracts.Media;
 using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Posts.Entities;
@@ -11,25 +10,6 @@ public sealed class EventProjectionStore(
     PostsDbContext dbContext,
     TimeProvider timeProvider)
 {
-    public Task<bool> ProjectAsync(
-        UserRegisteredIntegrationEvent integrationEvent,
-        CancellationToken cancellationToken) =>
-        ProjectOnceAsync(
-            integrationEvent.EventId,
-            UserRegisteredIntegrationEvent.EventType,
-            async () =>
-            {
-                if (!await dbContext.KnownUsers.AnyAsync(
-                        user => user.UserId == integrationEvent.UserId,
-                        cancellationToken))
-                {
-                    dbContext.KnownUsers.Add(KnownUser.Create(
-                        integrationEvent.UserId,
-                        integrationEvent.OccurredAtUtc));
-                }
-            },
-            cancellationToken);
-
     public Task<bool> ProjectAsync(
         FriendRequestAcceptedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken) =>

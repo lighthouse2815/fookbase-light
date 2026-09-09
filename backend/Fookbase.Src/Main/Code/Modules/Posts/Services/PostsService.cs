@@ -287,8 +287,6 @@ public sealed class PostsService(
 
     private static ApplicationError ToApplicationError(PostsServiceError error) => error switch
     {
-        PostsServiceError.UserNotFound => new(
-            "user_not_found", "The user was not found.", ApplicationErrorType.NotFound),
         PostsServiceError.PostNotFound => new(
             "post_not_found", "The post was not found.", ApplicationErrorType.NotFound),
         PostsServiceError.CommentNotFound => new(
@@ -317,11 +315,6 @@ public sealed class PostsService(
         IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default)
     {
-        if (!await UserExistsAsync(authorUserId, cancellationToken))
-        {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.UserNotFound);
-        }
-
         var mediaError = await ValidateMediaAsync(authorUserId, mediaIds, cancellationToken);
         if (mediaError != PostsServiceError.None)
             return PostsServiceResult<PostResponse>.Failure(mediaError);
@@ -466,11 +459,6 @@ public sealed class PostsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!await UserExistsAsync(viewerUserId, cancellationToken))
-        {
-            return PostsServiceResult<PagedResponse<PostResponse>>.Failure(PostsServiceError.UserNotFound);
-        }
-
         var query = VisiblePosts(viewerUserId);
         var total = await query.CountAsync(cancellationToken);
         var posts = await query
@@ -491,11 +479,6 @@ public sealed class PostsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!await UserExistsAsync(authorUserId, cancellationToken))
-        {
-            return PostsServiceResult<PagedResponse<PostResponse>>.Failure(PostsServiceError.UserNotFound);
-        }
-
         var query = VisiblePosts(viewerUserId).Where(post => post.AuthorUserId == authorUserId);
         var total = await query.CountAsync(cancellationToken);
         var posts = await query
@@ -516,11 +499,6 @@ public sealed class PostsService(
         string content,
         CancellationToken cancellationToken = default)
     {
-        if (!await UserExistsAsync(authorUserId, cancellationToken))
-        {
-            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.UserNotFound);
-        }
-
         var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == postId && item.DeletedAtUtc == null,
             cancellationToken);
@@ -676,11 +654,6 @@ public sealed class PostsService(
         ReactionType? reactionType,
         CancellationToken cancellationToken)
     {
-        if (!await UserExistsAsync(actorUserId, cancellationToken))
-        {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.UserNotFound);
-        }
-
         var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == postId && item.DeletedAtUtc == null,
             cancellationToken);
@@ -828,9 +801,6 @@ public sealed class PostsService(
                 .ToDictionary(item => item.Type.ToString().ToLowerInvariant(), item => item.Count),
             viewerReactions.GetValueOrDefault(post.Id))).ToList();
     }
-
-    private Task<bool> UserExistsAsync(Guid userId, CancellationToken cancellationToken) =>
-        dbContext.KnownUsers.AnyAsync(user => user.UserId == userId, cancellationToken);
 
     private async Task<PostsServiceError> ValidateMediaAsync(
         Guid ownerUserId, IReadOnlyList<Guid> mediaIds, CancellationToken cancellationToken)
