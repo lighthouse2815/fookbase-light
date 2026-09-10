@@ -1,18 +1,12 @@
 using Fookbase.Api.Modules.Users.Services;
-using Fookbase.Api.Modules.Users.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Users;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddUsersInfrastructure(
-        this IServiceCollection services,
-        string connectionString)
+    public static IServiceCollection AddUsersInfrastructure(this IServiceCollection services)
     {
-        services.AddDbContext<UsersDbContext>(options =>
-            options.UseNpgsql(connectionString));
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<UserProfileService>();
 

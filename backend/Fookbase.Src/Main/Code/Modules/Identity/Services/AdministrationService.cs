@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Identity.Common;
-using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Fookbase.Api.Modules.Identity.Services;
 
 public sealed class AdministrationService(
-    IdentityDbContext dbContext,
+    FookbaseDbContext dbContext,
     UserManager<User> userManager)
 {
     private const int MaximumPageSize = 100;

@@ -1,9 +1,8 @@
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.Config;
+using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Identity;
@@ -12,7 +11,6 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddIdentityInfrastructure(
         this IServiceCollection services,
-        string connectionString,
         JwtOptions jwtOptions,
         EmailOptions emailOptions,
         AdminOptions adminOptions)
@@ -20,9 +18,6 @@ public static class DependencyInjection
         jwtOptions.Validate();
         emailOptions.Validate();
         adminOptions.Validate();
-
-        services.AddDbContext<IdentityDbContext>(options =>
-            options.UseNpgsql(connectionString));
 
         services
             .AddIdentityCore<User>(options =>
@@ -36,7 +31,7 @@ public static class DependencyInjection
                 options.User.RequireUniqueEmail = true;
             })
             .AddRoles<IdentityRole<Guid>>()
-            .AddEntityFrameworkStores<IdentityDbContext>()
+            .AddEntityFrameworkStores<FookbaseDbContext>()
             .AddDefaultTokenProviders();
 
         services.AddSingleton(jwtOptions);

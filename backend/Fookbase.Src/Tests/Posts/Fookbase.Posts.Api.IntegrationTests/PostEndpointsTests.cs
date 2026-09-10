@@ -76,7 +76,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NotFound, missingUserReport.StatusCode);
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var reports = await dbContext.ContentReports
             .Where(report => report.ReporterUserId == reporterUserId)
             .ToListAsync();
@@ -116,7 +116,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.NotNull((await dbContext.Posts.SingleAsync(item => item.Id == post.Id)).DeletedAtUtc);
     }
 
@@ -154,7 +154,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.NotNull((await dbContext.Posts.AsNoTracking().SingleAsync(post => post.Id == created.Id)).DeletedAtUtc);
     }
 
@@ -283,7 +283,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
         using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(MediaStatus.Deleted,
             (await db.MediaAssets.SingleAsync(x => x.Id == mediaId)).Status);
     }
@@ -317,9 +317,9 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             new { content = "too many", privacy = "public", mediaIds = eleven })).StatusCode);
 
         using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.True(await db.PostMedia.AnyAsync(x => x.PostId == imageOnly.Id && x.MediaId == own));
-        var mediaDb = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var mediaDb = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.True(await mediaDb.MediaReferences.AnyAsync(x => x.PostId == imageOnly.Id && x.MediaId == own));
     }
 
@@ -387,10 +387,10 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(new[] { second }, updated.MediaIds);
 
         using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.False(await db.PostMedia.AnyAsync(x => x.PostId == post.Id && x.MediaId == first));
         Assert.True(await db.PostMedia.AnyAsync(x => x.PostId == post.Id && x.MediaId == second));
-        var mediaDb = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var mediaDb = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.False(await mediaDb.MediaReferences.AnyAsync(x => x.PostId == post.Id && x.MediaId == first));
         Assert.True(await mediaDb.MediaReferences.AnyAsync(x => x.PostId == post.Id && x.MediaId == second));
     }
@@ -405,7 +405,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
                 DateTimeOffset.UtcNow.AddTicks(index)))
             .ToArray();
         using var scope = factory.Services.CreateScope();
-        var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var identityDb = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         identityDb.Users.AddRange(users);
         await identityDb.SaveChangesAsync();
         return users.Select(user => user.Id).ToArray();
@@ -437,7 +437,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     private async Task<Guid> CreateReadyMediaAsync(Guid ownerUserId, MediaType mediaType = MediaType.Image)
     {
         using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var now = DateTimeOffset.UtcNow;
         var mediaId = Guid.NewGuid();
         var asset = MediaAsset.CreatePending(
@@ -459,7 +459,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     private async Task DeleteMediaAsync(Guid mediaId)
     {
         using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var asset = await db.MediaAssets.SingleAsync(item => item.Id == mediaId);
         asset.Delete(DateTimeOffset.UtcNow);
         await db.SaveChangesAsync();

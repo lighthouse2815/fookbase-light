@@ -1,5 +1,6 @@
 using Fookbase.Api.Modules.Users.Data;
 using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,10 @@ public sealed class UsersApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__UsersDatabase")
-            ?? throw new InvalidOperationException("Users development database connection string is required.");
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__FookbaseDatabase")
+            ?? throw new InvalidOperationException("Fookbase development database connection string is required.");
         builder.UseEnvironment("Testing");
-        ConfigureModuleConnections(builder, connectionString);
+        builder.UseSetting("ConnectionStrings:FookbaseDatabase", connectionString);
         builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-must-have-32-characters");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
@@ -28,18 +29,8 @@ public sealed class UsersApiFactory : WebApplicationFactory<Program>
         var host = base.CreateHost(builder);
 
         using var scope = host.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         dbContext.Database.Migrate();
-        scope.ServiceProvider.GetRequiredService<MediaDbContext>().Database.Migrate();
-
         return host;
-    }
-
-    private static void ConfigureModuleConnections(IWebHostBuilder builder, string connectionString)
-    {
-        foreach (var module in new[] { "Identity", "Users", "Friends", "Messages", "Posts", "Media" })
-        {
-            builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
-        }
     }
 }

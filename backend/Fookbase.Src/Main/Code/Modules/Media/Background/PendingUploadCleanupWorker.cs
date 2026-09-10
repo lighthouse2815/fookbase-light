@@ -1,6 +1,6 @@
 using Fookbase.Api.Modules.Media.Config;
-using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +19,7 @@ internal sealed class PendingUploadCleanupWorker(
             try
             {
                 using var scope = scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+                var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
                 var now = timeProvider.GetUtcNow();
                 var assets = await db.MediaAssets.Where(x => x.Status == MediaStatus.PendingUpload &&
                         x.UploadExpiresAtUtc != null && x.UploadExpiresAtUtc <= now)

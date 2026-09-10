@@ -11,6 +11,8 @@ using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Friends;
 using Fookbase.Api.Modules.Messages;
 using Fookbase.Api.Modules.Users;
+using Fookbase.Api.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +20,12 @@ namespace Fookbase.Api;
 
 internal static class ModuleServiceCollectionExtensions
 {
+    public static IServiceCollection AddFookbasePersistence(
+        this IServiceCollection services,
+        IConfiguration configuration) =>
+        services.AddDbContext<FookbaseDbContext>(options =>
+            options.UseNpgsql(RequiredConnectionString(configuration, "FookbaseDatabase")));
+
     public static IServiceCollection AddIdentityModule(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -30,32 +38,27 @@ internal static class ModuleServiceCollectionExtensions
             ?? new AdminOptions();
 
         return services.AddIdentityInfrastructure(
-            RequiredConnectionString(configuration, "IdentityDatabase"),
             jwtOptions,
             emailOptions,
             adminOptions);
     }
 
     public static IServiceCollection AddUsersModule(
-        this IServiceCollection services,
-        IConfiguration configuration) =>
-        services.AddUsersInfrastructure(RequiredConnectionString(configuration, "UsersDatabase"));
+        this IServiceCollection services) =>
+        services.AddUsersInfrastructure();
 
     public static IServiceCollection AddFriendsModule(
-        this IServiceCollection services,
-        IConfiguration configuration) =>
-        services.AddFriendsInfrastructure(RequiredConnectionString(configuration, "FriendsDatabase"));
+        this IServiceCollection services) =>
+        services.AddFriendsInfrastructure();
 
     public static IServiceCollection AddMessagesModule(
-        this IServiceCollection services,
-        IConfiguration configuration) =>
-        services.AddMessagesInfrastructure(RequiredConnectionString(configuration, "MessagesDatabase"));
+        this IServiceCollection services) =>
+        services.AddMessagesInfrastructure();
 
     public static IServiceCollection AddPostsModule(
         this IServiceCollection services,
         IConfiguration configuration) =>
         services.AddPostsInfrastructure(
-            RequiredConnectionString(configuration, "PostsDatabase"),
             configuration.GetSection(PostsOptions.SectionName).Get<PostsOptions>()
                 ?? new PostsOptions());
 
@@ -67,7 +70,6 @@ internal static class ModuleServiceCollectionExtensions
             ?? throw new InvalidOperationException("MinIO configuration is required.");
 
         return services.AddMediaInfrastructure(
-            RequiredConnectionString(configuration, "MediaDatabase"),
             minioOptions,
             configuration.GetSection(MediaOptions.SectionName).Get<MediaOptions>()
                 ?? new MediaOptions());

@@ -1,16 +1,14 @@
 using Fookbase.Api.Modules.Posts.Common;
-using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
-using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Services;
 
 public sealed class ReportsService(
-    PostsDbContext dbContext,
-    IdentityDbContext identityDbContext,
+    FookbaseDbContext dbContext,
     TimeProvider timeProvider)
 {
     private const int MaximumPageSize = 100;
@@ -21,7 +19,7 @@ public sealed class ReportsService(
         CreateReportRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!await identityDbContext.Users.AsNoTracking().AnyAsync(
+        if (!await dbContext.Users.AsNoTracking().AnyAsync(
                 user => user.Id == reportedUserId,
                 cancellationToken))
         {

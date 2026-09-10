@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Users.Common;
-using Fookbase.Api.Modules.Users.Data;
+using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Users.DTOs.Requests;
 using Fookbase.Api.Modules.Users.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Fookbase.Api.Modules.Users.Services;
 
 public sealed class UserProfileService(
-    UsersDbContext dbContext,
+    FookbaseDbContext dbContext,
     MediaService mediaService,
     TimeProvider timeProvider)
 {
@@ -112,34 +112,30 @@ public sealed class UserProfileService(
             return NotFound();
         }
 
-        var previousAvatarMediaId = profile.AvatarMediaId;
-        var previousCoverMediaId = profile.CoverMediaId;
-        var avatarMediaId = request.AvatarMediaId ?? previousAvatarMediaId;
-        var coverMediaId = request.CoverMediaId ?? previousCoverMediaId;
-        await mediaService.SynchronizeProfileReferencesAsync(
-            userId,
-            avatarMediaId,
-            coverMediaId,
-            cancellationToken);
-        profile.Update(
-            request.DisplayName,
-            request.Bio,
-            request.DateOfBirth,
-            request.CurrentCity,
-            request.AvatarMediaId,
-            request.CoverMediaId,
-            timeProvider.GetUtcNow());
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
+            var avatarMediaId = request.AvatarMediaId ?? profile.AvatarMediaId;
+            var coverMediaId = request.CoverMediaId ?? profile.CoverMediaId;
+            await mediaService.SynchronizeProfileReferencesAsync(
+                userId,
+                avatarMediaId,
+                coverMediaId,
+                cancellationToken);
+            profile.Update(
+                request.DisplayName,
+                request.Bio,
+                request.DateOfBirth,
+                request.CurrentCity,
+                request.AvatarMediaId,
+                request.CoverMediaId,
+                timeProvider.GetUtcNow());
             await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
         catch
         {
-            await mediaService.SynchronizeProfileReferencesAsync(
-                userId,
-                previousAvatarMediaId,
-                previousCoverMediaId,
-                CancellationToken.None);
+            await transaction.RollbackAsync(CancellationToken.None);
             throw;
         }
 

@@ -32,7 +32,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.False(duplicateCreated);
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var profile = await dbContext.UserProfiles.SingleAsync(
             item => item.UserId == user.Id);
 
@@ -130,7 +130,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Equal(request.CurrentCity, updated.CurrentCity);
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var otherProfile = await dbContext.UserProfiles.AsNoTracking().SingleAsync(
             item => item.UserId == userB.Id);
         Assert.Equal(userB.Username, otherProfile.DisplayName);
@@ -156,7 +156,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{cover}")).StatusCode);
         using (var scope = factory.Services.CreateScope())
         {
-            var mediaDb = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+            var mediaDb = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             Assert.Contains(await mediaDb.ProfileMediaReferences.AsNoTracking().ToListAsync(), reference =>
                 reference.UserId == user.Id &&
                 reference.Slot == ProfileMediaSlot.Avatar &&
@@ -175,7 +175,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{cover}")).StatusCode);
         using var verification = factory.Services.CreateScope();
-        var profile = await verification.ServiceProvider.GetRequiredService<UsersDbContext>()
+        var profile = await verification.ServiceProvider.GetRequiredService<FookbaseDbContext>()
             .UserProfiles.AsNoTracking()
             .SingleAsync(item => item.UserId == user.Id);
         Assert.Equal(replacementAvatar, profile.AvatarMediaId);
@@ -186,7 +186,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     {
         using var scope = factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<UserProfileService>();
-        var existed = await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
+        var existed = await scope.ServiceProvider.GetRequiredService<FookbaseDbContext>()
             .UserProfiles.AnyAsync(profile => profile.UserId == user.Id);
         await service.EnsureCreatedAsync(user.Id, user.Username);
         return !existed;
@@ -229,7 +229,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     private async Task<Guid> CreateReadyImageAsync(Guid ownerUserId)
     {
         using var scope = factory.Services.CreateScope();
-        var mediaDb = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var mediaDb = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var now = DateTimeOffset.UtcNow;
         var mediaId = Guid.NewGuid();
         var asset = MediaAsset.CreatePending(

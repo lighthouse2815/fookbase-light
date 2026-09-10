@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Identity.Common;
-using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
@@ -12,7 +12,7 @@ namespace Fookbase.Api.Modules.Identity.Services;
 
 public sealed class AuthenticationService(
     UserManager<User> userManager,
-    IdentityDbContext dbContext,
+    FookbaseDbContext dbContext,
     JwtTokenService tokenService,
     RoleManager<IdentityRole<Guid>> roleManager,
     IEmailSender emailSender,
@@ -429,18 +429,15 @@ public sealed class AuthenticationService(
         RefreshToken refreshToken,
         CancellationToken cancellationToken)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var result = await userManager.CreateAsync(user, password);
         if (!result.Succeeded)
         {
-            await transaction.RollbackAsync(cancellationToken);
             dbContext.ChangeTracker.Clear();
             return result;
         }
 
         dbContext.RefreshTokens.Add(refreshToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
         return result;
     }
 

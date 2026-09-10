@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Messages.Common;
-using Fookbase.Api.Modules.Messages.Data;
+using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Messages.DTOs.Requests;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Messages.Entities;
@@ -13,7 +13,7 @@ using System.Text.Json;
 namespace Fookbase.Api.Modules.Messages.Services;
 
 public sealed class MessagesService(
-    MessagesDbContext dbContext,
+    FookbaseDbContext dbContext,
     TimeProvider timeProvider,
     IHubContext<MessagesHub> hubContext,
     FriendsService friendsService)

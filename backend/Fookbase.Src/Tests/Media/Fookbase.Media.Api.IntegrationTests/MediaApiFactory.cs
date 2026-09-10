@@ -1,6 +1,7 @@
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Users.Data;
+using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -15,21 +16,12 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var mediaConnectionString = Environment.GetEnvironmentVariable(
-            "ConnectionStrings__MediaDatabase");
-        if (string.IsNullOrWhiteSpace(mediaConnectionString))
-        {
-            var postsConnectionString = Environment.GetEnvironmentVariable(
-                "ConnectionStrings__PostsDatabase")
-                ?? throw new InvalidOperationException(
-                    "A Media or Posts development database connection string is required.");
-            mediaConnectionString = postsConnectionString.Replace(
-                "Database=posts_db",
-                "Database=media_db",
-                StringComparison.OrdinalIgnoreCase);
-        }
+            "ConnectionStrings__FookbaseDatabase")
+            ?? throw new InvalidOperationException(
+                "Fookbase development database connection string is required.");
 
         builder.UseEnvironment("Testing");
-        ConfigureModuleConnections(builder, mediaConnectionString);
+        builder.UseSetting("ConnectionStrings:FookbaseDatabase", mediaConnectionString);
         builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-must-have-32-characters");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
@@ -49,18 +41,8 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
         var host = base.CreateHost(builder);
 
         using var scope = host.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         dbContext.Database.Migrate();
-        scope.ServiceProvider.GetRequiredService<UsersDbContext>().Database.Migrate();
-
         return host;
-    }
-
-    private static void ConfigureModuleConnections(IWebHostBuilder builder, string connectionString)
-    {
-        foreach (var module in new[] { "Identity", "Users", "Friends", "Messages", "Posts", "Media" })
-        {
-            builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
-        }
     }
 }

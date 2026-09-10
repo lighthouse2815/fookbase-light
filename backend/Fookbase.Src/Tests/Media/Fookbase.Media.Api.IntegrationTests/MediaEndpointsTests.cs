@@ -104,7 +104,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         var referenced = await ReadyAsync(owner);
         using (var scope = factory.Services.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.MediaReferences.Add(MediaReference.Create(referenced, Guid.NewGuid(), DateTimeOffset.UtcNow));
             await db.SaveChangesAsync();
         }
@@ -115,7 +115,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.NoContent,
             (await owner.DeleteAsync($"/api/media/{unreferenced}")).StatusCode);
         using var verification = factory.Services.CreateScope();
-        var verifyDb = verification.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var verifyDb = verification.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(MediaStatus.Deleted,
             (await verifyDb.MediaAssets.AsNoTracking().SingleAsync(x => x.Id == unreferenced)).Status);
         Assert.True(await verifyDb.ObjectDeletions.AnyAsync(x => x.MediaId == unreferenced));
@@ -136,7 +136,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     private void PutObject(Guid mediaId, byte[] bytes)
     {
         using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var key = db.MediaAssets.AsNoTracking().Single(x => x.Id == mediaId).ObjectKey;
         scope.ServiceProvider.GetRequiredService<InMemoryObjectStorage>().Put(key, bytes, "image/png");
     }

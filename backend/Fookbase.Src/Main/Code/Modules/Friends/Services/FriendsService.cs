@@ -1,6 +1,6 @@
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Common;
-using Fookbase.Api.Modules.Friends.Data;
+using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace Fookbase.Api.Modules.Friends.Services;
 
 public sealed class FriendsService(
-    FriendsDbContext dbContext,
+    FookbaseDbContext dbContext,
     IHubContext<MessagesHub> hubContext,
     TimeProvider timeProvider)
 {

@@ -1,8 +1,6 @@
 using Fookbase.Api.Modules.Media.Background;
 using Fookbase.Api.Modules.Media.Config;
-using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Minio;
 
@@ -12,14 +10,12 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddMediaInfrastructure(
         this IServiceCollection services,
-        string connectionString,
         MinioOptions minioOptions,
         MediaOptions mediaOptions)
     {
         minioOptions.Validate();
         mediaOptions.Validate();
 
-        services.AddDbContext<MediaDbContext>(options => options.UseNpgsql(connectionString));
         services.AddSingleton(minioOptions);
         services.AddSingleton(mediaOptions);
         services.AddSingleton<IMinioClient>(_ =>

@@ -3,6 +3,7 @@ using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Services;
+using Fookbase.Api.Persistence;
 
 namespace Fookbase.Api.Application;
 
@@ -10,7 +11,8 @@ public sealed class AdministrationUseCase(
     AdministrationService administrationService,
     ReportsService reportsService,
     PostsService postsService,
-    MediaService mediaService)
+    MediaService mediaService,
+    FookbaseDbContext dbContext)
 {
     public async Task<AdminDashboardResponse> GetDashboardAsync(
         CancellationToken cancellationToken = default)
@@ -30,13 +32,24 @@ public sealed class AdministrationUseCase(
         Guid postId,
         CancellationToken cancellationToken = default)
     {
-        var result = await postsService.DeletePostForModerationAsync(postId, cancellationToken);
-        if (!result.Succeeded)
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            return result;
-        }
+            var result = await postsService.DeletePostForModerationAsync(postId, cancellationToken);
+            if (!result.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return result;
+            }
 
-        await mediaService.RemovePostReferencesAsync(postId, cancellationToken);
-        return ApplicationResult.Success();
+            await mediaService.RemovePostReferencesAsync(postId, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return ApplicationResult.Success();
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
     }
 }

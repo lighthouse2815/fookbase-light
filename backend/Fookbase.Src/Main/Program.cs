@@ -43,10 +43,11 @@ if (rateLimitPermitLimit <= 0 ||
 {
     throw new InvalidOperationException("Rate limiting values must be positive.");
 }
+builder.Services.AddFookbasePersistence(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration);
-builder.Services.AddUsersModule(builder.Configuration);
-builder.Services.AddFriendsModule(builder.Configuration);
-builder.Services.AddMessagesModule(builder.Configuration);
+builder.Services.AddUsersModule();
+builder.Services.AddFriendsModule();
+builder.Services.AddMessagesModule();
 builder.Services.AddPostsModule(builder.Configuration);
 builder.Services.AddMediaModule(builder.Configuration);
 builder.Services.AddApplicationUseCases();

@@ -3,13 +3,15 @@ using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Services;
 using MediaApplicationError = Fookbase.Api.Modules.Media.Common.ApplicationError;
+using Fookbase.Api.Persistence;
 
 namespace Fookbase.Api.Application;
 
 public sealed class PostsUseCase(
     PostsService postsService,
     FriendsService friendsService,
-    Fookbase.Api.Modules.Media.Services.MediaService mediaService)
+    Fookbase.Api.Modules.Media.Services.MediaService mediaService,
+    FookbaseDbContext dbContext)
 {
     public async Task<ApplicationResult<PostResponse>> CreatePostAsync(
         Guid actorUserId,
@@ -30,18 +32,33 @@ public sealed class PostsUseCase(
             return ApplicationResult<PostResponse>.Failure(mediaError);
         }
 
-        var result = await postsService.CreatePostAsync(
-            actorUserId, content, privacy, mediaIds, cancellationToken);
-        if (!result.Succeeded)
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
+            var result = await postsService.CreatePostAsync(
+                actorUserId, content, privacy, mediaIds, cancellationToken);
+            if (!result.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return result;
+            }
+
+            var references = await mediaService.SynchronizePostReferencesAsync(
+                actorUserId, result.Value!.Id, mediaIds, cancellationToken);
+            if (!references.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+            }
+
+            await transaction.CommitAsync(cancellationToken);
             return result;
         }
-
-        var references = await mediaService.SynchronizePostReferencesAsync(
-            actorUserId, result.Value!.Id, mediaIds, cancellationToken);
-        return references.Succeeded
-            ? result
-            : ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
     }
 
     public async Task<ApplicationResult<PostResponse>> UpdatePostAsync(
@@ -70,18 +87,33 @@ public sealed class PostsUseCase(
             return ApplicationResult<PostResponse>.Failure(mediaError);
         }
 
-        var result = await postsService.UpdatePostAsync(
-            actorUserId, postId, content, privacy, mediaIds, cancellationToken);
-        if (!result.Succeeded)
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
+            var result = await postsService.UpdatePostAsync(
+                actorUserId, postId, content, privacy, mediaIds, cancellationToken);
+            if (!result.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return result;
+            }
+
+            var references = await mediaService.SynchronizePostReferencesAsync(
+                actorUserId, postId, mediaIds, cancellationToken);
+            if (!references.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+            }
+
+            await transaction.CommitAsync(cancellationToken);
             return result;
         }
-
-        var references = await mediaService.SynchronizePostReferencesAsync(
-            actorUserId, postId, mediaIds, cancellationToken);
-        return references.Succeeded
-            ? result
-            : ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
     }
 
     public async Task<ApplicationResult> DeletePostAsync(
@@ -89,14 +121,25 @@ public sealed class PostsUseCase(
         Guid postId,
         CancellationToken cancellationToken = default)
     {
-        var result = await postsService.DeletePostAsync(actorUserId, postId, cancellationToken);
-        if (!result.Succeeded)
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            return result;
-        }
+            var result = await postsService.DeletePostAsync(actorUserId, postId, cancellationToken);
+            if (!result.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return result;
+            }
 
-        await mediaService.RemovePostReferencesAsync(postId, cancellationToken);
-        return ApplicationResult.Success();
+            await mediaService.RemovePostReferencesAsync(postId, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return ApplicationResult.Success();
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
     }
 
     public async Task<ApplicationResult<PostResponse>> GetPostAsync(

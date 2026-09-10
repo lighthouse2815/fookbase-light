@@ -1,6 +1,6 @@
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +19,7 @@ internal sealed class ObjectDeletionWorker(
             try
             {
                 using var scope = scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+                var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
                 var storage = scope.ServiceProvider.GetRequiredService<IObjectStorage>();
                 var jobs = await db.ObjectDeletions.Where(x => x.ProcessedAtUtc == null)
                     .OrderBy(x => x.CreatedAtUtc).Take(options.CleanupBatchSize).ToListAsync(stoppingToken);

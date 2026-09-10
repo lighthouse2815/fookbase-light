@@ -1,6 +1,6 @@
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Config;
-using Fookbase.Api.Modules.Posts.Data;
+using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Fookbase.Api.Modules.Posts.Services;
 
 public sealed class PostsService(
-    PostsDbContext dbContext,
+    FookbaseDbContext dbContext,
     TimeProvider timeProvider,
     PostsOptions options)
 {
@@ -370,14 +370,12 @@ public sealed class PostsService(
         var now = timeProvider.GetUtcNow();
         var post = Post.Create(Guid.NewGuid(), authorUserId, content, privacy, now);
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Posts.Add(post);
         for (var index = 0; index < mediaIds.Count; index++)
         {
             dbContext.PostMedia.Add(PostMedia.Create(post.Id, mediaIds[index], index));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
         return PostsServiceResult<PostResponse>.Success(EmptySummary(post, mediaIds));
     }
 
@@ -410,7 +408,6 @@ public sealed class PostsService(
         var added = mediaIds.Where(id => existingMedia.All(x => x.MediaId != id)).ToList();
         post.Update(content, privacy, now);
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         foreach (var item in removed)
         {
             dbContext.PostMedia.Remove(item);
@@ -423,7 +420,6 @@ public sealed class PostsService(
         foreach (var item in existingMedia.Except(removed))
             item.ChangeSortOrder(mediaOrder[item.MediaId]);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
         return PostsServiceResult<PostResponse>.Success(
             (await LoadResponsesAsync([post], actorUserId, cancellationToken))[0]);
     }
@@ -450,13 +446,11 @@ public sealed class PostsService(
         var attachments = await dbContext.PostMedia.Where(x => x.PostId == postId).ToListAsync(cancellationToken);
         post.Delete(now);
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         foreach (var attachment in attachments)
         {
             dbContext.PostMedia.Remove(attachment);
         }
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
         return PostsServiceError.None;
     }
 
@@ -556,10 +550,8 @@ public sealed class PostsService(
         var now = timeProvider.GetUtcNow();
         var comment = Comment.Create(Guid.NewGuid(), postId, authorUserId, parentCommentId, content, now);
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Comments.Add(comment);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
         return PostsServiceResult<CommentResponse>.Success(ToResponse(comment));
     }
 
@@ -712,9 +704,7 @@ public sealed class PostsService(
             reaction.ChangeTo(reactionType.Value, now);
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
         return PostsServiceResult<PostResponse>.Success(
             (await LoadResponsesAsync([post], actorUserId, cancellationToken))[0]);
     }

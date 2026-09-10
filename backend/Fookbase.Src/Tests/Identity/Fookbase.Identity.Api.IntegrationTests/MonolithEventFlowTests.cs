@@ -33,7 +33,7 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
         Assert.NotNull(authentication);
 
         using var scope = factory.Services.CreateScope();
-        Assert.True(await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
+        Assert.True(await scope.ServiceProvider.GetRequiredService<FookbaseDbContext>()
             .UserProfiles.AnyAsync(item => item.UserId == authentication.User.Id));
     }
 }
@@ -42,18 +42,15 @@ public sealed class MonolithApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__IdentityDatabase")
-            ?? throw new InvalidOperationException("Identity development database connection string is required.");
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__FookbaseDatabase")
+            ?? throw new InvalidOperationException("Fookbase development database connection string is required.");
         builder.UseEnvironment("Testing");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.UseSetting("Jwt:SigningKey", "identity-integration-tests-signing-key-with-32-characters");
-        foreach (var module in new[] { "Identity", "Users", "Friends", "Messages", "Posts", "Media" })
-        {
-            builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
-        }
+        builder.UseSetting("ConnectionStrings:FookbaseDatabase", connectionString);
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -61,11 +58,8 @@ public sealed class MonolithApiFactory : WebApplicationFactory<Program>
         var host = base.CreateHost(builder);
 
         using var scope = host.Services.CreateScope();
-        scope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.Migrate();
-        scope.ServiceProvider.GetRequiredService<UsersDbContext>().Database.Migrate();
-        scope.ServiceProvider.GetRequiredService<FriendsDbContext>().Database.Migrate();
-        scope.ServiceProvider.GetRequiredService<PostsDbContext>().Database.Migrate();
-        scope.ServiceProvider.GetRequiredService<MediaDbContext>().Database.Migrate();
+        scope.ServiceProvider.GetRequiredService<Fookbase.Api.Persistence.FookbaseDbContext>()
+            .Database.Migrate();
 
         return host;
     }

@@ -194,7 +194,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
     private async Task BecomeFriendsAsync(Guid firstUserId, Guid secondUserId)
     {
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         dbContext.Friendships.Add(Friendship.Create(
             Guid.NewGuid(),
             firstUserId,
@@ -206,7 +206,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
     private async Task BlockAsync(Guid blockerUserId, Guid blockedUserId)
     {
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         dbContext.BlockedUsers.Add(BlockedUser.Create(blockerUserId, blockedUserId, DateTimeOffset.UtcNow));
         await dbContext.SaveChangesAsync();
     }

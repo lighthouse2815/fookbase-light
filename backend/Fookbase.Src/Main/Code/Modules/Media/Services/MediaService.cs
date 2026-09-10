@@ -1,17 +1,15 @@
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Common;
-using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
-using Fookbase.Api.Modules.Users.Data;
+using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Services;
 
 public sealed class MediaService(
-    MediaDbContext dbContext,
-    UsersDbContext usersDbContext,
+    FookbaseDbContext dbContext,
     IObjectStorage objectStorage,
     MediaOptions options,
     TimeProvider timeProvider)
@@ -328,7 +326,7 @@ public sealed class MediaService(
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByProfile = await dbContext.ProfileMediaReferences
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
-        var isReferencedByActiveProfile = await usersDbContext.UserProfiles.AsNoTracking()
+        var isReferencedByActiveProfile = await dbContext.UserProfiles.AsNoTracking()
             .AnyAsync(profile =>
                 profile.AvatarMediaId == mediaId || profile.CoverMediaId == mediaId,
                 cancellationToken);

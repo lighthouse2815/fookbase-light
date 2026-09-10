@@ -52,15 +52,18 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.False(string.IsNullOrWhiteSpace(jwt.Id));
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var user = await dbContext.Users.SingleAsync(item => item.Id == authentication.User.Id);
         var refreshToken = await dbContext.RefreshTokens
+            .SingleAsync(item => item.UserId == authentication.User.Id);
+        var profile = await dbContext.UserProfiles
             .SingleAsync(item => item.UserId == authentication.User.Id);
         Assert.NotEqual(account.Password, user.PasswordHash);
         Assert.Equal(account.Email.ToUpperInvariant(), user.NormalizedEmail);
         Assert.Equal(account.Username.ToUpperInvariant(), user.NormalizedUserName);
         Assert.NotEqual(authentication.RefreshToken, refreshToken.TokenHash);
         Assert.Equal(Hash(authentication.RefreshToken), refreshToken.TokenHash);
+        Assert.Equal(account.Username, profile.Username);
     }
 
     [Fact]

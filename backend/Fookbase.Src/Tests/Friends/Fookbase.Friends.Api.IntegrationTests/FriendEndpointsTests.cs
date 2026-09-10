@@ -49,7 +49,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var request = await first.Content.ReadFromJsonAsync<FriendRequestResponse>();
         Assert.NotNull(request);
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(1, await dbContext.FriendRequests.CountAsync(
             item => item.UserId1 == Min(userA, userB) &&
                     item.UserId2 == Max(userA, userB) &&
@@ -72,7 +72,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.Single(responses, response => response.StatusCode == HttpStatusCode.Created);
         Assert.Single(responses, response => response.StatusCode == HttpStatusCode.Conflict);
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(1, await dbContext.FriendRequests.CountAsync(
             item => item.UserId1 == Min(userA, userB) &&
                     item.UserId2 == Max(userA, userB) &&
@@ -108,7 +108,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.Single(concurrent, response => response.StatusCode == HttpStatusCode.Conflict);
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(1, await dbContext.Friendships.CountAsync(
             item => item.UserId1 == Min(userA, userB) && item.UserId2 == Max(userA, userB)));
     }
@@ -131,7 +131,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.Equal(HttpStatusCode.NoContent, declined.StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, cancelled.StatusCode);
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(FriendRequestStatus.Declined,
             (await dbContext.FriendRequests.FindAsync(declinedRequest.Id))!.Status);
         Assert.Equal(FriendRequestStatus.Cancelled,
@@ -189,7 +189,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.Equal("none", (await clientA.GetFromJsonAsync<RelationshipStatusResponse>(
             $"/api/friends/status/{userB}"))!.Status);
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
     }
 
     [Fact]
@@ -225,7 +225,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.Contains(blocked.Items, item => item.UserId == userC);
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.False(await dbContext.Friendships.AnyAsync(
             item => item.UserId1 == Min(userA, userB) && item.UserId2 == Max(userA, userB)));
         Assert.Equal(FriendRequestStatus.Cancelled,
@@ -252,7 +252,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.DoesNotContain(friends!.Items, item => item.UserId == userB);
 
         using var scope = factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
     }
 
     [Fact]
