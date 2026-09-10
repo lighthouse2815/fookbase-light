@@ -5,6 +5,7 @@ export interface AuthenticatedUser {
   email: string
   username: string
   emailConfirmed: boolean
+  roles: string[]
 }
 
 export interface AuthenticationResponse {
