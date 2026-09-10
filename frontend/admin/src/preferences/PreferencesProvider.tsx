@@ -23,6 +23,7 @@ const messages = {
     email: 'Email', password: 'Password', yourPassword: 'Your password', signIn: 'Sign in to Admin Center', signingIn: 'Signing in...',
     protectedWorkspace: 'Manage reports, content and account safety from one protected workspace.', restricted: 'Restricted to authorised administrators.',
     adminRequired: 'This account does not have administrator access.', unableSignIn: 'Unable to sign in.',
+    newReports: 'new reports', viewPendingReports: 'View pending reports', retry: 'Retry', loadingReports: 'Loading reports...', loadingAccounts: 'Loading accounts...',
   },
   vi: {
     switchToLight: 'Chuyển sang giao diện sáng', switchToDark: 'Chuyển sang giao diện tối', language: 'Ngôn ngữ',
@@ -42,6 +43,7 @@ const messages = {
     email: 'Email', password: 'Mật khẩu', yourPassword: 'Mật khẩu của bạn', signIn: 'Đăng nhập Admin Center', signingIn: 'Đang đăng nhập...',
     protectedWorkspace: 'Quản lý báo cáo, nội dung và an toàn tài khoản trong một không gian bảo vệ.', restricted: 'Chỉ quản trị viên được ủy quyền mới có quyền truy cập.',
     adminRequired: 'Tài khoản này không có quyền quản trị.', unableSignIn: 'Không thể đăng nhập.',
+    newReports: 'báo cáo mới', viewPendingReports: 'Xem báo cáo chờ xử lý', retry: 'Thử lại', loadingReports: 'Đang tải báo cáo...', loadingAccounts: 'Đang tải tài khoản...',
   },
 } as const
 
