@@ -1,5 +1,6 @@
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Config;
+using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
@@ -12,6 +13,7 @@ namespace Fookbase.Api.Modules.Posts.Services;
 public sealed class PostsService(
     FookbaseDbContext dbContext,
     NotificationService notificationService,
+    GroupPostAccessService groupPostAccessService,
     TimeProvider timeProvider,
     PostsOptions options)
 {
@@ -36,6 +38,29 @@ public sealed class PostsService(
             actorUserId,
             content,
             parsedPrivacy,
+            mediaIds,
+            cancellationToken));
+    }
+
+    public async Task<ApplicationResult<PostResponse>> CreatePostInGroupAsync(
+        Guid actorUserId,
+        Guid groupId,
+        string content,
+        IReadOnlyList<Guid> mediaIds,
+        CancellationToken cancellationToken = default)
+    {
+        var validation = ValidatePostRequest(content, "public", mediaIds);
+        if (!validation.Succeeded)
+        {
+            return ApplicationResult<PostResponse>.Failure(validation.Error!);
+        }
+
+        return Map(await CreatePostInContainerCoreAsync(
+            actorUserId,
+            content,
+            PostPrivacy.Public,
+            PostContainerType.Group,
+            groupId,
             mediaIds,
             cancellationToken));
     }
@@ -404,8 +429,34 @@ public sealed class PostsService(
         IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default)
     {
+        return await CreatePostInContainerCoreAsync(
+            authorUserId,
+            content,
+            privacy,
+            PostContainerType.Profile,
+            authorUserId,
+            mediaIds,
+            cancellationToken);
+    }
+
+    public async Task<PostsServiceResult<PostResponse>> CreatePostInContainerCoreAsync(
+        Guid authorUserId,
+        string content,
+        PostPrivacy privacy,
+        PostContainerType containerType,
+        Guid containerId,
+        IReadOnlyList<Guid> mediaIds,
+        CancellationToken cancellationToken = default)
+    {
         var now = timeProvider.GetUtcNow();
-        var post = Post.Create(Guid.NewGuid(), authorUserId, content, privacy, now);
+        var post = Post.CreateInContainer(
+            Guid.NewGuid(),
+            authorUserId,
+            content,
+            privacy,
+            containerType,
+            containerId,
+            now);
 
         dbContext.Posts.Add(post);
         for (var index = 0; index < mediaIds.Count; index++)
@@ -433,6 +484,15 @@ public sealed class PostsService(
         }
 
         if (post.AuthorUserId != actorUserId)
+        {
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.Forbidden);
+        }
+
+        if (post.ContainerType == PostContainerType.Group &&
+            !await groupPostAccessService.CanCreatePostAsync(
+                post.ContainerId,
+                actorUserId,
+                cancellationToken))
         {
             return PostsServiceResult<PostResponse>.Failure(PostsServiceError.Forbidden);
         }
@@ -479,6 +539,16 @@ public sealed class PostsService(
             return PostsServiceError.Forbidden;
         }
 
+        if (actorUserId is not null &&
+            post.ContainerType == PostContainerType.Group &&
+            !await groupPostAccessService.CanCreatePostAsync(
+                post.ContainerId,
+                actorUserId.Value,
+                cancellationToken))
+        {
+            return PostsServiceError.Forbidden;
+        }
+
         var now = timeProvider.GetUtcNow();
         var attachments = await dbContext.PostMedia.Where(x => x.PostId == postId).ToListAsync(cancellationToken);
         post.Delete(now);
@@ -496,9 +566,10 @@ public sealed class PostsService(
         Guid postId,
         CancellationToken cancellationToken = default)
     {
-        var post = await VisiblePosts(viewer)
-            .SingleOrDefaultAsync(item => item.Id == postId, cancellationToken);
-        if (post is null)
+        var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == postId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (post is null || !await CanViewPostAsync(post, viewer, cancellationToken))
         {
             return PostsServiceResult<PostResponse>.Failure(PostsServiceError.PostNotFound);
         }
@@ -562,7 +633,7 @@ public sealed class PostsService(
             return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.PostNotFound);
         }
 
-        var accessError = GetInteractionAccessError(actor, post);
+        var accessError = await GetInteractionAccessErrorAsync(actor, post, cancellationToken);
         if (accessError != PostsServiceError.None)
         {
             return PostsServiceResult<CommentResponse>.Failure(accessError);
@@ -664,7 +735,10 @@ public sealed class PostsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!await VisiblePosts(viewer).AnyAsync(post => post.Id == postId, cancellationToken))
+        var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == postId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (post is null || !await CanViewPostAsync(post, viewer, cancellationToken))
         {
             return PostsServiceResult<PagedResponse<CommentResponse>>.Failure(PostsServiceError.PostNotFound);
         }
@@ -702,9 +776,13 @@ public sealed class PostsService(
     public async Task<PostsServiceError> AuthorizeMediaAccessCoreAsync(
         PostViewerContext viewer, Guid postId, Guid mediaId, CancellationToken cancellationToken = default)
     {
-        var post = await VisiblePosts(viewer)
-            .SingleOrDefaultAsync(x => x.Id == postId, cancellationToken);
-        if (post is null) return PostsServiceError.PostNotFound;
+        var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == postId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (post is null || !await CanViewPostAsync(post, viewer, cancellationToken))
+        {
+            return PostsServiceError.PostNotFound;
+        }
         return await dbContext.PostMedia.AnyAsync(
             x => x.PostId == postId && x.MediaId == mediaId, cancellationToken)
             ? PostsServiceError.None
@@ -726,7 +804,7 @@ public sealed class PostsService(
             return PostsServiceResult<PostResponse>.Failure(PostsServiceError.PostNotFound);
         }
 
-        var accessError = GetInteractionAccessError(actor, post);
+        var accessError = await GetInteractionAccessErrorAsync(actor, post, cancellationToken);
         if (accessError != PostsServiceError.None)
         {
             return PostsServiceResult<PostResponse>.Failure(accessError);
@@ -793,7 +871,7 @@ public sealed class PostsService(
             return PostsServiceError.PostNotFound;
         }
 
-        var accessError = GetInteractionAccessError(actor, post);
+        var accessError = await GetInteractionAccessErrorAsync(actor, post, cancellationToken);
         if (accessError != PostsServiceError.None)
         {
             return accessError;
@@ -846,10 +924,33 @@ public sealed class PostsService(
         return PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer);
     }
 
-    private static PostsServiceError GetInteractionAccessError(
-        PostViewerContext actor,
-        Post post)
+    private async Task<bool> CanViewPostAsync(
+        Post post,
+        PostViewerContext? viewer,
+        CancellationToken cancellationToken)
     {
+        return post.ContainerType == PostContainerType.Group
+            ? await groupPostAccessService.CanAccessPostAsync(post, viewer, cancellationToken)
+            : PostVisibility.CanDirectlyAccess(post, viewer);
+    }
+
+    private async Task<PostsServiceError> GetInteractionAccessErrorAsync(
+        PostViewerContext actor,
+        Post post,
+        CancellationToken cancellationToken)
+    {
+        if (post.ContainerType == PostContainerType.Group)
+        {
+            if (actor.BlockedUserIds.Contains(post.AuthorUserId))
+            {
+                return PostsServiceError.RelationshipBlocked;
+            }
+
+            return await groupPostAccessService.CanParticipateAsync(post, actor, cancellationToken)
+                ? PostsServiceError.None
+                : PostsServiceError.Forbidden;
+        }
+
         if (actor.UserId == post.AuthorUserId)
         {
             return PostsServiceError.None;
@@ -874,7 +975,7 @@ public sealed class PostsService(
         return PostsServiceError.Forbidden;
     }
 
-    private async Task<IReadOnlyList<PostResponse>> LoadResponsesAsync(
+    public async Task<IReadOnlyList<PostResponse>> LoadResponsesAsync(
         IReadOnlyList<Post> posts,
         Guid? viewerUserId,
         CancellationToken cancellationToken)

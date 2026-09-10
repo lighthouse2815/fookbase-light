@@ -7,6 +7,13 @@ public enum PostPrivacy
     OnlyMe
 }
 
+public enum PostContainerType
+{
+    Profile,
+    Group,
+    Page
+}
+
 public sealed class Post
 {
     public const int MaximumContentLength = 10_000;
@@ -20,12 +27,16 @@ public sealed class Post
         Guid authorUserId,
         string content,
         PostPrivacy privacy,
+        PostContainerType containerType,
+        Guid containerId,
         DateTimeOffset createdAtUtc)
     {
         Id = id;
         AuthorUserId = authorUserId;
         Content = NormalizeContent(content);
         Privacy = privacy;
+        ContainerType = containerType;
+        ContainerId = containerId;
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -36,6 +47,10 @@ public sealed class Post
     public string Content { get; private set; } = string.Empty;
 
     public PostPrivacy Privacy { get; private set; }
+
+    public PostContainerType ContainerType { get; private set; }
+
+    public Guid ContainerId { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
@@ -49,7 +64,17 @@ public sealed class Post
         string content,
         PostPrivacy privacy,
         DateTimeOffset createdAtUtc) =>
-        new(id, authorUserId, content, privacy, createdAtUtc);
+        new(id, authorUserId, content, privacy, PostContainerType.Profile, authorUserId, createdAtUtc);
+
+    public static Post CreateInContainer(
+        Guid id,
+        Guid authorUserId,
+        string content,
+        PostPrivacy privacy,
+        PostContainerType containerType,
+        Guid containerId,
+        DateTimeOffset createdAtUtc) =>
+        new(id, authorUserId, content, privacy, containerType, containerId, createdAtUtc);
 
     public void Update(string content, PostPrivacy privacy, DateTimeOffset updatedAtUtc)
     {

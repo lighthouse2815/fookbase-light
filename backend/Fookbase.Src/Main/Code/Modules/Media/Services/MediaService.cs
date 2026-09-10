@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Media.Config;
+using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Media.Common;
 using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
@@ -224,6 +225,34 @@ public sealed class MediaService(
                 "invalid_profile_media_type", "Profile media must be an image.", ApplicationErrorType.Validation));
     }
 
+    public async Task<ApplicationResult> ValidateGroupCoverImageAsync(
+        Guid ownerUserId,
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
+        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_media", "The group cover image must be ready.", ApplicationErrorType.Validation));
+        }
+
+        if (asset.OwnerUserId != ownerUserId)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "media_not_owned", "Only the media owner can use this group cover image.",
+                ApplicationErrorType.Forbidden));
+        }
+
+        return asset.MediaType == MediaType.Image
+            ? ApplicationResult.Success()
+            : ApplicationResult.Failure(new ApplicationError(
+                "invalid_group_cover_media_type", "Group cover media must be an image.",
+                ApplicationErrorType.Validation));
+    }
+
     public async Task<ApplicationResult> SynchronizePostReferencesAsync(
         Guid ownerUserId,
         Guid postId,
@@ -297,6 +326,48 @@ public sealed class MediaService(
             .Where(reference => reference.PostId == postId)
             .ExecuteDeleteAsync(cancellationToken);
 
+    public async Task SynchronizeGroupCoverReferenceAsync(
+        Guid groupId,
+        Guid? mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var currentReference = await dbContext.GroupCoverMediaReferences.SingleOrDefaultAsync(
+            reference => reference.GroupId == groupId,
+            cancellationToken);
+        if (mediaId is null)
+        {
+            if (currentReference is not null)
+            {
+                dbContext.GroupCoverMediaReferences.Remove(currentReference);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return;
+        }
+
+        if (currentReference is null)
+        {
+            dbContext.GroupCoverMediaReferences.Add(GroupCoverMediaReference.Create(
+                groupId,
+                mediaId.Value,
+                timeProvider.GetUtcNow()));
+        }
+        else if (currentReference.MediaId != mediaId.Value)
+        {
+            dbContext.GroupCoverMediaReferences.Remove(currentReference);
+            dbContext.GroupCoverMediaReferences.Add(GroupCoverMediaReference.Create(
+                groupId,
+                mediaId.Value,
+                timeProvider.GetUtcNow()));
+        }
+        else
+        {
+            return;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<ApplicationResult> DeleteAsync(
         Guid ownerUserId,
         Guid mediaId,
@@ -330,7 +401,15 @@ public sealed class MediaService(
             .AnyAsync(profile =>
                 profile.AvatarMediaId == mediaId || profile.CoverMediaId == mediaId,
                 cancellationToken);
-        if (isReferencedByPost || isReferencedByProfile || isReferencedByActiveProfile)
+        var isReferencedByGroupCover = await dbContext.GroupCoverMediaReferences
+            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
+        var isReferencedByActiveGroup = await dbContext.Groups.AsNoTracking()
+            .AnyAsync(group => group.CoverMediaId == mediaId && group.DeletedAtUtc == null, cancellationToken);
+        if (isReferencedByPost ||
+            isReferencedByProfile ||
+            isReferencedByActiveProfile ||
+            isReferencedByGroupCover ||
+            isReferencedByActiveGroup)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.Conflict));

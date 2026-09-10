@@ -8,14 +8,19 @@ public enum NotificationType
     PostComment,
     CommentReaction,
     PostMention,
-    CommentMention
+    CommentMention,
+    GroupInvite,
+    GroupJoinApproved
 }
 
 public enum NotificationEntityType
 {
     FriendRequest,
     Post,
-    Comment
+    Comment,
+    Group,
+    GroupJoinRequest,
+    GroupInvite
 }
 
 public sealed class Notification

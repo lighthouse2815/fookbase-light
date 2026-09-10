@@ -69,6 +69,7 @@ printf '%s\n' 'Importing legacy data into fookbase_db'
       --no-privileges \
       --exclude-table=public.__EFMigrationsHistory
   done
+  printf '%s\n' "UPDATE public.\"Posts\" SET \"ContainerType\" = 0, \"ContainerId\" = \"AuthorUserId\" WHERE \"ContainerId\" = '00000000-0000-0000-0000-000000000000';"
   printf '%s\n' 'COMMIT;'
 } | psql "$target_connection_string" --set ON_ERROR_STOP=1 --quiet
 

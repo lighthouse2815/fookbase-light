@@ -230,6 +230,18 @@ public sealed class NotificationService(
                 await CanAccessPostAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
             NotificationEntityType.Comment => notification.EntityId is not null &&
                 await CanAccessCommentAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
+            NotificationEntityType.Group => notification.EntityId is not null &&
+                await CanAccessGroupAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
+            NotificationEntityType.GroupJoinRequest => notification.EntityId is not null &&
+                await CanSurfaceGroupJoinRequestAsync(
+                    recipientUserId,
+                    notification.EntityId.Value,
+                    cancellationToken),
+            NotificationEntityType.GroupInvite => notification.EntityId is not null &&
+                await CanSurfaceGroupInviteAsync(
+                    recipientUserId,
+                    notification.EntityId.Value,
+                    cancellationToken),
             _ => true
         };
     }
@@ -260,6 +272,11 @@ public sealed class NotificationService(
             return false;
         }
 
+        if (post.ContainerType == PostContainerType.Group)
+        {
+            return await CanAccessGroupAsync(recipientUserId, post.ContainerId, cancellationToken);
+        }
+
         if (post.AuthorUserId == recipientUserId)
         {
             return true;
@@ -286,6 +303,46 @@ public sealed class NotificationService(
                     (friendship.UserId1 == post.AuthorUserId && friendship.UserId2 == recipientUserId),
                 cancellationToken);
     }
+
+    private async Task<bool> CanAccessGroupAsync(
+        Guid recipientUserId,
+        Guid groupId,
+        CancellationToken cancellationToken)
+    {
+        var group = await dbContext.Groups.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == groupId && item.DeletedAtUtc == null,
+            cancellationToken);
+        return group is not null &&
+            (group.Privacy == Fookbase.Api.Modules.Groups.Entities.GroupPrivacy.Public ||
+             await dbContext.GroupMembers.AsNoTracking().AnyAsync(
+                 member => member.GroupId == groupId && member.UserId == recipientUserId,
+                 cancellationToken));
+    }
+
+    private Task<bool> CanSurfaceGroupJoinRequestAsync(
+        Guid recipientUserId,
+        Guid requestId,
+        CancellationToken cancellationToken) =>
+        (from request in dbContext.GroupJoinRequests.AsNoTracking()
+         join itemGroup in dbContext.Groups.AsNoTracking() on request.GroupId equals itemGroup.Id
+         join member in dbContext.GroupMembers.AsNoTracking()
+             on new { request.GroupId, UserId = recipientUserId }
+             equals new { member.GroupId, member.UserId }
+         where request.Id == requestId &&
+               request.RequesterUserId == recipientUserId &&
+               itemGroup.DeletedAtUtc == null
+         select request.Id).AnyAsync(cancellationToken);
+
+    private Task<bool> CanSurfaceGroupInviteAsync(
+        Guid recipientUserId,
+        Guid inviteId,
+        CancellationToken cancellationToken) =>
+        (from invite in dbContext.GroupInvites.AsNoTracking()
+         join itemGroup in dbContext.Groups.AsNoTracking() on invite.GroupId equals itemGroup.Id
+         where invite.Id == inviteId &&
+               invite.InviteeUserId == recipientUserId &&
+               itemGroup.DeletedAtUtc == null
+         select invite.Id).AnyAsync(cancellationToken);
 
     private async Task<IReadOnlyList<NotificationResponse>> ToResponsesAsync(
         IReadOnlyList<Notification> notifications,

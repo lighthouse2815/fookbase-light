@@ -150,6 +150,190 @@ namespace Fookbase.Api.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.Group", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CoverMediaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Privacy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "CreatedAtUtc")
+                        .HasFilter("\"DeletedAtUtc\" IS NULL");
+
+                    b.HasIndex("Privacy", "Name")
+                        .HasFilter("\"DeletedAtUtc\" IS NULL");
+
+                    b.ToTable("Groups", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupCoverMediaReference", b =>
+                {
+                    b.Property<Guid>("GroupId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AttachedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MediaId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("GroupId");
+
+                    b.HasIndex("MediaId");
+
+                    b.ToTable("GroupCoverMediaReferences", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupInvite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InviteeUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InviterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("RespondedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId", "InviteeUserId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 0");
+
+                    b.HasIndex("InviteeUserId", "Status", "CreatedAtUtc");
+
+                    b.ToTable("GroupInvites", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupJoinRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RequesterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("RespondedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RespondedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId", "RequesterUserId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 0");
+
+                    b.HasIndex("GroupId", "Status", "CreatedAtUtc");
+
+                    b.ToTable("GroupJoinRequests", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupMember", b =>
+                {
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("JoinedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GroupId", "UserId");
+
+                    b.HasIndex("GroupId", "Role");
+
+                    b.HasIndex("UserId", "GroupId");
+
+                    b.ToTable("GroupMembers", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId", "SortOrder", "Id");
+
+                    b.ToTable("GroupRules", (string)null);
+                });
+
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -665,6 +849,12 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<Guid>("AuthorUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("ContainerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ContainerType")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(10000)
@@ -689,6 +879,9 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasIndex("DeletedAtUtc", "CreatedAtUtc");
 
                     b.HasIndex("AuthorUserId", "CreatedAtUtc", "Id")
+                        .HasFilter("\"DeletedAtUtc\" IS NULL");
+
+                    b.HasIndex("ContainerType", "ContainerId", "CreatedAtUtc", "Id")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
                     b.ToTable("Posts", (string)null);

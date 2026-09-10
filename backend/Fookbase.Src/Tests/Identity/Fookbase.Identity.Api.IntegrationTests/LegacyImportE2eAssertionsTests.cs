@@ -73,6 +73,8 @@ public sealed class LegacyImportE2eAssertionsTests
 
         var post = await dbContext.Posts.SingleAsync(candidate => candidate.Id == PostId);
         Assert.Equal(UserOneId, post.AuthorUserId);
+        Assert.Equal(PostContainerType.Profile, post.ContainerType);
+        Assert.Equal(UserOneId, post.ContainerId);
         Assert.Equal("legacy post", post.Content);
         Assert.Equal(CreatedAtUtc, post.CreatedAtUtc);
         Assert.Contains(

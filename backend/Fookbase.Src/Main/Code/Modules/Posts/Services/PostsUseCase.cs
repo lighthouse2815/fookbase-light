@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Services;
@@ -10,9 +11,73 @@ namespace Fookbase.Api.Modules.Posts.Services;
 public sealed class PostsUseCase(
     PostsService postsService,
     FriendsService friendsService,
+    GroupPostAccessService groupPostAccessService,
     Fookbase.Api.Modules.Media.Services.MediaService mediaService,
     FookbaseDbContext dbContext)
 {
+    public async Task<ApplicationResult<PostResponse>> CreateGroupPostAsync(
+        Guid actorUserId,
+        Guid groupId,
+        string content,
+        IReadOnlyList<Guid> mediaIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await groupPostAccessService.CanCreatePostAsync(groupId, actorUserId, cancellationToken))
+        {
+            return ApplicationResult<PostResponse>.Failure(new ApplicationError(
+                "group_membership_required",
+                "Only active group members can create group posts.",
+                ApplicationErrorType.Forbidden));
+        }
+
+        var input = postsService.ValidatePostRequest(content, "public", mediaIds);
+        if (!input.Succeeded)
+        {
+            return ApplicationResult<PostResponse>.Failure(input.Error!);
+        }
+
+        var mediaError = await ValidatePostMediaAsync(actorUserId, mediaIds, cancellationToken);
+        if (mediaError is not null)
+        {
+            return ApplicationResult<PostResponse>.Failure(mediaError);
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var result = await postsService.CreatePostInGroupAsync(
+                actorUserId,
+                groupId,
+                content,
+                mediaIds,
+                cancellationToken);
+            if (!result.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return result;
+            }
+
+            var references = await mediaService.SynchronizePostReferencesAsync(
+                actorUserId,
+                result.Value!.Id,
+                mediaIds,
+                cancellationToken);
+            if (!references.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return result;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+    }
+
     public async Task<ApplicationResult<PostResponse>> CreatePostAsync(
         Guid actorUserId,
         string content,
@@ -125,6 +190,31 @@ public sealed class PostsUseCase(
         try
         {
             var result = await postsService.DeletePostAsync(actorUserId, postId, cancellationToken);
+            if (!result.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return result;
+            }
+
+            await mediaService.RemovePostReferencesAsync(postId, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return ApplicationResult.Success();
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+    }
+
+    public async Task<ApplicationResult> DeletePostForModerationAsync(
+        Guid postId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var result = await postsService.DeletePostForModerationAsync(postId, cancellationToken);
             if (!result.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);

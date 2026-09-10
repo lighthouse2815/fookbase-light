@@ -30,6 +30,7 @@ export default function TopNavbar() {
     { path: '/feed', icon: '🏠', label: t('home') },
     { path: '/explore', icon: '🔍', label: t('explore') },
     { path: '/messages', icon: '💬', label: t('messages') },
+    { path: '/groups', icon: '👥', label: t('groups') },
     { path: '/games', icon: '🎮', label: t('games') },
     { path: '/profile', icon: '👤', label: t('profile') },
   ]
@@ -43,6 +44,9 @@ export default function TopNavbar() {
   const notificationDestination = (notification: typeof notifications[number]) => {
     if ((notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted') && notification.actorUserId) {
       return '/profile/' + notification.actorUserId
+    }
+    if (notification.type === 'GroupInvite' || notification.type === 'GroupJoinApproved') {
+      return '/groups'
     }
 
     return notification.entityId ? '/feed?post=' + notification.entityId : '/feed'
@@ -65,6 +69,10 @@ export default function TopNavbar() {
         return actor + ' mentioned you in a post.'
       case 'CommentMention':
         return actor + ' mentioned you in a comment.'
+      case 'GroupInvite':
+        return actor + ' invited you to a group.'
+      case 'GroupJoinApproved':
+        return actor + ' approved your group join request.'
     }
   }
 

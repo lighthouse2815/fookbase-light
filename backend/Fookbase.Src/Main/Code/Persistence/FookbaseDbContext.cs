@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
@@ -25,6 +26,18 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<BlockedUser> BlockedUsers => Set<BlockedUser>();
 
     public DbSet<FriendNotification> FriendNotifications => Set<FriendNotification>();
+
+    public DbSet<Group> Groups => Set<Group>();
+
+    public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
+
+    public DbSet<GroupJoinRequest> GroupJoinRequests => Set<GroupJoinRequest>();
+
+    public DbSet<GroupInvite> GroupInvites => Set<GroupInvite>();
+
+    public DbSet<GroupRule> GroupRules => Set<GroupRule>();
+
+    public DbSet<GroupCoverMediaReference> GroupCoverMediaReferences => Set<GroupCoverMediaReference>();
 
     public DbSet<Conversation> Conversations => Set<Conversation>();
 

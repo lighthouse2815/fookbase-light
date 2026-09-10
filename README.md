@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Feed, Messages, Notifications, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
+Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Feed, Groups, Messages, Notifications, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
 Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
 
@@ -17,6 +17,7 @@ Fookbase.Api :5000
   |-- Users module
   |-- Friends module
   |-- Feed module
+  |-- Groups module
   |-- Messages module (SignalR)
   |-- Notifications module (SignalR)
   |-- Posts module
@@ -209,7 +210,8 @@ Tin nhắn chỉ được gửi giữa bạn bè không bị block. History dùn
 
 Thông báo tổng quát được lưu trong bảng `Notifications`, newest-first bằng keyset cursor
 `CreatedAtUtc + Id`, và chỉ recipient có thể đọc/đánh dấu đã đọc. Các event hiện có là friend
-request/acceptance, post reaction/comment và comment reaction; hành động của chính recipient
+request/acceptance, post reaction/comment, comment reaction, group invite và private-group join
+approval; hành động của chính recipient
 không sinh notification. Event realtime dùng SignalR tại `/hubs/notifications`. Message badge
 và notification badge là hai count độc lập; general notification không được tạo cho chat message.
 
@@ -225,6 +227,35 @@ có mọi privacy, còn post của bạn chỉ có `public` hoặc `friends`. Po
 `CreatedAtUtc + Id` theo newest-first, limit mặc định 20/tối đa 50. Response đã batch author,
 media metadata, comment/reaction counts và viewer reaction; frontend tiếp tục lấy media URL ngắn
 hạn qua endpoint media access đã được authorize.
+
+### Groups
+
+| Method | Endpoint | Authentication |
+| --- | --- | --- |
+| POST | `/api/groups` | Bearer JWT |
+| GET/PATCH/DELETE | `/api/groups/{groupId}` | GET tùy theo privacy; mutation theo role |
+| GET | `/api/groups/mine` | Bearer JWT, keyset cursor |
+| GET | `/api/groups/discover?query=&cursor=&limit=` | Public groups, keyset cursor |
+| POST | `/api/groups/{groupId}/join` | Bearer JWT |
+| POST | `/api/groups/{groupId}/leave` | Bearer JWT, member |
+| GET | `/api/groups/{groupId}/members` | Theo group privacy, keyset cursor |
+| GET | `/api/groups/{groupId}/join-requests` | Moderator/Admin/Owner |
+| POST | `/api/groups/{groupId}/join-requests/{requestId}/approve|decline` | Moderator/Admin/Owner |
+| GET | `/api/groups/invites/mine` | Bearer JWT, keyset cursor |
+| POST | `/api/groups/{groupId}/invites` | Bearer JWT, member |
+| POST | `/api/groups/{groupId}/invites/{inviteId}/accept|decline` | Bearer JWT, invitee |
+| PATCH | `/api/groups/{groupId}/members/{userId}/role` | Owner |
+| DELETE | `/api/groups/{groupId}/members/{userId}` | Owner; Admin removes ordinary member |
+| GET/POST | `/api/groups/{groupId}/rules` | Read theo privacy; Owner/Admin create |
+| PATCH/DELETE | `/api/groups/{groupId}/rules/{ruleId}` | Owner/Admin |
+| GET/POST | `/api/groups/{groupId}/posts?cursor=&limit=` | Read theo privacy; member creates |
+| DELETE | `/api/groups/{groupId}/posts/{postId}` | Moderator/Admin/Owner |
+
+Tạo group và membership `Owner` được commit trong một transaction. Public group join ngay;
+private group tạo join request. Owner phải transfer ownership hoặc xóa group trước khi rời.
+Group post tái sử dụng Posts, Comments, Reactions, Reports và private Media; post của Group không
+được đưa vào Home Feed V2. Cover image chỉ dùng ready image do actor sở hữu, có reference riêng
+để không thể xóa media còn đang được group active tham chiếu.
 
 ### Posts
 
@@ -243,6 +274,9 @@ hạn qua endpoint media access đã được authorize.
 | GET | `/api/posts/{postId}/media/{mediaId}/access` | Bearer JWT |
 
 Privacy hợp lệ gồm `public`, `friends`, `onlyMe`; reaction gồm `like`, `love`, `haha`, `wow`, `sad`, `angry`.
+Profile posts giữ `ContainerType=Profile` và `ContainerId=AuthorUserId`; Group posts dùng
+`ContainerType=Group`. `GET /api/posts/{postId}` cùng comment/reaction/media access luôn kiểm
+tra Group membership/privacy khi post nằm trong Group.
 
 ### Media
 
