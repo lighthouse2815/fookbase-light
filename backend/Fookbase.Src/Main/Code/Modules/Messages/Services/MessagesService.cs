@@ -329,10 +329,12 @@ public sealed class MessagesService(
             (message.CreatedAtUtc < lastReadMessage.CreatedAtUtc ||
              (message.CreatedAtUtc == lastReadMessage.CreatedAtUtc &&
               message.Id.CompareTo(lastReadMessage.Id) <= 0)));
+        var messageIdsToMarkRead = await messagesToMarkRead
+            .Select(message => message.Id)
+            .ToArrayAsync(cancellationToken);
         await messagesToMarkRead.ExecuteUpdateAsync(
             setters => setters.SetProperty(message => message.ReadAtUtc, readAtUtc),
             cancellationToken);
-        var messageIdsToMarkRead = messagesToMarkRead.Select(message => message.Id);
         await dbContext.MessageNotifications
             .Where(notification =>
                 notification.RecipientUserId == actorUserId &&
