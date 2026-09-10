@@ -1,11 +1,14 @@
 using Fookbase.Api.Modules.Messages.Common;
 using Fookbase.Api.Modules.Messages.Data;
+using Fookbase.Api.Modules.Messages.DTOs.Requests;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Friends.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
+using System.Text.Json;
 
 namespace Fookbase.Api.Modules.Messages.Services;
 
@@ -17,6 +20,7 @@ public sealed class MessagesService(
 {
     private const int MaximumLimit = 100;
     private const int MaximumContentLength = 5000;
+    private const int MaximumCursorLength = 256;
 
     public async Task<ApplicationResult<ConversationResponse>> GetOrCreateConversationAsync(
         Guid actorUserId,
@@ -46,6 +50,9 @@ public sealed class MessagesService(
             var now = timeProvider.GetUtcNow();
             conversation = Conversation.Create(Guid.NewGuid(), actorUserId, participantUserId, now);
             dbContext.Conversations.Add(conversation);
+            dbContext.ConversationReadCursors.AddRange(
+                ConversationReadCursor.Create(conversation.Id, conversation.UserId1),
+                ConversationReadCursor.Create(conversation.Id, conversation.UserId2));
 
             try
             {
@@ -53,7 +60,7 @@ public sealed class MessagesService(
             }
             catch (DbUpdateException)
             {
-                dbContext.Entry(conversation).State = EntityState.Detached;
+                dbContext.ChangeTracker.Clear();
                 conversation = await FindConversationAsync(actorUserId, participantUserId, cancellationToken);
                 if (conversation is null)
                 {
@@ -113,16 +120,7 @@ public sealed class MessagesService(
                     .First())
                 .ToListAsync(cancellationToken))
                 .ToDictionary(message => message.ConversationId);
-        var unreadCounts = conversationIds.Length == 0
-            ? new Dictionary<Guid, int>()
-            : await dbContext.Messages.AsNoTracking()
-                .Where(message =>
-                    conversationIds.Contains(message.ConversationId)
-                    && message.SenderUserId != actorUserId
-                    && message.ReadAtUtc == null)
-                .GroupBy(message => message.ConversationId)
-                .Select(group => new { ConversationId = group.Key, Count = group.Count() })
-                .ToDictionaryAsync(item => item.ConversationId, item => item.Count, cancellationToken);
+        var unreadCounts = await GetUnreadCountsAsync(actorUserId, conversationIds, cancellationToken);
         var items = conversations
             .Select(conversation => ToConversationResponse(
                 conversation,
@@ -206,26 +204,26 @@ public sealed class MessagesService(
             new PagedResponse<IncomingMessageResponse>(items, offset, limit, total));
     }
 
-    public async Task<ApplicationResult<PagedResponse<MessageResponse>>> GetMessagesAsync(
+    public async Task<ApplicationResult<MessageHistoryResponse>> GetMessagesAsync(
         Guid actorUserId,
         Guid conversationId,
-        int offset,
+        string? before,
         int limit,
         CancellationToken cancellationToken = default)
     {
-        var paginationError = ValidatePagination(offset, limit);
+        var paginationError = ValidateHistoryPagination(before, limit, out var cursor);
         if (paginationError is not null)
         {
-            return ApplicationResult<PagedResponse<MessageResponse>>.Failure(paginationError);
+            return ApplicationResult<MessageHistoryResponse>.Failure(paginationError);
         }
 
-        var conversation = await dbContext.Conversations.SingleOrDefaultAsync(
+        var conversation = await dbContext.Conversations.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == conversationId,
             cancellationToken);
         var accessError = ValidateAccess(conversation, actorUserId);
         if (accessError is not null)
         {
-            return ApplicationResult<PagedResponse<MessageResponse>>.Failure(accessError);
+            return ApplicationResult<MessageHistoryResponse>.Failure(accessError);
         }
 
         var relationshipError = await ValidateMessageRelationshipAsync(
@@ -234,61 +232,124 @@ public sealed class MessagesService(
             cancellationToken);
         if (relationshipError is not null)
         {
-            return ApplicationResult<PagedResponse<MessageResponse>>.Failure(relationshipError);
-        }
-
-        var unreadMessages = await dbContext.Messages
-            .Where(message =>
-                message.ConversationId == conversationId
-                && message.SenderUserId != actorUserId
-                && message.ReadAtUtc == null)
-            .ToListAsync(cancellationToken);
-        if (unreadMessages.Count > 0)
-        {
-            var now = timeProvider.GetUtcNow();
-            foreach (var message in unreadMessages)
-            {
-                message.MarkRead(now);
-            }
-
-            var unreadMessageIds = unreadMessages.Select(message => message.Id).ToArray();
-            var notifications = await dbContext.MessageNotifications
-                .Where(notification =>
-                    notification.RecipientUserId == actorUserId
-                    && unreadMessageIds.Contains(notification.MessageId)
-                    && notification.ReadAtUtc == null)
-                .ToListAsync(cancellationToken);
-            foreach (var notification in notifications)
-            {
-                notification.MarkRead(now);
-            }
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await hubContext.Clients.User(conversation.OtherUserId(actorUserId).ToString()).SendAsync(
-                "MessagesRead",
-                new MessagesReadResponse(conversationId, actorUserId, now),
-                cancellationToken);
+            return ApplicationResult<MessageHistoryResponse>.Failure(relationshipError);
         }
 
         var query = dbContext.Messages.AsNoTracking()
             .Where(message => message.ConversationId == conversationId);
-        var total = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderBy(message => message.CreatedAtUtc)
-            .ThenBy(message => message.Id)
-            .Skip(offset)
-            .Take(limit)
-            .Select(message => new MessageResponse(
-                message.Id,
-                message.ConversationId,
-                message.SenderUserId,
-                message.Content,
-                message.CreatedAtUtc,
-                message.ReadAtUtc))
-            .ToListAsync(cancellationToken);
+        if (cursor is not null)
+        {
+            query = query.Where(message =>
+                message.CreatedAtUtc < cursor.CreatedAtUtc ||
+                (message.CreatedAtUtc == cursor.CreatedAtUtc &&
+                 message.Id.CompareTo(cursor.MessageId) < 0));
+        }
 
-        return ApplicationResult<PagedResponse<MessageResponse>>.Success(
-            new PagedResponse<MessageResponse>(items, offset, limit, total));
+        var fetchedMessages = await query
+            .OrderByDescending(message => message.CreatedAtUtc)
+            .ThenByDescending(message => message.Id)
+            .Take(limit + 1)
+            .ToListAsync(cancellationToken);
+        var hasMore = fetchedMessages.Count > limit;
+        var pageMessages = fetchedMessages.Take(limit).ToArray();
+        var nextCursor = hasMore && pageMessages.Length > 0
+            ? EncodeCursor(pageMessages[^1])
+            : null;
+        var items = pageMessages
+            .Reverse()
+            .Select(ToMessageResponse)
+            .ToArray();
+
+        return ApplicationResult<MessageHistoryResponse>.Success(
+            new MessageHistoryResponse(items, nextCursor, hasMore));
+    }
+
+    public async Task<ApplicationResult> MarkConversationReadAsync(
+        Guid actorUserId,
+        Guid conversationId,
+        MarkConversationReadRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var conversation = await dbContext.Conversations.SingleOrDefaultAsync(
+            item => item.Id == conversationId,
+            cancellationToken);
+        var accessError = ValidateAccess(conversation, actorUserId);
+        if (accessError is not null)
+        {
+            return ApplicationResult.Failure(accessError);
+        }
+
+        var relationshipError = await ValidateMessageRelationshipAsync(
+            actorUserId,
+            conversation!.OtherUserId(actorUserId),
+            cancellationToken);
+        if (relationshipError is not null)
+        {
+            return ApplicationResult.Failure(relationshipError);
+        }
+
+        var lastReadMessage = request.LastReadMessageId is null
+            ? await dbContext.Messages
+                .Where(message => message.ConversationId == conversationId)
+                .OrderByDescending(message => message.CreatedAtUtc)
+                .ThenByDescending(message => message.Id)
+                .FirstOrDefaultAsync(cancellationToken)
+            : await dbContext.Messages.SingleOrDefaultAsync(
+                message => message.ConversationId == conversationId &&
+                           message.Id == request.LastReadMessageId.Value,
+                cancellationToken);
+        if (lastReadMessage is null)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "message_not_found",
+                "The message was not found in this conversation.",
+                ApplicationErrorType.NotFound));
+        }
+
+        var readCursor = await dbContext.ConversationReadCursors.SingleOrDefaultAsync(
+            cursor => cursor.ConversationId == conversationId && cursor.UserId == actorUserId,
+            cancellationToken);
+        if (readCursor is null)
+        {
+            readCursor = ConversationReadCursor.Create(conversationId, actorUserId);
+            dbContext.ConversationReadCursors.Add(readCursor);
+        }
+
+        var readAtUtc = timeProvider.GetUtcNow();
+        if (!readCursor.AdvanceTo(lastReadMessage.Id, lastReadMessage.CreatedAtUtc, readAtUtc))
+        {
+            return ApplicationResult.Success();
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var messagesToMarkRead = dbContext.Messages.Where(message =>
+            message.ConversationId == conversationId &&
+            message.SenderUserId != actorUserId &&
+            message.ReadAtUtc == null &&
+            (message.CreatedAtUtc < lastReadMessage.CreatedAtUtc ||
+             (message.CreatedAtUtc == lastReadMessage.CreatedAtUtc &&
+              message.Id.CompareTo(lastReadMessage.Id) <= 0)));
+        await messagesToMarkRead.ExecuteUpdateAsync(
+            setters => setters.SetProperty(message => message.ReadAtUtc, readAtUtc),
+            cancellationToken);
+        var messageIdsToMarkRead = messagesToMarkRead.Select(message => message.Id);
+        await dbContext.MessageNotifications
+            .Where(notification =>
+                notification.RecipientUserId == actorUserId &&
+                notification.ReadAtUtc == null &&
+                messageIdsToMarkRead.Contains(notification.MessageId))
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(notification => notification.ReadAtUtc, readAtUtc),
+                cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        await hubContext.Clients.User(conversation.OtherUserId(actorUserId).ToString()).SendAsync(
+            "MessagesRead",
+            new MessagesReadResponse(conversationId, actorUserId, lastReadMessage.Id, readAtUtc),
+            cancellationToken);
+
+        return ApplicationResult.Success();
     }
 
     public async Task<ApplicationResult<MessageResponse>> SendMessageAsync(
@@ -337,12 +398,10 @@ public sealed class MessagesService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var recipientUserId = conversation.OtherUserId(actorUserId);
-        var unreadCount = await dbContext.Messages.AsNoTracking()
-            .CountAsync(item =>
-                item.ConversationId == conversationId
-                && item.SenderUserId == actorUserId
-                && item.ReadAtUtc == null,
-                cancellationToken);
+        var unreadCount = (await GetUnreadCountsAsync(
+            recipientUserId,
+            [conversationId],
+            cancellationToken)).GetValueOrDefault(conversationId);
         var messageResponse = ToMessageResponse(message);
         await hubContext.Clients.User(recipientUserId.ToString()).SendAsync(
             "MessageReceived",
@@ -392,6 +451,36 @@ public sealed class MessagesService(
             cancellationToken);
     }
 
+    private async Task<Dictionary<Guid, int>> GetUnreadCountsAsync(
+        Guid actorUserId,
+        IReadOnlyCollection<Guid> conversationIds,
+        CancellationToken cancellationToken)
+    {
+        if (conversationIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await (
+            from message in dbContext.Messages.AsNoTracking()
+            join cursor in dbContext.ConversationReadCursors.AsNoTracking()
+                    .Where(item => item.UserId == actorUserId)
+                on message.ConversationId equals cursor.ConversationId into matchingCursors
+            from cursor in matchingCursors.DefaultIfEmpty()
+            where conversationIds.Contains(message.ConversationId)
+                  && message.SenderUserId != actorUserId
+                  && (cursor == null ||
+                      cursor.LastReadMessageCreatedAtUtc == null ||
+                      cursor.LastReadMessageId == null ||
+                      message.CreatedAtUtc > cursor.LastReadMessageCreatedAtUtc ||
+                      (message.CreatedAtUtc == cursor.LastReadMessageCreatedAtUtc &&
+                       message.Id.CompareTo(cursor.LastReadMessageId.Value) > 0))
+            group message by message.ConversationId
+            into group
+            select new { ConversationId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.ConversationId, item => item.Count, cancellationToken);
+    }
+
     private static ApplicationError? ValidatePagination(int offset, int limit)
     {
         if (offset < 0 || limit is < 1 or > MaximumLimit)
@@ -403,6 +492,73 @@ public sealed class MessagesService(
         }
 
         return null;
+    }
+
+    private static ApplicationError? ValidateHistoryPagination(
+        string? before,
+        int limit,
+        out MessageHistoryCursor? cursor)
+    {
+        cursor = null;
+        if (limit is < 1 or > MaximumLimit)
+        {
+            return new ApplicationError(
+                "invalid_pagination",
+                $"Limit must be between 1 and {MaximumLimit}.",
+                ApplicationErrorType.Validation);
+        }
+
+        if (string.IsNullOrWhiteSpace(before))
+        {
+            return null;
+        }
+
+        if (before.Length > MaximumCursorLength || !TryDecodeCursor(before, out cursor))
+        {
+            return new ApplicationError(
+                "invalid_message_cursor",
+                "The message history cursor is invalid.",
+                ApplicationErrorType.Validation);
+        }
+
+        return null;
+    }
+
+    private static string EncodeCursor(Message message)
+    {
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(
+            new MessageHistoryCursor(message.CreatedAtUtc, message.Id));
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static bool TryDecodeCursor(string value, out MessageHistoryCursor? cursor)
+    {
+        cursor = null;
+        try
+        {
+            var base64 = value
+                .Replace('-', '+')
+                .Replace('_', '/');
+            base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=');
+            cursor = JsonSerializer.Deserialize<MessageHistoryCursor>(
+                Encoding.UTF8.GetString(Convert.FromBase64String(base64)));
+            return cursor is not null && cursor.MessageId != Guid.Empty;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private static ApplicationError? ValidateAccess(Conversation? conversation, Guid actorUserId)
@@ -466,4 +622,6 @@ public sealed class MessagesService(
             message.Content,
             message.CreatedAtUtc,
             message.ReadAtUtc);
+
+    private sealed record MessageHistoryCursor(DateTimeOffset CreatedAtUtc, Guid MessageId);
 }

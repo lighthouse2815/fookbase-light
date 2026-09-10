@@ -25,6 +25,12 @@ export interface PagedResponse<T> {
   total: number
 }
 
+export interface MessageHistoryResponse {
+  items: Message[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
 export interface IncomingMessage {
   conversation: Conversation
   message: Message
@@ -41,10 +47,18 @@ export const messagesApi = {
     apiRequest<PagedResponse<IncomingMessage>>(
       `/api/messages/notifications?${new URLSearchParams({ offset: String(offset), limit: String(limit) })}`,
     ),
-  getMessages: (conversationId: string, offset = 0, limit = 50) =>
-    apiRequest<PagedResponse<Message>>(
-      `/api/messages/conversations/${conversationId}/messages?${new URLSearchParams({ offset: String(offset), limit: String(limit) })}`,
-    ),
+  getMessages: (conversationId: string, before?: string | null, limit = 50) => {
+    const query = new URLSearchParams({ limit: String(limit) })
+    if (before) query.set('before', before)
+    return apiRequest<MessageHistoryResponse>(
+      `/api/messages/conversations/${conversationId}/messages?${query}`,
+    )
+  },
+  markConversationRead: (conversationId: string, lastReadMessageId: string) =>
+    apiRequest<void>(`/api/messages/conversations/${conversationId}/read`, {
+      method: 'POST',
+      body: JSON.stringify({ lastReadMessageId }),
+    }),
   sendMessage: (conversationId: string, content: string) =>
     apiRequest<Message>(`/api/messages/conversations/${conversationId}/messages`, {
       method: 'POST',

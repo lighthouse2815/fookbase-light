@@ -24,6 +24,15 @@ function avatarLabel(profile: UserProfile) {
   return profile.displayName.slice(0, 2).toUpperCase() || profile.username.slice(0, 2).toUpperCase()
 }
 
+function mergeMessagesChronologically(current: Message[], next: Message[]) {
+  return [...current, ...next]
+    .filter((message, index, items) => items.findIndex((item) => item.id === message.id) === index)
+    .sort((left, right) =>
+      Date.parse(left.createdAtUtc) - Date.parse(right.createdAtUtc) ||
+      left.id.localeCompare(right.id),
+    )
+}
+
 export default function MessagesPage() {
   const { session } = useAuth()
   const { language, t } = usePreferences()
@@ -37,8 +46,8 @@ export default function MessagesPage() {
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({})
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
-  const [messagesTotal, setMessagesTotal] = useState(0)
-  const [messagesOffset, setMessagesOffset] = useState(0)
+  const [nextMessageCursor, setNextMessageCursor] = useState<string | null>(null)
+  const [hasMoreMessages, setHasMoreMessages] = useState(false)
   const [draft, setDraft] = useState('')
   const [search, setSearch] = useState('')
   const [newMessageQuery, setNewMessageQuery] = useState('')
@@ -52,6 +61,7 @@ export default function MessagesPage() {
   const [conversationsPageError, setConversationsPageError] = useState<string | null>(null)
   const [messagesPageError, setMessagesPageError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const shouldScrollToBottomRef = useRef(false)
   const lastTypingSentAtRef = useRef(0)
 
   const loadConversations = useCallback(async (offset = 0, append = false) => {
@@ -117,10 +127,11 @@ export default function MessagesPage() {
         if (!active) return
         setError(null)
         setMessages(page.items)
-        setMessagesTotal(page.total)
-        setMessagesOffset(page.offset + page.items.length)
+        setNextMessageCursor(page.nextCursor)
+        setHasMoreMessages(page.hasMore)
         setMessagesPageError(null)
-        markConversationRead(activeConversationId)
+        shouldScrollToBottomRef.current = true
+        markConversationRead(activeConversationId, page.items.at(-1)?.id)
         setConversations((current) => current.map((conversation) =>
           conversation.id === activeConversationId ? { ...conversation, unreadCount: 0 } : conversation,
         ))
@@ -167,10 +178,9 @@ export default function MessagesPage() {
 
     void messagesApi.getMessages(activeConversationId)
       .then((page) => {
-        setMessages(page.items)
-        setMessagesTotal(page.total)
-        setMessagesOffset(page.offset + page.items.length)
-        markConversationRead(activeConversationId)
+        setMessages((current) => mergeMessagesChronologically(current, page.items))
+        shouldScrollToBottomRef.current = true
+        markConversationRead(activeConversationId, page.items.at(-1)?.id)
       })
       .catch(() => undefined)
     return () => window.clearTimeout(timeoutId)
@@ -195,7 +205,10 @@ export default function MessagesPage() {
   }, [activeConversationId, readAtByConversation, session])
 
   useEffect(() => {
+    if (!shouldScrollToBottomRef.current) return
+
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    shouldScrollToBottomRef.current = false
   }, [messages])
 
   useEffect(() => {
@@ -252,14 +265,14 @@ export default function MessagesPage() {
   }
 
   const loadMoreMessages = async () => {
-    if (!activeConversationId) return
+    if (!activeConversationId || !hasMoreMessages || !nextMessageCursor) return
     setIsLoadingMoreMessages(true)
     setMessagesPageError(null)
     try {
-      const page = await messagesApi.getMessages(activeConversationId, messagesOffset)
-      setMessages((current) => [...current, ...page.items.filter((message) => !current.some((item) => item.id === message.id))])
-      setMessagesTotal(page.total)
-      setMessagesOffset(page.offset + page.items.length)
+      const page = await messagesApi.getMessages(activeConversationId, nextMessageCursor)
+      setMessages((current) => mergeMessagesChronologically(current, page.items))
+      setNextMessageCursor(page.nextCursor)
+      setHasMoreMessages(page.hasMore)
     } catch (requestError) {
       setMessagesPageError(requestError instanceof ApiError ? requestError.message : t('unableLoadMessages'))
     } finally {
@@ -274,8 +287,7 @@ export default function MessagesPage() {
     try {
       const message = await messagesApi.sendMessage(activeConversationId, draft.trim())
       setMessages((current) => [...current, message])
-      setMessagesTotal((current) => current + 1)
-      setMessagesOffset((current) => current + 1)
+      shouldScrollToBottomRef.current = true
       setConversations((current) => current
         .map((conversation) => conversation.id === activeConversationId
           ? { ...conversation, lastMessage: message, lastMessageAtUtc: message.createdAtUtc }
@@ -358,6 +370,7 @@ export default function MessagesPage() {
           <>
             <div className="px-5 py-4 border-b border-border bg-surface flex items-center gap-3"><Avatar profile={partner} /><div><div className="text-[14px] font-semibold text-text">{partner.displayName}</div><div className="text-[12px] text-text-light">@{partner.username}</div></div><button type="button" onClick={() => void loadConversations().catch(() => undefined)} className="ml-auto text-sm text-primary bg-transparent border-none cursor-pointer">{t('refresh')}</button></div>
             <div className="flex-1 scroll-smooth overflow-y-auto p-5 flex flex-col gap-3">
+              <PaginationControls hasMore={hasMoreMessages} isLoading={isLoadingMoreMessages} error={messagesPageError} label={t('loadMoreMessages')} onLoadMore={() => void loadMoreMessages()} />
               {messages.map((message, index) => {
                 const isMine = message.senderUserId === session!.user.id
                 const isLatestReadMessage = isMine
@@ -371,7 +384,6 @@ export default function MessagesPage() {
                   <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}><div className={`px-4 py-2.5 text-[14px] leading-relaxed ${isMine ? 'bubble-mine' : 'bubble-theirs'}`}>{message.content}</div><span className="text-[11px] text-text-light px-1">{formatTimestamp(message.createdAtUtc, locale, t('now'))}{isLatestReadMessage ? ` · ${t('seen')}` : ''}</span></div>
                 </div>
               })}
-              <PaginationControls hasMore={messagesOffset < messagesTotal} isLoading={isLoadingMoreMessages} error={messagesPageError} label={t('loadMoreMessages')} onLoadMore={() => void loadMoreMessages()} />
               {typingConversationIds.has(activeConversation.id) && (
                 <div className="flex items-end gap-2">
                   <Avatar profile={partner} size="small" />

@@ -6,9 +6,10 @@ export interface RealtimeContextValue {
   incomingMessages: IncomingMessage[]
   incomingFriendNotifications: FriendNotification[]
   unreadMessageCount: number
+  unreadNotificationCount: number
   typingConversationIds: ReadonlySet<string>
   readAtByConversation: ReadonlyMap<string, string>
-  markConversationRead: (conversationId: string) => void
+  markConversationRead: (conversationId: string, lastReadMessageId?: string) => void
   markFriendNotificationRead: (notificationId: string) => void
   sendTyping: (conversationId: string) => void
 }

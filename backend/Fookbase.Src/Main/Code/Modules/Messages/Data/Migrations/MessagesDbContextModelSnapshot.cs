@@ -41,6 +41,19 @@ partial class MessagesDbContextModelSnapshot : ModelSnapshot
             });
         });
 
+        modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationReadCursor", builder =>
+        {
+            builder.Property<Guid>("ConversationId").HasColumnType("uuid");
+            builder.Property<Guid>("UserId").HasColumnType("uuid");
+            builder.Property<DateTimeOffset?>("LastReadAtUtc").HasColumnType("timestamp with time zone");
+            builder.Property<DateTimeOffset?>("LastReadMessageCreatedAtUtc")
+                .HasColumnType("timestamp with time zone");
+            builder.Property<Guid?>("LastReadMessageId").HasColumnType("uuid");
+            builder.HasKey("ConversationId", "UserId");
+            builder.HasIndex("UserId", "ConversationId");
+            builder.ToTable("ConversationReadCursors");
+        });
+
         modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", builder =>
         {
             builder.Property<Guid>("Id")
@@ -55,7 +68,7 @@ partial class MessagesDbContextModelSnapshot : ModelSnapshot
             builder.Property<DateTimeOffset?>("ReadAtUtc").HasColumnType("timestamp with time zone");
             builder.Property<Guid>("SenderUserId").HasColumnType("uuid");
             builder.HasKey("Id");
-            builder.HasIndex("ConversationId", "CreatedAtUtc");
+            builder.HasIndex("ConversationId", "CreatedAtUtc", "Id");
             builder.HasIndex("ConversationId", "ReadAtUtc");
             builder.ToTable("Messages");
         });
@@ -71,7 +84,7 @@ partial class MessagesDbContextModelSnapshot : ModelSnapshot
             builder.Property<DateTimeOffset?>("ReadAtUtc").HasColumnType("timestamp with time zone");
             builder.Property<Guid>("RecipientUserId").HasColumnType("uuid");
             builder.HasKey("Id");
-            builder.HasIndex("MessageId").IsUnique();
+            builder.HasIndex("RecipientUserId", "MessageId").IsUnique();
             builder.HasIndex("RecipientUserId", "ReadAtUtc", "CreatedAtUtc");
             builder.ToTable("MessageNotifications");
         });

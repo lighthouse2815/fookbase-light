@@ -3,6 +3,7 @@ import type { Post, User } from '../../../data/mockData'
 import { formatNumber, formatTimestamp } from '../../../data/mockData'
 import LikeButton from '../../../shared/components/LikeButton'
 import CommentModal from '../../../shared/components/CommentModal'
+import { usePreferences } from '../../../preferences'
 
 interface PostCardProps {
   post: Post

@@ -34,8 +34,11 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       ...nextMessages.filter((nextMessage) => !current.some((item) => item.message.id === nextMessage.message.id)),
     ])
   }, [])
-  const markConversationRead = useCallback((conversationId: string) => {
+  const markConversationRead = useCallback((conversationId: string, lastReadMessageId?: string) => {
     setIncomingMessages((current) => current.filter((item) => item.conversation.id !== conversationId))
+    if (lastReadMessageId) {
+      void messagesApi.markConversationRead(conversationId, lastReadMessageId).catch(() => undefined)
+    }
   }, [])
   const addFriendNotifications = useCallback((nextNotifications: FriendNotification[]) => {
     setIncomingFriendNotifications((current) => [
@@ -133,7 +136,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(() => ({
     incomingMessages,
     incomingFriendNotifications,
-    unreadMessageCount: incomingMessages.length + incomingFriendNotifications.length,
+    unreadMessageCount: incomingMessages.length,
+    unreadNotificationCount: incomingFriendNotifications.length,
     typingConversationIds,
     readAtByConversation,
     markConversationRead,

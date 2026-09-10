@@ -16,6 +16,7 @@ public static class MessageEndpoints
         group.MapGet("/conversations", GetConversationsAsync);
         group.MapGet("/notifications", GetUnreadNotificationsAsync);
         group.MapGet("/conversations/{conversationId:guid}/messages", GetMessagesAsync);
+        group.MapPost("/conversations/{conversationId:guid}/read", MarkConversationReadAsync);
         group.MapPost("/conversations/{conversationId:guid}/messages", SendMessageAsync);
 
         return endpoints;
@@ -57,7 +58,7 @@ public static class MessageEndpoints
         ClaimsPrincipal principal,
         MessagesService service,
         CancellationToken cancellationToken,
-        int offset = 0,
+        string? before = null,
         int limit = 50)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -68,10 +69,30 @@ public static class MessageEndpoints
         var result = await service.GetMessagesAsync(
             actorUserId,
             conversationId,
-            offset,
+            before,
             limit,
             cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> MarkConversationReadAsync(
+        Guid conversationId,
+        MarkConversationReadRequest request,
+        ClaimsPrincipal principal,
+        MessagesService service,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await service.MarkConversationReadAsync(
+            actorUserId,
+            conversationId,
+            request,
+            cancellationToken);
+        return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
     }
 
     private static async Task<IResult> GetUnreadNotificationsAsync(

@@ -27,7 +27,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
     }
 
     [Fact]
-    public async Task Direct_conversation_is_reused_and_messages_are_read_by_recipient()
+    public async Task Direct_conversation_is_reused_and_messages_require_an_explicit_read_marker()
     {
         var senderUserId = Guid.NewGuid();
         var recipientUserId = Guid.NewGuid();
@@ -60,17 +60,72 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         Assert.Contains(notifications!.Items, item =>
             item.Conversation.Id == conversation.Id && item.Message.Content == "Hello from the sender");
 
-        var history = await recipient.GetFromJsonAsync<PagedResponse<MessageResponse>>(
+        var history = await recipient.GetFromJsonAsync<MessageHistoryResponse>(
             $"/api/messages/conversations/{conversation.Id}/messages");
         Assert.NotNull(history);
         var message = Assert.Single(history!.Items);
         Assert.Equal(senderUserId, message.SenderUserId);
         Assert.Equal("Hello from the sender", message.Content);
-        Assert.NotNull(message.ReadAtUtc);
+        Assert.Null(message.ReadAtUtc);
+        var notificationsAfterHistory = await recipient.GetFromJsonAsync<PagedResponse<IncomingMessageResponse>>(
+            "/api/messages/notifications");
+        Assert.NotNull(notificationsAfterHistory);
+        Assert.Single(notificationsAfterHistory!.Items);
+
+        var markRead = await recipient.PostAsJsonAsync(
+            $"/api/messages/conversations/{conversation.Id}/read",
+            new { lastReadMessageId = message.Id });
+        Assert.Equal(HttpStatusCode.NoContent, markRead.StatusCode);
+
+        var readHistory = await recipient.GetFromJsonAsync<MessageHistoryResponse>(
+            $"/api/messages/conversations/{conversation.Id}/messages");
+        Assert.NotNull(readHistory);
+        Assert.NotNull(Assert.Single(readHistory!.Items).ReadAtUtc);
         var remainingNotifications = await recipient.GetFromJsonAsync<PagedResponse<IncomingMessageResponse>>(
             "/api/messages/notifications");
         Assert.NotNull(remainingNotifications);
         Assert.Empty(remainingNotifications!.Items);
+    }
+
+    [Fact]
+    public async Task Message_history_returns_the_newest_page_then_stable_older_cursor_pages()
+    {
+        var senderUserId = Guid.NewGuid();
+        var recipientUserId = Guid.NewGuid();
+        await BecomeFriendsAsync(senderUserId, recipientUserId);
+        using var sender = CreateAuthenticatedClient(senderUserId);
+        using var recipient = CreateAuthenticatedClient(recipientUserId);
+
+        var created = await sender.PostAsync($"/api/messages/conversations/{recipientUserId}", null);
+        var conversation = await created.Content.ReadFromJsonAsync<ConversationResponse>();
+        Assert.NotNull(conversation);
+        foreach (var content in new[] { "oldest", "middle", "newest" })
+        {
+            var sent = await sender.PostAsJsonAsync(
+                $"/api/messages/conversations/{conversation!.Id}/messages",
+                new { content });
+            Assert.Equal(HttpStatusCode.Created, sent.StatusCode);
+        }
+
+        var newestPage = await recipient.GetFromJsonAsync<MessageHistoryResponse>(
+            $"/api/messages/conversations/{conversation!.Id}/messages?limit=2");
+        Assert.NotNull(newestPage);
+        Assert.Equal(new[] { "middle", "newest" }, newestPage!.Items.Select(message => message.Content));
+        Assert.True(newestPage.HasMore);
+        Assert.False(string.IsNullOrWhiteSpace(newestPage.NextCursor));
+        Assert.All(newestPage.Items, message => Assert.Null(message.ReadAtUtc));
+
+        var olderPage = await recipient.GetFromJsonAsync<MessageHistoryResponse>(
+            $"/api/messages/conversations/{conversation.Id}/messages?limit=2&before={Uri.EscapeDataString(newestPage.NextCursor!)}");
+        Assert.NotNull(olderPage);
+        Assert.Equal(new[] { "oldest" }, olderPage!.Items.Select(message => message.Content));
+        Assert.False(olderPage.HasMore);
+        Assert.Null(olderPage.NextCursor);
+
+        var notifications = await recipient.GetFromJsonAsync<PagedResponse<IncomingMessageResponse>>(
+            "/api/messages/notifications");
+        Assert.NotNull(notifications);
+        Assert.Equal(3, notifications!.Items.Count);
     }
 
     [Fact]

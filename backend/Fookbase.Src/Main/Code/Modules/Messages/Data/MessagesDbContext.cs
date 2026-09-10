@@ -8,6 +8,8 @@ public sealed class MessagesDbContext(DbContextOptions<MessagesDbContext> option
 {
     public DbSet<Conversation> Conversations => Set<Conversation>();
 
+    public DbSet<ConversationReadCursor> ConversationReadCursors => Set<ConversationReadCursor>();
+
     public DbSet<Message> Messages => Set<Message>();
 
     public DbSet<MessageNotification> MessageNotifications => Set<MessageNotification>();

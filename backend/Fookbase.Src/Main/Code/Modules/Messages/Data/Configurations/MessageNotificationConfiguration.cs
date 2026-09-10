@@ -11,7 +11,11 @@ internal sealed class MessageNotificationConfiguration : IEntityTypeConfiguratio
         builder.ToTable("MessageNotifications");
         builder.HasKey(notification => notification.Id);
         builder.Property(notification => notification.CreatedAtUtc).IsRequired();
-        builder.HasIndex(notification => notification.MessageId).IsUnique();
+        builder.HasIndex(notification => new
+        {
+            notification.RecipientUserId,
+            notification.MessageId
+        }).IsUnique();
         builder.HasIndex(notification => new
         {
             notification.RecipientUserId,
