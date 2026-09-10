@@ -7,7 +7,6 @@ import MessagesPage from '../pages/messages/MessagesPage'
 import ProfilePage from '../pages/profile/ProfilePage'
 import UserProfilePage from '../pages/profile/UserProfilePage'
 import LoginPage from '../pages/auth/LoginPage'
-import AdminPage from '../pages/admin/AdminPage'
 
 export const router = createBrowserRouter([
   {
@@ -45,10 +44,6 @@ export const router = createBrowserRouter([
       {
         path: 'profile/:userId',
         element: <UserProfilePage />,
-      },
-      {
-        path: 'admin',
-        element: <AdminPage />,
       },
       {
         path: '*',

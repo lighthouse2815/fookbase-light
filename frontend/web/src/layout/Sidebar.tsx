@@ -20,9 +20,6 @@ export default function Sidebar() {
   const { session } = useAuth()
   const { unreadMessageCount } = useRealtime()
   const initials = session!.user.username.slice(0, 2).toUpperCase()
-  const navItems = (session!.user.roles ?? []).includes('Admin')
-    ? [...NAV_ITEMS, { path: '/admin', emoji: '🛡️', label: 'Admin Center' }]
-    : NAV_ITEMS
 
   return (
     <aside className="fixed top-14 left-0 w-[280px] h-[calc(100vh-56px)] flex flex-col bg-bg z-40 max-lg:hidden overflow-y-auto scroll-smooth">
@@ -43,7 +40,7 @@ export default function Sidebar() {
           </span>
         </Link>
 
-        {navItems.map((item) => (
+        {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
