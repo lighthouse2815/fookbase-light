@@ -26,7 +26,20 @@ var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<Jw
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 var rateLimitPermitLimit = builder.Configuration.GetValue("RateLimiting:PermitLimit", 120);
 var rateLimitWindowSeconds = builder.Configuration.GetValue("RateLimiting:WindowSeconds", 60);
-if (rateLimitPermitLimit <= 0 || rateLimitWindowSeconds <= 0)
+var authLoginPermitLimit = builder.Configuration.GetValue("RateLimiting:SensitiveAuth:LoginPermitLimit", 10);
+var authRecoveryPermitLimit = builder.Configuration.GetValue("RateLimiting:SensitiveAuth:RecoveryPermitLimit", 5);
+var authResendVerificationPermitLimit = builder.Configuration.GetValue(
+    "RateLimiting:SensitiveAuth:ResendVerificationPermitLimit",
+    3);
+var authRateLimitWindowSeconds = builder.Configuration.GetValue(
+    "RateLimiting:SensitiveAuth:WindowSeconds",
+    300);
+if (rateLimitPermitLimit <= 0 ||
+    rateLimitWindowSeconds <= 0 ||
+    authLoginPermitLimit <= 0 ||
+    authRecoveryPermitLimit <= 0 ||
+    authResendVerificationPermitLimit <= 0 ||
+    authRateLimitWindowSeconds <= 0)
 {
     throw new InvalidOperationException("Rate limiting values must be positive.");
 }
@@ -111,6 +124,18 @@ builder.Services.AddRateLimiter(options =>
             AutoReplenishment = true
         });
     });
+    options.AddPolicy("auth-login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            $"auth-login:{ClientAddress(context)}",
+            _ => SensitiveAuthRateLimit(authLoginPermitLimit, authRateLimitWindowSeconds)));
+    options.AddPolicy("auth-password-recovery", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            $"auth-password-recovery:{ClientAddress(context)}",
+            _ => SensitiveAuthRateLimit(authRecoveryPermitLimit, authRateLimitWindowSeconds)));
+    options.AddPolicy("auth-resend-verification", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            $"auth-resend-verification:{ClientAddress(context)}",
+            _ => SensitiveAuthRateLimit(authResendVerificationPermitLimit, authRateLimitWindowSeconds)));
 });
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
@@ -139,5 +164,17 @@ app.MapAdminEndpoints();
 app.MapMediaEndpoints();
 
 app.Run();
+
+static FixedWindowRateLimiterOptions SensitiveAuthRateLimit(int permitLimit, int windowSeconds) =>
+    new()
+    {
+        PermitLimit = permitLimit,
+        Window = TimeSpan.FromSeconds(windowSeconds),
+        QueueLimit = 0,
+        AutoReplenishment = true
+    };
+
+static string ClientAddress(HttpContext context) =>
+    context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
 public partial class Program;

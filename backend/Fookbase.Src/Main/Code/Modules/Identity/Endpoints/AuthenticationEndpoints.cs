@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Application;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fookbase.Api.Modules.Identity.Endpoints;
 
@@ -16,14 +17,20 @@ public static class AuthenticationEndpoints
         var group = endpoints.MapGroup("/api/auth");
 
         group.MapPost("/register", RegisterAsync).AllowAnonymous();
-        group.MapPost("/login", LoginAsync).AllowAnonymous();
+        group.MapPost("/login", LoginAsync).AllowAnonymous().RequireRateLimiting("auth-login");
         group.MapPost("/refresh", RefreshAsync).AllowAnonymous();
-        group.MapPost("/password/forgot", RequestPasswordResetAsync).AllowAnonymous();
-        group.MapPost("/password/reset", ResetPasswordAsync).AllowAnonymous();
+        group.MapPost("/password/forgot", RequestPasswordResetAsync)
+            .AllowAnonymous()
+            .RequireRateLimiting("auth-password-recovery");
+        group.MapPost("/password/reset", ResetPasswordAsync)
+            .AllowAnonymous()
+            .RequireRateLimiting("auth-password-recovery");
         group.MapPost("/email/verify", VerifyEmailAsync).AllowAnonymous();
         group.MapPost("/logout", LogoutAsync).RequireAuthorization();
         group.MapPost("/password/change", ChangePasswordAsync).RequireAuthorization();
-        group.MapPost("/email/verification", SendEmailVerificationAsync).RequireAuthorization();
+        group.MapPost("/email/verification", SendEmailVerificationAsync)
+            .RequireAuthorization()
+            .RequireRateLimiting("auth-resend-verification");
         group.MapGet("/me", GetCurrentUserAsync).RequireAuthorization();
 
         return endpoints;
