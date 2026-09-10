@@ -1,4 +1,4 @@
-using Fookbase.Api.Application;
+using Fookbase.Api.Modules.Admin;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity;
@@ -75,14 +75,8 @@ internal static class ModuleServiceCollectionExtensions
                 ?? new MediaOptions());
     }
 
-    public static IServiceCollection AddApplicationUseCases(this IServiceCollection services)
-    {
-        services.AddScoped<RegistrationUseCase>();
-        services.AddScoped<PostsUseCase>();
-        services.AddScoped<AdministrationUseCase>();
-
-        return services;
-    }
+    public static IServiceCollection AddAdminModule(this IServiceCollection services) =>
+        services.AddAdminInfrastructure();
 
     private static string RequiredConnectionString(IConfiguration configuration, string name) =>
         configuration.GetConnectionString(name)

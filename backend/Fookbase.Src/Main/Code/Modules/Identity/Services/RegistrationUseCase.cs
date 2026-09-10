@@ -5,7 +5,7 @@ using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Persistence;
 
-namespace Fookbase.Api.Application;
+namespace Fookbase.Api.Modules.Identity.Services;
 
 public sealed class RegistrationUseCase(
     AuthenticationService authenticationService,

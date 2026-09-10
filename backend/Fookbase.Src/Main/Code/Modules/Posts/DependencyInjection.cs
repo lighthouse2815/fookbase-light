@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddSingleton(postsOptions);
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<PostsService>();
+        services.AddScoped<PostsUseCase>();
         services.AddScoped<ReportsService>();
         return services;
     }

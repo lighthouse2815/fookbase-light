@@ -4,7 +4,6 @@ using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Application;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fookbase.Api.Modules.Identity.Endpoints;

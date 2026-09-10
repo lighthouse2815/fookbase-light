@@ -5,7 +5,7 @@ using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Persistence;
 
-namespace Fookbase.Api.Application;
+namespace Fookbase.Api.Modules.Admin.Services;
 
 public sealed class AdministrationUseCase(
     AdministrationService administrationService,

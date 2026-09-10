@@ -1,5 +1,5 @@
-using Fookbase.Api.Application;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;

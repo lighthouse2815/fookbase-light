@@ -5,7 +5,7 @@ using Fookbase.Api.Modules.Posts.Services;
 using MediaApplicationError = Fookbase.Api.Modules.Media.Common.ApplicationError;
 using Fookbase.Api.Persistence;
 
-namespace Fookbase.Api.Application;
+namespace Fookbase.Api.Modules.Posts.Services;
 
 public sealed class PostsUseCase(
     PostsService postsService,
