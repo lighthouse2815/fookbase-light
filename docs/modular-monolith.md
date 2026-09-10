@@ -12,7 +12,15 @@ External local dependencies are PostgreSQL and MinIO. There is no API gateway, R
 
 Each module keeps feature-local `Entities`, `Data`, `Services`, and `Endpoints` folders inside the single API project. All services use the same scoped `FookbaseDbContext`; module ownership remains a code organization boundary, not a database boundary. User reports verify an Identity user exists, and Media verifies active profile-media references before deletion.
 
-Cross-module coordination is explicit and synchronous: an endpoint calls an application use case only when it must combine services. `RegistrationUseCase` commits the authentication account, refresh token, and user profile in one transaction. `PostsUseCase` obtains the current Friends relationship snapshot for privacy checks and commits posts with Media attachment references in one transaction. Profile image/reference changes use one transaction as well. Messages uses `FriendsService` for direct-conversation access checks and SignalR at `/hubs/messages` for client updates. These are in-process C# calls, not HTTP requests.
+Cross-module coordination is explicit and synchronous. The coordinator remains inside the module
+that owns the endpoint: `Modules/Identity/Services/RegistrationUseCase`,
+`Modules/Posts/Services/PostsUseCase`, and
+`Modules/Admin/Services/AdministrationUseCase`. `RegistrationUseCase` commits the
+authentication account, refresh token, and user profile in one transaction. `PostsUseCase`
+obtains the current Friends relationship snapshot for privacy checks and commits posts with Media
+attachment references in one transaction. Profile image/reference changes use one transaction as
+well. Messages uses `FriendsService` for direct-conversation access checks and SignalR at
+`/hubs/messages` for client updates. These are in-process C# calls, not HTTP requests.
 
 ## No messaging projections
 
@@ -32,6 +40,8 @@ database. Historical module migrations remain as uncompiled source for audit and
 `scripts/import-legacy-databases.sh` imports all six legacy databases only into an empty
 `fookbase_db`, excludes their migration-history tables, and streams the copy through one target
 transaction. It never drops, resets, or writes to a source database.
+The full active-versus-legacy migration policy is in
+[migration-history.md](migration-history.md).
 
 There are no outbox or inbox implementations in the running application. The only retained
 durable workflow is `ObjectDeletions`, a Media table consumed by `ObjectDeletionWorker`; it

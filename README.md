@@ -2,7 +2,7 @@
 
 Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Messages, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
-Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> Application use case (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
+Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
 
 Chi tiết về ranh giới module và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
 
@@ -17,8 +17,8 @@ Fookbase.Api :5000
   |-- Users module
   |-- Friends module
   |-- Messages module (SignalR)
-  |-- Application use cases
   |-- Posts module
+  |-- Admin module
   `-- Media module
       |
       |-- PostgreSQL
@@ -45,30 +45,29 @@ Các credential mẫu chỉ dành cho local development. Hãy thay password và 
 
 ## Khởi động
 
-Khởi động PostgreSQL và MinIO:
+Khởi động đầy đủ local stack (PostgreSQL, MinIO và API):
 
 ```bash
-docker compose up -d
+docker compose up --build -d
 docker compose ps
 ```
 
-MinIO Console chạy tại <http://localhost:9001>. API object storage chạy tại <http://localhost:9000>.
+Compose chỉ lấy secrets từ `.env`; Docker image không chứa `.env` hoặc credential. Local
+compose tự apply migration hợp nhất khi API start. MinIO Console chạy tại
+<http://localhost:9001>, API object storage chạy tại <http://localhost:9000>, và API chạy tại
+<http://localhost:5000>.
 
-Apply migration cho database hợp nhất:
+Kiểm tra health:
 
 ```bash
-set -a
-source .env
-set +a
-dotnet tool restore
-
-dotnet tool run dotnet-ef database update \
-  --project backend/Fookbase.Src/Main \
-  --startup-project backend/Fookbase.Src/Main \
-  --context FookbaseDbContext
+curl -fsS http://localhost:5000/health/live
+curl -fsS http://localhost:5000/health/ready
 ```
 
-Chạy backend monolith:
+`/health` vẫn là liveness-compatible endpoint. `/health/live` chỉ xác nhận process sống;
+`/health/ready` yêu cầu PostgreSQL và private MinIO bucket sẵn sàng.
+
+Để chạy API trực tiếp thay vì container, apply migration thủ công rồi chạy backend:
 
 ```bash
 set -a
@@ -77,7 +76,7 @@ set +a
 dotnet run --project backend/Fookbase.Src/Main
 ```
 
-API chạy tại <http://localhost:5000>, health check tại <http://localhost:5000/health>.
+API chạy tại <http://localhost:5000>.
 
 Để mở quyền quản trị cho một tài khoản development, đặt `Admin__BootstrapEmail` thành email
 của tài khoản đó trước khi đăng ký hoặc đăng nhập. Hệ thống sẽ tự gán role `Admin` vào lần
@@ -115,7 +114,16 @@ set -a
 source .env
 set +a
 dotnet test FookbaseLight.sln --no-build
+
+./scripts/test-legacy-import-e2e.sh
 ```
+
+`test-legacy-import-e2e.sh` tạo một PostgreSQL container tạm, apply active
+`FookbaseDbContext` migration, tạo sáu source database legacy đại diện và chạy chính
+`scripts/import-legacy-databases.sh`. Test xác nhận preservation của ID, timestamp,
+password hash, friendship/block, posts/media/profile reference, conversation/message/read
+cursor qua `FookbaseDbContext`, đồng thời kiểm tra script từ chối target không rỗng. Container
+và database tạm được xóa sau test; database development không bị dùng.
 
 Nếu máy chưa có .NET SDK 10, có thể build bằng container:
 
@@ -231,7 +239,11 @@ Tất cả endpoint Admin yêu cầu JWT có role `Admin`.
 
 ## Phối hợp module
 
-Khi một API cần nhiều service, endpoint gọi một application use case. Ví dụ đăng ký gọi `RegistrationUseCase` để tạo Identity và profile; Posts gọi `PostsUseCase` để lấy quan hệ hiện tại từ Friends và đồng bộ attachment với Media. Không có endpoint nào truy cập `DbContext` trực tiếp hoặc điều phối nhiều service.
+Khi một API cần nhiều service, endpoint gọi coordinator trong module sở hữu endpoint:
+`Modules/Identity/Services/RegistrationUseCase`, `Modules/Posts/Services/PostsUseCase`, hoặc
+`Modules/Admin/Services/AdministrationUseCase`. Đăng ký tạo Identity và profile trong một
+transaction; Posts lấy quan hệ hiện tại từ Friends và đồng bộ attachment với Media. Không có
+endpoint nào truy cập `DbContext` trực tiếp hoặc điều phối nhiều service.
 
 ## Tạo migration mới
 
@@ -246,6 +258,8 @@ dotnet tool run dotnet-ef migrations add MigrationName \
 Runtime migration và snapshot nằm ở `backend/Fookbase.Src/Main/Code/Persistence/Migrations`.
 Historical module migrations vẫn được giữ tại `Code/Modules/<Module>/Data/Migrations` làm
 record cho import dữ liệu cũ, nhưng không còn được compile hoặc apply ở runtime.
+Xem [docs/migration-history.md](docs/migration-history.md) để biết active source và legacy
+history cụ thể.
 
 ## Chuyển dữ liệu development cũ
 

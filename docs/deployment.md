@@ -18,6 +18,30 @@ Minio__BucketInitializationEnabled=false
 
 Khi API và MinIO cùng khởi động, bootstrap bucket sẽ retry 5 lần với khoảng cách 2 giây. Điều chỉnh `Minio__BucketInitializationMaxAttempts` và `Minio__BucketInitializationRetrySeconds` nếu storage cần thời gian sẵn sàng lâu hơn.
 
+## Docker image và local stack
+
+Backend image được build từ
+`backend/Fookbase.Src/Main/Dockerfile`. Đây là multi-stage .NET 10 build/publish Release,
+chỉ copy publish output sang ASP.NET runtime image, chạy bằng user không phải root, expose cổng
+`5000`, và không copy `.env` vào build context.
+
+Để chạy đầy đủ local stack:
+
+```bash
+cp .env.example .env
+# thay các giá trị mẫu trước khi dùng ngoài máy local
+docker compose config --quiet
+docker compose up --build -d
+curl -fsS http://localhost:5000/health/live
+curl -fsS http://localhost:5000/health/ready
+```
+
+Compose local đặt `Database__ApplyMigrationsOnStartup=true` để một fresh
+`fookbase_db` có schema ngay khi start. Với production, giữ giá trị này `false` và chạy
+`dotnet-ef database update` như một deployment step có kiểm soát trước khi đổi traffic. Liveness
+không phụ thuộc dependency; readiness chỉ trả thành công sau khi PostgreSQL và bucket MinIO
+private đã sẵn sàng.
+
 ## Reverse proxy và TLS
 
 Đặt API, MinIO API và frontend phía sau reverse proxy có chứng chỉ TLS. Proxy cần chuyển tiếp WebSocket cho `/hubs/messages`; không mở trực tiếp PostgreSQL, MinIO console hoặc MinIO API ra Internet. Chỉ proxy mới được kết nối tới các service nội bộ.
