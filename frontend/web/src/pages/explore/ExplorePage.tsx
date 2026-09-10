@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
+import { friendsApi } from '../../api/friends'
+import type { RelationshipStatus } from '../../api/friends'
 import { postsApi } from '../../api/posts'
 import type { Post } from '../../api/posts'
 import { usersApi } from '../../api/users'
@@ -30,6 +32,23 @@ export default function ExplorePage() {
   const [isSearchingPosts, setIsSearchingPosts] = useState(true)
   const [isLoadingMoreUsers, setIsLoadingMoreUsers] = useState(false)
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false)
+  const [relationships, setRelationships] = useState<Record<string, RelationshipStatus>>({})
+  const [relationshipActionError, setRelationshipActionError] = useState<string | null>(null)
+  const [updatingRelationshipUserId, setUpdatingRelationshipUserId] = useState<string | null>(null)
+
+  const loadRelationshipStatuses = async (profiles: readonly UserProfile[]) => {
+    const results = await Promise.allSettled(profiles.map((profile) => friendsApi.getStatus(profile.userId)))
+
+    setRelationships((currentRelationships) => {
+      const nextRelationships = { ...currentRelationships }
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          nextRelationships[profiles[index].userId] = result.value
+        }
+      })
+      return nextRelationships
+    })
+  }
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -37,9 +56,11 @@ export default function ExplorePage() {
       setUserSearchError(null)
       void usersApi.search(query)
         .then((page) => {
-          setUsers(page.items.filter((user) => user.userId !== session!.user.id))
+          const nextUsers = page.items.filter((user) => user.userId !== session!.user.id)
+          setUsers(nextUsers)
           setTotalUsers(page.total)
           setNextUserOffset(page.offset + page.items.length)
+          void loadRelationshipStatuses(nextUsers)
         })
         .catch((error: unknown) => {
           setUserSearchError(error instanceof ApiError ? error.message : 'Không thể tìm người dùng.')
@@ -83,6 +104,7 @@ export default function ExplorePage() {
         ...currentUsers,
         ...page.items.filter((user) => user.userId !== session!.user.id && !currentUsers.some((item) => item.userId === user.userId)),
       ])
+      void loadRelationshipStatuses(page.items.filter((user) => user.userId !== session!.user.id))
       setTotalUsers(page.total)
       setNextUserOffset(page.offset + page.items.length)
     } catch (error) {
@@ -112,6 +134,45 @@ export default function ExplorePage() {
   }
 
   const hasQuery = Boolean(query.trim())
+
+  const updateRelationship = async (userId: string, action: () => Promise<unknown>) => {
+    setUpdatingRelationshipUserId(userId)
+    setRelationshipActionError(null)
+
+    try {
+      await action()
+      const status = await friendsApi.getStatus(userId)
+      setRelationships((currentRelationships) => ({ ...currentRelationships, [userId]: status }))
+    } catch (error) {
+      setRelationshipActionError(error instanceof ApiError ? error.message : 'Không thể cập nhật mối quan hệ.')
+    } finally {
+      setUpdatingRelationshipUserId(null)
+    }
+  }
+
+  const renderRelationshipAction = (userId: string) => {
+    const relationship = relationships[userId]
+    const isUpdating = updatingRelationshipUserId === userId
+    const actionClass = 'rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all disabled:opacity-60'
+
+    if (relationship?.status === 'friends') {
+      return <span className={`${actionClass} bg-surface-2 text-text-muted`}>Friends</span>
+    }
+
+    if (relationship?.status === 'request_sent' && relationship.requestId) {
+      return <button type="button" onClick={() => void updateRelationship(userId, () => friendsApi.cancelRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} border border-border bg-surface-2 text-text hover:bg-surface-hover`}>Cancel request</button>
+    }
+
+    if (relationship?.status === 'request_received' && relationship.requestId) {
+      return <button type="button" onClick={() => void updateRelationship(userId, () => friendsApi.acceptRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-primary text-white hover:bg-primary-dark`}>Accept request</button>
+    }
+
+    if (relationship?.status === 'blocked') {
+      return <span className={`${actionClass} bg-surface-2 text-text-muted`}>Unavailable</span>
+    }
+
+    return <button type="button" onClick={() => void updateRelationship(userId, () => friendsApi.sendRequest(userId))} disabled={isUpdating} className={`${actionClass} bg-primary text-white hover:bg-primary-dark`}>{isUpdating ? 'Sending...' : 'Add friend'}</button>
+  }
 
   return (
     <div className="p-4 xl:p-6 flex flex-col gap-6 min-h-screen bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
@@ -143,11 +204,15 @@ export default function ExplorePage() {
           <h2 className="font-heading font-bold text-[17px] text-text mb-4">{hasQuery ? 'People' : 'People to discover'}</h2>
           <div className="flex flex-col gap-3">
             {userSearchError && <div className="bg-[#e41e3f]/10 border border-[#e41e3f]/40 rounded-2xl p-4 text-sm text-[#ff8a9b]">{userSearchError}</div>}
+            {relationshipActionError && <div className="bg-[#e41e3f]/10 border border-[#e41e3f]/40 rounded-2xl p-4 text-sm text-[#ff8a9b]">{relationshipActionError}</div>}
             {isSearchingUsers ? <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">Searching users...</div> : users.length === 0 && !userSearchError ? <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">{hasQuery ? `No people found matching “${query}”.` : 'No users to discover yet.'}</div> : users.map((user, index) => (
               <div key={user.userId} className="bg-surface rounded-2xl border border-border p-4 flex items-start gap-3 transition-all duration-200 hover:card-shadow-hover" style={{ animation: `slide-in-left 0.3s ease ${index * 0.06}s both` }}>
                 <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}</div>
                 <div className="flex-1 min-w-0"><p className="text-[13px] font-semibold text-text truncate">{user.displayName}</p><p className="text-[12px] text-text-muted truncate">@{user.username}</p>{user.currentCity && <p className="text-[12px] text-text-muted">{user.currentCity}</p>}</div>
-                <Link to={`/profile/${user.userId}`} className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 shrink-0 no-underline bg-primary text-white hover:bg-primary-dark">View</Link>
+                <div className="flex shrink-0 items-center gap-2">
+                  {renderRelationshipAction(user.userId)}
+                  <Link to={`/profile/${user.userId}`} className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 no-underline bg-surface-2 text-text hover:bg-surface-hover">View</Link>
+                </div>
               </div>
             ))}
             {nextUserOffset < totalUsers && <button type="button" onClick={() => void loadMoreUsers()} disabled={isLoadingMoreUsers} className="rounded-lg border border-border bg-surface-2 hover:bg-surface-hover disabled:opacity-60 py-2 text-sm font-semibold text-text cursor-pointer">{isLoadingMoreUsers ? 'Loading...' : 'Load more people'}</button>}

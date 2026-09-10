@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { friendsApi } from '../../api/friends'
-import type { BlockedUser, Friend, FriendRequest, PagedResponse, RelationshipStatus } from '../../api/friends'
+import type { BlockedUser, Friend, FriendRequest, PagedResponse } from '../../api/friends'
 import { mediaApi } from '../../api/media'
 import { postsApi } from '../../api/posts'
 import type { Post as ApiPost } from '../../api/posts'
@@ -57,9 +57,6 @@ export default function ProfilePage() {
   const [isLoadingMoreFriends, setIsLoadingMoreFriends] = useState(false)
   const [relationshipError, setRelationshipError] = useState<string | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
-  const [relationshipUserId, setRelationshipUserId] = useState('')
-  const [relationshipStatus, setRelationshipStatus] = useState<RelationshipStatus | null>(null)
-  const [mutualFriendCount, setMutualFriendCount] = useState<number | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profilePosts, setProfilePosts] = useState<ApiPost[]>([])
@@ -216,22 +213,6 @@ export default function ProfilePage() {
       setRelationshipError(error instanceof ApiError ? error.message : 'Không thể tải thêm bạn bè.')
     } finally {
       setIsLoadingMoreFriends(false)
-    }
-  }
-
-  const lookupRelationship = async () => {
-    if (!relationshipUserId.trim()) return
-    setRelationshipError(null)
-
-    try {
-      const [status, mutualFriends] = await Promise.all([
-        friendsApi.getStatus(relationshipUserId.trim()),
-        friendsApi.getMutualFriends(relationshipUserId.trim()),
-      ])
-      setRelationshipStatus(status)
-      setMutualFriendCount(mutualFriends.count)
-    } catch (error) {
-      setRelationshipError(error instanceof ApiError ? error.message : 'Không thể tra cứu quan hệ.')
     }
   }
 
@@ -632,34 +613,6 @@ export default function ProfilePage() {
                 {relationshipError}
               </div>
             )}
-
-            <section className="rounded-xl border border-border bg-surface-2/40 p-4 flex flex-col gap-3">
-              <div>
-                <h3 className="font-heading font-bold text-base text-text">Manage relationship</h3>
-                <p className="text-xs text-text-muted">Enter a user ID to send a request, check status, mutual friends, or block.</p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  value={relationshipUserId}
-                  onChange={(event) => {
-                    setRelationshipUserId(event.target.value)
-                    setRelationshipStatus(null)
-                    setMutualFriendCount(null)
-                  }}
-                  placeholder="User ID (UUID)"
-                  className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text outline-none"
-                />
-                <button type="button" onClick={() => void lookupRelationship()} className="px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text text-sm cursor-pointer">Check</button>
-              </div>
-              {relationshipStatus && (
-                <div className="flex flex-wrap items-center gap-2 text-sm text-text">
-                  <span>Status: <strong>{relationshipStatus.status}</strong></span>
-                  {mutualFriendCount !== null && <span className="text-text-muted">· {mutualFriendCount} mutual friends</span>}
-                  <button type="button" onClick={() => void runRelationshipAction(relationshipUserId, () => friendsApi.sendRequest(relationshipUserId))} className="px-2.5 py-1 rounded-lg bg-primary text-white border-none cursor-pointer text-xs">Add friend</button>
-                  <button type="button" onClick={() => void runRelationshipAction(relationshipUserId, () => friendsApi.block(relationshipUserId))} className="px-2.5 py-1 rounded-lg bg-surface border border-border text-text cursor-pointer text-xs">Block</button>
-                </div>
-              )}
-            </section>
 
             {incomingRequests.length > 0 && (
               <section className="flex flex-col gap-3">
