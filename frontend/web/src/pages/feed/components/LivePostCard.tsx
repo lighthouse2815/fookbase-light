@@ -6,6 +6,7 @@ import type { Comment, MediaAccess, Post } from '../../../api/posts'
 import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
+import { usePreferences } from '../../../preferences'
 
 interface LivePostCardProps {
   post: Post
@@ -15,8 +16,8 @@ interface LivePostCardProps {
   onPostDeleted: (postId: string) => void
 }
 
-function relativeDate(value: string) {
-  return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(
+function relativeDate(value: string, locale: string) {
+  return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
     Math.round((new Date(value).getTime() - Date.now()) / 60_000),
     'minute',
   )
@@ -29,6 +30,7 @@ export default function LivePostCard({
   onPostUpdated,
   onPostDeleted,
 }: LivePostCardProps) {
+  const { language, t } = usePreferences()
   const [comments, setComments] = useState<Comment[]>([])
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState('')
@@ -60,7 +62,7 @@ export default function LivePostCard({
       setComments(page.items)
       setShowComments(true)
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải bình luận.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
     }
   }
 
@@ -71,7 +73,7 @@ export default function LivePostCard({
         : await postsApi.setReaction(post.id, 'like')
       onPostUpdated(updatedPost)
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật cảm xúc.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReaction'))
     }
   }
 
@@ -85,12 +87,12 @@ export default function LivePostCard({
       setCommentText('')
       onPostUpdated({ ...post, commentCount: post.commentCount + 1 })
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể thêm bình luận.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableCreateComment'))
     }
   }
 
   const editComment = async (comment: Comment) => {
-    const content = window.prompt('Edit comment', comment.content)
+    const content = window.prompt(t('editCommentPrompt'), comment.content)
     if (content === null || !content.trim()) return
 
     try {
@@ -99,24 +101,24 @@ export default function LivePostCard({
         item.id === updatedComment.id ? updatedComment : item,
       ))
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể sửa bình luận.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableEditComment'))
     }
   }
 
   const deleteComment = async (comment: Comment) => {
-    if (!window.confirm('Delete this comment?')) return
+    if (!window.confirm(t('deleteCommentConfirm'))) return
 
     try {
       await postsApi.deleteComment(comment.id)
       setComments((currentComments) => currentComments.filter((item) => item.id !== comment.id))
       onPostUpdated({ ...post, commentCount: Math.max(0, post.commentCount - 1) })
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể xóa bình luận.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableDeleteComment'))
     }
   }
 
   const editPost = async () => {
-    const content = window.prompt('Edit post', post.content)
+    const content = window.prompt(t('editPostPrompt'), post.content)
     if (content === null || !content.trim()) return
 
     try {
@@ -126,18 +128,18 @@ export default function LivePostCard({
         mediaIds: post.mediaIds,
       }))
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể sửa bài viết.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableEditPost'))
     }
   }
 
   const deletePost = async () => {
-    if (!window.confirm('Delete this post?')) return
+    if (!window.confirm(t('deletePostConfirm'))) return
 
     try {
       await postsApi.delete(post.id)
       onPostDeleted(post.id)
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể xóa bài viết.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableDeletePost'))
     }
   }
 
@@ -148,13 +150,13 @@ export default function LivePostCard({
           {author?.avatarUrl ? <img src={resolveProfileImageUrl(author.avatarUrl)} alt="" className="w-full h-full object-cover" /> : author?.displayName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <Link to={`/profile/${post.authorUserId}`} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{author?.displayName ?? 'User'}</Link>
-          <p className="text-xs text-text-muted">@{author?.username ?? post.authorUserId.slice(0, 8)} · {relativeDate(post.createdAtUtc)}</p>
+          <Link to={`/profile/${post.authorUserId}`} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{author?.displayName ?? t('user')}</Link>
+          <p className="text-xs text-text-muted">@{author?.username ?? post.authorUserId.slice(0, 8)} · {relativeDate(post.createdAtUtc, language === 'vi' ? 'vi-VN' : 'en-US')}</p>
         </div>
         {isAuthor ? (
           <div className="flex gap-1">
-            <button type="button" onClick={() => void editPost()} className="text-xs text-text-muted hover:text-text bg-transparent border-none cursor-pointer">Edit</button>
-            <button type="button" onClick={() => void deletePost()} className="text-xs text-[#ff8a9b] bg-transparent border-none cursor-pointer">Delete</button>
+            <button type="button" onClick={() => void editPost()} className="text-xs text-text-muted hover:text-text bg-transparent border-none cursor-pointer">{t('edit')}</button>
+            <button type="button" onClick={() => void deletePost()} className="text-xs text-[#ff8a9b] bg-transparent border-none cursor-pointer">{t('delete')}</button>
           </div>
         ) : (
           <ReportButton targetType="post" targetId={post.id} className="border-none bg-transparent text-xs text-text-muted hover:text-[#ff8a9b]" />
@@ -167,25 +169,25 @@ export default function LivePostCard({
           {media.map((item) => item.mediaType === 'video' ? (
             <video key={item.mediaId} controls preload="metadata" className="max-h-[520px] w-full rounded-lg bg-surface-2">
               <source src={item.url} type={item.contentType} />
-              Your browser does not support video playback.
+              {t('browserNoVideo')}
             </video>
           ) : (
-            <img key={item.mediaId} src={item.url} alt="Post attachment" className="max-h-[520px] w-full rounded-lg object-cover bg-surface-2" />
+            <img key={item.mediaId} src={item.url} alt={t('postAttachment')} className="max-h-[520px] w-full rounded-lg object-cover bg-surface-2" />
           ))}
         </div>
       )}
       {error && <p className="text-xs text-[#ff8a9b]">{error}</p>}
 
       <div className="flex items-center justify-between text-xs text-text-muted border-t border-border pt-2">
-        <span>{likeCount > 0 ? `${likeCount} likes` : ''}</span>
-        <span>{post.commentCount} comments</span>
+        <span>{likeCount > 0 ? `${likeCount} ${t('likes')}` : ''}</span>
+        <span>{post.commentCount} {t('comments')}</span>
       </div>
       <div className="grid grid-cols-2 gap-1 border-t border-border pt-1">
         <button type="button" onClick={() => void toggleLike()} className={`py-2 rounded-lg border-none cursor-pointer ${isLiked ? 'text-primary bg-primary/10' : 'text-text-muted bg-transparent hover:bg-surface-2'}`}>
-          👍 {isLiked ? 'Liked' : 'Like'}
+          👍 {isLiked ? t('liked') : t('like')}
         </button>
         <button type="button" onClick={() => void (showComments ? setShowComments(false) : loadComments())} className="py-2 rounded-lg text-text-muted hover:bg-surface-2 bg-transparent border-none cursor-pointer">
-          💬 Comment
+          💬 {t('comment')}
         </button>
       </div>
       {showComments && (
@@ -195,15 +197,15 @@ export default function LivePostCard({
               <p className="flex-1 text-sm text-text whitespace-pre-wrap">{comment.content}</p>
               {comment.authorUserId === currentUserId && (
                 <div className="flex gap-1">
-                  <button type="button" onClick={() => void editComment(comment)} className="bg-transparent border-none text-xs text-text-muted hover:text-text cursor-pointer">Edit</button>
-                  <button type="button" onClick={() => void deleteComment(comment)} className="bg-transparent border-none text-xs text-[#ff8a9b] cursor-pointer">Delete</button>
+                  <button type="button" onClick={() => void editComment(comment)} className="bg-transparent border-none text-xs text-text-muted hover:text-text cursor-pointer">{t('edit')}</button>
+                  <button type="button" onClick={() => void deleteComment(comment)} className="bg-transparent border-none text-xs text-[#ff8a9b] cursor-pointer">{t('delete')}</button>
                 </div>
               )}
             </div>
           ))}
           <form onSubmit={(event) => void createComment(event)} className="flex gap-2">
-            <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Write a comment" className="min-w-0 flex-1 bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text outline-none" />
-            <button className="px-3 rounded-lg bg-primary text-white border-none cursor-pointer text-sm">Send</button>
+            <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder={t('writeComment')} className="min-w-0 flex-1 bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text outline-none" />
+            <button className="px-3 rounded-lg bg-primary text-white border-none cursor-pointer text-sm">{t('send')}</button>
           </form>
         </div>
       )}

@@ -7,11 +7,13 @@ import type { Post } from '../../api/posts'
 import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
+import { usePreferences } from '../../preferences'
 import LivePostCard from './components/LivePostCard'
 import NewPostBox from './components/NewPostBox'
 
 export default function FeedPage() {
   const { session } = useAuth()
+  const { t } = usePreferences()
   const [posts, setPosts] = useState<Post[]>([])
   const [authors, setAuthors] = useState<Record<string, UserProfile>>({})
   const [isLoading, setIsLoading] = useState(true)
@@ -96,8 +98,8 @@ export default function FeedPage() {
         {/* Posts */}
         <div className="flex flex-col gap-4">
           {error && <p className="rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]">{error}</p>}
-          {isLoading && <p className="text-sm text-text-muted">Loading feed...</p>}
-          {!isLoading && posts.length === 0 && !error && <p className="text-sm text-text-muted">No posts yet.</p>}
+          {isLoading && <p className="text-sm text-text-muted">{t('loadingFeed')}</p>}
+          {!isLoading && posts.length === 0 && !error && <p className="text-sm text-text-muted">{t('noPostsYet')}</p>}
           {posts.map((post) => (
             <LivePostCard
               key={post.id}
@@ -115,7 +117,7 @@ export default function FeedPage() {
               disabled={isLoadingMore}
               className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
             >
-              {isLoadingMore ? 'Loading...' : 'Load more posts'}
+              {isLoadingMore ? t('loading') : t('loadMorePosts')}
             </button>
           )}
         </div>
@@ -124,7 +126,7 @@ export default function FeedPage() {
       <aside className="w-[300px] xl:w-[340px] shrink-0 hidden lg:flex flex-col">
         <div className="sticky top-14 p-2 flex flex-col gap-5 h-[calc(100vh-56px)] scroll-smooth overflow-y-auto">
           <section>
-            <h2 className="font-heading font-bold text-[15px] text-text mb-3">People you may know</h2>
+            <h2 className="font-heading font-bold text-[15px] text-text mb-3">{t('peopleYouMayKnow')}</h2>
             <div className="flex flex-col gap-3">
               {suggestedUsers.map((user) => (
                 <div
@@ -138,16 +140,16 @@ export default function FeedPage() {
                     <p className="text-[13px] font-semibold text-text truncate">{user.displayName}</p>
                     <p className="text-[11px] text-text-muted truncate">@{user.username}</p>
                   </div>
-                  <Link to={`/profile/${user.userId}`} className="px-3 py-1 rounded-full text-[12px] font-semibold text-primary border border-primary/30 bg-surface-2 hover:bg-primary hover:text-white hover:border-transparent transition-all no-underline">View</Link>
+                  <Link to={`/profile/${user.userId}`} className="px-3 py-1 rounded-full text-[12px] font-semibold text-primary border border-primary/30 bg-surface-2 hover:bg-primary hover:text-white hover:border-transparent transition-all no-underline">{t('view')}</Link>
                 </div>
               ))}
-              {suggestedUsers.length === 0 && <p className="text-sm text-text-muted">No suggestions yet.</p>}
+              {suggestedUsers.length === 0 && <p className="text-sm text-text-muted">{t('noSuggestionsYet')}</p>}
             </div>
           </section>
 
           {/* Footer */}
           <p className="text-[11px] text-text-light leading-relaxed">
-            Terms · Privacy · Cookies · Ads info · More · © 2026 Fookbase
+            {t('terms')} · {t('privacy')} · {t('cookies')} · {t('adsInfo')} · {t('more')} · © 2026 Fookbase
           </p>
         </div>
       </aside>

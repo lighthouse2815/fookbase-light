@@ -7,15 +7,16 @@ import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { useRealtime } from '../../realtime/useRealtime'
+import { usePreferences } from '../../preferences'
 
-function formatTimestamp(value: string) {
+function formatTimestamp(value: string, locale: string, nowLabel: string) {
   const date = new Date(value)
   const diffMinutes = Math.floor((Date.now() - date.getTime()) / 60_000)
-  if (diffMinutes < 1) return 'now'
+  if (diffMinutes < 1) return nowLabel
   if (diffMinutes < 60) return `${diffMinutes}m`
   if (diffMinutes < 1_440) return `${Math.floor(diffMinutes / 60)}h`
   if (diffMinutes < 10_080) return `${Math.floor(diffMinutes / 1_440)}d`
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
+  return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(date)
 }
 
 function avatarLabel(profile: UserProfile) {
@@ -24,6 +25,8 @@ function avatarLabel(profile: UserProfile) {
 
 export default function MessagesPage() {
   const { session } = useAuth()
+  const { language, t } = usePreferences()
+  const locale = language === 'vi' ? 'vi-VN' : 'en-US'
   const [searchParams] = useSearchParams()
   const requestedConversationId = searchParams.get('conversation')
   const { incomingMessages, markConversationRead, readAtByConversation, sendTyping, typingConversationIds } = useRealtime()
@@ -67,7 +70,7 @@ export default function MessagesPage() {
     const timeoutId = window.setTimeout(() => {
       void loadConversations()
         .catch((requestError: unknown) => {
-          if (active) setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải cuộc trò chuyện.')
+          if (active) setError(requestError instanceof ApiError ? requestError.message : t('unableLoadConversations'))
         })
         .finally(() => {
           if (active) setIsLoading(false)
@@ -78,7 +81,7 @@ export default function MessagesPage() {
       active = false
       window.clearTimeout(timeoutId)
     }
-  }, [loadConversations])
+  }, [loadConversations, t])
 
   useEffect(() => {
     if (!activeConversationId) return
@@ -95,11 +98,11 @@ export default function MessagesPage() {
         ))
       })
       .catch((requestError: unknown) => {
-        if (active) setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải tin nhắn.')
+        if (active) setError(requestError instanceof ApiError ? requestError.message : t('unableLoadMessages'))
       })
 
     return () => { active = false }
-  }, [activeConversationId, markConversationRead])
+  }, [activeConversationId, markConversationRead, t])
 
   useEffect(() => {
     if (incomingMessages.length === 0) return
@@ -214,7 +217,7 @@ export default function MessagesPage() {
       setNewMessageQuery('')
       setNewMessageResults([])
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể bắt đầu cuộc trò chuyện.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableCreateConversation'))
     }
   }
 
@@ -232,7 +235,7 @@ export default function MessagesPage() {
         .sort((left, right) => Date.parse(right.lastMessageAtUtc) - Date.parse(left.lastMessageAtUtc)))
       setDraft('')
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể gửi tin nhắn.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableSendMessage'))
     } finally {
       setIsSending(false)
     }
@@ -260,17 +263,17 @@ export default function MessagesPage() {
     <div className="flex h-[calc(100vh-56px)] bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
       <aside className="w-[280px] shrink-0 border-r border-border bg-surface flex flex-col h-full max-sm:w-16">
         <div className="px-4 py-4 border-b border-border flex items-center justify-between">
-          <h1 className="font-heading font-bold text-[17px] text-text max-sm:hidden">Messages</h1>
-          <button type="button" onClick={() => setIsCreatingConversation((current) => !current)} className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center text-text-muted hover:bg-surface-3 transition-colors cursor-pointer border-none" title="New message">✏️</button>
+          <h1 className="font-heading font-bold text-[17px] text-text max-sm:hidden">{t('messages')}</h1>
+          <button type="button" onClick={() => setIsCreatingConversation((current) => !current)} className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center text-text-muted hover:bg-surface-3 transition-colors cursor-pointer border-none" title={t('newMessage')}>✏️</button>
         </div>
 
         <div className="px-3 py-2 border-b border-border max-sm:hidden">
-          <input type="text" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search messages..." className="w-full bg-surface-2 rounded-full text-[13px] text-text px-3.5 py-2 outline-none placeholder:text-text-light border border-border focus:input-focus transition-all" />
+          <input type="text" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('searchMessages')} className="w-full bg-surface-2 rounded-full text-[13px] text-text px-3.5 py-2 outline-none placeholder:text-text-light border border-border focus:input-focus transition-all" />
         </div>
 
         {isCreatingConversation && (
           <div className="p-3 border-b border-border max-sm:hidden">
-            <input autoFocus type="search" value={newMessageQuery} onChange={(event) => setNewMessageQuery(event.target.value)} placeholder="Find a person..." className="w-full bg-surface-2 rounded-lg text-[13px] text-text px-3 py-2 outline-none placeholder:text-text-light border border-border focus:input-focus" />
+            <input autoFocus type="search" value={newMessageQuery} onChange={(event) => setNewMessageQuery(event.target.value)} placeholder={t('findPerson')} className="w-full bg-surface-2 rounded-lg text-[13px] text-text px-3 py-2 outline-none placeholder:text-text-light border border-border focus:input-focus" />
             {newMessageResults.map((profile) => (
               <button key={profile.userId} type="button" onClick={() => void startConversation(profile)} className="w-full text-left flex gap-2 items-center px-1 py-2 hover:bg-surface-2 rounded-lg cursor-pointer border-none bg-transparent">
                 <Avatar profile={profile} size="small" />
@@ -281,8 +284,8 @@ export default function MessagesPage() {
         )}
 
         <div className="flex-1 scroll-smooth overflow-y-auto">
-          {isLoading && <p className="px-4 py-3 text-sm text-text-muted max-sm:hidden">Loading conversations...</p>}
-          {!isLoading && visibleConversations.length === 0 && <p className="px-4 py-3 text-sm text-text-muted max-sm:hidden">No conversations yet.</p>}
+          {isLoading && <p className="px-4 py-3 text-sm text-text-muted max-sm:hidden">{t('loadingConversations')}</p>}
+          {!isLoading && visibleConversations.length === 0 && <p className="px-4 py-3 text-sm text-text-muted max-sm:hidden">{t('noConversations')}</p>}
           {visibleConversations.map((conversation) => {
             const profile = profiles[conversation.participantUserId]
             const isActive = conversation.id === activeConversationId
@@ -290,8 +293,8 @@ export default function MessagesPage() {
               <button key={conversation.id} type="button" onClick={() => setActiveConversationId(conversation.id)} className={['w-full text-left flex items-center gap-3 px-4 py-3 border-b border-border transition-colors cursor-pointer', isActive ? 'bg-surface-2 border-l-2 border-l-primary' : 'bg-transparent border-l-2 border-l-transparent hover:bg-surface-2'].join(' ')}>
                 {profile ? <Avatar profile={profile} /> : <div className="w-10 h-10 rounded-full bg-surface-3 shrink-0" />}
                 <div className="flex-1 min-w-0 max-sm:hidden">
-                  <div className="flex items-center justify-between mb-0.5"><span className={`text-[13px] truncate ${conversation.unreadCount > 0 ? 'font-semibold' : 'font-medium'} text-text`}>{profile?.displayName ?? 'Unknown user'}</span><span className="text-[11px] text-text-light shrink-0 ml-1">{formatTimestamp(conversation.lastMessageAtUtc)}</span></div>
-                  <div className="flex items-center justify-between"><p className={`text-[12px] truncate ${conversation.unreadCount > 0 ? 'text-text font-medium' : 'text-text-muted'}`}>{conversation.lastMessage?.content ?? 'Start a conversation'}</p>{conversation.unreadCount > 0 && <span className="ml-1 min-w-[18px] h-[18px] rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1.5 shrink-0">{conversation.unreadCount}</span>}</div>
+                  <div className="flex items-center justify-between mb-0.5"><span className={`text-[13px] truncate ${conversation.unreadCount > 0 ? 'font-semibold' : 'font-medium'} text-text`}>{profile?.displayName ?? t('unknownUser')}</span><span className="text-[11px] text-text-light shrink-0 ml-1">{formatTimestamp(conversation.lastMessageAtUtc, locale, t('now'))}</span></div>
+                  <div className="flex items-center justify-between"><p className={`text-[12px] truncate ${conversation.unreadCount > 0 ? 'text-text font-medium' : 'text-text-muted'}`}>{conversation.lastMessage?.content ?? t('startConversation')}</p>{conversation.unreadCount > 0 && <span className="ml-1 min-w-[18px] h-[18px] rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1.5 shrink-0">{conversation.unreadCount}</span>}</div>
                 </div>
               </button>
             )
@@ -301,10 +304,10 @@ export default function MessagesPage() {
 
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-bg">
         {!activeConversation || !partner ? (
-          <div className="flex-1 flex items-center justify-center text-sm text-text-muted">Select a conversation or create a new one.</div>
+          <div className="flex-1 flex items-center justify-center text-sm text-text-muted">{t('selectConversation')}</div>
         ) : (
           <>
-            <div className="px-5 py-4 border-b border-border bg-surface flex items-center gap-3"><Avatar profile={partner} /><div><div className="text-[14px] font-semibold text-text">{partner.displayName}</div><div className="text-[12px] text-text-light">@{partner.username}</div></div><button type="button" onClick={() => void loadConversations().catch(() => undefined)} className="ml-auto text-sm text-primary bg-transparent border-none cursor-pointer">Refresh</button></div>
+            <div className="px-5 py-4 border-b border-border bg-surface flex items-center gap-3"><Avatar profile={partner} /><div><div className="text-[14px] font-semibold text-text">{partner.displayName}</div><div className="text-[12px] text-text-light">@{partner.username}</div></div><button type="button" onClick={() => void loadConversations().catch(() => undefined)} className="ml-auto text-sm text-primary bg-transparent border-none cursor-pointer">{t('refresh')}</button></div>
             <div className="flex-1 scroll-smooth overflow-y-auto p-5 flex flex-col gap-3">
               {messages.map((message, index) => {
                 const isMine = message.senderUserId === session!.user.id
@@ -316,21 +319,21 @@ export default function MessagesPage() {
                     && candidate.createdAtUtc > message.createdAtUtc)
                 return <div key={message.id} className={`flex gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`} style={{ animation: `scale-in 0.2s ease ${index * 0.015}s both` }}>
                   {!isMine && <Avatar profile={partner} size="small" />}
-                  <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}><div className={`px-4 py-2.5 text-[14px] leading-relaxed ${isMine ? 'bubble-mine' : 'bubble-theirs'}`}>{message.content}</div><span className="text-[11px] text-text-light px-1">{formatTimestamp(message.createdAtUtc)}{isLatestReadMessage ? ' · Seen' : ''}</span></div>
+                  <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}><div className={`px-4 py-2.5 text-[14px] leading-relaxed ${isMine ? 'bubble-mine' : 'bubble-theirs'}`}>{message.content}</div><span className="text-[11px] text-text-light px-1">{formatTimestamp(message.createdAtUtc, locale, t('now'))}{isLatestReadMessage ? ` · ${t('seen')}` : ''}</span></div>
                 </div>
               })}
               {typingConversationIds.has(activeConversation.id) && (
                 <div className="flex items-end gap-2">
                   <Avatar profile={partner} size="small" />
-                  <div className="bubble-theirs px-4 py-3 flex items-center gap-1" aria-label={`${partner.displayName} is typing`}>
+                  <div className="bubble-theirs px-4 py-3 flex items-center gap-1" aria-label={`${partner.displayName} ${t('isTyping')}`}>
                     {[0, 1, 2].map((dot) => <span key={dot} className="w-2 h-2 rounded-full bg-text-muted inline-block" style={{ animation: `pulse-dot 1.2s ease ${dot * 0.2}s infinite` }} />)}
                   </div>
                 </div>
               )}
-              {messages.length === 0 && <p className="text-sm text-text-muted">No messages yet. Say hello.</p>}
+              {messages.length === 0 && <p className="text-sm text-text-muted">{t('noMessagesSayHello')}</p>}
               <div ref={messagesEndRef} />
             </div>
-            <div className="px-4 py-3 border-t border-border bg-surface"><div className="flex items-center gap-3 bg-surface-2 rounded-full px-4 py-2 border border-border focus-within:border-border-focus transition-colors"><textarea rows={1} maxLength={5000} value={draft} disabled={isSending} onChange={(event) => handleDraftChange(event.target.value)} onKeyDown={handleKeyDown} placeholder="Message..." className="flex-1 bg-transparent border-none text-[14px] text-text outline-none resize-none placeholder:text-text-light py-1 leading-normal disabled:opacity-50" />{draft.trim() && <button type="button" onClick={() => void handleSend()} disabled={isSending} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white cursor-pointer border-none shrink-0 hover:bg-primary-dark transition-all disabled:opacity-50" title="Send message">▶</button>}</div></div>
+            <div className="px-4 py-3 border-t border-border bg-surface"><div className="flex items-center gap-3 bg-surface-2 rounded-full px-4 py-2 border border-border focus-within:border-border-focus transition-colors"><textarea rows={1} maxLength={5000} value={draft} disabled={isSending} onChange={(event) => handleDraftChange(event.target.value)} onKeyDown={handleKeyDown} placeholder={t('message')} className="flex-1 bg-transparent border-none text-[14px] text-text outline-none resize-none placeholder:text-text-light py-1 leading-normal disabled:opacity-50" />{draft.trim() && <button type="button" onClick={() => void handleSend()} disabled={isSending} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white cursor-pointer border-none shrink-0 hover:bg-primary-dark transition-all disabled:opacity-50" title={t('sendMessage')}>▶</button>}</div></div>
           </>
         )}
         {error && <p className="absolute bottom-4 right-4 max-w-sm rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]">{error}</p>}

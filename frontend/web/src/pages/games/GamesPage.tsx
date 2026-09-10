@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { usePreferences } from '../../preferences'
 
 type Mark = 'X' | 'O'
 type Cell = Mark | null
@@ -57,6 +58,7 @@ const chooseComputerMove = (board: Cell[]) => {
 }
 
 export default function GamesPage() {
+  const { t } = usePreferences()
   const [board, setBoard] = useState<Cell[]>(createBoard)
   const [turn, setTurn] = useState<Mark>('X')
   const [winner, setWinner] = useState<Mark | null>(null)
@@ -65,11 +67,11 @@ export default function GamesPage() {
 
   const gameIsOver = Boolean(winner) || isDraw
   const status = useMemo(() => {
-    if (winner === 'X') return 'You won this round!'
-    if (winner === 'O') return 'The computer won this round.'
-    if (isDraw) return 'It is a draw.'
-    return turn === 'X' ? 'Your turn — choose a square.' : 'Computer is thinking…'
-  }, [isDraw, turn, winner])
+    if (winner === 'X') return t('youWonRound')
+    if (winner === 'O') return t('computerWonRound')
+    if (isDraw) return t('drawRound')
+    return turn === 'X' ? t('yourTurn') : t('computerThinking')
+  }, [isDraw, t, turn, winner])
 
   const finishMove = (nextBoard: Cell[], mark: Mark) => {
     const roundWinner = getWinner(nextBoard)
@@ -135,17 +137,17 @@ export default function GamesPage() {
     <main className="min-h-screen bg-bg p-4 xl:p-6" style={{ animation: 'fade-in 0.25s ease both' }}>
       <div className="mx-auto max-w-5xl">
         <header className="mb-6">
-          <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">Games</p>
-          <h1 className="font-heading text-3xl font-bold text-text">Take a quick break</h1>
-          <p className="mt-2 text-text-muted">Play a round of Tic-tac-toe without leaving Fookbase.</p>
+          <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">{t('games')}</p>
+          <h1 className="font-heading text-3xl font-bold text-text">{t('quickBreak')}</h1>
+          <p className="mt-2 text-text-muted">{t('gamesDescription')}</p>
         </header>
 
         <section className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h2 className="font-heading text-xl font-bold text-text">Tic-tac-toe</h2>
-                <p className="mt-1 text-sm text-text-muted">You play X. The computer plays O.</p>
+                <h2 className="font-heading text-xl font-bold text-text">{t('ticTacToe')}</h2>
+                <p className="mt-1 text-sm text-text-muted">{t('youPlayX')}</p>
               </div>
               <span
                 className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
@@ -161,7 +163,7 @@ export default function GamesPage() {
                 <button
                   key={index}
                   type="button"
-                  aria-label={`Square ${index + 1}${cell ? `: ${cell}` : ''}`}
+                  aria-label={`${t('square')} ${index + 1}${cell ? `: ${cell}` : ''}`}
                   disabled={turn !== 'X' || gameIsOver || Boolean(cell)}
                   onClick={() => playMove(index)}
                   className={`aspect-square rounded-2xl border border-border bg-surface text-4xl font-black shadow-sm transition sm:text-5xl ${
@@ -175,39 +177,39 @@ export default function GamesPage() {
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button type="button" onClick={resetRound} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark">
-                New round
+                {t('newRound')}
               </button>
               <button type="button" onClick={resetGame} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text transition hover:bg-surface-hover">
-                Reset score
+                {t('resetScore')}
               </button>
             </div>
           </div>
 
           <aside className="space-y-4">
             <div className="rounded-3xl border border-border bg-surface p-5 card-shadow">
-              <h2 className="font-heading text-lg font-bold text-text">Scoreboard</h2>
+              <h2 className="font-heading text-lg font-bold text-text">{t('scoreboard')}</h2>
               <dl className="mt-4 space-y-3">
                 <div className="flex items-center justify-between rounded-2xl bg-primary/15 px-4 py-3">
-                  <dt className="font-medium text-primary-light">You (X)</dt>
+                  <dt className="font-medium text-primary-light">{t('you')} (X)</dt>
                   <dd className="text-xl font-bold text-primary-light">{score.player}</dd>
                 </div>
                 <div className="flex items-center justify-between rounded-2xl bg-bg px-4 py-3">
-                  <dt className="font-medium text-text-muted">Draws</dt>
+                  <dt className="font-medium text-text-muted">{t('draws')}</dt>
                   <dd className="text-xl font-bold text-text">{score.draw}</dd>
                 </div>
                 <div className="flex items-center justify-between rounded-2xl bg-secondary/15 px-4 py-3">
-                  <dt className="font-medium text-secondary">Computer (O)</dt>
+                  <dt className="font-medium text-secondary">{t('computer')} (O)</dt>
                   <dd className="text-xl font-bold text-secondary">{score.computer}</dd>
                 </div>
               </dl>
             </div>
 
             <div className="rounded-3xl border border-border bg-surface p-5 card-shadow">
-              <h2 className="font-heading text-lg font-bold text-text">How to play</h2>
+              <h2 className="font-heading text-lg font-bold text-text">{t('howToPlay')}</h2>
               <ol className="mt-3 space-y-2 text-sm leading-6 text-text-muted">
-                <li>1. Choose an empty square to place an X.</li>
-                <li>2. Get three marks in a row, column, or diagonal.</li>
-                <li>3. Start a new round anytime and keep your score.</li>
+                <li>1. {t('gameRuleOne')}</li>
+                <li>2. {t('gameRuleTwo')}</li>
+                <li>3. {t('gameRuleThree')}</li>
               </ol>
             </div>
           </aside>

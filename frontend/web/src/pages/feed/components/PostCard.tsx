@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react'
 import type { Post, User } from '../../../data/mockData'
 import { formatNumber, formatTimestamp } from '../../../data/mockData'
 import LikeButton from '../../../shared/components/LikeButton'
+import { usePreferences } from '../../../preferences'
 
 interface PostCardProps {
   post: Post
@@ -18,6 +19,7 @@ const badgeClass: Record<string, string> = {
 }
 
 export default function PostCard({ post, author, style }: PostCardProps) {
+  const { t } = usePreferences()
   const [liked, setLiked] = useState(post.isLiked)
   const [reposted, setReposted] = useState(post.isReposted)
   const [likeCount, setLikeCount] = useState(post.likes)
@@ -73,7 +75,7 @@ export default function PostCard({ post, author, style }: PostCardProps) {
           type="button"
           className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted
                      hover:bg-surface-2 hover:text-text transition-colors cursor-pointer border-none"
-          title="More options"
+          title={t('moreOptions')}
         >
           •••
         </button>
@@ -129,8 +131,8 @@ export default function PostCard({ post, author, style }: PostCardProps) {
             )}
           </div>
           <div className="flex items-center gap-3 text-[12px]">
-            {post.comments > 0 && <span>{formatNumber(post.comments)} comments</span>}
-            {repostCount > 0 && <span>{formatNumber(repostCount)} shares</span>}
+            {post.comments > 0 && <span>{formatNumber(post.comments)} {t('comments')}</span>}
+            {repostCount > 0 && <span>{formatNumber(repostCount)} {t('shares')}</span>}
           </div>
         </div>
       )}
@@ -148,7 +150,7 @@ export default function PostCard({ post, author, style }: PostCardProps) {
                      transition-colors cursor-pointer bg-transparent border-none"
         >
           <span className="text-base">💬</span>
-          <span>Comment</span>
+          <span>{t('comment')}</span>
         </button>
 
         {/* Share / Repost */}
@@ -161,10 +163,9 @@ export default function PostCard({ post, author, style }: PostCardProps) {
                      ${reposted ? 'text-secondary font-semibold' : 'text-text-muted hover:text-text'}`}
         >
           <span className="text-base">↗️</span>
-          <span>{reposted ? 'Shared' : 'Share'}</span>
+          <span>{reposted ? t('shared') : t('share')}</span>
         </button>
       </div>
     </article>
   )
 }
-

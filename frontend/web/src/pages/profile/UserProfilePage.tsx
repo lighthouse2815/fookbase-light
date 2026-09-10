@@ -8,12 +8,14 @@ import type { Post } from '../../api/posts'
 import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
+import { usePreferences } from '../../preferences'
 import ReportButton from '../../shared/components/ReportButton'
 import LivePostCard from '../feed/components/LivePostCard'
 
 export default function UserProfilePage() {
   const { userId } = useParams()
   const { session } = useAuth()
+  const { t } = usePreferences()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [relationship, setRelationship] = useState<RelationshipStatus | null>(null)
   const [isBlockedByMe, setIsBlockedByMe] = useState(false)
@@ -42,11 +44,11 @@ export default function UserProfilePage() {
       setPosts(userPosts.items)
       setIsBlockedByMe(blockedUsers.items.some((blockedUser) => blockedUser.userId === userId))
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải hồ sơ.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableLoadProfile'))
     } finally {
       setIsLoading(false)
     }
-  }, [userId])
+  }, [t, userId])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -66,7 +68,7 @@ export default function UserProfilePage() {
       await action()
       await loadProfile()
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật mối quan hệ.')
+      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateRelationship'))
     } finally {
       setIsUpdating(false)
     }
@@ -78,30 +80,30 @@ export default function UserProfilePage() {
     const actionClass = 'px-4 py-2 rounded-lg font-semibold text-sm border-none cursor-pointer disabled:opacity-60'
     switch (relationship.status) {
       case 'none':
-        return <button type="button" onClick={() => void updateRelationship(() => friendsApi.sendRequest(userId))} disabled={isUpdating} className={`${actionClass} bg-primary hover:bg-primary-dark text-white`}>Add friend</button>
+        return <button type="button" onClick={() => void updateRelationship(() => friendsApi.sendRequest(userId))} disabled={isUpdating} className={`${actionClass} bg-primary hover:bg-primary-dark text-white`}>{t('addFriend')}</button>
       case 'request_sent':
-        return <button type="button" onClick={() => void updateRelationship(() => friendsApi.cancelRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>Cancel request</button>
+        return <button type="button" onClick={() => void updateRelationship(() => friendsApi.cancelRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('cancelRequest')}</button>
       case 'request_received':
         return (
           <div className="flex gap-2">
-            <button type="button" onClick={() => void updateRelationship(() => friendsApi.acceptRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-primary hover:bg-primary-dark text-white`}>Accept</button>
-            <button type="button" onClick={() => void updateRelationship(() => friendsApi.declineRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>Decline</button>
+            <button type="button" onClick={() => void updateRelationship(() => friendsApi.acceptRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-primary hover:bg-primary-dark text-white`}>{t('accept')}</button>
+            <button type="button" onClick={() => void updateRelationship(() => friendsApi.declineRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('decline')}</button>
           </div>
         )
       case 'friends':
-        return <button type="button" onClick={() => void updateRelationship(() => friendsApi.unfriend(userId))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>Unfriend</button>
+        return <button type="button" onClick={() => void updateRelationship(() => friendsApi.unfriend(userId))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('unfriend')}</button>
       case 'blocked':
         return isBlockedByMe
-          ? <button type="button" onClick={() => void updateRelationship(() => friendsApi.unblock(userId))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>Unblock</button>
-          : <span className="text-sm text-text-muted">Relationship unavailable</span>
+          ? <button type="button" onClick={() => void updateRelationship(() => friendsApi.unblock(userId))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('unblock')}</button>
+          : <span className="text-sm text-text-muted">{t('relationshipUnavailable')}</span>
       default:
-        return <span className="text-sm text-text-muted">Relationship unavailable</span>
+        return <span className="text-sm text-text-muted">{t('relationshipUnavailable')}</span>
     }
   }
 
   return (
     <div className="min-h-screen bg-bg px-4 py-6 sm:px-8">
-      {isLoading && <p className="text-sm text-text-muted">Loading profile...</p>}
+      {isLoading && <p className="text-sm text-text-muted">{t('loadingProfile')}</p>}
       {error && <p className="mb-4 rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]">{error}</p>}
       {profile && (
         <div className="max-w-3xl mx-auto flex flex-col gap-5">
@@ -118,11 +120,11 @@ export default function UserProfilePage() {
                   <h1 className="font-heading font-bold text-2xl text-text">{profile.displayName}</h1>
                   <p className="text-sm text-text-muted">@{profile.username}</p>
                   {profile.bio && <p className="mt-3 whitespace-pre-wrap text-sm text-text">{profile.bio}</p>}
-                  <p className="mt-3 text-sm text-text-muted">{profile.currentCity ?? 'No city listed'} · {mutualFriendCount} mutual friends</p>
+                  <p className="mt-3 text-sm text-text-muted">{profile.currentCity ?? t('noCityListed')} · {mutualFriendCount} {t('mutualFriends')}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {renderRelationshipAction()}
-                  {relationship?.status !== 'blocked' && <button type="button" onClick={() => void updateRelationship(() => friendsApi.block(userId))} disabled={isUpdating} className="px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface-hover text-text border border-border font-semibold text-sm cursor-pointer disabled:opacity-60">Block</button>}
+                  {relationship?.status !== 'blocked' && <button type="button" onClick={() => void updateRelationship(() => friendsApi.block(userId))} disabled={isUpdating} className="px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface-hover text-text border border-border font-semibold text-sm cursor-pointer disabled:opacity-60">{t('block')}</button>}
                   <ReportButton targetType="user" targetId={userId} />
                 </div>
               </div>
@@ -130,8 +132,8 @@ export default function UserProfilePage() {
           </section>
 
           <section className="flex flex-col gap-4">
-            <h2 className="font-heading font-bold text-xl text-text">Posts</h2>
-            {posts.length === 0 && <p className="text-sm text-text-muted">No visible posts.</p>}
+            <h2 className="font-heading font-bold text-xl text-text">{t('posts')}</h2>
+            {posts.length === 0 && <p className="text-sm text-text-muted">{t('noVisiblePosts')}</p>}
             {posts.map((post) => (
               <LivePostCard
                 key={post.id}

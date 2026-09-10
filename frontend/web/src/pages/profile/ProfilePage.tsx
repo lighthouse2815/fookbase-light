@@ -11,6 +11,7 @@ import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { formatNumber } from '../../data/mockData'
+import { usePreferences } from '../../preferences'
 import LivePostCard from '../feed/components/LivePostCard'
 import NewPostBox from '../feed/components/NewPostBox'
 
@@ -21,13 +22,6 @@ interface ProfilePhoto {
   postId: string
   url: string
 }
-
-const TABS: { id: ProfileTab; label: string }[] = [
-  { id: 'posts', label: 'Posts' },
-  { id: 'about', label: 'About' },
-  { id: 'friends', label: 'Friends' },
-  { id: 'photos', label: 'Photos' },
-]
 
 const emptyFriendPage: PagedResponse<Friend> = {
   items: [],
@@ -54,6 +48,12 @@ function getProfileName(profile: UserProfile | undefined, userId: string) {
 
 export default function ProfilePage() {
   const { session, changePassword } = useAuth()
+  const { language, t } = usePreferences()
+  const locale = language === 'vi' ? 'vi-VN' : 'en-US'
+  const tabs: { id: ProfileTab; label: string }[] = [
+    { id: 'posts', label: t('posts') }, { id: 'about', label: t('about') },
+    { id: 'friends', label: t('friends') }, { id: 'photos', label: t('photos') },
+  ]
   const [tab, setTab] = useState<ProfileTab>('posts')
   const [friends, setFriends] = useState<PagedResponse<Friend>>(emptyFriendPage)
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([])
@@ -91,8 +91,8 @@ export default function ProfilePage() {
   const username = profile?.username ?? session!.user.username
   const initials = displayName.slice(0, 2).toUpperCase()
   const bio = profile?.bio ?? ''
-  const location = profile?.currentCity ?? 'Not set'
-  const joinedDate = profile ? new Date(profile.createdAt).toLocaleDateString() : '—'
+  const location = profile?.currentCity ?? t('notSet')
+  const joinedDate = profile ? new Date(profile.createdAt).toLocaleDateString(locale) : '—'
 
   const loadProfilePosts = useCallback(async (
     userId: string,
@@ -150,12 +150,12 @@ export default function ProfilePage() {
         loadProfilePhotos(currentProfile.userId),
       ])
     } catch (error) {
-      setProfileError(error instanceof ApiError ? error.message : 'Không thể tải hồ sơ.')
+      setProfileError(error instanceof ApiError ? error.message : t('unableLoadProfile'))
       setIsProfilePostsLoading(false)
     }
-  }, [loadProfilePhotos, loadProfilePosts])
+  }, [loadProfilePhotos, loadProfilePosts, t])
 
-  const loadRelationships = async (showLoading = true) => {
+  const loadRelationships = useCallback(async (showLoading = true) => {
     if (showLoading) {
       setIsRelationshipsLoading(true)
       setRelationshipError(null)
@@ -192,12 +192,12 @@ export default function ProfilePage() {
       setFriendProfiles(profiles)
     } catch (error) {
       setRelationshipError(
-        error instanceof ApiError ? error.message : 'Không thể tải dữ liệu bạn bè.',
+        error instanceof ApiError ? error.message : t('unableLoadFriends'),
       )
     } finally {
       setIsRelationshipsLoading(false)
     }
-  }
+  }, [t])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -205,7 +205,7 @@ export default function ProfilePage() {
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
-  }, [])
+  }, [loadRelationships])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -224,7 +224,7 @@ export default function ProfilePage() {
       await loadRelationships()
     } catch (error) {
       setRelationshipError(
-        error instanceof ApiError ? error.message : 'Không thể cập nhật mối quan hệ.',
+        error instanceof ApiError ? error.message : t('unableUpdateRelationship'),
       )
     } finally {
       setActionId(null)
@@ -254,7 +254,7 @@ export default function ProfilePage() {
       }))
       setFriendProfiles((currentProfiles) => ({ ...currentProfiles, ...profiles }))
     } catch (error) {
-      setRelationshipError(error instanceof ApiError ? error.message : 'Không thể tải thêm bạn bè.')
+      setRelationshipError(error instanceof ApiError ? error.message : t('unableLoadMoreFriends'))
     } finally {
       setIsLoadingMoreFriends(false)
     }
@@ -279,7 +279,7 @@ export default function ProfilePage() {
       }))
       setIsProfileEditing(false)
     } catch (error) {
-      setProfileError(error instanceof ApiError ? error.message : 'Không thể cập nhật hồ sơ.')
+      setProfileError(error instanceof ApiError ? error.message : t('unableUpdateProfile'))
     }
   }
 
@@ -298,7 +298,7 @@ export default function ProfilePage() {
   const uploadProfileMedia = async (kind: 'avatar' | 'cover', file: File) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type) || file.size > 20 * 1024 * 1024) {
-      setProfileError('Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP tối đa 20 MB.')
+      setProfileError(t('invalidProfilePhoto'))
       return
     }
 
@@ -314,7 +314,7 @@ export default function ProfilePage() {
       )
       setProfile(updatedProfile)
     } catch (error) {
-      setProfileError(error instanceof ApiError ? error.message : 'Không thể cập nhật ảnh hồ sơ.')
+      setProfileError(error instanceof ApiError ? error.message : t('unableUpdateProfilePhoto'))
     } finally {
       setProfileMediaUpload(null)
     }
@@ -341,9 +341,9 @@ export default function ProfilePage() {
       setCurrentPasswordDraft('')
       setNewPasswordDraft('')
       setConfirmPasswordDraft('')
-      setAccountSecurityNotice('Mật khẩu đã được đổi. Các phiên đăng nhập khác đã bị đăng xuất.')
+      setAccountSecurityNotice(t('passwordChanged'))
     } catch (error) {
-      setAccountSecurityError(error instanceof ApiError ? error.message : 'Không thể đổi mật khẩu.')
+      setAccountSecurityError(error instanceof ApiError ? error.message : t('unableChangePassword'))
     } finally {
       setIsChangingPassword(false)
     }
@@ -356,9 +356,9 @@ export default function ProfilePage() {
 
     try {
       await authApi.resendEmailVerification()
-      setAccountSecurityNotice('Email xác minh đã được gửi lại.')
+      setAccountSecurityNotice(t('verificationResent'))
     } catch (error) {
-      setAccountSecurityError(error instanceof ApiError ? error.message : 'Không thể gửi email xác minh.')
+      setAccountSecurityError(error instanceof ApiError ? error.message : t('unableResendVerification'))
     } finally {
       setIsResendingVerification(false)
     }
@@ -386,7 +386,7 @@ export default function ProfilePage() {
               {/* Camera icon button */}
               <button
                 type="button"
-                title="Update profile picture"
+                title={t('updateProfilePicture')}
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={profileMediaUpload !== null}
                 className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-surface-2 hover:bg-surface-hover
@@ -408,7 +408,7 @@ export default function ProfilePage() {
                        border border-border/60 transition-colors cursor-pointer shadow-md backdrop-blur-sm z-10 disabled:opacity-60"
           >
             <span>📷</span>
-            <span className="hidden sm:inline">{profileMediaUpload?.kind === 'cover' ? `Uploading ${profileMediaUpload.progress}%` : 'Edit cover photo'}</span>
+            <span className="hidden sm:inline">{profileMediaUpload?.kind === 'cover' ? `${t('uploading')} ${profileMediaUpload.progress}%` : t('editCoverPhoto')}</span>
           </button>
         </div>
 
@@ -435,11 +435,11 @@ export default function ProfilePage() {
               {/* Stats row: followers, following, posts - inline with dot separators */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-[14px] text-text-muted mt-2.5">
                 <span>
-                  <strong className="font-semibold text-text">{formatNumber(friends.total)}</strong> friends
+                  <strong className="font-semibold text-text">{formatNumber(friends.total)}</strong> {t('friendsCount')}
                 </span>
                 <span className="text-text-light font-bold">•</span>
                 <span>
-                  <strong className="font-semibold text-text">{formatNumber(profilePostsTotal)}</strong> posts
+                  <strong className="font-semibold text-text">{formatNumber(profilePostsTotal)}</strong> {t('posts').toLowerCase()}
                 </span>
               </div>
             </div>
@@ -452,7 +452,7 @@ export default function ProfilePage() {
                 className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
               >
                 <span>👥</span>
-                <span>Friends</span>
+                <span>{t('friends')}</span>
               </button>
 
               {/* Edit profile button: bg-surface-2 text-text rounded-lg, not a pill button */}
@@ -462,17 +462,17 @@ export default function ProfilePage() {
                 className="px-4 py-2 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
               >
                 <span>✏️</span>
-                <span>Edit profile</span>
+                <span>{t('editProfile')}</span>
               </button>
 
               {/* More options button */}
               <button
                 type="button"
-                title="Account security"
+                title={t('accountSecurity')}
                 onClick={() => setIsAccountSecurityOpen((current) => !current)}
                 className="h-9 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center justify-center px-3 transition-colors cursor-pointer border border-border"
               >
-                <span>Security</span>
+                <span>{t('security')}</span>
               </button>
             </div>
           </div>
@@ -480,18 +480,18 @@ export default function ProfilePage() {
           {profileError && <p className="mb-3 rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 px-3 py-2 text-sm text-[#ff8a9b]">{profileError}</p>}
           {isProfileEditing && (
             <form onSubmit={(event) => void saveProfile(event)} className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-border bg-surface-2/60 p-4">
-              <label className="flex flex-col gap-1 text-sm text-text">Display name
+              <label className="flex flex-col gap-1 text-sm text-text">{t('displayName')}
                 <input value={displayNameDraft} onChange={(event) => setDisplayNameDraft(event.target.value)} required className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
               </label>
-              <label className="flex flex-col gap-1 text-sm text-text">Current city
+              <label className="flex flex-col gap-1 text-sm text-text">{t('currentCity')}
                 <input value={cityDraft} onChange={(event) => setCityDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
               </label>
-              <label className="sm:col-span-2 flex flex-col gap-1 text-sm text-text">Bio
+              <label className="sm:col-span-2 flex flex-col gap-1 text-sm text-text">{t('bio')}
                 <textarea value={bioDraft} onChange={(event) => setBioDraft(event.target.value)} rows={3} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none resize-y" />
               </label>
               <div className="sm:col-span-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setIsProfileEditing(false)} className="px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text text-sm cursor-pointer">Cancel</button>
-                <button className="px-3 py-2 rounded-lg bg-primary hover:bg-primary-dark border-none text-white text-sm cursor-pointer">Save profile</button>
+                <button type="button" onClick={() => setIsProfileEditing(false)} className="px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover border border-border text-text text-sm cursor-pointer">{t('cancel')}</button>
+                <button className="px-3 py-2 rounded-lg bg-primary hover:bg-primary-dark border-none text-white text-sm cursor-pointer">{t('saveProfile')}</button>
               </div>
             </form>
           )}
@@ -500,32 +500,32 @@ export default function ProfilePage() {
             <section className="mb-4 rounded-xl border border-border bg-surface-2/60 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-heading text-lg font-bold text-text">Account security</h2>
-                  <p className="mt-1 text-sm text-text-muted">Manage your password and email verification.</p>
+                  <h2 className="font-heading text-lg font-bold text-text">{t('accountSecurity')}</h2>
+                  <p className="mt-1 text-sm text-text-muted">{t('managePasswordSecurity')}</p>
                 </div>
                 {!session!.user.emailConfirmed && (
                   <button type="button" onClick={() => void resendVerificationEmail()} disabled={isResendingVerification} className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary-light disabled:opacity-60">
-                    {isResendingVerification ? 'Sending...' : 'Resend verification email'}
+                    {isResendingVerification ? t('sending') : t('resendVerificationEmail')}
                   </button>
                 )}
               </div>
 
-              {!session!.user.emailConfirmed && <p className="mt-3 rounded-lg border border-[#e7b65b]/35 bg-[#e7b65b]/10 px-3 py-2 text-sm text-[#f4cf86]">Your email has not been verified yet.</p>}
+              {!session!.user.emailConfirmed && <p className="mt-3 rounded-lg border border-[#e7b65b]/35 bg-[#e7b65b]/10 px-3 py-2 text-sm text-[#f4cf86]">{t('emailNotVerified')}</p>}
               {accountSecurityError && <p role="alert" className="mt-3 rounded-lg border border-[#e41e3f]/40 bg-[#e41e3f]/10 px-3 py-2 text-sm text-[#ff8a9b]">{accountSecurityError}</p>}
               {accountSecurityNotice && <p role="status" className="mt-3 rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 text-sm text-primary-light">{accountSecurityNotice}</p>}
 
               <form onSubmit={(event) => void updatePassword(event)} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <label className="flex flex-col gap-1 text-sm text-text">Current password
+                <label className="flex flex-col gap-1 text-sm text-text">{t('currentPassword')}
                   <input required autoComplete="current-password" type="password" value={currentPasswordDraft} onChange={(event) => setCurrentPasswordDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
                 </label>
-                <label className="flex flex-col gap-1 text-sm text-text">New password
+                <label className="flex flex-col gap-1 text-sm text-text">{t('newPassword')}
                   <input required minLength={8} autoComplete="new-password" type="password" value={newPasswordDraft} onChange={(event) => setNewPasswordDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
                 </label>
-                <label className="flex flex-col gap-1 text-sm text-text">Confirm new password
+                <label className="flex flex-col gap-1 text-sm text-text">{t('confirmNewPassword')}
                   <input required minLength={8} autoComplete="new-password" type="password" value={confirmPasswordDraft} onChange={(event) => setConfirmPasswordDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
                 </label>
                 <div className="sm:col-span-3 flex justify-end">
-                  <button disabled={isChangingPassword} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isChangingPassword ? 'Saving...' : 'Change password'}</button>
+                  <button disabled={isChangingPassword} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isChangingPassword ? t('saving') : t('changePassword')}</button>
                 </div>
               </form>
             </section>
@@ -534,13 +534,13 @@ export default function ProfilePage() {
           {/* 4. Tabs below: Posts | About | Friends | Photos */}
           <div className="border-t border-border mt-2" />
           <div className="flex items-center gap-1 overflow-x-auto scroll-smooth pt-1">
-            {TABS.map((t) => {
-              const isActive = tab === t.id
+            {tabs.map((item) => {
+              const isActive = tab === item.id
               return (
                 <button
-                  key={t.id}
+                  key={item.id}
                   type="button"
-                  onClick={() => setTab(t.id)}
+                  onClick={() => setTab(item.id)}
                   className={[
                     'px-4 py-3.5 text-[15px] font-semibold transition-all duration-150 cursor-pointer relative border-none bg-transparent whitespace-nowrap',
                     isActive
@@ -548,7 +548,7 @@ export default function ProfilePage() {
                       : 'text-text-muted hover:text-text hover:bg-surface-2/60 rounded-lg',
                   ].join(' ')}
                 >
-                  {t.label}
+                  {item.label}
                   {isActive && (
                     <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-sm" />
                   )}
@@ -569,21 +569,21 @@ export default function ProfilePage() {
 
               {/* Manage posts header */}
               <div className="bg-surface rounded-xl card-shadow border border-border p-3.5 px-4 flex items-center justify-between">
-                <h2 className="font-heading font-bold text-[17px] text-text">Posts</h2>
+                <h2 className="font-heading font-bold text-[17px] text-text">{t('posts')}</h2>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover text-text text-xs font-semibold rounded-lg transition-colors cursor-pointer border-none flex items-center gap-1.5"
                   >
                     <span>⚙️</span>
-                    <span>Manage posts</span>
+                    <span>{t('managePosts')}</span>
                   </button>
                 </div>
               </div>
 
               <div className="flex flex-col gap-3">
-                {isProfilePostsLoading && <p className="text-sm text-text-muted">Loading posts...</p>}
-                {!isProfilePostsLoading && profilePosts.length === 0 && <p className="text-sm text-text-muted">No posts yet.</p>}
+                {isProfilePostsLoading && <p className="text-sm text-text-muted">{t('loadingPosts')}</p>}
+                {!isProfilePostsLoading && profilePosts.length === 0 && <p className="text-sm text-text-muted">{t('noPostsYet')}</p>}
                 {profile && profilePosts.map((post) => (
                   <LivePostCard
                     key={post.id}
@@ -604,7 +604,7 @@ export default function ProfilePage() {
                     disabled={isLoadingMoreProfilePosts}
                     className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
                   >
-                    {isLoadingMoreProfilePosts ? 'Loading...' : 'Load more posts'}
+                    {isLoadingMoreProfilePosts ? t('loading') : t('loadMorePosts')}
                   </button>
                 )}
               </div>
@@ -614,18 +614,18 @@ export default function ProfilePage() {
             <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-5 2xl:col-span-4 flex flex-col gap-4">
               {/* 6. Intro Card */}
               <div className="bg-surface rounded-xl card-shadow border border-border p-4 flex flex-col gap-3.5">
-                <h2 className="font-heading font-bold text-[18px] text-text">Intro</h2>
+                <h2 className="font-heading font-bold text-[18px] text-text">{t('intro')}</h2>
 
                 {/* Bio text */}
                 <p className="text-[14px] text-text text-center py-0.5 leading-relaxed whitespace-pre-wrap">
-                  {bio || 'No bio yet.'}
+                  {bio || t('noBioYet')}
                 </p>
                 <button
                   type="button"
                   onClick={openProfileEditor}
                   className="w-full py-2 px-3 bg-surface-2 hover:bg-surface-hover text-text text-sm font-semibold rounded-lg transition-colors cursor-pointer border-none"
                 >
-                  Edit bio
+                  {t('editBio')}
                 </button>
 
                 <div className="border-t border-border my-0.5" />
@@ -634,15 +634,15 @@ export default function ProfilePage() {
                 <div className="flex flex-col gap-3 text-sm">
                   <div className="flex items-center gap-3 text-text">
                     <span className="text-text-muted text-base shrink-0">📍</span>
-                    <span>Lives in <strong className="font-semibold text-text">{location}</strong></span>
+                    <span>{t('livesIn')} <strong className="font-semibold text-text">{location}</strong></span>
                   </div>
                   <div className="flex items-center gap-3 text-text">
                     <span className="text-text-muted text-base shrink-0">📅</span>
-                    <span>Joined <strong className="font-semibold text-text">{joinedDate}</strong></span>
+                    <span>{t('joined')} <strong className="font-semibold text-text">{joinedDate}</strong></span>
                   </div>
                   <div className="flex items-center gap-3 text-text">
                     <span className="text-text-muted text-base shrink-0">👥</span>
-                    <span><strong className="font-semibold text-text">{formatNumber(friends.total)}</strong> friends</span>
+                    <span><strong className="font-semibold text-text">{formatNumber(friends.total)}</strong> {t('friendsCount')}</span>
                   </div>
                 </div>
 
@@ -651,23 +651,23 @@ export default function ProfilePage() {
                   onClick={openProfileEditor}
                   className="w-full py-2 px-3 bg-surface-2 hover:bg-surface-hover text-text text-sm font-semibold rounded-lg transition-colors cursor-pointer border-none mt-1"
                 >
-                  Edit details
+                  {t('editDetails')}
                 </button>
               </div>
 
               {/* Photos Preview Card */}
               <div className="bg-surface rounded-xl card-shadow border border-border p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <h2 className="font-heading font-bold text-[18px] text-text">Photos</h2>
+                  <h2 className="font-heading font-bold text-[18px] text-text">{t('photos')}</h2>
                   <button
                     type="button"
                     onClick={() => setTab('photos')}
                     className="text-primary hover:underline text-sm font-medium cursor-pointer border-none bg-transparent"
                   >
-                    See all photos
+                    {t('seeAllPhotos')}
                   </button>
                 </div>
-                {isPhotosLoading ? <p className="text-sm text-text-muted">Loading photos...</p> : photos.length === 0 ? <p className="text-sm text-text-muted">No photos posted yet.</p> : (
+                {isPhotosLoading ? <p className="text-sm text-text-muted">{t('loadingPhotos')}</p> : photos.length === 0 ? <p className="text-sm text-text-muted">{t('noPhotosPosted')}</p> : (
                   <div className="grid grid-cols-3 gap-2">
                     {photos.slice(0, 6).map((photo) => <img key={photo.mediaId} src={photo.url} alt="" className="aspect-square w-full rounded-lg object-cover" />)}
                   </div>
@@ -678,15 +678,15 @@ export default function ProfilePage() {
               <div className="bg-surface rounded-xl card-shadow border border-border p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="font-heading font-bold text-[18px] text-text">Friends</h2>
-                    <p className="text-xs text-text-muted">{formatNumber(friends.total)} friends</p>
+                    <h2 className="font-heading font-bold text-[18px] text-text">{t('friends')}</h2>
+                    <p className="text-xs text-text-muted">{formatNumber(friends.total)} {t('friendsCount')}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setTab('friends')}
                     className="text-primary hover:underline text-sm font-medium cursor-pointer border-none bg-transparent"
                   >
-                    See all friends
+                    {t('seeAllFriends')}
                   </button>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -711,7 +711,7 @@ export default function ProfilePage() {
                     )
                   })}
                   {!isRelationshipsLoading && friends.items.length === 0 && !relationshipError && (
-                    <p className="col-span-3 text-xs text-text-muted">Chưa có bạn bè.</p>
+                    <p className="col-span-3 text-xs text-text-muted">{t('noFriendsYet')}</p>
                   )}
                 </div>
               </div>
@@ -722,29 +722,29 @@ export default function ProfilePage() {
         {/* ── About Tab ── */}
         {tab === 'about' && (
           <div className="bg-surface rounded-xl card-shadow border border-border p-6 flex flex-col gap-6">
-            <h2 className="font-heading font-bold text-xl text-text border-b border-border pb-3">About</h2>
+            <h2 className="font-heading font-bold text-xl text-text border-b border-border pb-3">{t('about')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-4">
-                <h3 className="font-semibold text-text-muted text-xs uppercase tracking-wider">Overview</h3>
+                <h3 className="font-semibold text-text-muted text-xs uppercase tracking-wider">{t('overview')}</h3>
                 <div className="flex items-start gap-3">
                   <span className="text-xl">📍</span>
                   <div>
-                    <p className="text-sm font-semibold text-text">Lives in {location}</p>
-                    <p className="text-xs text-text-muted">Current City</p>
+                    <p className="text-sm font-semibold text-text">{t('livesIn')} {location}</p>
+                    <p className="text-xs text-text-muted">{t('currentCity')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="text-xl">📅</span>
                   <div>
-                    <p className="text-sm font-semibold text-text">Joined {joinedDate}</p>
-                    <p className="text-xs text-text-muted">Member Since</p>
+                    <p className="text-sm font-semibold text-text">{t('joined')} {joinedDate}</p>
+                    <p className="text-xs text-text-muted">{t('memberSince')}</p>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col gap-4">
-                <h3 className="font-semibold text-text-muted text-xs uppercase tracking-wider">Bio</h3>
+                <h3 className="font-semibold text-text-muted text-xs uppercase tracking-wider">{t('bio')}</h3>
                 <p className="text-sm text-text leading-relaxed whitespace-pre-line bg-surface-2 p-3.5 rounded-lg border border-border">
-                  {bio || 'No bio yet.'}
+                  {bio || t('noBioYet')}
                 </p>
               </div>
             </div>
@@ -756,8 +756,8 @@ export default function ProfilePage() {
           <div className="bg-surface rounded-xl card-shadow border border-border p-6 flex flex-col gap-5">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
-                <h2 className="font-heading font-bold text-xl text-text">Friends</h2>
-                <p className="text-sm text-text-muted">{formatNumber(friends.total)} friends</p>
+                <h2 className="font-heading font-bold text-xl text-text">{t('friends')}</h2>
+                <p className="text-sm text-text-muted">{formatNumber(friends.total)} {t('friendsCount')}</p>
               </div>
               <button
                 type="button"
@@ -765,7 +765,7 @@ export default function ProfilePage() {
                 disabled={isRelationshipsLoading}
                 className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
               >
-                {isRelationshipsLoading ? 'Loading...' : 'Refresh'}
+                {isRelationshipsLoading ? t('loading') : t('refresh')}
               </button>
             </div>
 
@@ -777,7 +777,7 @@ export default function ProfilePage() {
 
             {incomingRequests.length > 0 && (
               <section className="flex flex-col gap-3">
-                <h3 className="font-heading font-bold text-lg text-text">Friend requests</h3>
+                <h3 className="font-heading font-bold text-lg text-text">{t('friendRequests')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {incomingRequests.map((request) => {
                     const profile = friendProfiles[request.senderUserId]
@@ -796,7 +796,7 @@ export default function ProfilePage() {
                             disabled={isPending}
                             className="px-3 py-1.5 bg-primary hover:bg-primary-dark disabled:opacity-60 text-white rounded-lg text-xs font-semibold border-none cursor-pointer transition-colors"
                           >
-                            Accept
+                            {t('accept')}
                           </button>
                           <button
                             type="button"
@@ -804,7 +804,7 @@ export default function ProfilePage() {
                             disabled={isPending}
                             className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
                           >
-                            Decline
+                            {t('decline')}
                           </button>
                         </div>
                       </div>
@@ -816,7 +816,7 @@ export default function ProfilePage() {
 
             {outgoingRequests.length > 0 && (
               <section className="flex flex-col gap-3">
-                <h3 className="font-heading font-bold text-lg text-text">Sent requests</h3>
+                <h3 className="font-heading font-bold text-lg text-text">{t('sentRequests')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {outgoingRequests.map((request) => {
                     const profile = friendProfiles[request.receiverUserId]
@@ -834,7 +834,7 @@ export default function ProfilePage() {
                           disabled={isPending}
                           className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors shrink-0"
                         >
-                          Cancel
+                          {t('cancel')}
                         </button>
                       </div>
                     )
@@ -845,7 +845,7 @@ export default function ProfilePage() {
 
             {blockedUsers.length > 0 && (
               <section className="flex flex-col gap-3">
-                <h3 className="font-heading font-bold text-lg text-text">Blocked users</h3>
+                <h3 className="font-heading font-bold text-lg text-text">{t('blockedUsers')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {blockedUsers.map((blockedUser) => {
                     const profile = friendProfiles[blockedUser.userId]
@@ -857,7 +857,7 @@ export default function ProfilePage() {
                           <Link to={`/profile/${blockedUser.userId}`} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{getProfileName(profile, blockedUser.userId)}</Link>
                           <p className="text-xs text-text-muted truncate">@{profile?.username ?? blockedUser.userId.slice(0, 8)}</p>
                         </div>
-                        <button type="button" onClick={() => void runRelationshipAction(blockedUser.userId, () => friendsApi.unblock(blockedUser.userId))} disabled={isPending} className="px-3 py-1.5 rounded-lg bg-surface border border-border text-text text-xs cursor-pointer disabled:opacity-60">Unblock</button>
+                        <button type="button" onClick={() => void runRelationshipAction(blockedUser.userId, () => friendsApi.unblock(blockedUser.userId))} disabled={isPending} className="px-3 py-1.5 rounded-lg bg-surface border border-border text-text text-xs cursor-pointer disabled:opacity-60">{t('unblock')}</button>
                       </div>
                     )
                   })}
@@ -866,7 +866,7 @@ export default function ProfilePage() {
             )}
 
             {!isRelationshipsLoading && friends.items.length === 0 && !relationshipError && (
-              <p className="text-sm text-text-muted">Chưa có bạn bè.</p>
+              <p className="text-sm text-text-muted">{t('noFriendsYet')}</p>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -891,7 +891,7 @@ export default function ProfilePage() {
                       </Link>
                       <p className="text-xs text-text-muted">@{profile?.username ?? friend.userId.slice(0, 8)}</p>
                       <p className="text-xs text-text-light mt-0.5">
-                        Friends since {new Date(friend.friendsSinceUtc).toLocaleDateString()}
+                        {t('friendsSince')} {new Date(friend.friendsSinceUtc).toLocaleDateString(locale)}
                       </p>
                     </div>
                   </div>
@@ -901,7 +901,7 @@ export default function ProfilePage() {
                     disabled={isPending}
                     className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
                   >
-                    {isPending ? 'Updating...' : 'Unfriend'}
+                    {isPending ? t('updating') : t('unfriend')}
                   </button>
                 </div>
                 )
@@ -914,7 +914,7 @@ export default function ProfilePage() {
                 disabled={isLoadingMoreFriends}
                 className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
               >
-                {isLoadingMoreFriends ? 'Loading...' : 'Load more friends'}
+                {isLoadingMoreFriends ? t('loading') : t('loadMoreFriends')}
               </button>
             )}
           </div>
@@ -924,10 +924,10 @@ export default function ProfilePage() {
         {tab === 'photos' && (
           <div className="bg-surface rounded-xl card-shadow border border-border p-6 flex flex-col gap-5">
             <div className="border-b border-border pb-3">
-              <h2 className="font-heading font-bold text-xl text-text">Photos</h2>
-              <p className="text-sm text-text-muted">Photos from your posts</p>
+              <h2 className="font-heading font-bold text-xl text-text">{t('photos')}</h2>
+              <p className="text-sm text-text-muted">{t('photosFromPosts')}</p>
             </div>
-            {isPhotosLoading ? <p className="text-sm text-text-muted">Loading photos...</p> : photos.length === 0 ? <p className="text-sm text-text-muted">No photos posted yet.</p> : (
+            {isPhotosLoading ? <p className="text-sm text-text-muted">{t('loadingPhotos')}</p> : photos.length === 0 ? <p className="text-sm text-text-muted">{t('noPhotosPosted')}</p> : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {photos.map((photo) => <img key={photo.mediaId} src={photo.url} alt="" className="aspect-square w-full rounded-xl object-cover" />)}
               </div>
