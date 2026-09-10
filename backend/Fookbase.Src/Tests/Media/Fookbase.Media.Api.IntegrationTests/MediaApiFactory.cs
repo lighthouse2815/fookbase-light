@@ -55,7 +55,7 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
 
     private static void ConfigureModuleConnections(IWebHostBuilder builder, string connectionString)
     {
-        foreach (var module in new[] { "Identity", "Users", "Friends", "Posts", "Media" })
+        foreach (var module in new[] { "Identity", "Users", "Friends", "Messages", "Posts", "Media" })
         {
             builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
         }

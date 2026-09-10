@@ -6,6 +6,7 @@ using Fookbase.Api.Modules.Friends.Endpoints;
 using Fookbase.Api.Modules.Identity.Endpoints;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Endpoints;
+using Fookbase.Api.Modules.Messages.Endpoints;
 using Fookbase.Api.Modules.Posts.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,6 +20,7 @@ var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<Jw
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddUsersModule(builder.Configuration);
 builder.Services.AddFriendsModule(builder.Configuration);
+builder.Services.AddMessagesModule(builder.Configuration);
 builder.Services.AddPostsModule(builder.Configuration);
 builder.Services.AddMediaModule(builder.Configuration);
 builder.Services.AddApplicationUseCases();
@@ -72,6 +74,7 @@ app.MapHealthChecks("/health");
 app.MapAuthenticationEndpoints();
 app.MapUserProfileEndpoints();
 app.MapFriendEndpoints();
+app.MapMessageEndpoints();
 app.MapPostEndpoints();
 app.MapMediaEndpoints();
 

@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Posts;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Friends;
+using Fookbase.Api.Modules.Messages;
 using Fookbase.Api.Modules.Users;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,11 @@ internal static class ModuleServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration) =>
         services.AddFriendsInfrastructure(RequiredConnectionString(configuration, "FriendsDatabase"));
+
+    public static IServiceCollection AddMessagesModule(
+        this IServiceCollection services,
+        IConfiguration configuration) =>
+        services.AddMessagesInfrastructure(RequiredConnectionString(configuration, "MessagesDatabase"));
 
     public static IServiceCollection AddPostsModule(
         this IServiceCollection services,
