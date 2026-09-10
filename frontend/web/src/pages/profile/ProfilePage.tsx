@@ -12,6 +12,7 @@ import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { formatNumber } from '../../data/mockData'
 import { usePreferences } from '../../preferences'
+import PaginationControls from '../../shared/components/PaginationControls'
 import LivePostCard from '../feed/components/LivePostCard'
 import NewPostBox from '../feed/components/NewPostBox'
 
@@ -72,6 +73,8 @@ export default function ProfilePage() {
   const [isPhotosLoading, setIsPhotosLoading] = useState(true)
   const [isProfilePostsLoading, setIsProfilePostsLoading] = useState(true)
   const [isLoadingMoreProfilePosts, setIsLoadingMoreProfilePosts] = useState(false)
+  const [profilePostsPageError, setProfilePostsPageError] = useState<string | null>(null)
+  const [loadMoreFriendsError, setLoadMoreFriendsError] = useState<string | null>(null)
   const [isProfileEditing, setIsProfileEditing] = useState(false)
   const [isAccountSecurityOpen, setIsAccountSecurityOpen] = useState(false)
   const [displayNameDraft, setDisplayNameDraft] = useState('')
@@ -101,8 +104,10 @@ export default function ProfilePage() {
   ) => {
     if (append) {
       setIsLoadingMoreProfilePosts(true)
+      setProfilePostsPageError(null)
     } else {
       setIsProfilePostsLoading(true)
+      setProfilePostsPageError(null)
     }
 
     try {
@@ -111,6 +116,8 @@ export default function ProfilePage() {
         ? [...currentPosts, ...page.items.filter((post) => !currentPosts.some((item) => item.id === post.id))]
         : page.items)
       setProfilePostsTotal(page.total)
+    } catch (error) {
+      setProfilePostsPageError(error instanceof ApiError ? error.message : t('unableLoadPosts'))
     } finally {
       if (append) {
         setIsLoadingMoreProfilePosts(false)
@@ -118,7 +125,7 @@ export default function ProfilePage() {
         setIsProfilePostsLoading(false)
       }
     }
-  }, [])
+  }, [t])
 
   const loadProfilePhotos = useCallback(async (userId: string) => {
     setIsPhotosLoading(true)
@@ -233,7 +240,7 @@ export default function ProfilePage() {
 
   const loadMoreFriends = async () => {
     setIsLoadingMoreFriends(true)
-    setRelationshipError(null)
+    setLoadMoreFriendsError(null)
 
     try {
       const page = await friendsApi.getFriends(friends.items.length, 20)
@@ -254,7 +261,7 @@ export default function ProfilePage() {
       }))
       setFriendProfiles((currentProfiles) => ({ ...currentProfiles, ...profiles }))
     } catch (error) {
-      setRelationshipError(error instanceof ApiError ? error.message : t('unableLoadMoreFriends'))
+      setLoadMoreFriendsError(error instanceof ApiError ? error.message : t('unableLoadMoreFriends'))
     } finally {
       setIsLoadingMoreFriends(false)
     }
@@ -597,16 +604,7 @@ export default function ProfilePage() {
                     }}
                   />
                 ))}
-                {profile && profilePosts.length < profilePostsTotal && (
-                  <button
-                    type="button"
-                    onClick={() => void loadProfilePosts(profile.userId, profilePosts.length, true)}
-                    disabled={isLoadingMoreProfilePosts}
-                    className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
-                  >
-                    {isLoadingMoreProfilePosts ? t('loading') : t('loadMorePosts')}
-                  </button>
-                )}
+                {profile && <PaginationControls hasMore={profilePosts.length < profilePostsTotal} isLoading={isLoadingMoreProfilePosts} error={profilePostsPageError} label={t('loadMorePosts')} onLoadMore={() => void loadProfilePosts(profile.userId, profilePosts.length, true)} />}
               </div>
             </div>
 
@@ -907,16 +905,7 @@ export default function ProfilePage() {
                 )
               })}
             </div>
-            {friends.items.length < friends.total && (
-              <button
-                type="button"
-                onClick={() => void loadMoreFriends()}
-                disabled={isLoadingMoreFriends}
-                className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
-              >
-                {isLoadingMoreFriends ? t('loading') : t('loadMoreFriends')}
-              </button>
-            )}
+            <PaginationControls hasMore={friends.items.length < friends.total} isLoading={isLoadingMoreFriends} error={loadMoreFriendsError} label={t('loadMoreFriends')} onLoadMore={() => void loadMoreFriends()} />
           </div>
         )}
 

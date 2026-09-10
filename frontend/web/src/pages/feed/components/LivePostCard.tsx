@@ -7,6 +7,7 @@ import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
 import { usePreferences } from '../../../preferences'
+import PaginationControls from '../../../shared/components/PaginationControls'
 
 interface LivePostCardProps {
   post: Post
@@ -32,7 +33,12 @@ export default function LivePostCard({
 }: LivePostCardProps) {
   const { language, t } = usePreferences()
   const [comments, setComments] = useState<Comment[]>([])
+  const [commentsTotal, setCommentsTotal] = useState(0)
+  const [commentsOffset, setCommentsOffset] = useState(0)
   const [showComments, setShowComments] = useState(false)
+  const [isLoadingComments, setIsLoadingComments] = useState(false)
+  const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false)
+  const [commentsPageError, setCommentsPageError] = useState<string | null>(null)
   const [commentText, setCommentText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
@@ -57,12 +63,33 @@ export default function LivePostCard({
   }, [post.id, post.mediaIds])
 
   const loadComments = async () => {
+    setIsLoadingComments(true)
+    setCommentsPageError(null)
     try {
       const page = await postsApi.getComments(post.id)
       setComments(page.items)
+      setCommentsTotal(page.total)
+      setCommentsOffset(page.offset + page.items.length)
       setShowComments(true)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
+    } finally {
+      setIsLoadingComments(false)
+    }
+  }
+
+  const loadMoreComments = async () => {
+    setIsLoadingMoreComments(true)
+    setCommentsPageError(null)
+    try {
+      const page = await postsApi.getComments(post.id, commentsOffset)
+      setComments((current) => [...current, ...page.items.filter((comment) => !current.some((item) => item.id === comment.id))])
+      setCommentsTotal(page.total)
+      setCommentsOffset(page.offset + page.items.length)
+    } catch (requestError) {
+      setCommentsPageError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
+    } finally {
+      setIsLoadingMoreComments(false)
     }
   }
 
@@ -84,6 +111,8 @@ export default function LivePostCard({
     try {
       const comment = await postsApi.createComment(post.id, commentText.trim())
       setComments((currentComments) => [...currentComments, comment])
+      setCommentsTotal((currentTotal) => currentTotal + 1)
+      setCommentsOffset((currentOffset) => currentOffset + 1)
       setCommentText('')
       onPostUpdated({ ...post, commentCount: post.commentCount + 1 })
     } catch (requestError) {
@@ -111,6 +140,8 @@ export default function LivePostCard({
     try {
       await postsApi.deleteComment(comment.id)
       setComments((currentComments) => currentComments.filter((item) => item.id !== comment.id))
+      setCommentsTotal((currentTotal) => Math.max(0, currentTotal - 1))
+      setCommentsOffset((currentOffset) => Math.max(0, currentOffset - 1))
       onPostUpdated({ ...post, commentCount: Math.max(0, post.commentCount - 1) })
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableDeleteComment'))
@@ -192,6 +223,7 @@ export default function LivePostCard({
       </div>
       {showComments && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
+          {isLoadingComments && <p className="text-sm text-text-muted">{t('loading')}</p>}
           {comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-2 bg-surface-2 rounded-lg px-3 py-2">
               <p className="flex-1 text-sm text-text whitespace-pre-wrap">{comment.content}</p>
@@ -203,6 +235,7 @@ export default function LivePostCard({
               )}
             </div>
           ))}
+          <PaginationControls hasMore={commentsOffset < commentsTotal} isLoading={isLoadingMoreComments} error={commentsPageError} label={t('loadMoreComments')} onLoadMore={() => void loadMoreComments()} />
           <form onSubmit={(event) => void createComment(event)} className="flex gap-2">
             <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder={t('writeComment')} className="min-w-0 flex-1 bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text outline-none" />
             <button className="px-3 rounded-lg bg-primary text-white border-none cursor-pointer text-sm">{t('send')}</button>

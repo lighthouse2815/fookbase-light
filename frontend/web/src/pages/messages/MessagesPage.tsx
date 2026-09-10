@@ -8,6 +8,7 @@ import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { useRealtime } from '../../realtime/useRealtime'
 import { usePreferences } from '../../preferences'
+import PaginationControls from '../../shared/components/PaginationControls'
 
 function formatTimestamp(value: string, locale: string, nowLabel: string) {
   const date = new Date(value)
@@ -31,9 +32,13 @@ export default function MessagesPage() {
   const requestedConversationId = searchParams.get('conversation')
   const { incomingMessages, markConversationRead, readAtByConversation, sendTyping, typingConversationIds } = useRealtime()
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [conversationTotal, setConversationTotal] = useState(0)
+  const [conversationOffset, setConversationOffset] = useState(0)
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({})
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
+  const [messagesTotal, setMessagesTotal] = useState(0)
+  const [messagesOffset, setMessagesOffset] = useState(0)
   const [draft, setDraft] = useState('')
   const [search, setSearch] = useState('')
   const [newMessageQuery, setNewMessageQuery] = useState('')
@@ -41,13 +46,21 @@ export default function MessagesPage() {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [isLoadingMoreConversations, setIsLoadingMoreConversations] = useState(false)
+  const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [conversationsPageError, setConversationsPageError] = useState<string | null>(null)
+  const [messagesPageError, setMessagesPageError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastTypingSentAtRef = useRef(0)
 
-  const loadConversations = useCallback(async () => {
-    const page = await messagesApi.getConversations()
-    setConversations(page.items)
+  const loadConversations = useCallback(async (offset = 0, append = false) => {
+    const page = await messagesApi.getConversations(offset)
+    setConversations((current) => append
+      ? [...current, ...page.items.filter((conversation) => !current.some((item) => item.id === conversation.id))]
+      : page.items)
+    setConversationTotal(page.total)
+    setConversationOffset(page.offset + page.items.length)
     setActiveConversationId((current) => page.items.some((item) => item.id === requestedConversationId)
       ? requestedConversationId
       : current ?? page.items[0]?.id ?? null)
@@ -64,6 +77,18 @@ export default function MessagesPage() {
       }))
     }
   }, [requestedConversationId])
+
+  const loadMoreConversations = async () => {
+    setIsLoadingMoreConversations(true)
+    setConversationsPageError(null)
+    try {
+      await loadConversations(conversationOffset, true)
+    } catch (requestError) {
+      setConversationsPageError(requestError instanceof ApiError ? requestError.message : t('unableLoadConversations'))
+    } finally {
+      setIsLoadingMoreConversations(false)
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -92,6 +117,9 @@ export default function MessagesPage() {
         if (!active) return
         setError(null)
         setMessages(page.items)
+        setMessagesTotal(page.total)
+        setMessagesOffset(page.offset + page.items.length)
+        setMessagesPageError(null)
         markConversationRead(activeConversationId)
         setConversations((current) => current.map((conversation) =>
           conversation.id === activeConversationId ? { ...conversation, unreadCount: 0 } : conversation,
@@ -140,6 +168,8 @@ export default function MessagesPage() {
     void messagesApi.getMessages(activeConversationId)
       .then((page) => {
         setMessages(page.items)
+        setMessagesTotal(page.total)
+        setMessagesOffset(page.offset + page.items.length)
         markConversationRead(activeConversationId)
       })
       .catch(() => undefined)
@@ -221,6 +251,22 @@ export default function MessagesPage() {
     }
   }
 
+  const loadMoreMessages = async () => {
+    if (!activeConversationId) return
+    setIsLoadingMoreMessages(true)
+    setMessagesPageError(null)
+    try {
+      const page = await messagesApi.getMessages(activeConversationId, messagesOffset)
+      setMessages((current) => [...current, ...page.items.filter((message) => !current.some((item) => item.id === message.id))])
+      setMessagesTotal(page.total)
+      setMessagesOffset(page.offset + page.items.length)
+    } catch (requestError) {
+      setMessagesPageError(requestError instanceof ApiError ? requestError.message : t('unableLoadMessages'))
+    } finally {
+      setIsLoadingMoreMessages(false)
+    }
+  }
+
   const handleSend = async () => {
     if (!activeConversationId || !draft.trim() || isSending) return
     setIsSending(true)
@@ -228,6 +274,8 @@ export default function MessagesPage() {
     try {
       const message = await messagesApi.sendMessage(activeConversationId, draft.trim())
       setMessages((current) => [...current, message])
+      setMessagesTotal((current) => current + 1)
+      setMessagesOffset((current) => current + 1)
       setConversations((current) => current
         .map((conversation) => conversation.id === activeConversationId
           ? { ...conversation, lastMessage: message, lastMessageAtUtc: message.createdAtUtc }
@@ -299,6 +347,7 @@ export default function MessagesPage() {
               </button>
             )
           })}
+          <div className="p-3 max-sm:hidden"><PaginationControls hasMore={!search.trim() && conversationOffset < conversationTotal} isLoading={isLoadingMoreConversations} error={conversationsPageError} label={t('loadMoreConversations')} onLoadMore={() => void loadMoreConversations()} /></div>
         </div>
       </aside>
 
@@ -322,6 +371,7 @@ export default function MessagesPage() {
                   <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}><div className={`px-4 py-2.5 text-[14px] leading-relaxed ${isMine ? 'bubble-mine' : 'bubble-theirs'}`}>{message.content}</div><span className="text-[11px] text-text-light px-1">{formatTimestamp(message.createdAtUtc, locale, t('now'))}{isLatestReadMessage ? ` · ${t('seen')}` : ''}</span></div>
                 </div>
               })}
+              <PaginationControls hasMore={messagesOffset < messagesTotal} isLoading={isLoadingMoreMessages} error={messagesPageError} label={t('loadMoreMessages')} onLoadMore={() => void loadMoreMessages()} />
               {typingConversationIds.has(activeConversation.id) && (
                 <div className="flex items-end gap-2">
                   <Avatar profile={partner} size="small" />

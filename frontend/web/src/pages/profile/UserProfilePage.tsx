@@ -10,6 +10,7 @@ import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
 import ReportButton from '../../shared/components/ReportButton'
+import PaginationControls from '../../shared/components/PaginationControls'
 import LivePostCard from '../feed/components/LivePostCard'
 
 export default function UserProfilePage() {
@@ -21,9 +22,13 @@ export default function UserProfilePage() {
   const [isBlockedByMe, setIsBlockedByMe] = useState(false)
   const [mutualFriendCount, setMutualFriendCount] = useState(0)
   const [posts, setPosts] = useState<Post[]>([])
+  const [postsTotal, setPostsTotal] = useState(0)
+  const [postsOffset, setPostsOffset] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [postsPageError, setPostsPageError] = useState<string | null>(null)
 
   const loadProfile = useCallback(async () => {
     if (!userId) return
@@ -42,6 +47,9 @@ export default function UserProfilePage() {
       setRelationship(status)
       setMutualFriendCount(mutualFriends.count)
       setPosts(userPosts.items)
+      setPostsTotal(userPosts.total)
+      setPostsOffset(userPosts.offset + userPosts.items.length)
+      setPostsPageError(null)
       setIsBlockedByMe(blockedUsers.items.some((blockedUser) => blockedUser.userId === userId))
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableLoadProfile'))
@@ -71,6 +79,22 @@ export default function UserProfilePage() {
       setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateRelationship'))
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const loadMorePosts = async () => {
+    if (!userId) return
+    setIsLoadingMorePosts(true)
+    setPostsPageError(null)
+    try {
+      const page = await postsApi.getByUser(userId, postsOffset)
+      setPosts((current) => [...current, ...page.items.filter((post) => !current.some((item) => item.id === post.id))])
+      setPostsTotal(page.total)
+      setPostsOffset(page.offset + page.items.length)
+    } catch (requestError) {
+      setPostsPageError(requestError instanceof ApiError ? requestError.message : t('unableLoadPosts'))
+    } finally {
+      setIsLoadingMorePosts(false)
     }
   }
 
@@ -144,6 +168,7 @@ export default function UserProfilePage() {
                 onPostDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))}
               />
             ))}
+            <PaginationControls hasMore={postsOffset < postsTotal} isLoading={isLoadingMorePosts} error={postsPageError} label={t('loadMorePosts')} onLoadMore={() => void loadMorePosts()} />
           </section>
         </div>
       )}

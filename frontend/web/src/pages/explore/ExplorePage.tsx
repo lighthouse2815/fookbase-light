@@ -9,6 +9,7 @@ import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
+import PaginationControls from '../../shared/components/PaginationControls'
 
 function relativeDate(value: string, locale: string) {
   return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
@@ -34,6 +35,8 @@ export default function ExplorePage() {
   const [isSearchingPosts, setIsSearchingPosts] = useState(true)
   const [isLoadingMoreUsers, setIsLoadingMoreUsers] = useState(false)
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false)
+  const [userLoadMoreError, setUserLoadMoreError] = useState<string | null>(null)
+  const [postLoadMoreError, setPostLoadMoreError] = useState<string | null>(null)
   const [relationships, setRelationships] = useState<Record<string, RelationshipStatus>>({})
   const [relationshipActionError, setRelationshipActionError] = useState<string | null>(null)
   const [updatingRelationshipUserId, setUpdatingRelationshipUserId] = useState<string | null>(null)
@@ -98,7 +101,7 @@ export default function ExplorePage() {
 
   const loadMoreUsers = async () => {
     setIsLoadingMoreUsers(true)
-    setUserSearchError(null)
+    setUserLoadMoreError(null)
 
     try {
       const page = await usersApi.search(query, nextUserOffset)
@@ -110,7 +113,7 @@ export default function ExplorePage() {
       setTotalUsers(page.total)
       setNextUserOffset(page.offset + page.items.length)
     } catch (error) {
-      setUserSearchError(error instanceof ApiError ? error.message : t('unableSearchUsers'))
+      setUserLoadMoreError(error instanceof ApiError ? error.message : t('unableSearchUsers'))
     } finally {
       setIsLoadingMoreUsers(false)
     }
@@ -118,7 +121,7 @@ export default function ExplorePage() {
 
   const loadMorePosts = async () => {
     setIsLoadingMorePosts(true)
-    setPostSearchError(null)
+    setPostLoadMoreError(null)
 
     try {
       const page = await postsApi.search(query, nextPostOffset)
@@ -129,7 +132,7 @@ export default function ExplorePage() {
       setTotalPosts(page.total)
       setNextPostOffset(page.offset + page.items.length)
     } catch (error) {
-      setPostSearchError(error instanceof ApiError ? error.message : t('unableSearchPosts'))
+      setPostLoadMoreError(error instanceof ApiError ? error.message : t('unableSearchPosts'))
     } finally {
       setIsLoadingMorePosts(false)
     }
@@ -198,7 +201,7 @@ export default function ExplorePage() {
                 <div className="text-xs text-text-light">{post.commentCount} {t('comments')} · {Object.values(post.reactionCounts).reduce((sum, count) => sum + count, 0)} {t('reactions')}</div>
               </article>
             ))}
-            {nextPostOffset < totalPosts && <button type="button" onClick={() => void loadMorePosts()} disabled={isLoadingMorePosts} className="rounded-lg border border-border bg-surface-2 hover:bg-surface-hover disabled:opacity-60 py-2 text-sm font-semibold text-text cursor-pointer">{isLoadingMorePosts ? t('loading') : t('loadMorePosts')}</button>}
+            <PaginationControls hasMore={nextPostOffset < totalPosts} isLoading={isLoadingMorePosts} error={postLoadMoreError} label={t('loadMorePosts')} onLoadMore={() => void loadMorePosts()} />
           </div>
         </section>
 
@@ -217,7 +220,7 @@ export default function ExplorePage() {
                 </div>
               </div>
             ))}
-            {nextUserOffset < totalUsers && <button type="button" onClick={() => void loadMoreUsers()} disabled={isLoadingMoreUsers} className="rounded-lg border border-border bg-surface-2 hover:bg-surface-hover disabled:opacity-60 py-2 text-sm font-semibold text-text cursor-pointer">{isLoadingMoreUsers ? t('loading') : t('loadMorePeople')}</button>}
+            <PaginationControls hasMore={nextUserOffset < totalUsers} isLoading={isLoadingMoreUsers} error={userLoadMoreError} label={t('loadMorePeople')} onLoadMore={() => void loadMoreUsers()} />
           </div>
         </section>
       </div>

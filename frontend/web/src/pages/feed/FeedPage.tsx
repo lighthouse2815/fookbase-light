@@ -10,6 +10,7 @@ import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
 import LivePostCard from './components/LivePostCard'
 import NewPostBox from './components/NewPostBox'
+import PaginationControls from '../../shared/components/PaginationControls'
 
 export default function FeedPage() {
   const { session } = useAuth()
@@ -21,14 +22,16 @@ export default function FeedPage() {
   const [totalPosts, setTotalPosts] = useState(0)
   const [suggestedUsers, setSuggestedUsers] = useState<UserProfile[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
 
   const loadFeed = async (offset = 0, append = false) => {
     if (append) {
       setIsLoadingMore(true)
+      setLoadMoreError(null)
     } else {
       setIsLoading(true)
+      setError(null)
     }
-    setError(null)
 
     try {
       const page = await postsApi.getFeed(offset)
@@ -45,7 +48,9 @@ export default function FeedPage() {
       setAuthors((currentAuthors) => append ? { ...currentAuthors, ...profiles } : profiles)
       setTotalPosts(page.total)
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải bảng tin.')
+      const message = requestError instanceof ApiError ? requestError.message : 'Không thể tải bảng tin.'
+      if (append) setLoadMoreError(message)
+      else setError(message)
     } finally {
       if (append) {
         setIsLoadingMore(false)
@@ -110,16 +115,7 @@ export default function FeedPage() {
               onPostDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))}
             />
           ))}
-          {posts.length < totalPosts && (
-            <button
-              type="button"
-              onClick={() => void loadFeed(posts.length, true)}
-              disabled={isLoadingMore}
-              className="rounded-lg bg-surface-2 hover:bg-surface-hover disabled:opacity-60 border border-border py-2.5 text-sm font-semibold text-text cursor-pointer"
-            >
-              {isLoadingMore ? t('loading') : t('loadMorePosts')}
-            </button>
-          )}
+          <PaginationControls hasMore={posts.length < totalPosts} isLoading={isLoadingMore} error={loadMoreError} label={t('loadMorePosts')} onLoadMore={() => void loadFeed(posts.length, true)} />
         </div>
       </div>
 
