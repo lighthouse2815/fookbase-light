@@ -1,10 +1,10 @@
 # Fookbase Light
 
-Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
+Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Messages, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
-Code nghiệp vụ được chia theo feature module trong một project backend duy nhất: `Modules/<Module>/Entities`, `Services`, `Repositories`, `Endpoints` và `Shared`. Các module trao đổi event trực tiếp trong process. Transactional outbox và inbox vẫn được giữ để event bền vững, retry được và idempotent, nhưng không cần message broker.
+Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> Application use case (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
 
-Chi tiết về ranh giới module, quyết định giữ projection/outbox-inbox và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
+Chi tiết về ranh giới module và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
 
 ## Kiến trúc
 
@@ -16,7 +16,9 @@ Fookbase.Api :5000
   |-- Identity module
   |-- Users module
   |-- Friends module
-  |-- Posts module ---- gọi trực tiếp ----> Media module
+  |-- Messages module (SignalR)
+  |-- Application use cases
+  |-- Posts module
   `-- Media module
       |
       |-- PostgreSQL
@@ -25,7 +27,7 @@ Fookbase.Api :5000
 
 Backend chỉ có một entry point: `backend/Fookbase.Src/Main`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
 
-Năm database module hiện tại được giữ để migration và dữ liệu development cũ tiếp tục tương thích. Đây chỉ là ranh giới lưu trữ nội bộ của cùng một ứng dụng, không phải các service triển khai độc lập.
+Sáu database module hiện tại được giữ để migration và dữ liệu development cũ tiếp tục tương thích. Đây chỉ là ranh giới lưu trữ nội bộ của cùng một ứng dụng, không phải các service triển khai độc lập.
 
 ## Yêu cầu
 
@@ -60,7 +62,7 @@ source .env
 set +a
 dotnet tool restore
 
-for context in IdentityDbContext UsersDbContext FriendsDbContext PostsDbContext MediaDbContext; do
+for context in IdentityDbContext UsersDbContext FriendsDbContext MessagesDbContext PostsDbContext MediaDbContext; do
   dotnet tool run dotnet-ef database update \
     --project backend/Fookbase.Src/Main \
     --startup-project backend/Fookbase.Src/Main \
@@ -79,6 +81,11 @@ dotnet run --project backend/Fookbase.Src/Main
 
 API chạy tại <http://localhost:5000>, health check tại <http://localhost:5000/health>.
 
+Để mở quyền quản trị cho một tài khoản development, đặt `Admin__BootstrapEmail` thành email
+của tài khoản đó trước khi đăng ký hoặc đăng nhập. Hệ thống sẽ tự gán role `Admin` vào lần
+phát hành token kế tiếp; không đặt biến này ở môi trường production nếu chưa có quy trình
+quản lý role riêng.
+
 Chạy frontend:
 
 ```bash
@@ -88,6 +95,17 @@ npm run dev
 ```
 
 Frontend chạy tại <http://localhost:5173>.
+
+Chạy web Admin riêng:
+
+```bash
+cd frontend/admin
+npm install
+npm run dev
+```
+
+Admin Center chạy tại <http://localhost:5174>. Khi dùng local, thêm origin này vào
+`Cors__AllowedOrigins__1` (đã có sẵn trong `.env.example`).
 
 ## Build và test
 
@@ -159,6 +177,18 @@ JWT signing key chỉ được đọc từ `Jwt__SigningKey`. Refresh token raw 
 
 Tất cả Friends endpoint yêu cầu Bearer JWT. Collection endpoint dùng offset pagination, `limit` mặc định 20 và tối đa 100.
 
+### Messages
+
+| Method | Endpoint | Authentication |
+| --- | --- | --- |
+| POST | `/api/messages/conversations/{userId}` | Bearer JWT, bạn bè |
+| GET | `/api/messages/conversations` | Bearer JWT |
+| GET | `/api/messages/conversations/{conversationId}/messages` | Bearer JWT, thành viên |
+| POST | `/api/messages/conversations/{conversationId}/messages` | Bearer JWT, thành viên |
+| GET | `/api/messages/notifications` | Bearer JWT |
+
+Tin nhắn chỉ được gửi giữa bạn bè không bị block. Notification chưa đọc được lưu trong Messages database và cập nhật realtime qua SignalR tại `/hubs/messages`.
+
 ### Posts
 
 | Method | Endpoint | Authentication |
@@ -187,16 +217,22 @@ Privacy hợp lệ gồm `public`, `friends`, `onlyMe`; reaction gồm `like`, `
 
 Upload dùng presigned PUT trực tiếp tới bucket private. Posts lấy read URL bằng lời gọi C# trực tiếp tới Media module; endpoint HTTP nội bộ và shared service token cũ đã được loại bỏ.
 
-## Event nội bộ
+### Admin
 
-Các mutation vẫn ghi event và business state trong cùng transaction. Outbox worker của cùng process chuyển event tới projection handler của module đích rồi mới đánh dấu `ProcessedAtUtc`. Nếu handler lỗi, `RetryCount` và `LastError` được cập nhật để worker retry. Inbox giữ tính idempotent khi event được xử lý lại.
+| Method | Endpoint | Chức năng |
+| --- | --- | --- |
+| GET | `/api/admin/dashboard` | Thống kê users, posts và reports chờ xử lý |
+| GET | `/api/admin/users` | Danh sách tài khoản, hỗ trợ `query`, `offset`, `limit` |
+| PATCH | `/api/admin/users/{userId}/status` | Bật/tắt tài khoản thường |
+| GET | `/api/admin/reports` | Danh sách reports, lọc theo `status` |
+| PATCH | `/api/admin/reports/{reportId}/status` | Đánh dấu `reviewed`, `resolved` hoặc `dismissed` |
+| DELETE | `/api/admin/posts/{postId}` | Gỡ bài viết vi phạm |
 
-Các luồng chính:
+Tất cả endpoint Admin yêu cầu JWT có role `Admin`.
 
-- Identity registration → Users, Friends, Posts và Media.
-- Friends accepted/removed/blocked/unblocked → Posts.
-- Media ready/deleted → Posts.
-- Posts media attached/detached → Media.
+## Phối hợp module
+
+Khi một API cần nhiều service, endpoint gọi một application use case. Ví dụ đăng ký gọi `RegistrationUseCase` để tạo Identity và profile; Posts gọi `PostsUseCase` để lấy quan hệ hiện tại từ Friends và đồng bộ attachment với Media. Không có endpoint nào truy cập `DbContext` trực tiếp hoặc điều phối nhiều service.
 
 ## Tạo migration mới
 

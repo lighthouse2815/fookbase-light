@@ -8,8 +8,6 @@ public sealed class UsersDbContext(DbContextOptions<UsersDbContext> options)
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
-    public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(

@@ -19,6 +19,7 @@ const badgeClass: Record<string, string> = {
 }
 
 export default function PostCard({ post, author, style }: PostCardProps) {
+  const { t } = usePreferences()
   const [liked, setLiked] = useState(post.isLiked)
   const [reposted, setReposted] = useState(post.isReposted)
   const [likeCount, setLikeCount] = useState(post.likes)
@@ -76,7 +77,7 @@ export default function PostCard({ post, author, style }: PostCardProps) {
           type="button"
           className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted
                      hover:bg-surface-2 hover:text-text transition-colors cursor-pointer border-none"
-          title="More options"
+          title={t('moreOptions')}
         >
           •••
         </button>
@@ -194,4 +195,3 @@ export default function PostCard({ post, author, style }: PostCardProps) {
     </article>
   )
 }
-

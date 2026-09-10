@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { usePreferences } from '../../preferences'
 
 interface LikeButtonProps {
   liked?: boolean
@@ -7,13 +8,14 @@ interface LikeButtonProps {
 }
 
 export default function LikeButton({ liked = false, onToggle, className = '' }: LikeButtonProps) {
+  const { t } = usePreferences()
   return (
     <StyledWrapper className={className}>
       <button
         type="button"
         className={`like-btn ${liked ? 'is-liked' : ''}`}
         onClick={onToggle}
-        aria-label="Like"
+        aria-label={t('like')}
       >
         <div className="icon-wrapper">
           <svg className="icon-like-solid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -26,7 +28,7 @@ export default function LikeButton({ liked = false, onToggle, className = '' }: 
             <div className="checked-like-fx" />
           </div>
         </div>
-        <span className="like-label">{liked ? 'Liked' : 'Like'}</span>
+        <span className="like-label">{liked ? t('liked') : t('like')}</span>
       </button>
     </StyledWrapper>
   )
@@ -160,4 +162,3 @@ const StyledWrapper = styled.div`
     }
   }
 `
-

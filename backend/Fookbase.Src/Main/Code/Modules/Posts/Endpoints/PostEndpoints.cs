@@ -1,7 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Fookbase.Api.Application;
 using Fookbase.Api.Modules.Posts.Common;
-using Fookbase.Api.Modules.Posts.Services;
+using Fookbase.Api.Modules.Posts.DTOs.Requests;
 
 namespace Fookbase.Api.Modules.Posts.Endpoints;
 
@@ -16,6 +17,7 @@ public static class PostEndpoints
         group.MapDelete("/{postId:guid}", DeletePostAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}", GetPostAsync);
         group.MapGet("/feed", GetFeedAsync).RequireAuthorization();
+        group.MapGet("/search", SearchPostsAsync).RequireAuthorization();
         group.MapGet("/users/{authorUserId:guid}", GetUserPostsAsync);
         group.MapPost("/{postId:guid}/comments", CreateCommentAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}/comments", GetCommentsAsync);
@@ -32,7 +34,7 @@ public static class PostEndpoints
     private static async Task<IResult> CreatePostAsync(
         CreatePostRequest request,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -40,7 +42,7 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.CreatePostAsync(
+        var result = await useCase.CreatePostAsync(
             actorUserId, request.Content, request.Privacy, request.MediaIds ?? [], cancellationToken);
         return result.Succeeded
             ? Results.Created($"/api/posts/{result.Value!.Id}", result.Value)
@@ -51,7 +53,7 @@ public static class PostEndpoints
         Guid postId,
         UpdatePostRequest request,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -59,7 +61,7 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.UpdatePostAsync(
+        var result = await useCase.UpdatePostAsync(
             actorUserId, postId, request.Content, request.Privacy, request.MediaIds ?? [], cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
@@ -67,16 +69,16 @@ public static class PostEndpoints
     private static Task<IResult> DeletePostAsync(
         Guid postId,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
-            actorUserId => service.DeletePostAsync(actorUserId, postId, cancellationToken));
+            actorUserId => useCase.DeletePostAsync(actorUserId, postId, cancellationToken));
 
     private static async Task<IResult> GetPostAsync(
         Guid postId,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken)
     {
         if (!TryGetViewerUserId(principal, out var viewerUserId))
@@ -84,13 +86,13 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.GetPostAsync(viewerUserId, postId, cancellationToken);
+        var result = await useCase.GetPostAsync(viewerUserId, postId, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
     private static async Task<IResult> GetFeedAsync(
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -100,14 +102,31 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.GetFeedAsync(actorUserId, offset, limit, cancellationToken);
+        var result = await useCase.GetFeedAsync(actorUserId, offset, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> SearchPostsAsync(
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken,
+        string? query = null,
+        int offset = 0,
+        int limit = 20)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await useCase.SearchPostsAsync(actorUserId, query, offset, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
     private static async Task<IResult> GetUserPostsAsync(
         Guid authorUserId,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -117,7 +136,7 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.GetUserPostsAsync(
+        var result = await useCase.GetUserPostsAsync(
             viewerUserId, authorUserId, offset, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
@@ -126,7 +145,7 @@ public static class PostEndpoints
         Guid postId,
         CreateCommentRequest request,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -134,7 +153,7 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.CreateCommentAsync(
+        var result = await useCase.CreateCommentAsync(
             actorUserId, postId, request.ParentCommentId, request.Content, cancellationToken);
         return result.Succeeded
             ? Results.Created($"/api/posts/comments/{result.Value!.Id}", result.Value)
@@ -145,7 +164,7 @@ public static class PostEndpoints
         Guid commentId,
         UpdateCommentRequest request,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -153,7 +172,7 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.UpdateCommentAsync(
+        var result = await useCase.UpdateCommentAsync(
             actorUserId, commentId, request.Content, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
@@ -161,16 +180,16 @@ public static class PostEndpoints
     private static Task<IResult> DeleteCommentAsync(
         Guid commentId,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken) =>
         ExecuteCommandAsync(
             principal,
-            actorUserId => service.DeleteCommentAsync(actorUserId, commentId, cancellationToken));
+            actorUserId => useCase.DeleteCommentAsync(actorUserId, commentId, cancellationToken));
 
     private static async Task<IResult> GetCommentsAsync(
         Guid postId,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
@@ -180,7 +199,7 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.GetCommentsAsync(
+        var result = await useCase.GetCommentsAsync(
             viewerUserId, postId, offset, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
@@ -189,7 +208,7 @@ public static class PostEndpoints
         Guid postId,
         SetReactionRequest request,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -197,7 +216,7 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.SetReactionAsync(
+        var result = await useCase.SetReactionAsync(
             actorUserId, postId, request.Type, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
@@ -205,7 +224,7 @@ public static class PostEndpoints
     private static async Task<IResult> RemoveReactionAsync(
         Guid postId,
         ClaimsPrincipal principal,
-        PostsService service,
+        PostsUseCase useCase,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId))
@@ -213,16 +232,16 @@ public static class PostEndpoints
             return InvalidAccessToken();
         }
 
-        var result = await service.RemoveReactionAsync(actorUserId, postId, cancellationToken);
+        var result = await useCase.RemoveReactionAsync(actorUserId, postId, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
     private static async Task<IResult> GetMediaAccessAsync(
-        Guid postId, Guid mediaId, ClaimsPrincipal principal, PostsService service,
+        Guid postId, Guid mediaId, ClaimsPrincipal principal, PostsUseCase useCase,
         CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(principal, out var actorUserId)) return InvalidAccessToken();
-        var result = await service.GetMediaAccessAsync(actorUserId, postId, mediaId, cancellationToken);
+        var result = await useCase.GetMediaAccessAsync(actorUserId, postId, mediaId, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
@@ -257,13 +276,3 @@ public static class PostEndpoints
 
     private static IResult InvalidAccessToken() => Results.Unauthorized();
 }
-
-public sealed record CreatePostRequest(string Content, string Privacy, IReadOnlyList<Guid>? MediaIds = null);
-
-public sealed record UpdatePostRequest(string Content, string Privacy, IReadOnlyList<Guid>? MediaIds = null);
-
-public sealed record CreateCommentRequest(string Content, Guid? ParentCommentId);
-
-public sealed record UpdateCommentRequest(string Content);
-
-public sealed record SetReactionRequest(string Type);

@@ -15,7 +15,7 @@ public sealed class UsersApiFactory : WebApplicationFactory<Program>
             ?? throw new InvalidOperationException("Users development database connection string is required.");
         builder.UseEnvironment("Testing");
         ConfigureModuleConnections(builder, connectionString);
-        builder.UseSetting("Outbox:PublisherEnabled", "false");
+        builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-must-have-32-characters");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
@@ -35,7 +35,7 @@ public sealed class UsersApiFactory : WebApplicationFactory<Program>
 
     private static void ConfigureModuleConnections(IWebHostBuilder builder, string connectionString)
     {
-        foreach (var module in new[] { "Identity", "Users", "Friends", "Posts", "Media" })
+        foreach (var module in new[] { "Identity", "Users", "Friends", "Messages", "Posts", "Media" })
         {
             builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
         }

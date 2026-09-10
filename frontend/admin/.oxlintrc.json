@@ -1,0 +1,6 @@
+{
+  "plugins": ["react", "react-hooks", "typescript"],
+  "env": {
+    "browser": true
+  }
+}

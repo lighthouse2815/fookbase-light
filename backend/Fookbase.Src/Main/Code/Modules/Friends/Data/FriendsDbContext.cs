@@ -12,6 +12,8 @@ public sealed class FriendsDbContext(DbContextOptions<FriendsDbContext> options)
 
     public DbSet<BlockedUser> BlockedUsers => Set<BlockedUser>();
 
+    public DbSet<FriendNotification> FriendNotifications => Set<FriendNotification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(

@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Media.Repositories;
+using Fookbase.Api.Modules.Media.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -29,10 +29,10 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
 
         builder.UseEnvironment("Testing");
         ConfigureModuleConnections(builder, mediaConnectionString);
+        builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-must-have-32-characters");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
-        builder.UseSetting("Outbox:PublisherEnabled", "false");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.ConfigureServices(services =>
         {
@@ -56,7 +56,7 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
 
     private static void ConfigureModuleConnections(IWebHostBuilder builder, string connectionString)
     {
-        foreach (var module in new[] { "Identity", "Users", "Friends", "Posts", "Media" })
+        foreach (var module in new[] { "Identity", "Users", "Friends", "Messages", "Posts", "Media" })
         {
             builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
         }

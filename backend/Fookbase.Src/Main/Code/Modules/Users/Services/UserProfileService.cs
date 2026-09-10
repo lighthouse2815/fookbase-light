@@ -3,14 +3,43 @@ using Fookbase.Api.Modules.Users.Data;
 using Fookbase.Api.Modules.Users.DTOs.Requests;
 using Fookbase.Api.Modules.Users.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Modules.Media.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Services;
 
 public sealed class UserProfileService(
     UsersDbContext dbContext,
+    MediaService mediaService,
     TimeProvider timeProvider)
 {
+    private const int MaximumSearchLimit = 50;
+
+    public async Task EnsureCreatedAsync(
+        Guid userId,
+        string username,
+        CancellationToken cancellationToken = default)
+    {
+        if (await dbContext.UserProfiles.AnyAsync(profile => profile.UserId == userId, cancellationToken))
+        {
+            return;
+        }
+
+        dbContext.UserProfiles.Add(UserProfile.Create(userId, username, timeProvider.GetUtcNow()));
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            dbContext.ChangeTracker.Clear();
+            if (!await dbContext.UserProfiles.AnyAsync(profile => profile.UserId == userId, cancellationToken))
+            {
+                throw;
+            }
+        }
+    }
+
     public async Task<ApplicationResult<UserProfileResponse>> GetAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -23,12 +52,49 @@ public sealed class UserProfileService(
             : ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
     }
 
+    public async Task<ApplicationResult<PagedResponse<UserProfileResponse>>> SearchAsync(
+        string? query,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        if (offset < 0 || limit is < 1 or > MaximumSearchLimit)
+        {
+            return ApplicationResult<PagedResponse<UserProfileResponse>>.Failure(
+                new ApplicationError(
+                    "invalid_pagination",
+                    $"Offset must be non-negative and limit must be between 1 and {MaximumSearchLimit}.",
+                    ApplicationErrorType.Validation));
+        }
+
+        var normalizedQuery = query?.Trim().ToLowerInvariant();
+        var profiles = dbContext.UserProfiles.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            profiles = profiles.Where(profile =>
+                profile.Username.ToLower().Contains(normalizedQuery) ||
+                profile.DisplayName.ToLower().Contains(normalizedQuery));
+        }
+
+        var total = await profiles.CountAsync(cancellationToken);
+        var items = await profiles
+            .OrderBy(profile => profile.Username)
+            .Skip(offset)
+            .Take(limit)
+            .Select(profile => ToResponse(profile))
+            .ToListAsync(cancellationToken);
+
+        return ApplicationResult<PagedResponse<UserProfileResponse>>.Success(
+            new PagedResponse<UserProfileResponse>(items, offset, limit, total));
+    }
+
     public async Task<ApplicationResult<UserProfileResponse>> UpdateAsync(
         Guid userId,
         UpdateUserProfileRequest request,
         CancellationToken cancellationToken = default)
     {
         var errors = Validate(request, timeProvider.GetUtcNow());
+        await ValidateProfileMediaAsync(userId, request, errors, cancellationToken);
         if (errors.Count > 0)
         {
             return ApplicationResult<UserProfileResponse>.Failure(
@@ -51,13 +117,31 @@ public sealed class UserProfileService(
             request.Bio,
             request.DateOfBirth,
             request.CurrentCity,
+            request.AvatarMediaId,
+            request.CoverMediaId,
             timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
     }
 
-    private static IReadOnlyDictionary<string, string[]> Validate(
+    public async Task<Guid?> GetAvatarMediaIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.UserProfiles.AsNoTracking()
+            .Where(profile => profile.UserId == userId)
+            .Select(profile => profile.AvatarMediaId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<Guid?> GetCoverMediaIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.UserProfiles.AsNoTracking()
+            .Where(profile => profile.UserId == userId)
+            .Select(profile => profile.CoverMediaId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+    private static Dictionary<string, string[]> Validate(
         UpdateUserProfileRequest request,
         DateTimeOffset now)
     {
@@ -87,6 +171,37 @@ public sealed class UserProfileService(
         return errors;
     }
 
+    private async Task ValidateProfileMediaAsync(
+        Guid userId,
+        UpdateUserProfileRequest request,
+        Dictionary<string, string[]> errors,
+        CancellationToken cancellationToken)
+    {
+        if (request.AvatarMediaId is not null)
+        {
+            var validation = await mediaService.ValidateProfileImageAsync(
+                userId,
+                request.AvatarMediaId.Value,
+                cancellationToken);
+            if (!validation.Succeeded)
+            {
+                errors["avatarMediaId"] = [validation.Error!.Message];
+            }
+        }
+
+        if (request.CoverMediaId is not null)
+        {
+            var validation = await mediaService.ValidateProfileImageAsync(
+                userId,
+                request.CoverMediaId.Value,
+                cancellationToken);
+            if (!validation.Succeeded)
+            {
+                errors["coverMediaId"] = [validation.Error!.Message];
+            }
+        }
+    }
+
     private static ApplicationResult<UserProfileResponse> NotFound() =>
         ApplicationResult<UserProfileResponse>.Failure(
             new ApplicationError(
@@ -100,8 +215,8 @@ public sealed class UserProfileService(
             profile.Username,
             profile.DisplayName,
             profile.Bio,
-            profile.AvatarUrl,
-            profile.CoverUrl,
+            profile.AvatarMediaId is null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar",
+            profile.CoverMediaId is null ? profile.CoverUrl : $"/api/users/{profile.UserId}/cover",
             profile.DateOfBirth,
             profile.CurrentCity,
             profile.CreatedAt,

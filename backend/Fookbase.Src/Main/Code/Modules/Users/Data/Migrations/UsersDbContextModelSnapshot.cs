@@ -28,6 +28,9 @@ namespace Fookbase.Api.Modules.Users.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AvatarMediaId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("AvatarUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
@@ -35,6 +38,9 @@ namespace Fookbase.Api.Modules.Users.Data.Migrations
                     b.Property<string>("Bio")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("CoverMediaId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CoverUrl")
                         .HasMaxLength(2048)
@@ -69,25 +75,6 @@ namespace Fookbase.Api.Modules.Users.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("UserProfiles", (string)null);
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Users.Repositories.InboxMessage", b =>
-                {
-                    b.Property<Guid>("EventId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTimeOffset>("ProcessedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("EventId");
-
-                    b.ToTable("InboxMessages", (string)null);
                 });
 #pragma warning restore 612, 618
         }

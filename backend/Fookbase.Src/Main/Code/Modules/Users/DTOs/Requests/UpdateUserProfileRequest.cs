@@ -4,4 +4,6 @@ public sealed record UpdateUserProfileRequest(
     string? DisplayName,
     string? Bio,
     DateOnly? DateOfBirth,
-    string? CurrentCity);
+    string? CurrentCity,
+    Guid? AvatarMediaId = null,
+    Guid? CoverMediaId = null);

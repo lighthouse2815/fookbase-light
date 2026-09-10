@@ -10,37 +10,13 @@ External local dependencies are PostgreSQL and MinIO. There is no API gateway, R
 
 ## Module boundaries and communication
 
-Each module retains feature-local `Entities`, `Services`, `Repositories`, and `Endpoints` folders inside the single API project. A module must not access another module's `DbContext` or `DbSet`.
+Each module keeps feature-local `Entities`, `Data`, `Services`, and `Endpoints` folders inside the single API project. A module does not access another module's `DbContext` or `DbSet`.
 
-Cross-module communication uses explicit application abstractions or typed integration-event contracts. The current Posts-to-Media read URL path is an in-process call: `DirectMediaReadUrlClient` adapts Posts' `IMediaReadUrlClient` to Media's `IMediaService`; it does not create an HTTP request or use an internal service token.
+Cross-module coordination is explicit and synchronous: an endpoint calls an application use case only when it must combine services. `RegistrationUseCase` creates the authentication account and its user profile. `PostsUseCase` obtains the current Friends relationship snapshot for privacy checks and asks Media to validate and synchronize post attachments. These are in-process C# calls, not HTTP requests.
 
-Events are dispatched by `InProcessIntegrationEventPublisher` in the API project. Event-type strings remain contract identifiers for durable records and idempotency; broker-specific exchange, queue, and routing-key constants were removed.
+## No messaging projections
 
-## Projection audit
-
-The following projections are intentionally retained:
-
-| Projection | Owner | Reason |
-| --- | --- | --- |
-| `Posts.KnownUsers` | Posts | Lets Posts validate a known author without reading Identity persistence directly. |
-| `Friends.KnownUsers` | Friends | Supports relationship validation and local relationship responses without coupling Friends to Identity storage. |
-| `Media.KnownUsers` | Media | Keeps media ownership validation within Media's database boundary. |
-| `Posts.KnownMedia` | Posts | Validates attachment ownership, readiness, and deleted state before post mutations. |
-| `Posts.FriendEdges` and `Posts.BlockedEdges` | Posts | Feed and privacy queries filter many posts; local read models avoid per-post cross-module calls and preserve a single query path. |
-
-No projection is retained solely to simulate a microservice. They are local read models needed to preserve module persistence ownership and to make feed/privacy/media authorization efficient. Replacing them with direct application contracts would require cross-module calls on every feed candidate and would make the current query behaviour slower and more complex.
-
-## Outbox and inbox decision
-
-Outbox and inbox remain for mutations that update another module's persistent read model:
-
-1. A source module saves its business state and its outbox message in its own database transaction.
-2. An in-process hosted worker retries pending messages after failures or process restarts.
-3. A target module records the event in its inbox with its projection update, making repeated delivery idempotent.
-
-This is not distributed messaging: all handlers run inside the same API process. It is retained because the modules currently own separate `DbContext` transactions; removing it without adding a cross-context transaction would allow permanent projection drift if the process stopped between source and target writes.
-
-Events with no current consumer are retained in the source outbox as audit records. They do not create queues or invoke a broker.
+There is no messaging layer, integration-event contract, outbox, inbox, event publisher, projection worker, or hosted outbox service. Posts reads current relationship data through `FriendsService`; Media remains the owner of attachment metadata and references. The direct calls are intentionally simple for this single-process application.
 
 ## Database consolidation plan
 
@@ -61,8 +37,8 @@ Safe migration milestone:
 1. Back up and verify all five source databases; record row counts and migration history.
 2. Create `fookbase_db` and the five schemas without modifying source databases.
 3. Add schema-aware EF migrations for fresh installations, then apply them to the target database.
-4. Copy each module's tables from its source database to its matching target schema in one maintenance window, preserving primary keys, timestamps, outbox, and inbox records.
-5. Validate row counts, foreign-key/check constraints, pending outbox count, and representative API flows against the target.
+4. Copy each module's tables from its source database to its matching target schema in one maintenance window, preserving primary keys and timestamps.
+5. Validate row counts, foreign-key/check constraints, and representative API flows against the target.
 6. Switch connection strings only after validation; retain source backups until rollback is no longer needed.
 
 A migration script must be introduced with the schema migrations in that dedicated milestone. It must require explicit source and target connection strings, run read-only preflight checks first, and never drop, reset, or overwrite a source database.
@@ -71,4 +47,4 @@ A migration script must be introduced with the schema migrations in that dedicat
 
 All public routes remain under `/api/auth`, `/api/users`, `/api/friends`, `/api/posts`, and `/api/media`, served by `http://localhost:5000`. JWT and ASP.NET Core Identity are unchanged; endpoints continue to take the actor identifier from the JWT `sub` claim.
 
-Media remains private in MinIO. Clients upload with presigned PUT URLs, Posts obtains signed read URLs through the in-process Media call, and ownership/reference/lifecycle/signature validation remain in Media.
+Media remains private in MinIO. Clients upload with presigned PUT URLs; PostsUseCase obtains signed read URLs through the in-process Media service, and ownership/reference/lifecycle/signature validation remain in Media.

@@ -3,15 +3,12 @@ namespace Fookbase.Api.Modules.Posts.Services;
 public enum PostsServiceError
 {
     None,
-    UserNotFound,
     PostNotFound,
     CommentNotFound,
     ParentCommentNotFound,
     Forbidden,
     RelationshipBlocked,
     InvalidParentComment,
-    InvalidMedia,
-    MediaNotOwned,
     MediaNotAttached
 }
 

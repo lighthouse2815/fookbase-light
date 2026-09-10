@@ -1,9 +1,13 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { useAuth } from '../auth/useAuth'
 import TopNavbar from './TopNavbar'
 import Sidebar from './Sidebar'
 
 export default function MainLayout() {
   const location = useLocation()
+  const { session } = useAuth()
+
+  if (!session) return <Navigate to="/login" replace />
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
@@ -27,4 +31,3 @@ export default function MainLayout() {
     </div>
   )
 }
-

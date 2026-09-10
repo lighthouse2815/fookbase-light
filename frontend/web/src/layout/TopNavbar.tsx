@@ -9,13 +9,6 @@ interface NavItem {
   label: string
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { path: '/feed', icon: '🏠', label: 'Home' },
-  { path: '/explore', icon: '🔍', label: 'Explore' },
-  { path: '/messages', icon: '💬', label: 'Messages' },
-  { path: '/profile', icon: '👤', label: 'Profile' },
-]
-
 export default function TopNavbar() {
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS)
@@ -56,25 +49,27 @@ export default function TopNavbar() {
         <Link
           to="/feed"
           className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline"
-          title="Fookbase Home"
+          title={t('home')}
         >
           <span className="text-white text-xl font-bold">f</span>
         </Link>
 
         {/* Search */}
-        <div className="relative flex-1 max-sm:hidden">
+        <form onSubmit={submitSearch} className="relative flex-1 max-sm:hidden">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light text-sm">🔍</span>
           <input
-            type="text"
-            placeholder="Search Fookbase"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder={t('searchFookbase')}
             className="w-full bg-surface-2 border-none rounded-full text-[13px] text-text pl-9 pr-4 py-2 outline-none focus:input-focus transition-all placeholder:text-text-light"
           />
-        </div>
+        </form>
       </div>
 
       {/* ── Center: Navigation Tabs ──────────────────── */}
       <nav className="flex-1 flex items-center justify-center gap-1 max-w-[600px] mx-auto">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -100,9 +95,11 @@ export default function TopNavbar() {
 
       {/* ── Right: Actions ───────────────────────────── */}
       <div className="flex items-center gap-2 w-[280px] shrink-0 justify-end">
+        <PreferenceControls className="max-sm:hidden" />
         {/* Grid menu */}
         <button
           type="button"
+          onClick={() => void signOut()}
           className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none text-sm"
           title="Menu"
         >
@@ -130,10 +127,10 @@ export default function TopNavbar() {
         {/* User avatar link to profile */}
         <Link
           to="/profile"
-          className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline ${CURRENT_USER.avatarColor}`}
-          title={`${CURRENT_USER.displayName}'s Profile`}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline bg-primary"
+          title={t('profile')}
         >
-          {CURRENT_USER.avatar}
+          {initials}
         </Link>
       </div>
 
@@ -149,4 +146,3 @@ export default function TopNavbar() {
     </header>
   )
 }
-

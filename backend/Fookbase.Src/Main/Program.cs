@@ -1,27 +1,42 @@
 using Fookbase.Api.Modules.Identity.Config;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Fookbase.Api;
 using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Modules.Friends.Endpoints;
+using Fookbase.Api.Modules.Admin;
+using Fookbase.Api.Modules.Admin.Endpoints;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Endpoints;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Media.Controllers;
+using Fookbase.Api.Modules.Media.Endpoints;
+using Fookbase.Api.Modules.Messages.Endpoints;
+using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Posts.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is required.");
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var rateLimitPermitLimit = builder.Configuration.GetValue("RateLimiting:PermitLimit", 120);
+var rateLimitWindowSeconds = builder.Configuration.GetValue("RateLimiting:WindowSeconds", 60);
+if (rateLimitPermitLimit <= 0 || rateLimitWindowSeconds <= 0)
+{
+    throw new InvalidOperationException("Rate limiting values must be positive.");
+}
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddUsersModule(builder.Configuration);
 builder.Services.AddFriendsModule(builder.Configuration);
+builder.Services.AddMessagesModule(builder.Configuration);
 builder.Services.AddPostsModule(builder.Configuration);
 builder.Services.AddMediaModule(builder.Configuration);
-builder.Services.AddInProcessModuleCommunication();
+builder.Services.AddApplicationUseCases();
 
 jwtOptions.Validate();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -41,6 +56,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrWhiteSpace(accessToken)
+                    && context.HttpContext.Request.Path.StartsWithSegments("/hubs/messages"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            },
             OnChallenge = async context =>
             {
                 context.HandleResponse();
@@ -57,7 +83,35 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options => options.AddPolicy(AdminPolicy.Name, policy =>
+    policy.RequireRole(AdminRole.Name)));
+builder.Services.AddSignalR();
+if (allowedOrigins.Length > 0)
+{
+    builder.Services.AddCors(options => options.AddPolicy("Client", policy => policy
+        .WithOrigins(allowedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
+}
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var userId = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var partitionKey = string.IsNullOrWhiteSpace(userId)
+            ? $"ip:{context.Connection.RemoteIpAddress}"
+            : $"user:{userId}";
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = rateLimitPermitLimit,
+            Window = TimeSpan.FromSeconds(rateLimitWindowSeconds),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+});
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -65,14 +119,23 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+if (allowedOrigins.Length > 0)
+{
+    app.UseCors("Client");
+}
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 app.MapAuthenticationEndpoints();
 app.MapUserProfileEndpoints();
 app.MapFriendEndpoints();
+app.MapMessageEndpoints();
+app.MapHub<MessagesHub>("/hubs/messages");
 app.MapPostEndpoints();
+app.MapReportEndpoints();
+app.MapAdminEndpoints();
 app.MapMediaEndpoints();
 
 app.Run();

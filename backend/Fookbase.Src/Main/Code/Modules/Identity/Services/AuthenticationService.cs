@@ -1,12 +1,12 @@
-using System.Text.Json;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Shared.Contracts.Identity;
+using Fookbase.Api.Modules.Identity.Config;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
@@ -14,6 +14,11 @@ public sealed class AuthenticationService(
     UserManager<User> userManager,
     IdentityDbContext dbContext,
     JwtTokenService tokenService,
+    RoleManager<IdentityRole<Guid>> roleManager,
+    IEmailSender emailSender,
+    EmailOptions emailOptions,
+    AdminOptions adminOptions,
+    ILogger<AuthenticationService> logger,
     TimeProvider timeProvider)
 {
     public async Task<ApplicationResult<AuthenticationResponse>> RegisterAsync(
@@ -45,18 +50,11 @@ public sealed class AuthenticationService(
 
         var now = timeProvider.GetUtcNow();
         var user = new User(Guid.NewGuid(), email, userName, now);
-        var accessToken = tokenService.CreateAccessToken(user, now);
         var refreshToken = tokenService.CreateRefreshToken(user.Id, now);
-        var integrationEvent = new UserRegisteredIntegrationEvent(
-            Guid.NewGuid(),
-            user.Id,
-            userName,
-            now);
         var creationResult = await CreateUserAsync(
             user,
             request.Password!,
             refreshToken.RefreshToken,
-            integrationEvent,
             cancellationToken);
 
         if (!creationResult.Succeeded)
@@ -79,8 +77,21 @@ public sealed class AuthenticationService(
             return ValidationFailure<AuthenticationResponse>(errors);
         }
 
+        if (emailSender.IsEnabled)
+        {
+            try
+            {
+                await SendEmailVerificationForUserAsync(user, cancellationToken);
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Unable to send email verification for user {UserId}.", user.Id);
+            }
+        }
+
+        var roles = await GetRolesAsync(user);
         return ApplicationResult<AuthenticationResponse>.Success(
-            BuildResponse(user, accessToken, refreshToken));
+            BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now), refreshToken));
     }
 
     public async Task<ApplicationResult<AuthenticationResponse>> LoginAsync(
@@ -154,8 +165,9 @@ public sealed class AuthenticationService(
                 "The refresh token is invalid or expired.");
         }
 
+        var roles = await GetRolesAsync(user);
         return ApplicationResult<AuthenticationResponse>.Success(
-            BuildResponse(user, tokenService.CreateAccessToken(user, now), replacement));
+            BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now), replacement));
     }
 
     public async Task<ApplicationResult> LogoutAsync(
@@ -191,7 +203,160 @@ public sealed class AuthenticationService(
                 "The access token is invalid.");
         }
 
-        return ApplicationResult<AuthenticatedUserResponse>.Success(ToResponse(user));
+        return ApplicationResult<AuthenticatedUserResponse>.Success(
+            ToResponse(user, await GetRolesAsync(user)));
+    }
+
+    public async Task<ApplicationResult> SendEmailVerificationAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_access_token", "The access token is invalid.", ApplicationErrorType.Unauthorized));
+        }
+
+        if (user.EmailConfirmed)
+        {
+            return ApplicationResult.Success();
+        }
+
+        if (!emailSender.IsEnabled)
+        {
+            return ApplicationResult.Failure(EmailUnavailable());
+        }
+
+        try
+        {
+            await SendEmailVerificationForUserAsync(user, cancellationToken);
+            return ApplicationResult.Success();
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Unable to resend email verification for user {UserId}.", user.Id);
+            return ApplicationResult.Failure(EmailUnavailable());
+        }
+    }
+
+    public async Task<ApplicationResult> VerifyEmailAsync(
+        VerifyEmailRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token))
+        {
+            return ApplicationResult.Failure(InvalidVerificationLink());
+        }
+
+        var user = await userManager.FindByEmailAsync(request.Email.Trim());
+        if (user is null || !user.IsActive)
+        {
+            return ApplicationResult.Failure(InvalidVerificationLink());
+        }
+
+        var result = await userManager.ConfirmEmailAsync(user, request.Token);
+        return result.Succeeded
+            ? ApplicationResult.Success()
+            : ApplicationResult.Failure(InvalidVerificationLink());
+    }
+
+    public async Task<ApplicationResult> RequestPasswordResetAsync(
+        ForgotPasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!emailSender.IsEnabled)
+        {
+            return ApplicationResult.Failure(EmailUnavailable());
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return ApplicationResult.Success();
+        }
+
+        var user = await userManager.FindByEmailAsync(request.Email.Trim());
+        if (user is null || !user.IsActive)
+        {
+            return ApplicationResult.Success();
+        }
+
+        try
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            var resetUrl = BuildFrontendUrl("reset", user.Email!, token);
+            await emailSender.SendAsync(
+                user.Email!,
+                "Reset your Fookbase password",
+                $"<p>We received a request to reset your Fookbase password.</p><p><a href=\"{resetUrl}\">Reset password</a></p><p>If you did not request this, you can ignore this email.</p>",
+                cancellationToken);
+            return ApplicationResult.Success();
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Unable to send password reset email for user {UserId}.", user.Id);
+            return ApplicationResult.Failure(EmailUnavailable());
+        }
+    }
+
+    public async Task<ApplicationResult> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token) ||
+            string.IsNullOrWhiteSpace(request.Password) || request.Password != request.ConfirmPassword)
+        {
+            return ApplicationResult.Failure(InvalidResetRequest());
+        }
+
+        var user = await userManager.FindByEmailAsync(request.Email.Trim());
+        if (user is null || !user.IsActive)
+        {
+            return ApplicationResult.Failure(InvalidResetRequest());
+        }
+
+        var result = await userManager.ResetPasswordAsync(user, request.Token, request.Password);
+        if (!result.Succeeded)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "validation_failed", "One or more validation errors occurred.", ApplicationErrorType.Validation,
+                ToErrors(result)));
+        }
+
+        await RevokeAllRefreshTokensAsync(user.Id, timeProvider.GetUtcNow(), cancellationToken);
+        return ApplicationResult.Success();
+    }
+
+    public async Task<ApplicationResult<AuthenticationResponse>> ChangePasswordAsync(
+        Guid userId,
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword) ||
+            request.NewPassword != request.ConfirmPassword)
+        {
+            return ValidationFailure<AuthenticationResponse>(new Dictionary<string, string[]>
+            {
+                ["password"] = ["Current password, matching new password, and confirmation are required."]
+            });
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive)
+        {
+            return UnauthorizedFailure<AuthenticationResponse>(
+                "invalid_access_token", "The access token is invalid.");
+        }
+
+        var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            return ValidationFailure<AuthenticationResponse>(ToErrors(result));
+        }
+
+        var now = timeProvider.GetUtcNow();
+        await RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
+        return await IssueNewTokenPairAsync(user, now, cancellationToken);
     }
 
     private async Task<ApplicationResult<AuthenticationResponse>> IssueNewTokenPairAsync(
@@ -199,35 +364,69 @@ public sealed class AuthenticationService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        var accessToken = tokenService.CreateAccessToken(user, now);
+        var roles = await GetRolesAsync(user);
+        var accessToken = tokenService.CreateAccessToken(user, roles, now);
         var refreshToken = tokenService.CreateRefreshToken(user.Id, now);
 
         dbContext.RefreshTokens.Add(refreshToken.RefreshToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ApplicationResult<AuthenticationResponse>.Success(
-            BuildResponse(user, accessToken, refreshToken));
+            BuildResponse(user, roles, accessToken, refreshToken));
     }
 
     private static AuthenticationResponse BuildResponse(
         User user,
+        IReadOnlyList<string> roles,
         AccessTokenResult accessToken,
         RefreshTokenResult refreshToken) =>
         new(
-            ToResponse(user),
+            ToResponse(user, roles),
             accessToken.Token,
             accessToken.ExpiresAt,
             refreshToken.RawToken,
             refreshToken.RefreshToken.ExpiresAt);
 
-    private static AuthenticatedUserResponse ToResponse(User user) =>
-        new(user.Id, user.Email!, user.UserName!);
+    private static AuthenticatedUserResponse ToResponse(User user, IReadOnlyList<string> roles) =>
+        new(user.Id, user.Email!, user.UserName!, user.EmailConfirmed, roles);
+
+    private async Task<IReadOnlyList<string>> GetRolesAsync(User user)
+    {
+        if (adminOptions.IsBootstrapAdmin(user.Email!))
+        {
+            await EnsureBootstrapAdminRoleAsync(user);
+        }
+
+        return (await userManager.GetRolesAsync(user))
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private async Task EnsureBootstrapAdminRoleAsync(User user)
+    {
+        if (!await roleManager.RoleExistsAsync(AdminRole.Name))
+        {
+            var createRole = await roleManager.CreateAsync(new IdentityRole<Guid>(AdminRole.Name));
+            if (!createRole.Succeeded && !await roleManager.RoleExistsAsync(AdminRole.Name))
+            {
+                throw new InvalidOperationException("The bootstrap administrator role could not be created.");
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(user, AdminRole.Name))
+        {
+            var addRole = await userManager.AddToRoleAsync(user, AdminRole.Name);
+            if (!addRole.Succeeded)
+            {
+                throw new InvalidOperationException("The bootstrap administrator role could not be assigned.");
+            }
+        }
+    }
 
     private async Task<IdentityResult> CreateUserAsync(
         User user,
         string password,
         RefreshToken refreshToken,
-        UserRegisteredIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -240,11 +439,6 @@ public sealed class AuthenticationService(
         }
 
         dbContext.RefreshTokens.Add(refreshToken);
-        dbContext.OutboxMessages.Add(OutboxMessage.Create(
-            integrationEvent.EventId,
-            UserRegisteredIntegrationEvent.EventType,
-            JsonSerializer.Serialize(integrationEvent),
-            integrationEvent.OccurredAtUtc));
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return result;
@@ -288,6 +482,30 @@ public sealed class AuthenticationService(
                 setters => setters.SetProperty(token => token.RevokedAt, revokedAt),
                 cancellationToken) == 1;
 
+    private Task RevokeAllRefreshTokensAsync(
+        Guid userId,
+        DateTimeOffset revokedAt,
+        CancellationToken cancellationToken) =>
+        dbContext.RefreshTokens
+            .Where(token => token.UserId == userId && token.RevokedAt == null && token.ExpiresAt > revokedAt)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(token => token.RevokedAt, revokedAt),
+                cancellationToken);
+
+    private async Task SendEmailVerificationForUserAsync(User user, CancellationToken cancellationToken)
+    {
+        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        var verificationUrl = BuildFrontendUrl("verify", user.Email!, token);
+        await emailSender.SendAsync(
+            user.Email!,
+            "Verify your Fookbase email",
+            $"<p>Thanks for joining Fookbase.</p><p><a href=\"{verificationUrl}\">Verify email address</a></p>",
+            cancellationToken);
+    }
+
+    private string BuildFrontendUrl(string mode, string email, string token) =>
+        $"{emailOptions.FrontendBaseUrl.TrimEnd('/')}/login?mode={mode}&email={WebUtility.UrlEncode(email)}&token={WebUtility.UrlEncode(token)}";
+
     private static IReadOnlyDictionary<string, string[]> ToErrors(IdentityResult result) =>
         result.Errors
             .GroupBy(error => error.Code, StringComparer.Ordinal)
@@ -318,4 +536,22 @@ public sealed class AuthenticationService(
             "invalid_refresh_token",
             "The refresh token is invalid or expired.",
             ApplicationErrorType.Unauthorized);
+
+    private static ApplicationError EmailUnavailable() =>
+        new(
+            "email_unavailable",
+            "Email delivery is not configured or is temporarily unavailable.",
+            ApplicationErrorType.Conflict);
+
+    private static ApplicationError InvalidVerificationLink() =>
+        new(
+            "invalid_verification_link",
+            "The email verification link is invalid or expired.",
+            ApplicationErrorType.Validation);
+
+    private static ApplicationError InvalidResetRequest() =>
+        new(
+            "invalid_password_reset",
+            "The password reset request is invalid or expired.",
+            ApplicationErrorType.Validation);
 }

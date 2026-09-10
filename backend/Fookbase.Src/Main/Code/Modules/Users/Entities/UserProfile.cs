@@ -30,6 +30,10 @@ public sealed class UserProfile
 
     public string? CoverUrl { get; private set; }
 
+    public Guid? AvatarMediaId { get; private set; }
+
+    public Guid? CoverMediaId { get; private set; }
+
     public DateOnly? DateOfBirth { get; private set; }
 
     public string? CurrentCity { get; private set; }
@@ -49,6 +53,8 @@ public sealed class UserProfile
         string? bio,
         DateOnly? dateOfBirth,
         string? currentCity,
+        Guid? avatarMediaId,
+        Guid? coverMediaId,
         DateTimeOffset updatedAt)
     {
         if (displayName is not null)
@@ -69,6 +75,18 @@ public sealed class UserProfile
         if (currentCity is not null)
         {
             CurrentCity = NormalizeOptionalText(currentCity);
+        }
+
+        if (avatarMediaId is not null)
+        {
+            AvatarMediaId = avatarMediaId;
+            AvatarUrl = null;
+        }
+
+        if (coverMediaId is not null)
+        {
+            CoverMediaId = coverMediaId;
+            CoverUrl = null;
         }
 
         UpdatedAt = updatedAt;

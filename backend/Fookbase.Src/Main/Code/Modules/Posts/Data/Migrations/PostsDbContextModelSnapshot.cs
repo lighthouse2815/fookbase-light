@@ -22,33 +22,6 @@ namespace Fookbase.Api.Modules.Posts.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.BlockedEdge", b =>
-                {
-                    b.Property<Guid>("BlockerUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BlockedUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset>("LastChangedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("BlockerUserId", "BlockedUserId");
-
-                    b.HasIndex("IsActive", "BlockedUserId");
-
-                    b.ToTable("BlockedEdges", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_BlockedEdges_DifferentUsers", "\"BlockerUserId\" <> \"BlockedUserId\"");
-                        });
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -87,82 +60,42 @@ namespace Fookbase.Api.Modules.Posts.Data.Migrations
                     b.ToTable("Comments", (string)null);
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.FriendEdge", b =>
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentReport", b =>
                 {
-                    b.Property<Guid>("UserId1")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId2")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset>("LastChangedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("UserId1", "UserId2");
-
-                    b.HasIndex("IsActive", "UserId1");
-
-                    b.HasIndex("IsActive", "UserId2");
-
-                    b.ToTable("FriendEdges", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_FriendEdges_CanonicalPair", "\"UserId1\" < \"UserId2\"");
-                        });
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.KnownMedia", b =>
-                {
-                    b.Property<Guid>("MediaId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("IsReady")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset>("LastChangedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("MediaType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<Guid>("OwnerUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("SizeBytes")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("MediaId");
-
-                    b.HasIndex("OwnerUserId", "IsReady");
-
-                    b.ToTable("KnownMedia", (string)null);
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.KnownUser", b =>
-                {
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("UserId");
+                    b.Property<string>("Details")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                    b.ToTable("KnownUsers", (string)null);
+                    b.Property<int>("Reason")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ReporterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TargetType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReporterUserId", "TargetType", "TargetId")
+                        .IsUnique();
+
+                    b.HasIndex("TargetType", "TargetId", "Status", "CreatedAtUtc");
+
+                    b.ToTable("ContentReports", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Post", b =>
@@ -241,60 +174,6 @@ namespace Fookbase.Api.Modules.Posts.Data.Migrations
                     b.HasIndex("PostId", "Type");
 
                     b.ToTable("PostReactions", (string)null);
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Data.InboxMessage", b =>
-                {
-                    b.Property<Guid>("EventId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTimeOffset>("ProcessedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("EventId");
-
-                    b.ToTable("InboxMessages", (string)null);
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Data.OutboxMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTimeOffset>("OccurredAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTimeOffset?>("ProcessedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RetryCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProcessedAtUtc", "OccurredAtUtc");
-
-                    b.ToTable("OutboxMessages", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>

@@ -154,9 +154,19 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             "/api/friends/requests/incoming");
         var pendingStatus = await clientA.GetFromJsonAsync<RelationshipStatusResponse>(
             $"/api/friends/status/{userB}");
+        var receiverNotifications = await clientB.GetFromJsonAsync<PagedResponse<FriendNotificationResponse>>(
+            "/api/friends/notifications/unread");
         Assert.Contains(outgoing!.Items, item => item.Id == request.Id);
         Assert.Contains(incoming!.Items, item => item.Id == request.Id);
         Assert.Equal("request_sent", pendingStatus!.Status);
+        var requestNotification = Assert.Single(receiverNotifications!.Items);
+        Assert.Equal(userA, requestNotification.ActorUserId);
+        Assert.Equal("friend_request", requestNotification.Type);
+
+        var markRead = await clientB.PostAsync($"/api/friends/notifications/{requestNotification.Id}/read", null);
+        Assert.Equal(HttpStatusCode.NoContent, markRead.StatusCode);
+        Assert.Empty((await clientB.GetFromJsonAsync<PagedResponse<FriendNotificationResponse>>(
+            "/api/friends/notifications/unread"))!.Items);
 
         var accepted = await clientB.PostAsync(
             $"/api/friends/requests/{request.Id}/accept",
@@ -168,6 +178,11 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.Contains(friendsB!.Items, item => item.UserId == userA);
         Assert.Equal("friends", (await clientA.GetFromJsonAsync<RelationshipStatusResponse>(
             $"/api/friends/status/{userB}"))!.Status);
+        var senderNotifications = await clientA.GetFromJsonAsync<PagedResponse<FriendNotificationResponse>>(
+            "/api/friends/notifications/unread");
+        var acceptanceNotification = Assert.Single(senderNotifications!.Items);
+        Assert.Equal(userB, acceptanceNotification.ActorUserId);
+        Assert.Equal("friend_accepted", acceptanceNotification.Type);
 
         var unfriend = await clientA.DeleteAsync($"/api/friends/{userB}");
         Assert.Equal(HttpStatusCode.NoContent, unfriend.StatusCode);

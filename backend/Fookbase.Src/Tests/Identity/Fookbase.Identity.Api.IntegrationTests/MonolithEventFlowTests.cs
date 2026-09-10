@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Data;
-using Fookbase.Api.Modules.Media.Repositories;
+using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Users.Data;
 using Microsoft.AspNetCore.Hosting;
@@ -20,7 +20,7 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
     : IClassFixture<MonolithApiFactory>
 {
     [Fact]
-    public async Task Registration_is_projected_to_modules_that_require_user_data()
+    public async Task Registration_creates_the_user_profile_directly()
     {
         using var client = factory.CreateClient();
         var suffix = Guid.NewGuid().ToString("N")[..16];
@@ -32,38 +32,9 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
         var authentication = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
         Assert.NotNull(authentication);
 
-        await WaitUntilAsync(async () =>
-        {
-            using var scope = factory.Services.CreateScope();
-            var userId = authentication.User.Id;
-            var identityOutbox = await scope.ServiceProvider
-                .GetRequiredService<IdentityDbContext>()
-                .OutboxMessages.AsNoTracking().ToListAsync();
-            return await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
-                       .UserProfiles.AnyAsync(item => item.UserId == userId) &&
-                   await scope.ServiceProvider.GetRequiredService<PostsDbContext>()
-                       .KnownUsers.AnyAsync(item => item.UserId == userId) &&
-                   await scope.ServiceProvider.GetRequiredService<MediaDbContext>()
-                       .KnownUsers.AnyAsync(item => item.UserId == userId) &&
-                   identityOutbox.Any(item =>
-                       item.Payload.Contains(userId.ToString()) && item.ProcessedAtUtc != null);
-        });
-    }
-
-    private static async Task WaitUntilAsync(Func<Task<bool>> condition)
-    {
-        var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(15);
-        while (DateTimeOffset.UtcNow < timeoutAt)
-        {
-            if (await condition())
-            {
-                return;
-            }
-
-            await Task.Delay(100);
-        }
-
-        Assert.Fail("The registration event was not projected to every module in time.");
+        using var scope = factory.Services.CreateScope();
+        Assert.True(await scope.ServiceProvider.GetRequiredService<UsersDbContext>()
+            .UserProfiles.AnyAsync(item => item.UserId == authentication.User.Id));
     }
 }
 
@@ -71,13 +42,18 @@ public sealed class MonolithApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__IdentityDatabase")
+            ?? throw new InvalidOperationException("Identity development database connection string is required.");
         builder.UseEnvironment("Testing");
-        builder.UseSetting("Outbox:PublisherEnabled", "true");
-        builder.UseSetting("Outbox:PollingIntervalSeconds", "1");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
+        builder.UseSetting("Jwt:SigningKey", "identity-integration-tests-signing-key-with-32-characters");
+        foreach (var module in new[] { "Identity", "Users", "Friends", "Messages", "Posts", "Media" })
+        {
+            builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
+        }
     }
 
     protected override IHost CreateHost(IHostBuilder builder)

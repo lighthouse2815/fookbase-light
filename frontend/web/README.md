@@ -2,6 +2,14 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
+## API during development
+
+`npm run dev` proxies `/api` requests to `http://localhost:5000`, the default backend URL.
+Set `VITE_API_PROXY_TARGET` to use another backend URL. For a separately deployed frontend,
+set `VITE_API_BASE_URL` to the API origin instead.
+
+The sign-in flow stores the JWT session in local storage and refreshes an expired access token automatically.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)

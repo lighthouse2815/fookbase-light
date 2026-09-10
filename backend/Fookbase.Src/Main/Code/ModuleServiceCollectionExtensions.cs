@@ -1,17 +1,18 @@
-using Fookbase.Api.Shared.IntegrationEvents;
+using Fookbase.Api.Application;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Identity.Config;
+using Fookbase.Api.Modules.Identity;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Media;
 using Fookbase.Api.Modules.Media.Config;
+using Fookbase.Api.Modules.Posts;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Friends;
-using Fookbase.Api.Modules.Users.Config;
+using Fookbase.Api.Modules.Messages;
+using Fookbase.Api.Modules.Users;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using IdentityOutboxOptions = Fookbase.Api.Modules.Identity.Messaging.OutboxOptions;
-using MediaOutboxOptions = Fookbase.Api.Modules.Media.Config.OutboxOptions;
-using PostsOutboxOptions = Fookbase.Api.Modules.Posts.Config.OutboxOptions;
 
 namespace Fookbase.Api;
 
@@ -23,12 +24,16 @@ internal static class ModuleServiceCollectionExtensions
     {
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
             ?? throw new InvalidOperationException("JWT configuration is required.");
+        var emailOptions = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()
+            ?? new EmailOptions();
+        var adminOptions = configuration.GetSection(AdminOptions.SectionName).Get<AdminOptions>()
+            ?? new AdminOptions();
 
         return services.AddIdentityInfrastructure(
             RequiredConnectionString(configuration, "IdentityDatabase"),
             jwtOptions,
-            configuration.GetSection(IdentityOutboxOptions.SectionName).Get<IdentityOutboxOptions>()
-                ?? new IdentityOutboxOptions());
+            emailOptions,
+            adminOptions);
     }
 
     public static IServiceCollection AddUsersModule(
@@ -41,13 +46,16 @@ internal static class ModuleServiceCollectionExtensions
         IConfiguration configuration) =>
         services.AddFriendsInfrastructure(RequiredConnectionString(configuration, "FriendsDatabase"));
 
+    public static IServiceCollection AddMessagesModule(
+        this IServiceCollection services,
+        IConfiguration configuration) =>
+        services.AddMessagesInfrastructure(RequiredConnectionString(configuration, "MessagesDatabase"));
+
     public static IServiceCollection AddPostsModule(
         this IServiceCollection services,
         IConfiguration configuration) =>
         services.AddPostsInfrastructure(
             RequiredConnectionString(configuration, "PostsDatabase"),
-            configuration.GetSection(PostsOutboxOptions.SectionName).Get<PostsOutboxOptions>()
-                ?? new PostsOutboxOptions(),
             configuration.GetSection(PostsOptions.SectionName).Get<PostsOptions>()
                 ?? new PostsOptions());
 
@@ -61,22 +69,15 @@ internal static class ModuleServiceCollectionExtensions
         return services.AddMediaInfrastructure(
             RequiredConnectionString(configuration, "MediaDatabase"),
             minioOptions,
-            configuration.GetSection(MediaOutboxOptions.SectionName).Get<MediaOutboxOptions>()
-                ?? new MediaOutboxOptions(),
             configuration.GetSection(MediaOptions.SectionName).Get<MediaOptions>()
                 ?? new MediaOptions());
     }
 
-    public static IServiceCollection AddInProcessModuleCommunication(this IServiceCollection services)
+    public static IServiceCollection AddApplicationUseCases(this IServiceCollection services)
     {
-        services.AddScoped<InProcessIntegrationEventPublisher>();
-        services.AddScoped<Fookbase.Api.Modules.Identity.Messaging.IIntegrationEventPublisher>(
-            provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
-        services.AddScoped<Fookbase.Api.Modules.Posts.Messaging.IIntegrationEventPublisher>(
-            provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
-        services.AddScoped<Fookbase.Api.Modules.Media.Services.IIntegrationEventPublisher>(
-            provider => provider.GetRequiredService<InProcessIntegrationEventPublisher>());
-        services.AddScoped<IMediaReadUrlClient, DirectMediaReadUrlClient>();
+        services.AddScoped<RegistrationUseCase>();
+        services.AddScoped<PostsUseCase>();
+        services.AddScoped<AdministrationUseCase>();
 
         return services;
     }

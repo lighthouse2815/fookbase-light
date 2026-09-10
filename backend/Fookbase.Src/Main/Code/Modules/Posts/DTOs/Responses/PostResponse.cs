@@ -1,0 +1,13 @@
+namespace Fookbase.Api.Modules.Posts.DTOs.Responses;
+
+public sealed record PostResponse(
+    Guid Id,
+    Guid AuthorUserId,
+    string Content,
+    string Privacy,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? UpdatedAtUtc,
+    IReadOnlyList<Guid> MediaIds,
+    int CommentCount,
+    IReadOnlyDictionary<string, int> ReactionCounts,
+    string? ViewerReaction);

@@ -43,6 +43,37 @@ namespace Fookbase.Api.Modules.Friends.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FriendRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ReadAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecipientUserId", "ReadAtUtc", "CreatedAtUtc");
+
+                    b.ToTable("FriendNotifications", (string)null);
+                });
+
             modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendRequest", b =>
                 {
                     b.Property<Guid>("Id")

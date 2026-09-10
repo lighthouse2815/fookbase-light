@@ -9,5 +9,16 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/hubs': {
+        target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:5000',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
 })
