@@ -264,7 +264,7 @@ public sealed class MessagesService(
             new MessageHistoryResponse(items, nextCursor, hasMore));
     }
 
-    public async Task<ApplicationResult> MarkConversationReadAsync(
+    public async Task<ApplicationResult<bool>> MarkConversationReadAsync(
         Guid actorUserId,
         Guid conversationId,
         MarkConversationReadRequest request,
@@ -276,7 +276,7 @@ public sealed class MessagesService(
         var accessError = ValidateAccess(conversation, actorUserId);
         if (accessError is not null)
         {
-            return ApplicationResult.Failure(accessError);
+            return ApplicationResult<bool>.Failure(accessError);
         }
 
         var relationshipError = await ValidateMessageRelationshipAsync(
@@ -285,7 +285,7 @@ public sealed class MessagesService(
             cancellationToken);
         if (relationshipError is not null)
         {
-            return ApplicationResult.Failure(relationshipError);
+            return ApplicationResult<bool>.Failure(relationshipError);
         }
 
         var lastReadMessage = request.LastReadMessageId is null
@@ -300,7 +300,7 @@ public sealed class MessagesService(
                 cancellationToken);
         if (lastReadMessage is null)
         {
-            return ApplicationResult.Failure(new ApplicationError(
+            return ApplicationResult<bool>.Failure(new ApplicationError(
                 "message_not_found",
                 "The message was not found in this conversation.",
                 ApplicationErrorType.NotFound));
@@ -318,7 +318,7 @@ public sealed class MessagesService(
         var readAtUtc = timeProvider.GetUtcNow();
         if (!readCursor.AdvanceTo(lastReadMessage.Id, lastReadMessage.CreatedAtUtc, readAtUtc))
         {
-            return ApplicationResult.Success();
+            return ApplicationResult<bool>.Success(true);
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -349,7 +349,7 @@ public sealed class MessagesService(
             new MessagesReadResponse(conversationId, actorUserId, lastReadMessage.Id, readAtUtc),
             cancellationToken);
 
-        return ApplicationResult.Success();
+        return ApplicationResult<bool>.Success(true);
     }
 
     public async Task<ApplicationResult<MessageResponse>> SendMessageAsync(
@@ -476,8 +476,12 @@ public sealed class MessagesService(
                       (message.CreatedAtUtc == cursor.LastReadMessageCreatedAtUtc &&
                        message.Id.CompareTo(cursor.LastReadMessageId.Value) > 0))
             group message by message.ConversationId
-            into group
-            select new { ConversationId = group.Key, Count = group.Count() })
+            into messagesByConversation
+            select new
+            {
+                ConversationId = messagesByConversation.Key,
+                Count = messagesByConversation.Count()
+            })
             .ToDictionaryAsync(item => item.ConversationId, item => item.Count, cancellationToken);
     }
 
