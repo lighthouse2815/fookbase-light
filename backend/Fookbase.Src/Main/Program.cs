@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Fookbase.Api;
 using Fookbase.Api.Shared.ErrorHandling;
+using Fookbase.Api.Shared.HealthChecks;
 using Fookbase.Api.Modules.Friends.Endpoints;
 using Fookbase.Api.Modules.Admin;
 using Fookbase.Api.Modules.Admin.Endpoints;
@@ -10,12 +11,16 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Endpoints;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Endpoints;
+using Fookbase.Api.Modules.Media.HealthChecks;
 using Fookbase.Api.Modules.Messages.Endpoints;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Posts.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 
@@ -50,7 +55,7 @@ builder.Services.AddFriendsModule();
 builder.Services.AddMessagesModule();
 builder.Services.AddPostsModule(builder.Configuration);
 builder.Services.AddMediaModule(builder.Configuration);
-builder.Services.AddApplicationUseCases();
+builder.Services.AddAdminModule();
 
 jwtOptions.Validate();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -138,11 +143,22 @@ builder.Services.AddRateLimiter(options =>
             $"auth-resend-verification:{ClientAddress(context)}",
             _ => SensitiveAuthRateLimit(authResendVerificationPermitLimit, authRateLimitWindowSeconds)));
 });
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck<FookbaseDatabaseHealthCheck>("postgresql", tags: ["ready"])
+    .AddCheck<MinioBucketHealthCheck>("minio", tags: ["ready"]);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
+
+if (builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", false))
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider
+        .GetRequiredService<Fookbase.Api.Persistence.FookbaseDbContext>()
+        .Database
+        .MigrateAsync();
+}
 
 app.UseExceptionHandler();
 if (allowedOrigins.Length > 0)
@@ -154,6 +170,14 @@ app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready")
+});
 app.MapAuthenticationEndpoints();
 app.MapUserProfileEndpoints();
 app.MapFriendEndpoints();
