@@ -16,6 +16,10 @@ public sealed class MinioOptions
 
     public bool BucketInitializationEnabled { get; init; } = true;
 
+    public int BucketInitializationMaxAttempts { get; init; } = 5;
+
+    public int BucketInitializationRetrySeconds { get; init; } = 2;
+
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Endpoint))
@@ -36,6 +40,11 @@ public sealed class MinioOptions
         if (string.IsNullOrWhiteSpace(BucketName))
         {
             throw new InvalidOperationException("MinIO bucket name is required.");
+        }
+
+        if (BucketInitializationMaxAttempts <= 0 || BucketInitializationRetrySeconds <= 0)
+        {
+            throw new InvalidOperationException("MinIO bucket initialization retry settings must be positive.");
         }
     }
 }

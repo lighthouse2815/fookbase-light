@@ -16,6 +16,8 @@ Minio__BucketInitializationEnabled=false
 
 `VITE_API_BASE_URL` phải là origin HTTPS của API nếu frontend không reverse-proxy `/api` và `/hubs` về cùng domain.
 
+Khi API và MinIO cùng khởi động, bootstrap bucket sẽ retry 5 lần với khoảng cách 2 giây. Điều chỉnh `Minio__BucketInitializationMaxAttempts` và `Minio__BucketInitializationRetrySeconds` nếu storage cần thời gian sẵn sàng lâu hơn.
+
 ## Reverse proxy và TLS
 
 Đặt API, MinIO API và frontend phía sau reverse proxy có chứng chỉ TLS. Proxy cần chuyển tiếp WebSocket cho `/hubs/messages`; không mở trực tiếp PostgreSQL, MinIO console hoặc MinIO API ra Internet. Chỉ proxy mới được kết nối tới các service nội bộ.
