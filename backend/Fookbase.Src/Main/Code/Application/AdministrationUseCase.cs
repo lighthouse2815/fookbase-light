@@ -15,16 +15,15 @@ public sealed class AdministrationUseCase(
     public async Task<AdminDashboardResponse> GetDashboardAsync(
         CancellationToken cancellationToken = default)
     {
-        var totalUsers = administrationService.CountUsersAsync(cancellationToken);
-        var activeUsers = administrationService.CountActiveUsersAsync(cancellationToken);
-        var moderation = reportsService.GetModerationSummaryAsync(cancellationToken);
+        var totalUsers = await administrationService.CountUsersAsync(cancellationToken);
+        var activeUsers = await administrationService.CountActiveUsersAsync(cancellationToken);
+        var moderation = await reportsService.GetModerationSummaryAsync(cancellationToken);
 
-        await Task.WhenAll(totalUsers, activeUsers, moderation);
         return new AdminDashboardResponse(
-            totalUsers.Result,
-            activeUsers.Result,
-            moderation.Result.ActivePostCount,
-            moderation.Result.PendingReportCount);
+            totalUsers,
+            activeUsers,
+            moderation.ActivePostCount,
+            moderation.PendingReportCount);
     }
 
     public async Task<ApplicationResult> DeletePostAsync(

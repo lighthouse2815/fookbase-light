@@ -49,7 +49,26 @@ public sealed class AdministrationService(
             .Skip(offset)
             .Take(limit)
             .ToListAsync(cancellationToken);
-        var responses = await Task.WhenAll(items.Select(ToResponseAsync));
+        var userIds = items.Select(user => user.Id).ToArray();
+        var rolesByUserId = userIds.Length == 0
+            ? new Dictionary<Guid, string[]>()
+            : (await (
+                from userRole in dbContext.UserRoles.AsNoTracking()
+                join role in dbContext.Roles.AsNoTracking() on userRole.RoleId equals role.Id
+                where userIds.Contains(userRole.UserId)
+                orderby role.Name
+                select new { userRole.UserId, RoleName = role.Name! })
+                .ToListAsync(cancellationToken))
+                .GroupBy(item => item.UserId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group
+                        .Select(item => item.RoleName)
+                        .Order(StringComparer.OrdinalIgnoreCase)
+                        .ToArray());
+        var responses = items
+            .Select(user => ToResponse(user, rolesByUserId.GetValueOrDefault(user.Id, [])))
+            .ToArray();
 
         return ApplicationResult<PagedResponse<AdminUserResponse>>.Success(
             new PagedResponse<AdminUserResponse>(responses, offset, limit, total));
@@ -104,13 +123,12 @@ public sealed class AdministrationService(
     }
 
     private async Task<AdminUserResponse> ToResponseAsync(User user) =>
-        new(
-            user.Id,
-            user.Email!,
-            user.UserName!,
-            user.IsActive,
-            user.CreatedAt,
+        ToResponse(
+            user,
             (await userManager.GetRolesAsync(user)).Order(StringComparer.OrdinalIgnoreCase).ToArray());
+
+    private static AdminUserResponse ToResponse(User user, IReadOnlyList<string> roles) =>
+        new(user.Id, user.Email!, user.UserName!, user.IsActive, user.CreatedAt, roles);
 
     private static ApplicationError Forbidden(string message) =>
         new("admin_action_forbidden", message, ApplicationErrorType.Forbidden);
