@@ -10,7 +10,7 @@ External local dependencies are PostgreSQL and MinIO. There is no API gateway, R
 
 ## Module boundaries and communication
 
-Each module keeps feature-local `Entities`, `Data`, `Services`, and `Endpoints` folders inside the single API project. A module does not access another module's `DbContext` or `DbSet`.
+Each module keeps feature-local `Entities`, `Data`, `Services`, and `Endpoints` folders inside the single API project. Each module owns its data writes. A small number of in-process read checks use the authoritative module context when needed for integrity: user reports verify an Identity user exists, and Media verifies active Users profile-media references before deletion.
 
 Cross-module coordination is explicit and synchronous: an endpoint calls an application use case only when it must combine services. `RegistrationUseCase` creates the authentication account and its user profile. `PostsUseCase` obtains the current Friends relationship snapshot for privacy checks and asks Media to validate and synchronize post attachments. Messages uses `FriendsService` for direct-conversation access checks and SignalR at `/hubs/messages` for client updates. These are in-process C# calls, not HTTP requests.
 
@@ -31,7 +31,7 @@ posts.*
 media.*
 ```
 
-Each module will keep its own `DbContext` and EF migrations. The current five development databases are intentionally not reset or migrated automatically.
+Each module will keep its own `DbContext` and EF migrations. The current six development databases are intentionally not reset or migrated automatically.
 
 Safe migration milestone:
 
