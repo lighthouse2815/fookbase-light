@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+!.env.example
+.nuget/
+
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/dist-ssr/
+
+frontend/
+backend/Fookbase.Src/Tests/
+backend/Fookbase.Src/Main/Code/Modules/*/Data/Migrations/
