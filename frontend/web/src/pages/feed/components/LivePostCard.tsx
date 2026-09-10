@@ -5,6 +5,7 @@ import { postsApi } from '../../../api/posts'
 import type { Comment, MediaAccess, Post } from '../../../api/posts'
 import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
+import ReportButton from '../../../shared/components/ReportButton'
 
 interface LivePostCardProps {
   post: Post
@@ -150,11 +151,13 @@ export default function LivePostCard({
           <Link to={`/profile/${post.authorUserId}`} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{author?.displayName ?? 'User'}</Link>
           <p className="text-xs text-text-muted">@{author?.username ?? post.authorUserId.slice(0, 8)} · {relativeDate(post.createdAtUtc)}</p>
         </div>
-        {isAuthor && (
+        {isAuthor ? (
           <div className="flex gap-1">
             <button type="button" onClick={() => void editPost()} className="text-xs text-text-muted hover:text-text bg-transparent border-none cursor-pointer">Edit</button>
             <button type="button" onClick={() => void deletePost()} className="text-xs text-[#ff8a9b] bg-transparent border-none cursor-pointer">Delete</button>
           </div>
+        ) : (
+          <ReportButton targetType="post" targetId={post.id} className="border-none bg-transparent text-xs text-text-muted hover:text-[#ff8a9b]" />
         )}
       </div>
 

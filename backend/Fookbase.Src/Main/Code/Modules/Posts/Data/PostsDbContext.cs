@@ -9,6 +9,7 @@ public sealed class PostsDbContext(DbContextOptions<PostsDbContext> options) : D
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<PostReaction> PostReactions => Set<PostReaction>();
     public DbSet<PostMedia> PostMedia => Set<PostMedia>();
+    public DbSet<ContentReport> ContentReports => Set<ContentReport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -130,6 +130,7 @@ app.MapFriendEndpoints();
 app.MapMessageEndpoints();
 app.MapHub<MessagesHub>("/hubs/messages");
 app.MapPostEndpoints();
+app.MapReportEndpoints();
 app.MapMediaEndpoints();
 
 app.Run();

@@ -8,6 +8,7 @@ import type { Post } from '../../api/posts'
 import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
+import ReportButton from '../../shared/components/ReportButton'
 import LivePostCard from '../feed/components/LivePostCard'
 
 export default function UserProfilePage() {
@@ -122,6 +123,7 @@ export default function UserProfilePage() {
                 <div className="flex flex-wrap gap-2">
                   {renderRelationshipAction()}
                   {relationship?.status !== 'blocked' && <button type="button" onClick={() => void updateRelationship(() => friendsApi.block(userId))} disabled={isUpdating} className="px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface-hover text-text border border-border font-semibold text-sm cursor-pointer disabled:opacity-60">Block</button>}
+                  <ReportButton targetType="user" targetId={userId} />
                 </div>
               </div>
             </div>

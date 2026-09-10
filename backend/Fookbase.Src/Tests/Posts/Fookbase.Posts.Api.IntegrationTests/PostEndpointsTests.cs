@@ -8,6 +8,7 @@ using System.Text;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +29,57 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             new { content = "hello", privacy = "public" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Users_can_report_posts_and_user_profiles_once()
+    {
+        var users = await CreateUserIdsAsync(3);
+        var authorUserId = users[0];
+        var reporterUserId = users[1];
+        var reportedUserId = users[2];
+        using var author = CreateAuthenticatedClient(authorUserId);
+        using var reporter = CreateAuthenticatedClient(reporterUserId);
+        using var anonymous = factory.CreateClient();
+        var post = await CreatePostAsync(author, "reportable", "public");
+
+        var postReport = await reporter.PostAsJsonAsync(
+            $"/api/reports/posts/{post.Id}",
+            new { reason = "harassment", details = "Repeated abusive language." });
+        var duplicatePostReport = await reporter.PostAsJsonAsync(
+            $"/api/reports/posts/{post.Id}",
+            new { reason = "spam" });
+        var ownPostReport = await author.PostAsJsonAsync(
+            $"/api/reports/posts/{post.Id}",
+            new { reason = "spam" });
+        var userReport = await reporter.PostAsJsonAsync(
+            $"/api/reports/users/{reportedUserId}",
+            new { reason = "scam" });
+        var ownUserReport = await reporter.PostAsJsonAsync(
+            $"/api/reports/users/{reporterUserId}",
+            new { reason = "spam" });
+        var anonymousReport = await anonymous.PostAsJsonAsync(
+            $"/api/reports/users/{reportedUserId}",
+            new { reason = "spam" });
+
+        Assert.Equal(HttpStatusCode.Created, postReport.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, duplicatePostReport.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, ownPostReport.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, userReport.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, ownUserReport.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousReport.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        var reports = await dbContext.ContentReports
+            .Where(report => report.ReporterUserId == reporterUserId)
+            .ToListAsync();
+        Assert.Contains(reports, report =>
+            report.TargetType == ReportTargetType.Post && report.TargetId == post.Id &&
+            report.Reason == ReportReason.Harassment && report.Details == "Repeated abusive language.");
+        Assert.Contains(reports, report =>
+            report.TargetType == ReportTargetType.User && report.TargetId == reportedUserId &&
+            report.Reason == ReportReason.Scam);
     }
 
     [Fact]
