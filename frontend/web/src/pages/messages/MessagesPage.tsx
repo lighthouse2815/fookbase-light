@@ -23,7 +23,7 @@ function avatarLabel(profile: UserProfile) {
 
 export default function MessagesPage() {
   const { session } = useAuth()
-  const { incomingMessages, markConversationRead, sendTyping, typingConversationIds } = useRealtime()
+  const { incomingMessages, markConversationRead, readAtByConversation, sendTyping, typingConversationIds } = useRealtime()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({})
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
@@ -137,6 +137,24 @@ export default function MessagesPage() {
       .catch(() => undefined)
     return () => window.clearTimeout(timeoutId)
   }, [activeConversationId, incomingMessages, markConversationRead])
+
+  useEffect(() => {
+    if (!activeConversationId) return
+
+    const readAtUtc = readAtByConversation.get(activeConversationId)
+    if (!readAtUtc) return
+
+    const timeoutId = window.setTimeout(() => {
+      setMessages((current) => current.map((message) =>
+        message.senderUserId === session!.user.id
+          && !message.readAtUtc
+          && Date.parse(message.createdAtUtc) <= Date.parse(readAtUtc)
+          ? { ...message, readAtUtc }
+          : message,
+      ))
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [activeConversationId, readAtByConversation, session])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -285,9 +303,15 @@ export default function MessagesPage() {
             <div className="flex-1 scroll-smooth overflow-y-auto p-5 flex flex-col gap-3">
               {messages.map((message, index) => {
                 const isMine = message.senderUserId === session!.user.id
+                const isLatestReadMessage = isMine
+                  && message.readAtUtc
+                  && !messages.some((candidate) =>
+                    candidate.senderUserId === session!.user.id
+                    && candidate.readAtUtc
+                    && candidate.createdAtUtc > message.createdAtUtc)
                 return <div key={message.id} className={`flex gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`} style={{ animation: `scale-in 0.2s ease ${index * 0.015}s both` }}>
                   {!isMine && <Avatar profile={partner} size="small" />}
-                  <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}><div className={`px-4 py-2.5 text-[14px] leading-relaxed ${isMine ? 'bubble-mine' : 'bubble-theirs'}`}>{message.content}</div><span className="text-[11px] text-text-light px-1">{formatTimestamp(message.createdAtUtc)}</span></div>
+                  <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}><div className={`px-4 py-2.5 text-[14px] leading-relaxed ${isMine ? 'bubble-mine' : 'bubble-theirs'}`}>{message.content}</div><span className="text-[11px] text-text-light px-1">{formatTimestamp(message.createdAtUtc)}{isLatestReadMessage ? ' · Seen' : ''}</span></div>
                 </div>
               })}
               {typingConversationIds.has(activeConversation.id) && (

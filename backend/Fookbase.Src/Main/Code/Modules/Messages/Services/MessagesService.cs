@@ -264,6 +264,10 @@ public sealed class MessagesService(
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
+            await hubContext.Clients.User(conversation.OtherUserId(actorUserId).ToString()).SendAsync(
+                "MessagesRead",
+                new MessagesReadResponse(conversationId, actorUserId, now),
+                cancellationToken);
         }
 
         var query = dbContext.Messages.AsNoTracking()

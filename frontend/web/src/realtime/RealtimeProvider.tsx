@@ -12,10 +12,17 @@ interface MessageTyping {
   senderUserId: string
 }
 
+interface MessagesRead {
+  conversationId: string
+  readerUserId: string
+  readAtUtc: string
+}
+
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth()
   const [incomingMessages, setIncomingMessages] = useState<IncomingMessage[]>([])
   const [typingConversationIds, setTypingConversationIds] = useState<ReadonlySet<string>>(new Set())
+  const [readAtByConversation, setReadAtByConversation] = useState<ReadonlyMap<string, string>>(new Map())
   const connectionRef = useRef<ReturnType<HubConnectionBuilder['build']> | null>(null)
   const typingTimeoutsRef = useRef<Map<string, number>>(new Map())
   const addIncomingMessages = useCallback((nextMessages: IncomingMessage[]) => {
@@ -73,16 +80,28 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       }, 3_000)
       typingTimeouts.set(typing.conversationId, timeoutId)
     })
+    connection.on('MessagesRead', (read: MessagesRead) => {
+      if (read.readerUserId === session.user.id) return
+
+      setReadAtByConversation((current) => {
+        const previousReadAt = current.get(read.conversationId)
+        if (previousReadAt && Date.parse(previousReadAt) >= Date.parse(read.readAtUtc)) return current
+
+        return new Map(current).set(read.conversationId, read.readAtUtc)
+      })
+    })
     void connection.start().catch(() => undefined)
 
     return () => {
       active = false
       connection.off('MessageReceived')
       connection.off('TypingStarted')
+      connection.off('MessagesRead')
       if (connectionRef.current === connection) connectionRef.current = null
       for (const timeoutId of typingTimeouts.values()) window.clearTimeout(timeoutId)
       typingTimeouts.clear()
       setTypingConversationIds(new Set())
+      setReadAtByConversation(new Map())
       void connection.stop()
     }
   }, [addIncomingMessages, session])
@@ -91,9 +110,10 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     incomingMessages,
     unreadMessageCount: incomingMessages.length,
     typingConversationIds,
+    readAtByConversation,
     markConversationRead,
     sendTyping,
-  }), [incomingMessages, markConversationRead, sendTyping, typingConversationIds])
+  }), [incomingMessages, markConversationRead, readAtByConversation, sendTyping, typingConversationIds])
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>
 }

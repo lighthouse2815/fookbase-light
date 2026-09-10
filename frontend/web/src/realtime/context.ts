@@ -5,6 +5,7 @@ export interface RealtimeContextValue {
   incomingMessages: IncomingMessage[]
   unreadMessageCount: number
   typingConversationIds: ReadonlySet<string>
+  readAtByConversation: ReadonlyMap<string, string>
   markConversationRead: (conversationId: string) => void
   sendTyping: (conversationId: string) => void
 }
