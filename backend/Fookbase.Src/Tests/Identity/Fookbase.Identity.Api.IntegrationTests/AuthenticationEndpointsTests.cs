@@ -148,7 +148,11 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var user = await response.Content.ReadFromJsonAsync<AuthenticatedUserResponse>();
         Assert.NotNull(user);
-        Assert.Equal(authentication.User, user);
+        Assert.Equal(authentication.User.Id, user!.Id);
+        Assert.Equal(authentication.User.Email, user.Email);
+        Assert.Equal(authentication.User.Username, user.Username);
+        Assert.Equal(authentication.User.EmailConfirmed, user.EmailConfirmed);
+        Assert.Equal(authentication.User.Roles, user.Roles);
     }
 
     [Fact]
