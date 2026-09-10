@@ -37,6 +37,10 @@ export const messagesApi = {
     apiRequest<PagedResponse<Conversation>>(
       `/api/messages/conversations?${new URLSearchParams({ offset: String(offset), limit: String(limit) })}`,
     ),
+  getUnreadNotifications: (offset = 0, limit = 100) =>
+    apiRequest<PagedResponse<IncomingMessage>>(
+      `/api/messages/notifications?${new URLSearchParams({ offset: String(offset), limit: String(limit) })}`,
+    ),
   getMessages: (conversationId: string, offset = 0, limit = 50) =>
     apiRequest<PagedResponse<Message>>(
       `/api/messages/conversations/${conversationId}/messages?${new URLSearchParams({ offset: String(offset), limit: String(limit) })}`,

@@ -14,6 +14,7 @@ public static class MessageEndpoints
 
         group.MapPost("/conversations/{userId:guid}", GetOrCreateConversationAsync);
         group.MapGet("/conversations", GetConversationsAsync);
+        group.MapGet("/notifications", GetUnreadNotificationsAsync);
         group.MapGet("/conversations/{conversationId:guid}/messages", GetMessagesAsync);
         group.MapPost("/conversations/{conversationId:guid}/messages", SendMessageAsync);
 
@@ -67,6 +68,26 @@ public static class MessageEndpoints
         var result = await service.GetMessagesAsync(
             actorUserId,
             conversationId,
+            offset,
+            limit,
+            cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetUnreadNotificationsAsync(
+        ClaimsPrincipal principal,
+        MessagesService service,
+        CancellationToken cancellationToken,
+        int offset = 0,
+        int limit = 100)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await service.GetUnreadNotificationsAsync(
+            actorUserId,
             offset,
             limit,
             cancellationToken);

@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
+Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Messages, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
 Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> Application use case (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
 
@@ -16,6 +16,7 @@ Fookbase.Api :5000
   |-- Identity module
   |-- Users module
   |-- Friends module
+  |-- Messages module (SignalR)
   |-- Application use cases
   |-- Posts module
   `-- Media module
@@ -26,7 +27,7 @@ Fookbase.Api :5000
 
 Backend chỉ có một entry point: `backend/Fookbase.Src/Main`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
 
-Năm database module hiện tại được giữ để migration và dữ liệu development cũ tiếp tục tương thích. Đây chỉ là ranh giới lưu trữ nội bộ của cùng một ứng dụng, không phải các service triển khai độc lập.
+Sáu database module hiện tại được giữ để migration và dữ liệu development cũ tiếp tục tương thích. Đây chỉ là ranh giới lưu trữ nội bộ của cùng một ứng dụng, không phải các service triển khai độc lập.
 
 ## Yêu cầu
 
@@ -61,7 +62,7 @@ source .env
 set +a
 dotnet tool restore
 
-for context in IdentityDbContext UsersDbContext FriendsDbContext PostsDbContext MediaDbContext; do
+for context in IdentityDbContext UsersDbContext FriendsDbContext MessagesDbContext PostsDbContext MediaDbContext; do
   dotnet tool run dotnet-ef database update \
     --project backend/Fookbase.Src/Main \
     --startup-project backend/Fookbase.Src/Main \
@@ -159,6 +160,18 @@ JWT signing key chỉ được đọc từ `Jwt__SigningKey`. Refresh token raw 
 | GET | `/api/friends/blocks` |
 
 Tất cả Friends endpoint yêu cầu Bearer JWT. Collection endpoint dùng offset pagination, `limit` mặc định 20 và tối đa 100.
+
+### Messages
+
+| Method | Endpoint | Authentication |
+| --- | --- | --- |
+| POST | `/api/messages/conversations/{userId}` | Bearer JWT, bạn bè |
+| GET | `/api/messages/conversations` | Bearer JWT |
+| GET | `/api/messages/conversations/{conversationId}/messages` | Bearer JWT, thành viên |
+| POST | `/api/messages/conversations/{conversationId}/messages` | Bearer JWT, thành viên |
+| GET | `/api/messages/notifications` | Bearer JWT |
+
+Tin nhắn chỉ được gửi giữa bạn bè không bị block. Notification chưa đọc được lưu trong Messages database và cập nhật realtime qua SignalR tại `/hubs/messages`.
 
 ### Posts
 

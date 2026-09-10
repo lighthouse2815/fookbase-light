@@ -1,0 +1,44 @@
+namespace Fookbase.Api.Modules.Messages.Entities;
+
+public sealed class MessageNotification
+{
+    private MessageNotification()
+    {
+    }
+
+    private MessageNotification(
+        Guid id,
+        Guid recipientUserId,
+        Guid conversationId,
+        Guid messageId,
+        DateTimeOffset createdAtUtc)
+    {
+        Id = id;
+        RecipientUserId = recipientUserId;
+        ConversationId = conversationId;
+        MessageId = messageId;
+        CreatedAtUtc = createdAtUtc;
+    }
+
+    public Guid Id { get; private set; }
+
+    public Guid RecipientUserId { get; private set; }
+
+    public Guid ConversationId { get; private set; }
+
+    public Guid MessageId { get; private set; }
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset? ReadAtUtc { get; private set; }
+
+    public static MessageNotification Create(
+        Guid id,
+        Guid recipientUserId,
+        Guid conversationId,
+        Guid messageId,
+        DateTimeOffset createdAtUtc) =>
+        new(id, recipientUserId, conversationId, messageId, createdAtUtc);
+
+    public void MarkRead(DateTimeOffset readAtUtc) => ReadAtUtc ??= readAtUtc;
+}

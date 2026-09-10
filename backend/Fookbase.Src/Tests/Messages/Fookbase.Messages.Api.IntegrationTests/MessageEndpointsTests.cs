@@ -5,6 +5,8 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
+using Fookbase.Api.Modules.Friends.Data;
+using Fookbase.Api.Modules.Friends.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -29,6 +31,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
     {
         var senderUserId = Guid.NewGuid();
         var recipientUserId = Guid.NewGuid();
+        await BecomeFriendsAsync(senderUserId, recipientUserId);
         using var sender = CreateAuthenticatedClient(senderUserId);
         using var recipient = CreateAuthenticatedClient(recipientUserId);
 
@@ -51,6 +54,11 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         Assert.NotNull(conversations);
         Assert.Contains(conversations!.Items, item =>
             item.Id == conversation.Id && item.UnreadCount == 1 && item.LastMessage!.Content == "Hello from the sender");
+        var notifications = await recipient.GetFromJsonAsync<PagedResponse<IncomingMessageResponse>>(
+            "/api/messages/notifications");
+        Assert.NotNull(notifications);
+        Assert.Contains(notifications!.Items, item =>
+            item.Conversation.Id == conversation.Id && item.Message.Content == "Hello from the sender");
 
         var history = await recipient.GetFromJsonAsync<PagedResponse<MessageResponse>>(
             $"/api/messages/conversations/{conversation.Id}/messages");
@@ -59,6 +67,10 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         Assert.Equal(senderUserId, message.SenderUserId);
         Assert.Equal("Hello from the sender", message.Content);
         Assert.NotNull(message.ReadAtUtc);
+        var remainingNotifications = await recipient.GetFromJsonAsync<PagedResponse<IncomingMessageResponse>>(
+            "/api/messages/notifications");
+        Assert.NotNull(remainingNotifications);
+        Assert.Empty(remainingNotifications!.Items);
     }
 
     [Fact]
@@ -66,6 +78,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
     {
         var userA = Guid.NewGuid();
         var userB = Guid.NewGuid();
+        await BecomeFriendsAsync(userA, userB);
         using var owner = CreateAuthenticatedClient(userA);
         using var outsider = CreateAuthenticatedClient(Guid.NewGuid());
 
@@ -80,6 +93,23 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
 
         Assert.Equal(HttpStatusCode.Forbidden, read.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, send.StatusCode);
+    }
+
+    [Fact]
+    public async Task Non_friends_or_blocked_users_cannot_start_a_conversation()
+    {
+        var userA = Guid.NewGuid();
+        var userB = Guid.NewGuid();
+        using var client = CreateAuthenticatedClient(userA);
+
+        var nonFriend = await client.PostAsync($"/api/messages/conversations/{userB}", null);
+        Assert.Equal(HttpStatusCode.Forbidden, nonFriend.StatusCode);
+
+        await BecomeFriendsAsync(userA, userB);
+        await BlockAsync(userB, userA);
+        var blocked = await client.PostAsync($"/api/messages/conversations/{userB}", null);
+
+        Assert.Equal(HttpStatusCode.Forbidden, blocked.StatusCode);
     }
 
     private HttpClient CreateAuthenticatedClient(Guid userId)
@@ -104,5 +134,25 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
             "Bearer",
             new JwtSecurityTokenHandler().WriteToken(token));
         return client;
+    }
+
+    private async Task BecomeFriendsAsync(Guid firstUserId, Guid secondUserId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        dbContext.Friendships.Add(Friendship.Create(
+            Guid.NewGuid(),
+            firstUserId,
+            secondUserId,
+            DateTimeOffset.UtcNow));
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task BlockAsync(Guid blockerUserId, Guid blockedUserId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FriendsDbContext>();
+        dbContext.BlockedUsers.Add(BlockedUser.Create(blockerUserId, blockedUserId, DateTimeOffset.UtcNow));
+        await dbContext.SaveChangesAsync();
     }
 }

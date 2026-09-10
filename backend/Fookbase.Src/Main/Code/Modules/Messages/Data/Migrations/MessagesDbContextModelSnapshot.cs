@@ -59,6 +59,22 @@ partial class MessagesDbContextModelSnapshot : ModelSnapshot
             builder.HasIndex("ConversationId", "ReadAtUtc");
             builder.ToTable("Messages");
         });
+
+        modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageNotification", builder =>
+        {
+            builder.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uuid");
+            builder.Property<Guid>("ConversationId").HasColumnType("uuid");
+            builder.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone");
+            builder.Property<Guid>("MessageId").HasColumnType("uuid");
+            builder.Property<DateTimeOffset?>("ReadAtUtc").HasColumnType("timestamp with time zone");
+            builder.Property<Guid>("RecipientUserId").HasColumnType("uuid");
+            builder.HasKey("Id");
+            builder.HasIndex("MessageId").IsUnique();
+            builder.HasIndex("RecipientUserId", "ReadAtUtc", "CreatedAtUtc");
+            builder.ToTable("MessageNotifications");
+        });
 #pragma warning restore 612, 618
     }
 }

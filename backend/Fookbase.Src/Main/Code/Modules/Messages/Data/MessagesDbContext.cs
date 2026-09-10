@@ -10,6 +10,8 @@ public sealed class MessagesDbContext(DbContextOptions<MessagesDbContext> option
 
     public DbSet<Message> Messages => Set<Message>();
 
+    public DbSet<MessageNotification> MessageNotifications => Set<MessageNotification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(
