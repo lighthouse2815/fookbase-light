@@ -2,7 +2,7 @@ import { useState, type CSSProperties } from 'react'
 import type { Post, User } from '../../../data/mockData'
 import { formatNumber, formatTimestamp } from '../../../data/mockData'
 import LikeButton from '../../../shared/components/LikeButton'
-import { usePreferences } from '../../../preferences'
+import CommentModal from '../../../shared/components/CommentModal'
 
 interface PostCardProps {
   post: Post
@@ -24,6 +24,8 @@ export default function PostCard({ post, author, style }: PostCardProps) {
   const [reposted, setReposted] = useState(post.isReposted)
   const [likeCount, setLikeCount] = useState(post.likes)
   const [repostCount, setRepostCount] = useState(post.reposts)
+  const [commentCount, setCommentCount] = useState(post.comments)
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false)
 
   const handleLike = () => {
     setLiked((v) => !v)
@@ -118,7 +120,7 @@ export default function PostCard({ post, author, style }: PostCardProps) {
       )}
 
       {/* ── Reactions / Stats Row ── */}
-      {(likeCount > 0 || repostCount > 0 || post.comments > 0) && (
+      {(likeCount > 0 || repostCount > 0 || commentCount > 0) && (
         <div className="flex items-center justify-between text-[13px] text-text-muted pt-1 px-1">
           <div className="flex items-center gap-1.5">
             {likeCount > 0 && (
@@ -131,8 +133,16 @@ export default function PostCard({ post, author, style }: PostCardProps) {
             )}
           </div>
           <div className="flex items-center gap-3 text-[12px]">
-            {post.comments > 0 && <span>{formatNumber(post.comments)} {t('comments')}</span>}
-            {repostCount > 0 && <span>{formatNumber(repostCount)} {t('shares')}</span>}
+            {commentCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsCommentModalOpen(true)}
+                className="hover:underline cursor-pointer bg-transparent border-none text-text-muted p-0"
+              >
+                {formatNumber(commentCount)} bình luận
+              </button>
+            )}
+            {repostCount > 0 && <span>{formatNumber(repostCount)} chia sẻ</span>}
           </div>
         </div>
       )}
@@ -145,12 +155,13 @@ export default function PostCard({ post, author, style }: PostCardProps) {
         {/* Comment */}
         <button
           type="button"
+          onClick={() => setIsCommentModalOpen(true)}
           className="flex items-center justify-center gap-2 py-2 rounded-lg text-[13px] sm:text-[14px]
                      font-medium text-text-muted hover:text-text hover:bg-surface-2
                      transition-colors cursor-pointer bg-transparent border-none"
         >
           <span className="text-base">💬</span>
-          <span>{t('comment')}</span>
+          <span>Bình luận</span>
         </button>
 
         {/* Share / Repost */}
@@ -163,9 +174,24 @@ export default function PostCard({ post, author, style }: PostCardProps) {
                      ${reposted ? 'text-secondary font-semibold' : 'text-text-muted hover:text-text'}`}
         >
           <span className="text-base">↗️</span>
-          <span>{reposted ? t('shared') : t('share')}</span>
+          <span>{reposted ? 'Đã chia sẻ' : 'Chia sẻ'}</span>
         </button>
       </div>
+
+      {/* ── Comment Modal ── */}
+      <CommentModal
+        isOpen={isCommentModalOpen}
+        onClose={() => setIsCommentModalOpen(false)}
+        post={post}
+        author={author}
+        liked={liked}
+        likeCount={likeCount}
+        reposted={reposted}
+        repostCount={repostCount}
+        onLike={handleLike}
+        onRepost={handleRepost}
+        onCommentAdded={() => setCommentCount((c) => c + 1)}
+      />
     </article>
   )
 }
