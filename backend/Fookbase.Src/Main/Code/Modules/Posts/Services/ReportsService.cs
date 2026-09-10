@@ -3,20 +3,38 @@ using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Services;
 
-public sealed class ReportsService(PostsDbContext dbContext, TimeProvider timeProvider)
+public sealed class ReportsService(
+    PostsDbContext dbContext,
+    IdentityDbContext identityDbContext,
+    TimeProvider timeProvider)
 {
     private const int MaximumPageSize = 100;
 
-    public Task<ApplicationResult<ContentReportResponse>> ReportUserAsync(
+    public async Task<ApplicationResult<ContentReportResponse>> ReportUserAsync(
         Guid reporterUserId,
         Guid reportedUserId,
         CreateReportRequest request,
-        CancellationToken cancellationToken = default) =>
-        CreateAsync(reporterUserId, ReportTargetType.User, reportedUserId, request, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        if (!await identityDbContext.Users.AsNoTracking().AnyAsync(
+                user => user.Id == reportedUserId,
+                cancellationToken))
+        {
+            return ApplicationResult<ContentReportResponse>.Failure(NotFound("The user was not found."));
+        }
+
+        return await CreateAsync(
+            reporterUserId,
+            ReportTargetType.User,
+            reportedUserId,
+            request,
+            cancellationToken);
+    }
 
     public async Task<ApplicationResult<ContentReportResponse>> ReportPostAsync(
         Guid reporterUserId,

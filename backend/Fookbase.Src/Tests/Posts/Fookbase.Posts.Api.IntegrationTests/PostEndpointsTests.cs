@@ -10,6 +10,8 @@ using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Data;
+using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,6 +63,9 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var anonymousReport = await anonymous.PostAsJsonAsync(
             $"/api/reports/users/{reportedUserId}",
             new { reason = "spam" });
+        var missingUserReport = await reporter.PostAsJsonAsync(
+            $"/api/reports/users/{Guid.NewGuid()}",
+            new { reason = "spam" });
 
         Assert.Equal(HttpStatusCode.Created, postReport.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, duplicatePostReport.StatusCode);
@@ -68,6 +73,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.Created, userReport.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, ownUserReport.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, anonymousReport.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, missingUserReport.StatusCode);
 
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
@@ -389,8 +395,21 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.True(await mediaDb.MediaReferences.AnyAsync(x => x.PostId == post.Id && x.MediaId == second));
     }
 
-    private static Task<Guid[]> CreateUserIdsAsync(int count) =>
-        Task.FromResult(Enumerable.Range(0, count).Select(_ => Guid.NewGuid()).ToArray());
+    private async Task<Guid[]> CreateUserIdsAsync(int count)
+    {
+        var users = Enumerable.Range(0, count)
+            .Select(index => new User(
+                Guid.NewGuid(),
+                $"posts-{Guid.NewGuid():N}@example.com",
+                $"posts_{Guid.NewGuid():N}"[..32],
+                DateTimeOffset.UtcNow.AddTicks(index)))
+            .ToArray();
+        using var scope = factory.Services.CreateScope();
+        var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        identityDb.Users.AddRange(users);
+        await identityDb.SaveChangesAsync();
+        return users.Select(user => user.Id).ToArray();
+    }
 
     private async Task<PostResponse> CreatePostAsync(
         HttpClient client, string content, string privacy, IReadOnlyList<Guid>? mediaIds = null)

@@ -2,6 +2,7 @@ using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Posts.Data;
+using Fookbase.Api.Modules.Identity.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,7 @@ public sealed class PostsApiFactory : WebApplicationFactory<Program>
         using var scope = host.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
         dbContext.Database.Migrate();
+        scope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.Migrate();
         scope.ServiceProvider.GetRequiredService<FriendsDbContext>().Database.Migrate();
         scope.ServiceProvider.GetRequiredService<MediaDbContext>().Database.Migrate();
 
