@@ -32,6 +32,15 @@ export interface BlockedUser {
   blockedAtUtc: string
 }
 
+export interface FriendNotification {
+  id: string
+  actorUserId: string
+  friendRequestId: string
+  type: 'friend_request' | 'friend_accepted'
+  createdAtUtc: string
+  readAtUtc: string | null
+}
+
 const pageQuery = (offset = 0, limit = 100) => `?offset=${offset}&limit=${limit}`
 
 export const friendsApi = {
@@ -57,6 +66,10 @@ export const friendsApi = {
     apiRequest<void>(`/api/friends/${userId}`, { method: 'DELETE' }),
   getBlockedUsers: (offset = 0, limit = 100) =>
     apiRequest<PagedResponse<BlockedUser>>(`/api/friends/blocks${pageQuery(offset, limit)}`),
+  getUnreadNotifications: (offset = 0, limit = 20) =>
+    apiRequest<PagedResponse<FriendNotification>>(`/api/friends/notifications/unread${pageQuery(offset, limit)}`),
+  markNotificationRead: (notificationId: string) =>
+    apiRequest<void>(`/api/friends/notifications/${notificationId}/read`, { method: 'POST' }),
   block: (userId: string) =>
     apiRequest<void>(`/api/friends/blocks/${userId}`, { method: 'POST' }),
   unblock: (userId: string) =>

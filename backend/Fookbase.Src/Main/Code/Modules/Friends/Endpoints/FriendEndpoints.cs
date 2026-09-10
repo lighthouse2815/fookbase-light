@@ -17,6 +17,8 @@ public static class FriendEndpoints
         group.MapPost("/requests/{requestId:guid}/decline", DeclineRequestAsync);
         group.MapGet("/requests/incoming", GetIncomingRequestsAsync);
         group.MapGet("/requests/outgoing", GetOutgoingRequestsAsync);
+        group.MapGet("/notifications/unread", GetUnreadNotificationsAsync);
+        group.MapPost("/notifications/{notificationId:guid}/read", MarkNotificationReadAsync);
         group.MapDelete("/{userId:guid}", UnfriendAsync);
         group.MapGet("", GetFriendsAsync);
         group.MapGet("/status/{userId:guid}", GetStatusAsync);
@@ -168,6 +170,31 @@ public static class FriendEndpoints
         var result = await service.GetBlockedUsersAsync(actorUserId, offset, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
+
+    private static async Task<IResult> GetUnreadNotificationsAsync(
+        ClaimsPrincipal principal,
+        FriendsService service,
+        CancellationToken cancellationToken,
+        int offset = 0,
+        int limit = 20)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await service.GetUnreadNotificationsAsync(actorUserId, offset, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static Task<IResult> MarkNotificationReadAsync(
+        Guid notificationId,
+        ClaimsPrincipal principal,
+        FriendsService service,
+        CancellationToken cancellationToken) =>
+        ExecuteCommandAsync(
+            principal,
+            actorUserId => service.MarkNotificationReadAsync(actorUserId, notificationId, cancellationToken));
 
     private static async Task<IResult> GetStatusAsync(
         Guid userId,

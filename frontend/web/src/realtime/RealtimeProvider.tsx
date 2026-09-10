@@ -1,6 +1,8 @@
 import { HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiBaseUrl } from '../api/client'
+import { friendsApi } from '../api/friends'
+import type { FriendNotification } from '../api/friends'
 import { messagesApi } from '../api/messages'
 import type { IncomingMessage } from '../api/messages'
 import { useAuth } from '../auth/useAuth'
@@ -21,6 +23,7 @@ interface MessagesRead {
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth()
   const [incomingMessages, setIncomingMessages] = useState<IncomingMessage[]>([])
+  const [incomingFriendNotifications, setIncomingFriendNotifications] = useState<FriendNotification[]>([])
   const [typingConversationIds, setTypingConversationIds] = useState<ReadonlySet<string>>(new Set())
   const [readAtByConversation, setReadAtByConversation] = useState<ReadonlyMap<string, string>>(new Map())
   const connectionRef = useRef<ReturnType<HubConnectionBuilder['build']> | null>(null)
@@ -33,6 +36,16 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   }, [])
   const markConversationRead = useCallback((conversationId: string) => {
     setIncomingMessages((current) => current.filter((item) => item.conversation.id !== conversationId))
+  }, [])
+  const addFriendNotifications = useCallback((nextNotifications: FriendNotification[]) => {
+    setIncomingFriendNotifications((current) => [
+      ...current,
+      ...nextNotifications.filter((nextNotification) => !current.some((item) => item.id === nextNotification.id)),
+    ])
+  }, [])
+  const markFriendNotificationRead = useCallback((notificationId: string) => {
+    setIncomingFriendNotifications((current) => current.filter((item) => item.id !== notificationId))
+    void friendsApi.markNotificationRead(notificationId).catch(() => undefined)
   }, [])
   const sendTyping = useCallback((conversationId: string) => {
     const connection = connectionRef.current
@@ -50,6 +63,11 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         if (active) addIncomingMessages(page.items)
       })
       .catch(() => undefined)
+    void friendsApi.getUnreadNotifications()
+      .then((page) => {
+        if (active) addFriendNotifications(page.items)
+      })
+      .catch(() => undefined)
 
     const connection = new HubConnectionBuilder()
       .withUrl(`${apiBaseUrl}/hubs/messages`, {
@@ -63,6 +81,9 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
     connection.on('MessageReceived', (incomingMessage: IncomingMessage) => {
       addIncomingMessages([incomingMessage])
+    })
+    connection.on('FriendNotificationReceived', (notification: FriendNotification) => {
+      addFriendNotifications([notification])
     })
     connection.on('TypingStarted', (typing: MessageTyping) => {
       if (typing.senderUserId === session.user.id) return
@@ -95,25 +116,30 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false
       connection.off('MessageReceived')
+      connection.off('FriendNotificationReceived')
       connection.off('TypingStarted')
       connection.off('MessagesRead')
       if (connectionRef.current === connection) connectionRef.current = null
       for (const timeoutId of typingTimeouts.values()) window.clearTimeout(timeoutId)
       typingTimeouts.clear()
       setTypingConversationIds(new Set())
+      setIncomingMessages([])
+      setIncomingFriendNotifications([])
       setReadAtByConversation(new Map())
       void connection.stop()
     }
-  }, [addIncomingMessages, session])
+  }, [addFriendNotifications, addIncomingMessages, session])
 
   const value = useMemo(() => ({
     incomingMessages,
-    unreadMessageCount: incomingMessages.length,
+    incomingFriendNotifications,
+    unreadMessageCount: incomingMessages.length + incomingFriendNotifications.length,
     typingConversationIds,
     readAtByConversation,
     markConversationRead,
+    markFriendNotificationRead,
     sendTyping,
-  }), [incomingMessages, markConversationRead, readAtByConversation, sendTyping, typingConversationIds])
+  }), [incomingFriendNotifications, incomingMessages, markConversationRead, markFriendNotificationRead, readAtByConversation, sendTyping, typingConversationIds])
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>
 }
