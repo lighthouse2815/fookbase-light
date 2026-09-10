@@ -12,6 +12,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/feed', emoji: '🏠', label: 'Feed' },
   { path: '/explore', emoji: '🔍', label: 'Explore' },
   { path: '/messages', emoji: '💬', label: 'Messages', badge: 2 },
+  { path: '/games', emoji: '🎮', label: 'Games' },
   { path: '/profile', emoji: '👤', label: 'Profile' },
 ]
 

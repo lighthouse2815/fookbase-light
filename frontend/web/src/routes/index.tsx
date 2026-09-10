@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import MainLayout from '../layout/MainLayout'
 import FeedPage from '../pages/feed/FeedPage'
 import ExplorePage from '../pages/explore/ExplorePage'
+import GamesPage from '../pages/games/GamesPage'
 import MessagesPage from '../pages/messages/MessagesPage'
 import ProfilePage from '../pages/profile/ProfilePage'
 import UserProfilePage from '../pages/profile/UserProfilePage'
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
       {
         path: 'explore',
         element: <ExplorePage />,
+      },
+      {
+        path: 'games',
+        element: <GamesPage />,
       },
       {
         path: 'messages',

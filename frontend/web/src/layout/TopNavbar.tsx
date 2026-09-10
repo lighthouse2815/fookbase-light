@@ -13,6 +13,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/feed', icon: '🏠', label: 'Home' },
   { path: '/explore', icon: '🔍', label: 'Explore' },
   { path: '/messages', icon: '💬', label: 'Messages' },
+  { path: '/games', icon: '🎮', label: 'Games' },
   { path: '/profile', icon: '👤', label: 'Profile' },
 ]
 
