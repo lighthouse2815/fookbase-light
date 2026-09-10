@@ -17,9 +17,11 @@ import {
 
 const reactions = ['like', 'love', 'haha', 'wow', 'sad', 'angry']
 
-function displayConversation(conversation: Conversation) {
+function displayConversation(conversation: Conversation, profiles?: ReadonlyMap<string, UserProfile>) {
   if (conversation.type === 'group') return conversation.title ?? 'Nhóm không tên'
-  return conversation.participantUserId ? `@${conversation.participantUserId.slice(0, 8)}` : 'Cuộc trò chuyện'
+  return conversation.participantUserId
+    ? profiles?.get(conversation.participantUserId)?.displayName ?? `@${conversation.participantUserId.slice(0, 8)}`
+    : 'Cuộc trò chuyện'
 }
 
 function formatTime(value: string) {
@@ -160,7 +162,7 @@ function Avatar({ name, url }: { name: string; url?: string | null }) {
   return url ? <img className="avatar" src={url} alt="" /> : <span className="avatar">{name.slice(0, 2).toUpperCase()}</span>
 }
 
-function ConversationAvatar({ conversation }: { conversation: Conversation }) {
+function ConversationAvatar({ conversation, profiles }: { conversation: Conversation; profiles?: ReadonlyMap<string, UserProfile> }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     if (!conversation.photoMediaId) { setUrl(null); return }
@@ -170,7 +172,9 @@ function ConversationAvatar({ conversation }: { conversation: Conversation }) {
     }).catch(() => { if (isCurrent) setUrl(null) })
     return () => { isCurrent = false }
   }, [conversation.photoMediaId])
-  return <Avatar name={displayConversation(conversation)} url={url} />
+  const directProfile = conversation.participantUserId ? profiles?.get(conversation.participantUserId) : null
+  const avatarUrl = directProfile?.avatarUrl?.startsWith('/') ? `${apiBaseUrl}${directProfile.avatarUrl}` : directProfile?.avatarUrl
+  return <Avatar name={displayConversation(conversation, profiles)} url={url ?? avatarUrl} />
 }
 
 function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () => Promise<void> }) {
@@ -183,6 +187,8 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [typing, setTyping] = useState(false)
   const [onlineIds, setOnlineIds] = useState<ReadonlySet<string>>(new Set())
+  const [profiles, setProfiles] = useState<ReadonlyMap<string, UserProfile>>(new Map())
+  const [profileLookups, setProfileLookups] = useState<ReadonlySet<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const connectionRef = useRef<ReturnType<HubConnectionBuilder['build']> | null>(null)
@@ -205,6 +211,21 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     if (!before && lastIncoming) void messengerApi.read(conversationId, lastIncoming.id).catch(() => undefined)
   }, [session.user.id])
   useEffect(() => { void loadConversations().catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tải cuộc trò chuyện.')) }, [loadConversations])
+  useEffect(() => {
+    const unknownIds = conversations.filter((conversation) => conversation.type === 'direct' && conversation.participantUserId && !profiles.has(conversation.participantUserId) && !profileLookups.has(conversation.participantUserId)).map((conversation) => conversation.participantUserId!)
+    if (unknownIds.length === 0) return
+    setProfileLookups((current) => new Set([...current, ...unknownIds]))
+    let isCurrent = true
+    void Promise.all(unknownIds.map((userId) => messengerApi.user(userId).catch(() => null))).then((users) => {
+      if (!isCurrent) return
+      setProfiles((current) => {
+        const next = new Map(current)
+        users.forEach((user) => { if (user) next.set(user.userId, user) })
+        return next
+      })
+    })
+    return () => { isCurrent = false }
+  }, [conversations, profiles, profileLookups])
   useEffect(() => { if (activeId) { setReplyTo(null); void loadMessages(activeId).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tải tin nhắn.')) } }, [activeId, loadMessages])
   useEffect(() => {
     const connection = new HubConnectionBuilder().withUrl(`${apiBaseUrl}/hubs/messages`, { accessTokenFactory: () => getSession()?.accessToken ?? '' }).withAutomaticReconnect().configureLogging(import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error).build()
@@ -251,20 +272,20 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   return <main className="messenger-shell">
     <aside className="conversation-pane"><header className="pane-header"><div><strong>Messenger</strong><small>@{session.user.username}</small></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
       <input className="conversation-filter" placeholder="Tìm cuộc trò chuyện" onChange={(event) => { const value = event.target.value.toLowerCase(); document.querySelectorAll<HTMLElement>('[data-conversation]').forEach((node) => { node.hidden = !node.dataset.conversation?.includes(value) }) }} />
-      <div className="conversation-list">{conversations.map((conversation) => <button key={conversation.id} data-conversation={displayConversation(conversation).toLowerCase()} hidden={false} className={`conversation-item ${conversation.id === activeId ? 'selected' : ''}`} onClick={() => setActiveId(conversation.id)}>
-        <ConversationAvatar conversation={conversation} /><span><b>{displayConversation(conversation)}</b><small>{conversation.lastMessage?.deletedAtUtc ? 'Tin nhắn đã gỡ' : conversation.lastMessage?.content ?? (conversation.lastMessage?.attachments?.length ? 'Đã gửi media' : 'Bắt đầu trò chuyện')}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
+      <div className="conversation-list">{conversations.map((conversation) => <button key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} hidden={false} className={`conversation-item ${conversation.id === activeId ? 'selected' : ''}`} onClick={() => setActiveId(conversation.id)}>
+        <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{conversation.lastMessage?.deletedAtUtc ? 'Tin nhắn đã gỡ' : conversation.lastMessage?.content ?? (conversation.lastMessage?.attachments?.length ? 'Đã gửi media' : 'Bắt đầu trò chuyện')}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
       </div>
       {nextConversationCursor && <button className="load-more" onClick={() => void loadConversations(nextConversationCursor)}>Tải thêm</button>}
       <footer><button onClick={() => void onSignOut()}>Đăng xuất</button><a href={import.meta.env.VITE_WEB_URL ?? 'http://localhost:5173'}>Fookbase</a></footer>
     </aside>
     <section className="chat-pane">{error && <p className="alert">{error}</p>}{active ? <>
-      <header className="chat-header"><button className="mobile-back" aria-label="Quay lại danh sách" onClick={() => setActiveId(null)}>‹</button><ConversationAvatar conversation={active} /><div><strong>{displayConversation(active)}</strong><small>{typing ? 'đang nhập…' : active.type === 'group' ? `${active.participants.length} thành viên` : onlineIds.has(active.participantUserId ?? '') ? 'Đang hoạt động' : 'Ngoại tuyến'}</small></div><button className="mobile-details" onClick={() => document.body.classList.toggle('details-open')}>ⓘ</button></header>
+      <header className="chat-header"><button className="mobile-back" aria-label="Quay lại danh sách" onClick={() => setActiveId(null)}>‹</button><ConversationAvatar conversation={active} profiles={profiles} /><div><strong>{displayConversation(active, profiles)}</strong><small>{typing ? 'đang nhập…' : active.type === 'group' ? `${active.participants.length} thành viên` : onlineIds.has(active.participantUserId ?? '') ? 'Đang hoạt động' : 'Ngoại tuyến'}</small></div><button className="mobile-details" onClick={() => document.body.classList.toggle('details-open')}>ⓘ</button></header>
       <div className="message-list">{hasMoreMessages && <button className="load-more" onClick={() => activeId && void loadMessages(activeId, nextMessageCursor ?? undefined)}>Tải tin cũ hơn</button>}
         {messages.map((message) => <MessageBubble key={message.id} message={message} mine={message.senderUserId === session.user.id} onReply={() => setReplyTo(message)} onReact={(type) => void messengerApi.react(message.id, type).catch((reason) => setError(reason.message))} onEdit={() => { const content = window.prompt('Chỉnh sửa tin nhắn', message.content ?? ''); if (content?.trim()) void messengerApi.edit(message.id, content.trim()).then((updated) => setMessages((current) => upsertMessage(current, updated))).catch((reason) => setError(reason.message)) }} onDelete={() => { if (window.confirm('Gỡ tin nhắn này?')) void messengerApi.unsend(message.id).then(() => setMessages((current) => current.map((item) => item.id === message.id ? { ...item, content: null, attachments: [], reactions: [], deletedAtUtc: new Date().toISOString() } : item))).catch((reason) => setError(reason.message)) }} />)}
       </div>
       <Composer conversationId={active.id} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} onSend={send} onTyping={sendTyping} />
     </> : <div className="empty-chat"><div>💬</div><h1>Chọn một cuộc trò chuyện</h1><p>Hoặc tạo tin nhắn mới để bắt đầu.</p><button className="primary" onClick={() => setShowCreate(true)}>Tin nhắn mới</button></div>}</section>
-    <aside className="details-pane">{active ? <><header><button className="close-details" onClick={() => document.body.classList.remove('details-open')}>×</button><ConversationAvatar conversation={active} /><h2>{displayConversation(active)}</h2>{active.type === 'group' && <><input ref={groupPhotoInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; if (file) void updateGroupPhoto(file).catch((reason) => setError(reason.message)) }} /><button onClick={() => void updateGroupTitle()}>Đổi tên</button><button onClick={() => groupPhotoInputRef.current?.click()}>Đổi ảnh</button></>}</header>
+    <aside className="details-pane">{active ? <><header><button className="close-details" onClick={() => document.body.classList.remove('details-open')}>×</button><ConversationAvatar conversation={active} profiles={profiles} /><h2>{displayConversation(active, profiles)}</h2>{active.type === 'group' && <><input ref={groupPhotoInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; if (file) void updateGroupPhoto(file).catch((reason) => setError(reason.message)) }} /><button onClick={() => void updateGroupTitle()}>Đổi tên</button><button onClick={() => groupPhotoInputRef.current?.click()}>Đổi ảnh</button></>}</header>
       <section><h3>Thành viên ({active.participants.length})</h3>{active.participants.map((participant) => <ParticipantRow key={participant.userId} participant={participant} currentUserId={session.user.id} isOnline={onlineIds.has(participant.userId)} canManage={myParticipant?.role === 'owner' || myParticipant?.role === 'admin'} conversation={active} onRefresh={async () => { const updated = await messengerApi.conversation(active.id); setConversations((current) => current.map((item) => item.id === updated.id ? updated : item)) }} />)}
       {active.type === 'group' && (myParticipant?.role === 'owner' || myParticipant?.role === 'admin') && <button className="secondary" onClick={() => void addParticipants()}>Thêm thành viên</button>}</section>
       <section><h3>Cài đặt</h3><button className="secondary" onClick={() => void messengerApi.updateConversation(active.id, { archived: !active.isArchived }).then(() => loadConversations())}>{active.isArchived ? 'Bỏ lưu trữ' : 'Lưu trữ'}</button><button className="secondary" onClick={() => void messengerApi.updateConversation(active.id, { mutedUntilUtc: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() }).then(() => loadConversations())}>Tắt thông báo 8 giờ</button>{active.type === 'group' && myParticipant?.role !== 'owner' && <button className="danger" onClick={() => void leave()}>Rời nhóm</button>}</section>
