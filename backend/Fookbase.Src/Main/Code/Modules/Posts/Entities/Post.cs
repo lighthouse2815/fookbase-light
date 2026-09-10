@@ -10,8 +10,7 @@ public enum PostPrivacy
 public enum PostContainerType
 {
     Profile,
-    Group,
-    Page
+    Group
 }
 
 public sealed class Post
