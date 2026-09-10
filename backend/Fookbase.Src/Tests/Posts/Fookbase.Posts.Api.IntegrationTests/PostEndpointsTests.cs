@@ -91,6 +91,10 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             await friend.GetAsync("/api/posts/feed"));
         var strangerFeed = await ReadAsync<PagedResponse<PostResponse>>(
             await stranger.GetAsync("/api/posts/feed"));
+        var friendSearch = await ReadAsync<PagedResponse<PostResponse>>(
+            await friend.GetAsync("/api/posts/search?query=friends"));
+        var strangerSearch = await ReadAsync<PagedResponse<PostResponse>>(
+            await stranger.GetAsync("/api/posts/search?query=friends"));
 
         Assert.Single(anonymousPosts.Items);
         Assert.Equal(publicPost.Id, anonymousPosts.Items[0].Id);
@@ -99,6 +103,8 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.DoesNotContain(friendFeed.Items, item => item.Id == privatePost.Id);
         Assert.Contains(strangerFeed.Items, item => item.Id == publicPost.Id);
         Assert.DoesNotContain(strangerFeed.Items, item => item.Id == friendsPost.Id);
+        Assert.Contains(friendSearch.Items, item => item.Id == friendsPost.Id);
+        Assert.DoesNotContain(strangerSearch.Items, item => item.Id == friendsPost.Id);
         Assert.DoesNotContain(strangerFeed.Items, item => item.Id == privatePost.Id);
 
         await BlockAsync(authorId, friendId);

@@ -127,6 +127,19 @@ public sealed class PostsUseCase(
             limit,
             cancellationToken);
 
+    public async Task<ApplicationResult<PagedResponse<PostResponse>>> SearchPostsAsync(
+        Guid viewerUserId,
+        string? query,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default) =>
+        await postsService.SearchPostsAsync(
+            await CreateRequiredViewerContextAsync(viewerUserId, cancellationToken),
+            query,
+            offset,
+            limit,
+            cancellationToken);
+
     public async Task<ApplicationResult<CommentResponse>> CreateCommentAsync(
         Guid actorUserId,
         Guid postId,

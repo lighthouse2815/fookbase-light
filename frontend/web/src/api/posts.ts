@@ -42,6 +42,12 @@ export const postsApi = {
   getById: (postId: string) => apiRequest<Post>(`/api/posts/${postId}`),
   getFeed: (offset = 0, limit = 20) =>
     apiRequest<PagedResponse<Post>>(`/api/posts/feed${pageQuery(offset, limit)}`),
+  search: (query = '', offset = 0, limit = 20) => {
+    const params = new URLSearchParams({ offset: String(offset), limit: String(limit) })
+    if (query.trim()) params.set('query', query.trim())
+
+    return apiRequest<PagedResponse<Post>>(`/api/posts/search?${params.toString()}`)
+  },
   getByUser: (userId: string, offset = 0, limit = 20) =>
     apiRequest<PagedResponse<Post>>(`/api/posts/users/${userId}${pageQuery(offset, limit)}`),
   createComment: (postId: string, content: string, parentCommentId?: string) =>

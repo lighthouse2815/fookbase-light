@@ -17,6 +17,7 @@ public static class PostEndpoints
         group.MapDelete("/{postId:guid}", DeletePostAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}", GetPostAsync);
         group.MapGet("/feed", GetFeedAsync).RequireAuthorization();
+        group.MapGet("/search", SearchPostsAsync).RequireAuthorization();
         group.MapGet("/users/{authorUserId:guid}", GetUserPostsAsync);
         group.MapPost("/{postId:guid}/comments", CreateCommentAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}/comments", GetCommentsAsync);
@@ -102,6 +103,23 @@ public static class PostEndpoints
         }
 
         var result = await useCase.GetFeedAsync(actorUserId, offset, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> SearchPostsAsync(
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken,
+        string? query = null,
+        int offset = 0,
+        int limit = 20)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await useCase.SearchPostsAsync(actorUserId, query, offset, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 

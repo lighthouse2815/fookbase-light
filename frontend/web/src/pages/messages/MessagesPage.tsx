@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { messagesApi } from '../../api/messages'
 import type { Conversation, Message } from '../../api/messages'
@@ -23,6 +24,8 @@ function avatarLabel(profile: UserProfile) {
 
 export default function MessagesPage() {
   const { session } = useAuth()
+  const [searchParams] = useSearchParams()
+  const requestedConversationId = searchParams.get('conversation')
   const { incomingMessages, markConversationRead, readAtByConversation, sendTyping, typingConversationIds } = useRealtime()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({})
@@ -42,7 +45,9 @@ export default function MessagesPage() {
   const loadConversations = useCallback(async () => {
     const page = await messagesApi.getConversations()
     setConversations(page.items)
-    setActiveConversationId((current) => current ?? page.items[0]?.id ?? null)
+    setActiveConversationId((current) => page.items.some((item) => item.id === requestedConversationId)
+      ? requestedConversationId
+      : current ?? page.items[0]?.id ?? null)
 
     const participantUserIds = [...new Set(page.items.map((item) => item.participantUserId))]
     if (participantUserIds.length === 0) return
@@ -55,7 +60,7 @@ export default function MessagesPage() {
         ...Object.fromEntries(loadedProfiles.map((profile) => [profile.userId, profile])),
       }))
     }
-  }, [])
+  }, [requestedConversationId])
 
   useEffect(() => {
     let active = true

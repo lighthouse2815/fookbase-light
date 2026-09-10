@@ -144,6 +144,38 @@ public sealed class PostsService(
             cancellationToken));
     }
 
+    public async Task<ApplicationResult<PagedResponse<PostResponse>>> SearchPostsAsync(
+        PostViewerContext viewer,
+        string? query,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var error = ValidatePagination(offset, limit);
+        if (error is not null)
+        {
+            return ApplicationResult<PagedResponse<PostResponse>>.Failure(error);
+        }
+
+        var normalizedQuery = query?.Trim().ToLowerInvariant();
+        var posts = VisiblePosts(viewer);
+        if (!string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            posts = posts.Where(post => post.Content.ToLower().Contains(normalizedQuery));
+        }
+
+        var total = await posts.CountAsync(cancellationToken);
+        var items = await posts
+            .OrderByDescending(post => post.CreatedAtUtc)
+            .ThenByDescending(post => post.Id)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+        var responses = await LoadResponsesAsync(items, viewer.UserId, cancellationToken);
+        return ApplicationResult<PagedResponse<PostResponse>>.Success(
+            new PagedResponse<PostResponse>(responses, offset, limit, total));
+    }
+
     public async Task<ApplicationResult<CommentResponse>> CreateCommentAsync(
         PostViewerContext actor,
         Guid postId,

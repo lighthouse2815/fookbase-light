@@ -1,26 +1,35 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
+import { postsApi } from '../../api/posts'
+import type { Post } from '../../api/posts'
 import { usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
-import { TRENDING_TOPICS, formatNumber } from '../../data/mockData'
+
+function relativeDate(value: string) {
+  return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(
+    Math.round((new Date(value).getTime() - Date.now()) / 60_000),
+    'minute',
+  )
+}
 
 export default function ExplorePage() {
-  const [query, setQuery] = useState('')
   const { session } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const query = searchParams.get('q') ?? ''
   const [users, setUsers] = useState<UserProfile[]>([])
+  const [posts, setPosts] = useState<Post[]>([])
   const [totalUsers, setTotalUsers] = useState(0)
+  const [totalPosts, setTotalPosts] = useState(0)
   const [nextUserOffset, setNextUserOffset] = useState(0)
+  const [nextPostOffset, setNextPostOffset] = useState(0)
   const [userSearchError, setUserSearchError] = useState<string | null>(null)
+  const [postSearchError, setPostSearchError] = useState<string | null>(null)
   const [isSearchingUsers, setIsSearchingUsers] = useState(true)
+  const [isSearchingPosts, setIsSearchingPosts] = useState(true)
   const [isLoadingMoreUsers, setIsLoadingMoreUsers] = useState(false)
-
-  const trimmedQuery = query.trim().toLowerCase()
-
-  const filteredTopics = TRENDING_TOPICS.filter((topic) =>
-    !trimmedQuery || topic.tag.toLowerCase().includes(trimmedQuery)
-  )
+  const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false)
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -41,6 +50,29 @@ export default function ExplorePage() {
     return () => window.clearTimeout(timeoutId)
   }, [query, session])
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setIsSearchingPosts(true)
+      setPostSearchError(null)
+      void postsApi.search(query)
+        .then((page) => {
+          setPosts(page.items)
+          setTotalPosts(page.total)
+          setNextPostOffset(page.offset + page.items.length)
+        })
+        .catch((error: unknown) => {
+          setPostSearchError(error instanceof ApiError ? error.message : 'Không thể tìm bài viết.')
+        })
+        .finally(() => setIsSearchingPosts(false))
+    }, 250)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [query])
+
+  const updateQuery = (nextQuery: string) => {
+    setSearchParams(nextQuery.trim() ? { q: nextQuery } : {})
+  }
+
   const loadMoreUsers = async () => {
     setIsLoadingMoreUsers(true)
     setUserSearchError(null)
@@ -60,135 +92,65 @@ export default function ExplorePage() {
     }
   }
 
+  const loadMorePosts = async () => {
+    setIsLoadingMorePosts(true)
+    setPostSearchError(null)
+
+    try {
+      const page = await postsApi.search(query, nextPostOffset)
+      setPosts((currentPosts) => [
+        ...currentPosts,
+        ...page.items.filter((post) => !currentPosts.some((item) => item.id === post.id)),
+      ])
+      setTotalPosts(page.total)
+      setNextPostOffset(page.offset + page.items.length)
+    } catch (error) {
+      setPostSearchError(error instanceof ApiError ? error.message : 'Không thể tìm bài viết.')
+    } finally {
+      setIsLoadingMorePosts(false)
+    }
+  }
+
+  const hasQuery = Boolean(query.trim())
+
   return (
-    <div
-      className="p-4 xl:p-6 flex flex-col gap-6 min-h-screen bg-bg"
-      style={{ animation: 'fade-in 0.25s ease both' }}
-    >
-      {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex items-center gap-3 pt-1">
-        <h1 className="font-heading font-bold text-[22px] text-text">Explore</h1>
-      </div>
+    <div className="p-4 xl:p-6 flex flex-col gap-6 min-h-screen bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
+      <div className="flex items-center gap-3 pt-1"><h1 className="font-heading font-bold text-[22px] text-text">Explore</h1></div>
 
-      {/* ── Search bar ─────────────────────────────────── */}
       <div className="relative max-w-xl">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-light text-base select-none pointer-events-none">
-          🔍
-        </span>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search people, topics, posts..."
-          className="w-full bg-surface-2 border border-border rounded-full
-                     text-[14px] text-text pl-11 pr-10 py-2.5 outline-none
-                     focus:input-focus transition-all placeholder:text-text-light"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => setQuery('')}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-light hover:text-text
-                       text-xs cursor-pointer w-5 h-5 rounded-full flex items-center justify-center
-                       bg-surface-3 hover:bg-surface border-none transition-colors"
-            title="Clear search"
-          >
-            ✕
-          </button>
-        )}
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-light text-base select-none pointer-events-none">🔍</span>
+        <input type="search" value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Search people and posts..." className="w-full bg-surface-2 border border-border rounded-full text-[14px] text-text pl-11 pr-10 py-2.5 outline-none focus:input-focus transition-all placeholder:text-text-light" />
+        {query && <button type="button" onClick={() => updateQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-light hover:text-text text-xs cursor-pointer w-5 h-5 rounded-full flex items-center justify-center bg-surface-3 hover:bg-surface border-none transition-colors" title="Clear search">✕</button>}
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_340px] 2xl:grid-cols-[1fr_380px] gap-6 items-start">
-        {/* ── Trending Topics ──────────────────────────── */}
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
         <section>
-          <h2 className="font-heading font-bold text-[17px] text-text mb-4">Trending Topics</h2>
-          <div className="bg-surface rounded-2xl border border-border overflow-hidden">
-            {filteredTopics.length === 0 ? (
-              <div className="p-8 text-center text-text-muted text-[14px]">
-                No topics found matching &ldquo;{query}&rdquo;
-              </div>
-            ) : (
-              filteredTopics.map((topic, i) => {
-                return (
-                  <div
-                    key={topic.id}
-                    className="group flex items-center gap-4 px-5 py-4 cursor-pointer
-                               border-b border-border last:border-0 transition-colors
-                               hover:bg-surface-2"
-                    style={{ animation: `fade-in 0.3s ease ${i * 0.04}s both` }}
-                  >
-                    <span className="text-[15px] text-text-light font-medium w-5 shrink-0">
-                      {i + 1}
-                    </span>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-semibold text-text group-hover:text-primary transition-colors truncate">
-                        {topic.tag}
-                      </div>
-                      <div className="text-[12px] text-text-muted">
-                        {formatNumber(topic.posts)} posts
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-lg select-none">
-                        {topic.trend === 'hot' ? '🔥' : topic.trend === 'up' ? '📈' : '📉'}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })
-            )}
+          <h2 className="font-heading font-bold text-[17px] text-text mb-4">{hasQuery ? 'Posts' : 'Latest posts'}</h2>
+          <div className="flex flex-col gap-3">
+            {postSearchError && <div className="bg-[#e41e3f]/10 border border-[#e41e3f]/40 rounded-2xl p-4 text-sm text-[#ff8a9b]">{postSearchError}</div>}
+            {isSearchingPosts ? <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">Searching posts...</div> : posts.length === 0 && !postSearchError ? <div className="bg-surface rounded-2xl border border-border p-8 text-center text-text-muted text-[14px]">{hasQuery ? `No posts found matching “${query}”.` : 'No visible posts yet.'}</div> : posts.map((post) => (
+              <article key={post.id} className="bg-surface rounded-2xl border border-border p-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-3 text-xs text-text-muted"><Link to={`/profile/${post.authorUserId}`} className="font-semibold text-text hover:underline no-underline">View author</Link><span>{relativeDate(post.createdAtUtc)}</span></div>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-text">{post.content || `${post.mediaIds.length} attachment${post.mediaIds.length === 1 ? '' : 's'}`}</p>
+                <div className="text-xs text-text-light">{post.commentCount} comments · {Object.values(post.reactionCounts).reduce((sum, count) => sum + count, 0)} reactions</div>
+              </article>
+            ))}
+            {nextPostOffset < totalPosts && <button type="button" onClick={() => void loadMorePosts()} disabled={isLoadingMorePosts} className="rounded-lg border border-border bg-surface-2 hover:bg-surface-hover disabled:opacity-60 py-2 text-sm font-semibold text-text cursor-pointer">{isLoadingMorePosts ? 'Loading...' : 'Load more posts'}</button>}
           </div>
         </section>
 
-        {/* ── Suggested Users ──────────────────────────── */}
         <section>
-          <h2 className="font-heading font-bold text-[17px] text-text mb-4">Who to follow</h2>
+          <h2 className="font-heading font-bold text-[17px] text-text mb-4">{hasQuery ? 'People' : 'People to discover'}</h2>
           <div className="flex flex-col gap-3">
             {userSearchError && <div className="bg-[#e41e3f]/10 border border-[#e41e3f]/40 rounded-2xl p-4 text-sm text-[#ff8a9b]">{userSearchError}</div>}
-            {isSearchingUsers ? (
-              <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">Searching users...</div>
-            ) : users.length === 0 && !userSearchError ? (
-              <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">
-                No users found matching &ldquo;{query}&rdquo;
+            {isSearchingUsers ? <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">Searching users...</div> : users.length === 0 && !userSearchError ? <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">{hasQuery ? `No people found matching “${query}”.` : 'No users to discover yet.'}</div> : users.map((user, index) => (
+              <div key={user.userId} className="bg-surface rounded-2xl border border-border p-4 flex items-start gap-3 transition-all duration-200 hover:card-shadow-hover" style={{ animation: `slide-in-left 0.3s ease ${index * 0.06}s both` }}>
+                <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}</div>
+                <div className="flex-1 min-w-0"><p className="text-[13px] font-semibold text-text truncate">{user.displayName}</p><p className="text-[12px] text-text-muted truncate">@{user.username}</p>{user.currentCity && <p className="text-[12px] text-text-muted">{user.currentCity}</p>}</div>
+                <Link to={`/profile/${user.userId}`} className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 shrink-0 no-underline bg-primary text-white hover:bg-primary-dark">View</Link>
               </div>
-            ) : (
-              users.map((user, i) => (
-                  <div
-                    key={user.userId}
-                    className="bg-surface rounded-2xl border border-border p-4
-                               flex items-start gap-3 transition-all duration-200 hover:card-shadow-hover"
-                    style={{ animation: `slide-in-left 0.3s ease ${i * 0.06}s both` }}
-                  >
-                    <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">
-                      {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                        <span className="text-[13px] font-semibold text-text truncate">
-                        {user.displayName}
-                      </span>
-                      </div>
-                      <p className="text-[12px] text-text-muted truncate">@{user.username}</p>
-                      {user.currentCity && <p className="text-[12px] text-text-muted">{user.currentCity}</p>}
-                    </div>
-
-                    <Link to={`/profile/${user.userId}`} className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 shrink-0 no-underline bg-primary text-white hover:bg-primary-dark">View</Link>
-                  </div>
-              ))
-            )}
-            {nextUserOffset < totalUsers && (
-              <button
-                type="button"
-                onClick={() => void loadMoreUsers()}
-                disabled={isLoadingMoreUsers}
-                className="rounded-lg border border-border bg-surface-2 hover:bg-surface-hover disabled:opacity-60 py-2 text-sm font-semibold text-text cursor-pointer"
-              >
-                {isLoadingMoreUsers ? 'Loading...' : 'Load more users'}
-              </button>
-            )}
+            ))}
+            {nextUserOffset < totalUsers && <button type="button" onClick={() => void loadMoreUsers()} disabled={isLoadingMoreUsers} className="rounded-lg border border-border bg-surface-2 hover:bg-surface-hover disabled:opacity-60 py-2 text-sm font-semibold text-text cursor-pointer">{isLoadingMoreUsers ? 'Loading...' : 'Load more people'}</button>}
           </div>
         </section>
       </div>
