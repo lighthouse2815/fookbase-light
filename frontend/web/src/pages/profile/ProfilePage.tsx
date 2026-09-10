@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { friendsApi } from '../../api/friends'
 import type { BlockedUser, Friend, FriendRequest, PagedResponse, RelationshipStatus } from '../../api/friends'
@@ -561,9 +562,9 @@ export default function ProfilePage() {
                             />
                           ) : getInitials(profile)}
                         </div>
-                        <span className="text-[12px] font-medium text-text truncate w-full group-hover:underline">
+                        <Link to={`/profile/${friend.userId}`} className="text-[12px] font-medium text-text truncate w-full group-hover:underline no-underline">
                           {getProfileName(profile, friend.userId)}
-                        </span>
+                        </Link>
                       </div>
                     )
                   })}
@@ -671,7 +672,7 @@ export default function ProfilePage() {
                     return (
                       <div key={request.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface-2/60 border border-border">
                         <div className="min-w-0">
-                          <p className="font-semibold text-text text-sm truncate">{getProfileName(profile, request.senderUserId)}</p>
+                          <Link to={`/profile/${request.senderUserId}`} className="block font-semibold text-text text-sm truncate hover:underline no-underline">{getProfileName(profile, request.senderUserId)}</Link>
                           <p className="text-xs text-text-muted truncate">@{profile?.username ?? request.senderUserId.slice(0, 8)}</p>
                         </div>
                         <div className="flex gap-2 shrink-0">
@@ -710,7 +711,7 @@ export default function ProfilePage() {
                     return (
                       <div key={request.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface-2/60 border border-border">
                         <div className="min-w-0">
-                          <p className="font-semibold text-text text-sm truncate">{getProfileName(profile, request.receiverUserId)}</p>
+                          <Link to={`/profile/${request.receiverUserId}`} className="block font-semibold text-text text-sm truncate hover:underline no-underline">{getProfileName(profile, request.receiverUserId)}</Link>
                           <p className="text-xs text-text-muted truncate">@{profile?.username ?? request.receiverUserId.slice(0, 8)}</p>
                         </div>
                         <button
@@ -739,7 +740,7 @@ export default function ProfilePage() {
                     return (
                       <div key={blockedUser.userId} className="flex items-center justify-between gap-3 rounded-lg bg-surface-2/60 border border-border p-3">
                         <div className="min-w-0">
-                          <p className="font-semibold text-sm text-text truncate">{getProfileName(profile, blockedUser.userId)}</p>
+                          <Link to={`/profile/${blockedUser.userId}`} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{getProfileName(profile, blockedUser.userId)}</Link>
                           <p className="text-xs text-text-muted truncate">@{profile?.username ?? blockedUser.userId.slice(0, 8)}</p>
                         </div>
                         <button type="button" onClick={() => void runRelationshipAction(blockedUser.userId, () => friendsApi.unblock(blockedUser.userId))} disabled={isPending} className="px-3 py-1.5 rounded-lg bg-surface border border-border text-text text-xs cursor-pointer disabled:opacity-60">Unblock</button>
@@ -771,9 +772,9 @@ export default function ProfilePage() {
                       ) : getInitials(profile)}
                     </div>
                     <div>
-                      <p className="font-semibold text-text text-sm hover:underline cursor-pointer">
+                      <Link to={`/profile/${friend.userId}`} className="block font-semibold text-text text-sm hover:underline no-underline">
                         {getProfileName(profile, friend.userId)}
-                      </p>
+                      </Link>
                       <p className="text-xs text-text-muted">@{profile?.username ?? friend.userId.slice(0, 8)}</p>
                       <p className="text-xs text-text-light mt-0.5">
                         Friends since {new Date(friend.friendsSinceUtc).toLocaleDateString()}

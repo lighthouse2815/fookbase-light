@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
 import { postsApi } from '../../../api/posts'
 import type { Comment, Post } from '../../../api/posts'
@@ -145,7 +146,7 @@ export default function LivePostCard({
           {author?.avatarUrl ? <img src={author.avatarUrl} alt="" className="w-full h-full object-cover" /> : author?.displayName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-text truncate">{author?.displayName ?? 'User'}</p>
+          <Link to={`/profile/${post.authorUserId}`} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{author?.displayName ?? 'User'}</Link>
           <p className="text-xs text-text-muted">@{author?.username ?? post.authorUserId.slice(0, 8)} · {relativeDate(post.createdAtUtc)}</p>
         </div>
         {isAuthor && (
