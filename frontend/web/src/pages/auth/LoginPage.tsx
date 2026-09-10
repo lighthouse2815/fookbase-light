@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
+import { authApi } from '../../api/auth'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
 
@@ -11,23 +12,68 @@ const features = [
 
 export default function LoginPage() {
   const { session, signIn, signUp } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [isRegistering, setIsRegistering] = useState(false)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => searchParams.get('email') ?? '')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [verificationState, setVerificationState] = useState<'loading' | 'success' | 'error'>('loading')
 
-  if (session) return <Navigate to="/feed" replace />
+  const accountMode = searchParams.get('mode')
+  const linkedEmail = searchParams.get('email') ?? ''
+  const linkedToken = searchParams.get('token') ?? ''
+  const isRequestingReset = accountMode === 'forgot'
+  const isResetting = accountMode === 'reset'
+  const isVerifying = accountMode === 'verify'
+  const isAccountFlow = isRequestingReset || isResetting || isVerifying
+
+  useEffect(() => {
+    if (!isVerifying) return
+
+    if (!linkedEmail || !linkedToken) {
+      return
+    }
+
+    let isActive = true
+    void authApi.verifyEmail(linkedEmail, linkedToken)
+      .then(() => {
+        if (isActive) setVerificationState('success')
+      })
+      .catch((requestError: unknown) => {
+        if (isActive) {
+          setVerificationState('error')
+          setError(requestError instanceof ApiError ? requestError.message : 'Không thể xác minh email.')
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [isVerifying, linkedEmail, linkedToken])
+
+  if (session && !isAccountFlow) return <Navigate to="/feed" replace />
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+    setNotice(null)
     setIsSubmitting(true)
 
     try {
-      if (isRegistering) {
+      if (isRequestingReset) {
+        await authApi.requestPasswordReset(email)
+        setNotice('Nếu email này có tài khoản, chúng tôi đã gửi liên kết đặt lại mật khẩu.')
+      } else if (isResetting) {
+        await authApi.resetPassword({ email, token: linkedToken, password, confirmPassword })
+        setNotice('Mật khẩu đã được đặt lại. Bạn có thể đăng nhập bằng mật khẩu mới.')
+        setPassword('')
+        setConfirmPassword('')
+      } else if (isRegistering) {
         await signUp({ email, username, password })
       } else {
         await signIn({ email, password })
@@ -42,7 +88,16 @@ export default function LoginPage() {
   const switchMode = () => {
     setIsRegistering((current) => !current)
     setError(null)
+    setNotice(null)
     setPassword('')
+  }
+
+  const returnToSignIn = () => {
+    setSearchParams({})
+    setError(null)
+    setNotice(null)
+    setPassword('')
+    setConfirmPassword('')
   }
 
   const fieldClassName = 'w-full rounded-xl border border-border bg-surface-2/70 px-11 py-3 text-[15px] text-text outline-none transition placeholder:text-text-light focus:border-primary focus:bg-surface-2 focus:ring-4 focus:ring-primary/15'
@@ -81,7 +136,7 @@ export default function LoginPage() {
         </section>
 
         <section className="flex min-h-[620px] items-center justify-center p-5 sm:p-10 lg:p-12">
-          <form onSubmit={submit} className="w-full max-w-md">
+          <form onSubmit={isVerifying ? (event) => event.preventDefault() : submit} className="w-full max-w-md">
             <div className="mb-9 flex items-center justify-between lg:hidden">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-xl font-extrabold text-white">f</div>
@@ -91,54 +146,81 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-7">
-              <p className="text-sm font-semibold text-primary-light">{isRegistering ? 'JOIN FOOKBASE' : 'WELCOME BACK'}</p>
-              <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-text sm:text-4xl">{isRegistering ? 'Create your space.' : 'Sign in to your space.'}</h1>
-              <p className="mt-3 text-sm leading-6 text-text-muted">{isRegistering ? 'Set up your account in a moment and start connecting.' : 'Enter your details to continue where you left off.'}</p>
+              <p className="text-sm font-semibold text-primary-light">{isVerifying ? 'EMAIL VERIFICATION' : isResetting ? 'RESET PASSWORD' : isRequestingReset ? 'ACCOUNT RECOVERY' : isRegistering ? 'JOIN FOOKBASE' : 'WELCOME BACK'}</p>
+              <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-text sm:text-4xl">{isVerifying ? 'Verify your email.' : isResetting ? 'Choose a new password.' : isRequestingReset ? 'Reset your password.' : isRegistering ? 'Create your space.' : 'Sign in to your space.'}</h1>
+              <p className="mt-3 text-sm leading-6 text-text-muted">{isVerifying ? 'We are confirming the email address linked to your Fookbase account.' : isResetting ? 'Use a strong password you do not use elsewhere.' : isRequestingReset ? 'Enter your email and we will send a secure reset link.' : isRegistering ? 'Set up your account in a moment and start connecting.' : 'Enter your details to continue where you left off.'}</p>
             </div>
 
             {error && <p role="alert" className="mb-5 rounded-xl border border-[#e15f5f]/45 bg-[#e15f5f]/10 px-4 py-3 text-sm leading-5 text-[#ff9b9b]">{error}</p>}
+            {notice && <p role="status" className="mb-5 rounded-xl border border-primary/35 bg-primary/10 px-4 py-3 text-sm leading-5 text-primary-light">{notice}</p>}
 
-            <div className="flex flex-col gap-5">
-              <label className="flex flex-col gap-2 text-sm font-semibold text-text">
-                Email address
-                <span className="relative block">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">@</span>
-                  <input required autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className={fieldClassName} />
-                </span>
-              </label>
+            {isVerifying ? (
+              <div className="rounded-xl border border-border bg-surface-2/60 p-5 text-sm leading-6 text-text-muted">
+                {(!linkedEmail || !linkedToken) && 'Liên kết xác minh không hợp lệ.'}
+                {linkedEmail && linkedToken && verificationState === 'loading' && 'Đang xác minh email của bạn...'}
+                {verificationState === 'success' && 'Email đã được xác minh. Bạn có thể tiếp tục sử dụng Fookbase.'}
+                {verificationState === 'error' && 'Không thể xác minh email từ liên kết này.'}
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-5">
+                  <label className="flex flex-col gap-2 text-sm font-semibold text-text">
+                    Email address
+                    <span className="relative block">
+                      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">@</span>
+                      <input required readOnly={isResetting && Boolean(linkedEmail)} autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className={fieldClassName} />
+                    </span>
+                  </label>
 
-              {isRegistering && (
-                <label className="flex flex-col gap-2 text-sm font-semibold text-text">
-                  Username
-                  <span className="relative block">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">#</span>
-                    <input required minLength={3} maxLength={32} autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Choose a username" className={fieldClassName} />
-                  </span>
-                </label>
-              )}
+                  {isRegistering && (
+                    <label className="flex flex-col gap-2 text-sm font-semibold text-text">
+                      Username
+                      <span className="relative block">
+                        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">#</span>
+                        <input required minLength={3} maxLength={32} autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Choose a username" className={fieldClassName} />
+                      </span>
+                    </label>
+                  )}
 
-              <label className="flex flex-col gap-2 text-sm font-semibold text-text">
-                Password
-                <span className="relative block">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">⌁</span>
-                  <input required minLength={isRegistering ? 8 : undefined} autoComplete={isRegistering ? 'new-password' : 'current-password'} type={isPasswordVisible ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={isRegistering ? 'At least 8 characters' : 'Your password'} className={`${fieldClassName} pr-16`} />
-                  <button type="button" onClick={() => setIsPasswordVisible((current) => !current)} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-bold text-text-muted transition hover:bg-white/5 hover:text-text" aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}>{isPasswordVisible ? 'HIDE' : 'SHOW'}</button>
-                </span>
-              </label>
-            </div>
+                  {!isRequestingReset && (
+                    <label className="flex flex-col gap-2 text-sm font-semibold text-text">
+                      Password
+                      <span className="relative block">
+                        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">⌁</span>
+                        <input required minLength={isRegistering || isResetting ? 8 : undefined} autoComplete={isRegistering || isResetting ? 'new-password' : 'current-password'} type={isPasswordVisible ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={isRegistering || isResetting ? 'At least 8 characters' : 'Your password'} className={`${fieldClassName} pr-16`} />
+                        <button type="button" onClick={() => setIsPasswordVisible((current) => !current)} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-bold text-text-muted transition hover:bg-white/5 hover:text-text" aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}>{isPasswordVisible ? 'HIDE' : 'SHOW'}</button>
+                      </span>
+                    </label>
+                  )}
 
-            {isRegistering && <p className="mt-4 text-xs leading-5 text-text-light">By creating an account, you agree to use Fookbase respectfully and keep your login details private.</p>}
+                  {isResetting && (
+                    <label className="flex flex-col gap-2 text-sm font-semibold text-text">
+                      Confirm new password
+                      <input required minLength={8} autoComplete="new-password" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your new password" className={fieldClassName} />
+                    </label>
+                  )}
+                </div>
 
-            <button disabled={isSubmitting} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-dark hover:shadow-primary/35 disabled:cursor-not-allowed disabled:opacity-60">
-              {isSubmitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
-              {isSubmitting ? 'Please wait...' : isRegistering ? 'Create account' : 'Sign in'}
-            </button>
+                {isRegistering && <p className="mt-4 text-xs leading-5 text-text-light">By creating an account, you agree to use Fookbase respectfully and keep your login details private.</p>}
 
-            <div className="my-6 flex items-center gap-3 text-xs font-medium text-text-light"><span className="h-px flex-1 bg-border" />OR<span className="h-px flex-1 bg-border" /></div>
+                <button disabled={isSubmitting} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-dark hover:shadow-primary/35 disabled:cursor-not-allowed disabled:opacity-60">
+                  {isSubmitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
+                  {isSubmitting ? 'Please wait...' : isRequestingReset ? 'Send reset link' : isResetting ? 'Reset password' : isRegistering ? 'Create account' : 'Sign in'}
+                </button>
+              </>
+            )}
 
-            <button type="button" onClick={switchMode} className="w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2">
-              {isRegistering ? 'I already have an account' : 'Create a new account'}
-            </button>
+            {isVerifying || isRequestingReset || isResetting ? (
+              <button type="button" onClick={returnToSignIn} className="mt-6 w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2">Back to sign in</button>
+            ) : (
+              <>
+                {!isRegistering && <button type="button" onClick={() => setSearchParams({ mode: 'forgot' })} className="mt-4 text-sm font-semibold text-primary-light hover:text-text">Forgot password?</button>}
+                <div className="my-6 flex items-center gap-3 text-xs font-medium text-text-light"><span className="h-px flex-1 bg-border" />OR<span className="h-px flex-1 bg-border" /></div>
+                <button type="button" onClick={switchMode} className="w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2">
+                  {isRegistering ? 'I already have an account' : 'Create a new account'}
+                </button>
+              </>
+            )}
           </form>
         </section>
       </div>

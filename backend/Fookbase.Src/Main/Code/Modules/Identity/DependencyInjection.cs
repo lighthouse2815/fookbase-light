@@ -13,9 +13,11 @@ public static class DependencyInjection
     public static IServiceCollection AddIdentityInfrastructure(
         this IServiceCollection services,
         string connectionString,
-        JwtOptions jwtOptions)
+        JwtOptions jwtOptions,
+        EmailOptions emailOptions)
     {
         jwtOptions.Validate();
+        emailOptions.Validate();
 
         services.AddDbContext<IdentityDbContext>(options =>
             options.UseNpgsql(connectionString));
@@ -32,10 +34,13 @@ public static class DependencyInjection
                 options.User.RequireUniqueEmail = true;
             })
             .AddRoles<IdentityRole<Guid>>()
-            .AddEntityFrameworkStores<IdentityDbContext>();
+            .AddEntityFrameworkStores<IdentityDbContext>()
+            .AddDefaultTokenProviders();
 
         services.AddSingleton(jwtOptions);
+        services.AddSingleton(emailOptions);
         services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
 

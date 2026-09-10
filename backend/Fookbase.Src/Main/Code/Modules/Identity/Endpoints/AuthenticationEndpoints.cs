@@ -18,7 +18,12 @@ public static class AuthenticationEndpoints
         group.MapPost("/register", RegisterAsync).AllowAnonymous();
         group.MapPost("/login", LoginAsync).AllowAnonymous();
         group.MapPost("/refresh", RefreshAsync).AllowAnonymous();
+        group.MapPost("/password/forgot", RequestPasswordResetAsync).AllowAnonymous();
+        group.MapPost("/password/reset", ResetPasswordAsync).AllowAnonymous();
+        group.MapPost("/email/verify", VerifyEmailAsync).AllowAnonymous();
         group.MapPost("/logout", LogoutAsync).RequireAuthorization();
+        group.MapPost("/password/change", ChangePasswordAsync).RequireAuthorization();
+        group.MapPost("/email/verification", SendEmailVerificationAsync).RequireAuthorization();
         group.MapGet("/me", GetCurrentUserAsync).RequireAuthorization();
 
         return endpoints;
@@ -60,6 +65,42 @@ public static class AuthenticationEndpoints
             : result.Error!.ToHttpResult();
     }
 
+    private static async Task<IResult> RequestPasswordResetAsync(
+        ForgotPasswordRequest request,
+        AuthenticationService authenticationService,
+        CancellationToken cancellationToken)
+    {
+        var result = await authenticationService.RequestPasswordResetAsync(request, cancellationToken);
+
+        return result.Succeeded
+            ? Results.NoContent()
+            : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        AuthenticationService authenticationService,
+        CancellationToken cancellationToken)
+    {
+        var result = await authenticationService.ResetPasswordAsync(request, cancellationToken);
+
+        return result.Succeeded
+            ? Results.NoContent()
+            : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> VerifyEmailAsync(
+        VerifyEmailRequest request,
+        AuthenticationService authenticationService,
+        CancellationToken cancellationToken)
+    {
+        var result = await authenticationService.VerifyEmailAsync(request, cancellationToken);
+
+        return result.Succeeded
+            ? Results.NoContent()
+            : result.Error!.ToHttpResult();
+    }
+
     private static async Task<IResult> LogoutAsync(
         LogoutRequest request,
         ClaimsPrincipal principal,
@@ -75,6 +116,41 @@ public static class AuthenticationEndpoints
             userId,
             request,
             cancellationToken);
+
+        return result.Succeeded
+            ? Results.NoContent()
+            : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        ClaimsPrincipal principal,
+        AuthenticationService authenticationService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await authenticationService.ChangePasswordAsync(userId, request, cancellationToken);
+
+        return result.Succeeded
+            ? Results.Ok(result.Value)
+            : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> SendEmailVerificationAsync(
+        ClaimsPrincipal principal,
+        AuthenticationService authenticationService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await authenticationService.SendEmailVerificationAsync(userId, cancellationToken);
 
         return result.Succeeded
             ? Results.NoContent()

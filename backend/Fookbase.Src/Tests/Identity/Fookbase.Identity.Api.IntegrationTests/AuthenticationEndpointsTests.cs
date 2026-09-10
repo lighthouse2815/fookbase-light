@@ -41,6 +41,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var authentication = await ReadAuthenticationResponseAsync(response);
         Assert.Equal(account.Email, authentication.User.Email);
         Assert.Equal(account.Username, authentication.User.Username);
+        Assert.False(authentication.User.EmailConfirmed);
         Assert.False(string.IsNullOrWhiteSpace(authentication.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(authentication.RefreshToken));
 
@@ -194,6 +195,89 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal(HttpStatusCode.Unauthorized, refreshResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task Email_verification_confirms_the_registered_account()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        await RegisterAsync(client, account);
+
+        var email = GetLatestEmail(account.Email, "Verify your Fookbase email");
+        var (emailAddress, token) = GetLinkParameters(email.HtmlBody);
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/email/verify",
+            new VerifyEmailRequest(emailAddress, token));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(account.Email, account.Password));
+        var authentication = await ReadAuthenticationResponseAsync(loginResponse);
+        Assert.True(authentication.User.EmailConfirmed);
+    }
+
+    [Fact]
+    public async Task Password_reset_revokes_existing_sessions_and_allows_new_password()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        var original = await RegisterAsync(client, account);
+
+        var requestResponse = await client.PostAsJsonAsync(
+            "/api/auth/password/forgot",
+            new ForgotPasswordRequest(account.Email));
+        Assert.Equal(HttpStatusCode.NoContent, requestResponse.StatusCode);
+
+        var email = GetLatestEmail(account.Email, "Reset your Fookbase password");
+        var (emailAddress, token) = GetLinkParameters(email.HtmlBody);
+        const string newPassword = "New-password-123!";
+        var resetResponse = await client.PostAsJsonAsync(
+            "/api/auth/password/reset",
+            new ResetPasswordRequest(emailAddress, token, newPassword, newPassword));
+        Assert.Equal(HttpStatusCode.NoContent, resetResponse.StatusCode);
+
+        var refreshResponse = await client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshRequest(original.RefreshToken));
+        Assert.Equal(HttpStatusCode.Unauthorized, refreshResponse.StatusCode);
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(account.Email, newPassword));
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Password_change_rotates_the_current_session()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        var original = await RegisterAsync(client, account);
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", original.AccessToken);
+
+        const string newPassword = "New-password-123!";
+        var changeResponse = await client.PostAsJsonAsync(
+            "/api/auth/password/change",
+            new ChangePasswordRequest(account.Password, newPassword, newPassword));
+
+        Assert.Equal(HttpStatusCode.OK, changeResponse.StatusCode);
+        var rotated = await ReadAuthenticationResponseAsync(changeResponse);
+        Assert.NotEqual(original.RefreshToken, rotated.RefreshToken);
+
+        client.DefaultRequestHeaders.Authorization = null;
+        var refreshResponse = await client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshRequest(original.RefreshToken));
+        Assert.Equal(HttpStatusCode.Unauthorized, refreshResponse.StatusCode);
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(account.Email, newPassword));
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+    }
+
     private static async Task<AuthenticationResponse> RegisterAsync(
         HttpClient client,
         TestAccount account)
@@ -222,6 +306,36 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
     private static string Hash(string token) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+
+    private SentEmail GetLatestEmail(string recipientEmail, string subject) =>
+        factory.Services.GetRequiredService<TestEmailSender>().Emails
+            .LastOrDefault(email =>
+                email.RecipientEmail.Equals(recipientEmail, StringComparison.OrdinalIgnoreCase) &&
+                email.Subject == subject)
+        ?? throw new InvalidOperationException($"No '{subject}' email was sent to {recipientEmail}.");
+
+    private static (string Email, string Token) GetLinkParameters(string htmlBody)
+    {
+        var linkStart = htmlBody.IndexOf("href=\"", StringComparison.Ordinal);
+        var linkEnd = linkStart < 0 ? -1 : htmlBody.IndexOf('"', linkStart + 6);
+        if (linkEnd < 0)
+        {
+            throw new InvalidOperationException("Email did not contain a link.");
+        }
+
+        var uri = new Uri(htmlBody[(linkStart + 6)..linkEnd]);
+        var parameters = uri.Query[1..]
+            .Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Select(part => part.Split('=', 2))
+            .ToDictionary(
+                pair => pair[0],
+                pair => pair.Length == 2 ? WebUtility.UrlDecode(pair[1]) : string.Empty,
+                StringComparer.Ordinal);
+
+        return (
+            parameters.GetValueOrDefault("email") ?? throw new InvalidOperationException("Email link was missing an email."),
+            parameters.GetValueOrDefault("token") ?? throw new InvalidOperationException("Email link was missing a token."));
+    }
 
     private sealed record TestAccount(string Email, string Username, string Password);
 }

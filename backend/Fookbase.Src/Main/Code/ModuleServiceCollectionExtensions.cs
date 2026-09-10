@@ -24,10 +24,13 @@ internal static class ModuleServiceCollectionExtensions
     {
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
             ?? throw new InvalidOperationException("JWT configuration is required.");
+        var emailOptions = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()
+            ?? new EmailOptions();
 
         return services.AddIdentityInfrastructure(
             RequiredConnectionString(configuration, "IdentityDatabase"),
-            jwtOptions);
+            jwtOptions,
+            emailOptions);
     }
 
     public static IServiceCollection AddUsersModule(

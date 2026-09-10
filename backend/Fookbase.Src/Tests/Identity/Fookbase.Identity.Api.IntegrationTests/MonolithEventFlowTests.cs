@@ -42,11 +42,18 @@ public sealed class MonolithApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__IdentityDatabase")
+            ?? throw new InvalidOperationException("Identity development database connection string is required.");
         builder.UseEnvironment("Testing");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
+        builder.UseSetting("Jwt:SigningKey", "identity-integration-tests-signing-key-with-32-characters");
+        foreach (var module in new[] { "Identity", "Users", "Friends", "Messages", "Posts", "Media" })
+        {
+            builder.UseSetting($"ConnectionStrings:{module}Database", connectionString);
+        }
     }
 
     protected override IHost CreateHost(IHostBuilder builder)

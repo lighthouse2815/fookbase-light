@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { authApi } from '../api/auth'
-import type { Credentials, RegistrationDetails } from '../api/auth'
+import type { ChangePasswordDetails, Credentials, RegistrationDetails } from '../api/auth'
 import { ApiError } from '../api/client'
 import { clearAuthSession, getAuthSession, saveAuthSession } from './session'
 import type { AuthSession } from './session'
@@ -22,6 +22,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     applySession(await authApi.register(details))
   }
 
+  const changePassword = async (details: ChangePasswordDetails) => {
+    applySession(await authApi.changePassword(details))
+  }
+
   const signOut = async () => {
     try {
       if (session) {
@@ -38,19 +42,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let isActive = true
     const timeoutId = window.setTimeout(() => {
-      void authApi.getCurrentUser().catch(async (error: unknown) => {
-        if (!(error instanceof ApiError) || error.status !== 401) return
-
-        try {
-          const refreshedSession = await authApi.refresh(session.refreshToken)
-          if (isActive) applySession(refreshedSession)
-        } catch {
-          if (isActive) {
-            clearAuthSession()
-            setSession(null)
+      void authApi.getCurrentUser()
+        .then((user) => {
+          if (isActive && JSON.stringify(user) !== JSON.stringify(session.user)) {
+            applySession({ ...session, user })
           }
-        }
-      })
+        })
+        .catch(async (error: unknown) => {
+          if (!(error instanceof ApiError) || error.status !== 401) return
+
+          try {
+            const refreshedSession = await authApi.refresh(session.refreshToken)
+            if (isActive) applySession(refreshedSession)
+          } catch {
+            if (isActive) {
+              clearAuthSession()
+              setSession(null)
+            }
+          }
+        })
     }, 0)
 
     return () => {
@@ -60,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session])
 
   return (
-    <AuthContext.Provider value={{ session, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, signIn, signUp, changePassword, signOut }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
+import { authApi } from '../../api/auth'
 import { friendsApi } from '../../api/friends'
 import type { BlockedUser, Friend, FriendRequest, PagedResponse } from '../../api/friends'
 import { mediaApi } from '../../api/media'
@@ -52,7 +53,7 @@ function getProfileName(profile: UserProfile | undefined, userId: string) {
 }
 
 export default function ProfilePage() {
-  const { session } = useAuth()
+  const { session, changePassword } = useAuth()
   const [tab, setTab] = useState<ProfileTab>('posts')
   const [friends, setFriends] = useState<PagedResponse<Friend>>(emptyFriendPage)
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([])
@@ -72,10 +73,18 @@ export default function ProfilePage() {
   const [isProfilePostsLoading, setIsProfilePostsLoading] = useState(true)
   const [isLoadingMoreProfilePosts, setIsLoadingMoreProfilePosts] = useState(false)
   const [isProfileEditing, setIsProfileEditing] = useState(false)
+  const [isAccountSecurityOpen, setIsAccountSecurityOpen] = useState(false)
   const [displayNameDraft, setDisplayNameDraft] = useState('')
   const [bioDraft, setBioDraft] = useState('')
   const [cityDraft, setCityDraft] = useState('')
   const [profileMediaUpload, setProfileMediaUpload] = useState<{ kind: 'avatar' | 'cover'; progress: number } | null>(null)
+  const [currentPasswordDraft, setCurrentPasswordDraft] = useState('')
+  const [newPasswordDraft, setNewPasswordDraft] = useState('')
+  const [confirmPasswordDraft, setConfirmPasswordDraft] = useState('')
+  const [accountSecurityError, setAccountSecurityError] = useState<string | null>(null)
+  const [accountSecurityNotice, setAccountSecurityNotice] = useState<string | null>(null)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [isResendingVerification, setIsResendingVerification] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const displayName = profile?.displayName ?? session!.user.username
@@ -317,6 +326,44 @@ export default function ProfilePage() {
     if (file) void uploadProfileMedia(kind, file)
   }
 
+  const updatePassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setAccountSecurityError(null)
+    setAccountSecurityNotice(null)
+    setIsChangingPassword(true)
+
+    try {
+      await changePassword({
+        currentPassword: currentPasswordDraft,
+        newPassword: newPasswordDraft,
+        confirmPassword: confirmPasswordDraft,
+      })
+      setCurrentPasswordDraft('')
+      setNewPasswordDraft('')
+      setConfirmPasswordDraft('')
+      setAccountSecurityNotice('Mật khẩu đã được đổi. Các phiên đăng nhập khác đã bị đăng xuất.')
+    } catch (error) {
+      setAccountSecurityError(error instanceof ApiError ? error.message : 'Không thể đổi mật khẩu.')
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
+  const resendVerificationEmail = async () => {
+    setAccountSecurityError(null)
+    setAccountSecurityNotice(null)
+    setIsResendingVerification(true)
+
+    try {
+      await authApi.resendEmailVerification()
+      setAccountSecurityNotice('Email xác minh đã được gửi lại.')
+    } catch (error) {
+      setAccountSecurityError(error instanceof ApiError ? error.message : 'Không thể gửi email xác minh.')
+    } finally {
+      setIsResendingVerification(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
       <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => selectProfileMedia('avatar', event)} />
@@ -421,10 +468,11 @@ export default function ProfilePage() {
               {/* More options button */}
               <button
                 type="button"
-                title="More options"
-                className="w-9 h-9 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center justify-center transition-colors cursor-pointer border border-border"
+                title="Account security"
+                onClick={() => setIsAccountSecurityOpen((current) => !current)}
+                className="h-9 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center justify-center px-3 transition-colors cursor-pointer border border-border"
               >
-                <span>•••</span>
+                <span>Security</span>
               </button>
             </div>
           </div>
@@ -446,6 +494,41 @@ export default function ProfilePage() {
                 <button className="px-3 py-2 rounded-lg bg-primary hover:bg-primary-dark border-none text-white text-sm cursor-pointer">Save profile</button>
               </div>
             </form>
+          )}
+
+          {isAccountSecurityOpen && (
+            <section className="mb-4 rounded-xl border border-border bg-surface-2/60 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-heading text-lg font-bold text-text">Account security</h2>
+                  <p className="mt-1 text-sm text-text-muted">Manage your password and email verification.</p>
+                </div>
+                {!session!.user.emailConfirmed && (
+                  <button type="button" onClick={() => void resendVerificationEmail()} disabled={isResendingVerification} className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary-light disabled:opacity-60">
+                    {isResendingVerification ? 'Sending...' : 'Resend verification email'}
+                  </button>
+                )}
+              </div>
+
+              {!session!.user.emailConfirmed && <p className="mt-3 rounded-lg border border-[#e7b65b]/35 bg-[#e7b65b]/10 px-3 py-2 text-sm text-[#f4cf86]">Your email has not been verified yet.</p>}
+              {accountSecurityError && <p role="alert" className="mt-3 rounded-lg border border-[#e41e3f]/40 bg-[#e41e3f]/10 px-3 py-2 text-sm text-[#ff8a9b]">{accountSecurityError}</p>}
+              {accountSecurityNotice && <p role="status" className="mt-3 rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 text-sm text-primary-light">{accountSecurityNotice}</p>}
+
+              <form onSubmit={(event) => void updatePassword(event)} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <label className="flex flex-col gap-1 text-sm text-text">Current password
+                  <input required autoComplete="current-password" type="password" value={currentPasswordDraft} onChange={(event) => setCurrentPasswordDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
+                </label>
+                <label className="flex flex-col gap-1 text-sm text-text">New password
+                  <input required minLength={8} autoComplete="new-password" type="password" value={newPasswordDraft} onChange={(event) => setNewPasswordDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
+                </label>
+                <label className="flex flex-col gap-1 text-sm text-text">Confirm new password
+                  <input required minLength={8} autoComplete="new-password" type="password" value={confirmPasswordDraft} onChange={(event) => setConfirmPasswordDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
+                </label>
+                <div className="sm:col-span-3 flex justify-end">
+                  <button disabled={isChangingPassword} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isChangingPassword ? 'Saving...' : 'Change password'}</button>
+                </div>
+              </form>
+            </section>
           )}
 
           {/* 4. Tabs below: Posts | About | Friends | Photos */}

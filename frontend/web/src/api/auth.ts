@@ -4,6 +4,7 @@ export interface AuthenticatedUser {
   id: string
   email: string
   username: string
+  emailConfirmed: boolean
 }
 
 export interface AuthenticationResponse {
@@ -21,6 +22,19 @@ export interface Credentials {
 
 export interface RegistrationDetails extends Credentials {
   username: string
+}
+
+export interface ChangePasswordDetails {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
+export interface ResetPasswordDetails {
+  email: string
+  token: string
+  password: string
+  confirmPassword: string
 }
 
 const jsonBody = (value: unknown) => ({ body: JSON.stringify(value) })
@@ -47,4 +61,26 @@ export const authApi = {
       ...jsonBody({ refreshToken }),
     }),
   getCurrentUser: () => apiRequest<AuthenticatedUser>('/api/auth/me'),
+  requestPasswordReset: (email: string) =>
+    apiRequest<void>('/api/auth/password/forgot', {
+      method: 'POST',
+      ...jsonBody({ email }),
+    }),
+  resetPassword: (details: ResetPasswordDetails) =>
+    apiRequest<void>('/api/auth/password/reset', {
+      method: 'POST',
+      ...jsonBody(details),
+    }),
+  changePassword: (details: ChangePasswordDetails) =>
+    apiRequest<AuthenticationResponse>('/api/auth/password/change', {
+      method: 'POST',
+      ...jsonBody(details),
+    }),
+  verifyEmail: (email: string, token: string) =>
+    apiRequest<void>('/api/auth/email/verify', {
+      method: 'POST',
+      ...jsonBody({ email, token }),
+    }),
+  resendEmailVerification: () =>
+    apiRequest<void>('/api/auth/email/verification', { method: 'POST' }),
 }
