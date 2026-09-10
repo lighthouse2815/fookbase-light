@@ -11,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IUserIdProvider, SubjectUserIdProvider>();
+        services.AddSingleton<MessagesPresenceService>();
         services.AddScoped<MessagesService>();
 
         return services;

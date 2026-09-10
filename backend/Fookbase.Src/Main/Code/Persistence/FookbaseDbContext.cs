@@ -43,7 +43,13 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<ConversationReadCursor> ConversationReadCursors => Set<ConversationReadCursor>();
 
+    public DbSet<ConversationParticipant> ConversationParticipants => Set<ConversationParticipant>();
+
     public DbSet<Message> Messages => Set<Message>();
+
+    public DbSet<MessageAttachment> MessageAttachments => Set<MessageAttachment>();
+
+    public DbSet<MessageReaction> MessageReactions => Set<MessageReaction>();
 
     public DbSet<MessageNotification> MessageNotifications => Set<MessageNotification>();
 

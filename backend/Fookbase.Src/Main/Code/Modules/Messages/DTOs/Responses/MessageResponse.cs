@@ -4,6 +4,13 @@ public sealed record MessageResponse(
     Guid Id,
     Guid ConversationId,
     Guid SenderUserId,
-    string Content,
+    string? Content,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? ReadAtUtc);
+    DateTimeOffset? ReadAtUtc,
+    string Type = "text",
+    Guid? ReplyToMessageId = null,
+    MessageReplyPreviewResponse? ReplyTo = null,
+    DateTimeOffset? EditedAtUtc = null,
+    DateTimeOffset? DeletedAtUtc = null,
+    IReadOnlyList<MessageAttachmentResponse>? Attachments = null,
+    IReadOnlyList<MessageReactionResponse>? Reactions = null);

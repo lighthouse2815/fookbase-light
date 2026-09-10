@@ -4,4 +4,5 @@ public sealed record PagedResponse<T>(
     IReadOnlyList<T> Items,
     int Offset,
     int Limit,
-    int Total);
+    int Total,
+    string? NextCursor = null);

@@ -1,5 +1,11 @@
 namespace Fookbase.Api.Modules.Messages.Entities;
 
+public enum MessageType
+{
+    Text,
+    Media
+}
+
 public sealed class Message
 {
     private Message()
@@ -10,13 +16,17 @@ public sealed class Message
         Guid id,
         Guid conversationId,
         Guid senderUserId,
-        string content,
+        MessageType type,
+        string? content,
+        Guid? replyToMessageId,
         DateTimeOffset createdAtUtc)
     {
         Id = id;
         ConversationId = conversationId;
         SenderUserId = senderUserId;
+        Type = type;
         Content = content;
+        ReplyToMessageId = replyToMessageId;
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -26,9 +36,17 @@ public sealed class Message
 
     public Guid SenderUserId { get; private set; }
 
-    public string Content { get; private set; } = string.Empty;
+    public MessageType Type { get; private set; }
+
+    public string? Content { get; private set; }
+
+    public Guid? ReplyToMessageId { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset? EditedAtUtc { get; private set; }
+
+    public DateTimeOffset? DeletedAtUtc { get; private set; }
 
     public DateTimeOffset? ReadAtUtc { get; private set; }
 
@@ -36,9 +54,33 @@ public sealed class Message
         Guid id,
         Guid conversationId,
         Guid senderUserId,
-        string content,
+        MessageType type,
+        string? content,
+        Guid? replyToMessageId,
         DateTimeOffset createdAtUtc) =>
-        new(id, conversationId, senderUserId, content, createdAtUtc);
+        new(id, conversationId, senderUserId, type, content, replyToMessageId, createdAtUtc);
 
     public void MarkRead(DateTimeOffset readAtUtc) => ReadAtUtc ??= readAtUtc;
+
+    public void Edit(string content, DateTimeOffset editedAtUtc)
+    {
+        if (DeletedAtUtc is not null || Type != MessageType.Text)
+        {
+            throw new InvalidOperationException("Only active text messages can be edited.");
+        }
+
+        Content = content;
+        EditedAtUtc = editedAtUtc;
+    }
+
+    public void Delete(DateTimeOffset deletedAtUtc)
+    {
+        if (DeletedAtUtc is not null)
+        {
+            return;
+        }
+
+        Content = null;
+        DeletedAtUtc = deletedAtUtc;
+    }
 }

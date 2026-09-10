@@ -7,6 +7,11 @@ using System.Text;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -43,6 +48,16 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         var repeatedConversation = await reused.Content.ReadFromJsonAsync<ConversationResponse>();
         Assert.NotNull(conversation);
         Assert.Equal(conversation!.Id, repeatedConversation!.Id);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var participants = await dbContext.ConversationParticipants
+                .Where(participant => participant.ConversationId == conversation.Id)
+                .ToListAsync();
+            Assert.Equal(2, participants.Count);
+            Assert.Contains(participants, participant => participant.UserId == senderUserId);
+            Assert.Contains(participants, participant => participant.UserId == recipientUserId);
+        }
 
         var sent = await sender.PostAsJsonAsync(
             $"/api/messages/conversations/{conversation.Id}/messages",
@@ -167,6 +182,78 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         Assert.Equal(HttpStatusCode.Forbidden, blocked.StatusCode);
     }
 
+    [Fact]
+    public async Task Reply_reaction_edit_and_unsend_use_the_same_conversation_and_hide_deleted_content()
+    {
+        var firstUserId = Guid.NewGuid();
+        var secondUserId = Guid.NewGuid();
+        await BecomeFriendsAsync(firstUserId, secondUserId);
+        using var first = CreateAuthenticatedClient(firstUserId);
+        using var second = CreateAuthenticatedClient(secondUserId);
+
+        var conversation = await (await first.PostAsync($"/api/messages/conversations/{secondUserId}", null))
+            .Content.ReadFromJsonAsync<ConversationResponse>();
+        Assert.NotNull(conversation);
+        var original = await (await first.PostAsJsonAsync(
+            $"/api/messages/conversations/{conversation!.Id}/messages", new { content = "original" }))
+            .Content.ReadFromJsonAsync<MessageResponse>();
+        Assert.NotNull(original);
+
+        var replyResponse = await second.PostAsJsonAsync(
+            $"/api/messages/conversations/{conversation.Id}/messages",
+            new { content = "reply", replyToMessageId = original!.Id });
+        Assert.Equal(HttpStatusCode.Created, replyResponse.StatusCode);
+        var reply = await replyResponse.Content.ReadFromJsonAsync<MessageResponse>();
+        Assert.NotNull(reply);
+        Assert.Equal(original.Id, reply!.ReplyToMessageId);
+        Assert.Equal("original", reply.ReplyTo!.Content);
+
+        Assert.Equal(HttpStatusCode.OK, (await first.PostAsJsonAsync(
+            $"/api/messages/{reply.Id}/reactions", new { type = "love" })).StatusCode);
+        var foreignEdit = await first.PatchAsJsonAsync($"/api/messages/{reply.Id}", new { content = "forbidden" });
+        Assert.Equal(HttpStatusCode.Forbidden, foreignEdit.StatusCode);
+
+        var edited = await second.PatchAsJsonAsync($"/api/messages/{reply.Id}", new { content = "edited reply" });
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        Assert.Equal("edited reply", (await edited.Content.ReadFromJsonAsync<MessageResponse>())!.Content);
+        Assert.Equal(HttpStatusCode.NoContent, (await second.DeleteAsync($"/api/messages/{reply.Id}")).StatusCode);
+
+        var history = await first.GetFromJsonAsync<MessageHistoryResponse>(
+            $"/api/messages/conversations/{conversation.Id}/messages");
+        var deleted = Assert.Single(history!.Items.Where(message => message.Id == reply.Id));
+        Assert.Null(deleted.Content);
+        Assert.NotNull(deleted.DeletedAtUtc);
+        Assert.Empty(deleted.Attachments!);
+    }
+
+    [Fact]
+    public async Task Group_conversation_creates_owner_and_members_and_excludes_removed_member_from_access()
+    {
+        var users = await CreateUsersAsync(3);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        using var member = CreateAuthenticatedClient(users[1]);
+        using var removed = CreateAuthenticatedClient(users[2]);
+
+        var created = await owner.PostAsJsonAsync("/api/messages/conversations/group", new
+        {
+            title = "Test group",
+            participantUserIds = new[] { users[1], users[2] }
+        });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var conversation = await created.Content.ReadFromJsonAsync<ConversationResponse>();
+        Assert.NotNull(conversation);
+        Assert.Equal("group", conversation!.Type);
+        Assert.Equal(3, conversation.Participants!.Count);
+        Assert.Equal("owner", conversation.Participants.Single(participant => participant.UserId == users[0]).Role);
+
+        Assert.Equal(HttpStatusCode.Created, (await member.PostAsJsonAsync(
+            $"/api/messages/conversations/{conversation.Id}/messages", new { content = "hello group" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync(
+            $"/api/messages/conversations/{conversation.Id}/participants/{users[2]}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await removed.GetAsync(
+            $"/api/messages/conversations/{conversation.Id}/messages")).StatusCode);
+    }
+
     private HttpClient CreateAuthenticatedClient(Guid userId)
     {
         using var scope = factory.Services.CreateScope();
@@ -209,5 +296,23 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         dbContext.BlockedUsers.Add(BlockedUser.Create(blockerUserId, blockedUserId, DateTimeOffset.UtcNow));
         await dbContext.SaveChangesAsync();
+    }
+
+    private async Task<Guid[]> CreateUsersAsync(int count)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var users = Enumerable.Range(0, count)
+            .Select(index => new User(
+                Guid.NewGuid(),
+                $"messenger-{Guid.NewGuid():N}@example.com",
+                $"messenger_{Guid.NewGuid():N}"[..32],
+                now.AddTicks(index)))
+            .ToArray();
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        dbContext.Users.AddRange(users);
+        dbContext.UserProfiles.AddRange(users.Select(user => UserProfile.Create(user.Id, user.UserName!, now)));
+        await dbContext.SaveChangesAsync();
+        return users.Select(user => user.Id).ToArray();
     }
 }

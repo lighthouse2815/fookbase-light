@@ -591,25 +591,78 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<DateTimeOffset>("LastMessageAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId1")
+                    b.Property<Guid?>("PhotoMediaId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("UserId2")
+                    b.Property<string>("Title")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId2")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId1", "LastMessageAtUtc");
-
                     b.HasIndex("UserId1", "UserId2")
                         .IsUnique();
 
-                    b.HasIndex("UserId2", "LastMessageAtUtc");
+                    b.HasIndex("LastMessageAtUtc", "Id");
 
-                    b.ToTable("Conversations", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Conversations_CanonicalPair", "\"UserId1\" < \"UserId2\"");
-                        });
+                    b.ToTable("Conversations", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationParticipant", b =>
+                {
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ArchivedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("JoinedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastDeliveredMessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("LastReadAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LastReadMessageCreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastReadMessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("LeftAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("MutedUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nickname")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ConversationId", "UserId");
+
+                    b.HasIndex("ConversationId", "UserId");
+
+                    b.HasIndex("UserId", "ConversationId");
+
+                    b.ToTable("ConversationParticipants", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationReadCursor", b =>
@@ -643,7 +696,6 @@ namespace Fookbase.Api.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasMaxLength(5000)
                         .HasColumnType("character varying(5000)");
 
@@ -653,19 +705,76 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("EditedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("ReadAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReplyToMessageId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("SenderUserId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
 
-                    b.HasIndex("ConversationId", "ReadAtUtc");
+                    b.HasKey("Id");
 
                     b.HasIndex("ConversationId", "CreatedAtUtc", "Id");
 
+                    b.HasIndex("ReplyToMessageId");
+
                     b.ToTable("Messages", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageAttachment", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MediaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("MessageId", "MediaId");
+
+                    b.HasIndex("MediaId");
+
+                    b.HasIndex("MessageId", "SortOrder")
+                        .IsUnique();
+
+                    b.ToTable("MessageAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageReaction", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("MessageId", "UserId");
+
+                    b.HasIndex("MessageId", "Type");
+
+                    b.ToTable("MessageReactions", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageNotification", b =>
@@ -738,6 +847,32 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasIndex("RecipientUserId", "ActorUserId", "Type", "EntityType", "EntityId");
 
                     b.ToTable("Notifications", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", null)
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageAttachment", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", null)
+                        .WithMany()
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageReaction", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", null)
+                        .WithMany()
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>

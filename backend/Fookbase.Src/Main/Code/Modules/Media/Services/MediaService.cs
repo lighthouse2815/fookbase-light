@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Media.Common;
 using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -405,11 +406,17 @@ public sealed class MediaService(
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByActiveGroup = await dbContext.Groups.AsNoTracking()
             .AnyAsync(group => group.CoverMediaId == mediaId && group.DeletedAtUtc == null, cancellationToken);
+        var isReferencedByMessage = await dbContext.MessageAttachments.AsNoTracking()
+            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
+        var isReferencedByConversationPhoto = await dbContext.Conversations.AsNoTracking()
+            .AnyAsync(conversation => conversation.PhotoMediaId == mediaId, cancellationToken);
         if (isReferencedByPost ||
             isReferencedByProfile ||
             isReferencedByActiveProfile ||
             isReferencedByGroupCover ||
-            isReferencedByActiveGroup)
+            isReferencedByActiveGroup ||
+            isReferencedByMessage ||
+            isReferencedByConversationPhoto)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.Conflict));

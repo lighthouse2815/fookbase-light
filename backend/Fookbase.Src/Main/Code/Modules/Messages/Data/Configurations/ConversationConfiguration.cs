@@ -8,14 +8,13 @@ internal sealed class ConversationConfiguration : IEntityTypeConfiguration<Conve
 {
     public void Configure(EntityTypeBuilder<Conversation> builder)
     {
-        builder.ToTable("Conversations", table => table.HasCheckConstraint(
-            "CK_Conversations_CanonicalPair",
-            "\"UserId1\" < \"UserId2\""));
+        builder.ToTable("Conversations");
         builder.HasKey(conversation => conversation.Id);
+        builder.Property(conversation => conversation.Type).HasConversion<int>().IsRequired();
+        builder.Property(conversation => conversation.Title).HasMaxLength(120);
         builder.Property(conversation => conversation.CreatedAtUtc).IsRequired();
         builder.Property(conversation => conversation.LastMessageAtUtc).IsRequired();
         builder.HasIndex(conversation => new { conversation.UserId1, conversation.UserId2 }).IsUnique();
-        builder.HasIndex(conversation => new { conversation.UserId1, conversation.LastMessageAtUtc });
-        builder.HasIndex(conversation => new { conversation.UserId2, conversation.LastMessageAtUtc });
+        builder.HasIndex(conversation => new { conversation.LastMessageAtUtc, conversation.Id });
     }
 }

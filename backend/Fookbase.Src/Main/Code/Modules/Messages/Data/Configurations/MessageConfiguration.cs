@@ -10,9 +10,14 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
     {
         builder.ToTable("Messages");
         builder.HasKey(message => message.Id);
-        builder.Property(message => message.Content).HasMaxLength(5000).IsRequired();
+        builder.Property(message => message.Type).HasConversion<int>().IsRequired();
+        builder.Property(message => message.Content).HasMaxLength(5000);
         builder.Property(message => message.CreatedAtUtc).IsRequired();
         builder.HasIndex(message => new { message.ConversationId, message.CreatedAtUtc, message.Id });
-        builder.HasIndex(message => new { message.ConversationId, message.ReadAtUtc });
+        builder.HasIndex(message => message.ReplyToMessageId);
+        builder.HasOne<Message>()
+            .WithMany()
+            .HasForeignKey(message => message.ReplyToMessageId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
