@@ -1,4 +1,4 @@
-import { apiRequest } from './client'
+import { apiBaseUrl, apiRequest } from './client'
 
 export interface UserProfile {
   userId: string
@@ -41,4 +41,10 @@ export interface UpdateUserProfileDetails {
   bio?: string | null
   dateOfBirth?: string | null
   currentCity?: string | null
+  avatarMediaId?: string | null
+  coverMediaId?: string | null
+}
+
+export function resolveProfileImageUrl(url: string) {
+  return url.startsWith('/') ? `${apiBaseUrl}${url}` : url
 }

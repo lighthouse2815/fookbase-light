@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
 import { postsApi } from '../../../api/posts'
 import type { Comment, MediaAccess, Post } from '../../../api/posts'
+import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 
 interface LivePostCardProps {
@@ -143,7 +144,7 @@ export default function LivePostCard({
     <article className="bg-surface rounded-xl border border-border p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0 overflow-hidden">
-          {author?.avatarUrl ? <img src={author.avatarUrl} alt="" className="w-full h-full object-cover" /> : author?.displayName.slice(0, 2).toUpperCase()}
+          {author?.avatarUrl ? <img src={resolveProfileImageUrl(author.avatarUrl)} alt="" className="w-full h-full object-cover" /> : author?.displayName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <Link to={`/profile/${post.authorUserId}`} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{author?.displayName ?? 'User'}</Link>

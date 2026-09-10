@@ -3,12 +3,14 @@ using Fookbase.Api.Modules.Users.Data;
 using Fookbase.Api.Modules.Users.DTOs.Requests;
 using Fookbase.Api.Modules.Users.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Modules.Media.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Services;
 
 public sealed class UserProfileService(
     UsersDbContext dbContext,
+    MediaService mediaService,
     TimeProvider timeProvider)
 {
     private const int MaximumSearchLimit = 50;
@@ -92,6 +94,7 @@ public sealed class UserProfileService(
         CancellationToken cancellationToken = default)
     {
         var errors = Validate(request, timeProvider.GetUtcNow());
+        await ValidateProfileMediaAsync(userId, request, errors, cancellationToken);
         if (errors.Count > 0)
         {
             return ApplicationResult<UserProfileResponse>.Failure(
@@ -114,13 +117,31 @@ public sealed class UserProfileService(
             request.Bio,
             request.DateOfBirth,
             request.CurrentCity,
+            request.AvatarMediaId,
+            request.CoverMediaId,
             timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
     }
 
-    private static IReadOnlyDictionary<string, string[]> Validate(
+    public async Task<Guid?> GetAvatarMediaIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.UserProfiles.AsNoTracking()
+            .Where(profile => profile.UserId == userId)
+            .Select(profile => profile.AvatarMediaId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<Guid?> GetCoverMediaIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.UserProfiles.AsNoTracking()
+            .Where(profile => profile.UserId == userId)
+            .Select(profile => profile.CoverMediaId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+    private static Dictionary<string, string[]> Validate(
         UpdateUserProfileRequest request,
         DateTimeOffset now)
     {
@@ -150,6 +171,37 @@ public sealed class UserProfileService(
         return errors;
     }
 
+    private async Task ValidateProfileMediaAsync(
+        Guid userId,
+        UpdateUserProfileRequest request,
+        Dictionary<string, string[]> errors,
+        CancellationToken cancellationToken)
+    {
+        if (request.AvatarMediaId is not null)
+        {
+            var validation = await mediaService.ValidateProfileImageAsync(
+                userId,
+                request.AvatarMediaId.Value,
+                cancellationToken);
+            if (!validation.Succeeded)
+            {
+                errors["avatarMediaId"] = [validation.Error!.Message];
+            }
+        }
+
+        if (request.CoverMediaId is not null)
+        {
+            var validation = await mediaService.ValidateProfileImageAsync(
+                userId,
+                request.CoverMediaId.Value,
+                cancellationToken);
+            if (!validation.Succeeded)
+            {
+                errors["coverMediaId"] = [validation.Error!.Message];
+            }
+        }
+    }
+
     private static ApplicationResult<UserProfileResponse> NotFound() =>
         ApplicationResult<UserProfileResponse>.Failure(
             new ApplicationError(
@@ -163,8 +215,8 @@ public sealed class UserProfileService(
             profile.Username,
             profile.DisplayName,
             profile.Bio,
-            profile.AvatarUrl,
-            profile.CoverUrl,
+            profile.AvatarMediaId is null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar",
+            profile.CoverMediaId is null ? profile.CoverUrl : $"/api/users/{profile.UserId}/cover",
             profile.DateOfBirth,
             profile.CurrentCity,
             profile.CreatedAt,

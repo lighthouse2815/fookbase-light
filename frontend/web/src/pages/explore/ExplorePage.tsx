@@ -5,7 +5,7 @@ import { friendsApi } from '../../api/friends'
 import type { RelationshipStatus } from '../../api/friends'
 import { postsApi } from '../../api/posts'
 import type { Post } from '../../api/posts'
-import { usersApi } from '../../api/users'
+import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 
@@ -207,7 +207,7 @@ export default function ExplorePage() {
             {relationshipActionError && <div className="bg-[#e41e3f]/10 border border-[#e41e3f]/40 rounded-2xl p-4 text-sm text-[#ff8a9b]">{relationshipActionError}</div>}
             {isSearchingUsers ? <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">Searching users...</div> : users.length === 0 && !userSearchError ? <div className="bg-surface rounded-2xl border border-border p-6 text-center text-text-muted text-[14px]">{hasQuery ? `No people found matching “${query}”.` : 'No users to discover yet.'}</div> : users.map((user, index) => (
               <div key={user.userId} className="bg-surface rounded-2xl border border-border p-4 flex items-start gap-3 transition-all duration-200 hover:card-shadow-hover" style={{ animation: `slide-in-left 0.3s ease ${index * 0.06}s both` }}>
-                <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}</div>
+                <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{user.avatarUrl ? <img src={resolveProfileImageUrl(user.avatarUrl)} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}</div>
                 <div className="flex-1 min-w-0"><p className="text-[13px] font-semibold text-text truncate">{user.displayName}</p><p className="text-[12px] text-text-muted truncate">@{user.username}</p>{user.currentCity && <p className="text-[12px] text-text-muted">{user.currentCity}</p>}</div>
                 <div className="flex shrink-0 items-center gap-2">
                   {renderRelationshipAction(user.userId)}

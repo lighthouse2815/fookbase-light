@@ -15,6 +15,7 @@ public sealed class UsersApiFactory : WebApplicationFactory<Program>
             ?? throw new InvalidOperationException("Users development database connection string is required.");
         builder.UseEnvironment("Testing");
         ConfigureModuleConnections(builder, connectionString);
+        builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-must-have-32-characters");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");

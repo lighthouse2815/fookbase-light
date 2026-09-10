@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { messagesApi } from '../../api/messages'
 import type { Conversation, Message } from '../../api/messages'
-import { usersApi } from '../../api/users'
+import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { useRealtime } from '../../realtime/useRealtime'
@@ -341,5 +341,5 @@ export default function MessagesPage() {
 
 function Avatar({ profile, size = 'normal' }: { profile: UserProfile; size?: 'normal' | 'small' }) {
   const dimensions = size === 'small' ? 'w-8 h-8 text-[10px]' : 'w-10 h-10 text-[11px]'
-  return <div className={`${dimensions} rounded-full bg-primary flex items-center justify-center font-bold text-white shrink-0 overflow-hidden`}>{profile.avatarUrl ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" /> : avatarLabel(profile)}</div>
+  return <div className={`${dimensions} rounded-full bg-primary flex items-center justify-center font-bold text-white shrink-0 overflow-hidden`}>{profile.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full object-cover" /> : avatarLabel(profile)}</div>
 }

@@ -198,6 +198,32 @@ public sealed class MediaService(
         return ApplicationResult.Success();
     }
 
+    public async Task<ApplicationResult> ValidateProfileImageAsync(
+        Guid ownerUserId,
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
+        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_media", "The profile image must be ready.", ApplicationErrorType.Validation));
+        }
+
+        if (asset.OwnerUserId != ownerUserId)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "media_not_owned", "Only the media owner can use this profile image.", ApplicationErrorType.Forbidden));
+        }
+
+        return asset.MediaType == MediaType.Image
+            ? ApplicationResult.Success()
+            : ApplicationResult.Failure(new ApplicationError(
+                "invalid_profile_media_type", "Profile media must be an image.", ApplicationErrorType.Validation));
+    }
+
     public async Task<ApplicationResult> SynchronizePostReferencesAsync(
         Guid ownerUserId,
         Guid postId,

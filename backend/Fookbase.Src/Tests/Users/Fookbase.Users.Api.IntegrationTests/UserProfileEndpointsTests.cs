@@ -60,9 +60,9 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     [Fact]
     public async Task Search_returns_matching_profiles_with_pagination()
     {
-        var searchTerm = $"security_{Guid.NewGuid():N}";
+        var searchTerm = $"security_{Guid.NewGuid():N}"[..25];
         var matchingUser = new UserSeed(Guid.NewGuid(), searchTerm);
-        var otherUser = new UserSeed(Guid.NewGuid(), $"frontend_{Guid.NewGuid():N}");
+        var otherUser = new UserSeed(Guid.NewGuid(), $"frontend_{Guid.NewGuid():N}"[..25]);
         await EnsureProfileAsync(matchingUser);
         await EnsureProfileAsync(otherUser);
         using var client = factory.CreateClient();

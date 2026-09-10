@@ -5,7 +5,7 @@ import { friendsApi } from '../../api/friends'
 import type { RelationshipStatus } from '../../api/friends'
 import { postsApi } from '../../api/posts'
 import type { Post } from '../../api/posts'
-import { usersApi } from '../../api/users'
+import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import LivePostCard from '../feed/components/LivePostCard'
@@ -106,11 +106,11 @@ export default function UserProfilePage() {
         <div className="max-w-3xl mx-auto flex flex-col gap-5">
           <section className="bg-surface border border-border rounded-2xl overflow-hidden">
             <div className="h-40 bg-gradient-to-br from-primary/60 via-surface-2 to-surface-3">
-              {profile.coverUrl && <img src={profile.coverUrl} alt="" className="w-full h-full object-cover" />}
+              {profile.coverUrl && <img src={resolveProfileImageUrl(profile.coverUrl)} alt="" className="w-full h-full object-cover" />}
             </div>
             <div className="px-5 pb-5">
               <div className="w-24 h-24 -mt-12 rounded-full bg-primary text-white border-4 border-surface flex items-center justify-center overflow-hidden text-2xl font-bold">
-                {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" /> : profile.displayName.slice(0, 2).toUpperCase()}
+                {profile.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full object-cover" /> : profile.displayName.slice(0, 2).toUpperCase()}
               </div>
               <div className="mt-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>

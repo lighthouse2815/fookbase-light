@@ -4,7 +4,7 @@ import { ApiError } from '../../api/client'
 import { mediaApi } from '../../api/media'
 import { postsApi } from '../../api/posts'
 import type { Post } from '../../api/posts'
-import { usersApi } from '../../api/users'
+import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import LivePostCard from './components/LivePostCard'
@@ -132,7 +132,7 @@ export default function FeedPage() {
                   className="bg-surface rounded-xl border border-border p-3 flex items-center gap-3"
                 >
                   <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-[11px] font-bold text-white bg-primary shrink-0">
-                    {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}
+                    {user.avatarUrl ? <img src={resolveProfileImageUrl(user.avatarUrl)} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold text-text truncate">{user.displayName}</p>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { friendsApi } from '../../api/friends'
@@ -6,7 +6,7 @@ import type { BlockedUser, Friend, FriendRequest, PagedResponse } from '../../ap
 import { mediaApi } from '../../api/media'
 import { postsApi } from '../../api/posts'
 import type { Post as ApiPost } from '../../api/posts'
-import { usersApi } from '../../api/users'
+import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { formatNumber } from '../../data/mockData'
@@ -14,6 +14,12 @@ import LivePostCard from '../feed/components/LivePostCard'
 import NewPostBox from '../feed/components/NewPostBox'
 
 type ProfileTab = 'posts' | 'about' | 'friends' | 'photos'
+
+interface ProfilePhoto {
+  mediaId: string
+  postId: string
+  url: string
+}
 
 const TABS: { id: ProfileTab; label: string }[] = [
   { id: 'posts', label: 'Posts' },
@@ -61,12 +67,17 @@ export default function ProfilePage() {
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profilePosts, setProfilePosts] = useState<ApiPost[]>([])
   const [profilePostsTotal, setProfilePostsTotal] = useState(0)
+  const [photos, setPhotos] = useState<ProfilePhoto[]>([])
+  const [isPhotosLoading, setIsPhotosLoading] = useState(true)
   const [isProfilePostsLoading, setIsProfilePostsLoading] = useState(true)
   const [isLoadingMoreProfilePosts, setIsLoadingMoreProfilePosts] = useState(false)
   const [isProfileEditing, setIsProfileEditing] = useState(false)
   const [displayNameDraft, setDisplayNameDraft] = useState('')
   const [bioDraft, setBioDraft] = useState('')
   const [cityDraft, setCityDraft] = useState('')
+  const [profileMediaUpload, setProfileMediaUpload] = useState<{ kind: 'avatar' | 'cover'; progress: number } | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
   const displayName = profile?.displayName ?? session!.user.username
   const username = profile?.username ?? session!.user.username
   const initials = displayName.slice(0, 2).toUpperCase()
@@ -100,16 +111,40 @@ export default function ProfilePage() {
     }
   }, [])
 
+  const loadProfilePhotos = useCallback(async (userId: string) => {
+    setIsPhotosLoading(true)
+
+    try {
+      const page = await postsApi.getByUser(userId, 0, 100)
+      const mediaItems = page.items.flatMap((post) => post.mediaIds.map((mediaId) => ({ postId: post.id, mediaId })))
+      const results = await Promise.allSettled(
+        mediaItems.map((item) => postsApi.getMediaAccess(item.postId, item.mediaId)),
+      )
+      setPhotos(results.flatMap((result, index) => (
+        result.status === 'fulfilled' && result.value.mediaType === 'image'
+          ? [{ ...mediaItems[index], url: result.value.url }]
+          : []
+      )))
+    } catch {
+      setPhotos([])
+    } finally {
+      setIsPhotosLoading(false)
+    }
+  }, [])
+
   const loadCurrentProfile = useCallback(async () => {
     try {
       const currentProfile = await usersApi.getCurrent()
       setProfile(currentProfile)
-      await loadProfilePosts(currentProfile.userId)
+      await Promise.all([
+        loadProfilePosts(currentProfile.userId),
+        loadProfilePhotos(currentProfile.userId),
+      ])
     } catch (error) {
       setProfileError(error instanceof ApiError ? error.message : 'Không thể tải hồ sơ.')
       setIsProfilePostsLoading(false)
     }
-  }, [loadProfilePosts])
+  }, [loadProfilePhotos, loadProfilePosts])
 
   const loadRelationships = async (showLoading = true) => {
     if (showLoading) {
@@ -248,14 +283,49 @@ export default function ProfilePage() {
     const post = await postsApi.create({ content, privacy: 'public', mediaIds })
     setProfilePosts((currentPosts) => [post, ...currentPosts])
     setProfilePostsTotal((currentTotal) => currentTotal + 1)
+    if (profile) void loadProfilePhotos(profile.userId)
+  }
+
+  const uploadProfileMedia = async (kind: 'avatar' | 'cover', file: File) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type) || file.size > 20 * 1024 * 1024) {
+      setProfileError('Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP tối đa 20 MB.')
+      return
+    }
+
+    setProfileError(null)
+    setProfileMediaUpload({ kind, progress: 0 })
+
+    try {
+      const mediaId = await mediaApi.uploadFile(file, (progress) => {
+        setProfileMediaUpload({ kind, progress })
+      })
+      const updatedProfile = await usersApi.updateCurrent(
+        kind === 'avatar' ? { avatarMediaId: mediaId } : { coverMediaId: mediaId },
+      )
+      setProfile(updatedProfile)
+    } catch (error) {
+      setProfileError(error instanceof ApiError ? error.message : 'Không thể cập nhật ảnh hồ sơ.')
+    } finally {
+      setProfileMediaUpload(null)
+    }
+  }
+
+  const selectProfileMedia = (kind: 'avatar' | 'cover', event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (file) void uploadProfileMedia(kind, file)
   }
 
   return (
     <div className="min-h-screen bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
+      <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => selectProfileMedia('avatar', event)} />
+      <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => selectProfileMedia('cover', event)} />
       {/* ── Top Section: Cover + Header + Tabs ─────────────────────── */}
       <div className="bg-surface border-b border-border shadow-sm">
         {/* 1. Cover photo area: Full-width dark gradient banner */}
         <div className="relative w-full h-[260px] sm:h-[300px] md:h-[340px] bg-gradient-to-b from-surface-3 via-surface-2 to-surface-3">
+          {profile?.coverUrl && <img src={resolveProfileImageUrl(profile.coverUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
           {/* Subtle dark texture overlay */}
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3e4042_1px,transparent_1px)] [background-size:16px_16px]" />
           <div className="absolute inset-0 bg-gradient-to-t from-surface/50 via-transparent to-transparent" />
@@ -264,17 +334,19 @@ export default function ProfilePage() {
           <div className="absolute -bottom-[84px] left-1/2 -translate-x-1/2 md:translate-x-0 md:left-8 z-20">
             <div className="relative group">
               <div className="w-[168px] h-[168px] rounded-full flex items-center justify-center text-5xl font-bold text-white border-4 border-surface shadow-2xl bg-primary">
-                {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" /> : initials}
+                {profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full rounded-full object-cover" /> : initials}
               </div>
               {/* Camera icon button */}
               <button
                 type="button"
                 title="Update profile picture"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={profileMediaUpload !== null}
                 className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-surface-2 hover:bg-surface-hover
                            flex items-center justify-center text-text border border-border cursor-pointer
-                           shadow-md transition-colors text-sm"
+                           shadow-md transition-colors text-sm disabled:opacity-60"
               >
-                📷
+                {profileMediaUpload?.kind === 'avatar' ? `${profileMediaUpload.progress}%` : '📷'}
               </button>
             </div>
           </div>
@@ -282,12 +354,14 @@ export default function ProfilePage() {
           {/* Edit cover photo button */}
           <button
             type="button"
+            onClick={() => coverInputRef.current?.click()}
+            disabled={profileMediaUpload !== null}
             className="absolute right-4 sm:right-8 bottom-4 px-3.5 py-1.5 rounded-lg bg-surface/85 hover:bg-surface
                        text-text text-[13px] font-semibold flex items-center gap-2
-                       border border-border/60 transition-colors cursor-pointer shadow-md backdrop-blur-sm z-10"
+                       border border-border/60 transition-colors cursor-pointer shadow-md backdrop-blur-sm z-10 disabled:opacity-60"
           >
             <span>📷</span>
-            <span className="hidden sm:inline">Edit cover photo</span>
+            <span className="hidden sm:inline">{profileMediaUpload?.kind === 'cover' ? `Uploading ${profileMediaUpload.progress}%` : 'Edit cover photo'}</span>
           </button>
         </div>
 
@@ -510,7 +584,11 @@ export default function ProfilePage() {
                     See all photos
                   </button>
                 </div>
-                <p className="text-sm text-text-muted">Photo albums are not available yet.</p>
+                {isPhotosLoading ? <p className="text-sm text-text-muted">Loading photos...</p> : photos.length === 0 ? <p className="text-sm text-text-muted">No photos posted yet.</p> : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {photos.slice(0, 6).map((photo) => <img key={photo.mediaId} src={photo.url} alt="" className="aspect-square w-full rounded-lg object-cover" />)}
+                  </div>
+                )}
               </div>
 
               {/* Friends Preview Card */}
@@ -537,7 +615,7 @@ export default function ProfilePage() {
                         <div className="w-full aspect-square rounded-lg overflow-hidden flex items-center justify-center text-base font-bold text-white mb-1.5 shadow-sm transition-transform group-hover:scale-[1.02] bg-primary">
                           {profile?.avatarUrl ? (
                             <img
-                              src={profile.avatarUrl}
+                              src={resolveProfileImageUrl(profile.avatarUrl)}
                               alt=""
                               className="w-full h-full object-cover"
                             />
@@ -721,7 +799,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center font-bold text-white text-lg bg-primary">
                       {profile?.avatarUrl ? (
-                        <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full object-cover" />
                       ) : getInitials(profile)}
                     </div>
                     <div>
@@ -764,9 +842,13 @@ export default function ProfilePage() {
           <div className="bg-surface rounded-xl card-shadow border border-border p-6 flex flex-col gap-5">
             <div className="border-b border-border pb-3">
               <h2 className="font-heading font-bold text-xl text-text">Photos</h2>
-              <p className="text-sm text-text-muted">All media and photos</p>
+              <p className="text-sm text-text-muted">Photos from your posts</p>
             </div>
-            <p className="text-sm text-text-muted">Photo albums are not available yet.</p>
+            {isPhotosLoading ? <p className="text-sm text-text-muted">Loading photos...</p> : photos.length === 0 ? <p className="text-sm text-text-muted">No photos posted yet.</p> : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {photos.map((photo) => <img key={photo.mediaId} src={photo.url} alt="" className="aspect-square w-full rounded-xl object-cover" />)}
+              </div>
+            )}
           </div>
         )}
       </div>
