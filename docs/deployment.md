@@ -26,7 +26,7 @@ Khi API và MinIO cùng khởi động, bootstrap bucket sẽ retry 5 lần vớ
 
 ## Rate limit
 
-API giới hạn mặc định 120 request mỗi 60 giây cho mỗi JWT subject hoặc địa chỉ IP chưa đăng nhập. Điều chỉnh bằng `RateLimiting__PermitLimit` và `RateLimiting__WindowSeconds` theo lưu lượng thực tế. Các request bị từ chối nhận HTTP 429.
+API giới hạn mặc định 120 request mỗi 60 giây cho mỗi JWT subject hoặc địa chỉ IP chưa đăng nhập. Các route nhạy cảm có limiter riêng nghiêm ngặt hơn: login dùng `RateLimiting__SensitiveAuth__LoginPermitLimit`; quên/đặt lại mật khẩu dùng `RateLimiting__SensitiveAuth__RecoveryPermitLimit`; gửi lại email xác thực dùng `RateLimiting__SensitiveAuth__ResendVerificationPermitLimit`. Cửa sổ chung của các limiter này là `RateLimiting__SensitiveAuth__WindowSeconds` (mặc định 300 giây). Các request bị từ chối nhận HTTP 429.
 
 ## Backup và khôi phục
 

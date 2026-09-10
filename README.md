@@ -184,10 +184,11 @@ Tất cả Friends endpoint yêu cầu Bearer JWT. Collection endpoint dùng off
 | POST | `/api/messages/conversations/{userId}` | Bearer JWT, bạn bè |
 | GET | `/api/messages/conversations` | Bearer JWT |
 | GET | `/api/messages/conversations/{conversationId}/messages` | Bearer JWT, thành viên |
+| POST | `/api/messages/conversations/{conversationId}/read` | Bearer JWT, thành viên |
 | POST | `/api/messages/conversations/{conversationId}/messages` | Bearer JWT, thành viên |
 | GET | `/api/messages/notifications` | Bearer JWT |
 
-Tin nhắn chỉ được gửi giữa bạn bè không bị block. Notification chưa đọc được lưu trong Messages database và cập nhật realtime qua SignalR tại `/hubs/messages`.
+Tin nhắn chỉ được gửi giữa bạn bè không bị block. History dùng keyset pagination: request đầu không có `before` trả trang mới nhất; dùng `nextCursor` làm giá trị `before` để tải các tin cũ hơn. GET history không thay đổi trạng thái đã đọc; client xác nhận mốc đọc bằng `POST .../read` với `lastReadMessageId`. Read cursor được lưu theo thành viên conversation để sẵn sàng mở rộng conversation nhiều thành viên trong tương lai. Notification chưa đọc được lưu trong Messages database và cập nhật realtime qua SignalR tại `/hubs/messages`.
 
 ### Posts
 
@@ -241,7 +242,7 @@ dotnet tool run dotnet-ef migrations add MigrationName \
   --project backend/Fookbase.Src/Main \
   --startup-project backend/Fookbase.Src/Main \
   --context PostsDbContext \
-  --output-dir Modules/Posts/Repositories/Migrations
+  --output-dir Code/Modules/Posts/Data/Migrations
 ```
 
-Thay `PostsDbContext` và output directory bằng module cần cập nhật. PostgreSQL init script tự tạo các database module còn thiếu khi volume được tạo lần đầu.
+Thay `PostsDbContext` và output directory bằng module cần cập nhật. Các path hiện tại lần lượt là `Code/Modules/Identity/Data/Migrations`, `Code/Modules/Users/Data/Migrations`, `Code/Modules/Friends/Data/Migrations`, `Code/Modules/Messages/Data/Migrations`, `Code/Modules/Posts/Data/Migrations`, và `Code/Modules/Media/Data/Migrations`. PostgreSQL init script tự tạo các database module còn thiếu khi volume được tạo lần đầu.
