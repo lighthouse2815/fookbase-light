@@ -7,6 +7,7 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : D
 {
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<MediaReference> MediaReferences => Set<MediaReference>();
+    public DbSet<ProfileMediaReference> ProfileMediaReferences => Set<ProfileMediaReference>();
     public DbSet<ObjectDeletion> ObjectDeletions => Set<ObjectDeletion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

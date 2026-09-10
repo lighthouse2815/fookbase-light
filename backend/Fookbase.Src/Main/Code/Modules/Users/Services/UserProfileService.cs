@@ -112,6 +112,15 @@ public sealed class UserProfileService(
             return NotFound();
         }
 
+        var previousAvatarMediaId = profile.AvatarMediaId;
+        var previousCoverMediaId = profile.CoverMediaId;
+        var avatarMediaId = request.AvatarMediaId ?? previousAvatarMediaId;
+        var coverMediaId = request.CoverMediaId ?? previousCoverMediaId;
+        await mediaService.SynchronizeProfileReferencesAsync(
+            userId,
+            avatarMediaId,
+            coverMediaId,
+            cancellationToken);
         profile.Update(
             request.DisplayName,
             request.Bio,
@@ -120,7 +129,19 @@ public sealed class UserProfileService(
             request.AvatarMediaId,
             request.CoverMediaId,
             timeProvider.GetUtcNow());
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            await mediaService.SynchronizeProfileReferencesAsync(
+                userId,
+                previousAvatarMediaId,
+                previousCoverMediaId,
+                CancellationToken.None);
+            throw;
+        }
 
         return ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
     }

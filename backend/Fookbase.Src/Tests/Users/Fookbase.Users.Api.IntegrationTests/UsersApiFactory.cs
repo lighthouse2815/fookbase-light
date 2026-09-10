@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Users.Data;
+using Fookbase.Api.Modules.Media.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,7 @@ public sealed class UsersApiFactory : WebApplicationFactory<Program>
         using var scope = host.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
         dbContext.Database.Migrate();
+        scope.ServiceProvider.GetRequiredService<MediaDbContext>().Database.Migrate();
 
         return host;
     }

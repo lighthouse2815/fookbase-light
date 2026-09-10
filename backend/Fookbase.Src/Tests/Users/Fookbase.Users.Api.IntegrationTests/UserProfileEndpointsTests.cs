@@ -8,6 +8,8 @@ using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Modules.Users.Data;
 using Fookbase.Api.Modules.Users.Services;
+using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Modules.Media.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -135,6 +137,51 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Null(otherProfile.Bio);
     }
 
+    [Fact]
+    public async Task Active_avatar_and_cover_media_are_synchronized_and_cannot_be_deleted()
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        var avatar = await CreateReadyImageAsync(user.Id);
+        var cover = await CreateReadyImageAsync(user.Id);
+        var replacementAvatar = await CreateReadyImageAsync(user.Id);
+        using var client = CreateAuthenticatedClient(user.Id);
+
+        var update = await client.PatchAsJsonAsync(
+            "/api/users/me",
+            new UpdateUserProfileRequest(null, null, null, null, avatar, cover));
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{cover}")).StatusCode);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var mediaDb = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+            Assert.Contains(await mediaDb.ProfileMediaReferences.AsNoTracking().ToListAsync(), reference =>
+                reference.UserId == user.Id &&
+                reference.Slot == ProfileMediaSlot.Avatar &&
+                reference.MediaId == avatar);
+            Assert.Contains(await mediaDb.ProfileMediaReferences.AsNoTracking().ToListAsync(), reference =>
+                reference.UserId == user.Id &&
+                reference.Slot == ProfileMediaSlot.Cover &&
+                reference.MediaId == cover);
+        }
+
+        var replaceAvatar = await client.PatchAsJsonAsync(
+            "/api/users/me",
+            new UpdateUserProfileRequest(null, null, null, null, replacementAvatar));
+        Assert.Equal(HttpStatusCode.OK, replaceAvatar.StatusCode);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{cover}")).StatusCode);
+        using var verification = factory.Services.CreateScope();
+        var profile = await verification.ServiceProvider.GetRequiredService<UsersDbContext>()
+            .UserProfiles.AsNoTracking()
+            .SingleAsync(item => item.UserId == user.Id);
+        Assert.Equal(replacementAvatar, profile.AvatarMediaId);
+        Assert.Equal(cover, profile.CoverMediaId);
+    }
+
     private async Task<bool> EnsureProfileAsync(UserSeed user)
     {
         using var scope = factory.Services.CreateScope();
@@ -177,6 +224,28 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     {
         var suffix = Guid.NewGuid().ToString("N")[..16];
         return new UserSeed(Guid.NewGuid(), $"user_{suffix}");
+    }
+
+    private async Task<Guid> CreateReadyImageAsync(Guid ownerUserId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var mediaDb = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var mediaId = Guid.NewGuid();
+        var asset = MediaAsset.CreatePending(
+            mediaId,
+            ownerUserId,
+            MediaType.Image,
+            $"{ownerUserId:N}/{mediaId:N}.png",
+            "profile.png",
+            "image/png",
+            11,
+            now,
+            now.AddMinutes(5));
+        asset.MarkReady(11, now);
+        mediaDb.MediaAssets.Add(asset);
+        await mediaDb.SaveChangesAsync();
+        return mediaId;
     }
 
     private sealed record UserSeed(Guid Id, string Username);

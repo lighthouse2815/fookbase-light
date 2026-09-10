@@ -4,12 +4,14 @@ using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Users.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Services;
 
 public sealed class MediaService(
     MediaDbContext dbContext,
+    UsersDbContext usersDbContext,
     IObjectStorage objectStorage,
     MediaOptions options,
     TimeProvider timeProvider)
@@ -251,6 +253,47 @@ public sealed class MediaService(
         return ApplicationResult.Success();
     }
 
+    public async Task SynchronizeProfileReferencesAsync(
+        Guid userId,
+        Guid? avatarMediaId,
+        Guid? coverMediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var desiredMediaIds = new Dictionary<ProfileMediaSlot, Guid>();
+        if (avatarMediaId is not null)
+        {
+            desiredMediaIds[ProfileMediaSlot.Avatar] = avatarMediaId.Value;
+        }
+
+        if (coverMediaId is not null)
+        {
+            desiredMediaIds[ProfileMediaSlot.Cover] = coverMediaId.Value;
+        }
+
+        var currentReferences = await dbContext.ProfileMediaReferences
+            .Where(reference => reference.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.ProfileMediaReferences.RemoveRange(currentReferences.Where(reference =>
+            !desiredMediaIds.TryGetValue(reference.Slot, out var desiredMediaId) ||
+            desiredMediaId != reference.MediaId));
+        foreach (var (slot, mediaId) in desiredMediaIds)
+        {
+            if (currentReferences.Any(reference =>
+                    reference.Slot == slot && reference.MediaId == mediaId))
+            {
+                continue;
+            }
+
+            dbContext.ProfileMediaReferences.Add(ProfileMediaReference.Create(
+                userId,
+                slot,
+                mediaId,
+                timeProvider.GetUtcNow()));
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public Task RemovePostReferencesAsync(Guid postId, CancellationToken cancellationToken = default) =>
         dbContext.MediaReferences
             .Where(reference => reference.PostId == postId)
@@ -281,7 +324,15 @@ public sealed class MediaService(
                 "invalid_media_status", "Only ready media can be deleted.", ApplicationErrorType.Conflict));
         }
 
-        if (await dbContext.MediaReferences.AnyAsync(reference => reference.MediaId == mediaId, cancellationToken))
+        var isReferencedByPost = await dbContext.MediaReferences
+            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
+        var isReferencedByProfile = await dbContext.ProfileMediaReferences
+            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
+        var isReferencedByActiveProfile = await usersDbContext.UserProfiles.AsNoTracking()
+            .AnyAsync(profile =>
+                profile.AvatarMediaId == mediaId || profile.CoverMediaId == mediaId,
+                cancellationToken);
+        if (isReferencedByPost || isReferencedByProfile || isReferencedByActiveProfile)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.Conflict));

@@ -83,7 +83,7 @@ namespace Fookbase.Api.Modules.Media.Data.Migrations
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaReference", b =>
-                {
+            {
                     b.Property<Guid>("MediaId")
                         .HasColumnType("uuid");
 
@@ -98,6 +98,27 @@ namespace Fookbase.Api.Modules.Media.Data.Migrations
                     b.HasIndex("PostId");
 
                     b.ToTable("MediaReferences", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ProfileMediaReference", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Slot")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("AttachedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MediaId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("UserId", "Slot");
+
+                    b.HasIndex("MediaId");
+
+                    b.ToTable("ProfileMediaReferences", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ObjectDeletion", b =>
