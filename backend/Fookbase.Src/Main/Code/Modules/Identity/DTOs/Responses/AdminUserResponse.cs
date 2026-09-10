@@ -1,8 +1,9 @@
 namespace Fookbase.Api.Modules.Identity.DTOs.Responses;
 
-public sealed record AuthenticatedUserResponse(
+public sealed record AdminUserResponse(
     Guid Id,
     string Email,
     string Username,
-    bool EmailConfirmed,
+    bool IsActive,
+    DateTimeOffset CreatedAt,
     IReadOnlyList<string> Roles);

@@ -4,6 +4,8 @@ public enum ApplicationErrorType
 {
     Validation,
     Unauthorized,
+    Forbidden,
+    NotFound,
     Conflict
 }
 

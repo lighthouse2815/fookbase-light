@@ -81,6 +81,11 @@ dotnet run --project backend/Fookbase.Src/Main
 
 API chạy tại <http://localhost:5000>, health check tại <http://localhost:5000/health>.
 
+Để mở quyền quản trị cho một tài khoản development, đặt `Admin__BootstrapEmail` thành email
+của tài khoản đó trước khi đăng ký hoặc đăng nhập. Hệ thống sẽ tự gán role `Admin` vào lần
+phát hành token kế tiếp; không đặt biến này ở môi trường production nếu chưa có quy trình
+quản lý role riêng.
+
 Chạy frontend:
 
 ```bash
@@ -200,6 +205,19 @@ Privacy hợp lệ gồm `public`, `friends`, `onlyMe`; reaction gồm `like`, `
 | DELETE | `/api/media/{mediaId}` | Bearer JWT, chủ sở hữu |
 
 Upload dùng presigned PUT trực tiếp tới bucket private. Posts lấy read URL bằng lời gọi C# trực tiếp tới Media module; endpoint HTTP nội bộ và shared service token cũ đã được loại bỏ.
+
+### Admin
+
+| Method | Endpoint | Chức năng |
+| --- | --- | --- |
+| GET | `/api/admin/dashboard` | Thống kê users, posts và reports chờ xử lý |
+| GET | `/api/admin/users` | Danh sách tài khoản, hỗ trợ `query`, `offset`, `limit` |
+| PATCH | `/api/admin/users/{userId}/status` | Bật/tắt tài khoản thường |
+| GET | `/api/admin/reports` | Danh sách reports, lọc theo `status` |
+| PATCH | `/api/admin/reports/{reportId}/status` | Đánh dấu `reviewed`, `resolved` hoặc `dismissed` |
+| DELETE | `/api/admin/posts/{postId}` | Gỡ bài viết vi phạm |
+
+Tất cả endpoint Admin yêu cầu JWT có role `Admin`.
 
 ## Phối hợp module
 

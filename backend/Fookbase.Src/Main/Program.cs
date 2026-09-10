@@ -4,6 +4,9 @@ using System.Text;
 using Fookbase.Api;
 using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Modules.Friends.Endpoints;
+using Fookbase.Api.Modules.Admin;
+using Fookbase.Api.Modules.Admin.Endpoints;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Endpoints;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Endpoints;
@@ -80,7 +83,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options => options.AddPolicy(AdminPolicy.Name, policy =>
+    policy.RequireRole(AdminRole.Name)));
 builder.Services.AddSignalR();
 if (allowedOrigins.Length > 0)
 {
@@ -131,6 +135,7 @@ app.MapMessageEndpoints();
 app.MapHub<MessagesHub>("/hubs/messages");
 app.MapPostEndpoints();
 app.MapReportEndpoints();
+app.MapAdminEndpoints();
 app.MapMediaEndpoints();
 
 app.Run();

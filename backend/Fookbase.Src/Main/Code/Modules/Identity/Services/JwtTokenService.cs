@@ -10,16 +10,20 @@ namespace Fookbase.Api.Modules.Identity.Services;
 
 public sealed class JwtTokenService(JwtOptions options)
 {
-    public AccessTokenResult CreateAccessToken(User user, DateTimeOffset now)
+    public AccessTokenResult CreateAccessToken(
+        User user,
+        IEnumerable<string> roles,
+        DateTimeOffset now)
     {
         var expiresAt = now.AddMinutes(options.AccessTokenExpirationMinutes);
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
         var signingKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(options.SigningKey));
         var credentials = new SigningCredentials(

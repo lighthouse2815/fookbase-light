@@ -83,6 +83,38 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Administrators_can_review_reports_and_remove_reported_posts()
+    {
+        var users = await CreateUserIdsAsync(3);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var reporter = CreateAuthenticatedClient(users[1]);
+        using var administrator = CreateAuthenticatedClient(users[2], ["Admin"]);
+        var post = await CreatePostAsync(author, "reportable content", "public");
+        var reportResponse = await reporter.PostAsJsonAsync(
+            $"/api/reports/posts/{post.Id}",
+            new { reason = "spam", details = "Unwanted promotion." });
+        var report = await ReadAsync<ContentReportResponse>(reportResponse);
+
+        var forbidden = await author.GetAsync("/api/admin/reports");
+        var reportsResponse = await administrator.GetAsync("/api/admin/reports?status=pending");
+        var reports = await ReadAsync<PagedResponse<ModerationReportResponse>>(reportsResponse);
+        var reviewResponse = await administrator.PatchAsJsonAsync(
+            $"/api/admin/reports/{report.Id}/status",
+            new { status = "resolved" });
+        var reviewed = await ReadAsync<ModerationReportResponse>(reviewResponse);
+        var deleteResponse = await administrator.DeleteAsync($"/api/admin/posts/{post.Id}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        Assert.Contains(reports.Items, item => item.Id == report.Id && item.ReporterUserId == users[1]);
+        Assert.Equal("resolved", reviewed.Status);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PostsDbContext>();
+        Assert.NotNull((await dbContext.Posts.SingleAsync(item => item.Id == post.Id)).DeletedAtUtc);
+    }
+
+    [Fact]
     public async Task Author_can_create_update_and_soft_delete_post()
     {
         var users = await CreateUserIdsAsync(2);
@@ -414,18 +446,21 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         await db.SaveChangesAsync();
     }
 
-    private HttpClient CreateAuthenticatedClient(Guid userId)
+    private HttpClient CreateAuthenticatedClient(Guid userId, IReadOnlyCollection<string>? roles = null)
     {
         using var scope = factory.Services.CreateScope();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var now = DateTime.UtcNow;
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+        claims.AddRange((roles ?? []).Select(role => new Claim(ClaimTypes.Role, role)));
         var token = new JwtSecurityToken(
             configuration["Jwt:Issuer"],
             configuration["Jwt:Audience"],
-            [
-                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            ],
+            claims,
             notBefore: now.AddSeconds(-1),
             expires: now.AddMinutes(5),
             signingCredentials: new SigningCredentials(

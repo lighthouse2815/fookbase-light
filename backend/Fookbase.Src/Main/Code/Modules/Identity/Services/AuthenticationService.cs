@@ -14,8 +14,10 @@ public sealed class AuthenticationService(
     UserManager<User> userManager,
     IdentityDbContext dbContext,
     JwtTokenService tokenService,
+    RoleManager<IdentityRole<Guid>> roleManager,
     IEmailSender emailSender,
     EmailOptions emailOptions,
+    AdminOptions adminOptions,
     ILogger<AuthenticationService> logger,
     TimeProvider timeProvider)
 {
@@ -48,7 +50,6 @@ public sealed class AuthenticationService(
 
         var now = timeProvider.GetUtcNow();
         var user = new User(Guid.NewGuid(), email, userName, now);
-        var accessToken = tokenService.CreateAccessToken(user, now);
         var refreshToken = tokenService.CreateRefreshToken(user.Id, now);
         var creationResult = await CreateUserAsync(
             user,
@@ -88,7 +89,9 @@ public sealed class AuthenticationService(
             }
         }
 
-        return ApplicationResult<AuthenticationResponse>.Success(BuildResponse(user, accessToken, refreshToken));
+        var roles = await GetRolesAsync(user);
+        return ApplicationResult<AuthenticationResponse>.Success(
+            BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now), refreshToken));
     }
 
     public async Task<ApplicationResult<AuthenticationResponse>> LoginAsync(
@@ -162,8 +165,9 @@ public sealed class AuthenticationService(
                 "The refresh token is invalid or expired.");
         }
 
+        var roles = await GetRolesAsync(user);
         return ApplicationResult<AuthenticationResponse>.Success(
-            BuildResponse(user, tokenService.CreateAccessToken(user, now), replacement));
+            BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now), replacement));
     }
 
     public async Task<ApplicationResult> LogoutAsync(
@@ -199,7 +203,8 @@ public sealed class AuthenticationService(
                 "The access token is invalid.");
         }
 
-        return ApplicationResult<AuthenticatedUserResponse>.Success(ToResponse(user));
+        return ApplicationResult<AuthenticatedUserResponse>.Success(
+            ToResponse(user, await GetRolesAsync(user)));
     }
 
     public async Task<ApplicationResult> SendEmailVerificationAsync(
@@ -359,29 +364,64 @@ public sealed class AuthenticationService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        var accessToken = tokenService.CreateAccessToken(user, now);
+        var roles = await GetRolesAsync(user);
+        var accessToken = tokenService.CreateAccessToken(user, roles, now);
         var refreshToken = tokenService.CreateRefreshToken(user.Id, now);
 
         dbContext.RefreshTokens.Add(refreshToken.RefreshToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ApplicationResult<AuthenticationResponse>.Success(
-            BuildResponse(user, accessToken, refreshToken));
+            BuildResponse(user, roles, accessToken, refreshToken));
     }
 
     private static AuthenticationResponse BuildResponse(
         User user,
+        IReadOnlyList<string> roles,
         AccessTokenResult accessToken,
         RefreshTokenResult refreshToken) =>
         new(
-            ToResponse(user),
+            ToResponse(user, roles),
             accessToken.Token,
             accessToken.ExpiresAt,
             refreshToken.RawToken,
             refreshToken.RefreshToken.ExpiresAt);
 
-    private static AuthenticatedUserResponse ToResponse(User user) =>
-        new(user.Id, user.Email!, user.UserName!, user.EmailConfirmed);
+    private static AuthenticatedUserResponse ToResponse(User user, IReadOnlyList<string> roles) =>
+        new(user.Id, user.Email!, user.UserName!, user.EmailConfirmed, roles);
+
+    private async Task<IReadOnlyList<string>> GetRolesAsync(User user)
+    {
+        if (adminOptions.IsBootstrapAdmin(user.Email!))
+        {
+            await EnsureBootstrapAdminRoleAsync(user);
+        }
+
+        return (await userManager.GetRolesAsync(user))
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private async Task EnsureBootstrapAdminRoleAsync(User user)
+    {
+        if (!await roleManager.RoleExistsAsync(AdminRole.Name))
+        {
+            var createRole = await roleManager.CreateAsync(new IdentityRole<Guid>(AdminRole.Name));
+            if (!createRole.Succeeded && !await roleManager.RoleExistsAsync(AdminRole.Name))
+            {
+                throw new InvalidOperationException("The bootstrap administrator role could not be created.");
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(user, AdminRole.Name))
+        {
+            var addRole = await userManager.AddToRoleAsync(user, AdminRole.Name);
+            if (!addRole.Succeeded)
+            {
+                throw new InvalidOperationException("The bootstrap administrator role could not be assigned.");
+            }
+        }
+    }
 
     private async Task<IdentityResult> CreateUserAsync(
         User user,

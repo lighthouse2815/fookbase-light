@@ -14,10 +14,12 @@ public static class DependencyInjection
         this IServiceCollection services,
         string connectionString,
         JwtOptions jwtOptions,
-        EmailOptions emailOptions)
+        EmailOptions emailOptions,
+        AdminOptions adminOptions)
     {
         jwtOptions.Validate();
         emailOptions.Validate();
+        adminOptions.Validate();
 
         services.AddDbContext<IdentityDbContext>(options =>
             options.UseNpgsql(connectionString));
@@ -39,10 +41,12 @@ public static class DependencyInjection
 
         services.AddSingleton(jwtOptions);
         services.AddSingleton(emailOptions);
+        services.AddSingleton(adminOptions);
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
+        services.AddScoped<AdministrationService>();
 
         return services;
     }

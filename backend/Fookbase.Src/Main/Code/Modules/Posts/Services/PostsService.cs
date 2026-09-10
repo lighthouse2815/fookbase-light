@@ -68,6 +68,11 @@ public sealed class PostsService(
         CancellationToken cancellationToken = default) =>
         Map(await DeletePostCoreAsync(actorUserId, postId, cancellationToken));
 
+    public async Task<ApplicationResult> DeletePostForModerationAsync(
+        Guid postId,
+        CancellationToken cancellationToken = default) =>
+        Map(await DeletePostCoreAsync(null, postId, cancellationToken));
+
     public ApplicationResult ValidatePostRequest(
         string content,
         string privacy,
@@ -424,7 +429,7 @@ public sealed class PostsService(
     }
 
     public async Task<PostsServiceError> DeletePostCoreAsync(
-        Guid actorUserId,
+        Guid? actorUserId,
         Guid postId,
         CancellationToken cancellationToken = default)
     {
@@ -436,7 +441,7 @@ public sealed class PostsService(
             return PostsServiceError.PostNotFound;
         }
 
-        if (post.AuthorUserId != actorUserId)
+        if (actorUserId is not null && post.AuthorUserId != actorUserId)
         {
             return PostsServiceError.Forbidden;
         }

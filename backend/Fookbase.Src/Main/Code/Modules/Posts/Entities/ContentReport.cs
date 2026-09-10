@@ -76,4 +76,14 @@ public sealed class ContentReport
         string? details,
         DateTimeOffset createdAtUtc) =>
         new(Guid.NewGuid(), reporterUserId, targetType, targetId, reason, details, createdAtUtc);
+
+    public void UpdateStatus(ContentReportStatus status)
+    {
+        if (status == ContentReportStatus.Pending)
+        {
+            throw new ArgumentException("A report cannot be moved back to pending.");
+        }
+
+        Status = status;
+    }
 }

@@ -22,4 +22,6 @@ public sealed class User : IdentityUser<Guid>
     public bool IsActive { get; private set; }
 
     public void Disable() => IsActive = false;
+
+    public void Enable() => IsActive = true;
 }
