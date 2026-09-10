@@ -4,7 +4,7 @@ set -eu
 : "${BACKUP_DIR:?Set BACKUP_DIR to a directory outside the repository.}"
 
 timestamp=$(date -u +%Y%m%dT%H%M%SZ)
-databases="identity_db users_db friends_db messages_db posts_db media_db"
+databases="${BACKUP_DATABASES:-fookbase_db}"
 
 mkdir -p "$BACKUP_DIR"
 for database in $databases; do

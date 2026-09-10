@@ -27,7 +27,7 @@ Fookbase.Api :5000
 
 Backend chỉ có một entry point: `backend/Fookbase.Src/Main`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
 
-Sáu database module hiện tại được giữ để migration và dữ liệu development cũ tiếp tục tương thích. Đây chỉ là ranh giới lưu trữ nội bộ của cùng một ứng dụng, không phải các service triển khai độc lập.
+Toàn bộ persistence runtime dùng duy nhất `FookbaseDbContext` và PostgreSQL database `fookbase_db`. Module vẫn giữ entity, configuration và service trong folder riêng; chỉ DbContext và migration history được hợp nhất.
 
 ## Yêu cầu
 
@@ -54,7 +54,7 @@ docker compose ps
 
 MinIO Console chạy tại <http://localhost:9001>. API object storage chạy tại <http://localhost:9000>.
 
-Apply migration cho các module:
+Apply migration cho database hợp nhất:
 
 ```bash
 set -a
@@ -62,12 +62,10 @@ source .env
 set +a
 dotnet tool restore
 
-for context in IdentityDbContext UsersDbContext FriendsDbContext MessagesDbContext PostsDbContext MediaDbContext; do
-  dotnet tool run dotnet-ef database update \
-    --project backend/Fookbase.Src/Main \
-    --startup-project backend/Fookbase.Src/Main \
-    --context "$context"
-done
+dotnet tool run dotnet-ef database update \
+  --project backend/Fookbase.Src/Main \
+  --startup-project backend/Fookbase.Src/Main \
+  --context FookbaseDbContext
 ```
 
 Chạy backend monolith:
@@ -188,7 +186,7 @@ Tất cả Friends endpoint yêu cầu Bearer JWT. Collection endpoint dùng off
 | POST | `/api/messages/conversations/{conversationId}/messages` | Bearer JWT, thành viên |
 | GET | `/api/messages/notifications` | Bearer JWT |
 
-Tin nhắn chỉ được gửi giữa bạn bè không bị block. History dùng keyset pagination: request đầu không có `before` trả trang mới nhất; dùng `nextCursor` làm giá trị `before` để tải các tin cũ hơn. GET history không thay đổi trạng thái đã đọc; client xác nhận mốc đọc bằng `POST .../read` với `lastReadMessageId`. Read cursor được lưu theo thành viên conversation để sẵn sàng mở rộng conversation nhiều thành viên trong tương lai. Notification chưa đọc được lưu trong Messages database và cập nhật realtime qua SignalR tại `/hubs/messages`.
+Tin nhắn chỉ được gửi giữa bạn bè không bị block. History dùng keyset pagination: request đầu không có `before` trả trang mới nhất; dùng `nextCursor` làm giá trị `before` để tải các tin cũ hơn. GET history không thay đổi trạng thái đã đọc; client xác nhận mốc đọc bằng `POST .../read` với `lastReadMessageId`. Read cursor được lưu theo thành viên conversation để sẵn sàng mở rộng conversation nhiều thành viên trong tương lai. Notification chưa đọc được lưu trong bảng Messages của `fookbase_db` và cập nhật realtime qua SignalR tại `/hubs/messages`.
 
 ### Posts
 
@@ -241,8 +239,46 @@ Khi một API cần nhiều service, endpoint gọi một application use case. 
 dotnet tool run dotnet-ef migrations add MigrationName \
   --project backend/Fookbase.Src/Main \
   --startup-project backend/Fookbase.Src/Main \
-  --context PostsDbContext \
-  --output-dir Code/Modules/Posts/Data/Migrations
+  --context FookbaseDbContext \
+  --output-dir Code/Persistence/Migrations
 ```
 
-Thay `PostsDbContext` và output directory bằng module cần cập nhật. Các path hiện tại lần lượt là `Code/Modules/Identity/Data/Migrations`, `Code/Modules/Users/Data/Migrations`, `Code/Modules/Friends/Data/Migrations`, `Code/Modules/Messages/Data/Migrations`, `Code/Modules/Posts/Data/Migrations`, và `Code/Modules/Media/Data/Migrations`. PostgreSQL init script tự tạo các database module còn thiếu khi volume được tạo lần đầu.
+Runtime migration và snapshot nằm ở `backend/Fookbase.Src/Main/Code/Persistence/Migrations`.
+Historical module migrations vẫn được giữ tại `Code/Modules/<Module>/Data/Migrations` làm
+record cho import dữ liệu cũ, nhưng không còn được compile hoặc apply ở runtime.
+
+## Chuyển dữ liệu development cũ
+
+Fresh install tạo `fookbase_db` từ compose init script và migration hợp nhất ở trên. Không xóa
+sáu database cũ khi nâng cấp một development environment đã có dữ liệu.
+
+1. Trước khi thay `.env`, backup sáu source database:
+
+   ```bash
+   BACKUP_DIR=/safe/path BACKUP_DATABASES="identity_db users_db friends_db messages_db posts_db media_db" \
+     ./infrastructure/postgres/backup.sh
+   ```
+
+2. Tạo `fookbase_db` nếu volume PostgreSQL đã tồn tại từ trước, rồi apply `FookbaseDbContext`
+   migration. Compose init script sẽ làm bước tạo database tự động chỉ với volume mới:
+
+   ```bash
+   docker compose exec -T postgres sh -c \
+     'psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '\''fookbase_db'\''" | grep -q 1 || psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE fookbase_db"'
+   ```
+
+3. Giữ tạm sáu `ConnectionStrings__*Database` cũ trong môi trường chỉ cho lần import và đặt
+   `ConnectionStrings__FookbaseDatabase` tới database target. Chạy:
+
+   ```bash
+   ./scripts/import-legacy-databases.sh
+   ```
+
+   Script kiểm tra target rỗng, không drop/reset/ghi lên source database, bỏ qua sáu
+   `__EFMigrationsHistory` cũ, và import toàn bộ dữ liệu trong một transaction target. IDs,
+   timestamp, password hash, refresh token, post/comment/reaction, friendship/block/request,
+   conversation/message/read cursor, MediaAsset và reference đều được copy nguyên trạng.
+
+4. So sánh row count, chạy test/API smoke check, sau đó chỉ giữ
+   `ConnectionStrings__FookbaseDatabase` trong cấu hình runtime. Giữ source backup cho tới khi
+   rollback không còn cần thiết.

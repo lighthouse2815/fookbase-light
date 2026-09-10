@@ -4,45 +4,38 @@
 
 Fookbase runs as one ASP.NET Core process, `Fookbase.Api`, on port 5000. Identity, Users, Friends, Messages, Posts, and Media remain independent code modules, but they are not independently deployed services.
 
-`Fookbase.Api` is the sole composition root and the only backend project. It registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddMessagesModule`, `AddPostsModule`, and `AddMediaModule`. Module code is organized under `backend/Fookbase.Src/Main/Code/Modules/<Module>`; HTTP endpoints live in each module's `Endpoints` folder and EF migrations live in `Data/Migrations`.
+`Fookbase.Api` is the sole composition root and the only backend project. It registers `FookbaseDbContext` once, then registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddMessagesModule`, `AddPostsModule`, and `AddMediaModule`. Module code is organized under `backend/Fookbase.Src/Main/Code/Modules/<Module>`; HTTP endpoints and entity configurations remain in those module folders. The runtime migration and snapshot live under `Code/Persistence/Migrations`.
 
 External local dependencies are PostgreSQL and MinIO. There is no API gateway, RabbitMQ, service discovery, distributed transaction, or HTTP communication between application modules.
 
 ## Module boundaries and communication
 
-Each module keeps feature-local `Entities`, `Data`, `Services`, and `Endpoints` folders inside the single API project. Each module owns its data writes. A small number of in-process read checks use the authoritative module context when needed for integrity: user reports verify an Identity user exists, and Media verifies active Users profile-media references before deletion.
+Each module keeps feature-local `Entities`, `Data`, `Services`, and `Endpoints` folders inside the single API project. All services use the same scoped `FookbaseDbContext`; module ownership remains a code organization boundary, not a database boundary. User reports verify an Identity user exists, and Media verifies active profile-media references before deletion.
 
-Cross-module coordination is explicit and synchronous: an endpoint calls an application use case only when it must combine services. `RegistrationUseCase` creates the authentication account and its user profile. `PostsUseCase` obtains the current Friends relationship snapshot for privacy checks and asks Media to validate and synchronize post attachments. Messages uses `FriendsService` for direct-conversation access checks and SignalR at `/hubs/messages` for client updates. These are in-process C# calls, not HTTP requests.
+Cross-module coordination is explicit and synchronous: an endpoint calls an application use case only when it must combine services. `RegistrationUseCase` commits the authentication account, refresh token, and user profile in one transaction. `PostsUseCase` obtains the current Friends relationship snapshot for privacy checks and commits posts with Media attachment references in one transaction. Profile image/reference changes use one transaction as well. Messages uses `FriendsService` for direct-conversation access checks and SignalR at `/hubs/messages` for client updates. These are in-process C# calls, not HTTP requests.
 
 ## No messaging projections
 
 There is no messaging layer, integration-event contract, outbox, inbox, event publisher, projection worker, or hosted outbox service. Posts reads current relationship data through `FriendsService`; Media remains the owner of attachment metadata and references. The direct calls are intentionally simple for this single-process application.
 
-## Database consolidation plan
+## Persistence
 
-The target is one PostgreSQL database named `fookbase_db`, with schemas owned by modules:
+`fookbase_db` is the only runtime PostgreSQL database and `FookbaseDbContext` is the only
+runtime EF Core context. It maps Identity (`AspNet*`, `RefreshTokens`), Users
+(`UserProfiles`), Friends, Messages, Posts, and Media tables without cosmetic table renames.
+There are no active table-name collisions: the only former collisions were each source
+database's `__EFMigrationsHistory` and historical Inbox/Outbox tables, which were removed
+before the consolidated schema.
 
-```text
-identity.*
-users.*
-friends.*
-messages.*
-posts.*
-media.*
-```
+`Code/Persistence/Migrations/20260910143327_InitialFookbase.cs` initializes a complete fresh
+database. Historical module migrations remain as uncompiled source for audit and legacy import.
+`scripts/import-legacy-databases.sh` imports all six legacy databases only into an empty
+`fookbase_db`, excludes their migration-history tables, and streams the copy through one target
+transaction. It never drops, resets, or writes to a source database.
 
-Each module will keep its own `DbContext` and EF migrations. The current six development databases are intentionally not reset or migrated automatically.
-
-Safe migration milestone:
-
-1. Back up and verify all six source databases; record row counts and migration history.
-2. Create `fookbase_db` and the six schemas without modifying source databases.
-3. Add schema-aware EF migrations for fresh installations, then apply them to the target database.
-4. Copy each module's tables from its source database to its matching target schema in one maintenance window, preserving primary keys and timestamps.
-5. Validate row counts, foreign-key/check constraints, and representative API flows against the target.
-6. Switch connection strings only after validation; retain source backups until rollback is no longer needed.
-
-A migration script must be introduced with the schema migrations in that dedicated milestone. It must require explicit source and target connection strings, run read-only preflight checks first, and never drop, reset, or overwrite a source database.
+There are no outbox or inbox implementations in the running application. The only retained
+durable workflow is `ObjectDeletions`, a Media table consumed by `ObjectDeletionWorker`; it
+records retryable MinIO deletion work and is unrelated to inter-module coordination.
 
 ## Compatibility
 
