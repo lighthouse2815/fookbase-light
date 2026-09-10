@@ -350,6 +350,31 @@ public sealed class MessagesService(
         return ApplicationResult<MessageResponse>.Success(messageResponse);
     }
 
+    public async Task NotifyTypingAsync(
+        Guid actorUserId,
+        Guid conversationId,
+        CancellationToken cancellationToken = default)
+    {
+        var conversation = await dbContext.Conversations.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == conversationId,
+            cancellationToken);
+        if (ValidateAccess(conversation, actorUserId) is not null || conversation is null)
+        {
+            return;
+        }
+
+        var recipientUserId = conversation.OtherUserId(actorUserId);
+        if (await ValidateMessageRelationshipAsync(actorUserId, recipientUserId, cancellationToken) is not null)
+        {
+            return;
+        }
+
+        await hubContext.Clients.User(recipientUserId.ToString()).SendAsync(
+            "TypingStarted",
+            new MessageTypingResponse(conversationId, actorUserId),
+            cancellationToken);
+    }
+
     private async Task<Conversation?> FindConversationAsync(
         Guid firstUserId,
         Guid secondUserId,

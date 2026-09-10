@@ -23,7 +23,7 @@ function avatarLabel(profile: UserProfile) {
 
 export default function MessagesPage() {
   const { session } = useAuth()
-  const { incomingMessages, markConversationRead } = useRealtime()
+  const { incomingMessages, markConversationRead, sendTyping, typingConversationIds } = useRealtime()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({})
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
@@ -37,6 +37,7 @@ export default function MessagesPage() {
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const lastTypingSentAtRef = useRef(0)
 
   const loadConversations = useCallback(async () => {
     const page = await messagesApi.getConversations()
@@ -221,6 +222,17 @@ export default function MessagesPage() {
     }
   }
 
+  const handleDraftChange = (value: string) => {
+    setDraft(value)
+    if (!activeConversationId || !value.trim()) return
+
+    const now = Date.now()
+    if (now - lastTypingSentAtRef.current >= 1_500) {
+      lastTypingSentAtRef.current = now
+      sendTyping(activeConversationId)
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-56px)] bg-bg" style={{ animation: 'fade-in 0.25s ease both' }}>
       <aside className="w-[280px] shrink-0 border-r border-border bg-surface flex flex-col h-full max-sm:w-16">
@@ -278,10 +290,18 @@ export default function MessagesPage() {
                   <div className={`max-w-[65%] flex flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}><div className={`px-4 py-2.5 text-[14px] leading-relaxed ${isMine ? 'bubble-mine' : 'bubble-theirs'}`}>{message.content}</div><span className="text-[11px] text-text-light px-1">{formatTimestamp(message.createdAtUtc)}</span></div>
                 </div>
               })}
+              {typingConversationIds.has(activeConversation.id) && (
+                <div className="flex items-end gap-2">
+                  <Avatar profile={partner} size="small" />
+                  <div className="bubble-theirs px-4 py-3 flex items-center gap-1" aria-label={`${partner.displayName} is typing`}>
+                    {[0, 1, 2].map((dot) => <span key={dot} className="w-2 h-2 rounded-full bg-text-muted inline-block" style={{ animation: `pulse-dot 1.2s ease ${dot * 0.2}s infinite` }} />)}
+                  </div>
+                </div>
+              )}
               {messages.length === 0 && <p className="text-sm text-text-muted">No messages yet. Say hello.</p>}
               <div ref={messagesEndRef} />
             </div>
-            <div className="px-4 py-3 border-t border-border bg-surface"><div className="flex items-center gap-3 bg-surface-2 rounded-full px-4 py-2 border border-border focus-within:border-border-focus transition-colors"><textarea rows={1} maxLength={5000} value={draft} disabled={isSending} onChange={(event) => setDraft(event.target.value)} onKeyDown={handleKeyDown} placeholder="Message..." className="flex-1 bg-transparent border-none text-[14px] text-text outline-none resize-none placeholder:text-text-light py-1 leading-normal disabled:opacity-50" />{draft.trim() && <button type="button" onClick={() => void handleSend()} disabled={isSending} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white cursor-pointer border-none shrink-0 hover:bg-primary-dark transition-all disabled:opacity-50" title="Send message">▶</button>}</div></div>
+            <div className="px-4 py-3 border-t border-border bg-surface"><div className="flex items-center gap-3 bg-surface-2 rounded-full px-4 py-2 border border-border focus-within:border-border-focus transition-colors"><textarea rows={1} maxLength={5000} value={draft} disabled={isSending} onChange={(event) => handleDraftChange(event.target.value)} onKeyDown={handleKeyDown} placeholder="Message..." className="flex-1 bg-transparent border-none text-[14px] text-text outline-none resize-none placeholder:text-text-light py-1 leading-normal disabled:opacity-50" />{draft.trim() && <button type="button" onClick={() => void handleSend()} disabled={isSending} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white cursor-pointer border-none shrink-0 hover:bg-primary-dark transition-all disabled:opacity-50" title="Send message">▶</button>}</div></div>
           </>
         )}
         {error && <p className="absolute bottom-4 right-4 max-w-sm rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]">{error}</p>}

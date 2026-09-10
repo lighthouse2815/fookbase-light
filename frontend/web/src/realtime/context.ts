@@ -4,7 +4,9 @@ import type { IncomingMessage } from '../api/messages'
 export interface RealtimeContextValue {
   incomingMessages: IncomingMessage[]
   unreadMessageCount: number
+  typingConversationIds: ReadonlySet<string>
   markConversationRead: (conversationId: string) => void
+  sendTyping: (conversationId: string) => void
 }
 
 export const RealtimeContext = createContext<RealtimeContextValue | null>(null)
