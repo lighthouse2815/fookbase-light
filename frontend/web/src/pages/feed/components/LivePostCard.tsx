@@ -43,7 +43,10 @@ export default function LivePostCard({
   const [error, setError] = useState<string | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
   const isAuthor = post.authorUserId === currentUserId
-  const likeCount = post.reactionCounts.like ?? 0
+  const reactionCount = Object.values(post.reactionCounts).reduce(
+    (total, count) => total + count,
+    0,
+  )
   const isLiked = post.viewerReaction === 'like'
 
   useEffect(() => {
@@ -210,7 +213,7 @@ export default function LivePostCard({
       {error && <p className="text-xs text-[#ff8a9b]">{error}</p>}
 
       <div className="flex items-center justify-between text-xs text-text-muted border-t border-border pt-2">
-        <span>{likeCount > 0 ? `${likeCount} ${t('likes')}` : ''}</span>
+        <span>{reactionCount > 0 ? `${reactionCount} ${t('reactions')}` : ''}</span>
         <span>{post.commentCount} {t('comments')}</span>
       </div>
       <div className="grid grid-cols-2 gap-1 border-t border-border pt-1">

@@ -843,20 +843,7 @@ public sealed class PostsService(
 
     private IQueryable<Post> VisiblePosts(PostViewerContext? viewer)
     {
-        var query = dbContext.Posts.AsNoTracking().Where(post => post.DeletedAtUtc == null);
-        if (viewer is null)
-        {
-            return query.Where(post => post.Privacy == PostPrivacy.Public);
-        }
-
-        var viewerUserId = viewer.UserId;
-        var friendUserIds = viewer.FriendUserIds;
-        var blockedUserIds = viewer.BlockedUserIds;
-        return query.Where(post =>
-            post.AuthorUserId == viewerUserId ||
-            (!blockedUserIds.Contains(post.AuthorUserId) &&
-             (post.Privacy == PostPrivacy.Public ||
-              (post.Privacy == PostPrivacy.Friends && friendUserIds.Contains(post.AuthorUserId)))));
+        return PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer);
     }
 
     private static PostsServiceError GetInteractionAccessError(

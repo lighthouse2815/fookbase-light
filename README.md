@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Messages, Notifications, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
+Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Feed, Messages, Notifications, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
 Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
 
@@ -16,6 +16,7 @@ Fookbase.Api :5000
   |-- Identity module
   |-- Users module
   |-- Friends module
+  |-- Feed module
   |-- Messages module (SignalR)
   |-- Notifications module (SignalR)
   |-- Posts module
@@ -211,6 +212,19 @@ Thông báo tổng quát được lưu trong bảng `Notifications`, newest-firs
 request/acceptance, post reaction/comment và comment reaction; hành động của chính recipient
 không sinh notification. Event realtime dùng SignalR tại `/hubs/notifications`. Message badge
 và notification badge là hai count độc lập; general notification không được tạo cho chat message.
+
+### Feed
+
+| Method | Endpoint | Authentication |
+| --- | --- | --- |
+| GET | `/api/feed?cursor={cursor}&limit={limit}` | Bearer JWT |
+
+Home Feed V2 chỉ gồm post hợp lệ của người xem và bạn bè hiện tại: post của chính người xem
+có mọi privacy, còn post của bạn chỉ có `public` hoặc `friends`. Post của non-friend, post
+`onlyMe` của người khác, post bị xóa hoặc bị block không xuất hiện. Trang dùng keyset cursor
+`CreatedAtUtc + Id` theo newest-first, limit mặc định 20/tối đa 50. Response đã batch author,
+media metadata, comment/reaction counts và viewer reaction; frontend tiếp tục lấy media URL ngắn
+hạn qua endpoint media access đã được authorize.
 
 ### Posts
 

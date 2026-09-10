@@ -2,9 +2,9 @@
 
 ## Scope
 
-Fookbase runs as one ASP.NET Core process, `Fookbase.Api`, on port 5000. Identity, Users, Friends, Messages, Notifications, Posts, and Media remain independent code modules, but they are not independently deployed services.
+Fookbase runs as one ASP.NET Core process, `Fookbase.Api`, on port 5000. Identity, Users, Friends, Feed, Messages, Notifications, Posts, and Media remain independent code modules, but they are not independently deployed services.
 
-`Fookbase.Api` is the sole composition root and the only backend project. It registers `FookbaseDbContext` once, then registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddMessagesModule`, `AddNotificationsModule`, `AddPostsModule`, and `AddMediaModule`. Module code is organized under `backend/Fookbase.Src/Main/Code/Modules/<Module>`; HTTP endpoints and entity configurations remain in those module folders. The runtime migration and snapshot live under `Code/Persistence/Migrations`.
+`Fookbase.Api` is the sole composition root and the only backend project. It registers `FookbaseDbContext` once, then registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddFeedModule`, `AddMessagesModule`, `AddNotificationsModule`, `AddPostsModule`, and `AddMediaModule`. Module code is organized under `backend/Fookbase.Src/Main/Code/Modules/<Module>`; HTTP endpoints and entity configurations remain in those module folders. The runtime migration and snapshot live under `Code/Persistence/Migrations`.
 
 External local dependencies are PostgreSQL and MinIO. There is no API gateway, RabbitMQ, service discovery, distributed transaction, or HTTP communication between application modules.
 
@@ -25,6 +25,10 @@ context: Friends and Posts queue the durable notification in their existing save
 best-effort publish it to `/hubs/notifications` after commit. These are in-process C# calls, not
 HTTP requests.
 
+Feed is a read-only query/use-case module. It takes the current Friends relationship snapshot,
+uses the same `PostVisibility` rules as direct post access, then batch-loads author, media and
+engagement data for a cursor page. It owns no entity, table, cache or background fan-out.
+
 ## No messaging projections
 
 There is no messaging layer, integration-event contract, outbox, inbox, event publisher, projection worker, or hosted outbox service. Posts reads current relationship data through `FriendsService`; Media remains the owner of attachment metadata and references. The direct calls are intentionally simple for this single-process application.
@@ -33,14 +37,16 @@ There is no messaging layer, integration-event contract, outbox, inbox, event pu
 
 `fookbase_db` is the only runtime PostgreSQL database and `FookbaseDbContext` is the only
 runtime EF Core context. It maps Identity (`AspNet*`, `RefreshTokens`), Users
-(`UserProfiles`), Friends, Messages, Notifications, Posts, and Media tables without cosmetic table renames.
+(`UserProfiles`), Friends, Messages, Notifications, Posts, and Media tables without cosmetic table renames. Feed has no persistence table.
 There are no active table-name collisions: the only former collisions were each source
 database's `__EFMigrationsHistory` and historical Inbox/Outbox tables, which were removed
 before the consolidated schema.
 
 `Code/Persistence/Migrations/20260910143327_InitialFookbase.cs` initializes a complete fresh
 database; `20260910154744_AddNotifications.cs` adds `Notifications` and
-`CommentReactions`. Historical module migrations remain as uncompiled source for audit and legacy import.
+`CommentReactions`; `20260910162758_AddFeedPostIndex.cs` adds the partial active-post
+keyset index used by Feed. Historical module migrations remain as uncompiled source for audit and
+legacy import.
 `scripts/import-legacy-databases.sh` imports all six legacy databases only into an empty
 `fookbase_db`, excludes their migration-history tables, and streams the copy through one target
 transaction. It never drops, resets, or writes to a source database.
@@ -53,6 +59,6 @@ records retryable MinIO deletion work and is unrelated to inter-module coordinat
 
 ## Compatibility
 
-All public routes remain under `/api/auth`, `/api/users`, `/api/friends`, `/api/messages`, `/api/notifications`, `/api/posts`, and `/api/media`, served by `http://localhost:5000`; SignalR hubs are served at `/hubs/messages` and `/hubs/notifications`. JWT and ASP.NET Core Identity are unchanged; endpoints continue to take the actor identifier from the JWT `sub` claim.
+All public routes remain under `/api/auth`, `/api/users`, `/api/friends`, `/api/feed`, `/api/messages`, `/api/notifications`, `/api/posts`, and `/api/media`, served by `http://localhost:5000`; SignalR hubs are served at `/hubs/messages` and `/hubs/notifications`. JWT and ASP.NET Core Identity are unchanged; endpoints continue to take the actor identifier from the JWT `sub` claim.
 
 Media remains private in MinIO. Clients upload with presigned PUT URLs; PostsUseCase obtains signed read URLs through the in-process Media service, and ownership/reference/lifecycle/signature validation remain in Media.

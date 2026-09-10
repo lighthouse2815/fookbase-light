@@ -1,30 +1,28 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../api/client'
+import { feedApi } from '../../api/feed'
+import type { FeedItem } from '../../api/feed'
 import { mediaApi } from '../../api/media'
 import { postsApi } from '../../api/posts'
 import type { Post } from '../../api/posts'
-import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
+import PaginationControls from '../../shared/components/PaginationControls'
 import LivePostCard from './components/LivePostCard'
 import NewPostBox from './components/NewPostBox'
-import PaginationControls from '../../shared/components/PaginationControls'
 
 export default function FeedPage() {
   const { session } = useAuth()
   const { t } = usePreferences()
-  const [posts, setPosts] = useState<Post[]>([])
-  const [authors, setAuthors] = useState<Record<string, UserProfile>>({})
+  const [posts, setPosts] = useState<FeedItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [totalPosts, setTotalPosts] = useState(0)
-  const [suggestedUsers, setSuggestedUsers] = useState<UserProfile[]>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
 
-  const loadFeed = async (offset = 0, append = false) => {
+  const loadFeed = useCallback(async (cursor?: string, append = false) => {
     if (append) {
       setIsLoadingMore(true)
       setLoadMoreError(null)
@@ -34,31 +32,20 @@ export default function FeedPage() {
     }
 
     try {
-      const page = await postsApi.getFeed(offset)
-      const userIds = [...new Set(page.items.map((post) => post.authorUserId))]
-      const profileResults = await Promise.allSettled(userIds.map((userId) => usersApi.getById(userId)))
-      const profiles: Record<string, UserProfile> = {}
-      profileResults.forEach((result, index) => {
-        if (result.status === 'fulfilled') profiles[userIds[index]] = result.value
-      })
-
+      const page = await feedApi.getHome(cursor)
       setPosts((currentPosts) => append
         ? [...currentPosts, ...page.items.filter((post) => !currentPosts.some((item) => item.id === post.id))]
         : page.items)
-      setAuthors((currentAuthors) => append ? { ...currentAuthors, ...profiles } : profiles)
-      setTotalPosts(page.total)
+      setNextCursor(page.nextCursor)
     } catch (requestError) {
       const message = requestError instanceof ApiError ? requestError.message : 'Không thể tải bảng tin.'
       if (append) setLoadMoreError(message)
       else setError(message)
     } finally {
-      if (append) {
-        setIsLoadingMore(false)
-      } else {
-        setIsLoading(false)
-      }
+      if (append) setIsLoadingMore(false)
+      else setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -66,17 +53,7 @@ export default function FeedPage() {
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
-  }, [])
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void usersApi.search('', 0, 5)
-        .then((page) => setSuggestedUsers(page.items.filter((user) => user.userId !== session!.user.id)))
-        .catch(() => setSuggestedUsers([]))
-    }, 0)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [session])
+  }, [loadFeed])
 
   const handleNewPost = async (
     content: string,
@@ -84,71 +61,59 @@ export default function FeedPage() {
     onUploadProgress: (progress: number) => void,
   ) => {
     const mediaIds = await mediaApi.uploadFiles(files, onUploadProgress)
-    const post = await postsApi.create({ content, privacy: 'public', mediaIds })
-    setPosts((currentPosts) => [post, ...currentPosts])
-    setTotalPosts((currentTotal) => currentTotal + 1)
-    if (!authors[post.authorUserId]) {
-      const profile = await usersApi.getById(post.authorUserId)
-      setAuthors((currentAuthors) => ({ ...currentAuthors, [post.authorUserId]: profile }))
-    }
+    await postsApi.create({ content, privacy: 'public', mediaIds })
+    await loadFeed()
+  }
+
+  const toProfile = (post: FeedItem): UserProfile => ({
+    userId: post.author.userId,
+    username: post.author.username,
+    displayName: post.author.displayName,
+    avatarUrl: post.author.avatarUrl,
+    bio: null,
+    coverUrl: null,
+    dateOfBirth: null,
+    currentCity: null,
+    createdAt: post.createdAtUtc,
+    updatedAt: post.updatedAtUtc ?? post.createdAtUtc,
+  })
+
+  const mergeUpdatedPost = (updatedPost: Post) => {
+    setPosts((currentPosts) => currentPosts.map((post) => post.id === updatedPost.id
+      ? {
+          ...post,
+          ...updatedPost,
+          author: post.author,
+          media: post.media,
+          reactionCount: Object.values(updatedPost.reactionCounts).reduce(
+            (total, count) => total + count,
+            0,
+          ),
+        }
+      : post))
   }
 
   return (
-    <div className="flex justify-center gap-6 min-h-screen px-2 sm:px-4 py-4">
-      {/* ── Center Feed Column (max-w-[680px], centered) ── */}
+    <div className="flex justify-center min-h-screen px-2 sm:px-4 py-4">
       <div className="w-full max-w-[680px] min-w-0 flex flex-col gap-4">
-        {/* New post area */}
         <NewPostBox onPost={handleNewPost} />
-
-        {/* Posts */}
         <div className="flex flex-col gap-4">
-          {error && <p className="rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]">{error}</p>}
-          {isLoading && <p className="text-sm text-text-muted">{t('loadingFeed')}</p>}
+          {error && <div className="rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void loadFeed()} className="mt-2 rounded-md border border-[#ff8a9b]/50 bg-transparent px-3 py-1 text-xs font-semibold text-[#ff8a9b] cursor-pointer">{t('refresh')}</button></div>}
+          {isLoading && <div className="flex flex-col gap-4" aria-label={t('loadingFeed')}><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /></div>}
           {!isLoading && posts.length === 0 && !error && <p className="text-sm text-text-muted">{t('noPostsYet')}</p>}
           {posts.map((post) => (
             <LivePostCard
               key={post.id}
               post={post}
-              author={authors[post.authorUserId]}
+              author={toProfile(post)}
               currentUserId={session!.user.id}
-              onPostUpdated={(updatedPost) => setPosts((currentPosts) => currentPosts.map((item) => item.id === updatedPost.id ? updatedPost : item))}
+              onPostUpdated={mergeUpdatedPost}
               onPostDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))}
             />
           ))}
-          <PaginationControls hasMore={posts.length < totalPosts} isLoading={isLoadingMore} error={loadMoreError} label={t('loadMorePosts')} onLoadMore={() => void loadFeed(posts.length, true)} />
+          <PaginationControls hasMore={nextCursor !== null} isLoading={isLoadingMore} error={loadMoreError} label={t('loadMorePosts')} onLoadMore={() => void loadFeed(nextCursor ?? undefined, true)} />
         </div>
       </div>
-
-      <aside className="w-[300px] xl:w-[340px] shrink-0 hidden lg:flex flex-col">
-        <div className="sticky top-14 p-2 flex flex-col gap-5 h-[calc(100vh-56px)] scroll-smooth overflow-y-auto">
-          <section>
-            <h2 className="font-heading font-bold text-[15px] text-text mb-3">{t('peopleYouMayKnow')}</h2>
-            <div className="flex flex-col gap-3">
-              {suggestedUsers.map((user) => (
-                <div
-                  key={user.userId}
-                  className="bg-surface rounded-xl border border-border p-3 flex items-center gap-3"
-                >
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-[11px] font-bold text-white bg-primary shrink-0">
-                    {user.avatarUrl ? <img src={resolveProfileImageUrl(user.avatarUrl)} alt="" className="w-full h-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-text truncate">{user.displayName}</p>
-                    <p className="text-[11px] text-text-muted truncate">@{user.username}</p>
-                  </div>
-                  <Link to={`/profile/${user.userId}`} className="px-3 py-1 rounded-full text-[12px] font-semibold text-primary border border-primary/30 bg-surface-2 hover:bg-primary hover:text-white hover:border-transparent transition-all no-underline">{t('view')}</Link>
-                </div>
-              ))}
-              {suggestedUsers.length === 0 && <p className="text-sm text-text-muted">{t('noSuggestionsYet')}</p>}
-            </div>
-          </section>
-
-          {/* Footer */}
-          <p className="text-[11px] text-text-light leading-relaxed">
-            {t('terms')} · {t('privacy')} · {t('cookies')} · {t('adsInfo')} · {t('more')} · © 2026 Fookbase
-          </p>
-        </div>
-      </aside>
     </div>
   )
 }

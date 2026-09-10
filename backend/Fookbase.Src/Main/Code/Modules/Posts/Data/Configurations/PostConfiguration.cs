@@ -15,5 +15,7 @@ internal sealed class PostConfiguration : IEntityTypeConfiguration<Post>
         builder.Property(post => post.CreatedAtUtc).IsRequired();
         builder.HasIndex(post => new { post.AuthorUserId, post.CreatedAtUtc });
         builder.HasIndex(post => new { post.DeletedAtUtc, post.CreatedAtUtc });
+        builder.HasIndex(post => new { post.AuthorUserId, post.CreatedAtUtc, post.Id })
+            .HasFilter("\"DeletedAtUtc\" IS NULL");
     }
 }
