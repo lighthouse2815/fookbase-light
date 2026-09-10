@@ -44,7 +44,7 @@ private đã sẵn sàng.
 
 ## Reverse proxy và TLS
 
-Đặt API, MinIO API và frontend phía sau reverse proxy có chứng chỉ TLS. Proxy cần chuyển tiếp WebSocket cho `/hubs/messages`; không mở trực tiếp PostgreSQL, MinIO console hoặc MinIO API ra Internet. Chỉ proxy mới được kết nối tới các service nội bộ.
+Đặt API, MinIO API và frontend phía sau reverse proxy có chứng chỉ TLS. Proxy cần chuyển tiếp WebSocket cho `/hubs/messages` và `/hubs/notifications`; không mở trực tiếp PostgreSQL, MinIO console hoặc MinIO API ra Internet. Chỉ proxy mới được kết nối tới các service nội bộ.
 
 Đặt `AllowedHosts` thành host API thực tế thay vì `*`. Không bật HTTPS redirection trong container API khi proxy chưa gửi/cấu hình forwarded headers chính xác, vì điều đó gây redirect loop.
 

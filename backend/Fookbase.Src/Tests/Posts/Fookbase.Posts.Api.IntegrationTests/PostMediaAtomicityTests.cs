@@ -1,4 +1,6 @@
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Notifications.Entities;
+using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,6 +56,49 @@ public sealed class PostMediaAtomicityTests
         Assert.False(await dbContext.Posts.AnyAsync(post => post.AuthorUserId == authorUserId));
         Assert.False(await dbContext.PostMedia.AnyAsync());
         Assert.False(await dbContext.MediaReferences.AnyAsync());
+    }
+
+    [Fact]
+    public async Task Failed_notification_write_rolls_back_the_reaction()
+    {
+        await using var database = await TemporaryFookbaseDatabase.CreateAsync();
+        using var factory = new IsolatedPostsApiFactory(database.ConnectionString);
+        _ = factory.Services;
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var authorUserId = Guid.NewGuid();
+        var actorUserId = Guid.NewGuid();
+        var post = Post.Create(
+            Guid.NewGuid(),
+            authorUserId,
+            "atomic notification",
+            PostPrivacy.Public,
+            DateTimeOffset.UtcNow);
+        dbContext.Posts.Add(post);
+        await dbContext.SaveChangesAsync();
+        await dbContext.Database.ExecuteSqlRawAsync(
+            """
+            CREATE FUNCTION fail_notification_insert() RETURNS trigger AS $$
+            BEGIN
+                RAISE EXCEPTION 'notification insert intentionally rejected';
+            END;
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER reject_notification_insert
+            BEFORE INSERT ON "Notifications"
+            FOR EACH ROW EXECUTE FUNCTION fail_notification_insert();
+            """);
+
+        var posts = scope.ServiceProvider.GetRequiredService<PostsUseCase>();
+
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            posts.SetReactionAsync(actorUserId, post.Id, "like"));
+
+        dbContext.ChangeTracker.Clear();
+        Assert.False(await dbContext.PostReactions.AnyAsync(reaction =>
+            reaction.PostId == post.Id && reaction.UserId == actorUserId));
+        Assert.False(await dbContext.Notifications.AnyAsync(notification =>
+            notification.Type == NotificationType.PostReaction && notification.EntityId == post.Id));
     }
 
     private sealed class TemporaryFookbaseDatabase(

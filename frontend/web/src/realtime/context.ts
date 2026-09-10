@@ -1,16 +1,20 @@
 import { createContext } from 'react'
 import type { IncomingMessage } from '../api/messages'
-import type { FriendNotification } from '../api/friends'
+import type { AppNotification } from '../api/notifications'
 
 export interface RealtimeContextValue {
   incomingMessages: IncomingMessage[]
-  incomingFriendNotifications: FriendNotification[]
+  notifications: AppNotification[]
   unreadMessageCount: number
   unreadNotificationCount: number
+  hasMoreNotifications: boolean
+  isLoadingMoreNotifications: boolean
   typingConversationIds: ReadonlySet<string>
   readAtByConversation: ReadonlyMap<string, string>
   markConversationRead: (conversationId: string, lastReadMessageId?: string) => void
-  markFriendNotificationRead: (notificationId: string) => void
+  markNotificationRead: (notificationId: string) => void
+  markAllNotificationsRead: () => void
+  loadMoreNotifications: () => void
   sendTyping: (conversationId: string) => void
 }
 

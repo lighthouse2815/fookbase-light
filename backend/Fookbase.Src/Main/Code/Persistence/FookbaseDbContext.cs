@@ -2,6 +2,7 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -33,9 +34,13 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<MessageNotification> MessageNotifications => Set<MessageNotification>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     public DbSet<Post> Posts => Set<Post>();
 
     public DbSet<Comment> Comments => Set<Comment>();
+
+    public DbSet<CommentReaction> CommentReactions => Set<CommentReaction>();
 
     public DbSet<PostReaction> PostReactions => Set<PostReaction>();
 

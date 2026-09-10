@@ -10,6 +10,7 @@ using Fookbase.Api.Modules.Posts;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Friends;
 using Fookbase.Api.Modules.Messages;
+using Fookbase.Api.Modules.Notifications;
 using Fookbase.Api.Modules.Users;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,10 @@ internal static class ModuleServiceCollectionExtensions
     public static IServiceCollection AddMessagesModule(
         this IServiceCollection services) =>
         services.AddMessagesInfrastructure();
+
+    public static IServiceCollection AddNotificationsModule(
+        this IServiceCollection services) =>
+        services.AddNotificationsInfrastructure();
 
     public static IServiceCollection AddPostsModule(
         this IServiceCollection services,

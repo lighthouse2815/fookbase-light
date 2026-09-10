@@ -12,6 +12,8 @@ using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Notifications.DTOs.Responses;
+using Fookbase.Api.Modules.Notifications.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -251,6 +253,195 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Null(removed.ViewerReaction);
         Assert.Empty(removed.ReactionCounts);
         Assert.Equal(2, comments.Total);
+    }
+
+    [Fact]
+    public async Task Friend_request_and_acceptance_create_general_notifications()
+    {
+        var users = await CreateUserIdsAsync(2);
+        using var sender = CreateAuthenticatedClient(users[0]);
+        using var receiver = CreateAuthenticatedClient(users[1]);
+
+        var request = await ReadAsync<Fookbase.Api.Modules.Friends.DTOs.Responses.FriendRequestResponse>(
+            await sender.PostAsync("/api/friends/requests/" + users[1], null));
+        var acceptance = await receiver.PostAsync(
+            "/api/friends/requests/" + request.Id + "/accept",
+            null);
+        var receiverNotifications = await ReadAsync<NotificationPageResponse>(
+            await receiver.GetAsync("/api/notifications"));
+        var senderNotifications = await ReadAsync<NotificationPageResponse>(
+            await sender.GetAsync("/api/notifications"));
+
+        Assert.Equal(HttpStatusCode.OK, acceptance.StatusCode);
+        Assert.Contains(receiverNotifications.Items, item =>
+            item.Type == NotificationType.FriendRequestReceived.ToString() &&
+            item.ActorUserId == users[0] &&
+            item.EntityId == request.Id);
+        Assert.Contains(senderNotifications.Items, item =>
+            item.Type == NotificationType.FriendRequestAccepted.ToString() &&
+            item.ActorUserId == users[1] &&
+            item.EntityId == request.Id);
+    }
+
+    [Fact]
+    public async Task Post_reactions_are_deduplicated_and_own_actions_do_not_notify()
+    {
+        var users = await CreateUserIdsAsync(2);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var actor = CreateAuthenticatedClient(users[1]);
+        var post = await CreatePostAsync(author, "reaction target", "public");
+
+        Assert.Equal(HttpStatusCode.OK, (await author.PutAsJsonAsync(
+            "/api/posts/" + post.Id + "/reaction",
+            new { type = "like" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await actor.PutAsJsonAsync(
+            "/api/posts/" + post.Id + "/reaction",
+            new { type = "love" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await actor.PutAsJsonAsync(
+            "/api/posts/" + post.Id + "/reaction",
+            new { type = "wow" })).StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var notifications = await db.Notifications.AsNoTracking()
+            .Where(item =>
+                item.Type == NotificationType.PostReaction &&
+                item.EntityId == post.Id)
+            .ToListAsync();
+
+        var notification = Assert.Single(notifications);
+        Assert.Equal(users[0], notification.RecipientUserId);
+        Assert.Equal(users[1], notification.ActorUserId);
+        Assert.DoesNotContain(await db.Notifications.AsNoTracking().ToListAsync(), item =>
+            item.Type == NotificationType.PostReaction &&
+            item.RecipientUserId == users[0] &&
+            item.ActorUserId == users[0]);
+    }
+
+    [Fact]
+    public async Task Comments_and_comment_reactions_create_general_notifications()
+    {
+        var users = await CreateUserIdsAsync(3);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var commenter = CreateAuthenticatedClient(users[1]);
+        using var reactor = CreateAuthenticatedClient(users[2]);
+        var post = await CreatePostAsync(author, "comment target", "public");
+        var comment = await ReadAsync<CommentResponse>(await commenter.PostAsJsonAsync(
+            "/api/posts/" + post.Id + "/comments",
+            new { content = "a comment", parentCommentId = (Guid?)null }));
+
+        var reaction = await reactor.PutAsJsonAsync(
+            "/api/posts/comments/" + comment.Id + "/reaction",
+            new { type = "love" });
+
+        Assert.Equal(HttpStatusCode.NoContent, reaction.StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Contains(await db.Notifications.AsNoTracking().ToListAsync(), item =>
+            item.Type == NotificationType.PostComment &&
+            item.RecipientUserId == users[0] &&
+            item.ActorUserId == users[1] &&
+            item.EntityType == NotificationEntityType.Post &&
+            item.EntityId == post.Id);
+        Assert.Contains(await db.Notifications.AsNoTracking().ToListAsync(), item =>
+            item.Type == NotificationType.CommentReaction &&
+            item.RecipientUserId == users[1] &&
+            item.ActorUserId == users[2] &&
+            item.EntityType == NotificationEntityType.Comment &&
+            item.EntityId == comment.Id);
+    }
+
+    [Fact]
+    public async Task Notification_cursor_ownership_and_read_operations_are_scoped_to_recipient()
+    {
+        var users = await CreateUserIdsAsync(2);
+        var recipient = users[0];
+        var otherUser = users[1];
+        var now = DateTimeOffset.UtcNow;
+        var oldest = Notification.Create(
+            Guid.NewGuid(), recipient, otherUser, NotificationType.PostMention, null, null, now.AddMinutes(-2));
+        var middle = Notification.Create(
+            Guid.NewGuid(), recipient, otherUser, NotificationType.PostMention, null, null, now.AddMinutes(-1));
+        var newest = Notification.Create(
+            Guid.NewGuid(), recipient, otherUser, NotificationType.PostMention, null, null, now);
+        var privateNotification = Notification.Create(
+            Guid.NewGuid(), otherUser, recipient, NotificationType.PostMention, null, null, now);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.Notifications.AddRange(oldest, middle, newest, privateNotification);
+            await db.SaveChangesAsync();
+        }
+
+        using var recipientClient = CreateAuthenticatedClient(recipient);
+        using var otherClient = CreateAuthenticatedClient(otherUser);
+        var firstPage = await ReadAsync<NotificationPageResponse>(
+            await recipientClient.GetAsync("/api/notifications?limit=2"));
+        var secondPage = await ReadAsync<NotificationPageResponse>(
+            await recipientClient.GetAsync("/api/notifications?limit=2&before=" +
+                Uri.EscapeDataString(firstPage.NextCursor!)));
+        var unauthorizedRead = await otherClient.PostAsync(
+            "/api/notifications/" + newest.Id + "/read",
+            null);
+        var countBefore = await recipientClient.GetFromJsonAsync<NotificationCountResponse>(
+            "/api/notifications/unread-count");
+        var read = await recipientClient.PostAsync("/api/notifications/" + newest.Id + "/read", null);
+        var countAfterOne = await recipientClient.GetFromJsonAsync<NotificationCountResponse>(
+            "/api/notifications/unread-count");
+        var readAll = await recipientClient.PostAsync("/api/notifications/read-all", null);
+        var countAfterAll = await recipientClient.GetFromJsonAsync<NotificationCountResponse>(
+            "/api/notifications/unread-count");
+
+        Assert.Equal(newest.Id, firstPage.Items[0].Id);
+        Assert.Equal(middle.Id, firstPage.Items[1].Id);
+        Assert.Single(secondPage.Items);
+        Assert.Equal(oldest.Id, secondPage.Items[0].Id);
+        Assert.Equal(HttpStatusCode.NotFound, unauthorizedRead.StatusCode);
+        Assert.Equal(3, countBefore!.UnreadNotificationCount);
+        Assert.Equal(HttpStatusCode.NoContent, read.StatusCode);
+        Assert.Equal(2, countAfterOne!.UnreadNotificationCount);
+        Assert.Equal(HttpStatusCode.NoContent, readAll.StatusCode);
+        Assert.Equal(0, countAfterAll!.UnreadNotificationCount);
+    }
+
+    [Fact]
+    public async Task Blocked_and_stale_post_notifications_are_not_returned()
+    {
+        var users = await CreateUserIdsAsync(3);
+        var recipient = users[0];
+        var actor = users[1];
+        var postAuthor = users[2];
+        using var postAuthorClient = CreateAuthenticatedClient(postAuthor);
+        using var recipientClient = CreateAuthenticatedClient(recipient);
+        var post = await CreatePostAsync(postAuthorClient, "visibility target", "public");
+        var blockedNotification = Notification.Create(
+            Guid.NewGuid(), recipient, actor, NotificationType.PostReaction,
+            NotificationEntityType.Post, post.Id, DateTimeOffset.UtcNow);
+        var staleNotification = Notification.Create(
+            Guid.NewGuid(), recipient, postAuthor, NotificationType.PostComment,
+            NotificationEntityType.Post, post.Id, DateTimeOffset.UtcNow.AddTicks(1));
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.Notifications.AddRange(blockedNotification, staleNotification);
+            await db.SaveChangesAsync();
+        }
+
+        await BlockAsync(recipient, actor);
+        Assert.DoesNotContain((await ReadAsync<NotificationPageResponse>(
+            await recipientClient.GetAsync("/api/notifications"))).Items,
+            item => item.Id == blockedNotification.Id);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await postAuthorClient.DeleteAsync(
+            "/api/posts/" + post.Id)).StatusCode);
+        var visible = await ReadAsync<NotificationPageResponse>(
+            await recipientClient.GetAsync("/api/notifications"));
+        var unread = await recipientClient.GetFromJsonAsync<NotificationCountResponse>(
+            "/api/notifications/unread-count");
+
+        Assert.DoesNotContain(visible.Items, item =>
+            item.Id == blockedNotification.Id || item.Id == staleNotification.Id);
+        Assert.Equal(0, unread!.UnreadNotificationCount);
     }
 
     [Fact]
@@ -498,5 +689,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         return await response.Content.ReadFromJsonAsync<T>()
             ?? throw new InvalidOperationException("Response body was empty.");
     }
+
+    private sealed record NotificationCountResponse(int UnreadNotificationCount);
 
 }

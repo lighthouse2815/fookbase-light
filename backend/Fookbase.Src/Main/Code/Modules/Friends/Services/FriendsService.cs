@@ -3,6 +3,8 @@ using Fookbase.Api.Modules.Friends.Common;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
+using Fookbase.Api.Modules.Notifications.Entities;
+using Fookbase.Api.Modules.Notifications.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 
@@ -11,6 +13,7 @@ namespace Fookbase.Api.Modules.Friends.Services;
 public sealed class FriendsService(
     FookbaseDbContext dbContext,
     IHubContext<MessagesHub> hubContext,
+    NotificationService notificationService,
     TimeProvider timeProvider)
 {
     private const int MaximumLimit = 100;
@@ -247,10 +250,21 @@ public sealed class FriendsService(
             now);
         dbContext.FriendRequests.Add(request);
         dbContext.FriendNotifications.Add(notification);
+        var generalNotification = await notificationService.QueueAsync(
+            receiverUserId,
+            senderUserId,
+            NotificationType.FriendRequestReceived,
+            NotificationEntityType.FriendRequest,
+            request.Id,
+            cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         await PublishNotificationAsync(notification, cancellationToken);
+        if (generalNotification is not null)
+        {
+            await notificationService.PublishAsync(generalNotification, cancellationToken);
+        }
         return ApplicationResult<FriendRequestResponse>.Success(ToResponse(request));
     }
 
@@ -317,10 +331,21 @@ public sealed class FriendsService(
             now);
         dbContext.Friendships.Add(friendship);
         dbContext.FriendNotifications.Add(notification);
+        var generalNotification = await notificationService.QueueAsync(
+            request.SenderUserId,
+            actorUserId,
+            NotificationType.FriendRequestAccepted,
+            NotificationEntityType.FriendRequest,
+            request.Id,
+            cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         await PublishNotificationAsync(notification, cancellationToken);
+        if (generalNotification is not null)
+        {
+            await notificationService.PublishAsync(generalNotification, cancellationToken);
+        }
         return ApplicationResult<FriendResponse>.Success(
             new FriendResponse(friendship.OtherUserId(actorUserId), friendship.CreatedAtUtc));
     }

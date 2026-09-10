@@ -3,12 +3,15 @@ using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Notifications.Entities;
+using Fookbase.Api.Modules.Notifications.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Services;
 
 public sealed class PostsService(
     FookbaseDbContext dbContext,
+    NotificationService notificationService,
     TimeProvider timeProvider,
     PostsOptions options)
 {
@@ -273,6 +276,40 @@ public sealed class PostsService(
         Guid postId,
         CancellationToken cancellationToken = default) =>
         Map(await RemoveReactionCoreAsync(actor.UserId, postId, actor, cancellationToken));
+
+    public async Task<ApplicationResult> SetCommentReactionAsync(
+        PostViewerContext actor,
+        Guid commentId,
+        string reactionType,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.TryParse<ReactionType>(reactionType, true, out var parsedReaction) ||
+            !Enum.IsDefined(parsedReaction))
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_reaction_type",
+                "Reaction type must be one of: like, love, haha, wow, sad, angry.",
+                ApplicationErrorType.Validation));
+        }
+
+        return Map(await ChangeCommentReactionAsync(
+            actor.UserId,
+            commentId,
+            parsedReaction,
+            actor,
+            cancellationToken));
+    }
+
+    public async Task<ApplicationResult> RemoveCommentReactionAsync(
+        PostViewerContext actor,
+        Guid commentId,
+        CancellationToken cancellationToken = default) =>
+        Map(await ChangeCommentReactionAsync(
+            actor.UserId,
+            commentId,
+            null,
+            actor,
+            cancellationToken));
 
     public async Task<ApplicationResult> AuthorizeMediaAccessAsync(
         PostViewerContext viewer, Guid postId, Guid mediaId, CancellationToken cancellationToken = default)
@@ -551,7 +588,18 @@ public sealed class PostsService(
         var comment = Comment.Create(Guid.NewGuid(), postId, authorUserId, parentCommentId, content, now);
 
         dbContext.Comments.Add(comment);
+        var notification = await notificationService.QueueAsync(
+            post.AuthorUserId,
+            authorUserId,
+            NotificationType.PostComment,
+            NotificationEntityType.Post,
+            post.Id,
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (notification is not null)
+        {
+            await notificationService.PublishAsync(notification, cancellationToken);
+        }
         return PostsServiceResult<CommentResponse>.Success(ToResponse(comment));
     }
 
@@ -704,9 +752,93 @@ public sealed class PostsService(
             reaction.ChangeTo(reactionType.Value, now);
         }
 
+        var notification = reactionType is null
+            ? null
+            : await notificationService.QueueAsync(
+                post.AuthorUserId,
+                actorUserId,
+                NotificationType.PostReaction,
+                NotificationEntityType.Post,
+                post.Id,
+                cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (notification is not null)
+        {
+            await notificationService.PublishAsync(notification, cancellationToken);
+        }
         return PostsServiceResult<PostResponse>.Success(
             (await LoadResponsesAsync([post], actorUserId, cancellationToken))[0]);
+    }
+
+    private async Task<PostsServiceError> ChangeCommentReactionAsync(
+        Guid actorUserId,
+        Guid commentId,
+        ReactionType? reactionType,
+        PostViewerContext actor,
+        CancellationToken cancellationToken)
+    {
+        var comment = await dbContext.Comments.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == commentId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (comment is null)
+        {
+            return PostsServiceError.CommentNotFound;
+        }
+
+        var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == comment.PostId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (post is null)
+        {
+            return PostsServiceError.PostNotFound;
+        }
+
+        var accessError = GetInteractionAccessError(actor, post);
+        if (accessError != PostsServiceError.None)
+        {
+            return accessError;
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var reaction = await dbContext.CommentReactions.SingleOrDefaultAsync(
+            item => item.CommentId == commentId && item.UserId == actorUserId,
+            cancellationToken);
+        if (reactionType is null)
+        {
+            if (reaction is not null)
+            {
+                dbContext.CommentReactions.Remove(reaction);
+            }
+        }
+        else if (reaction is null)
+        {
+            dbContext.CommentReactions.Add(CommentReaction.Create(
+                commentId,
+                actorUserId,
+                reactionType.Value,
+                now));
+        }
+        else
+        {
+            reaction.ChangeTo(reactionType.Value, now);
+        }
+
+        var notification = reactionType is null
+            ? null
+            : await notificationService.QueueAsync(
+                comment.AuthorUserId,
+                actorUserId,
+                NotificationType.CommentReaction,
+                NotificationEntityType.Comment,
+                comment.Id,
+                cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        if (notification is not null)
+        {
+            await notificationService.PublishAsync(notification, cancellationToken);
+        }
+
+        return PostsServiceError.None;
     }
 
     private IQueryable<Post> VisiblePosts(PostViewerContext? viewer)

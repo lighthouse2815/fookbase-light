@@ -7,7 +7,8 @@ backend/Fookbase.Src/Main/Code/Persistence/Migrations/
 ```
 
 `FookbaseDbContext` uses the consolidated baseline migration
-`20260910143327_InitialFookbase`. New runtime migrations must be created in that
+`20260910143327_InitialFookbase`, followed by
+`20260910154744_AddNotifications`. New runtime migrations must be created in that
 directory with `FookbaseDbContext`; the baseline ID and its generated snapshot are
 not regenerated as part of ordinary maintenance.
 

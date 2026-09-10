@@ -240,6 +240,26 @@ public sealed class PostsUseCase(
         await postsService.RemoveReactionAsync(
             await CreateRequiredViewerContextAsync(actorUserId, cancellationToken), postId, cancellationToken);
 
+    public async Task<ApplicationResult> SetCommentReactionAsync(
+        Guid actorUserId,
+        Guid commentId,
+        string reactionType,
+        CancellationToken cancellationToken = default) =>
+        await postsService.SetCommentReactionAsync(
+            await CreateRequiredViewerContextAsync(actorUserId, cancellationToken),
+            commentId,
+            reactionType,
+            cancellationToken);
+
+    public async Task<ApplicationResult> RemoveCommentReactionAsync(
+        Guid actorUserId,
+        Guid commentId,
+        CancellationToken cancellationToken = default) =>
+        await postsService.RemoveCommentReactionAsync(
+            await CreateRequiredViewerContextAsync(actorUserId, cancellationToken),
+            commentId,
+            cancellationToken);
+
     public async Task<ApplicationResult<MediaAccessResponse>> GetMediaAccessAsync(
         Guid actorUserId,
         Guid postId,

@@ -1,0 +1,18 @@
+namespace Fookbase.Api.Modules.Notifications.DTOs.Responses;
+
+public sealed record NotificationResponse(
+    Guid Id,
+    Guid RecipientUserId,
+    Guid? ActorUserId,
+    string? ActorUsername,
+    string? ActorDisplayName,
+    string Type,
+    string? EntityType,
+    Guid? EntityId,
+    bool IsRead,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? ReadAtUtc);
+
+public sealed record NotificationPageResponse(
+    IReadOnlyList<NotificationResponse> Items,
+    string? NextCursor);

@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Messages, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
+Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Messages, Notifications, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
 
 Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
 
@@ -17,6 +17,7 @@ Fookbase.Api :5000
   |-- Users module
   |-- Friends module
   |-- Messages module (SignalR)
+  |-- Notifications module (SignalR)
   |-- Posts module
   |-- Admin module
   `-- Media module
@@ -194,7 +195,22 @@ Tất cả Friends endpoint yêu cầu Bearer JWT. Collection endpoint dùng off
 | POST | `/api/messages/conversations/{conversationId}/messages` | Bearer JWT, thành viên |
 | GET | `/api/messages/notifications` | Bearer JWT |
 
-Tin nhắn chỉ được gửi giữa bạn bè không bị block. History dùng keyset pagination: request đầu không có `before` trả trang mới nhất; dùng `nextCursor` làm giá trị `before` để tải các tin cũ hơn. GET history không thay đổi trạng thái đã đọc; client xác nhận mốc đọc bằng `POST .../read` với `lastReadMessageId`. Read cursor được lưu theo thành viên conversation để sẵn sàng mở rộng conversation nhiều thành viên trong tương lai. Notification chưa đọc được lưu trong bảng Messages của `fookbase_db` và cập nhật realtime qua SignalR tại `/hubs/messages`.
+Tin nhắn chỉ được gửi giữa bạn bè không bị block. History dùng keyset pagination: request đầu không có `before` trả trang mới nhất; dùng `nextCursor` làm giá trị `before` để tải các tin cũ hơn. GET history không thay đổi trạng thái đã đọc; client xác nhận mốc đọc bằng `POST .../read` với `lastReadMessageId`. Read cursor được lưu theo thành viên conversation để sẵn sàng mở rộng conversation nhiều thành viên trong tương lai. Thông báo tin nhắn chưa đọc được lưu ở `MessageNotifications` và cập nhật realtime qua SignalR tại `/hubs/messages`.
+
+### Notifications
+
+| Method | Endpoint | Authentication |
+| --- | --- | --- |
+| GET | `/api/notifications?before={cursor}&limit={limit}` | Bearer JWT |
+| GET | `/api/notifications/unread-count` | Bearer JWT |
+| POST | `/api/notifications/{notificationId}/read` | Bearer JWT, recipient |
+| POST | `/api/notifications/read-all` | Bearer JWT |
+
+Thông báo tổng quát được lưu trong bảng `Notifications`, newest-first bằng keyset cursor
+`CreatedAtUtc + Id`, và chỉ recipient có thể đọc/đánh dấu đã đọc. Các event hiện có là friend
+request/acceptance, post reaction/comment và comment reaction; hành động của chính recipient
+không sinh notification. Event realtime dùng SignalR tại `/hubs/notifications`. Message badge
+và notification badge là hai count độc lập; general notification không được tạo cho chat message.
 
 ### Posts
 
@@ -208,6 +224,7 @@ Tin nhắn chỉ được gửi giữa bạn bè không bị block. History dùn
 | POST | `/api/posts/{postId}/comments` | Bearer JWT |
 | GET | `/api/posts/{postId}/comments` | Tùy chọn |
 | PUT/DELETE | `/api/posts/comments/{commentId}` | Bearer JWT, tác giả |
+| PUT/DELETE | `/api/posts/comments/{commentId}/reaction` | Bearer JWT |
 | PUT/DELETE | `/api/posts/{postId}/reaction` | Bearer JWT |
 | GET | `/api/posts/{postId}/media/{mediaId}/access` | Bearer JWT |
 

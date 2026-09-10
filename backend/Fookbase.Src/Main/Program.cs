@@ -14,6 +14,8 @@ using Fookbase.Api.Modules.Media.Endpoints;
 using Fookbase.Api.Modules.Media.HealthChecks;
 using Fookbase.Api.Modules.Messages.Endpoints;
 using Fookbase.Api.Modules.Messages.Hubs;
+using Fookbase.Api.Modules.Notifications.Endpoints;
+using Fookbase.Api.Modules.Notifications.Hubs;
 using Fookbase.Api.Modules.Posts.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -53,6 +55,7 @@ builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddUsersModule();
 builder.Services.AddFriendsModule();
 builder.Services.AddMessagesModule();
+builder.Services.AddNotificationsModule();
 builder.Services.AddPostsModule(builder.Configuration);
 builder.Services.AddMediaModule(builder.Configuration);
 builder.Services.AddAdminModule();
@@ -79,7 +82,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var accessToken = context.Request.Query["access_token"];
                 if (!string.IsNullOrWhiteSpace(accessToken)
-                    && context.HttpContext.Request.Path.StartsWithSegments("/hubs/messages"))
+                    && (context.HttpContext.Request.Path.StartsWithSegments("/hubs/messages") ||
+                        context.HttpContext.Request.Path.StartsWithSegments("/hubs/notifications")))
                 {
                     context.Token = accessToken;
                 }
@@ -183,6 +187,8 @@ app.MapUserProfileEndpoints();
 app.MapFriendEndpoints();
 app.MapMessageEndpoints();
 app.MapHub<MessagesHub>("/hubs/messages");
+app.MapNotificationEndpoints();
+app.MapHub<NotificationsHub>("/hubs/notifications");
 app.MapPostEndpoints();
 app.MapReportEndpoints();
 app.MapAdminEndpoints();

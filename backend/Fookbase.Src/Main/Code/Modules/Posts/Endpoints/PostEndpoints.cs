@@ -23,6 +23,8 @@ public static class PostEndpoints
         group.MapGet("/{postId:guid}/comments", GetCommentsAsync);
         group.MapPut("/comments/{commentId:guid}", UpdateCommentAsync).RequireAuthorization();
         group.MapDelete("/comments/{commentId:guid}", DeleteCommentAsync).RequireAuthorization();
+        group.MapPut("/comments/{commentId:guid}/reaction", SetCommentReactionAsync).RequireAuthorization();
+        group.MapDelete("/comments/{commentId:guid}/reaction", RemoveCommentReactionAsync).RequireAuthorization();
         group.MapPut("/{postId:guid}/reaction", SetReactionAsync).RequireAuthorization();
         group.MapDelete("/{postId:guid}/reaction", RemoveReactionAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}/media/{mediaId:guid}/access", GetMediaAccessAsync)
@@ -221,6 +223,20 @@ public static class PostEndpoints
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
+    private static Task<IResult> SetCommentReactionAsync(
+        Guid commentId,
+        SetReactionRequest request,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken) =>
+        ExecuteCommandAsync(
+            principal,
+            actorUserId => useCase.SetCommentReactionAsync(
+                actorUserId,
+                commentId,
+                request.Type,
+                cancellationToken));
+
     private static async Task<IResult> RemoveReactionAsync(
         Guid postId,
         ClaimsPrincipal principal,
@@ -235,6 +251,18 @@ public static class PostEndpoints
         var result = await useCase.RemoveReactionAsync(actorUserId, postId, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
+
+    private static Task<IResult> RemoveCommentReactionAsync(
+        Guid commentId,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken) =>
+        ExecuteCommandAsync(
+            principal,
+            actorUserId => useCase.RemoveCommentReactionAsync(
+                actorUserId,
+                commentId,
+                cancellationToken));
 
     private static async Task<IResult> GetMediaAccessAsync(
         Guid postId, Guid mediaId, ClaimsPrincipal principal, PostsUseCase useCase,

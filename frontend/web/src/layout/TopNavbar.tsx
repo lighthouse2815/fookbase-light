@@ -13,9 +13,12 @@ interface NavItem {
 export default function TopNavbar() {
   const { session, signOut } = useAuth()
   const {
-    incomingMessages,
-    incomingFriendNotifications,
-    markFriendNotificationRead,
+    notifications,
+    markAllNotificationsRead,
+    markNotificationRead,
+    hasMoreNotifications,
+    isLoadingMoreNotifications,
+    loadMoreNotifications,
     unreadNotificationCount,
   } = useRealtime()
   const { t } = usePreferences()
@@ -35,6 +38,34 @@ export default function TopNavbar() {
     event.preventDefault()
     const query = searchQuery.trim()
     navigate(query ? `/explore?q=${encodeURIComponent(query)}` : '/explore')
+  }
+
+  const notificationDestination = (notification: typeof notifications[number]) => {
+    if ((notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted') && notification.actorUserId) {
+      return '/profile/' + notification.actorUserId
+    }
+
+    return notification.entityId ? '/feed?post=' + notification.entityId : '/feed'
+  }
+
+  const notificationText = (notification: typeof notifications[number]) => {
+    const actor = notification.actorDisplayName ?? notification.actorUsername ?? t('user')
+    switch (notification.type) {
+      case 'FriendRequestReceived':
+        return actor + ' sent you a friend request.'
+      case 'FriendRequestAccepted':
+        return actor + ' accepted your friend request.'
+      case 'PostReaction':
+        return actor + ' reacted to your post.'
+      case 'PostComment':
+        return actor + ' commented on your post.'
+      case 'CommentReaction':
+        return actor + ' reacted to your comment.'
+      case 'PostMention':
+        return actor + ' mentioned you in a post.'
+      case 'CommentMention':
+        return actor + ' mentioned you in a comment.'
+    }
   }
 
   return (
@@ -103,24 +134,17 @@ export default function TopNavbar() {
           </button>
           {isNotificationsOpen && (
             <div className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="font-heading text-base font-bold text-text">{t('notifications')}</h2><Link to="/messages" onClick={() => setIsNotificationsOpen(false)} className="text-xs font-semibold text-primary no-underline hover:underline">{t('openMessages')}</Link></div>
+              <div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="font-heading text-base font-bold text-text">{t('notifications')}</h2>{unreadNotificationCount > 0 && <button type="button" onClick={markAllNotificationsRead} className="border-0 bg-transparent text-xs font-semibold text-primary cursor-pointer hover:underline">Mark all read</button>}</div>
               <div className="max-h-96 overflow-y-auto">
-                {incomingMessages.length + incomingFriendNotifications.length === 0 ? <p className="px-4 py-6 text-center text-sm text-text-muted">{t('allCaughtUp')}</p> : (
+                {notifications.length === 0 ? <p className="px-4 py-6 text-center text-sm text-text-muted">{t('allCaughtUp')}</p> : (
                   <>
-                    {incomingFriendNotifications.map((notification) => (
-                      <Link key={notification.id} to={`/profile/${notification.actorUserId}`} onClick={() => { markFriendNotificationRead(notification.id); setIsNotificationsOpen(false) }} className="block border-b border-border px-4 py-3 no-underline transition-colors last:border-0 hover:bg-surface-2">
-                        <p className="text-sm font-semibold text-text">{notification.type === 'friend_request' ? t('newFriendRequest') : t('friendRequestAccepted')}</p>
-                        <p className="mt-0.5 text-sm text-text-muted">{t('viewProfile')}</p>
+                    {notifications.map((notification) => (
+                      <Link key={notification.id} to={notificationDestination(notification)} onClick={() => { markNotificationRead(notification.id); setIsNotificationsOpen(false) }} className="block border-b border-border px-4 py-3 no-underline transition-colors last:border-0 hover:bg-surface-2">
+                        <p className={notification.isRead ? 'text-sm text-text-muted' : 'text-sm font-semibold text-text'}>{notificationText(notification)}</p>
                         <p className="mt-1 text-xs text-text-light">{new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(notification.createdAtUtc))}</p>
                       </Link>
                     ))}
-                    {incomingMessages.map((incoming) => (
-                      <Link key={incoming.message.id} to={`/messages?conversation=${incoming.conversation.id}`} onClick={() => setIsNotificationsOpen(false)} className="block border-b border-border px-4 py-3 no-underline transition-colors last:border-0 hover:bg-surface-2">
-                        <p className="text-sm font-semibold text-text">{t('newMessage')}</p>
-                        <p className="mt-0.5 truncate text-sm text-text-muted">{incoming.message.content}</p>
-                        <p className="mt-1 text-xs text-text-light">{new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(incoming.message.createdAtUtc))}</p>
-                      </Link>
-                    ))}
+                    {hasMoreNotifications && <button type="button" onClick={loadMoreNotifications} disabled={isLoadingMoreNotifications} className="w-full border-0 bg-surface-2 px-4 py-3 text-sm font-semibold text-primary cursor-pointer disabled:cursor-wait">{isLoadingMoreNotifications ? t('loading') : 'Load more'}</button>}
                   </>
                 )}
               </div>
