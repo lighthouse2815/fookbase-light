@@ -1,4 +1,4 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
+export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
 const accessTokenStorageKey = 'fookbase.accessToken'
 
 export class ApiError extends Error {

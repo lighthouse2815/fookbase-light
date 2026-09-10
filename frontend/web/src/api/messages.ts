@@ -25,6 +25,11 @@ export interface PagedResponse<T> {
   total: number
 }
 
+export interface IncomingMessage {
+  conversation: Conversation
+  message: Message
+}
+
 export const messagesApi = {
   getOrCreateConversation: (userId: string) =>
     apiRequest<Conversation>(`/api/messages/conversations/${userId}`, { method: 'POST' }),

@@ -2,13 +2,16 @@ using Fookbase.Api.Modules.Messages.Common;
 using Fookbase.Api.Modules.Messages.Data;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Messages.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Messages.Services;
 
 public sealed class MessagesService(
     MessagesDbContext dbContext,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IHubContext<MessagesHub> hubContext)
 {
     private const int MaximumLimit = 100;
     private const int MaximumContentLength = 5000;
@@ -199,7 +202,22 @@ public sealed class MessagesService(
         dbContext.Messages.Add(message);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return ApplicationResult<MessageResponse>.Success(ToMessageResponse(message));
+        var recipientUserId = conversation.OtherUserId(actorUserId);
+        var unreadCount = await dbContext.Messages.AsNoTracking()
+            .CountAsync(item =>
+                item.ConversationId == conversationId
+                && item.SenderUserId == actorUserId
+                && item.ReadAtUtc == null,
+                cancellationToken);
+        var messageResponse = ToMessageResponse(message);
+        await hubContext.Clients.User(recipientUserId.ToString()).SendAsync(
+            "MessageReceived",
+            new IncomingMessageResponse(
+                ToConversationResponse(conversation, recipientUserId, message, unreadCount),
+                messageResponse),
+            cancellationToken);
+
+        return ApplicationResult<MessageResponse>.Success(messageResponse);
     }
 
     private async Task<Conversation?> FindConversationAsync(

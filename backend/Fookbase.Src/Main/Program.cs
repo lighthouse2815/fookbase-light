@@ -7,6 +7,7 @@ using Fookbase.Api.Modules.Identity.Endpoints;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Endpoints;
 using Fookbase.Api.Modules.Messages.Endpoints;
+using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Posts.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -43,6 +44,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrWhiteSpace(accessToken)
+                    && context.HttpContext.Request.Path.StartsWithSegments("/hubs/messages"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            },
             OnChallenge = async context =>
             {
                 context.HandleResponse();
@@ -60,6 +72,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
 builder.Services.AddHealthChecks();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -75,6 +88,7 @@ app.MapAuthenticationEndpoints();
 app.MapUserProfileEndpoints();
 app.MapFriendEndpoints();
 app.MapMessageEndpoints();
+app.MapHub<MessagesHub>("/hubs/messages");
 app.MapPostEndpoints();
 app.MapMediaEndpoints();
 

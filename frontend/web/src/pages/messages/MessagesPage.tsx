@@ -5,6 +5,7 @@ import type { Conversation, Message } from '../../api/messages'
 import { usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
+import { useRealtime } from '../../realtime/useRealtime'
 
 function formatTimestamp(value: string) {
   const date = new Date(value)
@@ -22,6 +23,7 @@ function avatarLabel(profile: UserProfile) {
 
 export default function MessagesPage() {
   const { session } = useAuth()
+  const { incomingMessages, markConversationRead } = useRealtime()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({})
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
@@ -81,6 +83,7 @@ export default function MessagesPage() {
         if (!active) return
         setError(null)
         setMessages(page.items)
+        markConversationRead(activeConversationId)
         setConversations((current) => current.map((conversation) =>
           conversation.id === activeConversationId ? { ...conversation, unreadCount: 0 } : conversation,
         ))
@@ -90,7 +93,49 @@ export default function MessagesPage() {
       })
 
     return () => { active = false }
-  }, [activeConversationId])
+  }, [activeConversationId, markConversationRead])
+
+  useEffect(() => {
+    if (incomingMessages.length === 0) return
+
+    const timeoutId = window.setTimeout(() => {
+      setConversations((current) => incomingMessages.reduce<Conversation[]>((updated, incomingMessage) => {
+        const existing = updated.find((conversation) => conversation.id === incomingMessage.conversation.id)
+        const nextConversation = existing
+          ? { ...existing, ...incomingMessage.conversation }
+          : incomingMessage.conversation
+        return [
+          nextConversation,
+          ...updated.filter((conversation) => conversation.id !== nextConversation.id),
+        ]
+      }, current).sort((left, right) => Date.parse(right.lastMessageAtUtc) - Date.parse(left.lastMessageAtUtc)))
+    }, 0)
+
+    const profileIds = [...new Set(incomingMessages.map((item) => item.conversation.participantUserId))]
+    void Promise.allSettled(profileIds.map((userId) => usersApi.getById(userId)))
+      .then((results) => {
+        const loadedProfiles = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+        if (loadedProfiles.length > 0) {
+          setProfiles((current) => ({
+            ...current,
+            ...Object.fromEntries(loadedProfiles.map((profile) => [profile.userId, profile])),
+          }))
+        }
+      })
+
+    const activeIncomingMessages = incomingMessages.filter((item) => item.conversation.id === activeConversationId)
+    if (activeIncomingMessages.length === 0 || !activeConversationId) {
+      return () => window.clearTimeout(timeoutId)
+    }
+
+    void messagesApi.getMessages(activeConversationId)
+      .then((page) => {
+        setMessages(page.items)
+        markConversationRead(activeConversationId)
+      })
+      .catch(() => undefined)
+    return () => window.clearTimeout(timeoutId)
+  }, [activeConversationId, incomingMessages, markConversationRead])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })

@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { useRealtime } from '../realtime/useRealtime'
 
 interface NavItem {
   path: string
@@ -16,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function TopNavbar() {
   const { session, signOut } = useAuth()
+  const { unreadMessageCount } = useRealtime()
   const initials = session!.user.username.slice(0, 2).toUpperCase()
 
   return (
@@ -80,16 +82,14 @@ export default function TopNavbar() {
           ↪
         </button>
         {/* Notifications */}
-        <button
-          type="button"
-          className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none text-sm relative"
-          title="Notifications"
+        <Link
+          to="/messages"
+          className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none text-sm relative no-underline"
+          title="Message notifications"
         >
           🔔
-          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center">
-            3
-          </span>
-        </button>
+          {unreadMessageCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
+        </Link>
         {/* User avatar link to profile */}
         <Link
           to="/profile"
