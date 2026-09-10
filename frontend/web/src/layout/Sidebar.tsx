@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
+import { usePreferences } from '../preferences'
 
 interface NavItem {
   path: string
@@ -8,18 +9,18 @@ interface NavItem {
   label: string
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { path: '/feed', emoji: '🏠', label: 'Feed' },
-  { path: '/explore', emoji: '🔍', label: 'Explore' },
-  { path: '/messages', emoji: '💬', label: 'Messages' },
-  { path: '/games', emoji: '🎮', label: 'Games' },
-  { path: '/profile', emoji: '👤', label: 'Profile' },
-]
-
 export default function Sidebar() {
   const { session } = useAuth()
   const { unreadMessageCount } = useRealtime()
+  const { t } = usePreferences()
   const initials = session!.user.username.slice(0, 2).toUpperCase()
+  const navItems: NavItem[] = [
+    { path: '/feed', emoji: '🏠', label: t('feed') },
+    { path: '/explore', emoji: '🔍', label: t('explore') },
+    { path: '/messages', emoji: '💬', label: t('messages') },
+    { path: '/games', emoji: '🎮', label: t('games') },
+    { path: '/profile', emoji: '👤', label: t('profile') },
+  ]
 
   return (
     <aside className="fixed top-14 left-0 w-[280px] h-[calc(100vh-56px)] flex flex-col bg-bg z-40 max-lg:hidden overflow-y-auto scroll-smooth">
@@ -40,7 +41,7 @@ export default function Sidebar() {
           </span>
         </Link>
 
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -85,7 +86,7 @@ export default function Sidebar() {
       {/* ── Footer ───────────────────────────────────────── */}
       <div className="mt-auto px-4 pb-4 pt-2">
         <p className="text-[11px] text-text-light leading-relaxed">
-          Privacy · Terms · Advertising · Cookies · © 2026 Fookbase
+          {t('appearance')} · {t('language')} · © 2026 Fookbase
         </p>
       </div>
     </aside>

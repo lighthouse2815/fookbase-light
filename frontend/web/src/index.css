@@ -43,6 +43,36 @@
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+:root {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-bg: #f0f2f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #e4e6eb;
+  --color-surface-3: #d8dadf;
+  --color-surface-hover: #d8dadf;
+  --color-primary: #1877f2;
+  --color-primary-light: #4a93e8;
+  --color-primary-dark: #166fe5;
+  --color-secondary: #258a3f;
+  --color-accent: #b76b00;
+  --color-accent-2: #d54040;
+  --color-like: #d54040;
+  --color-repost: #258a3f;
+  --color-info: #1877f2;
+  --color-warning: #b76b00;
+  --color-danger: #d54040;
+  --color-text: #1c1e21;
+  --color-text-muted: #606770;
+  --color-text-light: #8a8d91;
+  --color-text-inv: #ffffff;
+  --color-border: #d8dadf;
+  --color-border-focus: #1877f2;
+}
+
 /* ============================================================
    BASE RESET & GLOBAL
    ============================================================ */
@@ -79,22 +109,22 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #242526;
+  background: var(--color-surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4e4f50;
+  background: var(--color-surface-hover);
   border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #606162;
+  background: var(--color-text-light);
 }
 
 /* ── Selection ── */
 ::selection {
-  background: rgba(35, 116, 225, 0.3);
-  color: #e4e6eb;
+  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  color: var(--color-text);
 }
 
 /* ============================================================

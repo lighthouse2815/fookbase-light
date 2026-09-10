@@ -4,9 +4,11 @@ import { authApi } from './api/auth'
 import type { AuthenticationResponse } from './api/auth'
 import { ApiError } from './api/client'
 import LoginPage from './LoginPage'
+import { usePreferences } from './preferences'
 import { adminSessionChangedEvent, clearSession, getSession, saveSession } from './session'
 
 export default function App() {
+  const { t } = usePreferences()
   const [session, setSession] = useState<AuthenticationResponse | null>(() => getSession())
 
   const applySession = (nextSession: AuthenticationResponse) => {
@@ -26,7 +28,7 @@ export default function App() {
   const signIn = async (email: string, password: string) => {
     const nextSession = await authApi.login(email, password)
     if (!nextSession.user.roles.includes('Admin')) {
-      throw new ApiError('Tài khoản này không có quyền quản trị.', 403)
+      throw new ApiError(t('adminRequired'), 403)
     }
 
     applySession(nextSession)
