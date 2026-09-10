@@ -26,6 +26,7 @@ export default function TopNavbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
+  const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
   const navItems: NavItem[] = [
     { path: '/feed', icon: '🏠', label: t('home') },
     { path: '/explore', icon: '🔍', label: t('explore') },
@@ -99,7 +100,16 @@ export default function TopNavbar() {
       </div>
 
       <nav className="flex-1 flex items-center justify-center gap-1 max-w-[600px] mx-auto">
-        {navItems.map((item) => (
+        {navItems.map((item) => item.path === '/messages' ? (
+          <a
+            key={item.path}
+            href={messengerUrl}
+            className="flex-1 flex items-center justify-center py-2 rounded-lg transition-all duration-200 cursor-pointer relative max-w-[120px] text-2xl no-underline text-text-muted hover:bg-surface-2"
+            title={item.label}
+          >
+            <span>{item.icon}</span>
+          </a>
+        ) : (
           <NavLink
             key={item.path}
             to={item.path}

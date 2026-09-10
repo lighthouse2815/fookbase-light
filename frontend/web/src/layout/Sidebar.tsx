@@ -14,6 +14,7 @@ export default function Sidebar() {
   const { unreadMessageCount } = useRealtime()
   const { t } = usePreferences()
   const initials = session!.user.username.slice(0, 2).toUpperCase()
+  const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
   const navItems: NavItem[] = [
     { path: '/feed', emoji: '🏠', label: t('feed') },
     { path: '/explore', emoji: '🔍', label: t('explore') },
@@ -42,7 +43,17 @@ export default function Sidebar() {
           </span>
         </Link>
 
-        {navItems.map((item) => (
+        {navItems.map((item) => item.path === '/messages' ? (
+          <a
+            key={item.path}
+            href={messengerUrl}
+            className="group flex items-center gap-3 px-2 py-2 rounded-lg w-full text-left transition-all duration-200 cursor-pointer border-0 no-underline bg-transparent hover:bg-surface-2"
+          >
+            <span className="w-9 h-9 rounded-full flex items-center justify-center text-xl shrink-0 bg-surface-2 text-text">{item.emoji}</span>
+            <span className="font-semibold text-[15px] transition-colors text-text-muted group-hover:text-text">{item.label}</span>
+            {unreadMessageCount > 0 && <span className="ml-auto text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-[#e41e3f] text-white min-w-[20px] text-center">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
+          </a>
+        ) : (
           <NavLink
             key={item.path}
             to={item.path}
