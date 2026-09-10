@@ -34,6 +34,16 @@ export interface Post {
   isReposted: boolean;
 }
 
+export interface Comment {
+  id: string;
+  postId: string;
+  authorId: string;
+  content: string;
+  timestamp: Date;
+  likes: number;
+  isLiked?: boolean;
+}
+
 export interface Message {
   id: string;
   senderId: string;
@@ -55,6 +65,22 @@ export interface TrendingTopic {
   tag: string;
   posts: number;
   trend: 'up' | 'down' | 'hot';
+}
+
+export type NotificationType = 'like' | 'comment' | 'mention' | 'friend' | 'security' | 'group';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  content?: string;
+  timestamp: Date;
+  isRead: boolean;
+  targetUrl?: string;
+  actionData?: {
+    friendRequestStatus?: 'pending' | 'accepted' | 'declined';
+  };
 }
 
 // -----------------------------------------------------------
@@ -280,7 +306,104 @@ function withdraw(uint amount) external {
 ];
 
 // -----------------------------------------------------------
-// CONVERSATIONS / MESSAGES
+// COMMENTS
+// -----------------------------------------------------------
+export const INITIAL_COMMENTS: Comment[] = [
+  {
+    id: 'cm1',
+    postId: 'p1',
+    authorId: 'u6',
+    content: 'Classic. 3 weeks of sleepless nights vs 4 lines of C++ patch. Hope you grabbed that CVE credit!',
+    timestamp: new Date(Date.now() - 1000 * 60 * 6),
+    likes: 24,
+    isLiked: false,
+  },
+  {
+    id: 'cm2',
+    postId: 'p1',
+    authorId: 'u1',
+    content: 'Did you trigger it through GC pressure or canvas manipulation? Asking for a friend 😉',
+    timestamp: new Date(Date.now() - 1000 * 60 * 3),
+    likes: 12,
+    isLiked: true,
+  },
+  {
+    id: 'cm3',
+    postId: 'p2',
+    authorId: 'u3',
+    content: 'Tell that to half the government systems still using NTLMv1 lmao.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 20),
+    likes: 45,
+    isLiked: true,
+  },
+  {
+    id: 'cm4',
+    postId: 'p2',
+    authorId: 'u5',
+    content: 'My 4090 does 95 GH/s on NTLM. MD5 is literally plaintext at this point.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 15),
+    likes: 31,
+    isLiked: false,
+  },
+  {
+    id: 'cm5',
+    postId: 'p3',
+    authorId: 'u4',
+    content: 'ROP chains make my brain hurt. Bookmarked for the weekend, great writeup as always!',
+    timestamp: new Date(Date.now() - 1000 * 60 * 55),
+    likes: 8,
+    isLiked: false,
+  },
+  {
+    id: 'cm6',
+    postId: 'p4',
+    authorId: 'u1',
+    content: 'Checks-Effects-Interactions pattern is like 3 lines of code. Why is it so hard for devs to follow?',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
+    likes: 89,
+    isLiked: true,
+  },
+  {
+    id: 'cm7',
+    postId: 'p4',
+    authorId: 'u6',
+    content: 'Auditing DeFi is free money. Just Ctrl+F for external calls before state mutations 💀',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
+    likes: 64,
+    isLiked: false,
+  },
+  {
+    id: 'cm8',
+    postId: 'p5',
+    authorId: 'u2',
+    content: 'SYN scanner or full connect? Either way, sysadmins on your subnet are crying right now.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6),
+    likes: 15,
+    isLiked: false,
+  },
+  {
+    id: 'cm9',
+    postId: 'p6',
+    authorId: 'u5',
+    content: 'Port 3389 open to 0.0.0.0 is basically a honeypot at this point.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 10),
+    likes: 73,
+    isLiked: true,
+  },
+  {
+    id: 'cm10',
+    postId: 'p7',
+    authorId: 'u6',
+    content: 'VMP or Themida? If it\'s custom control-flow flattening, may god have mercy on your soul.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 18),
+    likes: 19,
+    isLiked: false,
+  },
+];
+
+export function getCommentsByPostId(postId: string): Comment[] {
+  return INITIAL_COMMENTS.filter((c) => c.postId === postId);
+}
 // -----------------------------------------------------------
 export const CONVERSATIONS: Conversation[] = [
   {
@@ -414,21 +537,89 @@ export const CONVERSATIONS: Conversation[] = [
 ];
 
 // -----------------------------------------------------------
+// NOTIFICATIONS
+// -----------------------------------------------------------
+export const INITIAL_NOTIFICATIONS: Notification[] = [
+  {
+    id: 'notif-1',
+    userId: 'u6',
+    type: 'like',
+    title: 'đã thích bài viết của bạn về UAF vulnerability.',
+    content: '"Found a UAF vuln in a popular browser engine. Spent 3 weeks..."',
+    timestamp: new Date(Date.now() - 1000 * 60 * 5),
+    isRead: false,
+    targetUrl: '/feed',
+  },
+  {
+    id: 'notif-2',
+    userId: 'u2',
+    type: 'comment',
+    title: 'đã bình luận về bài viết của bạn:',
+    content: '"SYN scanner or full connect? Either way, sysadmins on your subnet..."',
+    timestamp: new Date(Date.now() - 1000 * 60 * 25),
+    isRead: false,
+    targetUrl: '/feed',
+  },
+  {
+    id: 'notif-3',
+    userId: 'u5',
+    type: 'friend',
+    title: 'đã gửi cho bạn lời mời kết bạn.',
+    content: 'CTF player | pwn specialist',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1.5),
+    isRead: false,
+    targetUrl: '/profile',
+    actionData: {
+      friendRequestStatus: 'pending',
+    },
+  },
+  {
+    id: 'notif-4',
+    userId: 'u3',
+    type: 'mention',
+    title: 'đã nhắc đến bạn trong một bình luận:',
+    content: '"@n3ur0hack check out this reentrancy bug in the latest DeFi audit."',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4),
+    isRead: true,
+    targetUrl: '/feed',
+  },
+  {
+    id: 'notif-5',
+    userId: 'u1',
+    type: 'security',
+    title: 'Cảnh báo bảo mật hệ thống',
+    content: 'Phát hiện phiên đăng nhập mới từ IP 192.168.1.105 (San Francisco, CA).',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    isRead: true,
+  },
+  {
+    id: 'notif-6',
+    userId: 'u4',
+    type: 'group',
+    title: 'đã chia sẻ bài viết của bạn vào nhóm Hack Kingdom Club.',
+    content: '"TCP handshake goes brrr 🤝 Just wrote a raw socket scanner..."',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48),
+    isRead: true,
+    targetUrl: '/feed',
+  },
+];
+
+// -----------------------------------------------------------
 // TRENDING
 // -----------------------------------------------------------
 export const TRENDING_TOPICS: TrendingTopic[] = [
-  { id: 't1', tag: '#0day',       posts: 18420, trend: 'hot' },
-  { id: 't2', tag: '#log4shell',  posts: 12100, trend: 'up' },
-  { id: 't3', tag: '#ctf',        posts: 9880,  trend: 'up' },
-  { id: 't4', tag: '#opsec',      posts: 7720,  trend: 'up' },
-  { id: 't5', tag: '#reverseng',  posts: 6540,  trend: 'up' },
-  { id: 't6', tag: '#defi',       posts: 5910,  trend: 'hot' },
-  { id: 't7', tag: '#rootkit',    posts: 4200,  trend: 'up' },
-  { id: 't8', tag: '#pwn',        posts: 3980,  trend: 'up' },
-  { id: 't9', tag: '#bounty',     posts: 3440,  trend: 'up' },
-  { id: 't10', tag: '#ghidra',    posts: 2810,  trend: 'down' },
-  { id: 't11', tag: '#network',   posts: 2540,  trend: 'up' },
-  { id: 't12', tag: '#solidity',  posts: 2220,  trend: 'hot' },
+  { id: 't1', tag: '#0day', posts: 18420, trend: 'hot' },
+  { id: 't2', tag: '#log4shell', posts: 12100, trend: 'up' },
+  { id: 't3', tag: '#ctf', posts: 9880, trend: 'up' },
+  { id: 't4', tag: '#opsec', posts: 7720, trend: 'up' },
+  { id: 't5', tag: '#reverseng', posts: 6540, trend: 'up' },
+  { id: 't6', tag: '#defi', posts: 5910, trend: 'hot' },
+  { id: 't7', tag: '#rootkit', posts: 4200, trend: 'up' },
+  { id: 't8', tag: '#pwn', posts: 3980, trend: 'up' },
+  { id: 't9', tag: '#bounty', posts: 3440, trend: 'up' },
+  { id: 't10', tag: '#ghidra', posts: 2810, trend: 'down' },
+  { id: 't11', tag: '#network', posts: 2540, trend: 'up' },
+  { id: 't12', tag: '#solidity', posts: 2220, trend: 'hot' },
 ];
 
 // -----------------------------------------------------------
@@ -447,10 +638,10 @@ export function formatNumber(n: number): string {
 export function formatTimestamp(date: Date): string {
   const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1)   return 'just now';
-  if (mins < 60)  return `${mins}m`;
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)   return `${hrs}h`;
+  if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
   return `${days}d`;
 }

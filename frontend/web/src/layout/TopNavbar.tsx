@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { CURRENT_USER } from '../data/mockData'
+import { CURRENT_USER, INITIAL_NOTIFICATIONS, type Notification } from '../data/mockData'
+import NotificationModal from '../shared/components/NotificationModal'
 
 interface NavItem {
   path: string
@@ -15,6 +17,37 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export default function TopNavbar() {
+  const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS)
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length
+
+  const handleMarkAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+  }
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    )
+  }
+
+  const handleUpdateFriendRequest = (id: string, status: 'accepted' | 'declined') => {
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.id === id
+          ? {
+            ...n,
+            isRead: true,
+            actionData: {
+              ...n.actionData,
+              friendRequestStatus: status,
+            },
+          }
+          : n
+      )
+    )
+  }
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center px-4 z-50">
       {/* ── Left: Logo + Search ──────────────────────── */}
@@ -78,14 +111,22 @@ export default function TopNavbar() {
         {/* Notifications */}
         <button
           type="button"
-          className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none text-sm relative"
-          title="Notifications"
+          onClick={() => setIsNotifOpen((prev) => !prev)}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer border-none text-sm relative ${isNotifOpen
+              ? 'bg-primary/20 text-primary'
+              : 'bg-surface-2 text-text hover:bg-[#4e4f50]'
+            }`}
+          title="Thông báo"
+          aria-expanded={isNotifOpen}
         >
           🔔
-          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center">
-            3
-          </span>
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center shadow-xs">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </button>
+
         {/* User avatar link to profile */}
         <Link
           to="/profile"
@@ -95,6 +136,16 @@ export default function TopNavbar() {
           {CURRENT_USER.avatar}
         </Link>
       </div>
+
+      {/* ── Notification Modal / Dropdown ─────────── */}
+      <NotificationModal
+        isOpen={isNotifOpen}
+        onClose={() => setIsNotifOpen(false)}
+        notifications={notifications}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onMarkAsRead={handleMarkAsRead}
+        onUpdateFriendRequest={handleUpdateFriendRequest}
+      />
     </header>
   )
 }
