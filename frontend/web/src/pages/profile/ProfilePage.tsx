@@ -260,10 +260,10 @@ export default function ProfilePage() {
 
   const createProfilePost = async (
     content: string,
-    file: File | null,
+    files: readonly File[],
     onUploadProgress: (progress: number) => void,
   ) => {
-    const mediaIds = file ? [await mediaApi.uploadFile(file, onUploadProgress)] : []
+    const mediaIds = await mediaApi.uploadFiles(files, onUploadProgress)
     const post = await postsApi.create({ content, privacy: 'public', mediaIds })
     setProfilePosts((currentPosts) => [post, ...currentPosts])
     setProfilePostsTotal((currentTotal) => currentTotal + 1)

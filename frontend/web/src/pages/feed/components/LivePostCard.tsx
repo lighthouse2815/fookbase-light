@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
 import { postsApi } from '../../../api/posts'
-import type { Comment, Post } from '../../../api/posts'
+import type { Comment, MediaAccess, Post } from '../../../api/posts'
 import type { UserProfile } from '../../../api/users'
 
 interface LivePostCardProps {
@@ -31,7 +31,7 @@ export default function LivePostCard({
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [mediaUrls, setMediaUrls] = useState<string[]>([])
+  const [media, setMedia] = useState<MediaAccess[]>([])
   const isAuthor = post.authorUserId === currentUserId
   const likeCount = post.reactionCounts.like ?? 0
   const isLiked = post.viewerReaction === 'like'
@@ -41,10 +41,10 @@ export default function LivePostCard({
 
     void Promise.all(post.mediaIds.map((mediaId) => postsApi.getMediaAccess(post.id, mediaId)))
       .then((media) => {
-        if (isActive) setMediaUrls(media.map((item) => item.url))
+        if (isActive) setMedia(media)
       })
       .catch(() => {
-        if (isActive) setMediaUrls([])
+        if (isActive) setMedia([])
       })
 
     return () => {
@@ -158,9 +158,16 @@ export default function LivePostCard({
       </div>
 
       <p className="text-[14px] text-text leading-relaxed whitespace-pre-wrap">{post.content}</p>
-      {mediaUrls.length > 0 && (
-        <div className="grid grid-cols-1 gap-2">
-          {mediaUrls.map((url) => <img key={url} src={url} alt="Post attachment" className="max-h-[520px] w-full rounded-lg object-cover bg-surface-2" />)}
+      {media.length > 0 && (
+        <div className={`grid gap-2 ${media.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
+          {media.map((item) => item.mediaType === 'video' ? (
+            <video key={item.mediaId} controls preload="metadata" className="max-h-[520px] w-full rounded-lg bg-surface-2">
+              <source src={item.url} type={item.contentType} />
+              Your browser does not support video playback.
+            </video>
+          ) : (
+            <img key={item.mediaId} src={item.url} alt="Post attachment" className="max-h-[520px] w-full rounded-lg object-cover bg-surface-2" />
+          ))}
         </div>
       )}
       {error && <p className="text-xs text-[#ff8a9b]">{error}</p>}

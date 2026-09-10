@@ -203,7 +203,9 @@ public sealed class PostsUseCase(
                 new MediaAccessResponse(
                     readUrl.Value!.MediaId,
                     readUrl.Value.Url,
-                    readUrl.Value.ExpiresAtUtc))
+                    readUrl.Value.ExpiresAtUtc,
+                    readUrl.Value.MediaType,
+                    readUrl.Value.ContentType))
             : ApplicationResult<MediaAccessResponse>.Failure(new ApplicationError(
                 "media_unavailable", "The attached media is unavailable.", ApplicationErrorType.NotFound));
     }

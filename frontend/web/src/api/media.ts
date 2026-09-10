@@ -42,6 +42,16 @@ export const mediaApi = {
     await mediaApi.complete(uploadIntent.mediaId)
     return uploadIntent.mediaId
   },
+  uploadFiles: async (files: readonly File[], onProgress?: (progress: number) => void) => {
+    const mediaIds: string[] = []
+    for (const [index, file] of files.entries()) {
+      const mediaId = await mediaApi.uploadFile(file, (fileProgress) => {
+        onProgress?.(Math.round(((index + fileProgress / 100) / files.length) * 100))
+      })
+      mediaIds.push(mediaId)
+    }
+    return mediaIds
+  },
 }
 
 function uploadToStorage(

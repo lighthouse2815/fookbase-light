@@ -258,6 +258,24 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var publicAccess = await stranger.GetAsync($"/api/posts/{publicPost.Id}/media/{mediaId}/access");
         var access = await ReadAsync<MediaAccessResponse>(publicAccess);
         Assert.Contains("signed=1", access.Url);
+        Assert.Equal("image", access.MediaType);
+        Assert.Equal("image/png", access.ContentType);
+    }
+
+    [Fact]
+    public async Task Media_access_includes_video_metadata_for_playback()
+    {
+        var users = await CreateUserIdsAsync(2);
+        var videoId = await CreateReadyMediaAsync(users[0], MediaType.Video);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var viewer = CreateAuthenticatedClient(users[1]);
+
+        var post = await CreatePostAsync(author, "video post", "public", [videoId]);
+        var access = await ReadAsync<MediaAccessResponse>(
+            await viewer.GetAsync($"/api/posts/{post.Id}/media/{videoId}/access"));
+
+        Assert.Equal("video", access.MediaType);
+        Assert.Equal("video/mp4", access.ContentType);
     }
 
     [Fact]
@@ -307,7 +325,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.True((await friends.BlockAsync(blockerUserId, blockedUserId)).Succeeded);
     }
 
-    private async Task<Guid> CreateReadyMediaAsync(Guid ownerUserId)
+    private async Task<Guid> CreateReadyMediaAsync(Guid ownerUserId, MediaType mediaType = MediaType.Image)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
@@ -316,10 +334,10 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var asset = MediaAsset.CreatePending(
             mediaId,
             ownerUserId,
-            MediaType.Image,
-            $"{ownerUserId:N}/{mediaId:N}.png",
-            "photo.png",
-            "image/png",
+            mediaType,
+            $"{ownerUserId:N}/{mediaId:N}{(mediaType == MediaType.Video ? ".mp4" : ".png")}",
+            mediaType == MediaType.Video ? "video.mp4" : "photo.png",
+            mediaType == MediaType.Video ? "video/mp4" : "image/png",
             11,
             now,
             now.AddMinutes(5));

@@ -73,10 +73,10 @@ export default function FeedPage() {
 
   const handleNewPost = async (
     content: string,
-    file: File | null,
+    files: readonly File[],
     onUploadProgress: (progress: number) => void,
   ) => {
-    const mediaIds = file ? [await mediaApi.uploadFile(file, onUploadProgress)] : []
+    const mediaIds = await mediaApi.uploadFiles(files, onUploadProgress)
     const post = await postsApi.create({ content, privacy: 'public', mediaIds })
     setPosts((currentPosts) => [post, ...currentPosts])
     setTotalPosts((currentTotal) => currentTotal + 1)

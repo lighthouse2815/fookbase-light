@@ -73,4 +73,6 @@ export interface MediaAccess {
   mediaId: string
   url: string
   expiresAtUtc: string
+  mediaType: 'image' | 'video'
+  contentType: string
 }

@@ -164,7 +164,12 @@ public sealed class MediaService(
         var expiry = TimeSpan.FromMinutes(options.DownloadUrlExpiryMinutes);
         var url = await objectStorage.CreatePresignedGetUrlAsync(asset.ObjectKey, expiry, cancellationToken);
         return ApplicationResult<MediaReadUrlResponse>.Success(
-            new MediaReadUrlResponse(asset.Id, url, timeProvider.GetUtcNow().Add(expiry)));
+            new MediaReadUrlResponse(
+                asset.Id,
+                url,
+                timeProvider.GetUtcNow().Add(expiry),
+                asset.MediaType.ToString().ToLowerInvariant(),
+                asset.ContentType));
     }
 
     public async Task<ApplicationResult> ValidatePostMediaAsync(

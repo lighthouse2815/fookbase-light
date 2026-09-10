@@ -29,6 +29,7 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
 
         builder.UseEnvironment("Testing");
         ConfigureModuleConnections(builder, mediaConnectionString);
+        builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-must-have-32-characters");
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
