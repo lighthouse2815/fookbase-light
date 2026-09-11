@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Stories.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,9 +16,14 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.Property(message => message.CreatedAtUtc).IsRequired();
         builder.HasIndex(message => new { message.ConversationId, message.CreatedAtUtc, message.Id });
         builder.HasIndex(message => message.ReplyToMessageId);
+        builder.HasIndex(message => message.StoryId);
         builder.HasOne<Message>()
             .WithMany()
             .HasForeignKey(message => message.ReplyToMessageId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Story>()
+            .WithMany()
+            .HasForeignKey(message => message.StoryId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -5,6 +5,7 @@ using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -301,6 +302,50 @@ public sealed class MediaService(
             : ApplicationResult.Success();
     }
 
+    public async Task<ApplicationResult> ValidateStoryMediaAsync(
+        Guid ownerUserId,
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
+        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_story_media", "Story media must be ready.", ApplicationErrorType.Conflict));
+        }
+
+        if (asset.OwnerUserId != ownerUserId)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "media_not_owned", "Only the media owner can publish it as a story.",
+                ApplicationErrorType.Forbidden));
+        }
+
+        if (asset.MediaType == MediaType.Image)
+        {
+            return ApplicationResult.Success();
+        }
+
+        if (asset.MediaType != MediaType.Video ||
+            string.IsNullOrWhiteSpace(asset.ProcessedObjectKey) ||
+            string.IsNullOrWhiteSpace(asset.PosterObjectKey) ||
+            asset.DurationMs is null || asset.Width is null || asset.Height is null)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_story_video", "Story video must be fully processed and ready.",
+                ApplicationErrorType.Conflict));
+        }
+
+        return asset.DurationMs > options.MaximumStoryVideoDurationMs
+            ? ApplicationResult.Failure(new ApplicationError(
+                "invalid_story_duration",
+                $"Story videos cannot exceed {options.MaximumStoryVideoDurationMs} milliseconds.",
+                ApplicationErrorType.Validation))
+            : ApplicationResult.Success();
+    }
+
     public async Task<ApplicationResult> ValidateProfileImageAsync(
         Guid ownerUserId,
         Guid mediaId,
@@ -511,13 +556,16 @@ public sealed class MediaService(
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByConversationPhoto = await dbContext.Conversations.AsNoTracking()
             .AnyAsync(conversation => conversation.PhotoMediaId == mediaId, cancellationToken);
+        var isReferencedByStory = await dbContext.StoryMediaReferences.AsNoTracking()
+            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         if (isReferencedByPost ||
             isReferencedByProfile ||
             isReferencedByActiveProfile ||
             isReferencedByGroupCover ||
             isReferencedByActiveGroup ||
             isReferencedByMessage ||
-            isReferencedByConversationPhoto)
+            isReferencedByConversationPhoto ||
+            isReferencedByStory)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.Conflict));

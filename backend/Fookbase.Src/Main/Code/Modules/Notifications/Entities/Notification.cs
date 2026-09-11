@@ -10,7 +10,8 @@ public enum NotificationType
     PostMention,
     CommentMention,
     GroupInvite,
-    GroupJoinApproved
+    GroupJoinApproved,
+    StoryReaction
 }
 
 public enum NotificationEntityType
@@ -20,7 +21,8 @@ public enum NotificationEntityType
     Comment,
     Group,
     GroupJoinRequest,
-    GroupInvite
+    GroupInvite,
+    Story
 }
 
 public sealed class Notification

@@ -15,6 +15,8 @@ using Fookbase.Api.Modules.Messages;
 using Fookbase.Api.Modules.Notifications;
 using Fookbase.Api.Modules.Users;
 using Fookbase.Api.Modules.Reels;
+using Fookbase.Api.Modules.Stories;
+using Fookbase.Api.Modules.Stories.Config;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -93,6 +95,13 @@ internal static class ModuleServiceCollectionExtensions
 
     public static IServiceCollection AddReelsModule(this IServiceCollection services) =>
         services.AddReelsInfrastructure();
+
+    public static IServiceCollection AddStoriesModule(
+        this IServiceCollection services,
+        IConfiguration configuration) =>
+        services.AddStoriesInfrastructure(
+            configuration.GetSection(StoriesOptions.SectionName).Get<StoriesOptions>()
+                ?? new StoriesOptions());
 
     public static IServiceCollection AddAdminModule(this IServiceCollection services) =>
         services.AddAdminInfrastructure();

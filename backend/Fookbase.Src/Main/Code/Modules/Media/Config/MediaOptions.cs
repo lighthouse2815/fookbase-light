@@ -18,6 +18,7 @@ public sealed class MediaOptions
     public int VideoProcessingRetryDelaySeconds { get; init; } = 15;
     public int MinimumReelDurationMs { get; init; } = 1_000;
     public int MaximumReelDurationMs { get; init; } = 180_000;
+    public int MaximumStoryVideoDurationMs { get; init; } = 60_000;
 
     public void Validate()
     {
@@ -27,7 +28,7 @@ public sealed class MediaOptions
             VideoProcessingIntervalSeconds <= 0 || VideoProcessingBatchSize <= 0 ||
             VideoProcessingTimeoutSeconds <= 0 || VideoProcessingRetryLimit <= 0 ||
             VideoProcessingRetryDelaySeconds <= 0 || MinimumReelDurationMs <= 0 ||
-            MaximumReelDurationMs < MinimumReelDurationMs)
+            MaximumReelDurationMs < MinimumReelDurationMs || MaximumStoryVideoDurationMs <= 0)
         {
             throw new InvalidOperationException("Media size, expiry and cleanup settings must be positive.");
         }

@@ -19,7 +19,8 @@ public sealed class Message
         MessageType type,
         string? content,
         Guid? replyToMessageId,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        Guid? storyId)
     {
         Id = id;
         ConversationId = conversationId;
@@ -28,6 +29,7 @@ public sealed class Message
         Content = content;
         ReplyToMessageId = replyToMessageId;
         CreatedAtUtc = createdAtUtc;
+        StoryId = storyId;
     }
 
     public Guid Id { get; private set; }
@@ -41,6 +43,8 @@ public sealed class Message
     public string? Content { get; private set; }
 
     public Guid? ReplyToMessageId { get; private set; }
+
+    public Guid? StoryId { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
@@ -57,8 +61,9 @@ public sealed class Message
         MessageType type,
         string? content,
         Guid? replyToMessageId,
-        DateTimeOffset createdAtUtc) =>
-        new(id, conversationId, senderUserId, type, content, replyToMessageId, createdAtUtc);
+        DateTimeOffset createdAtUtc,
+        Guid? storyId = null) =>
+        new(id, conversationId, senderUserId, type, content, replyToMessageId, createdAtUtc, storyId);
 
     public void MarkRead(DateTimeOffset readAtUtc) => ReadAtUtc ??= readAtUtc;
 

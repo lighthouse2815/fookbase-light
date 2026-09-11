@@ -6,6 +6,7 @@ using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Reels.Entities;
+using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -69,6 +70,14 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
 
     public DbSet<ReelView> ReelViews => Set<ReelView>();
+
+    public DbSet<Story> Stories => Set<Story>();
+
+    public DbSet<StoryMediaReference> StoryMediaReferences => Set<StoryMediaReference>();
+
+    public DbSet<StoryView> StoryViews => Set<StoryView>();
+
+    public DbSet<StoryReaction> StoryReactions => Set<StoryReaction>();
 
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
 

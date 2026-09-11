@@ -20,6 +20,7 @@ using Fookbase.Api.Modules.Notifications.Endpoints;
 using Fookbase.Api.Modules.Notifications.Hubs;
 using Fookbase.Api.Modules.Posts.Endpoints;
 using Fookbase.Api.Modules.Reels.Endpoints;
+using Fookbase.Api.Modules.Stories.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -64,6 +65,7 @@ builder.Services.AddNotificationsModule();
 builder.Services.AddPostsModule(builder.Configuration);
 builder.Services.AddMediaModule(builder.Configuration);
 builder.Services.AddReelsModule();
+builder.Services.AddStoriesModule(builder.Configuration);
 builder.Services.AddAdminModule();
 
 jwtOptions.Validate();
@@ -202,6 +204,7 @@ app.MapReportEndpoints();
 app.MapAdminEndpoints();
 app.MapMediaEndpoints();
 app.MapReelEndpoints();
+app.MapStoryEndpoints();
 
 app.Run();
 

@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Hubs;
 using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -242,8 +243,51 @@ public sealed class NotificationService(
                     recipientUserId,
                     notification.EntityId.Value,
                     cancellationToken),
+            NotificationEntityType.Story => notification.EntityId is not null &&
+                await CanAccessStoryAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
             _ => true
         };
+    }
+
+    private async Task<bool> CanAccessStoryAsync(
+        Guid recipientUserId,
+        Guid storyId,
+        CancellationToken cancellationToken)
+    {
+        var story = await dbContext.Stories.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == storyId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (story is null)
+        {
+            return false;
+        }
+
+        if (story.AuthorUserId == recipientUserId)
+        {
+            return true;
+        }
+
+        if (story.ExpiresAtUtc <= timeProvider.GetUtcNow() ||
+            await dbContext.BlockedUsers.AsNoTracking().AnyAsync(
+                block =>
+                    (block.BlockerUserId == recipientUserId && block.BlockedUserId == story.AuthorUserId) ||
+                    (block.BlockerUserId == story.AuthorUserId && block.BlockedUserId == recipientUserId),
+                cancellationToken))
+        {
+            return false;
+        }
+
+        if (story.Privacy == PostPrivacy.Public)
+        {
+            return true;
+        }
+
+        return story.Privacy == PostPrivacy.Friends &&
+            await dbContext.Friendships.AsNoTracking().AnyAsync(
+                friendship =>
+                    (friendship.UserId1 == recipientUserId && friendship.UserId2 == story.AuthorUserId) ||
+                    (friendship.UserId1 == story.AuthorUserId && friendship.UserId2 == recipientUserId),
+                cancellationToken);
     }
 
     private async Task<bool> CanAccessCommentAsync(

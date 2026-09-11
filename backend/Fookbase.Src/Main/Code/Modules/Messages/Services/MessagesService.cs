@@ -2,12 +2,15 @@ using System.Text;
 using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
+using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Messages.Common;
 using Fookbase.Api.Modules.Messages.DTOs.Requests;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
+using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -192,7 +195,7 @@ public sealed class MessagesService(
                 (message.CreatedAtUtc == cursor.CreatedAtUtc && message.Id.CompareTo(cursor.MessageId) < 0));
         var candidates = await query.OrderByDescending(message => message.CreatedAtUtc).ThenByDescending(message => message.Id).Take(limit + 1).ToListAsync(cancellationToken);
         var page = candidates.Take(limit).ToArray();
-        var items = (await BuildMessageResponsesAsync(page, blockedUserIds, cancellationToken)).Reverse().ToArray();
+        var items = (await BuildMessageResponsesAsync(page, actorUserId, blockedUserIds, cancellationToken)).Reverse().ToArray();
         return ApplicationResult<MessageHistoryResponse>.Success(new MessageHistoryResponse(items,
             candidates.Count > limit && page.Length > 0 ? EncodeMessageCursor(page[^1]) : null, candidates.Count > limit));
     }
@@ -229,7 +232,41 @@ public sealed class MessagesService(
         return ApplicationResult<bool>.Success(true);
     }
 
-    public async Task<ApplicationResult<MessageResponse>> SendMessageAsync(Guid actorUserId, Guid conversationId, SendMessageRequest request, CancellationToken cancellationToken = default)
+    public Task<ApplicationResult<MessageResponse>> SendMessageAsync(
+        Guid actorUserId,
+        Guid conversationId,
+        SendMessageRequest request,
+        CancellationToken cancellationToken = default) =>
+        SendMessageCoreAsync(actorUserId, conversationId, request, null, cancellationToken);
+
+    public async Task<ApplicationResult<MessageResponse>> SendStoryReplyAsync(
+        Guid actorUserId,
+        Guid storyAuthorUserId,
+        Guid storyId,
+        string? content,
+        CancellationToken cancellationToken = default)
+    {
+        var conversation = await GetOrCreateDirectConversationAsync(
+            actorUserId, storyAuthorUserId, cancellationToken);
+        if (!conversation.Succeeded)
+        {
+            return ApplicationResult<MessageResponse>.Failure(conversation.Error!);
+        }
+
+        return await SendMessageCoreAsync(
+            actorUserId,
+            conversation.Value!.Id,
+            new SendMessageRequest(content),
+            storyId,
+            cancellationToken);
+    }
+
+    private async Task<ApplicationResult<MessageResponse>> SendMessageCoreAsync(
+        Guid actorUserId,
+        Guid conversationId,
+        SendMessageRequest request,
+        Guid? storyId,
+        CancellationToken cancellationToken)
     {
         var attachmentIds = request.MediaIds?.ToArray() ?? [];
         var content = request.Content?.Trim();
@@ -254,7 +291,7 @@ public sealed class MessagesService(
         }
         var now = timeProvider.GetUtcNow();
         var message = Message.Create(Guid.NewGuid(), conversationId, actorUserId, attachmentIds.Length == 0 ? MessageType.Text : MessageType.Media,
-            string.IsNullOrWhiteSpace(content) ? null : content, request.ReplyToMessageId, now);
+            string.IsNullOrWhiteSpace(content) ? null : content, request.ReplyToMessageId, now, storyId);
         conversation.RecordMessage(now);
         dbContext.Messages.Add(message);
         dbContext.MessageAttachments.AddRange(attachmentIds.Select((mediaId, index) => MessageAttachment.Create(message.Id, mediaId, index)));
@@ -267,11 +304,11 @@ public sealed class MessagesService(
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         var actorBlockedUserIds = (await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken)).BlockedUserIds;
-        var response = (await BuildMessageResponsesAsync([message], actorBlockedUserIds, cancellationToken))[0];
+        var response = (await BuildMessageResponsesAsync([message], actorUserId, actorBlockedUserIds, cancellationToken))[0];
         foreach (var recipient in recipients)
         {
             var recipientBlockedUserIds = (await friendsService.GetAccessSnapshotAsync(recipient, cancellationToken)).BlockedUserIds;
-            var recipientResponse = (await BuildMessageResponsesAsync([message], recipientBlockedUserIds, cancellationToken))[0];
+            var recipientResponse = (await BuildMessageResponsesAsync([message], recipient, recipientBlockedUserIds, cancellationToken))[0];
             var sidebar = await BuildConversationResponseAsync(conversation, recipient, cancellationToken);
             await hubContext.Clients.User(recipient.ToString()).SendAsync("MessageReceived", new IncomingMessageResponse(sidebar, recipientResponse), cancellationToken);
             await hubContext.Clients.User(recipient.ToString()).SendAsync("MessageCreated", recipientResponse, cancellationToken);
@@ -292,7 +329,7 @@ public sealed class MessagesService(
         catch (InvalidOperationException) { return Conflict<MessageResponse>("message_cannot_be_edited", "Only active text messages can be edited."); }
         await dbContext.SaveChangesAsync(cancellationToken);
         var actorBlockedUserIds = (await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken)).BlockedUserIds;
-        var response = (await BuildMessageResponsesAsync([message], actorBlockedUserIds, cancellationToken))[0];
+        var response = (await BuildMessageResponsesAsync([message], actorUserId, actorBlockedUserIds, cancellationToken))[0];
         await NotifyMessageChangedAsync(access.Value!.Conversation, actorUserId, "MessageEdited", message, cancellationToken);
         return ApplicationResult<MessageResponse>.Success(response);
     }
@@ -449,7 +486,7 @@ public sealed class MessagesService(
         var blocked = (await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken)).BlockedUserIds;
         var messages = await dbContext.Messages.AsNoTracking().Where(message => message.ConversationId == conversationId && message.DeletedAtUtc == null && message.Content != null && !blocked.Contains(message.SenderUserId) && EF.Functions.ILike(message.Content, $"%{query}%"))
             .OrderByDescending(message => message.CreatedAtUtc).ThenByDescending(message => message.Id).Take(50).ToListAsync(cancellationToken);
-        return ApplicationResult<IReadOnlyList<MessageResponse>>.Success(await BuildMessageResponsesAsync(messages, blocked, cancellationToken));
+        return ApplicationResult<IReadOnlyList<MessageResponse>>.Success(await BuildMessageResponsesAsync(messages, actorUserId, blocked, cancellationToken));
     }
 
     public async Task<ApplicationResult<MediaReadUrlResponse>> CreateMessageMediaReadUrlAsync(Guid actorUserId, Guid mediaId, CancellationToken cancellationToken = default)
@@ -496,7 +533,7 @@ public sealed class MessagesService(
         var messageMap = (await dbContext.Messages.AsNoTracking().Where(message => messageIds.Contains(message.Id)).ToListAsync(cancellationToken)).ToDictionary(message => message.Id);
         var participants = await LoadParticipantMapAsync(conversationIds, cancellationToken);
         var unread = await GetUnreadCountsAsync(actorUserId, conversationIds, blocked, cancellationToken);
-        var responses = (await BuildMessageResponsesAsync(messageMap.Values, blocked, cancellationToken)).ToDictionary(message => message.Id);
+        var responses = (await BuildMessageResponsesAsync(messageMap.Values, actorUserId, blocked, cancellationToken)).ToDictionary(message => message.Id);
         var items = notifications.Where(notification => conversations.ContainsKey(notification.ConversationId) && responses.ContainsKey(notification.MessageId)).Select(notification => new IncomingMessageResponse(
             ToConversationResponse(conversations[notification.ConversationId], actorUserId, participants[notification.ConversationId].Single(participant => participant.UserId == actorUserId), messageMap[notification.MessageId], unread.GetValueOrDefault(notification.ConversationId), participants[notification.ConversationId]), responses[notification.MessageId])).ToArray();
         return ApplicationResult<PagedResponse<IncomingMessageResponse>>.Success(new PagedResponse<IncomingMessageResponse>(items, offset, limit, total));
@@ -590,7 +627,11 @@ public sealed class MessagesService(
                       select new { ConversationId = groupByConversation.Key, Count = groupByConversation.Count() }).ToDictionaryAsync(item => item.ConversationId, item => item.Count, cancellationToken);
     }
 
-    private async Task<IReadOnlyList<MessageResponse>> BuildMessageResponsesAsync(IEnumerable<Message> source, IReadOnlySet<Guid> blockedUserIds, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<MessageResponse>> BuildMessageResponsesAsync(
+        IEnumerable<Message> source,
+        Guid viewerUserId,
+        IReadOnlySet<Guid> blockedUserIds,
+        CancellationToken cancellationToken)
     {
         var messages = source.ToArray();
         if (messages.Length == 0) return [];
@@ -599,7 +640,64 @@ public sealed class MessagesService(
         var attachments = await dbContext.MessageAttachments.AsNoTracking().Where(attachment => ids.Contains(attachment.MessageId)).ToListAsync(cancellationToken);
         var reactions = await dbContext.MessageReactions.AsNoTracking().Where(reaction => ids.Contains(reaction.MessageId) && !blockedUserIds.Contains(reaction.UserId)).ToListAsync(cancellationToken);
         var replies = replyIds.Length == 0 ? [] : await dbContext.Messages.AsNoTracking().Where(message => replyIds.Contains(message.Id) && !blockedUserIds.Contains(message.SenderUserId)).ToDictionaryAsync(message => message.Id, cancellationToken);
-        return messages.Select(message => ToMessageResponse(message, replies.GetValueOrDefault(message.ReplyToMessageId ?? Guid.Empty), attachments.Where(attachment => attachment.MessageId == message.Id), reactions.Where(reaction => reaction.MessageId == message.Id))).ToArray();
+        var stories = await LoadStoryReferencesAsync(messages, viewerUserId, blockedUserIds, cancellationToken);
+        return messages.Select(message => ToMessageResponse(message, replies.GetValueOrDefault(message.ReplyToMessageId ?? Guid.Empty), attachments.Where(attachment => attachment.MessageId == message.Id), reactions.Where(reaction => reaction.MessageId == message.Id), stories.GetValueOrDefault(message.Id))).ToArray();
+    }
+
+    private async Task<Dictionary<Guid, MessageStoryReferenceResponse>> LoadStoryReferencesAsync(
+        IReadOnlyCollection<Message> messages,
+        Guid viewerUserId,
+        IReadOnlySet<Guid> blockedUserIds,
+        CancellationToken cancellationToken)
+    {
+        var references = messages
+            .Where(message => message.DeletedAtUtc is null && message.StoryId is not null)
+            .Select(message => new { message.Id, StoryId = message.StoryId!.Value })
+            .ToArray();
+        if (references.Length == 0)
+        {
+            return [];
+        }
+
+        var storyIds = references.Select(reference => reference.StoryId).Distinct().ToArray();
+        var now = timeProvider.GetUtcNow();
+        var stories = await dbContext.Stories.AsNoTracking()
+            .Where(story => storyIds.Contains(story.Id) && story.DeletedAtUtc == null &&
+                            story.ExpiresAtUtc > now)
+            .ToDictionaryAsync(story => story.Id, cancellationToken);
+        var snapshot = await friendsService.GetAccessSnapshotAsync(viewerUserId, cancellationToken);
+        var mediaIds = stories.Values.Select(story => story.MediaId).Distinct().ToArray();
+        var mediaTypes = mediaIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await dbContext.MediaAssets.AsNoTracking()
+                .Where(asset => mediaIds.Contains(asset.Id) && asset.Status == MediaStatus.Ready &&
+                                asset.DeletedAtUtc == null)
+                .Select(asset => new { asset.Id, asset.MediaType })
+                .ToDictionaryAsync(
+                    item => item.Id,
+                    item => item.MediaType.ToString().ToLowerInvariant(),
+                    cancellationToken);
+        var result = new Dictionary<Guid, MessageStoryReferenceResponse>();
+        foreach (var reference in references)
+        {
+            if (!stories.TryGetValue(reference.StoryId, out var story) || story is null ||
+                !mediaTypes.TryGetValue(story.MediaId, out var mediaType))
+            {
+                result[reference.Id] = new MessageStoryReferenceResponse(reference.StoryId, false, null, null);
+                continue;
+            }
+
+            var available = story.AuthorUserId == viewerUserId ||
+                (!blockedUserIds.Contains(story.AuthorUserId) &&
+                 (story.Privacy == PostPrivacy.Public ||
+                  (story.Privacy == PostPrivacy.Friends &&
+                   snapshot.FriendUserIds.Contains(story.AuthorUserId))));
+            result[reference.Id] = available
+                ? new MessageStoryReferenceResponse(story.Id, true, story.Caption, mediaType)
+                : new MessageStoryReferenceResponse(story.Id, false, null, null);
+        }
+
+        return result;
     }
 
     private async Task<Guid[]> GetVisibleRecipientUserIdsAsync(Conversation conversation, Guid senderUserId, CancellationToken cancellationToken)
@@ -630,7 +728,7 @@ public sealed class MessagesService(
         foreach (var recipient in recipients)
         {
             var blockedUserIds = (await friendsService.GetAccessSnapshotAsync(recipient, cancellationToken)).BlockedUserIds;
-            var response = (await BuildMessageResponsesAsync([message], blockedUserIds, cancellationToken))[0];
+            var response = (await BuildMessageResponsesAsync([message], recipient, blockedUserIds, cancellationToken))[0];
             await hubContext.Clients.User(recipient.ToString()).SendAsync(eventName, response, cancellationToken);
         }
     }
@@ -646,13 +744,18 @@ public sealed class MessagesService(
         lastMessage is null ? null : ToMessageResponse(lastMessage, null, [], []), unreadCount, conversation.Type.ToString().ToLowerInvariant(), conversation.Title, conversation.PhotoMediaId,
         participants.Select(ToParticipantResponse).ToArray(), actor.MutedUntilUtc is not null && actor.MutedUntilUtc > DateTimeOffset.UtcNow, actor.ArchivedAtUtc is not null);
     private static ConversationParticipantResponse ToParticipantResponse(ConversationParticipant participant) => new(participant.UserId, participant.Role.ToString().ToLowerInvariant(), participant.JoinedAtUtc, participant.LeftAtUtc, participant.LastReadMessageId, participant.LastReadAtUtc, participant.LastDeliveredMessageId, participant.Nickname);
-    private static MessageResponse ToMessageResponse(Message message, Message? replyTo, IEnumerable<MessageAttachment> attachments, IEnumerable<MessageReaction> reactions) => new(
+    private static MessageResponse ToMessageResponse(Message message, Message? replyTo, IEnumerable<MessageAttachment> attachments, IEnumerable<MessageReaction> reactions, MessageStoryReferenceResponse? story = null) => new(
         message.Id, message.ConversationId, message.SenderUserId, message.DeletedAtUtc is null ? message.Content : null, message.CreatedAtUtc, message.ReadAtUtc,
         message.Type.ToString().ToLowerInvariant(), message.ReplyToMessageId,
         replyTo is null ? null : new MessageReplyPreviewResponse(replyTo.Id, replyTo.SenderUserId, replyTo.DeletedAtUtc is null ? replyTo.Content : null, replyTo.Type.ToString().ToLowerInvariant(), replyTo.DeletedAtUtc is not null),
         message.EditedAtUtc, message.DeletedAtUtc,
         message.DeletedAtUtc is null ? attachments.OrderBy(attachment => attachment.SortOrder).Select(attachment => new MessageAttachmentResponse(attachment.MediaId, attachment.SortOrder)).ToArray() : [],
-        message.DeletedAtUtc is null ? reactions.Select(ToReactionResponse).ToArray() : []);
+        message.DeletedAtUtc is null ? reactions.Select(ToReactionResponse).ToArray() : [],
+        message.DeletedAtUtc is null
+            ? story ?? (message.StoryId is null
+                ? null
+                : new MessageStoryReferenceResponse(message.StoryId.Value, false, null, null))
+            : null);
     private static MessageReactionResponse ToReactionResponse(MessageReaction reaction) => new(reaction.UserId, reaction.Type.ToString().ToLowerInvariant());
     private static bool CanManageConversation(ConversationParticipantRole role) => role is ConversationParticipantRole.Owner or ConversationParticipantRole.Admin;
     private static bool CanRemoveParticipant(ConversationParticipantRole actor, ConversationParticipantRole target, bool self) => target != ConversationParticipantRole.Owner && (actor == ConversationParticipantRole.Owner || (actor == ConversationParticipantRole.Admin && target == ConversationParticipantRole.Member && !self));
