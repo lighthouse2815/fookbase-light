@@ -210,6 +210,7 @@ public sealed class NotificationService(
         CancellationToken cancellationToken)
     {
         if (notification.ActorUserId is not null &&
+            !await IsPageContentNotificationAsync(notification, cancellationToken) &&
             await dbContext.BlockedUsers.AsNoTracking().AnyAsync(
                 block =>
                     (block.BlockerUserId == recipientUserId &&
@@ -245,7 +246,31 @@ public sealed class NotificationService(
                     cancellationToken),
             NotificationEntityType.Story => notification.EntityId is not null &&
                 await CanAccessStoryAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
+            NotificationEntityType.Page => notification.EntityId is not null &&
+                await CanAccessPageAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
+            NotificationEntityType.PageRoleInvitation => notification.EntityId is not null &&
+                await CanSurfacePageRoleInvitationAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
             _ => true
+        };
+    }
+
+    private Task<bool> IsPageContentNotificationAsync(Notification notification, CancellationToken cancellationToken)
+    {
+        if (notification.EntityId is null)
+        {
+            return Task.FromResult(false);
+        }
+
+        return notification.EntityType switch
+        {
+            NotificationEntityType.Post => dbContext.Posts.AsNoTracking().AnyAsync(post =>
+                post.Id == notification.EntityId.Value && post.ContainerType == PostContainerType.Page, cancellationToken),
+            NotificationEntityType.Comment =>
+                (from comment in dbContext.Comments.AsNoTracking()
+                 join post in dbContext.Posts.AsNoTracking() on comment.PostId equals post.Id
+                 where comment.Id == notification.EntityId.Value && post.ContainerType == PostContainerType.Page
+                 select comment.Id).AnyAsync(cancellationToken),
+            _ => Task.FromResult(false)
         };
     }
 
@@ -321,6 +346,11 @@ public sealed class NotificationService(
             return await CanAccessGroupAsync(recipientUserId, post.ContainerId, cancellationToken);
         }
 
+        if (post.ContainerType == PostContainerType.Page)
+        {
+            return await CanAccessPageAsync(recipientUserId, post.ContainerId, cancellationToken);
+        }
+
         if (post.AuthorUserId == recipientUserId)
         {
             return true;
@@ -358,10 +388,36 @@ public sealed class NotificationService(
             cancellationToken);
         return group is not null &&
             (group.Privacy == Fookbase.Api.Modules.Groups.Entities.GroupPrivacy.Public ||
-             await dbContext.GroupMembers.AsNoTracking().AnyAsync(
-                 member => member.GroupId == groupId && member.UserId == recipientUserId,
+            await dbContext.GroupMembers.AsNoTracking().AnyAsync(
+                member => member.GroupId == groupId && member.UserId == recipientUserId,
+                cancellationToken));
+    }
+
+    private async Task<bool> CanAccessPageAsync(
+        Guid recipientUserId,
+        Guid pageId,
+        CancellationToken cancellationToken)
+    {
+        var page = await dbContext.Pages.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == pageId && item.DeletedAtUtc == null,
+            cancellationToken);
+        return page is not null &&
+            (page.Status == Fookbase.Api.Modules.Pages.Entities.PageStatus.Published ||
+             await dbContext.PageMembers.AsNoTracking().AnyAsync(
+                 member => member.PageId == pageId && member.UserId == recipientUserId,
                  cancellationToken));
     }
+
+    private Task<bool> CanSurfacePageRoleInvitationAsync(
+        Guid recipientUserId,
+        Guid invitationId,
+        CancellationToken cancellationToken) =>
+        (from invitation in dbContext.PageRoleInvitations.AsNoTracking()
+         join page in dbContext.Pages.AsNoTracking() on invitation.PageId equals page.Id
+         where invitation.Id == invitationId && invitation.InviteeUserId == recipientUserId &&
+               invitation.Status == Fookbase.Api.Modules.Pages.Entities.PageRoleInvitationStatus.Pending &&
+               page.DeletedAtUtc == null
+         select invitation.Id).AnyAsync(cancellationToken);
 
     private Task<bool> CanSurfaceGroupJoinRequestAsync(
         Guid recipientUserId,

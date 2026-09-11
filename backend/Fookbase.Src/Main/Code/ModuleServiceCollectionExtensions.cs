@@ -17,6 +17,7 @@ using Fookbase.Api.Modules.Users;
 using Fookbase.Api.Modules.Reels;
 using Fookbase.Api.Modules.Stories;
 using Fookbase.Api.Modules.Stories.Config;
+using Fookbase.Api.Modules.Pages;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -64,6 +65,10 @@ internal static class ModuleServiceCollectionExtensions
     public static IServiceCollection AddGroupsModule(
         this IServiceCollection services) =>
         services.AddGroupsInfrastructure();
+
+    public static IServiceCollection AddPagesModule(
+        this IServiceCollection services) =>
+        services.AddPagesInfrastructure();
 
     public static IServiceCollection AddMessagesModule(
         this IServiceCollection services) =>

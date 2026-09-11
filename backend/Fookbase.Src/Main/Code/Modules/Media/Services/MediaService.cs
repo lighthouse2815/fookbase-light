@@ -5,6 +5,7 @@ using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -400,6 +401,32 @@ public sealed class MediaService(
                 ApplicationErrorType.Validation));
     }
 
+    public async Task<ApplicationResult> ValidatePageImageAsync(
+        Guid ownerUserId,
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
+        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_media", "The Page image must be ready.", ApplicationErrorType.Validation));
+        }
+
+        if (asset.OwnerUserId != ownerUserId)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "media_not_owned", "Only the media owner can use this Page image.", ApplicationErrorType.Forbidden));
+        }
+
+        return asset.MediaType == MediaType.Image
+            ? ApplicationResult.Success()
+            : ApplicationResult.Failure(new ApplicationError(
+                "invalid_page_media_type", "Page avatar and cover media must be images.", ApplicationErrorType.Validation));
+    }
+
     public async Task<ApplicationResult> SynchronizePostReferencesAsync(
         Guid ownerUserId,
         Guid postId,
@@ -515,6 +542,41 @@ public sealed class MediaService(
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task SynchronizePageReferencesAsync(
+        Guid pageId,
+        Guid? avatarMediaId,
+        Guid? coverMediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var desiredMediaIds = new Dictionary<PageMediaSlot, Guid>();
+        if (avatarMediaId is not null)
+        {
+            desiredMediaIds[PageMediaSlot.Avatar] = avatarMediaId.Value;
+        }
+
+        if (coverMediaId is not null)
+        {
+            desiredMediaIds[PageMediaSlot.Cover] = coverMediaId.Value;
+        }
+
+        var currentReferences = await dbContext.PageMediaReferences
+            .Where(reference => reference.PageId == pageId)
+            .ToListAsync(cancellationToken);
+        dbContext.PageMediaReferences.RemoveRange(currentReferences.Where(reference =>
+            !desiredMediaIds.TryGetValue(reference.Slot, out var desiredMediaId) || desiredMediaId != reference.MediaId));
+        foreach (var (slot, mediaId) in desiredMediaIds)
+        {
+            if (currentReferences.Any(reference => reference.Slot == slot && reference.MediaId == mediaId))
+            {
+                continue;
+            }
+
+            dbContext.PageMediaReferences.Add(PageMediaReference.Create(pageId, slot, mediaId, timeProvider.GetUtcNow()));
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<ApplicationResult> DeleteAsync(
         Guid ownerUserId,
         Guid mediaId,
@@ -552,6 +614,11 @@ public sealed class MediaService(
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByActiveGroup = await dbContext.Groups.AsNoTracking()
             .AnyAsync(group => group.CoverMediaId == mediaId && group.DeletedAtUtc == null, cancellationToken);
+        var isReferencedByPage = await dbContext.PageMediaReferences
+            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
+        var isReferencedByActivePage = await dbContext.Pages.AsNoTracking()
+            .AnyAsync(page => (page.AvatarMediaId == mediaId || page.CoverMediaId == mediaId) && page.DeletedAtUtc == null,
+                cancellationToken);
         var isReferencedByMessage = await dbContext.MessageAttachments.AsNoTracking()
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByConversationPhoto = await dbContext.Conversations.AsNoTracking()
@@ -563,6 +630,8 @@ public sealed class MediaService(
             isReferencedByActiveProfile ||
             isReferencedByGroupCover ||
             isReferencedByActiveGroup ||
+            isReferencedByPage ||
+            isReferencedByActivePage ||
             isReferencedByMessage ||
             isReferencedByConversationPhoto ||
             isReferencedByStory)

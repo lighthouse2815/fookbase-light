@@ -1,5 +1,6 @@
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Groups.Services;
+using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Services;
@@ -12,6 +13,7 @@ public sealed class PostsUseCase(
     PostsService postsService,
     FriendsService friendsService,
     GroupPostAccessService groupPostAccessService,
+    PagePostAccessService pagePostAccessService,
     Fookbase.Api.Modules.Media.Services.MediaService mediaService,
     FookbaseDbContext dbContext)
 {
@@ -110,6 +112,60 @@ public sealed class PostsUseCase(
 
             var references = await mediaService.SynchronizePostReferencesAsync(
                 actorUserId, result.Value!.Id, mediaIds, cancellationToken);
+            if (!references.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return result;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+    }
+
+    public async Task<ApplicationResult<PostResponse>> CreatePagePostAsync(
+        Guid actorUserId,
+        Guid pageId,
+        string content,
+        IReadOnlyList<Guid> mediaIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await pagePostAccessService.CanCreatePostAsync(pageId, actorUserId, cancellationToken))
+        {
+            return ApplicationResult<PostResponse>.Failure(new ApplicationError(
+                "page_post_forbidden", "Only Page owners, admins, and editors can publish Page posts.",
+                ApplicationErrorType.Forbidden));
+        }
+
+        var input = postsService.ValidatePostRequest(content, "public", mediaIds);
+        if (!input.Succeeded)
+        {
+            return ApplicationResult<PostResponse>.Failure(input.Error!);
+        }
+
+        var mediaError = await ValidatePostMediaAsync(actorUserId, mediaIds, cancellationToken);
+        if (mediaError is not null)
+        {
+            return ApplicationResult<PostResponse>.Failure(mediaError);
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var result = await postsService.CreatePostInPageAsync(actorUserId, pageId, content, mediaIds, cancellationToken);
+            if (!result.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return result;
+            }
+
+            var references = await mediaService.SynchronizePostReferencesAsync(actorUserId, result.Value!.Id, mediaIds,
+                cancellationToken);
             if (!references.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);

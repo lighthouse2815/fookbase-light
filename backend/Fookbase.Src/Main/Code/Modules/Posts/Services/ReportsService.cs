@@ -1,6 +1,7 @@
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Groups.Services;
+using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
@@ -13,6 +14,7 @@ public sealed class ReportsService(
     FookbaseDbContext dbContext,
     FriendsService friendsService,
     GroupPostAccessService groupPostAccessService,
+    PagePostAccessService pagePostAccessService,
     TimeProvider timeProvider)
 {
     private const int MaximumPageSize = 100;
@@ -65,6 +67,12 @@ public sealed class ReportsService(
             {
                 return ApplicationResult<ContentReportResponse>.Failure(NotFound("The post was not found."));
             }
+        }
+
+        if (post.ContainerType == PostContainerType.Page &&
+            !await pagePostAccessService.CanViewPageAsync(post.ContainerId, reporterUserId, cancellationToken))
+        {
+            return ApplicationResult<ContentReportResponse>.Failure(NotFound("The post was not found."));
         }
 
         if (post.AuthorUserId == reporterUserId)

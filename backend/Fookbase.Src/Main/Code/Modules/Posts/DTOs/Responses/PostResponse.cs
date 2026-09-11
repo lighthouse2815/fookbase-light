@@ -10,4 +10,13 @@ public sealed record PostResponse(
     IReadOnlyList<Guid> MediaIds,
     int CommentCount,
     IReadOnlyDictionary<string, int> ReactionCounts,
-    string? ViewerReaction);
+    string? ViewerReaction,
+    PostDisplayIdentityResponse? DisplayAuthor = null,
+    string? ContainerType = null);
+
+public sealed record PostDisplayIdentityResponse(
+    string Type,
+    Guid Id,
+    string Username,
+    string Name,
+    string? AvatarUrl);

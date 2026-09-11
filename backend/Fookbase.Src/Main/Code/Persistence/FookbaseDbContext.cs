@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
+using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Reels.Entities;
 using Fookbase.Api.Modules.Stories.Entities;
@@ -40,6 +41,16 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<GroupRule> GroupRules => Set<GroupRule>();
 
     public DbSet<GroupCoverMediaReference> GroupCoverMediaReferences => Set<GroupCoverMediaReference>();
+
+    public DbSet<Page> Pages => Set<Page>();
+
+    public DbSet<PageMember> PageMembers => Set<PageMember>();
+
+    public DbSet<PageRoleInvitation> PageRoleInvitations => Set<PageRoleInvitation>();
+
+    public DbSet<PageFollower> PageFollowers => Set<PageFollower>();
+
+    public DbSet<PageMediaReference> PageMediaReferences => Set<PageMediaReference>();
 
     public DbSet<Conversation> Conversations => Set<Conversation>();
 

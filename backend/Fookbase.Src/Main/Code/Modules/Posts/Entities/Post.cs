@@ -10,7 +10,8 @@ public enum PostPrivacy
 public enum PostContainerType
 {
     Profile,
-    Group
+    Group,
+    Page
 }
 
 public enum PostType
