@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { mediaApi, type Media } from '../../api/media'
 import { postsApi, type Comment } from '../../api/posts'
@@ -8,6 +9,8 @@ const supportedVideoTypes = new Set(['video/mp4', 'video/webm'])
 const maximumVideoBytes = 500 * 1024 * 1024
 
 export default function ReelsPage() {
+  const [searchParams] = useSearchParams()
+  const requestedReelId = searchParams.get('reel')
   const [reels, setReels] = useState<Reel[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -22,7 +25,9 @@ export default function ReelsPage() {
     else setIsLoading(true)
     setError(null)
     try {
-      const page = await reelsApi.getFeed(cursor)
+      const page = requestedReelId && !cursor
+        ? { items: [await reelsApi.get(requestedReelId)], nextCursor: null }
+        : await reelsApi.getFeed(cursor)
       setReels((current) => append
         ? [...current, ...page.items.filter((item) => !current.some((reel) => reel.id === item.id))]
         : page.items)
@@ -33,7 +38,7 @@ export default function ReelsPage() {
       if (append) setIsLoadingMore(false)
       else setIsLoading(false)
     }
-  }, [])
+  }, [requestedReelId])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)

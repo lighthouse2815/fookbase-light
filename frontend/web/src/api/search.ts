@@ -35,6 +35,7 @@ export interface SearchPage {
 export interface SearchPost extends Pick<Post, 'authorUserId' | 'mediaIds' | 'commentCount' | 'reactionCounts' | 'containerType' | 'displayAuthor'> {
   postId: string
   snippet: string
+  containerId: string
   createdAtUtc: string
 }
 

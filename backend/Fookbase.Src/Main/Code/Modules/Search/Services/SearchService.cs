@@ -388,6 +388,7 @@ public sealed class SearchService(
             .ToListAsync(cancellationToken);
         var visible = rows.Take(limit).Select(item => item.Post).ToList();
         var responses = await postsService.LoadResponsesAsync(visible, context.Viewer.UserId, cancellationToken);
+        var postContainers = visible.ToDictionary(post => post.Id, post => post.ContainerId);
         return new(
             responses.Select(item => new SearchPostResponse(
                 item.Id,
@@ -398,6 +399,7 @@ public sealed class SearchService(
                 item.CommentCount,
                 item.ReactionCounts,
                 item.ContainerType ?? "profile",
+                postContainers[item.Id],
                 item.CreatedAtUtc)).ToList(),
             rows.Count > limit ? EncodeCursor(SearchType.Posts, query, rows[limit - 1].Rank, rows[limit - 1].Post.Id,
                 ticks: rows[limit - 1].Post.CreatedAtUtc.UtcDateTime.Ticks) : null);

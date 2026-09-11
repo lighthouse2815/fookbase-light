@@ -37,6 +37,7 @@ public sealed record SearchPostResponse(
     int CommentCount,
     IReadOnlyDictionary<string, int> ReactionCounts,
     string ContainerType,
+    Guid ContainerId,
     DateTimeOffset CreatedAtUtc);
 
 public sealed record SearchReelAuthorResponse(
