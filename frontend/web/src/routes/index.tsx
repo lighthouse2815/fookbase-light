@@ -1,18 +1,25 @@
+import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import MainLayout from '../layout/MainLayout'
-import FeedPage from '../pages/feed/FeedPage'
-import ExplorePage from '../pages/explore/ExplorePage'
-import GamesPage from '../pages/games/GamesPage'
-import MessagesPage from '../pages/messages/MessagesPage'
-import ProfilePage from '../pages/profile/ProfilePage'
-import UserProfilePage from '../pages/profile/UserProfilePage'
-import LoginPage from '../pages/auth/LoginPage'
-import { GroupDetailPage, GroupsPage } from '../pages/groups'
+
+const feedPage = lazy(() => import('../pages/feed/FeedPage'))
+const explorePage = lazy(() => import('../pages/explore/ExplorePage'))
+const gamesPage = lazy(() => import('../pages/games/GamesPage'))
+const messagesPage = lazy(() => import('../pages/messages/MessagesPage'))
+const profilePage = lazy(() => import('../pages/profile/ProfilePage'))
+const userProfilePage = lazy(() => import('../pages/profile/UserProfilePage'))
+const loginPage = lazy(() => import('../pages/auth/LoginPage'))
+const groupsPage = lazy(() => import('../pages/groups/GroupsPage'))
+const groupDetailPage = lazy(() => import('../pages/groups/GroupDetailPage'))
+
+function page(Page: ComponentType) {
+  return <Suspense fallback={<main className="min-h-screen grid place-items-center text-text-muted">Đang tải…</main>}><Page /></Suspense>
+}
 
 export const router = createBrowserRouter([
   {
     path: '/login',
-    element: <LoginPage />,
+    element: page(loginPage),
   },
   {
     path: '/',
@@ -24,35 +31,35 @@ export const router = createBrowserRouter([
       },
       {
         path: 'feed',
-        element: <FeedPage />,
+        element: page(feedPage),
       },
       {
         path: 'explore',
-        element: <ExplorePage />,
+        element: page(explorePage),
       },
       {
         path: 'games',
-        element: <GamesPage />,
+        element: page(gamesPage),
       },
       {
         path: 'messages',
-        element: <MessagesPage />,
+        element: page(messagesPage),
       },
       {
         path: 'groups',
-        element: <GroupsPage />,
+        element: page(groupsPage),
       },
       {
         path: 'groups/:groupId',
-        element: <GroupDetailPage />,
+        element: page(groupDetailPage),
       },
       {
         path: 'profile',
-        element: <ProfilePage />,
+        element: page(profilePage),
       },
       {
         path: 'profile/:userId',
-        element: <UserProfilePage />,
+        element: page(userProfilePage),
       },
       {
         path: '*',

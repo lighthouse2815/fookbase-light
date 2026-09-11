@@ -9,6 +9,7 @@ using System.Text;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Modules.Messages.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -119,6 +120,37 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         Assert.Equal(MediaStatus.Deleted,
             (await verifyDb.MediaAssets.AsNoTracking().SingleAsync(x => x.Id == unreferenced)).Status);
         Assert.True(await verifyDb.ObjectDeletions.AnyAsync(x => x.MediaId == unreferenced));
+    }
+
+    [Fact]
+    public async Task Delete_is_blocked_by_live_message_attachment_and_conversation_photo_until_released()
+    {
+        var ownerId = CreateUserId();
+        using var owner = CreateAuthenticatedClient(ownerId);
+        var attachmentMediaId = await ReadyAsync(owner);
+        var photoMediaId = await ReadyAsync(owner);
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var message = Message.Create(Guid.NewGuid(), Guid.NewGuid(), ownerId, MessageType.Media, null, null, now);
+            var conversation = Conversation.CreateGroup(Guid.NewGuid(), "Photo reference", now);
+            conversation.UpdateGroup("Photo reference", photoMediaId);
+            db.Messages.Add(message);
+            db.MessageAttachments.Add(MessageAttachment.Create(message.Id, attachmentMediaId, 0));
+            db.Conversations.Add(conversation);
+            await db.SaveChangesAsync();
+
+            Assert.Equal(HttpStatusCode.Conflict, (await owner.DeleteAsync($"/api/media/{attachmentMediaId}")).StatusCode);
+            Assert.Equal(HttpStatusCode.Conflict, (await owner.DeleteAsync($"/api/media/{photoMediaId}")).StatusCode);
+
+            db.MessageAttachments.Remove((await db.MessageAttachments.SingleAsync(attachment => attachment.MessageId == message.Id)));
+            conversation.UpdateGroup("Photo reference", null);
+            await db.SaveChangesAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/media/{attachmentMediaId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/media/{photoMediaId}")).StatusCode);
     }
 
     private async Task<Guid> ReadyAsync(HttpClient owner)

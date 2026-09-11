@@ -8,6 +8,7 @@ using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Persistence;
@@ -100,6 +101,31 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
             "/api/messages/notifications");
         Assert.NotNull(remainingNotifications);
         Assert.Empty(remainingNotifications!.Items);
+    }
+
+    [Fact]
+    public async Task Concurrent_direct_creation_returns_one_conversation()
+    {
+        var firstUserId = Guid.NewGuid();
+        var secondUserId = Guid.NewGuid();
+        await BecomeFriendsAsync(firstUserId, secondUserId);
+        using var first = CreateAuthenticatedClient(firstUserId);
+
+        var responses = await Task.WhenAll(
+            first.PostAsync($"/api/messages/conversations/{secondUserId}", null),
+            first.PostAsync($"/api/messages/conversations/{secondUserId}", null));
+
+        Assert.All(responses, response => Assert.Equal(HttpStatusCode.OK, response.StatusCode));
+        var conversations = await Task.WhenAll(responses.Select(response => response.Content.ReadFromJsonAsync<ConversationResponse>()));
+        Assert.All(conversations, conversation => Assert.NotNull(conversation));
+        Assert.Single(conversations.Select(conversation => conversation!.Id).Distinct());
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Equal(1, await dbContext.Conversations.CountAsync(conversation =>
+            conversation.Type == ConversationType.Direct &&
+            dbContext.ConversationParticipants.Count(participant => participant.ConversationId == conversation.Id && participant.LeftAtUtc == null) == 2 &&
+            dbContext.ConversationParticipants.Any(participant => participant.ConversationId == conversation.Id && participant.UserId == firstUserId) &&
+            dbContext.ConversationParticipants.Any(participant => participant.ConversationId == conversation.Id && participant.UserId == secondUserId)));
     }
 
     [Fact]
@@ -210,6 +236,14 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
 
         Assert.Equal(HttpStatusCode.OK, (await first.PostAsJsonAsync(
             $"/api/messages/{reply.Id}/reactions", new { type = "love" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await first.PostAsJsonAsync(
+            $"/api/messages/{reply.Id}/reactions", new { type = "haha" })).StatusCode);
+        var reactedHistory = await second.GetFromJsonAsync<MessageHistoryResponse>(
+            $"/api/messages/conversations/{conversation.Id}/messages");
+        var reaction = Assert.Single(Assert.Single(reactedHistory!.Items, message => message.Id == reply.Id).Reactions!);
+        Assert.Equal(firstUserId, reaction.UserId);
+        Assert.Equal("haha", reaction.Type);
+        Assert.Equal(HttpStatusCode.NoContent, (await first.DeleteAsync($"/api/messages/{reply.Id}/reactions")).StatusCode);
         var foreignEdit = await first.PatchAsJsonAsync($"/api/messages/{reply.Id}", new { content = "forbidden" });
         Assert.Equal(HttpStatusCode.Forbidden, foreignEdit.StatusCode);
 
@@ -220,7 +254,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
 
         var history = await first.GetFromJsonAsync<MessageHistoryResponse>(
             $"/api/messages/conversations/{conversation.Id}/messages");
-        var deleted = Assert.Single(history!.Items.Where(message => message.Id == reply.Id));
+        var deleted = Assert.Single(history!.Items, message => message.Id == reply.Id);
         Assert.Null(deleted.Content);
         Assert.NotNull(deleted.DeletedAtUtc);
         Assert.Empty(deleted.Attachments!);
@@ -252,6 +286,53 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
             $"/api/messages/conversations/{conversation.Id}/participants/{users[2]}")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await removed.GetAsync(
             $"/api/messages/conversations/{conversation.Id}/messages")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Group_block_filter_hides_reply_preview_and_rejects_reactions_by_message_id()
+    {
+        var users = await CreateUsersAsync(3);
+        using var first = CreateAuthenticatedClient(users[0]);
+        using var blocked = CreateAuthenticatedClient(users[1]);
+        using var third = CreateAuthenticatedClient(users[2]);
+        var conversation = await (await first.PostAsJsonAsync("/api/messages/conversations/group", new
+        {
+            title = "Block audit",
+            participantUserIds = new[] { users[1], users[2] }
+        })).Content.ReadFromJsonAsync<ConversationResponse>();
+        Assert.NotNull(conversation);
+        await BlockAsync(users[0], users[1]);
+
+        var blockedMessage = await (await blocked.PostAsJsonAsync(
+            $"/api/messages/conversations/{conversation!.Id}/messages", new { content = "blocked secret" }))
+            .Content.ReadFromJsonAsync<MessageResponse>();
+        Assert.NotNull(blockedMessage);
+        var attachmentMediaId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var media = MediaAsset.CreatePending(attachmentMediaId, users[1], MediaType.Image,
+                $"tests/{attachmentMediaId}", "blocked.png", "image/png", 1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(1));
+            media.MarkReady(1, DateTimeOffset.UtcNow);
+            dbContext.MediaAssets.Add(media);
+            dbContext.MessageAttachments.Add(MessageAttachment.Create(blockedMessage!.Id, attachmentMediaId, 0));
+            await dbContext.SaveChangesAsync();
+        }
+        Assert.Equal(HttpStatusCode.Created, (await third.PostAsJsonAsync(
+            $"/api/messages/conversations/{conversation.Id}/messages", new { content = "visible reply", replyToMessageId = blockedMessage!.Id })).StatusCode);
+
+        var history = await first.GetFromJsonAsync<MessageHistoryResponse>(
+            $"/api/messages/conversations/{conversation.Id}/messages");
+        var visibleReply = Assert.Single(history!.Items);
+        Assert.Equal("visible reply", visibleReply.Content);
+        Assert.Null(visibleReply.ReplyTo);
+        var search = await first.GetFromJsonAsync<IReadOnlyList<MessageResponse>>(
+            $"/api/messages/conversations/{conversation.Id}/search?q=blocked");
+        Assert.Empty(search!);
+        Assert.Equal(HttpStatusCode.Forbidden, (await first.PostAsJsonAsync(
+            $"/api/messages/{blockedMessage.Id}/reactions", new { type = "like" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await first.GetAsync(
+            $"/api/messages/media/{attachmentMediaId}/read-url")).StatusCode);
     }
 
     private HttpClient CreateAuthenticatedClient(Guid userId)
