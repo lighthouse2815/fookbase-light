@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
+import { searchApi, type SearchSuggestions } from '../api/search'
 
 interface NavItem {
   path: string
@@ -24,6 +25,8 @@ export default function TopNavbar() {
   const { t } = usePreferences()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
   const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
@@ -41,8 +44,32 @@ export default function TopNavbar() {
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const query = searchQuery.trim()
-    navigate(query ? `/explore?q=${encodeURIComponent(query)}` : '/explore')
+    setSuggestions(null)
+    navigate(query ? `/search?q=${encodeURIComponent(query)}` : '/search')
   }
+
+  useEffect(() => {
+    const query = searchQuery.trim()
+    if (query.length < 2) {
+      return
+    }
+
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => {
+      void searchApi.suggestions(query, { signal: controller.signal })
+        .then((next) => setSuggestions(next))
+        .catch(() => {
+          if (!controller.signal.aborted) setSuggestions(null)
+        })
+    }, 300)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeoutId)
+    }
+  }, [searchQuery])
+
+  const hasSuggestions = Boolean(suggestions &&
+    (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
 
   const notificationDestination = (notification: typeof notifications[number]) => {
     if ((notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted') && notification.actorUserId) {
@@ -99,10 +126,21 @@ export default function TopNavbar() {
           <input
             type="search"
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(event) => {
+              const value = event.target.value
+              setSearchQuery(value)
+              if (value.trim().length < 2) setSuggestions(null)
+            }}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => window.setTimeout(() => setIsSearchFocused(false), 150)}
             placeholder={t('searchFookbase')}
             className="w-full bg-surface-2 border-none rounded-full text-[13px] text-text pl-9 pr-4 py-2 outline-none focus:input-focus transition-all placeholder:text-text-light"
           />
+          {isSearchFocused && hasSuggestions && suggestions && <div className="absolute top-11 z-50 w-full overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
+            {suggestions.people.length > 0 && <div className="border-b border-border p-2 last:border-0"><p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-light">People</p>{suggestions.people.map((person) => <Link key={person.userId} to={`/profile/${person.userId}`} onClick={() => setSuggestions(null)} className="block rounded-lg px-2 py-1.5 text-sm text-text no-underline hover:bg-surface-2"><span className="font-semibold">{person.displayName}</span><span className="ml-1 text-text-muted">@{person.username}</span></Link>)}</div>}
+            {suggestions.groups.length > 0 && <div className="border-b border-border p-2 last:border-0"><p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-light">Groups</p>{suggestions.groups.map((group) => <Link key={group.groupId} to={`/groups/${group.groupId}`} onClick={() => setSuggestions(null)} className="block rounded-lg px-2 py-1.5 text-sm text-text no-underline hover:bg-surface-2">{group.name}</Link>)}</div>}
+            {suggestions.pages.length > 0 && <div className="p-2"><p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-light">Pages</p>{suggestions.pages.map((page) => <Link key={page.pageId} to={`/pages/${page.username}`} onClick={() => setSuggestions(null)} className="block rounded-lg px-2 py-1.5 text-sm text-text no-underline hover:bg-surface-2">{page.name}<span className="ml-1 text-text-muted">@{page.username}</span></Link>)}</div>}
+          </div>}
         </form>
       </div>
 
