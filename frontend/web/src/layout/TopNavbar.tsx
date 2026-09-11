@@ -32,6 +32,7 @@ export default function TopNavbar() {
     { path: '/explore', icon: '🔍', label: t('explore') },
     { path: '/messages', icon: '💬', label: t('messages') },
     { path: '/groups', icon: '👥', label: t('groups') },
+    { path: '/reels', icon: '🎞️', label: 'Reels' },
     { path: '/games', icon: '🎮', label: t('games') },
     { path: '/profile', icon: '👤', label: t('profile') },
   ]

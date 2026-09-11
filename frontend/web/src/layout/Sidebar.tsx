@@ -20,6 +20,7 @@ export default function Sidebar() {
     { path: '/explore', emoji: '🔍', label: t('explore') },
     { path: '/messages', emoji: '💬', label: t('messages') },
     { path: '/groups', emoji: '👥', label: t('groups') },
+    { path: '/reels', emoji: '🎞️', label: 'Reels' },
     { path: '/games', emoji: '🎮', label: t('games') },
     { path: '/profile', emoji: '👤', label: t('profile') },
   ]

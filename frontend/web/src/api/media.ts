@@ -19,6 +19,11 @@ export interface Media {
   uploadExpiresAtUtc: string | null
   uploadedAtUtc: string | null
   deletedAtUtc: string | null
+  durationMs: number | null
+  width: number | null
+  height: number | null
+  hasProcessedVideo: boolean
+  processedAtUtc: string | null
 }
 
 export const mediaApi = {
@@ -36,11 +41,14 @@ export const mediaApi = {
   getMetadata: (mediaId: string) => apiRequest<Media>(`/api/media/${mediaId}`),
   delete: (mediaId: string) => apiRequest<void>(`/api/media/${mediaId}`, { method: 'DELETE' }),
   uploadFile: async (file: File, onProgress?: (progress: number) => void) => {
+    const completed = await mediaApi.uploadFileWithMetadata(file, onProgress)
+    return completed.id
+  },
+  uploadFileWithMetadata: async (file: File, onProgress?: (progress: number) => void) => {
     const uploadIntent = await mediaApi.createUpload(file)
     await uploadToStorage(uploadIntent.uploadUrl, file, onProgress)
 
-    await mediaApi.complete(uploadIntent.mediaId)
-    return uploadIntent.mediaId
+    return mediaApi.complete(uploadIntent.mediaId)
   },
   uploadFiles: async (files: readonly File[], onProgress?: (progress: number) => void) => {
     const mediaIds: string[] = []
@@ -52,6 +60,16 @@ export const mediaApi = {
     }
     return mediaIds
   },
+  getReadUrl: (mediaId: string) => apiRequest<MediaReadUrl>(`/api/media/${mediaId}/access`),
+  getPosterReadUrl: (mediaId: string) => apiRequest<MediaReadUrl>(`/api/media/${mediaId}/poster/access`),
+}
+
+export interface MediaReadUrl {
+  mediaId: string
+  url: string
+  expiresAtUtc: string
+  mediaType: string
+  contentType: string
 }
 
 function uploadToStorage(

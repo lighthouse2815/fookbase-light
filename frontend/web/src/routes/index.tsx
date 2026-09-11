@@ -11,6 +11,7 @@ const userProfilePage = lazy(() => import('../pages/profile/UserProfilePage'))
 const loginPage = lazy(() => import('../pages/auth/LoginPage'))
 const groupsPage = lazy(() => import('../pages/groups/GroupsPage'))
 const groupDetailPage = lazy(() => import('../pages/groups/GroupDetailPage'))
+const reelsPage = lazy(() => import('../pages/reels/ReelsPage'))
 
 function page(Page: ComponentType) {
   return <Suspense fallback={<main className="min-h-screen grid place-items-center text-text-muted">Đang tải…</main>}><Page /></Suspense>
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
       {
         path: 'groups/:groupId',
         element: page(groupDetailPage),
+      },
+      {
+        path: 'reels',
+        element: page(reelsPage),
       },
       {
         path: 'profile',
