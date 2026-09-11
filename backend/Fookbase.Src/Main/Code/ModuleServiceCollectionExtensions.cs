@@ -14,6 +14,7 @@ using Fookbase.Api.Modules.Groups;
 using Fookbase.Api.Modules.Messages;
 using Fookbase.Api.Modules.Notifications;
 using Fookbase.Api.Modules.Users;
+using Fookbase.Api.Modules.Reels;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -89,6 +90,9 @@ internal static class ModuleServiceCollectionExtensions
             configuration.GetSection(MediaOptions.SectionName).Get<MediaOptions>()
                 ?? new MediaOptions());
     }
+
+    public static IServiceCollection AddReelsModule(this IServiceCollection services) =>
+        services.AddReelsInfrastructure();
 
     public static IServiceCollection AddAdminModule(this IServiceCollection services) =>
         services.AddAdminInfrastructure();

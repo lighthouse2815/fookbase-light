@@ -27,12 +27,17 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
+        builder.UseSetting("Media:VideoProcessingIntervalSeconds", "1");
+        builder.UseSetting("Media:VideoProcessingRetryDelaySeconds", "1");
+        builder.UseSetting("Media:VideoProcessingEnabled", "true");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IObjectStorage>();
             services.AddSingleton<InMemoryObjectStorage>();
             services.AddSingleton<IObjectStorage>(provider =>
                 provider.GetRequiredService<InMemoryObjectStorage>());
+            services.RemoveAll<IVideoProcessor>();
+            services.AddSingleton<IVideoProcessor, FakeVideoProcessor>();
         });
     }
 

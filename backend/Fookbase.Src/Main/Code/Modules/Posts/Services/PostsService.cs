@@ -419,6 +419,8 @@ public sealed class PostsService(
             "invalid_parent_comment", "A reply can only target a top-level comment on the same post.", ApplicationErrorType.Validation),
         PostsServiceError.MediaNotAttached => new(
             "media_not_attached", "The media is not attached to this post.", ApplicationErrorType.NotFound),
+        PostsServiceError.InvalidPostType => new(
+            "invalid_post_type", "Reels must be edited through the Reels experience.", ApplicationErrorType.Conflict),
         _ => throw new ArgumentOutOfRangeException(nameof(error), error, null)
     };
 
@@ -486,6 +488,11 @@ public sealed class PostsService(
         if (post.AuthorUserId != actorUserId)
         {
             return PostsServiceResult<PostResponse>.Failure(PostsServiceError.Forbidden);
+        }
+
+        if (post.PostType != PostType.Standard)
+        {
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.InvalidPostType);
         }
 
         if (post.ContainerType == PostContainerType.Group &&
@@ -921,7 +928,8 @@ public sealed class PostsService(
 
     private IQueryable<Post> VisiblePosts(PostViewerContext? viewer)
     {
-        return PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer);
+        return PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer)
+            .Where(post => post.PostType == PostType.Standard);
     }
 
     private async Task<bool> CanViewPostAsync(

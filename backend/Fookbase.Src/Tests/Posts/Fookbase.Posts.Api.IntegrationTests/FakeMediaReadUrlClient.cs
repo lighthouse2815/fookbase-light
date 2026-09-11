@@ -18,5 +18,17 @@ public sealed class FakeObjectStorage : IObjectStorage
     public Task<byte[]> ReadPrefixAsync(string objectKey, int length, CancellationToken cancellationToken = default) =>
         Task.FromResult(Array.Empty<byte>());
 
+    public Task DownloadToFileAsync(
+        string objectKey,
+        string destinationPath,
+        CancellationToken cancellationToken = default) =>
+        Task.FromException(new InvalidOperationException("Test storage contains no video objects."));
+
+    public Task UploadFileAsync(
+        string objectKey,
+        string sourcePath,
+        string contentType,
+        CancellationToken cancellationToken = default) => Task.CompletedTask;
+
     public Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }

@@ -15,6 +15,8 @@ public static class MediaEndpoints
         group.MapPost("/uploads", CreateUploadAsync).RequireAuthorization();
         group.MapPost("/{mediaId:guid}/complete", CompleteAsync).RequireAuthorization();
         group.MapGet("/{mediaId:guid}", GetMetadataAsync).RequireAuthorization();
+        group.MapGet("/{mediaId:guid}/access", GetOwnerReadUrlAsync).RequireAuthorization();
+        group.MapGet("/{mediaId:guid}/poster/access", GetOwnerPosterReadUrlAsync).RequireAuthorization();
         group.MapDelete("/{mediaId:guid}", DeleteAsync).RequireAuthorization();
         return endpoints;
     }
@@ -52,6 +54,22 @@ public static class MediaEndpoints
         if (!TryGetActorUserId(principal, out var ownerUserId)) return Results.Unauthorized();
         var result = await service.DeleteAsync(ownerUserId, mediaId, cancellationToken);
         return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetOwnerReadUrlAsync(
+        Guid mediaId, ClaimsPrincipal principal, MediaService service, CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var ownerUserId)) return Results.Unauthorized();
+        var result = await service.CreateOwnerReadUrlAsync(ownerUserId, mediaId, false, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetOwnerPosterReadUrlAsync(
+        Guid mediaId, ClaimsPrincipal principal, MediaService service, CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var ownerUserId)) return Results.Unauthorized();
+        var result = await service.CreateOwnerReadUrlAsync(ownerUserId, mediaId, true, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
     private static bool TryGetActorUserId(ClaimsPrincipal principal, out Guid userId) =>

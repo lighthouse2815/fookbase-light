@@ -33,7 +33,8 @@ public sealed class FeedService(
             viewerUserId,
             relationships.FriendUserIds,
             relationships.BlockedUserIds);
-        var query = PostVisibility.ApplyHomeFeed(dbContext.Posts.AsNoTracking(), viewer);
+        var query = PostVisibility.ApplyHomeFeed(dbContext.Posts.AsNoTracking(), viewer)
+            .Where(post => post.PostType == PostType.Standard);
         if (cursor is not null)
         {
             query = query.Where(post =>

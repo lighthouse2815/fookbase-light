@@ -12,4 +12,9 @@ public sealed record MediaResponse(
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UploadExpiresAtUtc,
     DateTimeOffset? UploadedAtUtc,
-    DateTimeOffset? DeletedAtUtc);
+    DateTimeOffset? DeletedAtUtc,
+    long? DurationMs,
+    int? Width,
+    int? Height,
+    bool HasProcessedVideo,
+    DateTimeOffset? ProcessedAtUtc);

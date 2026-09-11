@@ -641,7 +641,21 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             11,
             now,
             now.AddMinutes(5));
-        asset.MarkReady(11, now);
+        if (mediaType == MediaType.Video)
+        {
+            asset.MarkProcessing(11, now);
+            asset.MarkVideoReady(
+                MediaAsset.ProcessedKey(ownerUserId, mediaId),
+                MediaAsset.PosterKey(ownerUserId, mediaId),
+                10_000,
+                720,
+                1280,
+                now);
+        }
+        else
+        {
+            asset.MarkReady(11, now);
+        }
         db.MediaAssets.Add(asset);
         await db.SaveChangesAsync();
         return mediaId;

@@ -35,6 +35,21 @@ public sealed class InMemoryObjectStorage : IObjectStorage
         return Task.CompletedTask;
     }
 
+    public Task DownloadToFileAsync(
+        string objectKey,
+        string destinationPath,
+        CancellationToken cancellationToken = default) =>
+        File.WriteAllBytesAsync(destinationPath, objects[objectKey].Content, cancellationToken);
+
+    public async Task UploadFileAsync(
+        string objectKey,
+        string sourcePath,
+        string contentType,
+        CancellationToken cancellationToken = default) =>
+        Put(objectKey, await File.ReadAllBytesAsync(sourcePath, cancellationToken), contentType);
+
     public void Put(string objectKey, byte[] content, string contentType) =>
         objects[objectKey] = (content, contentType);
+
+    public bool Contains(string objectKey) => objects.ContainsKey(objectKey);
 }

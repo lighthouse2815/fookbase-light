@@ -21,6 +21,8 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
 {
     private static readonly byte[] Png =
         [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02, 0x03];
+    private static readonly byte[] Mp4 =
+        [0x00, 0x00, 0x00, 0x18, (byte)'f', (byte)'t', (byte)'y', (byte)'p', (byte)'i', (byte)'s', (byte)'o', (byte)'m'];
 
     [Fact]
     public async Task Upload_intent_requires_jwt_and_validates_type_and_size()
@@ -79,6 +81,78 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
 
+    }
+
+    [Fact]
+    public async Task Video_completion_queues_durable_processing_and_generates_private_derivatives()
+    {
+        var userId = CreateUserId();
+        using var client = CreateAuthenticatedClient(userId);
+        var intent = await ReadAsync<UploadIntentResponse>(await client.PostAsJsonAsync("/api/media/uploads",
+            new CreateUploadRequest("reel.mp4", "video/mp4", Mp4.Length)));
+        PutObject(intent.MediaId, Mp4, "video/mp4");
+
+        var completed = await ReadAsync<MediaResponse>(
+            await client.PostAsync($"/api/media/{intent.MediaId}/complete", null));
+        Assert.Equal("Processing", completed.Status);
+        var ready = await WaitForStatusAsync(client, intent.MediaId, "Ready");
+
+        Assert.True(ready.HasProcessedVideo);
+        Assert.Equal(10_000, ready.DurationMs);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var asset = await db.MediaAssets.AsNoTracking().SingleAsync(item => item.Id == intent.MediaId);
+        Assert.True(await db.MediaProcessingJobs.AnyAsync(job => job.MediaId == intent.MediaId &&
+            job.Status == MediaProcessingJobStatus.Succeeded));
+        var storage = scope.ServiceProvider.GetRequiredService<InMemoryObjectStorage>();
+        Assert.True(storage.Contains(asset.ProcessedObjectKey!));
+        Assert.True(storage.Contains(asset.PosterObjectKey!));
+    }
+
+    [Fact]
+    public async Task Corrupt_video_processing_retries_then_fails_without_exposing_the_internal_error()
+    {
+        var userId = CreateUserId();
+        using var client = CreateAuthenticatedClient(userId);
+        byte[] corrupt = [.. Mp4, 0xff];
+        var intent = await ReadAsync<UploadIntentResponse>(await client.PostAsJsonAsync("/api/media/uploads",
+            new CreateUploadRequest("corrupt.mp4", "video/mp4", corrupt.Length)));
+        PutObject(intent.MediaId, corrupt, "video/mp4");
+        (await client.PostAsync($"/api/media/{intent.MediaId}/complete", null)).EnsureSuccessStatusCode();
+
+        var failed = await WaitForStatusAsync(client, intent.MediaId, "Failed", TimeSpan.FromSeconds(10));
+        Assert.False(failed.HasProcessedVideo);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var job = await db.MediaProcessingJobs.SingleAsync(item => item.MediaId == intent.MediaId);
+        Assert.Equal(MediaProcessingJobStatus.Failed, job.Status);
+        Assert.Equal(3, job.AttemptCount);
+        Assert.True(await db.ObjectDeletions.CountAsync(item => item.MediaId == intent.MediaId) >= 3);
+    }
+
+    [Fact]
+    public async Task Deleting_an_unreferenced_processed_video_queues_original_and_derivative_cleanup()
+    {
+        var userId = CreateUserId();
+        using var client = CreateAuthenticatedClient(userId);
+        var mediaId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var asset = MediaAsset.CreatePending(mediaId, userId, MediaType.Video,
+            $"{userId:N}/{mediaId:N}.mp4", "reel.mp4", "video/mp4", 11, now, now.AddMinutes(5));
+        asset.MarkProcessing(11, now);
+        asset.MarkVideoReady(MediaAsset.ProcessedKey(userId, mediaId), MediaAsset.PosterKey(userId, mediaId),
+            10_000, 720, 1280, now);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.MediaAssets.Add(asset);
+            await db.SaveChangesAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync("/api/media/" + mediaId)).StatusCode);
+        using var verification = factory.Services.CreateScope();
+        var verificationDb = verification.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Equal(3, await verificationDb.ObjectDeletions.CountAsync(item => item.MediaId == mediaId));
     }
 
     [Fact]
@@ -165,12 +239,34 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         await ReadAsync<UploadIntentResponse>(await client.PostAsJsonAsync("/api/media/uploads",
             new CreateUploadRequest("photo.png", "image/png", size)));
 
-    private void PutObject(Guid mediaId, byte[] bytes)
+    private void PutObject(Guid mediaId, byte[] bytes, string contentType = "image/png")
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var key = db.MediaAssets.AsNoTracking().Single(x => x.Id == mediaId).ObjectKey;
-        scope.ServiceProvider.GetRequiredService<InMemoryObjectStorage>().Put(key, bytes, "image/png");
+        scope.ServiceProvider.GetRequiredService<InMemoryObjectStorage>().Put(key, bytes, contentType);
+    }
+
+    private static async Task<MediaResponse> WaitForStatusAsync(
+        HttpClient client,
+        Guid mediaId,
+        string expectedStatus,
+        TimeSpan? timeout = null)
+    {
+        var deadline = DateTimeOffset.UtcNow + (timeout ?? TimeSpan.FromSeconds(5));
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            var response = await client.GetAsync($"/api/media/{mediaId}");
+            var media = await ReadAsync<MediaResponse>(response);
+            if (media.Status == expectedStatus)
+            {
+                return media;
+            }
+
+            await Task.Delay(100);
+        }
+
+        throw new TimeoutException($"Media {mediaId} did not reach {expectedStatus}.");
     }
 
     private static Guid CreateUserId() => Guid.NewGuid();

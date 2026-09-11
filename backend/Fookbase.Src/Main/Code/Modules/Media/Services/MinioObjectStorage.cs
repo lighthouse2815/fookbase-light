@@ -54,6 +54,32 @@ internal sealed class MinioObjectStorage(IMinioClient client, MinioOptions optio
         return prefix[..bytesRead];
     }
 
+    public async Task DownloadToFileAsync(
+        string objectKey,
+        string destinationPath,
+        CancellationToken cancellationToken = default)
+    {
+        await using var destination = File.Create(destinationPath);
+        await client.GetObjectAsync(new GetObjectArgs().WithBucket(options.BucketName)
+            .WithObject(objectKey)
+            .WithCallbackStream(async (source, token) =>
+                await source.CopyToAsync(destination, token)), cancellationToken);
+    }
+
+    public async Task UploadFileAsync(
+        string objectKey,
+        string sourcePath,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        await using var source = File.OpenRead(sourcePath);
+        await client.PutObjectAsync(new PutObjectArgs().WithBucket(options.BucketName)
+            .WithObject(objectKey)
+            .WithStreamData(source)
+            .WithObjectSize(source.Length)
+            .WithContentType(contentType), cancellationToken);
+    }
+
     public Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default) =>
         client.RemoveObjectAsync(new RemoveObjectArgs().WithBucket(options.BucketName)
             .WithObject(objectKey), cancellationToken);

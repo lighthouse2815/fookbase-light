@@ -11,7 +11,8 @@ public enum MediaStatus
     PendingUpload,
     Ready,
     Failed,
-    Deleted
+    Deleted,
+    Processing
 }
 
 public sealed class MediaAsset
@@ -54,6 +55,13 @@ public sealed class MediaAsset
     public DateTimeOffset? UploadExpiresAtUtc { get; private set; }
     public DateTimeOffset? UploadedAtUtc { get; private set; }
     public DateTimeOffset? DeletedAtUtc { get; private set; }
+    public long? DurationMs { get; private set; }
+    public int? Width { get; private set; }
+    public int? Height { get; private set; }
+    public string? ProcessedObjectKey { get; private set; }
+    public string? PosterObjectKey { get; private set; }
+    public string? ProcessingError { get; private set; }
+    public DateTimeOffset? ProcessedAtUtc { get; private set; }
 
     public static MediaAsset CreatePending(
         Guid id,
@@ -88,7 +96,7 @@ public sealed class MediaAsset
 
     public bool MarkFailed()
     {
-        if (Status != MediaStatus.PendingUpload)
+        if (Status is not (MediaStatus.PendingUpload or MediaStatus.Processing))
         {
             return false;
         }
@@ -96,6 +104,59 @@ public sealed class MediaAsset
         Status = MediaStatus.Failed;
         return true;
     }
+
+    public void MarkProcessing(long actualSizeBytes, DateTimeOffset uploadedAtUtc)
+    {
+        if (Status != MediaStatus.PendingUpload || MediaType != MediaType.Video)
+        {
+            throw new InvalidOperationException("Only a pending video upload can begin processing.");
+        }
+
+        ActualSizeBytes = actualSizeBytes;
+        UploadedAtUtc = uploadedAtUtc;
+        Status = MediaStatus.Processing;
+    }
+
+    public void MarkVideoReady(
+        string processedObjectKey,
+        string posterObjectKey,
+        long durationMs,
+        int width,
+        int height,
+        DateTimeOffset processedAtUtc)
+    {
+        if (Status != MediaStatus.Processing || MediaType != MediaType.Video ||
+            durationMs <= 0 || width <= 0 || height <= 0)
+        {
+            throw new InvalidOperationException("Only a processed video with valid metadata can become ready.");
+        }
+
+        ProcessedObjectKey = processedObjectKey;
+        PosterObjectKey = posterObjectKey;
+        DurationMs = durationMs;
+        Width = width;
+        Height = height;
+        ProcessedAtUtc = processedAtUtc;
+        ProcessingError = null;
+        Status = MediaStatus.Ready;
+    }
+
+    public void MarkProcessingFailed(string error)
+    {
+        if (Status != MediaStatus.Processing)
+        {
+            throw new InvalidOperationException("Only a processing video can fail processing.");
+        }
+
+        ProcessingError = error.Length <= 1000 ? error : error[..1000];
+        Status = MediaStatus.Failed;
+    }
+
+    public static string ProcessedKey(Guid ownerUserId, Guid mediaId) =>
+        $"{ownerUserId:N}/{mediaId:N}/processed.mp4";
+
+    public static string PosterKey(Guid ownerUserId, Guid mediaId) =>
+        $"{ownerUserId:N}/{mediaId:N}/poster.jpg";
 
     public bool Delete(DateTimeOffset deletedAtUtc)
     {

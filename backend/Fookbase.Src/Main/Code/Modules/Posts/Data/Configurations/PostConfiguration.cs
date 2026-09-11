@@ -14,6 +14,7 @@ internal sealed class PostConfiguration : IEntityTypeConfiguration<Post>
         builder.Property(post => post.Privacy).HasConversion<int>().IsRequired();
         builder.Property(post => post.ContainerType).HasConversion<int>().IsRequired();
         builder.Property(post => post.ContainerId).IsRequired();
+        builder.Property(post => post.PostType).HasConversion<int>().IsRequired();
         builder.Property(post => post.CreatedAtUtc).IsRequired();
         builder.HasIndex(post => new { post.AuthorUserId, post.CreatedAtUtc });
         builder.HasIndex(post => new { post.DeletedAtUtc, post.CreatedAtUtc });
@@ -26,5 +27,9 @@ internal sealed class PostConfiguration : IEntityTypeConfiguration<Post>
             post.CreatedAtUtc,
             post.Id
         }).HasFilter("\"DeletedAtUtc\" IS NULL");
+        builder.HasIndex(post => new { post.PostType, post.CreatedAtUtc, post.Id })
+            .HasFilter("\"DeletedAtUtc\" IS NULL");
+        builder.HasIndex(post => new { post.PostType, post.AuthorUserId, post.CreatedAtUtc, post.Id })
+            .HasFilter("\"DeletedAtUtc\" IS NULL");
     }
 }

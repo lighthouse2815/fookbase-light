@@ -32,10 +32,15 @@ public static class DependencyInjection
         });
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
+        services.AddSingleton<IVideoProcessor, FfmpegVideoProcessor>();
         services.AddScoped<MediaService>();
         services.AddHostedService<MinioBucketInitializer>();
         services.AddHostedService<PendingUploadCleanupWorker>();
         services.AddHostedService<ObjectDeletionWorker>();
+        if (mediaOptions.VideoProcessingEnabled)
+        {
+            services.AddHostedService<VideoProcessingWorker>();
+        }
         return services;
     }
 }

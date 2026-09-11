@@ -18,7 +18,10 @@ WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:5000 \
     DOTNET_RUNNING_IN_CONTAINER=true
 
-RUN groupadd --gid 10001 fookbase \
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 fookbase \
     && useradd --uid 10001 --gid fookbase --create-home --shell /usr/sbin/nologin fookbase
 
 COPY --from=build --chown=fookbase:fookbase /app/publish/ ./

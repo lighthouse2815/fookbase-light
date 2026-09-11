@@ -13,6 +13,12 @@ public enum PostContainerType
     Group
 }
 
+public enum PostType
+{
+    Standard,
+    Reel
+}
+
 public sealed class Post
 {
     public const int MaximumContentLength = 10_000;
@@ -28,6 +34,7 @@ public sealed class Post
         PostPrivacy privacy,
         PostContainerType containerType,
         Guid containerId,
+        PostType postType,
         DateTimeOffset createdAtUtc)
     {
         Id = id;
@@ -36,6 +43,7 @@ public sealed class Post
         Privacy = privacy;
         ContainerType = containerType;
         ContainerId = containerId;
+        PostType = postType;
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -51,6 +59,8 @@ public sealed class Post
 
     public Guid ContainerId { get; private set; }
 
+    public PostType PostType { get; private set; }
+
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
@@ -63,7 +73,8 @@ public sealed class Post
         string content,
         PostPrivacy privacy,
         DateTimeOffset createdAtUtc) =>
-        new(id, authorUserId, content, privacy, PostContainerType.Profile, authorUserId, createdAtUtc);
+        new(id, authorUserId, content, privacy, PostContainerType.Profile, authorUserId,
+            PostType.Standard, createdAtUtc);
 
     public static Post CreateInContainer(
         Guid id,
@@ -72,8 +83,18 @@ public sealed class Post
         PostPrivacy privacy,
         PostContainerType containerType,
         Guid containerId,
+        DateTimeOffset createdAtUtc,
+        PostType postType = PostType.Standard) =>
+        new(id, authorUserId, content, privacy, containerType, containerId, postType, createdAtUtc);
+
+    public static Post CreateReel(
+        Guid id,
+        Guid authorUserId,
+        string caption,
+        PostPrivacy privacy,
         DateTimeOffset createdAtUtc) =>
-        new(id, authorUserId, content, privacy, containerType, containerId, createdAtUtc);
+        new(id, authorUserId, caption, privacy, PostContainerType.Profile, authorUserId,
+            PostType.Reel, createdAtUtc);
 
     public void Update(string content, PostPrivacy privacy, DateTimeOffset updatedAtUtc)
     {

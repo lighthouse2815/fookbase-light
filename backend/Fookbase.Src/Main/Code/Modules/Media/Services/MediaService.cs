@@ -91,6 +91,11 @@ public sealed class MediaService(
             return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
         }
 
+        if (asset.Status == MediaStatus.Processing)
+        {
+            return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
+        }
+
         if (asset.Status != MediaStatus.PendingUpload)
         {
             return Conflict<MediaResponse>("invalid_media_status", "The upload cannot be completed.");
@@ -132,7 +137,15 @@ public sealed class MediaService(
                 "The uploaded object signature does not match its declared content type.");
         }
 
-        asset.MarkReady(storedObject.SizeBytes, now);
+        if (asset.MediaType == MediaType.Image)
+        {
+            asset.MarkReady(storedObject.SizeBytes, now);
+        }
+        else
+        {
+            asset.MarkProcessing(storedObject.SizeBytes, now);
+            dbContext.MediaProcessingJobs.Add(MediaProcessingJob.Create(asset.Id, now));
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
     }
@@ -164,14 +177,67 @@ public sealed class MediaService(
         }
 
         var expiry = TimeSpan.FromMinutes(options.DownloadUrlExpiryMinutes);
-        var url = await objectStorage.CreatePresignedGetUrlAsync(asset.ObjectKey, expiry, cancellationToken);
+        var objectKey = asset.MediaType == MediaType.Video
+            ? asset.ProcessedObjectKey
+            : asset.ObjectKey;
+        if (string.IsNullOrWhiteSpace(objectKey))
+        {
+            return ApplicationResult<MediaReadUrlResponse>.Failure(NotFound());
+        }
+
+        var url = await objectStorage.CreatePresignedGetUrlAsync(objectKey, expiry, cancellationToken);
         return ApplicationResult<MediaReadUrlResponse>.Success(
             new MediaReadUrlResponse(
                 asset.Id,
                 url,
                 timeProvider.GetUtcNow().Add(expiry),
                 asset.MediaType.ToString().ToLowerInvariant(),
-                asset.ContentType));
+                asset.MediaType == MediaType.Video ? "video/mp4" : asset.ContentType));
+    }
+
+    public async Task<ApplicationResult<MediaReadUrlResponse>> CreatePosterReadUrlAsync(
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
+        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null ||
+            asset.MediaType != MediaType.Video || string.IsNullOrWhiteSpace(asset.PosterObjectKey))
+        {
+            return ApplicationResult<MediaReadUrlResponse>.Failure(NotFound());
+        }
+
+        var expiry = TimeSpan.FromMinutes(options.DownloadUrlExpiryMinutes);
+        var url = await objectStorage.CreatePresignedGetUrlAsync(
+            asset.PosterObjectKey, expiry, cancellationToken);
+        return ApplicationResult<MediaReadUrlResponse>.Success(
+            new MediaReadUrlResponse(
+                asset.Id,
+                url,
+                timeProvider.GetUtcNow().Add(expiry),
+                "image",
+                "image/jpeg"));
+    }
+
+    public async Task<ApplicationResult<MediaReadUrlResponse>> CreateOwnerReadUrlAsync(
+        Guid ownerUserId,
+        Guid mediaId,
+        bool poster,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
+        var accessError = CheckOwner(asset, ownerUserId);
+        if (accessError is not null)
+        {
+            return ApplicationResult<MediaReadUrlResponse>.Failure(accessError);
+        }
+
+        return poster
+            ? await CreatePosterReadUrlAsync(mediaId, cancellationToken)
+            : await CreateReadUrlAsync(mediaId, cancellationToken);
     }
 
     public async Task<ApplicationResult> ValidatePostMediaAsync(
@@ -198,6 +264,41 @@ public sealed class MediaService(
         }
 
         return ApplicationResult.Success();
+    }
+
+    public async Task<ApplicationResult> ValidateReelVideoAsync(
+        Guid ownerUserId,
+        Guid mediaId,
+        CancellationToken cancellationToken = default)
+    {
+        var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == mediaId,
+            cancellationToken);
+        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null ||
+            asset.MediaType != MediaType.Video || string.IsNullOrWhiteSpace(asset.ProcessedObjectKey) ||
+            string.IsNullOrWhiteSpace(asset.PosterObjectKey) || asset.DurationMs is null ||
+            asset.Width is null || asset.Height is null)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "invalid_reel_video",
+                "The reel video must be fully processed and ready.",
+                ApplicationErrorType.Conflict));
+        }
+
+        if (asset.OwnerUserId != ownerUserId)
+        {
+            return ApplicationResult.Failure(new ApplicationError(
+                "media_not_owned", "Only the media owner can publish this reel video.",
+                ApplicationErrorType.Forbidden));
+        }
+
+        return asset.DurationMs < options.MinimumReelDurationMs ||
+               asset.DurationMs > options.MaximumReelDurationMs
+            ? ApplicationResult.Failure(new ApplicationError(
+                "invalid_reel_duration",
+                $"Reel videos must be between {options.MinimumReelDurationMs} and {options.MaximumReelDurationMs} milliseconds.",
+                ApplicationErrorType.Validation))
+            : ApplicationResult.Success();
     }
 
     public async Task<ApplicationResult> ValidateProfileImageAsync(
@@ -425,6 +526,15 @@ public sealed class MediaService(
         var now = timeProvider.GetUtcNow();
         asset.Delete(now);
         dbContext.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.ObjectKey, now));
+        if (!string.IsNullOrWhiteSpace(asset.ProcessedObjectKey))
+        {
+            dbContext.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.ProcessedObjectKey, now));
+        }
+
+        if (!string.IsNullOrWhiteSpace(asset.PosterObjectKey))
+        {
+            dbContext.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.PosterObjectKey, now));
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult.Success();
     }
@@ -471,7 +581,10 @@ public sealed class MediaService(
         asset.MediaType.ToString().ToLowerInvariant(),
         asset.Status.ToString(), asset.OriginalFileName, asset.ContentType,
         asset.DeclaredSizeBytes, asset.ActualSizeBytes, asset.CreatedAtUtc,
-        asset.UploadExpiresAtUtc, asset.UploadedAtUtc, asset.DeletedAtUtc);
+        asset.UploadExpiresAtUtc, asset.UploadedAtUtc, asset.DeletedAtUtc,
+        asset.DurationMs, asset.Width, asset.Height,
+        asset.MediaType == MediaType.Video && asset.Status == MediaStatus.Ready,
+        asset.ProcessedAtUtc);
 
     private static ApplicationError NotFound() =>
         new("media_not_found", "The media asset was not found.", ApplicationErrorType.NotFound);

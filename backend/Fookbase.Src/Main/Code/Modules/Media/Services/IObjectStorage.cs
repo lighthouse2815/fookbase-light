@@ -23,6 +23,17 @@ public interface IObjectStorage
         int length,
         CancellationToken cancellationToken = default);
 
+    Task DownloadToFileAsync(
+        string objectKey,
+        string destinationPath,
+        CancellationToken cancellationToken = default);
+
+    Task UploadFileAsync(
+        string objectKey,
+        string sourcePath,
+        string contentType,
+        CancellationToken cancellationToken = default);
+
     Task DeleteAsync(
         string objectKey,
         CancellationToken cancellationToken = default);

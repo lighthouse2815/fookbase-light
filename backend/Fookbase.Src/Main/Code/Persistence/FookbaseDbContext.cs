@@ -5,6 +5,7 @@ using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Reels.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -67,6 +68,8 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
 
+    public DbSet<ReelView> ReelViews => Set<ReelView>();
+
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
 
     public DbSet<MediaReference> MediaReferences => Set<MediaReference>();
@@ -74,6 +77,8 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<ProfileMediaReference> ProfileMediaReferences => Set<ProfileMediaReference>();
 
     public DbSet<ObjectDeletion> ObjectDeletions => Set<ObjectDeletion>();
+
+    public DbSet<MediaProcessingJob> MediaProcessingJobs => Set<MediaProcessingJob>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
