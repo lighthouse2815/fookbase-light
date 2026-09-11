@@ -12,6 +12,14 @@ export interface Post {
   commentCount: number
   reactionCounts: Record<string, number>
   viewerReaction: string | null
+  displayAuthor?: {
+    type: 'page'
+    id: string
+    username: string
+    name: string
+    avatarUrl: string | null
+  } | null
+  containerType?: 'profile' | 'group' | 'page'
 }
 
 export interface Comment {

@@ -43,6 +43,11 @@ export default function LivePostCard({
   const [error, setError] = useState<string | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
   const isAuthor = post.authorUserId === currentUserId
+  const displayAuthor = post.displayAuthor
+  const authorName = displayAuthor?.name ?? author?.displayName ?? t('user')
+  const authorUsername = displayAuthor?.username ?? author?.username ?? post.authorUserId.slice(0, 8)
+  const authorAvatarUrl = displayAuthor?.avatarUrl ?? author?.avatarUrl
+  const authorDestination = displayAuthor?.type === 'page' ? `/pages/${displayAuthor.username}` : `/profile/${post.authorUserId}`
   const reactionCount = Object.values(post.reactionCounts).reduce(
     (total, count) => total + count,
     0,
@@ -181,11 +186,11 @@ export default function LivePostCard({
     <article className="bg-surface rounded-xl border border-border p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0 overflow-hidden">
-          {author?.avatarUrl ? <img src={resolveProfileImageUrl(author.avatarUrl)} alt="" className="w-full h-full object-cover" /> : author?.displayName.slice(0, 2).toUpperCase()}
+          {authorAvatarUrl ? <img src={resolveProfileImageUrl(authorAvatarUrl)} alt="" className="w-full h-full object-cover" /> : authorName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <Link to={`/profile/${post.authorUserId}`} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{author?.displayName ?? t('user')}</Link>
-          <p className="text-xs text-text-muted">@{author?.username ?? post.authorUserId.slice(0, 8)} · {relativeDate(post.createdAtUtc, language === 'vi' ? 'vi-VN' : 'en-US')}</p>
+          <Link to={authorDestination} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{authorName}</Link>
+          <p className="text-xs text-text-muted">@{authorUsername} · {relativeDate(post.createdAtUtc, language === 'vi' ? 'vi-VN' : 'en-US')}</p>
         </div>
         {isAuthor ? (
           <div className="flex gap-1">

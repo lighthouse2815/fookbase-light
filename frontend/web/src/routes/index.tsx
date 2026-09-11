@@ -13,6 +13,9 @@ const groupsPage = lazy(() => import('../pages/groups/GroupsPage'))
 const groupDetailPage = lazy(() => import('../pages/groups/GroupDetailPage'))
 const reelsPage = lazy(() => import('../pages/reels/ReelsPage'))
 const storyArchivePage = lazy(() => import('../pages/stories/StoryArchivePage'))
+const pagesPage = lazy(() => import('../pages/pages/PagesPage'))
+const pageCreatePage = lazy(() => import('../pages/pages/PageCreatePage'))
+const pageDetailPage = lazy(() => import('../pages/pages/PageDetailPage'))
 
 function page(Page: ComponentType) {
   return <Suspense fallback={<main className="min-h-screen grid place-items-center text-text-muted">Đang tải…</main>}><Page /></Suspense>
@@ -54,6 +57,18 @@ export const router = createBrowserRouter([
       {
         path: 'groups/:groupId',
         element: page(groupDetailPage),
+      },
+      {
+        path: 'pages',
+        element: page(pagesPage),
+      },
+      {
+        path: 'pages/create',
+        element: page(pageCreatePage),
+      },
+      {
+        path: 'pages/:username',
+        element: page(pageDetailPage),
       },
       {
         path: 'reels',

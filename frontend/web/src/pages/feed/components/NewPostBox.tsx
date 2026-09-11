@@ -8,6 +8,8 @@ interface NewPostBoxProps {
     files: readonly File[],
     onUploadProgress: (progress: number) => void,
   ) => Promise<void>
+  identityName?: string
+  postingLabel?: string
 }
 
 const MAX_CHARS = 280
@@ -31,10 +33,10 @@ function validateFile(file: File, t: (key: string) => string) {
   return file.size > maximumSize ? `${file.name}: ${t('fileTooLarge')}` : null
 }
 
-export default function NewPostBox({ onPost }: NewPostBoxProps) {
+export default function NewPostBox({ onPost, identityName, postingLabel }: NewPostBoxProps) {
   const { session } = useAuth()
   const { t } = usePreferences()
-  const username = session!.user.username
+  const username = identityName ?? session!.user.username
   const initials = username.slice(0, 2).toUpperCase()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -125,7 +127,7 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
         <>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{initials}</div>
-            <button type="button" onClick={openComposer} className="flex-1 bg-surface-2 hover:bg-surface-3 text-text-muted text-left rounded-full px-4 py-2.5 text-[14px] cursor-pointer transition-colors border-none outline-none">{t('whatsOnMind')}, {username}?</button>
+            <button type="button" onClick={openComposer} className="flex-1 bg-surface-2 hover:bg-surface-3 text-text-muted text-left rounded-full px-4 py-2.5 text-[14px] cursor-pointer transition-colors border-none outline-none">{postingLabel ?? t('whatsOnMind')}, {username}?</button>
           </div>
           <div className="border-t border-border my-2.5" />
           <div className="flex items-center justify-between">
@@ -137,7 +139,7 @@ export default function NewPostBox({ onPost }: NewPostBoxProps) {
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between pb-1 border-b border-border">
-            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{initials}</div><div><div className="text-[14px] font-semibold text-text">{username}</div><div className="text-[12px] text-text-muted">{t('public')}</div></div></div>
+            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{initials}</div><div><div className="text-[14px] font-semibold text-text">{username}</div><div className="text-[12px] text-text-muted">{postingLabel ?? t('public')}</div></div></div>
             <button type="button" onClick={() => { if (!content.trim() && attachments.length === 0) setIsExpanded(false); else if (window.confirm(t('discardPost'))) { resetComposer(); setIsExpanded(false) } }} className="w-8 h-8 rounded-full bg-surface-2 hover:bg-surface-3 flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none transition-colors" title={t('close')}>✕</button>
           </div>
 
