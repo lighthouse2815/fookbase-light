@@ -18,6 +18,7 @@ using Fookbase.Api.Modules.Reels;
 using Fookbase.Api.Modules.Stories;
 using Fookbase.Api.Modules.Stories.Config;
 using Fookbase.Api.Modules.Pages;
+using Fookbase.Api.Modules.Search;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -110,6 +111,9 @@ internal static class ModuleServiceCollectionExtensions
 
     public static IServiceCollection AddAdminModule(this IServiceCollection services) =>
         services.AddAdminInfrastructure();
+
+    public static IServiceCollection AddSearchModule(this IServiceCollection services) =>
+        services.AddSearchInfrastructure();
 
     private static string RequiredConnectionString(IConfiguration configuration, string name) =>
         configuration.GetConnectionString(name)

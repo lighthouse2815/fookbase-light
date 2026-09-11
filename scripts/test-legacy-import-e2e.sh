@@ -95,6 +95,16 @@ for database_name in legacy_identity legacy_users legacy_friends legacy_messages
   create_database "${database_name}"
 done
 
+# The active schema now has trigram indexes for UserProfiles and Posts. pg_dump includes
+# those indexes when it prepares the legacy fixtures, so enable the same PostgreSQL
+# extension in the disposable source databases before copying their table schemas.
+run_sql legacy_users <<SQL
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+SQL
+run_sql legacy_posts <<SQL
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+SQL
+
 target_npgsql_connection="Host=127.0.0.1;Port=5432;Database=fookbase_db;Username=${database_user};Password=${database_password}"
 target_libpq_connection="host=127.0.0.1 port=5432 dbname=fookbase_db user=${database_user} password=${database_password}"
 

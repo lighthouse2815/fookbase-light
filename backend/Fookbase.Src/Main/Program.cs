@@ -23,6 +23,7 @@ using Fookbase.Api.Modules.Pages.Endpoints;
 using Fookbase.Api.Modules.Reels.Endpoints;
 using Fookbase.Api.Modules.Stories.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
+using Fookbase.Api.Modules.Search.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -46,12 +47,16 @@ var authResendVerificationPermitLimit = builder.Configuration.GetValue(
 var authRateLimitWindowSeconds = builder.Configuration.GetValue(
     "RateLimiting:SensitiveAuth:WindowSeconds",
     300);
+var searchPermitLimit = builder.Configuration.GetValue("RateLimiting:Search:PermitLimit", 30);
+var searchRateLimitWindowSeconds = builder.Configuration.GetValue("RateLimiting:Search:WindowSeconds", 60);
 if (rateLimitPermitLimit <= 0 ||
     rateLimitWindowSeconds <= 0 ||
     authLoginPermitLimit <= 0 ||
     authRecoveryPermitLimit <= 0 ||
     authResendVerificationPermitLimit <= 0 ||
-    authRateLimitWindowSeconds <= 0)
+    authRateLimitWindowSeconds <= 0 ||
+    searchPermitLimit <= 0 ||
+    searchRateLimitWindowSeconds <= 0)
 {
     throw new InvalidOperationException("Rate limiting values must be positive.");
 }
@@ -69,6 +74,7 @@ builder.Services.AddMediaModule(builder.Configuration);
 builder.Services.AddReelsModule();
 builder.Services.AddStoriesModule(builder.Configuration);
 builder.Services.AddAdminModule();
+builder.Services.AddSearchModule();
 
 jwtOptions.Validate();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -156,6 +162,15 @@ builder.Services.AddRateLimiter(options =>
         RateLimitPartition.GetFixedWindowLimiter(
             $"auth-resend-verification:{ClientAddress(context)}",
             _ => SensitiveAuthRateLimit(authResendVerificationPermitLimit, authRateLimitWindowSeconds)));
+    options.AddPolicy("search", context =>
+    {
+        var userId = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var partitionKey = string.IsNullOrWhiteSpace(userId)
+            ? $"search-ip:{context.Connection.RemoteIpAddress}"
+            : $"search-user:{userId}";
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ =>
+            SensitiveAuthRateLimit(searchPermitLimit, searchRateLimitWindowSeconds));
+    });
 });
 builder.Services.AddHealthChecks()
     .AddCheck<FookbaseDatabaseHealthCheck>("postgresql", tags: ["ready"])
@@ -208,6 +223,7 @@ app.MapAdminEndpoints();
 app.MapMediaEndpoints();
 app.MapReelEndpoints();
 app.MapStoryEndpoints();
+app.MapSearchEndpoints();
 
 app.Run();
 
