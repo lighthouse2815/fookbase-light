@@ -11,6 +11,7 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
+using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -274,6 +275,12 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         Assert.Single(secondPage.Items);
         Assert.NotEqual(firstPage.Items[0].Id, secondPage.Items[0].Id);
         Assert.Equal(HttpStatusCode.OK, mediaAccess.StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var persisted = await db.Posts.SingleAsync(item => item.Id == first.Id);
+        Assert.Equal(users[0], persisted.AuthorUserId);
+        Assert.Equal(PostContainerType.Group, persisted.ContainerType);
+        Assert.Equal(group.Id, persisted.ContainerId);
     }
 
     [Fact]

@@ -45,9 +45,11 @@ export default function LivePostCard({
   const isAuthor = post.authorUserId === currentUserId
   const displayAuthor = post.displayAuthor
   const authorName = displayAuthor?.name ?? author?.displayName ?? t('user')
-  const authorUsername = displayAuthor?.username ?? author?.username ?? post.authorUserId.slice(0, 8)
+  const authorUsername = displayAuthor?.username ?? author?.username ?? t('user')
   const authorAvatarUrl = displayAuthor?.avatarUrl ?? author?.avatarUrl
-  const authorDestination = displayAuthor?.type === 'page' ? `/pages/${displayAuthor.username}` : `/profile/${post.authorUserId}`
+  const authorDestination = displayAuthor?.type === 'page'
+    ? `/pages/${displayAuthor.username}`
+    : post.authorUserId ? `/profile/${post.authorUserId}` : '/'
   const reactionCount = Object.values(post.reactionCounts).reduce(
     (total, count) => total + count,
     0,

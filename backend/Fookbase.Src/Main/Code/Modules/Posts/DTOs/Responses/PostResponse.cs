@@ -2,7 +2,7 @@ namespace Fookbase.Api.Modules.Posts.DTOs.Responses;
 
 public sealed record PostResponse(
     Guid Id,
-    Guid AuthorUserId,
+    Guid? AuthorUserId,
     string Content,
     string Privacy,
     DateTimeOffset CreatedAtUtc,

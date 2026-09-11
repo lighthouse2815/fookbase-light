@@ -15,7 +15,7 @@ Pages are public identities managed by people without exposing the publishing ma
 
 - `PostContainerType.Page` preserves Profile and Group enum values and uses the Page Id for `ContainerId` while retaining the real publishing user in the audit field.
 - Page Posts are standard public posts only. Owner/Admin/Editor can publish, edit and delete; Owner/Admin/Moderator can remove comments.
-- Responses set `authorUserId` and `displayAuthor` to the Page identity for Page Posts. The publishing manager is not exposed by normal post APIs.
+- Page-post responses set `authorUserId` to `null` and `displayAuthor` to the Page identity. The publishing manager is not exposed by normal post APIs.
 - Published, non-deleted Page and post determine Page-post visibility. Manager profile privacy and blocks do not suppress it.
 - Page Posts are excluded from Home Feed and do not participate in Reels or Stories.
 - Engagement notifications target the real publishing manager in V1. This is documented behavior until Page-level notification routing exists.
@@ -29,3 +29,11 @@ Pages are public identities managed by people without exposing the publishing ma
 ## Deferred
 
 Page Blocks, Page Reels, Page Stories, Page Inbox, Ads/Business Manager, badges, Events, Marketplace, global search, mixed Page Home Feed ranking, ML ranking, HLS and CDN delivery are intentionally outside Pages V1.
+
+## M8.1: ngữ nghĩa tác giả của Page post
+
+`Posts.AuthorUserId` luôn lưu `User.Id` của tài khoản đã xác thực thực hiện thao tác publish. Với Page post, `ContainerType = Page` và `ContainerId = Page.Id`; Page là display identity riêng và không phải Identity user.
+
+Publisher thật vẫn là dữ liệu audit nội bộ và là người nhận notification reaction/comment trong V1; self-action vẫn bị loại bỏ. DTO công khai không trả publisher này, chỉ trả `displayAuthor` của Page.
+
+Không có migration dữ liệu cho M8.1: luồng M8 đã truyền actor từ JWT vào `CreatePostInPageAsync`, vì vậy các row Page post đã tồn tại đã lưu publisher là `User.Id`. Sai lệch chỉ ở projection DTO từng thay giá trị hiển thị bằng `Page.Id`. Việc cố chuyển `Page.Id` trong dữ liệu hiện tại sẽ không an toàn và không cần thiết; Post ID, container và timestamp không thay đổi.

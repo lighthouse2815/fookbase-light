@@ -1087,7 +1087,7 @@ public sealed class PostsService(
             var page = post.ContainerType == PostContainerType.Page ? pages.GetValueOrDefault(post.ContainerId) : null;
             return new PostResponse(
             post.Id,
-            page?.Id ?? post.AuthorUserId,
+            page is null ? post.AuthorUserId : null,
             post.Content,
             PrivacyName(post.Privacy),
             post.CreatedAtUtc,
@@ -1107,7 +1107,7 @@ public sealed class PostsService(
     private static PostResponse EmptySummary(Post post, IReadOnlyList<Guid> mediaIds) =>
         new(
             post.Id,
-            post.AuthorUserId,
+            post.ContainerType == PostContainerType.Page ? null : post.AuthorUserId,
             post.Content,
             PrivacyName(post.Privacy),
             post.CreatedAtUtc,

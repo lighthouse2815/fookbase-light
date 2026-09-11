@@ -13,6 +13,7 @@ using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Pages.DTOs.Responses;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
+using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -192,7 +193,7 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
-    public async Task Page_posts_display_page_identity_and_ignore_publishing_manager_blocks()
+    public async Task Page_posts_display_page_identity_without_revealing_the_publishing_manager()
     {
         var users = await CreateUsersAsync(3);
         using var owner = CreateAuthenticatedClient(users[0]);
@@ -205,15 +206,98 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         {
             var friends = scope.ServiceProvider.GetRequiredService<FriendsService>();
             Assert.True((await friends.BlockAsync(users[1], users[0])).Succeeded);
+
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var persisted = await db.Posts.SingleAsync(item => item.Id == post.Id);
+            Assert.Equal(users[0], persisted.AuthorUserId);
+            Assert.Equal(PostContainerType.Page, persisted.ContainerType);
+            Assert.Equal(page.Id, persisted.ContainerId);
         }
 
         var direct = await ReadAsync<PostResponse>(await viewer.GetAsync($"/api/posts/{post.Id}"));
 
-        Assert.Equal(page.Id, post.AuthorUserId);
+        Assert.Null(post.AuthorUserId);
         Assert.Equal("page", post.DisplayAuthor!.Type);
         Assert.Equal(page.Username, post.DisplayAuthor.Username);
-        Assert.Equal(page.Id, direct.AuthorUserId);
+        Assert.Null(direct.AuthorUserId);
         Assert.Equal("page", direct.ContainerType);
+    }
+
+    [Fact]
+    public async Task Owners_admins_and_editors_can_publish_page_posts_with_user_audit_authors()
+    {
+        var users = await CreateUsersAsync(5);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        using var admin = CreateAuthenticatedClient(users[1]);
+        using var editor = CreateAuthenticatedClient(users[2]);
+        using var moderator = CreateAuthenticatedClient(users[3]);
+        using var follower = CreateAuthenticatedClient(users[4]);
+        var page = await CreatePageAsync(owner, "publisher.roles.page");
+        (await owner.PostAsync($"/api/pages/{page.Id}/publish", null)).EnsureSuccessStatusCode();
+        await AddManagerAsync(owner, page.Id, users[1], "admin");
+        await AddManagerAsync(owner, page.Id, users[2], "editor");
+        await AddManagerAsync(owner, page.Id, users[3], "moderator");
+        (await follower.PostAsync($"/api/pages/{page.Id}/follow", null)).EnsureSuccessStatusCode();
+
+        var ownerPost = await ReadAsync<PostResponse>(await owner.PostAsJsonAsync(
+            $"/api/pages/{page.Id}/posts", new { content = "owner", mediaIds = Array.Empty<Guid>() }));
+        var adminPost = await ReadAsync<PostResponse>(await admin.PostAsJsonAsync(
+            $"/api/pages/{page.Id}/posts", new { content = "admin", mediaIds = Array.Empty<Guid>() }));
+        var editorPost = await ReadAsync<PostResponse>(await editor.PostAsJsonAsync(
+            $"/api/pages/{page.Id}/posts", new { content = "editor", mediaIds = Array.Empty<Guid>() }));
+        var moderatorPost = await moderator.PostAsJsonAsync(
+            $"/api/pages/{page.Id}/posts", new { content = "moderator", mediaIds = Array.Empty<Guid>() });
+        var followerPost = await follower.PostAsJsonAsync(
+            $"/api/pages/{page.Id}/posts", new { content = "follower", mediaIds = Array.Empty<Guid>() });
+
+        Assert.Equal(HttpStatusCode.Forbidden, moderatorPost.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, followerPost.StatusCode);
+        Assert.All(new[] { ownerPost, adminPost, editorPost }, post =>
+        {
+            Assert.Null(post.AuthorUserId);
+            Assert.Equal("page", post.DisplayAuthor!.Type);
+            Assert.Equal(page.Id, post.DisplayAuthor.Id);
+        });
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var persisted = await db.Posts.Where(item => item.Id == ownerPost.Id || item.Id == adminPost.Id || item.Id == editorPost.Id)
+            .ToDictionaryAsync(item => item.Id);
+        Assert.Equal(users[0], persisted[ownerPost.Id].AuthorUserId);
+        Assert.Equal(users[1], persisted[adminPost.Id].AuthorUserId);
+        Assert.Equal(users[2], persisted[editorPost.Id].AuthorUserId);
+        Assert.All(persisted.Values, item =>
+        {
+            Assert.Equal(PostContainerType.Page, item.ContainerType);
+            Assert.Equal(page.Id, item.ContainerId);
+        });
+    }
+
+    [Fact]
+    public async Task Page_post_engagement_notifies_the_publishing_manager_but_not_the_manager_self()
+    {
+        var users = await CreateUsersAsync(2);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        using var visitor = CreateAuthenticatedClient(users[1]);
+        var page = await CreatePageAsync(owner, "page.notifications.page");
+        (await owner.PostAsync($"/api/pages/{page.Id}/publish", null)).EnsureSuccessStatusCode();
+        var post = await ReadAsync<PostResponse>(await owner.PostAsJsonAsync(
+            $"/api/pages/{page.Id}/posts", new { content = "notify", mediaIds = Array.Empty<Guid>() }));
+
+        (await visitor.PutAsJsonAsync($"/api/posts/{post.Id}/reaction", new { type = "like" })).EnsureSuccessStatusCode();
+        (await visitor.PostAsJsonAsync($"/api/posts/{post.Id}/comments", new { content = "visitor comment" })).EnsureSuccessStatusCode();
+        (await owner.PutAsJsonAsync($"/api/posts/{post.Id}/reaction", new { type = "love" })).EnsureSuccessStatusCode();
+        (await owner.PostAsJsonAsync($"/api/posts/{post.Id}/comments", new { content = "owner comment" })).EnsureSuccessStatusCode();
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var notifications = await db.Notifications.AsNoTracking().Where(item => item.EntityId == post.Id).ToListAsync();
+        Assert.Contains(notifications, item => item.RecipientUserId == users[0] && item.ActorUserId == users[1] &&
+            item.Type == NotificationType.PostReaction);
+        Assert.Contains(notifications, item => item.RecipientUserId == users[0] && item.ActorUserId == users[1] &&
+            item.Type == NotificationType.PostComment);
+        Assert.DoesNotContain(notifications, item => item.ActorUserId == users[0] &&
+            (item.Type == NotificationType.PostReaction || item.Type == NotificationType.PostComment));
     }
 
     [Fact]

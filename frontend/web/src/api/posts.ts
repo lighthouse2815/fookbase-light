@@ -3,7 +3,7 @@ import type { PagedResponse } from './friends'
 
 export interface Post {
   id: string
-  authorUserId: string
+  authorUserId: string | null
   content: string
   privacy: string
   createdAtUtc: string

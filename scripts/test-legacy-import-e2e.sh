@@ -107,7 +107,7 @@ run_sdk \
 copy_legacy_schema legacy_identity AspNetUsers RefreshTokens
 copy_legacy_schema legacy_users UserProfiles
 copy_legacy_schema legacy_friends Friendships BlockedUsers
-copy_legacy_schema legacy_messages Conversations ConversationReadCursors Messages
+copy_legacy_schema legacy_messages Stories Conversations ConversationReadCursors Messages
 copy_legacy_schema legacy_posts Posts Comments PostReactions PostMedia
 copy_legacy_schema legacy_media MediaAssets MediaReferences ProfileMediaReferences
 

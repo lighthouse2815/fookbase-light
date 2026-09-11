@@ -16,9 +16,10 @@ const managerRoles = new Set(['owner', 'admin', 'moderator'])
 const rulesManagerRoles = new Set(['owner', 'admin'])
 
 function toAuthor(post: Post): UserProfile {
-  const suffix = post.authorUserId.slice(0, 8)
+  const authorUserId = post.authorUserId!
+  const suffix = authorUserId.slice(0, 8)
   return {
-    userId: post.authorUserId,
+    userId: authorUserId,
     username: 'member_' + suffix,
     displayName: 'Group member ' + suffix,
     avatarUrl: null,

@@ -36,6 +36,23 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Profile_posts_keep_the_authenticated_user_as_author_and_container()
+    {
+        var authorUserId = (await CreateUserIdsAsync(1))[0];
+        using var author = CreateAuthenticatedClient(authorUserId);
+
+        var response = await CreatePostAsync(author, "profile author", "public");
+
+        Assert.Equal(authorUserId, response.AuthorUserId);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var persisted = await db.Posts.SingleAsync(item => item.Id == response.Id);
+        Assert.Equal(authorUserId, persisted.AuthorUserId);
+        Assert.Equal(PostContainerType.Profile, persisted.ContainerType);
+        Assert.Equal(authorUserId, persisted.ContainerId);
+    }
+
+    [Fact]
     public async Task Users_can_report_posts_and_user_profiles_once()
     {
         var users = await CreateUserIdsAsync(3);
