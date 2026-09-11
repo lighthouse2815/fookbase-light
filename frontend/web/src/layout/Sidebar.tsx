@@ -21,6 +21,7 @@ export default function Sidebar() {
     { path: '/messages', emoji: '💬', label: t('messages') },
     { path: '/groups', emoji: '👥', label: t('groups') },
     { path: '/reels', emoji: '🎞️', label: 'Reels' },
+    { path: '/stories/archive', emoji: '🕘', label: 'Kho Story' },
     { path: '/games', emoji: '🎮', label: t('games') },
     { path: '/profile', emoji: '👤', label: t('profile') },
   ]

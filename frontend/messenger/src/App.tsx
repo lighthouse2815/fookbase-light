@@ -28,6 +28,13 @@ function formatTime(value: string) {
   return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
 }
 
+function messageSummary(message: Message | null) {
+  if (!message) return 'Bắt đầu trò chuyện'
+  if (message.deletedAtUtc) return 'Tin nhắn đã gỡ'
+  if (message.story) return message.story.isAvailable ? 'Đã trả lời Story' : 'Story không khả dụng'
+  return message.content ?? (message.attachments?.length ? 'Đã gửi media' : 'Bắt đầu trò chuyện')
+}
+
 function upsertMessage(items: Message[], message: Message) {
   const index = items.findIndex((item) => item.id === message.id)
   const next = index < 0 ? [...items, message] : items.map((item) => item.id === message.id ? message : item)
@@ -107,6 +114,10 @@ function MessageBubble({ message, mine, onReply, onEdit, onDelete, onReact }: {
   return <article className={`message-row ${mine ? 'mine' : ''}`} onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
     <div className="message-stack">
       {message.replyTo && <div className="reply-preview">↪ {message.replyTo.isDeleted ? 'Tin nhắn đã gỡ' : message.replyTo.content ?? 'Media'}</div>}
+      {message.story && <div className={`story-preview ${message.story.isAvailable ? '' : 'unavailable'}`}>
+        <span>{message.story.isAvailable ? '◉' : '◌'}</span>
+        <span><b>{message.story.isAvailable ? 'Story' : 'Story không khả dụng'}</b><small>{message.story.isAvailable ? message.story.caption ?? (message.story.mediaType === 'video' ? 'Video Story' : 'Ảnh Story') : 'Story này đã hết hạn hoặc bạn không còn quyền xem.'}</small></span>
+      </div>}
       <div className={`bubble ${message.deletedAtUtc ? 'deleted' : ''}`}>
         {message.deletedAtUtc ? 'Tin nhắn đã được gỡ' : <>
           {message.content && <span>{message.content}</span>}
@@ -273,7 +284,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     <aside className="conversation-pane"><header className="pane-header"><div><strong>Messenger</strong><small>@{session.user.username}</small></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
       <input className="conversation-filter" placeholder="Tìm cuộc trò chuyện" onChange={(event) => { const value = event.target.value.toLowerCase(); document.querySelectorAll<HTMLElement>('[data-conversation]').forEach((node) => { node.hidden = !node.dataset.conversation?.includes(value) }) }} />
       <div className="conversation-list">{conversations.map((conversation) => <button key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} hidden={false} className={`conversation-item ${conversation.id === activeId ? 'selected' : ''}`} onClick={() => setActiveId(conversation.id)}>
-        <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{conversation.lastMessage?.deletedAtUtc ? 'Tin nhắn đã gỡ' : conversation.lastMessage?.content ?? (conversation.lastMessage?.attachments?.length ? 'Đã gửi media' : 'Bắt đầu trò chuyện')}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
+        <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
       </div>
       {nextConversationCursor && <button className="load-more" onClick={() => void loadConversations(nextConversationCursor)}>Tải thêm</button>}
       <footer><button onClick={() => void onSignOut()}>Đăng xuất</button><a href={import.meta.env.VITE_WEB_URL ?? 'http://localhost:5173'}>Fookbase</a></footer>

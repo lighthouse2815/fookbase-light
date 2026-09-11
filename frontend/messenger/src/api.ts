@@ -102,6 +102,12 @@ export const authApi = {
 export interface MessageAttachment { mediaId: string; sortOrder: number }
 export interface MessageReaction { userId: string; type: string }
 export interface MessageReplyPreview { id: string; senderUserId: string; content: string | null; type: string; isDeleted: boolean }
+export interface MessageStoryReference {
+  storyId: string
+  isAvailable: boolean
+  caption: string | null
+  mediaType: 'image' | 'video' | null
+}
 export interface Message {
   id: string
   conversationId: string
@@ -116,6 +122,7 @@ export interface Message {
   deletedAtUtc: string | null
   attachments: MessageAttachment[]
   reactions: MessageReaction[]
+  story: MessageStoryReference | null
 }
 export interface Participant {
   userId: string

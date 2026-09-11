@@ -11,6 +11,7 @@ import { usePreferences } from '../../preferences'
 import PaginationControls from '../../shared/components/PaginationControls'
 import LivePostCard from './components/LivePostCard'
 import NewPostBox from './components/NewPostBox'
+import StoryTray from './components/StoryTray'
 
 export default function FeedPage() {
   const { session } = useAuth()
@@ -96,6 +97,7 @@ export default function FeedPage() {
   return (
     <div className="flex justify-center min-h-screen px-2 sm:px-4 py-4">
       <div className="w-full max-w-[680px] min-w-0 flex flex-col gap-4">
+        <StoryTray />
         <NewPostBox onPost={handleNewPost} />
         <div className="flex flex-col gap-4">
           {error && <div className="rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void loadFeed()} className="mt-2 rounded-md border border-[#ff8a9b]/50 bg-transparent px-3 py-1 text-xs font-semibold text-[#ff8a9b] cursor-pointer">{t('refresh')}</button></div>}

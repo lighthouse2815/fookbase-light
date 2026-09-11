@@ -50,6 +50,9 @@ export default function TopNavbar() {
     if (notification.type === 'GroupInvite' || notification.type === 'GroupJoinApproved') {
       return '/groups'
     }
+    if (notification.type === 'StoryReaction') {
+      return '/feed'
+    }
 
     return notification.entityId ? '/feed?post=' + notification.entityId : '/feed'
   }
@@ -75,6 +78,8 @@ export default function TopNavbar() {
         return actor + ' invited you to a group.'
       case 'GroupJoinApproved':
         return actor + ' approved your group join request.'
+      case 'StoryReaction':
+        return actor + ' reacted to your Story.'
     }
   }
 
