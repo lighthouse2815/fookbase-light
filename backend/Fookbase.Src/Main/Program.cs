@@ -64,7 +64,7 @@ builder.Services.AddFookbasePersistence(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddUsersModule();
 builder.Services.AddFriendsModule();
-builder.Services.AddFeedModule();
+builder.Services.AddFeedModule(builder.Configuration);
 builder.Services.AddGroupsModule();
 builder.Services.AddPagesModule();
 builder.Services.AddMessagesModule();

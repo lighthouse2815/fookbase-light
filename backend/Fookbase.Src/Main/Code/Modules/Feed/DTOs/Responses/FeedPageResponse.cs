@@ -1,7 +1,10 @@
+using Fookbase.Api.Modules.Posts.DTOs.Responses;
+using Fookbase.Api.Modules.Reels.DTOs.Responses;
+
 namespace Fookbase.Api.Modules.Feed.DTOs.Responses;
 
 public sealed record FeedAuthorResponse(
-    Guid UserId,
+    Guid? UserId,
     string Username,
     string DisplayName,
     string? AvatarUrl);
@@ -10,6 +13,12 @@ public sealed record FeedMediaResponse(
     Guid MediaId,
     string MediaType,
     string ContentType);
+
+public sealed record FeedContainerResponse(
+    Guid Id,
+    string Name,
+    string? Username,
+    string? Privacy);
 
 public sealed record FeedItemResponse(
     Guid Id,
@@ -23,8 +32,15 @@ public sealed record FeedItemResponse(
     int CommentCount,
     int ReactionCount,
     IReadOnlyDictionary<string, int> ReactionCounts,
-    string? ViewerReaction);
+    string? ViewerReaction,
+    string ContentType,
+    string ContainerType,
+    FeedContainerResponse Container,
+    PostDisplayIdentityResponse DisplayAuthor,
+    ReelVideoResponse? Video,
+    bool IsSuggested);
 
 public sealed record FeedPageResponse(
     IReadOnlyList<FeedItemResponse> Items,
-    string? NextCursor);
+    string? NextCursor,
+    DateTimeOffset AsOfUtc);

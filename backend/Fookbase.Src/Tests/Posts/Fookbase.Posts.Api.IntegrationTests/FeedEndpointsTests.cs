@@ -91,7 +91,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
-    public async Task Feed_cursor_is_newest_first_stable_and_rejects_invalid_input()
+    public async Task Following_cursor_is_newest_first_stable_and_rejects_invalid_input()
     {
         var viewer = (await CreateUsersAsync(1))[0];
         var timestamp = new DateTimeOffset(2026, 9, 10, 12, 0, 0, TimeSpan.Zero);
@@ -102,11 +102,11 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         }
 
         using var client = CreateAuthenticatedClient(viewer);
-        var invalid = await client.GetAsync("/api/feed?cursor=not-a-cursor");
+        var invalid = await client.GetAsync("/api/feed/following?cursor=not-a-cursor");
         var first = await ReadAsync<FeedPageResponse>(
-            await client.GetAsync("/api/feed?limit=2"));
+            await client.GetAsync("/api/feed/following?limit=2"));
         var second = await ReadAsync<FeedPageResponse>(
-            await client.GetAsync("/api/feed?limit=2&cursor=" +
+            await client.GetAsync("/api/feed/following?limit=2&cursor=" +
                 Uri.EscapeDataString(first.NextCursor!)));
         var expected = ids.OrderByDescending(id => id).ToArray();
         var actual = first.Items.Concat(second.Items).Select(item => item.Id).ToArray();
@@ -151,7 +151,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
-    public async Task Feed_traverses_multiple_large_pages_without_duplicate_posts()
+    public async Task Following_traverses_multiple_large_pages_without_duplicate_posts()
     {
         var viewer = (await CreateUsersAsync(1))[0];
         var timestamp = DateTimeOffset.UtcNow;
@@ -167,9 +167,9 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
 
         using var client = CreateAuthenticatedClient(viewer);
         var first = await ReadAsync<FeedPageResponse>(
-            await client.GetAsync("/api/feed?limit=50"));
+            await client.GetAsync("/api/feed/following?limit=50"));
         var second = await ReadAsync<FeedPageResponse>(
-            await client.GetAsync("/api/feed?limit=50&cursor=" +
+            await client.GetAsync("/api/feed/following?limit=50&cursor=" +
                 Uri.EscapeDataString(first.NextCursor!)));
         var actual = first.Items.Concat(second.Items)
             .Where(item => expectedIds.Contains(item.Id))

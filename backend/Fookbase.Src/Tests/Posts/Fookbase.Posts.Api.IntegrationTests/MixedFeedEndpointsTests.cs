@@ -1,0 +1,647 @@
+using System.Data.Common;
+using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using Fookbase.Api.Modules.Feed.Config;
+using Fookbase.Api.Modules.Feed.DTOs.Responses;
+using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Groups.Entities;
+using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Pages.Entities;
+using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Persistence;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Tokens;
+
+namespace Fookbase.Posts.Api.IntegrationTests;
+
+public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClassFixture<MixedFeedApiFactory>
+{
+    [Fact]
+    public async Task Mixed_candidates_preserve_container_identity_privacy_and_page_publisher_confidentiality()
+    {
+        var users = await CreateUsersAsync(5);
+        var (viewer, friend, stranger, manager, groupOwner) = (users[0], users[1], users[2], users[3], users[4]);
+        await BefriendAsync(viewer, friend);
+        var joined = await CreateGroupAsync(groupOwner, viewer, GroupPrivacy.Private);
+        var unjoined = await CreateGroupAsync(groupOwner, null, GroupPrivacy.Public);
+        var privateUnjoined = await CreateGroupAsync(groupOwner, null, GroupPrivacy.Private);
+        var followed = await CreatePageAsync(manager, viewer);
+        var unpublished = await CreatePageAsync(manager, viewer, published: false);
+        var unfollowed = await CreatePageAsync(manager, null);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var own = Standard(viewer, now, PostPrivacy.OnlyMe);
+        var friendPost = Standard(friend, now, PostPrivacy.Friends);
+        var nonFriendPost = Standard(stranger, now);
+        var privateFriendPost = Standard(friend, now, PostPrivacy.OnlyMe);
+        var groupPost = InContainer(groupOwner, joined.Id, PostContainerType.Group, now);
+        var unjoinedPost = InContainer(groupOwner, unjoined.Id, PostContainerType.Group, now);
+        var hiddenGroupPost = InContainer(groupOwner, privateUnjoined.Id, PostContainerType.Group, now);
+        var pagePost = InContainer(manager, followed.Id, PostContainerType.Page, now);
+        var unpublishedPost = InContainer(manager, unpublished.Id, PostContainerType.Page, now);
+        var unfollowedPost = InContainer(manager, unfollowed.Id, PostContainerType.Page, now);
+        await SaveAsync(db => db.Posts.AddRange(own, friendPost, nonFriendPost, privateFriendPost, groupPost,
+            unjoinedPost, hiddenGroupPost, pagePost, unpublishedPost, unfollowedPost));
+        var ownReel = await CreateReelAsync(viewer, now, PostPrivacy.OnlyMe);
+        var friendReel = await CreateReelAsync(friend, now, PostPrivacy.Friends);
+        await BlockAsync(viewer, manager);
+        using var client = CreateClient(viewer);
+
+        var response = await client.GetAsync("/api/feed?limit=50");
+        var raw = await response.Content.ReadAsStringAsync();
+        var feed = await ReadAsync(response);
+        var expected = new[] { own.Id, friendPost.Id, groupPost.Id, pagePost.Id, ownReel.Id, friendReel.Id };
+        Assert.All(expected, id => Assert.Contains(feed.Items, item => item.Id == id));
+        var excluded = new[] { nonFriendPost.Id, privateFriendPost.Id, unjoinedPost.Id, hiddenGroupPost.Id,
+            unpublishedPost.Id, unfollowedPost.Id };
+        Assert.All(excluded, id => Assert.DoesNotContain(feed.Items, item => item.Id == id));
+
+        var groupItem = Assert.Single(feed.Items, item => item.Id == groupPost.Id);
+        Assert.Equal("group", groupItem.ContainerType);
+        Assert.Equal(joined.Id, groupItem.Container.Id);
+        Assert.Equal(joined.Name, groupItem.Container.Name);
+        Assert.Equal(groupOwner, groupItem.DisplayAuthor.Id);
+        Assert.Equal(groupOwner, groupItem.Author.UserId);
+        var pageItem = Assert.Single(feed.Items, item => item.Id == pagePost.Id);
+        Assert.Equal("page", pageItem.DisplayAuthor.Type);
+        Assert.Equal(followed.Id, pageItem.DisplayAuthor.Id);
+        Assert.Equal(followed.Name, pageItem.Author.DisplayName);
+        Assert.Null(pageItem.Author.UserId);
+        Assert.DoesNotContain(manager.ToString(), raw, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(privateUnjoined.Name, raw, StringComparison.Ordinal);
+        Assert.Equal("standardPost", Assert.Single(feed.Items, item => item.Id == own.Id).ContentType);
+
+        var reelItem = Assert.Single(feed.Items, item => item.Id == friendReel.Id);
+        Assert.Equal("reel", reelItem.ContentType);
+        Assert.NotNull(reelItem.Video);
+        Assert.Equal($"/api/reels/{friendReel.Id}/video/access", reelItem.Video.VideoAccessPath);
+        Assert.Equal($"/api/reels/{friendReel.Id}/poster/access", reelItem.Video.PosterAccessPath);
+        Assert.Equal(720, reelItem.Video.Width);
+        Assert.Equal(1_280, reelItem.Video.Height);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/posts/{pagePost.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/posts/{hiddenGroupPost.Id}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Reels_require_accessible_privacy_and_processed_ready_media_even_for_the_owner()
+    {
+        var users = await CreateUsersAsync(4);
+        var (viewer, friend, stranger, blocked) = (users[0], users[1], users[2], users[3]);
+        await BefriendAsync(viewer, friend);
+        await BefriendAsync(viewer, blocked);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        await SaveAsync(db => db.Posts.AddRange(Enumerable.Range(0, 12).Select(i => Standard(viewer, now.AddSeconds(-i)))));
+        var ready = await CreateReelAsync(friend, now, PostPrivacy.Friends);
+        var hidden = await CreateReelAsync(friend, now, PostPrivacy.OnlyMe);
+        var strangersFriends = await CreateReelAsync(stranger, now, PostPrivacy.Friends);
+        var blockedPublic = await CreateReelAsync(blocked, now);
+        var pending = await CreateReelAsync(viewer, now, status: MediaStatus.PendingUpload);
+        var processing = await CreateReelAsync(viewer, now, status: MediaStatus.Processing);
+        var failed = await CreateReelAsync(viewer, now, status: MediaStatus.Failed);
+        var missing = Post.CreateReel(Guid.NewGuid(), viewer, "Missing media", PostPrivacy.OnlyMe, now);
+        await SaveAsync(db => db.Posts.Add(missing));
+        await BlockAsync(blocked, viewer);
+        using var client = CreateClient(viewer);
+
+        var feed = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
+
+        Assert.Contains(feed.Items, item => item.Id == ready.Id);
+        Assert.All(new[] { hidden.Id, strangersFriends.Id, blockedPublic.Id, pending.Id, processing.Id, failed.Id, missing.Id },
+            id => Assert.DoesNotContain(feed.Items, item => item.Id == id));
+        Assert.All(feed.Items.Where(item => item.ContentType == "reel"), item =>
+        {
+            Assert.NotNull(item.Video);
+            Assert.True(item.Video.DurationMs > 0);
+            Assert.DoesNotContain("http", item.Video.VideoAccessPath, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    [Theory]
+    [InlineData("block")]
+    [InlineData("reverse-block")]
+    [InlineData("unfriend")]
+    [InlineData("leave")]
+    [InlineData("remove")]
+    [InlineData("unfollow")]
+    [InlineData("unpublish")]
+    [InlineData("delete-group")]
+    [InlineData("delete-post")]
+    [InlineData("delete-reel")]
+    public async Task Relationship_and_deletion_changes_revoke_content_even_with_an_old_cursor(string change)
+    {
+        var users = await CreateUsersAsync(3);
+        var (viewer, friend, owner) = (users[0], users[1], users[2]);
+        await BefriendAsync(viewer, friend);
+        var group = await CreateGroupAsync(owner, viewer, GroupPrivacy.Private);
+        var page = await CreatePageAsync(owner, viewer);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var anchor = Standard(viewer, now);
+        var friendPost = Standard(friend, now.AddMinutes(-1), PostPrivacy.Friends);
+        var groupPost = InContainer(owner, group.Id, PostContainerType.Group, now.AddMinutes(-2));
+        var pagePost = InContainer(owner, page.Id, PostContainerType.Page, now.AddMinutes(-3));
+        await SaveAsync(db => db.Posts.AddRange(anchor, friendPost, groupPost, pagePost));
+        var reel = await CreateReelAsync(friend, now.AddMinutes(-4), PostPrivacy.Friends);
+        var target = change switch
+        {
+            "leave" or "remove" or "delete-group" => groupPost.Id,
+            "unfollow" or "unpublish" => pagePost.Id,
+            "delete-reel" => reel.Id,
+            _ => friendPost.Id
+        };
+        using var client = CreateClient(viewer);
+        var before = await ReadAsync(await client.GetAsync("/api/feed/following?limit=50"));
+        Assert.Contains(before.Items, item => item.Id == target);
+        var first = await ReadAsync(await client.GetAsync("/api/feed?limit=1"));
+        Assert.Equal(anchor.Id, Assert.Single(first.Items).Id);
+        Assert.NotNull(first.NextCursor);
+
+        if (change is "block" or "reverse-block")
+        {
+            await BlockAsync(change == "block" ? viewer : friend, change == "block" ? friend : viewer);
+        }
+        else if (change is "leave" or "remove")
+        {
+            using var actor = CreateClient(change == "leave" ? viewer : owner);
+            using var mutation = change == "leave"
+                ? await actor.PostAsync($"/api/groups/{group.Id}/leave", null)
+                : await actor.DeleteAsync($"/api/groups/{group.Id}/members/{viewer}");
+            mutation.EnsureSuccessStatusCode();
+        }
+        else
+        {
+            await SaveAsync(db =>
+            {
+                switch (change)
+                {
+                    case "unfriend":
+                        db.Friendships.Remove(db.Friendships.Single(item =>
+                            (item.UserId1 == viewer && item.UserId2 == friend) ||
+                            (item.UserId1 == friend && item.UserId2 == viewer)));
+                        break;
+                    case "unfollow":
+                        db.PageFollowers.Remove(db.PageFollowers.Single(item => item.PageId == page.Id && item.UserId == viewer));
+                        break;
+                    case "unpublish":
+                        db.Pages.Single(item => item.Id == page.Id).Unpublish(DateTimeOffset.UtcNow);
+                        break;
+                    case "delete-group":
+                        db.Groups.Single(item => item.Id == group.Id).Delete(DateTimeOffset.UtcNow);
+                        break;
+                    default:
+                        db.Posts.Single(item => item.Id == target).Delete(DateTimeOffset.UtcNow);
+                        break;
+                }
+            });
+        }
+
+        var remaining = await TraverseAsync(client, "/api/feed", 2, first.NextCursor);
+        var fresh = await ReadAsync(await client.GetAsync("/api/feed/following?limit=50"));
+        Assert.DoesNotContain(remaining, item => item.Id == target);
+        Assert.DoesNotContain(fresh.Items, item => item.Id == target);
+    }
+
+    [Fact]
+    public async Task Feed_session_excludes_new_content_until_refresh_and_ignores_engagement_changes_for_ordering()
+    {
+        var viewer = (await CreateUsersAsync(1))[0];
+        var timestamp = DateTimeOffset.UtcNow.AddHours(-1);
+        var posts = Enumerable.Range(0, 6).Select(i => Standard(viewer, timestamp.AddSeconds(-i))).ToArray();
+        await SaveAsync(db => db.Posts.AddRange(posts));
+        using var client = CreateClient(viewer);
+        var started = DateTimeOffset.UtcNow;
+        var first = await ReadAsync(await client.GetAsync("/api/feed?limit=2"));
+        Assert.InRange(first.AsOfUtc, started.AddSeconds(-1), DateTimeOffset.UtcNow.AddSeconds(1));
+        Assert.NotNull(first.NextCursor);
+        var newer = Standard(viewer, DateTimeOffset.UtcNow);
+        Assert.True(newer.CreatedAtUtc > first.AsOfUtc);
+        await SaveAsync(db =>
+        {
+            db.Posts.Add(newer);
+            db.PostReactions.Add(PostReaction.Create(posts[^1].Id, viewer, ReactionType.Love, DateTimeOffset.UtcNow));
+            db.Comments.Add(Comment.Create(Guid.NewGuid(), posts[^1].Id, viewer, null, "New engagement", DateTimeOffset.UtcNow));
+        });
+
+        var second = await ReadAsync(await client.GetAsync(CursorUrl("/api/feed", 2, first.NextCursor)));
+        Assert.Equal(first.AsOfUtc, second.AsOfUtc);
+        var remaining = second.Items.Concat(await TraverseAsync(client, "/api/feed", 2, second.NextCursor)).ToArray();
+        Assert.DoesNotContain(remaining, item => item.Id == newer.Id);
+        Assert.Equal(posts.Select(post => post.Id), first.Items.Concat(remaining).Where(item => !item.IsSuggested).Select(item => item.Id));
+        var reacted = Assert.Single(remaining, item => item.Id == posts[^1].Id);
+        Assert.Equal(1, reacted.CommentCount);
+        Assert.Equal(1, reacted.ReactionCount);
+        Assert.Equal("love", reacted.ViewerReaction);
+        var refreshed = await ReadAsync(await client.GetAsync("/api/feed?limit=2"));
+        Assert.True(refreshed.AsOfUtc >= newer.CreatedAtUtc);
+        Assert.Equal(newer.Id, refreshed.Items[0].Id);
+    }
+
+    [Fact]
+    public async Task Cursor_is_authenticated_and_bound_to_viewer_and_feed_mode()
+    {
+        var users = await CreateUsersAsync(2);
+        var viewer = users[0];
+        await SaveAsync(db => db.Posts.AddRange(Enumerable.Range(0, 4)
+            .Select(i => Standard(viewer, DateTimeOffset.UtcNow.AddMinutes(-i - 1)))));
+        using var anonymous = factory.CreateClient();
+        using var client = CreateClient(viewer);
+        using var other = CreateClient(users[1]);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/feed")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/feed/following")).StatusCode);
+        var first = await ReadAsync(await client.GetAsync("/api/feed?limit=1"));
+        var cursor = Assert.IsType<string>(first.NextCursor);
+        var middle = cursor.Length / 2;
+        var tampered = cursor[..middle] + (cursor[middle] == 'A' ? 'B' : 'A') + cursor[(middle + 1)..];
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(CursorUrl("/api/feed", 1, tampered))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await other.GetAsync(CursorUrl("/api/feed", 1, cursor))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(CursorUrl("/api/feed/following", 1, cursor))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/feed?cursor=invalid")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/feed?limit=0")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/feed?limit=51")).StatusCode);
+        var chronological = await ReadAsync(await client.GetAsync("/api/feed/following?limit=1"));
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(CursorUrl("/api/feed", 1, chronological.NextCursor))).StatusCode);
+    }
+
+    [Fact]
+    public async Task Equal_rank_and_timestamp_ties_use_id_and_remain_stable_across_page_sizes()
+    {
+        var viewer = (await CreateUsersAsync(1))[0];
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var posts = Enumerable.Range(0, 17).Select(_ => Standard(viewer, now)).ToArray();
+        await SaveAsync(db => db.Posts.AddRange(posts));
+        using var client = CreateClient(viewer);
+
+        var smallPages = await TraverseAsync(client, "/api/feed", 3);
+        var largePages = await TraverseAsync(client, "/api/feed", 11);
+        var expected = posts.OrderByDescending(item => item.Id).Select(item => item.Id).ToArray();
+
+        Assert.Equal(expected, smallPages.Where(item => !item.IsSuggested).Select(item => item.Id));
+        Assert.Equal(expected, largePages.Where(item => !item.IsSuggested).Select(item => item.Id));
+        Assert.Equal(smallPages.Count, smallPages.Select(item => item.Id).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task Affinity_and_freshness_are_predictable_and_changed_options_invalidate_old_cursors()
+    {
+        var users = await CreateUsersAsync(3);
+        var (viewer, friend, owner) = (users[0], users[1], users[2]);
+        await BefriendAsync(viewer, friend);
+        var group = await CreateGroupAsync(owner, viewer);
+        var page = await CreatePageAsync(owner, viewer);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var own = Standard(viewer, now);
+        var friendPost = Standard(friend, now);
+        var groupPost = InContainer(owner, group.Id, PostContainerType.Group, now);
+        var pagePost = InContainer(owner, page.Id, PostContainerType.Page, now);
+        var oldOwn = Standard(viewer, now.AddHours(-48));
+        await SaveAsync(db => db.Posts.AddRange(own, friendPost, groupPost, pagePost, oldOwn));
+        using var client = CreateClient(viewer);
+
+        var normal = await TraverseAsync(client, "/api/feed", 2);
+        Assert.Equal(new[] { own.Id, friendPost.Id, groupPost.Id, pagePost.Id, oldOwn.Id },
+            normal.Where(item => !item.IsSuggested).Select(item => item.Id));
+        var first = await ReadAsync(await client.GetAsync("/api/feed?limit=1"));
+        var sharedProtection = factory.Services.GetRequiredService<IDataProtectionProvider>();
+        using var changedFactory = factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<FeedRankingOptions>();
+            services.AddSingleton(new FeedRankingOptions
+            {
+                OwnAffinity = 0,
+                FriendAffinity = 30,
+                GroupAffinity = 10,
+                PageAffinity = 20,
+                FreshnessHoursPerPoint = 1,
+                CandidateLimitPerSource = 51
+            });
+            // Reuse protection keys so the failure below specifically exercises config binding.
+            services.RemoveAll<IDataProtectionProvider>();
+            services.AddSingleton(sharedProtection);
+        }));
+        using var changedClient = CreateClient(viewer, changedFactory);
+        var changed = await TraverseAsync(changedClient, "/api/feed", 2);
+        Assert.Equal(new[] { friendPost.Id, pagePost.Id, groupPost.Id, own.Id, oldOwn.Id },
+            changed.Where(item => !item.IsSuggested).Select(item => item.Id));
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await changedClient.GetAsync(CursorUrl("/api/feed", 1, first.NextCursor))).StatusCode);
+    }
+
+    [Fact]
+    public async Task Suggested_public_reels_have_a_session_wide_quota_and_never_enter_following()
+    {
+        var users = await CreateUsersAsync(2);
+        var (viewer, stranger) = (users[0], users[1]);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var posts = Enumerable.Range(0, 21).Select(i => Standard(viewer, now.AddSeconds(-i))).ToArray();
+        await SaveAsync(db => db.Posts.AddRange(posts));
+        for (var i = 0; i < 15; i++)
+        {
+            await CreateReelAsync(stranger, now.AddSeconds(-i));
+        }
+        using var client = CreateClient(viewer);
+
+        var ranked = await TraverseAsync(client, "/api/feed", 1);
+        var following = await TraverseAsync(client, "/api/feed/following", 3);
+        var organic = 0;
+        var suggested = 0;
+        foreach (var item in ranked)
+        {
+            if (item.IsSuggested)
+            {
+                suggested++;
+                Assert.Equal("reel", item.ContentType);
+                Assert.Equal("public", item.Privacy);
+                Assert.True(suggested <= organic / 4, "Discovery exceeded one suggestion per four organic items across cursors.");
+            }
+            else
+            {
+                organic++;
+            }
+        }
+        Assert.Equal(posts.Length, organic);
+        Assert.InRange(suggested, 1, posts.Length / 4);
+        var varied = new List<FeedItemResponse>();
+        string? cursor = null;
+        foreach (var limit in new[] { 3, 1, 7, 2, 50 })
+        {
+            var page = await ReadAsync(await client.GetAsync(CursorUrl("/api/feed", limit, cursor)));
+            varied.AddRange(page.Items);
+            cursor = page.NextCursor;
+            if (cursor is null)
+                break;
+        }
+        Assert.Null(cursor);
+        Assert.Equal(ranked.Select(item => item.Id), varied.Select(item => item.Id));
+        Assert.All(following, item => Assert.False(item.IsSuggested));
+        Assert.Equal(posts.Select(item => item.Id), following.Select(item => item.Id));
+    }
+
+    [Fact]
+    public async Task Following_orders_all_organic_sources_chronologically_with_a_stable_snapshot()
+    {
+        var users = await CreateUsersAsync(3);
+        var (viewer, friend, owner) = (users[0], users[1], users[2]);
+        await BefriendAsync(viewer, friend);
+        var group = await CreateGroupAsync(owner, viewer);
+        var page = await CreatePageAsync(owner, viewer);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var own = Standard(viewer, now.AddMinutes(-3));
+        var friendPost = Standard(friend, now.AddMinutes(-2));
+        var groupPost = InContainer(owner, group.Id, PostContainerType.Group, now.AddMinutes(-1));
+        var pagePost = InContainer(owner, page.Id, PostContainerType.Page, now);
+        await SaveAsync(db => db.Posts.AddRange(own, friendPost, groupPost, pagePost));
+        var reel = await CreateReelAsync(friend, now.AddSeconds(-30), PostPrivacy.Friends);
+        using var client = CreateClient(viewer);
+        var first = await ReadAsync(await client.GetAsync("/api/feed/following?limit=2"));
+        var second = await ReadAsync(await client.GetAsync(CursorUrl("/api/feed/following", 2, first.NextCursor)));
+        var last = await ReadAsync(await client.GetAsync(CursorUrl("/api/feed/following", 2, second.NextCursor)));
+
+        Assert.Equal(first.AsOfUtc, second.AsOfUtc);
+        Assert.Equal(first.AsOfUtc, last.AsOfUtc);
+        Assert.Equal(new[] { pagePost.Id, reel.Id, groupPost.Id, friendPost.Id, own.Id },
+            first.Items.Concat(second.Items).Concat(last.Items).Select(item => item.Id));
+        Assert.Null(last.NextCursor);
+    }
+
+    [Fact]
+    public async Task Mixed_history_crosses_candidate_windows_without_skips_or_per_item_sql_growth()
+    {
+        var users = await CreateUsersAsync(3);
+        var (viewer, friend, owner) = (users[0], users[1], users[2]);
+        await BefriendAsync(viewer, friend);
+        var group = await CreateGroupAsync(owner, viewer, GroupPrivacy.Private);
+        var page = await CreatePageAsync(owner, viewer);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var expected = new List<Post>();
+        await SaveAsync(db =>
+        {
+            // Each of the four organic source windows exceeds the default 100 rows.
+            for (var i = 0; i < 122; i++)
+            {
+                var timestamp = now.AddMinutes(-i);
+                expected.Add(Standard(viewer, timestamp, PostPrivacy.OnlyMe));
+                expected.Add(Standard(friend, timestamp, PostPrivacy.Friends));
+                expected.Add(InContainer(owner, group.Id, PostContainerType.Group, timestamp));
+                expected.Add(InContainer(owner, page.Id, PostContainerType.Page, timestamp));
+                var reel = Post.CreateReel(Guid.NewGuid(), friend, "Mixed history Reel", PostPrivacy.Friends, timestamp);
+                expected.Add(reel);
+                AttachVideo(db, reel, MediaStatus.Ready);
+            }
+            db.Posts.AddRange(expected);
+        });
+        using var client = CreateClient(viewer);
+        await ReadAsync(await client.GetAsync("/api/feed?limit=5"));
+        factory.Commands.Reset();
+        var small = await ReadAsync(await client.GetAsync("/api/feed?limit=5"));
+        var smallCount = factory.Commands.Count;
+        factory.Commands.Reset();
+        var watch = Stopwatch.StartNew();
+        var large = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
+        var largeCount = factory.Commands.Count;
+        watch.Stop();
+
+        Assert.Equal(5, small.Items.Count);
+        Assert.Equal(50, large.Items.Count);
+        Assert.InRange(smallCount, 1, 40);
+        Assert.InRange(largeCount, 1, 40);
+        Assert.True(largeCount <= smallCount + 6,
+            $"SQL command count grew from {smallCount} for 5 items to {largeCount} for 50 items.");
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(15), $"A mixed Feed page took {watch.Elapsed}.");
+        foreach (var endpoint in new[] { "/api/feed", "/api/feed/following" })
+        {
+            var items = await TraverseAsync(client, endpoint, 13);
+            var organicIds = items.Where(item => !item.IsSuggested).Select(item => item.Id).ToArray();
+            Assert.Equal(expected.Count, organicIds.Length);
+            Assert.Equal(expected.Select(item => item.Id).Order(), organicIds.Order());
+            Assert.Equal(items.Count, items.Select(item => item.Id).Distinct().Count());
+        }
+    }
+
+    private async Task<Guid[]> CreateUsersAsync(int count)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var users = Enumerable.Range(0, count).Select(_ =>
+        {
+            var id = Guid.NewGuid();
+            var username = "mixed_" + id.ToString("N")[..24];
+            return new User(id, username + "@example.com", username, now);
+        }).ToArray();
+        await SaveAsync(db =>
+        {
+            db.Users.AddRange(users);
+            db.UserProfiles.AddRange(users.Select(user => UserProfile.Create(user.Id, user.UserName!, now)));
+        });
+        return users.Select(user => user.Id).ToArray();
+    }
+
+    private Task BefriendAsync(Guid viewer, Guid friend) => SaveAsync(db =>
+        db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewer, friend, DateTimeOffset.UtcNow)));
+
+    private async Task BlockAsync(Guid viewer, Guid other)
+    {
+        using var scope = factory.Services.CreateScope();
+        Assert.True((await scope.ServiceProvider.GetRequiredService<FriendsService>().BlockAsync(viewer, other)).Succeeded);
+    }
+
+    private async Task<Group> CreateGroupAsync(Guid owner, Guid? viewer, GroupPrivacy privacy = GroupPrivacy.Public)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var group = Group.Create(Guid.NewGuid(), "Mixed Group " + Guid.NewGuid().ToString("N"), "Feed context", privacy, owner, now);
+        await SaveAsync(db =>
+        {
+            db.Groups.Add(group);
+            db.GroupMembers.Add(GroupMember.Create(group.Id, owner, GroupMemberRole.Owner, now));
+            if (viewer is not null)
+                db.GroupMembers.Add(GroupMember.Create(group.Id, viewer.Value, GroupMemberRole.Member, now));
+        });
+        return group;
+    }
+
+    private async Task<Page> CreatePageAsync(Guid owner, Guid? viewer, bool published = true)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var page = Page.Create(Guid.NewGuid(), "Mixed Page", "mixed_" + Guid.NewGuid().ToString("N"), "Community", null, owner, now);
+        if (published)
+            page.Publish(now);
+        await SaveAsync(db =>
+        {
+            db.Pages.Add(page);
+            db.PageMembers.Add(PageMember.Create(page.Id, owner, PageRole.Owner, now));
+            if (viewer is not null)
+                db.PageFollowers.Add(PageFollower.Create(page.Id, viewer.Value, now));
+        });
+        return page;
+    }
+
+    private static Post Standard(Guid owner, DateTimeOffset createdAt, PostPrivacy privacy = PostPrivacy.Public) =>
+        Post.Create(Guid.NewGuid(), owner, "Mixed profile post", privacy, createdAt);
+
+    private static Post InContainer(Guid owner, Guid container, PostContainerType type, DateTimeOffset createdAt) =>
+        Post.CreateInContainer(Guid.NewGuid(), owner, "Mixed container post", PostPrivacy.Public, type, container, createdAt);
+
+    private async Task<Post> CreateReelAsync(Guid owner, DateTimeOffset createdAt, PostPrivacy privacy = PostPrivacy.Public,
+        MediaStatus status = MediaStatus.Ready)
+    {
+        var reel = Post.CreateReel(Guid.NewGuid(), owner, "Mixed Reel", privacy, createdAt);
+        await SaveAsync(db =>
+        {
+            db.Posts.Add(reel);
+            AttachVideo(db, reel, status);
+        });
+        return reel;
+    }
+
+    private static void AttachVideo(FookbaseDbContext db, Post reel, MediaStatus status)
+    {
+        var id = Guid.NewGuid();
+        var media = MediaAsset.CreatePending(id, reel.AuthorUserId, MediaType.Video, id + ".mp4", "reel.mp4", "video/mp4", 100,
+            reel.CreatedAtUtc, DateTimeOffset.UtcNow.AddMinutes(5));
+        if (status is MediaStatus.Processing or MediaStatus.Ready)
+            media.MarkProcessing(100, reel.CreatedAtUtc);
+        if (status == MediaStatus.Ready)
+            media.MarkVideoReady(id + "-processed.mp4", id + "-poster.jpg", 2_000, 720, 1_280, reel.CreatedAtUtc);
+        if (status == MediaStatus.Failed)
+            media.MarkFailed();
+        db.MediaAssets.Add(media);
+        db.PostMedia.Add(PostMedia.Create(reel.Id, id, 0));
+    }
+
+    private async Task SaveAsync(Action<FookbaseDbContext> seed)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        seed(db);
+        await db.SaveChangesAsync();
+    }
+
+    private HttpClient CreateClient(Guid viewer, WebApplicationFactory<Program>? application = null)
+    {
+        application ??= factory;
+        var configuration = application.Services.GetRequiredService<IConfiguration>();
+        var now = DateTime.UtcNow;
+        var token = new JwtSecurityToken(configuration["Jwt:Issuer"], configuration["Jwt:Audience"],
+            [new Claim(JwtRegisteredClaimNames.Sub, viewer.ToString()), new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())],
+            notBefore: now.AddSeconds(-1), expires: now.AddMinutes(15),
+            signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SigningKey"]!)),
+                SecurityAlgorithms.HmacSha256));
+        var client = application.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new JwtSecurityTokenHandler().WriteToken(token));
+        return client;
+    }
+
+    private static string CursorUrl(string endpoint, int limit, string? cursor) =>
+        endpoint + "?limit=" + limit + (cursor is null ? string.Empty : "&cursor=" + Uri.EscapeDataString(cursor));
+
+    private static async Task<List<FeedItemResponse>> TraverseAsync(HttpClient client, string endpoint, int limit, string? cursor = null)
+    {
+        var items = new List<FeedItemResponse>();
+        DateTimeOffset? snapshot = null;
+        for (var page = 0; page < 150; page++)
+        {
+            var response = await ReadAsync(await client.GetAsync(CursorUrl(endpoint, limit, cursor)));
+            snapshot ??= response.AsOfUtc;
+            Assert.Equal(snapshot.Value, response.AsOfUtc);
+            items.AddRange(response.Items);
+            cursor = response.NextCursor;
+            if (cursor is null)
+                return items;
+        }
+        Assert.Fail("Feed did not terminate after 150 pages.");
+        return items;
+    }
+
+    private static async Task<FeedPageResponse> ReadAsync(HttpResponseMessage response)
+    {
+        var raw = await response.Content.ReadAsStringAsync();
+        Assert.True(response.IsSuccessStatusCode, $"HTTP {(int)response.StatusCode}: {raw}");
+        return JsonSerializer.Deserialize<FeedPageResponse>(raw, new JsonSerializerOptions(JsonSerializerDefaults.Web))
+            ?? throw new InvalidOperationException("Feed response was empty.");
+    }
+}
+
+public sealed class MixedFeedApiFactory : PostsApiFactory
+{
+    public FeedCommandCounter Commands { get; } = new();
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        base.ConfigureWebHost(builder);
+        builder.ConfigureServices(services =>
+            services.ConfigureDbContext<FookbaseDbContext>(options => options.AddInterceptors(Commands)));
+    }
+}
+
+public sealed class FeedCommandCounter : DbCommandInterceptor
+{
+    private int count;
+    public int Count => Volatile.Read(ref count);
+    public void Reset() => Interlocked.Exchange(ref count, 0);
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        Interlocked.Increment(ref count);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData,
+        InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+    {
+        Interlocked.Increment(ref count);
+        return ValueTask.FromResult(result);
+    }
+}

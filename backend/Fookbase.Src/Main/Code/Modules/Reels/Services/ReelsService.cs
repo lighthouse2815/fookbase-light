@@ -83,12 +83,12 @@ public sealed class ReelsService(
         CancellationToken cancellationToken = default)
     {
         var viewer = await CreateViewerContextAsync(viewerUserId, cancellationToken);
-        var reel = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
+        var reel = await ReelMediaQuery.ApplyReadyMedia(dbContext.Posts.AsNoTracking(), dbContext)
+            .SingleOrDefaultAsync(
             post => post.Id == reelId && post.PostType == PostType.Reel &&
                     post.ContainerType == PostContainerType.Profile && post.DeletedAtUtc == null,
             cancellationToken);
-        if (reel is null || !PostVisibility.CanDirectlyAccess(reel, viewer) ||
-            !await HasReadyVideoAsync(reel.Id, cancellationToken))
+        if (reel is null || !PostVisibility.CanDirectlyAccess(reel, viewer))
         {
             return NotFound<ReelResponse>();
         }
@@ -120,18 +120,9 @@ public sealed class ReelsService(
         }
 
         var viewer = await CreateRequiredViewerContextAsync(viewerUserId, cancellationToken);
-        var query = PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer)
-            .Where(post => post.PostType == PostType.Reel &&
-                           post.ContainerType == PostContainerType.Profile &&
-                           dbContext.PostMedia.Any(postMedia =>
-                               postMedia.PostId == post.Id &&
-                               dbContext.MediaAssets.Any(asset =>
-                                   asset.Id == postMedia.MediaId &&
-                                   asset.MediaType == MediaType.Video &&
-                                   asset.Status == MediaStatus.Ready &&
-                                   asset.DeletedAtUtc == null &&
-                                   asset.ProcessedObjectKey != null &&
-                                   asset.PosterObjectKey != null)));
+        var query = ReelMediaQuery.ApplyReadyMedia(
+            PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer), dbContext)
+            .Where(post => post.PostType == PostType.Reel);
         if (cursor is not null)
         {
             query = query.Where(post =>
@@ -248,11 +239,9 @@ public sealed class ReelsService(
         var authorIds = reels.Select(reel => reel.AuthorUserId).Distinct().ToArray();
         var mediaRows = await (
             from postMedia in dbContext.PostMedia.AsNoTracking()
-            join asset in dbContext.MediaAssets.AsNoTracking() on postMedia.MediaId equals asset.Id
-            where reelIds.Contains(postMedia.PostId) && asset.MediaType == MediaType.Video &&
-                  asset.Status == MediaStatus.Ready && asset.DeletedAtUtc == null &&
-                  asset.ProcessedObjectKey != null && asset.PosterObjectKey != null &&
-                  asset.DurationMs != null && asset.Width != null && asset.Height != null
+            join asset in ReelMediaQuery.ReadyVideos(dbContext.MediaAssets.AsNoTracking())
+                on postMedia.MediaId equals asset.Id
+            where reelIds.Contains(postMedia.PostId)
             select new ReelMediaRow(
                 postMedia.PostId,
                 asset.Id,
@@ -340,41 +329,25 @@ public sealed class ReelsService(
         }).ToList();
     }
 
-    private async Task<bool> HasReadyVideoAsync(Guid reelId, CancellationToken cancellationToken) =>
-        await GetReadyVideoMediaIdAsync(reelId, cancellationToken) is not null;
-
     private async Task<Guid?> GetReadyVideoMediaIdAsync(Guid reelId, CancellationToken cancellationToken) =>
         await dbContext.PostMedia.AsNoTracking()
             .Where(postMedia => postMedia.PostId == reelId)
             .Join(
-                dbContext.MediaAssets.AsNoTracking(),
+                ReelMediaQuery.ReadyVideos(dbContext.MediaAssets.AsNoTracking()),
                 postMedia => postMedia.MediaId,
                 asset => asset.Id,
-                (postMedia, asset) => new { postMedia.MediaId, asset })
-            .Where(item => item.asset.MediaType == MediaType.Video &&
-                           item.asset.Status == MediaStatus.Ready &&
-                           item.asset.DeletedAtUtc == null &&
-                           item.asset.ProcessedObjectKey != null &&
-                           item.asset.PosterObjectKey != null &&
-                           item.asset.DurationMs != null)
-            .Select(item => (Guid?)item.MediaId)
+                (postMedia, _) => (Guid?)postMedia.MediaId)
             .SingleOrDefaultAsync(cancellationToken);
 
     private async Task<MediaAsset?> GetReadyVideoAsync(Guid reelId, CancellationToken cancellationToken) =>
         await dbContext.PostMedia.AsNoTracking()
             .Where(postMedia => postMedia.PostId == reelId)
             .Join(
-                dbContext.MediaAssets.AsNoTracking(),
+                ReelMediaQuery.ReadyVideos(dbContext.MediaAssets.AsNoTracking()),
                 postMedia => postMedia.MediaId,
                 asset => asset.Id,
                 (_, asset) => asset)
-            .SingleOrDefaultAsync(asset => asset.MediaType == MediaType.Video &&
-                                    asset.Status == MediaStatus.Ready &&
-                                    asset.DeletedAtUtc == null &&
-                                    asset.ProcessedObjectKey != null &&
-                                    asset.PosterObjectKey != null &&
-                                    asset.DurationMs != null,
-                cancellationToken);
+            .SingleOrDefaultAsync(cancellationToken);
 
     private async Task<PostViewerContext?> CreateViewerContextAsync(
         Guid? viewerUserId,

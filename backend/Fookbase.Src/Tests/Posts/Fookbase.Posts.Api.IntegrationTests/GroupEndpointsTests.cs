@@ -185,7 +185,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Private_group_content_requires_membership_and_group_posts_never_enter_home_feed()
+    public async Task Private_group_content_and_home_feed_require_membership()
     {
         var users = await CreateUsersAsync(3);
         var group = await CreateGroupAsync(users[0], "private");
@@ -219,6 +219,8 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
             mediaIds = Array.Empty<Guid>()
         });
         var ownerFeed = await ReadAsync<FeedPageResponse>(await owner.GetAsync("/api/feed"));
+        var memberFeed = await ReadAsync<FeedPageResponse>(await member.GetAsync("/api/feed"));
+        var outsiderFeed = await ReadAsync<FeedPageResponse>(await outsider.GetAsync("/api/feed"));
 
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         Assert.Equal(HttpStatusCode.Created, publicPost.StatusCode);
@@ -227,7 +229,9 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.NotFound, outsiderDirect.StatusCode);
         Assert.Equal(HttpStatusCode.OK, memberDirect.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, nonMemberCreate.StatusCode);
-        Assert.DoesNotContain(ownerFeed.Items, item => item.Id == post.Id);
+        Assert.Contains(ownerFeed.Items, item => item.Id == post.Id);
+        Assert.Contains(memberFeed.Items, item => item.Id == post.Id);
+        Assert.DoesNotContain(outsiderFeed.Items, item => item.Id == post.Id);
     }
 
     [Fact]

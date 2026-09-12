@@ -8,19 +8,16 @@ namespace Fookbase.Api.Modules.Pages.Services;
 
 public sealed class PagePostAccessService(FookbaseDbContext dbContext)
 {
-    public async Task<bool> CanViewPageAsync(Guid pageId, Guid? viewerUserId,
-        CancellationToken cancellationToken = default)
-    {
-        var page = await dbContext.Pages.AsNoTracking().SingleOrDefaultAsync(
-            item => item.Id == pageId && item.DeletedAtUtc == null,
-            cancellationToken);
-        if (page is null)
-        {
-            return false;
-        }
+    public Task<bool> CanViewPageAsync(Guid pageId, Guid? viewerUserId,
+        CancellationToken cancellationToken = default) =>
+        VisiblePages(viewerUserId).AnyAsync(page => page.Id == pageId, cancellationToken);
 
-        return page.Status == PageStatus.Published ||
-            viewerUserId is not null && await IsMemberAsync(pageId, viewerUserId.Value, cancellationToken);
+    public IQueryable<Post> ApplyPublishedAccess(IQueryable<Post> posts)
+    {
+        var publishedPages = VisiblePages(null);
+        return posts.Where(post =>
+            post.DeletedAtUtc == null && post.ContainerType == PostContainerType.Page &&
+            publishedPages.Any(page => page.Id == post.ContainerId));
     }
 
     public Task<bool> IsMemberAsync(Guid pageId, Guid userId, CancellationToken cancellationToken = default) =>
@@ -68,4 +65,14 @@ public sealed class PagePostAccessService(FookbaseDbContext dbContext)
     private Task<bool> IsActivePageAsync(Guid pageId, CancellationToken cancellationToken) =>
         dbContext.Pages.AsNoTracking().AnyAsync(
             page => page.Id == pageId && page.DeletedAtUtc == null, cancellationToken);
+
+    private IQueryable<Page> VisiblePages(Guid? viewerUserId)
+    {
+        var pages = dbContext.Pages.AsNoTracking().Where(page => page.DeletedAtUtc == null);
+        return viewerUserId is null
+            ? pages.Where(page => page.Status == PageStatus.Published)
+            : pages.Where(page => page.Status == PageStatus.Published ||
+                dbContext.PageMembers.Any(member =>
+                    member.PageId == page.Id && member.UserId == viewerUserId.Value));
+    }
 }

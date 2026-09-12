@@ -56,24 +56,34 @@ public sealed class GroupPostAccessService(FookbaseDbContext dbContext)
             cancellationToken) &&
         await IsActiveMemberAsync(groupId, userId, cancellationToken);
 
-    public async Task<bool> CanAccessPostAsync(
+    public Task<bool> CanAccessPostAsync(
         Post post,
         PostViewerContext? viewer,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer)
+            .AnyAsync(item => item.Id == post.Id, cancellationToken);
+
+    public IQueryable<Post> ApplyDirectAccess(
+        IQueryable<Post> posts,
+        PostViewerContext? viewer)
     {
-        if (post.ContainerType != PostContainerType.Group)
+        var activePosts = posts.Where(post =>
+            post.DeletedAtUtc == null && post.ContainerType == PostContainerType.Group);
+        if (viewer is null)
         {
-            return false;
+            return activePosts.Where(post => dbContext.Groups.Any(group =>
+                group.Id == post.ContainerId && group.DeletedAtUtc == null &&
+                group.Privacy == GroupPrivacy.Public));
         }
 
-        if (!await CanViewGroupAsync(post.ContainerId, viewer?.UserId, cancellationToken))
-        {
-            return false;
-        }
-
-        return viewer is null ||
-            viewer.UserId == post.AuthorUserId ||
-            !viewer.BlockedUserIds.Contains(post.AuthorUserId);
+        var viewerUserId = viewer.UserId;
+        var blockedUserIds = viewer.BlockedUserIds;
+        return activePosts.Where(post =>
+            (post.AuthorUserId == viewerUserId || !blockedUserIds.Contains(post.AuthorUserId)) &&
+            dbContext.Groups.Any(group =>
+                group.Id == post.ContainerId && group.DeletedAtUtc == null &&
+                (group.Privacy == GroupPrivacy.Public || dbContext.GroupMembers.Any(member =>
+                    member.GroupId == group.Id && member.UserId == viewerUserId))));
     }
 
     public async Task<bool> CanParticipateAsync(
