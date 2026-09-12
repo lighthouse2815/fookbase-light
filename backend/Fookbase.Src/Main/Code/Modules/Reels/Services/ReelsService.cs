@@ -17,6 +17,7 @@ public sealed class ReelsService(
     FookbaseDbContext dbContext,
     FriendsService friendsService,
     MediaService mediaService,
+    SocialInteractionsService socialInteractionsService,
     TimeProvider timeProvider)
 {
     public const int DefaultPageSize = 20;
@@ -57,6 +58,7 @@ public sealed class ReelsService(
             dbContext.Posts.Add(post);
             dbContext.PostMedia.Add(PostMedia.Create(post.Id, videoMediaId, 0));
             await dbContext.SaveChangesAsync(cancellationToken);
+            await socialInteractionsService.SynchronizePostMetadataAsync(post.Id, actorUserId, cancellationToken);
 
             var references = await mediaService.SynchronizePostReferencesAsync(
                 actorUserId, post.Id, [videoMediaId], cancellationToken);

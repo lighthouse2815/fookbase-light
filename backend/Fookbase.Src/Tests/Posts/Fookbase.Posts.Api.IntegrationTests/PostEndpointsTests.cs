@@ -14,6 +14,7 @@ using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
+using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -175,6 +176,87 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.NotNull((await dbContext.Posts.AsNoTracking().SingleAsync(post => post.Id == created.Id)).DeletedAtUtc);
+    }
+
+    [Fact]
+    public async Task Saved_posts_are_idempotent_private_and_rechecked_when_access_changes()
+    {
+        var users = await CreateUserIdsAsync(2);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var viewer = CreateAuthenticatedClient(users[1]);
+        var post = await CreatePostAsync(author, "friends only saved post", "friends");
+
+        Assert.Equal(HttpStatusCode.NotFound, (await viewer.PostAsync($"/api/posts/{post.Id}/save", null)).StatusCode);
+        await CreateFriendshipAsync(users[0], users[1]);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await viewer.PostAsync($"/api/posts/{post.Id}/save", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await viewer.PostAsync($"/api/posts/{post.Id}/save", null)).StatusCode);
+        var savedResponse = await viewer.GetAsync("/api/posts/saved?limit=1");
+        Assert.True(savedResponse.IsSuccessStatusCode, await savedResponse.Content.ReadAsStringAsync());
+        var saved = await ReadAsync<SavedPostsPageResponse>(savedResponse);
+        Assert.Single(saved.Items);
+        Assert.Equal(post.Id, saved.Items[0].Id);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().GetAsync("/api/posts/saved")).StatusCode);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            Assert.Equal(1, await db.PostSaves.CountAsync(save => save.UserId == users[1] && save.PostId == post.Id));
+            var friendship = await db.Friendships.SingleAsync(item =>
+                (item.UserId1 == users[0] && item.UserId2 == users[1]) ||
+                (item.UserId1 == users[1] && item.UserId2 == users[0]));
+            db.Friendships.Remove(friendship);
+            await db.SaveChangesAsync();
+        }
+
+        var inaccessible = await ReadAsync<SavedPostsPageResponse>(await viewer.GetAsync("/api/posts/saved"));
+        Assert.Empty(inaccessible.Items);
+        Assert.Equal(HttpStatusCode.NoContent, (await viewer.DeleteAsync($"/api/posts/{post.Id}/save")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Shares_keep_a_single_original_and_mentions_hashtags_are_resolved_safely()
+    {
+        var users = await CreateUserIdsAsync(3);
+        var authorUserId = users[0];
+        var sharerUserId = users[1];
+        var mentionedUserId = users[2];
+        var mentionedUsername = "social_" + Guid.NewGuid().ToString("N")[..12];
+        await CreateProfileAsync(mentionedUserId, mentionedUsername);
+        using var author = CreateAuthenticatedClient(authorUserId);
+        using var sharer = CreateAuthenticatedClient(sharerUserId);
+        using var mentioned = CreateAuthenticatedClient(mentionedUserId);
+        var post = await CreatePostAsync(author, $"Hello @{mentionedUsername} #FookbaseLight", "public");
+
+        Assert.Single(post.Mentions!);
+        Assert.Equal(mentionedUserId, post.Mentions![0].UserId);
+        var shareResponse = await sharer.PostAsJsonAsync($"/api/posts/{post.Id}/shares", new
+        {
+            destinationType = "profile",
+            destinationId = sharerUserId,
+            caption = "Useful post"
+        });
+        var share = await ReadAsync<PostShareResponse>(shareResponse);
+        Assert.Equal(post.Id, share.OriginalPost.Id);
+        Assert.Equal("profile", share.DestinationType);
+        Assert.Equal(HttpStatusCode.Forbidden, (await sharer.PostAsJsonAsync($"/api/posts/{post.Id}/shares", new
+        {
+            destinationType = "profile",
+            destinationId = authorUserId
+        })).StatusCode);
+
+        var mentionNotifications = await ReadAsync<NotificationPageResponse>(await mentioned.GetAsync("/api/notifications"));
+        Assert.Contains(mentionNotifications.Items, item => item.Type == "PostMention" && item.EntityId == post.Id);
+        var hashtagPage = await ReadAsync<HashtagPostsPageResponse>(
+            await factory.CreateClient().GetAsync("/api/hashtags/fookbaselight/posts?limit=1"));
+        Assert.Contains(hashtagPage.Items, item => item.Id == post.Id);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Equal(1, await db.PostShares.CountAsync(item => item.OriginalPostId == post.Id));
+        Assert.Equal(1, await db.PostHashtags.CountAsync(item => item.PostId == post.Id));
+        Assert.Single(await db.Notifications.Where(item =>
+            item.Type == NotificationType.PostShared && item.EntityId == post.Id).ToListAsync());
     }
 
     [Fact]
@@ -617,6 +699,14 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         identityDb.Users.AddRange(users);
         await identityDb.SaveChangesAsync();
         return users.Select(user => user.Id).ToArray();
+    }
+
+    private async Task CreateProfileAsync(Guid userId, string username)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        db.UserProfiles.Add(UserProfile.Create(userId, username, DateTimeOffset.UtcNow));
+        await db.SaveChangesAsync();
     }
 
     private async Task<PostResponse> CreatePostAsync(

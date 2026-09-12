@@ -11,8 +11,10 @@ public static class PostEndpoints
     public static IEndpointRouteBuilder MapPostEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/posts");
+        var hashtags = endpoints.MapGroup("/api/hashtags");
 
         group.MapPost("", CreatePostAsync).RequireAuthorization();
+        group.MapGet("/saved", GetSavedPostsAsync).RequireAuthorization();
         group.MapPut("/{postId:guid}", UpdatePostAsync).RequireAuthorization();
         group.MapDelete("/{postId:guid}", DeletePostAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}", GetPostAsync);
@@ -27,8 +29,12 @@ public static class PostEndpoints
         group.MapDelete("/comments/{commentId:guid}/reaction", RemoveCommentReactionAsync).RequireAuthorization();
         group.MapPut("/{postId:guid}/reaction", SetReactionAsync).RequireAuthorization();
         group.MapDelete("/{postId:guid}/reaction", RemoveReactionAsync).RequireAuthorization();
+        group.MapPost("/{postId:guid}/save", SavePostAsync).RequireAuthorization();
+        group.MapDelete("/{postId:guid}/save", RemoveSavedPostAsync).RequireAuthorization();
+        group.MapPost("/{postId:guid}/shares", SharePostAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}/media/{mediaId:guid}/access", GetMediaAccessAsync)
             .RequireAuthorization();
+        hashtags.MapGet("/{tag}/posts", GetHashtagPostsAsync);
 
         return endpoints;
     }
@@ -76,6 +82,93 @@ public static class PostEndpoints
         ExecuteCommandAsync(
             principal,
             actorUserId => useCase.DeletePostAsync(actorUserId, postId, cancellationToken));
+
+    private static async Task<IResult> GetSavedPostsAsync(
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken,
+        string? cursor = null,
+        int limit = SocialInteractionsService.DefaultPageSize)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await useCase.GetSavedPostsAsync(actorUserId, cursor, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> SavePostAsync(
+        Guid postId,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await useCase.SavePostAsync(actorUserId, postId, cancellationToken);
+        return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> RemoveSavedPostAsync(
+        Guid postId,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await useCase.RemoveSavedPostAsync(actorUserId, postId, cancellationToken);
+        return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> SharePostAsync(
+        Guid postId,
+        CreatePostShareRequest request,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await useCase.SharePostAsync(
+            actorUserId,
+            postId,
+            request.DestinationType,
+            request.DestinationId,
+            request.Caption,
+            cancellationToken);
+        return result.Succeeded
+            ? Results.Created($"/api/posts/{postId}/shares/{result.Value!.Id}", result.Value)
+            : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetHashtagPostsAsync(
+        string tag,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken,
+        string? cursor = null,
+        int limit = SocialInteractionsService.DefaultPageSize)
+    {
+        if (!TryGetViewerUserId(principal, out var viewerUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await useCase.GetHashtagPostsAsync(viewerUserId, tag, cursor, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
 
     private static async Task<IResult> GetPostAsync(
         Guid postId,

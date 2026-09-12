@@ -64,13 +64,18 @@ public sealed record SearchReelResponse(
     long ViewCount,
     DateTimeOffset CreatedAtUtc);
 
+public sealed record SearchHashtagResponse(
+    string Tag,
+    string DisplayName);
+
 public sealed record GlobalSearchResponse(
     IReadOnlyList<SearchPersonResponse> People,
     IReadOnlyList<SearchGroupResponse> Groups,
     IReadOnlyList<SearchPageResponse> Pages,
     IReadOnlyList<SearchPostResponse> Posts,
     IReadOnlyList<SearchReelResponse> Reels,
-    string? NextCursor = null);
+    string? NextCursor = null,
+    IReadOnlyList<SearchHashtagResponse>? Hashtags = null);
 
 public sealed record SearchSuggestionsResponse(
     IReadOnlyList<SearchPersonResponse> People,

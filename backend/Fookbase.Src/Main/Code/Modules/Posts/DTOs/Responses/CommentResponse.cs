@@ -7,4 +7,5 @@ public sealed record CommentResponse(
     Guid? ParentCommentId,
     string Content,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc);
+    DateTimeOffset? UpdatedAtUtc,
+    IReadOnlyList<ContentMentionResponse>? Mentions = null);

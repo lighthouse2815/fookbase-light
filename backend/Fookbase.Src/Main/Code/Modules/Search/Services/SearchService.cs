@@ -18,7 +18,8 @@ namespace Fookbase.Api.Modules.Search.Services;
 public sealed class SearchService(
     FookbaseDbContext dbContext,
     FriendsService friendsService,
-    PostsService postsService)
+    PostsService postsService,
+    SocialInteractionsService socialInteractionsService)
 {
     public const int DefaultPageSize = 20;
     public const int MaximumPageSize = 50;
@@ -72,12 +73,17 @@ public sealed class SearchService(
             var pages = await SearchPagesAsync(context, query, null, previewLimit, cancellationToken);
             var posts = await SearchPostsAsync(context, query, null, previewLimit, cancellationToken);
             var reels = await SearchReelsAsync(context, query, null, previewLimit, cancellationToken);
+            var hashtags = (await socialInteractionsService.SearchHashtagsAsync(query, previewLimit, cancellationToken))
+                .Select(hashtag => new SearchHashtagResponse(hashtag.NormalizedName, hashtag.DisplayName))
+                .ToList();
             return ApplicationResult<GlobalSearchResponse>.Success(new(
                 people.Items,
                 groups.Items,
                 pages.Items,
                 posts.Items,
-                reels.Items));
+                reels.Items,
+                null,
+                hashtags));
         }
 
         if (!TryDecodeCursor(cursorValue, type, query, out var cursor))

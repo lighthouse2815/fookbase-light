@@ -282,6 +282,18 @@ public sealed class PostsService(
             cancellationToken));
     }
 
+    public async Task<CommentResponse?> GetCommentResponseAsync(
+        Guid commentId,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = await dbContext.Comments.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == commentId && item.DeletedAtUtc == null,
+            cancellationToken);
+        return comment is null
+            ? null
+            : (await LoadCommentResponsesAsync([comment], cancellationToken))[0];
+    }
+
     public async Task<ApplicationResult<PostResponse>> SetReactionAsync(
         PostViewerContext actor,
         Guid postId,
@@ -721,7 +733,8 @@ public sealed class PostsService(
         {
             await notificationService.PublishAsync(notification, cancellationToken);
         }
-        return PostsServiceResult<CommentResponse>.Success(ToResponse(comment));
+        return PostsServiceResult<CommentResponse>.Success(
+            (await LoadCommentResponsesAsync([comment], cancellationToken))[0]);
     }
 
     public async Task<PostsServiceResult<CommentResponse>> UpdateCommentCoreAsync(
@@ -752,7 +765,8 @@ public sealed class PostsService(
 
         comment.Update(content, timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
-        return PostsServiceResult<CommentResponse>.Success(ToResponse(comment));
+        return PostsServiceResult<CommentResponse>.Success(
+            (await LoadCommentResponsesAsync([comment], cancellationToken))[0]);
     }
 
     public async Task<PostsServiceError> DeleteCommentCoreAsync(
@@ -804,7 +818,8 @@ public sealed class PostsService(
             .Take(limit)
             .ToListAsync(cancellationToken);
         return PostsServiceResult<PagedResponse<CommentResponse>>.Success(
-            new PagedResponse<CommentResponse>(comments.Select(ToResponse).ToList(), offset, limit, total));
+            new PagedResponse<CommentResponse>(
+                await LoadCommentResponsesAsync(comments, cancellationToken), offset, limit, total));
     }
 
     public async Task<PostsServiceResult<PostResponse>> SetReactionCoreAsync(
@@ -1074,6 +1089,20 @@ public sealed class PostsService(
         var attachments = await dbContext.PostMedia.AsNoTracking()
             .Where(x => postIds.Contains(x.PostId)).OrderBy(x => x.SortOrder)
             .ToListAsync(cancellationToken);
+        var mentionRows = await dbContext.ContentMentions.AsNoTracking()
+            .Where(mention => mention.SourceType == MentionSourceType.Post && postIds.Contains(mention.SourceId))
+            .Select(mention => new MentionRow(
+                mention.SourceId,
+                mention.MentionedUserId,
+                mention.StartIndex,
+                mention.Length))
+            .ToListAsync(cancellationToken);
+        var mentionedUserIds = mentionRows.Select(mention => mention.UserId).Distinct().ToArray();
+        var mentionedProfiles = mentionedUserIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await dbContext.UserProfiles.AsNoTracking()
+                .Where(profile => mentionedUserIds.Contains(profile.UserId))
+                .ToDictionaryAsync(profile => profile.UserId, profile => profile.Username, cancellationToken);
 
         var pageIds = posts.Where(post => post.ContainerType == PostContainerType.Page).Select(post => post.ContainerId).Distinct().ToArray();
         var pages = pageIds.Length == 0
@@ -1100,7 +1129,17 @@ public sealed class PostsService(
             viewerReactions.GetValueOrDefault(post.Id),
             page is null ? null : new PostDisplayIdentityResponse("page", page.Id, page.Username, page.Name,
                 page.AvatarMediaId is null ? null : $"/api/pages/{page.Id}/avatar"),
-            post.ContainerType.ToString().ToLowerInvariant());
+            post.ContainerType.ToString().ToLowerInvariant(),
+            mentionRows
+                .Where(mention => mention.SourceId == post.Id && mentionedProfiles.ContainsKey(mention.UserId))
+                .OrderBy(mention => mention.StartIndex)
+                .Select(mention => new ContentMentionResponse(
+                    mention.UserId,
+                    mentionedProfiles[mention.UserId],
+                    mention.StartIndex,
+                    mention.Length))
+                .ToList(),
+            post.PostType == PostType.Reel ? "reel" : "standardPost");
         }).ToList();
     }
 
@@ -1119,15 +1158,51 @@ public sealed class PostsService(
 
     private sealed record PagePostIdentity(Guid Id, string Username, string Name, Guid? AvatarMediaId);
 
-    private static CommentResponse ToResponse(Comment comment) =>
-        new(
+    private sealed record MentionRow(Guid SourceId, Guid UserId, int StartIndex, int Length);
+
+    private async Task<IReadOnlyList<CommentResponse>> LoadCommentResponsesAsync(
+        IReadOnlyList<Comment> comments,
+        CancellationToken cancellationToken)
+    {
+        if (comments.Count == 0)
+        {
+            return [];
+        }
+
+        var commentIds = comments.Select(comment => comment.Id).ToArray();
+        var mentionRows = await dbContext.ContentMentions.AsNoTracking()
+            .Where(mention => mention.SourceType == MentionSourceType.Comment && commentIds.Contains(mention.SourceId))
+            .Select(mention => new MentionRow(
+                mention.SourceId,
+                mention.MentionedUserId,
+                mention.StartIndex,
+                mention.Length))
+            .ToListAsync(cancellationToken);
+        var mentionedUserIds = mentionRows.Select(mention => mention.UserId).Distinct().ToArray();
+        var profiles = mentionedUserIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await dbContext.UserProfiles.AsNoTracking()
+                .Where(profile => mentionedUserIds.Contains(profile.UserId))
+                .ToDictionaryAsync(profile => profile.UserId, profile => profile.Username, cancellationToken);
+
+        return comments.Select(comment => new CommentResponse(
             comment.Id,
             comment.PostId,
             comment.AuthorUserId,
             comment.ParentCommentId,
             comment.Content,
             comment.CreatedAtUtc,
-            comment.UpdatedAtUtc);
+            comment.UpdatedAtUtc,
+            mentionRows
+                .Where(mention => mention.SourceId == comment.Id && profiles.ContainsKey(mention.UserId))
+                .OrderBy(mention => mention.StartIndex)
+                .Select(mention => new ContentMentionResponse(
+                    mention.UserId,
+                    profiles[mention.UserId],
+                    mention.StartIndex,
+                    mention.Length))
+                .ToList())).ToList();
+    }
 
     private static string PrivacyName(PostPrivacy privacy) => privacy switch
     {

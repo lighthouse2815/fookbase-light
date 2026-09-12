@@ -15,6 +15,7 @@ public sealed class PostsUseCase(
     GroupPostAccessService groupPostAccessService,
     PagePostAccessService pagePostAccessService,
     Fookbase.Api.Modules.Media.Services.MediaService mediaService,
+    SocialInteractionsService socialInteractionsService,
     FookbaseDbContext dbContext)
 {
     public async Task<ApplicationResult<PostResponse>> CreateGroupPostAsync(
@@ -70,8 +71,17 @@ public sealed class PostsUseCase(
                 return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
             }
 
+            await socialInteractionsService.SynchronizePostMetadataAsync(
+                result.Value!.Id, actorUserId, cancellationToken);
+            var refreshed = await RefreshPostAsync(actorUserId, result.Value.Id, cancellationToken);
+            if (!refreshed.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return refreshed;
+            }
+
             await transaction.CommitAsync(cancellationToken);
-            return result;
+            return refreshed;
         }
         catch
         {
@@ -118,8 +128,17 @@ public sealed class PostsUseCase(
                 return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
             }
 
+            await socialInteractionsService.SynchronizePostMetadataAsync(
+                result.Value!.Id, actorUserId, cancellationToken);
+            var refreshed = await RefreshPostAsync(actorUserId, result.Value.Id, cancellationToken);
+            if (!refreshed.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return refreshed;
+            }
+
             await transaction.CommitAsync(cancellationToken);
-            return result;
+            return refreshed;
         }
         catch
         {
@@ -172,8 +191,17 @@ public sealed class PostsUseCase(
                 return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
             }
 
+            await socialInteractionsService.SynchronizePostMetadataAsync(
+                result.Value!.Id, actorUserId, cancellationToken);
+            var refreshed = await RefreshPostAsync(actorUserId, result.Value.Id, cancellationToken);
+            if (!refreshed.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return refreshed;
+            }
+
             await transaction.CommitAsync(cancellationToken);
-            return result;
+            return refreshed;
         }
         catch
         {
@@ -227,8 +255,16 @@ public sealed class PostsUseCase(
                 return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
             }
 
+            await socialInteractionsService.SynchronizePostMetadataAsync(postId, actorUserId, cancellationToken);
+            var refreshed = await RefreshPostAsync(actorUserId, postId, cancellationToken);
+            if (!refreshed.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return refreshed;
+            }
+
             await transaction.CommitAsync(cancellationToken);
-            return result;
+            return refreshed;
         }
         catch
         {
@@ -334,20 +370,115 @@ public sealed class PostsUseCase(
         Guid postId,
         Guid? parentCommentId,
         string content,
-        CancellationToken cancellationToken = default) =>
-        await postsService.CreateCommentAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var result = await postsService.CreateCommentAsync(
             await CreateRequiredViewerContextAsync(actorUserId, cancellationToken),
             postId,
             parentCommentId,
             content,
             cancellationToken);
+        if (!result.Succeeded)
+        {
+            return result;
+        }
 
-    public Task<ApplicationResult<CommentResponse>> UpdateCommentAsync(
+        await socialInteractionsService.SynchronizeCommentMentionsAsync(
+            result.Value!.Id, actorUserId, cancellationToken);
+        return await RefreshedCommentAsync(result.Value.Id, result, cancellationToken);
+    }
+
+    public async Task<ApplicationResult<CommentResponse>> UpdateCommentAsync(
         Guid actorUserId,
         Guid commentId,
         string content,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await postsService.UpdateCommentAsync(actorUserId, commentId, content, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return result;
+        }
+
+        await socialInteractionsService.SynchronizeCommentMentionsAsync(commentId, actorUserId, cancellationToken);
+        return await RefreshedCommentAsync(commentId, result, cancellationToken);
+    }
+
+    public async Task<ApplicationResult> SavePostAsync(
+        Guid actorUserId,
+        Guid postId,
         CancellationToken cancellationToken = default) =>
-        postsService.UpdateCommentAsync(actorUserId, commentId, content, cancellationToken);
+        await socialInteractionsService.SaveAsync(actorUserId, postId, cancellationToken);
+
+    public async Task<ApplicationResult> RemoveSavedPostAsync(
+        Guid actorUserId,
+        Guid postId,
+        CancellationToken cancellationToken = default) =>
+        await socialInteractionsService.RemoveSaveAsync(actorUserId, postId, cancellationToken);
+
+    public async Task<ApplicationResult<SavedPostsPageResponse>> GetSavedPostsAsync(
+        Guid actorUserId,
+        string? cursor,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var page = await socialInteractionsService.GetSavedPostsAsync(actorUserId, cursor, limit, cancellationToken);
+        if (!page.Succeeded)
+        {
+            return ApplicationResult<SavedPostsPageResponse>.Failure(page.Error!);
+        }
+
+        return ApplicationResult<SavedPostsPageResponse>.Success(new(
+            await postsService.LoadResponsesAsync(page.Value!.Posts, actorUserId, cancellationToken),
+            page.Value.NextCursor));
+    }
+
+    public async Task<ApplicationResult<PostShareResponse>> SharePostAsync(
+        Guid actorUserId,
+        Guid postId,
+        string destinationType,
+        Guid destinationId,
+        string? caption,
+        CancellationToken cancellationToken = default)
+    {
+        var created = await socialInteractionsService.ShareAsync(
+            actorUserId, postId, destinationType, destinationId, caption, cancellationToken);
+        if (!created.Succeeded)
+        {
+            return ApplicationResult<PostShareResponse>.Failure(created.Error!);
+        }
+
+        var value = created.Value!;
+        var original = (await postsService.LoadResponsesAsync([value.OriginalPost], actorUserId, cancellationToken))[0];
+        return ApplicationResult<PostShareResponse>.Success(new(
+            value.Share.Id,
+            value.Share.SharingUserId,
+            value.Share.DestinationType.ToString().ToLowerInvariant(),
+            value.Share.DestinationId,
+            value.Share.Caption,
+            value.Share.CreatedAtUtc,
+            original));
+    }
+
+    public async Task<ApplicationResult<HashtagPostsPageResponse>> GetHashtagPostsAsync(
+        Guid? viewerUserId,
+        string tag,
+        string? cursor,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var page = await socialInteractionsService.GetHashtagPostsAsync(
+            viewerUserId, tag, cursor, limit, cancellationToken);
+        if (!page.Succeeded)
+        {
+            return ApplicationResult<HashtagPostsPageResponse>.Failure(page.Error!);
+        }
+
+        return ApplicationResult<HashtagPostsPageResponse>.Success(new(
+            tag.Trim().TrimStart('#').ToLowerInvariant(),
+            await postsService.LoadResponsesAsync(page.Value!.Posts, viewerUserId, cancellationToken),
+            page.Value.NextCursor));
+    }
 
     public Task<ApplicationResult> DeleteCommentAsync(
         Guid actorUserId,
@@ -453,6 +584,24 @@ public sealed class PostsUseCase(
             viewerUserId,
             relationships.FriendUserIds,
             relationships.BlockedUserIds);
+    }
+
+    private async Task<ApplicationResult<PostResponse>> RefreshPostAsync(
+        Guid viewerUserId,
+        Guid postId,
+        CancellationToken cancellationToken) =>
+        await postsService.GetPostAsync(
+            await CreateRequiredViewerContextAsync(viewerUserId, cancellationToken),
+            postId,
+            cancellationToken);
+
+    private async Task<ApplicationResult<CommentResponse>> RefreshedCommentAsync(
+        Guid commentId,
+        ApplicationResult<CommentResponse> fallback,
+        CancellationToken cancellationToken)
+    {
+        var refreshed = await postsService.GetCommentResponseAsync(commentId, cancellationToken);
+        return refreshed is null ? fallback : ApplicationResult<CommentResponse>.Success(refreshed);
     }
 
     private async Task<ApplicationError?> ValidatePostMediaAsync(

@@ -12,7 +12,9 @@ public sealed record PostResponse(
     IReadOnlyDictionary<string, int> ReactionCounts,
     string? ViewerReaction,
     PostDisplayIdentityResponse? DisplayAuthor = null,
-    string? ContainerType = null);
+    string? ContainerType = null,
+    IReadOnlyList<ContentMentionResponse>? Mentions = null,
+    string ContentType = "standardPost");
 
 public sealed record PostDisplayIdentityResponse(
     string Type,

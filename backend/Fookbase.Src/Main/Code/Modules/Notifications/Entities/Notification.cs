@@ -7,6 +7,7 @@ public enum NotificationType
     PostReaction,
     PostComment,
     CommentReaction,
+    PostShared,
     PostMention,
     CommentMention,
     GroupInvite,
