@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Fookbase.Api;
 using Fookbase.Api.Shared.ErrorHandling;
+using AppDataProtectionOptions = Fookbase.Api.Shared.Config.DataProtectionOptions;
 using Fookbase.Api.Shared.HealthChecks;
 using Fookbase.Api.Modules.Friends.Endpoints;
 using Fookbase.Api.Modules.Feed.Endpoints;
@@ -25,6 +26,7 @@ using Fookbase.Api.Modules.Stories.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Fookbase.Api.Modules.Search.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +38,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is required.");
+var dataProtectionOptions = builder.Configuration.GetSection(AppDataProtectionOptions.SectionName)
+    .Get<AppDataProtectionOptions>() ?? new AppDataProtectionOptions();
+dataProtectionOptions.Validate(builder.Environment.IsProduction());
+var dataProtection = builder.Services.AddDataProtection()
+    .SetApplicationName(dataProtectionOptions.ApplicationName);
+if (!string.IsNullOrWhiteSpace(dataProtectionOptions.KeyRingPath))
+{
+    dataProtection.PersistKeysToFileSystem(
+        new DirectoryInfo(dataProtectionOptions.KeyRingPath));
+}
+
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 var rateLimitPermitLimit = builder.Configuration.GetValue("RateLimiting:PermitLimit", 120);
 var rateLimitWindowSeconds = builder.Configuration.GetValue("RateLimiting:WindowSeconds", 60);

@@ -12,7 +12,6 @@ public static class DependencyInjection
     {
         options.Validate();
         services.AddSingleton(options);
-        services.AddDataProtection();
         services.AddScoped<FeedService>();
         return services;
     }

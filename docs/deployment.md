@@ -42,6 +42,32 @@ Compose local đặt `Database__ApplyMigrationsOnStartup=true` để một fresh
 không phụ thuộc dependency; readiness chỉ trả thành công sau khi PostgreSQL và bucket MinIO
 private đã sẵn sàng.
 
+## Data Protection key ring
+
+Cursor của bảng tin được bảo vệ bằng ASP.NET Core Data Protection. Khi chạy Production,
+`DataProtection__KeyRingPath` là bắt buộc; API sẽ dừng khi thiếu cấu hình này để tránh dùng key
+ephemeral. Không đặt private key trong configuration: framework tạo và luân phiên key ring tại
+đường dẫn đã cấu hình. Bảo vệ volume/path này như credential, backup cùng dữ liệu ứng dụng và chỉ
+cấp quyền ghi cho API.
+
+Compose mount named volume `data-protection-keys` tại `/var/fookbase/data-protection-keys`. Service
+`data-protection-init` chỉ thiết lập quyền sở hữu cho UID API không phải root; API không chạy bằng
+root. Có thể smoke-test cursor qua một lần tái tạo container mà không xoá volume:
+
+```bash
+# Đăng nhập và thay ACCESS_TOKEN bằng JWT hợp lệ trước khi chạy.
+curl -fsS -H "Authorization: Bearer $ACCESS_TOKEN" \
+  'http://localhost:5000/api/feed?limit=1' > /tmp/feed-page.json
+CURSOR=$(jq -r '.nextCursor' /tmp/feed-page.json)
+docker compose up -d --force-recreate --no-deps api
+curl -fsS -H "Authorization: Bearer $ACCESS_TOKEN" --get \
+  --data-urlencode "cursor=$CURSOR" --data 'limit=1' \
+  'http://localhost:5000/api/feed' >/dev/null
+```
+
+Lệnh cuối phải trả HTTP 200. Không chạy `docker compose down -v` giữa hai request vì lệnh đó chủ
+động xoá key ring và làm mọi cursor cũ không thể giải mã.
+
 ## Reverse proxy và TLS
 
 Đặt API, MinIO API và frontend phía sau reverse proxy có chứng chỉ TLS. Proxy cần chuyển tiếp WebSocket cho `/hubs/messages` và `/hubs/notifications`; không mở trực tiếp PostgreSQL, MinIO console hoặc MinIO API ra Internet. Chỉ proxy mới được kết nối tới các service nội bộ.

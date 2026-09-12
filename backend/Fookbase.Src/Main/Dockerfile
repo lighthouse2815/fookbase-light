@@ -22,7 +22,9 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 fookbase \
-    && useradd --uid 10001 --gid fookbase --create-home --shell /usr/sbin/nologin fookbase
+    && useradd --uid 10001 --gid fookbase --create-home --shell /usr/sbin/nologin fookbase \
+    && mkdir -p /var/fookbase/data-protection-keys \
+    && chown -R fookbase:fookbase /var/fookbase
 
 COPY --from=build --chown=fookbase:fookbase /app/publish/ ./
 

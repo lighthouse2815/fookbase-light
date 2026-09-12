@@ -10,6 +10,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+      data-protection-init:
+        condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__FookbaseDatabase: Host=postgres;Port=5432;Database=fookbase_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
@@ -29,9 +31,20 @@ services:
       Minio__BucketInitializationEnabled: "true"
       Minio__BucketInitializationMaxAttempts: ${Minio__BucketInitializationMaxAttempts:-10}
       Minio__BucketInitializationRetrySeconds: ${Minio__BucketInitializationRetrySeconds:-2}
+      DataProtection__ApplicationName: ${DataProtection__ApplicationName:-Fookbase}
+      DataProtection__KeyRingPath: /var/fookbase/data-protection-keys
     ports:
       - "${API_PORT:-5000}:5000"
+    volumes:
+      - data-protection-keys:/var/fookbase/data-protection-keys
     restart: unless-stopped
+
+  data-protection-init:
+    image: busybox:1.37.0-musl
+    command: ["sh", "-c", "mkdir -p /var/fookbase/data-protection-keys && chown -R 10001:10001 /var/fookbase/data-protection-keys"]
+    volumes:
+      - data-protection-keys:/var/fookbase/data-protection-keys
+    restart: "no"
 
   postgres:
     image: postgres:17-alpine
@@ -97,3 +110,4 @@ services:
 volumes:
   identity-postgres-data:
   minio-data:
+  data-protection-keys:
