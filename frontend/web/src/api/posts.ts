@@ -1,6 +1,14 @@
 import { apiRequest } from './client'
 import type { PagedResponse } from './friends'
 
+export interface PostDisplayIdentity {
+  type: 'user' | 'page'
+  id: string
+  username: string
+  name: string
+  avatarUrl: string | null
+}
+
 export interface Post {
   id: string
   authorUserId: string | null
@@ -12,13 +20,7 @@ export interface Post {
   commentCount: number
   reactionCounts: Record<string, number>
   viewerReaction: string | null
-  displayAuthor?: {
-    type: 'page'
-    id: string
-    username: string
-    name: string
-    avatarUrl: string | null
-  } | null
+  displayAuthor?: PostDisplayIdentity | null
   containerType?: 'profile' | 'group' | 'page'
 }
 

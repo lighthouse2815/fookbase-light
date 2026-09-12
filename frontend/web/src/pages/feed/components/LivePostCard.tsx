@@ -12,6 +12,7 @@ import PaginationControls from '../../../shared/components/PaginationControls'
 interface LivePostCardProps {
   post: Post
   author?: UserProfile
+  group?: { id: string; name: string }
   currentUserId: string
   onPostUpdated: (post: Post) => void
   onPostDeleted: (postId: string) => void
@@ -27,6 +28,7 @@ function relativeDate(value: string, locale: string) {
 export default function LivePostCard({
   post,
   author,
+  group,
   currentUserId,
   onPostUpdated,
   onPostDeleted,
@@ -192,6 +194,7 @@ export default function LivePostCard({
         </div>
         <div className="flex-1 min-w-0">
           <Link to={authorDestination} className="block font-semibold text-sm text-text truncate hover:underline no-underline">{authorName}</Link>
+          {group && <p className="text-xs text-text-muted">{t('inGroup')} <Link to={`/groups/${group.id}`} className="font-semibold text-primary no-underline hover:underline">{group.name}</Link></p>}
           <p className="text-xs text-text-muted">@{authorUsername} · {relativeDate(post.createdAtUtc, language === 'vi' ? 'vi-VN' : 'en-US')}</p>
         </div>
         {isAuthor ? (
