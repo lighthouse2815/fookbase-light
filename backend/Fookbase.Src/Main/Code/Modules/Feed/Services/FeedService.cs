@@ -76,8 +76,26 @@ public sealed class FeedService(
         await AddWindowAsync(profile.Where(post => post.AuthorUserId != viewerUserId), options.FriendAffinity);
         await AddWindowAsync(groups, options.GroupAffinity);
         await AddWindowAsync(pages, options.PageAffinity);
+        var shares = dbContext.PostShares.AsNoTracking().Where(share =>
+            share.DeletedAtUtc == null && share.CreatedAtUtc <= session.AsOfUtc);
+        await AddShareWindowAsync(shares.Where(share =>
+            share.DestinationType == PostShareDestinationType.Profile &&
+            share.DestinationId == viewerUserId), options.OwnAffinity);
+        await AddShareWindowAsync(shares.Where(share =>
+            share.DestinationType == PostShareDestinationType.Profile &&
+            share.SharingUserId != viewerUserId &&
+            viewer.FriendUserIds.Contains(share.SharingUserId) &&
+            !viewer.BlockedUserIds.Contains(share.SharingUserId)), options.FriendAffinity);
+        await AddShareWindowAsync(shares.Where(share =>
+            share.DestinationType == PostShareDestinationType.Group &&
+            dbContext.GroupMembers.Any(member =>
+                member.GroupId == share.DestinationId && member.UserId == viewerUserId)), options.GroupAffinity);
+        await AddShareWindowAsync(shares.Where(share =>
+            share.DestinationType == PostShareDestinationType.Page &&
+            dbContext.PageFollowers.Any(follower =>
+                follower.PageId == share.DestinationId && follower.UserId == viewerUserId)), options.PageAffinity);
         organic = organic.OrderByDescending(item => item.Score)
-            .ThenByDescending(item => item.Post.CreatedAtUtc).ThenByDescending(item => item.Post.Id).ToList();
+            .ThenByDescending(item => item.CreatedAtUtc).ThenByDescending(item => item.SortId).ToList();
 
         var suggestions = new List<Candidate>();
         if (!following && (organic.Count > 0 || session.OrganicSinceSuggestion >= options.OrganicItemsPerSuggestion))
@@ -136,6 +154,12 @@ public sealed class FeedService(
             organic.AddRange(await LoadWindowAsync(query, following ? 0 : affinity,
                 session.Organic, session.AsOfUtc, false, cancellationToken));
         }
+
+        async Task AddShareWindowAsync(IQueryable<PostShare> query, int affinity)
+        {
+            organic.AddRange(await LoadShareWindowAsync(query, following ? 0 : affinity,
+                session.Organic, session.AsOfUtc, viewer, cancellationToken));
+        }
     }
 
     private async Task<List<Candidate>> LoadWindowAsync(
@@ -167,8 +191,86 @@ public sealed class FeedService(
         // traverse arbitrarily far beyond the first window without retaining a timeline.
         var posts = await query.OrderByDescending(post => post.CreatedAtUtc).ThenByDescending(post => post.Id)
             .Take(options.CandidateLimitPerSource).ToListAsync(cancellationToken);
-        return posts.Select(post => new Candidate(post,
-            affinityTicks - (asOfUtc.Ticks - post.CreatedAtUtc.Ticks), suggested)).ToList();
+        return posts.Select(post => new Candidate(
+            post,
+            null,
+            post.CreatedAtUtc,
+            post.Id,
+            affinityTicks - (asOfUtc.Ticks - post.CreatedAtUtc.Ticks),
+            suggested)).ToList();
+    }
+
+    private async Task<List<Candidate>> LoadShareWindowAsync(
+        IQueryable<PostShare> shares,
+        int affinity,
+        FeedPosition? position,
+        DateTimeOffset asOfUtc,
+        PostViewerContext viewer,
+        CancellationToken cancellationToken)
+    {
+        var affinityTicks = (long)affinity * options.FreshnessHoursPerPoint * TimeSpan.TicksPerHour;
+        var candidates = new List<Candidate>();
+        var scanPosition = position;
+        while (candidates.Count < options.CandidateLimitPerSource)
+        {
+            var window = shares;
+            if (scanPosition is not null)
+            {
+                var boundaryTicks = asOfUtc.Ticks + scanPosition.Score - affinityTicks;
+                if (boundaryTicks < DateTimeOffset.MinValue.Ticks)
+                {
+                    break;
+                }
+
+                var boundary = new DateTimeOffset(Math.Min(boundaryTicks, DateTimeOffset.MaxValue.Ticks), TimeSpan.Zero);
+                window = window.Where(share => share.CreatedAtUtc < boundary ||
+                    share.CreatedAtUtc == boundary && share.Id.CompareTo(scanPosition.Id) < 0);
+            }
+
+            var rows = await (
+                from share in window
+                join post in dbContext.Posts.AsNoTracking() on share.OriginalPostId equals post.Id
+                where post.DeletedAtUtc == null
+                orderby share.CreatedAtUtc descending, share.Id descending
+                select new { Share = share, Post = post })
+                .Take(options.CandidateLimitPerSource * 2)
+                .ToListAsync(cancellationToken);
+            if (rows.Count == 0)
+            {
+                break;
+            }
+
+            foreach (var row in rows)
+            {
+                scanPosition = new FeedPosition(
+                    affinityTicks - (asOfUtc.Ticks - row.Share.CreatedAtUtc.Ticks),
+                    row.Share.CreatedAtUtc,
+                    row.Share.Id);
+                if (!await postsService.CanViewPostAsync(row.Post, viewer, cancellationToken))
+                {
+                    continue;
+                }
+
+                candidates.Add(new Candidate(
+                    row.Post,
+                    row.Share,
+                    row.Share.CreatedAtUtc,
+                    row.Share.Id,
+                    affinityTicks - (asOfUtc.Ticks - row.Share.CreatedAtUtc.Ticks),
+                    false));
+                if (candidates.Count >= options.CandidateLimitPerSource)
+                {
+                    break;
+                }
+            }
+
+            if (rows.Count < options.CandidateLimitPerSource * 2)
+            {
+                break;
+            }
+        }
+
+        return candidates;
     }
 
     private FeedCursor DecodeCursor(string? value, IDataProtector protector)
@@ -211,7 +313,7 @@ public sealed class FeedService(
         position.Score >= -DateTimeOffset.MaxValue.Ticks && position.Score <= DateTimeOffset.MaxValue.Ticks;
 
     private static FeedPosition Position(Candidate candidate) =>
-        new(candidate.Score, candidate.Post.CreatedAtUtc, candidate.Post.Id);
+        new(candidate.Score, candidate.CreatedAtUtc, candidate.SortId);
 
     private async Task<IReadOnlyList<FeedItemResponse>> BuildItemsAsync(
         IReadOnlyList<Candidate> candidates, Guid viewerUserId, CancellationToken cancellationToken)
@@ -225,17 +327,47 @@ public sealed class FeedService(
         var summaries = (await postsService.LoadResponsesAsync(posts, viewerUserId, cancellationToken))
             .ToDictionary(post => post.Id);
         var postIds = posts.Select(post => post.Id).ToArray();
-        var authorIds = posts.Where(post => post.ContainerType != PostContainerType.Page)
-            .Select(post => post.AuthorUserId).Distinct().ToArray();
+        var authorIds = candidates
+            .SelectMany(candidate =>
+            {
+                if (candidate.Share is not null)
+                {
+                    return new[] { candidate.Share.SharingUserId };
+                }
+
+                return candidate.Post.ContainerType == PostContainerType.Page
+                    ? Array.Empty<Guid>()
+                    : new[] { candidate.Post.AuthorUserId };
+            })
+            .Distinct()
+            .ToArray();
         var profiles = await dbContext.UserProfiles.AsNoTracking().Where(profile => authorIds.Contains(profile.UserId))
             .Select(profile => new { profile.UserId, profile.Username, profile.DisplayName, profile.AvatarUrl, profile.AvatarMediaId })
             .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
-        var groupIds = posts.Where(post => post.ContainerType == PostContainerType.Group)
-            .Select(post => post.ContainerId).Distinct().ToArray();
+        var groupIds = candidates.SelectMany(candidate =>
+            (candidate.Post.ContainerType == PostContainerType.Group
+                ? new[] { candidate.Post.ContainerId }
+                : Array.Empty<Guid>())
+            .Concat(candidate.Share?.DestinationType == PostShareDestinationType.Group
+                ? new[] { candidate.Share.DestinationId }
+                : Array.Empty<Guid>()))
+            .Distinct()
+            .ToArray();
         var groups = await dbContext.Groups.AsNoTracking()
             .Where(group => groupIds.Contains(group.Id) && group.DeletedAtUtc == null)
             .Select(group => new { group.Id, group.Name, group.Privacy })
             .ToDictionaryAsync(group => group.Id, cancellationToken);
+        var destinationPageIds = candidates
+            .Where(candidate => candidate.Share?.DestinationType == PostShareDestinationType.Page)
+            .Select(candidate => candidate.Share!.DestinationId)
+            .Distinct()
+            .ToArray();
+        var destinationPages = destinationPageIds.Length == 0
+            ? new Dictionary<Guid, PageDestinationIdentity>()
+            : await dbContext.Pages.AsNoTracking()
+                .Where(page => destinationPageIds.Contains(page.Id) && page.DeletedAtUtc == null)
+                .Select(page => new PageDestinationIdentity(page.Id, page.Username, page.Name, page.AvatarMediaId))
+                .ToDictionaryAsync(page => page.Id, cancellationToken);
         var media = await (
             from attachment in dbContext.PostMedia.AsNoTracking()
             join asset in dbContext.MediaAssets.AsNoTracking() on attachment.MediaId equals asset.Id
@@ -288,20 +420,102 @@ public sealed class FeedService(
                     "video/mp4", $"/api/reels/{post.Id}/video/access", $"/api/reels/{post.Id}/poster/access");
             }
 
-            results.Add(new FeedItemResponse(post.Id, post.Content, summary.Privacy, post.CreatedAtUtc, post.UpdatedAtUtc,
-                new FeedAuthorResponse(post.ContainerType == PostContainerType.Page ? null : post.AuthorUserId,
-                    displayAuthor.Username, displayAuthor.Name, displayAuthor.AvatarUrl),
+            var itemId = post.Id;
+            var content = post.Content;
+            var createdAtUtc = post.CreatedAtUtc;
+            var updatedAtUtc = post.UpdatedAtUtc;
+            var contentType = post.PostType == PostType.Reel ? "reel" : "standardPost";
+            var containerType = post.ContainerType.ToString().ToLowerInvariant();
+            var author = new FeedAuthorResponse(post.ContainerType == PostContainerType.Page ? null : post.AuthorUserId,
+                displayAuthor.Username, displayAuthor.Name, displayAuthor.AvatarUrl);
+            FeedShareResponse? shareResponse = null;
+            if (candidate.Share is { } share)
+            {
+                var actorProfile = profiles.GetValueOrDefault(share.SharingUserId);
+                var actorUsername = actorProfile?.Username ?? share.SharingUserId.ToString("N");
+                var actor = new FeedAuthorResponse(
+                    share.SharingUserId,
+                    actorUsername,
+                    actorProfile?.DisplayName ?? actorUsername,
+                    actorProfile?.AvatarMediaId is null
+                        ? actorProfile?.AvatarUrl
+                        : $"/api/users/{share.SharingUserId}/avatar");
+                switch (share.DestinationType)
+                {
+                    case PostShareDestinationType.Profile:
+                        displayAuthor = new PostDisplayIdentityResponse(
+                            "user", share.SharingUserId, actor.Username, actor.DisplayName, actor.AvatarUrl);
+                        container = new(share.DestinationId, actor.DisplayName, actor.Username, "public");
+                        author = actor;
+                        break;
+                    case PostShareDestinationType.Group:
+                        var group = groups.GetValueOrDefault(share.DestinationId);
+                        if (group is null) continue;
+                        displayAuthor = new PostDisplayIdentityResponse(
+                            "user", share.SharingUserId, actor.Username, actor.DisplayName, actor.AvatarUrl);
+                        container = new(group.Id, group.Name, null, group.Privacy.ToString().ToLowerInvariant());
+                        author = actor;
+                        break;
+                    case PostShareDestinationType.Page:
+                        var page = destinationPages.GetValueOrDefault(share.DestinationId);
+                        if (page is null) continue;
+                        displayAuthor = new PostDisplayIdentityResponse(
+                            "page", page.Id, page.Username, page.Name,
+                            page.AvatarMediaId is null ? null : $"/api/pages/{page.Id}/avatar");
+                        container = new(page.Id, page.Name, page.Username, null);
+                        author = new FeedAuthorResponse(null, page.Username, page.Name, displayAuthor.AvatarUrl);
+                        actor = author;
+                        break;
+                    default:
+                        continue;
+                }
+
+                shareResponse = new FeedShareResponse(
+                    share.Id,
+                    post.Id,
+                    share.Caption,
+                    share.CreatedAtUtc,
+                    actor,
+                    post.ContainerType == PostContainerType.Page && summary.DisplayAuthor is { } pageAuthor
+                        ? pageAuthor
+                        : new PostDisplayIdentityResponse(
+                            "user", post.AuthorUserId,
+                            profile?.Username ?? post.AuthorUserId.ToString("N"),
+                            profile?.DisplayName ?? profile?.Username ?? post.AuthorUserId.ToString("N"),
+                            profile?.AvatarMediaId is null
+                                ? profile?.AvatarUrl
+                                : $"/api/users/{post.AuthorUserId}/avatar"),
+                    summary);
+                itemId = share.Id;
+                content = share.Caption ?? string.Empty;
+                createdAtUtc = share.CreatedAtUtc;
+                updatedAtUtc = null;
+                contentType = "share";
+                containerType = share.DestinationType.ToString().ToLowerInvariant();
+                video = null;
+                assets = [];
+            }
+
+            results.Add(new FeedItemResponse(itemId, content, summary.Privacy, createdAtUtc, updatedAtUtc,
+                author,
                 assets.Select(asset => asset.Id).ToList(),
                 assets.Select(asset => new FeedMediaResponse(asset.Id, asset.MediaType.ToString().ToLowerInvariant(), asset.ContentType)).ToList(),
                 summary.CommentCount, summary.ReactionCounts.Values.Sum(), summary.ReactionCounts, summary.ViewerReaction,
-                post.PostType == PostType.Reel ? "reel" : "standardPost", post.ContainerType.ToString().ToLowerInvariant(),
-                container, displayAuthor, video, candidate.IsSuggested));
+                contentType, containerType,
+                container, displayAuthor, video, candidate.IsSuggested, shareResponse));
         }
 
         return results;
     }
 
-    private sealed record Candidate(Post Post, long Score, bool IsSuggested);
+    private sealed record Candidate(
+        Post Post,
+        PostShare? Share,
+        DateTimeOffset CreatedAtUtc,
+        Guid SortId,
+        long Score,
+        bool IsSuggested);
+    private sealed record PageDestinationIdentity(Guid Id, string Username, string Name, Guid? AvatarMediaId);
     private sealed record FeedPosition(long Score, DateTimeOffset CreatedAtUtc, Guid Id);
     private sealed record FeedCursor(int Version, DateTimeOffset AsOfUtc, FeedPosition? Organic,
         FeedPosition? Suggestion, int OrganicSinceSuggestion);

@@ -991,7 +991,7 @@ public sealed class PostsService(
             .Where(post => post.PostType == PostType.Standard);
     }
 
-    private async Task<bool> CanViewPostAsync(
+    public async Task<bool> CanViewPostAsync(
         Post post,
         PostViewerContext? viewer,
         CancellationToken cancellationToken)

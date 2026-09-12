@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Feed.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Posts.Entities;
@@ -257,6 +258,37 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(1, await db.PostHashtags.CountAsync(item => item.PostId == post.Id));
         Assert.Single(await db.Notifications.Where(item =>
             item.Type == NotificationType.PostShared && item.EntityId == post.Id).ToListAsync());
+    }
+
+    [Fact]
+    public async Task Profile_shares_are_feed_events_and_disappear_when_the_original_becomes_inaccessible()
+    {
+        var users = await CreateUserIdsAsync(3);
+        var authorUserId = users[0];
+        var sharerUserId = users[1];
+        var viewerUserId = users[2];
+        await CreateFriendshipAsync(sharerUserId, viewerUserId);
+        using var author = CreateAuthenticatedClient(authorUserId);
+        using var sharer = CreateAuthenticatedClient(sharerUserId);
+        using var viewer = CreateAuthenticatedClient(viewerUserId);
+        var original = await CreatePostAsync(author, "shared feed original", "public");
+        var share = await ReadAsync<PostShareResponse>(await sharer.PostAsJsonAsync(
+            $"/api/posts/{original.Id}/shares",
+            new { destinationType = "profile", destinationId = sharerUserId, caption = "Read this" }));
+
+        var feed = await ReadAsync<FeedPageResponse>(await viewer.GetAsync("/api/feed?limit=50"));
+        var feedShare = Assert.Single(feed.Items, item => item.Id == share.Id);
+        Assert.Equal("share", feedShare.ContentType);
+        Assert.NotNull(feedShare.Share);
+        Assert.Equal(original.Id, feedShare.Share!.OriginalPostId);
+        Assert.Equal(original.Id, feedShare.Share.OriginalPost.Id);
+
+        Assert.Equal(HttpStatusCode.OK, (await author.PutAsJsonAsync($"/api/posts/{original.Id}", new
+        {
+            content = "shared feed original", privacy = "onlyMe"
+        })).StatusCode);
+        var refreshed = await ReadAsync<FeedPageResponse>(await viewer.GetAsync("/api/feed?limit=50"));
+        Assert.DoesNotContain(refreshed.Items, item => item.Id == share.Id);
     }
 
     [Fact]

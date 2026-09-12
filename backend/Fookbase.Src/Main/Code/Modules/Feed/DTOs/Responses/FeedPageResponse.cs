@@ -20,6 +20,15 @@ public sealed record FeedContainerResponse(
     string? Username,
     string? Privacy);
 
+public sealed record FeedShareResponse(
+    Guid Id,
+    Guid OriginalPostId,
+    string? Caption,
+    DateTimeOffset CreatedAtUtc,
+    FeedAuthorResponse Actor,
+    PostDisplayIdentityResponse OriginalAuthor,
+    PostResponse OriginalPost);
+
 public sealed record FeedItemResponse(
     Guid Id,
     string Content,
@@ -38,7 +47,8 @@ public sealed record FeedItemResponse(
     FeedContainerResponse Container,
     PostDisplayIdentityResponse DisplayAuthor,
     ReelVideoResponse? Video,
-    bool IsSuggested);
+    bool IsSuggested,
+    FeedShareResponse? Share = null);
 
 public sealed record FeedPageResponse(
     IReadOnlyList<FeedItemResponse> Items,
