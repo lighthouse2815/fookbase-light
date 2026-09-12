@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
 import PaginationControls from '../../shared/components/PaginationControls'
 import FeedReelCard from './components/FeedReelCard'
+import FeedShareCard from './components/FeedShareCard'
 import LivePostCard from './components/LivePostCard'
 import NewPostBox from './components/NewPostBox'
 import StoryTray from './components/StoryTray'
@@ -118,22 +119,25 @@ export default function FeedPage() {
   }
 
   const mergeUpdatedPost = (updatedPost: Post) => {
-    setPosts((currentPosts) => currentPosts.map((post) => post.id === updatedPost.id
-      ? {
-          ...post,
-          content: updatedPost.content,
-          privacy: updatedPost.privacy,
-          updatedAtUtc: updatedPost.updatedAtUtc,
-          mediaIds: updatedPost.mediaIds,
-          commentCount: updatedPost.commentCount,
-          reactionCounts: updatedPost.reactionCounts,
-          viewerReaction: updatedPost.viewerReaction,
-          reactionCount: Object.values(updatedPost.reactionCounts).reduce(
-            (total, count) => total + count,
-            0,
-          ),
-        }
-      : post))
+    const merge = (post: FeedItem): FeedItem => ({
+      ...post,
+      content: updatedPost.content,
+      privacy: updatedPost.privacy,
+      updatedAtUtc: updatedPost.updatedAtUtc,
+      mediaIds: updatedPost.mediaIds,
+      commentCount: updatedPost.commentCount,
+      reactionCounts: updatedPost.reactionCounts,
+      viewerReaction: updatedPost.viewerReaction,
+      mentions: updatedPost.mentions,
+      reactionCount: Object.values(updatedPost.reactionCounts).reduce((total, count) => total + count, 0),
+    })
+    setPosts((currentPosts) => currentPosts.map((post) => {
+      if (post.id === updatedPost.id) return merge(post)
+      if (post.share?.originalPost.id === updatedPost.id) {
+        return { ...post, share: { ...post.share, originalPost: updatedPost } }
+      }
+      return post
+    }))
   }
 
   return (
@@ -154,10 +158,18 @@ export default function FeedPage() {
           {error && <div role="alert" className="rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void loadFeed()} className="mt-2 rounded-md border border-[#ff8a9b]/50 bg-transparent px-3 py-1 text-xs font-semibold text-[#ff8a9b] cursor-pointer">{t('refresh')}</button></div>}
           {isLoading && <div className="flex flex-col gap-4" aria-label={t('loadingFeed')}><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /></div>}
           {!isLoading && posts.length === 0 && !error && <p className="text-sm text-text-muted">{t('noPostsYet')}</p>}
-          {posts.map((post) => post.contentType === 'reel' ? <FeedReelCard key={post.id} item={post} /> : (
+          {posts.map((post) => post.contentType === 'share' ? (
+            <FeedShareCard
+              key={post.id}
+              item={post}
+              currentUserId={session!.user.id}
+              onOriginalUpdated={mergeUpdatedPost}
+              onOriginalDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.share?.originalPost.id !== postId))}
+            />
+          ) : post.contentType === 'reel' ? <FeedReelCard key={post.id} item={post} /> : (
             <LivePostCard
               key={post.id}
-              post={{ ...post, authorUserId: post.author.userId }}
+              post={{ ...post, authorUserId: post.author.userId, contentType: 'standardPost' }}
               group={post.containerType === 'group' ? post.container : undefined}
               currentUserId={session!.user.id}
               onPostUpdated={mergeUpdatedPost}

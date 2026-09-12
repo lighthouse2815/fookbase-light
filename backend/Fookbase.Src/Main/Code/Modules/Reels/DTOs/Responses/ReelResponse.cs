@@ -1,3 +1,5 @@
+using Fookbase.Api.Modules.Posts.DTOs.Responses;
+
 namespace Fookbase.Api.Modules.Reels.DTOs.Responses;
 
 public sealed record ReelAuthorResponse(
@@ -28,4 +30,5 @@ public sealed record ReelResponse(
     IReadOnlyDictionary<string, int> ReactionCounts,
     string? ViewerReaction,
     long ViewCount,
-    long CompletionCount);
+    long CompletionCount,
+    IReadOnlyList<ContentMentionResponse>? Mentions = null);

@@ -62,6 +62,11 @@ export interface SearchReel {
   createdAtUtc: string
 }
 
+export interface SearchHashtag {
+  tag: string
+  displayName: string
+}
+
 export interface GlobalSearchResponse {
   people: SearchPerson[]
   groups: SearchGroup[]
@@ -69,6 +74,7 @@ export interface GlobalSearchResponse {
   posts: SearchPost[]
   reels: SearchReel[]
   nextCursor: string | null
+  hashtags?: SearchHashtag[]
 }
 
 export interface SearchSuggestions {

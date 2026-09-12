@@ -502,7 +502,7 @@ public sealed class FeedService(
                 assets.Select(asset => new FeedMediaResponse(asset.Id, asset.MediaType.ToString().ToLowerInvariant(), asset.ContentType)).ToList(),
                 summary.CommentCount, summary.ReactionCounts.Values.Sum(), summary.ReactionCounts, summary.ViewerReaction,
                 contentType, containerType,
-                container, displayAuthor, video, candidate.IsSuggested, shareResponse));
+                container, displayAuthor, video, candidate.IsSuggested, summary.Mentions ?? [], shareResponse));
         }
 
         return results;

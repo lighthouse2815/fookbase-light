@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { apiRequest } from '../../../api/client'
+import { ApiError, apiRequest } from '../../../api/client'
 import type { FeedItem } from '../../../api/feed'
 import type { MediaReadUrl } from '../../../api/media'
+import { postsApi } from '../../../api/posts'
 import { resolveProfileImageUrl } from '../../../api/users'
 import { usePreferences } from '../../../preferences'
+import TextWithReferences from '../../../shared/components/TextWithReferences'
+import ShareDialog from './ShareDialog'
 
 export default function FeedReelCard({ item }: { item: FeedItem }) {
   const { language, t } = usePreferences()
   const [posterUrl, setPosterUrl] = useState<string | null>(null)
   const [previewFailed, setPreviewFailed] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const posterAccessPath = item.video?.posterAccessPath
   const destination = `/reels?reel=${item.id}`
 
@@ -21,6 +27,16 @@ export default function FeedReelCard({ item }: { item: FeedItem }) {
       .catch(() => { if (!controller.signal.aborted) setPreviewFailed(true) })
     return () => controller.abort()
   }, [posterAccessPath])
+
+  const saveReel = async () => {
+    try {
+      if (isSaved) await postsApi.removeSaved(item.id)
+      else await postsApi.save(item.id)
+      setIsSaved((current) => !current)
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật Reel đã lưu.')
+    }
+  }
 
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
@@ -34,7 +50,7 @@ export default function FeedReelCard({ item }: { item: FeedItem }) {
         </div>
         <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{item.isSuggested ? t('suggestedReel') : 'Reel'}</span>
       </div>
-      {item.content && <p className="whitespace-pre-wrap text-sm leading-relaxed text-text">{item.content}</p>}
+      {item.content && <TextWithReferences content={item.content} mentions={item.mentions} className="whitespace-pre-wrap text-sm leading-relaxed text-text" />}
       <Link to={destination} aria-label={`${t('openReel')} · ${item.displayAuthor.name}`} className="relative flex h-[400px] items-center justify-center overflow-hidden rounded-lg bg-black text-white no-underline sm:h-[480px]">
         {posterUrl && !previewFailed ? <img src={posterUrl} alt="" onError={() => setPreviewFailed(true)} className="h-full w-full object-contain" /> : <span className="px-6 text-center text-sm">{previewFailed || !posterAccessPath ? t('unableLoadReelPreview') : t('loading')}</span>}
         <span className="absolute inset-0 flex items-center justify-center bg-black/10" aria-hidden="true"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/65 text-2xl">▶</span></span>
@@ -44,6 +60,12 @@ export default function FeedReelCard({ item }: { item: FeedItem }) {
         <span>{item.reactionCount} {t('reactions')}</span>
         <Link to={destination} className="text-text-muted no-underline hover:underline">{item.commentCount} {t('comments')}</Link>
       </div>
+      {error && <p role="alert" className="text-xs text-[#ff8a9b]">{error}</p>}
+      <div className="grid grid-cols-2 gap-1 border-t border-border pt-1">
+        <button type="button" onClick={() => void saveReel()} className={`rounded-lg border-none py-2 text-sm cursor-pointer ${isSaved ? 'bg-primary/10 text-primary' : 'bg-transparent text-text-muted hover:bg-surface-2'}`}>🔖 {isSaved ? 'Đã lưu' : 'Lưu'}</button>
+        <button type="button" onClick={() => setIsShareOpen(true)} className="rounded-lg border-none bg-transparent py-2 text-sm text-text-muted hover:bg-surface-2 cursor-pointer">↗ Chia sẻ</button>
+      </div>
+      {isShareOpen && <ShareDialog postId={item.id} onClose={() => setIsShareOpen(false)} />}
     </article>
   )
 }

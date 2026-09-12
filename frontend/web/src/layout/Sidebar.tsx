@@ -17,6 +17,7 @@ export default function Sidebar() {
   const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
   const navItems: NavItem[] = [
     { path: '/feed', emoji: '🏠', label: t('feed') },
+    { path: '/saved', emoji: '🔖', label: 'Đã lưu' },
     { path: '/explore', emoji: '🔍', label: t('explore') },
     { path: '/messages', emoji: '💬', label: t('messages') },
     { path: '/groups', emoji: '👥', label: t('groups') },

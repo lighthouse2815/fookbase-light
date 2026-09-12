@@ -24,8 +24,18 @@ export interface FeedContainer {
   privacy?: string | null
 }
 
-export interface FeedItem extends Omit<Post, 'authorUserId'> {
-  contentType: 'standardPost' | 'reel'
+export interface FeedShare {
+  id: string
+  originalPostId: string
+  caption: string | null
+  createdAtUtc: string
+  actor: FeedAuthor
+  originalAuthor: PostDisplayIdentity
+  originalPost: Post
+}
+
+export interface FeedItem extends Omit<Post, 'authorUserId' | 'contentType'> {
+  contentType: 'standardPost' | 'reel' | 'share'
   containerType: 'profile' | 'group' | 'page'
   container: FeedContainer
   displayAuthor: PostDisplayIdentity
@@ -34,6 +44,7 @@ export interface FeedItem extends Omit<Post, 'authorUserId'> {
   video: ReelVideo | null
   reactionCount: number
   isSuggested: boolean
+  share?: FeedShare | null
 }
 
 export interface FeedPage {

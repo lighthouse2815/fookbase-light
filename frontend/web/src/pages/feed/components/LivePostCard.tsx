@@ -6,8 +6,10 @@ import type { Comment, MediaAccess, Post } from '../../../api/posts'
 import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
+import TextWithReferences from '../../../shared/components/TextWithReferences'
 import { usePreferences } from '../../../preferences'
 import PaginationControls from '../../../shared/components/PaginationControls'
+import ShareDialog from './ShareDialog'
 
 interface LivePostCardProps {
   post: Post
@@ -44,6 +46,8 @@ export default function LivePostCard({
   const [commentText, setCommentText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
+  const [isSaved, setIsSaved] = useState(false)
+  const [isShareOpen, setIsShareOpen] = useState(false)
   const isAuthor = post.authorUserId === currentUserId
   const displayAuthor = post.displayAuthor
   const authorName = displayAuthor?.name ?? author?.displayName ?? t('user')
@@ -186,6 +190,16 @@ export default function LivePostCard({
     }
   }
 
+  const savePost = async () => {
+    try {
+      if (isSaved) await postsApi.removeSaved(post.id)
+      else await postsApi.save(post.id)
+      setIsSaved((current) => !current)
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật bài viết đã lưu.')
+    }
+  }
+
   return (
     <article className="bg-surface rounded-xl border border-border p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3">
@@ -207,7 +221,7 @@ export default function LivePostCard({
         )}
       </div>
 
-      <p className="text-[14px] text-text leading-relaxed whitespace-pre-wrap">{post.content}</p>
+      <TextWithReferences content={post.content} mentions={post.mentions} className="text-[14px] text-text leading-relaxed whitespace-pre-wrap" />
       {media.length > 0 && (
         <div className={`grid gap-2 ${media.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
           {media.map((item) => item.mediaType === 'video' ? (
@@ -226,12 +240,18 @@ export default function LivePostCard({
         <span>{reactionCount > 0 ? `${reactionCount} ${t('reactions')}` : ''}</span>
         <span>{post.commentCount} {t('comments')}</span>
       </div>
-      <div className="grid grid-cols-2 gap-1 border-t border-border pt-1">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 border-t border-border pt-1">
         <button type="button" onClick={() => void toggleLike()} className={`py-2 rounded-lg border-none cursor-pointer ${isLiked ? 'text-primary bg-primary/10' : 'text-text-muted bg-transparent hover:bg-surface-2'}`}>
           👍 {isLiked ? t('liked') : t('like')}
         </button>
         <button type="button" onClick={() => void (showComments ? setShowComments(false) : loadComments())} className="py-2 rounded-lg text-text-muted hover:bg-surface-2 bg-transparent border-none cursor-pointer">
           💬 {t('comment')}
+        </button>
+        <button type="button" onClick={() => void savePost()} className={`py-2 rounded-lg border-none cursor-pointer ${isSaved ? 'text-primary bg-primary/10' : 'text-text-muted bg-transparent hover:bg-surface-2'}`}>
+          🔖 {isSaved ? 'Đã lưu' : 'Lưu'}
+        </button>
+        <button type="button" onClick={() => setIsShareOpen(true)} className="py-2 rounded-lg border-none bg-transparent text-text-muted hover:bg-surface-2 cursor-pointer">
+          ↗ Chia sẻ
         </button>
       </div>
       {showComments && (
@@ -239,7 +259,7 @@ export default function LivePostCard({
           {isLoadingComments && <p className="text-sm text-text-muted">{t('loading')}</p>}
           {comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-2 bg-surface-2 rounded-lg px-3 py-2">
-              <p className="flex-1 text-sm text-text whitespace-pre-wrap">{comment.content}</p>
+              <TextWithReferences content={comment.content} mentions={comment.mentions} className="flex-1 text-sm text-text whitespace-pre-wrap" />
               {comment.authorUserId === currentUserId && (
                 <div className="flex gap-1">
                   <button type="button" onClick={() => void editComment(comment)} className="bg-transparent border-none text-xs text-text-muted hover:text-text cursor-pointer">{t('edit')}</button>
@@ -255,6 +275,7 @@ export default function LivePostCard({
           </form>
         </div>
       )}
+      {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} />}
     </article>
   )
 }

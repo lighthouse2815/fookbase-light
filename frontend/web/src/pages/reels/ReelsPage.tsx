@@ -4,6 +4,8 @@ import { ApiError } from '../../api/client'
 import { mediaApi, type Media } from '../../api/media'
 import { postsApi, type Comment } from '../../api/posts'
 import { reelsApi, type Reel } from '../../api/reels'
+import TextWithReferences from '../../shared/components/TextWithReferences'
+import ShareDialog from '../feed/components/ShareDialog'
 
 const supportedVideoTypes = new Set(['video/mp4', 'video/webm'])
 const maximumVideoBytes = 500 * 1024 * 1024
@@ -108,6 +110,8 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
   const [hasRecordedCompletion, setHasRecordedCompletion] = useState(false)
   const [isSavingComment, setIsSavingComment] = useState(false)
   const [currentMs, setCurrentMs] = useState(0)
+  const [isSaved, setIsSaved] = useState(false)
+  const [isShareOpen, setIsShareOpen] = useState(false)
 
   useEffect(() => {
     const card = cardRef.current
@@ -168,6 +172,16 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
     }
   }
 
+  const saveReel = async () => {
+    try {
+      if (isSaved) await postsApi.removeSaved(reel.id)
+      else await postsApi.save(reel.id)
+      setIsSaved((current) => !current)
+    } catch {
+      // Saving can be retried from the same action without changing the Reel state.
+    }
+  }
+
   const submitComment = async () => {
     const content = commentText.trim()
     if (!content || isSavingComment) return
@@ -206,17 +220,20 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
         <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 via-black/45 to-transparent px-4 pb-4 pt-20 text-white pointer-events-none">
           <div className="flex items-end gap-3 pointer-events-auto">
             <div className="h-10 w-10 shrink-0 rounded-full bg-primary text-center text-xs font-bold leading-10">{initial}</div>
-            <div className="min-w-0 flex-1"><p className="font-semibold">{reel.author.displayName} <span className="font-normal text-white/70">@{reel.author.username}</span></p>{reel.caption && <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{reel.caption}</p>}<p className="mt-2 text-xs text-white/70">{reel.viewCount.toLocaleString()} lượt xem</p></div>
+            <div className="min-w-0 flex-1"><p className="font-semibold">{reel.author.displayName} <span className="font-normal text-white/70">@{reel.author.username}</span></p>{reel.caption && <TextWithReferences content={reel.caption} mentions={reel.mentions} className="mt-1 whitespace-pre-wrap text-sm leading-relaxed" />}<p className="mt-2 text-xs text-white/70">{reel.viewCount.toLocaleString()} lượt xem</p></div>
           </div>
           <div className="mt-3 flex items-center gap-2 pointer-events-auto">
             <button type="button" onClick={toggleReaction} className="rounded-full bg-white/15 px-3 py-2 text-sm text-white">{reel.viewerReaction ? '♥ Đã thích' : '♡ Thích'} {reel.reactionCount > 0 ? reel.reactionCount : ''}</button>
             <button type="button" onClick={() => void openComments()} className="rounded-full bg-white/15 px-3 py-2 text-sm text-white">💬 {reel.commentCount}</button>
+            <button type="button" onClick={() => void saveReel()} className="rounded-full bg-white/15 px-3 py-2 text-sm text-white">🔖 {isSaved ? 'Đã lưu' : 'Lưu'}</button>
+            <button type="button" onClick={() => setIsShareOpen(true)} className="rounded-full bg-white/15 px-3 py-2 text-sm text-white">↗ Chia sẻ</button>
             <button type="button" onClick={() => setIsMuted((current) => !current)} className="ml-auto rounded-full bg-white/15 px-3 py-2 text-sm text-white">{isMuted ? '🔇' : '🔊'}</button>
           </div>
           <input aria-label="Tiến trình Reel" type="range" min="0" max={reel.video.durationMs} value={Math.min(currentMs, reel.video.durationMs)} onChange={(event) => { const next = Number(event.target.value); if (videoRef.current) videoRef.current.currentTime = next / 1000; setCurrentMs(next) }} className="mt-3 w-full accent-primary pointer-events-auto" />
         </div>
       </div>
-      {isCommentsOpen && <aside className="absolute bottom-4 left-1/2 z-20 w-[min(34rem,calc(100%-1rem))] -translate-x-1/2 rounded-xl border border-border bg-surface p-3 shadow-2xl"><div className="flex items-center justify-between"><h2 className="font-semibold text-text">Bình luận ({reel.commentCount})</h2><button type="button" onClick={() => setIsCommentsOpen(false)} className="border-0 bg-transparent text-text-muted">✕</button></div><div className="mt-2 max-h-44 space-y-2 overflow-y-auto">{comments.map((comment) => <p key={comment.id} className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-text">{comment.content}</p>)}{comments.length === 0 && <p className="py-2 text-sm text-text-muted">Chưa có bình luận.</p>}</div><div className="mt-3 flex gap-2"><input value={commentText} onChange={(event) => setCommentText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void submitComment() }} placeholder="Viết bình luận…" className="min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none" /><button type="button" disabled={!commentText.trim() || isSavingComment} onClick={() => void submitComment()} className="rounded-lg bg-primary px-3 text-sm font-semibold text-white disabled:opacity-40">Gửi</button></div></aside>}
+      {isCommentsOpen && <aside className="absolute bottom-4 left-1/2 z-20 w-[min(34rem,calc(100%-1rem))] -translate-x-1/2 rounded-xl border border-border bg-surface p-3 shadow-2xl"><div className="flex items-center justify-between"><h2 className="font-semibold text-text">Bình luận ({reel.commentCount})</h2><button type="button" onClick={() => setIsCommentsOpen(false)} className="border-0 bg-transparent text-text-muted">✕</button></div><div className="mt-2 max-h-44 space-y-2 overflow-y-auto">{comments.map((comment) => <TextWithReferences key={comment.id} content={comment.content} mentions={comment.mentions} className="block rounded-lg bg-surface-2 px-3 py-2 text-sm text-text" />)}{comments.length === 0 && <p className="py-2 text-sm text-text-muted">Chưa có bình luận.</p>}</div><div className="mt-3 flex gap-2"><input value={commentText} onChange={(event) => setCommentText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void submitComment() }} placeholder="Viết bình luận…" className="min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none" /><button type="button" disabled={!commentText.trim() || isSavingComment} onClick={() => void submitComment()} className="rounded-lg bg-primary px-3 text-sm font-semibold text-white disabled:opacity-40">Gửi</button></div></aside>}
+      {isShareOpen && <ShareDialog postId={reel.id} onClose={() => setIsShareOpen(false)} />}
     </section>
   )
 }

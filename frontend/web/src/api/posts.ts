@@ -9,6 +9,13 @@ export interface PostDisplayIdentity {
   avatarUrl: string | null
 }
 
+export interface ContentMention {
+  userId: string
+  username: string
+  startIndex: number
+  length: number
+}
+
 export interface Post {
   id: string
   authorUserId: string | null
@@ -22,6 +29,8 @@ export interface Post {
   viewerReaction: string | null
   displayAuthor?: PostDisplayIdentity | null
   containerType?: 'profile' | 'group' | 'page'
+  mentions?: ContentMention[]
+  contentType?: 'standardPost' | 'reel'
 }
 
 export interface Comment {
@@ -32,6 +41,32 @@ export interface Comment {
   content: string
   createdAtUtc: string
   updatedAtUtc: string | null
+  mentions?: ContentMention[]
+}
+
+export interface SavedPostsPage {
+  items: Post[]
+  nextCursor: string | null
+}
+
+export interface HashtagPostsPage extends SavedPostsPage {
+  tag: string
+}
+
+export interface PostShare {
+  id: string
+  sharingUserId: string
+  destinationType: 'profile' | 'group' | 'page'
+  destinationId: string
+  caption: string | null
+  createdAtUtc: string
+  originalPost: Post
+}
+
+export interface CreatePostShareDetails {
+  destinationType: 'profile' | 'group' | 'page'
+  destinationId: string
+  caption?: string
 }
 
 export interface CreatePostDetails {
@@ -60,6 +95,20 @@ export const postsApi = {
   },
   getByUser: (userId: string, offset = 0, limit = 20) =>
     apiRequest<PagedResponse<Post>>(`/api/posts/users/${userId}${pageQuery(offset, limit)}`),
+  getSaved: (cursor?: string, limit = 20) => {
+    const query = new URLSearchParams({ limit: String(limit) })
+    if (cursor) query.set('cursor', cursor)
+    return apiRequest<SavedPostsPage>('/api/posts/saved?' + query.toString())
+  },
+  save: (postId: string) => apiRequest<void>(`/api/posts/${postId}/save`, { method: 'POST' }),
+  removeSaved: (postId: string) => apiRequest<void>(`/api/posts/${postId}/save`, { method: 'DELETE' }),
+  share: (postId: string, details: CreatePostShareDetails) =>
+    apiRequest<PostShare>(`/api/posts/${postId}/shares`, { method: 'POST', ...jsonBody(details) }),
+  getHashtagPosts: (tag: string, cursor?: string, limit = 20) => {
+    const query = new URLSearchParams({ limit: String(limit) })
+    if (cursor) query.set('cursor', cursor)
+    return apiRequest<HashtagPostsPage>(`/api/hashtags/${encodeURIComponent(tag)}/posts?${query.toString()}`)
+  },
   createComment: (postId: string, content: string, parentCommentId?: string) =>
     apiRequest<Comment>(`/api/posts/${postId}/comments`, {
       method: 'POST',

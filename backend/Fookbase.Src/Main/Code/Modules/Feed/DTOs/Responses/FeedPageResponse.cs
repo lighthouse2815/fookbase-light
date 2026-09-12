@@ -48,6 +48,7 @@ public sealed record FeedItemResponse(
     PostDisplayIdentityResponse DisplayAuthor,
     ReelVideoResponse? Video,
     bool IsSuggested,
+    IReadOnlyList<ContentMentionResponse>? Mentions = null,
     FeedShareResponse? Share = null);
 
 public sealed record FeedPageResponse(

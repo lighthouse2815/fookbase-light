@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Reels.DTOs.Responses;
@@ -282,6 +283,20 @@ public sealed class ReelsService(
                     reaction => reaction.PostId,
                     reaction => reaction.Type.ToString().ToLowerInvariant(),
                     cancellationToken);
+        var mentionRows = await dbContext.ContentMentions.AsNoTracking()
+            .Where(mention => mention.SourceType == MentionSourceType.Post && reelIds.Contains(mention.SourceId))
+            .Select(mention => new MentionRow(
+                mention.SourceId,
+                mention.MentionedUserId,
+                mention.StartIndex,
+                mention.Length))
+            .ToListAsync(cancellationToken);
+        var mentionedUserIds = mentionRows.Select(mention => mention.UserId).Distinct().ToArray();
+        var mentionedProfiles = mentionedUserIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await dbContext.UserProfiles.AsNoTracking()
+                .Where(profile => mentionedUserIds.Contains(profile.UserId))
+                .ToDictionaryAsync(profile => profile.UserId, profile => profile.Username, cancellationToken);
         var viewCounts = await dbContext.ReelViews.AsNoTracking()
             .Where(view => reelIds.Contains(view.ReelPostId))
             .GroupBy(view => view.ReelPostId)
@@ -327,7 +342,16 @@ public sealed class ReelsService(
                 reactionCounts,
                 viewerReactions.GetValueOrDefault(reel.Id),
                 views?.ViewCount ?? 0,
-                views?.CompletionCount ?? 0);
+                views?.CompletionCount ?? 0,
+                mentionRows
+                    .Where(mention => mention.SourceId == reel.Id && mentionedProfiles.ContainsKey(mention.UserId))
+                    .OrderBy(mention => mention.StartIndex)
+                    .Select(mention => new ContentMentionResponse(
+                        mention.UserId,
+                        mentionedProfiles[mention.UserId],
+                        mention.StartIndex,
+                        mention.Length))
+                    .ToList());
         }).ToList();
     }
 
@@ -434,4 +458,5 @@ public sealed class ReelsService(
     private sealed record CountRow(Guid Id, int Count);
     private sealed record ReactionRow(Guid PostId, ReactionType Type, int Count);
     private sealed record ViewCountRow(Guid ReelPostId, long ViewCount, long CompletionCount);
+    private sealed record MentionRow(Guid SourceId, Guid UserId, int StartIndex, int Length);
 }
