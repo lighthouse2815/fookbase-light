@@ -17,6 +17,7 @@ export interface AuthSession {
   refreshToken: string
   refreshTokenExpiresAt: string
 }
+export interface TwoFactorChallenge { twoFactorRequired: true; challenge: string; expiresAtUtc: string }
 
 export class ApiError extends Error {
   readonly status: number
@@ -91,8 +92,11 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 }
 
 export const authApi = {
-  login: (email: string, password: string) => request<AuthSession>('/api/auth/login', {
+  login: (email: string, password: string) => request<AuthSession | TwoFactorChallenge>('/api/auth/login', {
     method: 'POST', body: JSON.stringify({ email, password }),
+  }),
+  verifyTwoFactor: (challenge: string, code: string) => request<AuthSession>('/api/auth/2fa/verify', {
+    method: 'POST', body: JSON.stringify({ challenge, code }),
   }),
   logout: (refreshToken: string) => request<void>('/api/auth/logout', {
     method: 'POST', body: JSON.stringify({ refreshToken }),

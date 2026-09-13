@@ -1,10 +1,11 @@
 import { createContext } from 'react'
-import type { ChangePasswordDetails, Credentials, RegistrationDetails } from '../api/auth'
+import type { ChangePasswordDetails, Credentials, LoginResponse, RegistrationDetails } from '../api/auth'
 import type { AuthSession } from './session'
 
 export interface AuthContextValue {
   session: AuthSession | null
-  signIn: (credentials: Credentials) => Promise<void>
+  signIn: (credentials: Credentials) => Promise<LoginResponse>
+  completeTwoFactor: (challenge: string, code: string) => Promise<void>
   signUp: (details: RegistrationDetails) => Promise<void>
   changePassword: (details: ChangePasswordDetails) => Promise<void>
   signOut: () => Promise<void>

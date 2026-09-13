@@ -29,6 +29,8 @@ export default function Sidebar() {
     { path: '/birthdays', emoji: '🎂', label: 'Sinh nhật' },
     { path: '/games', emoji: '🎮', label: t('games') },
     { path: '/profile', emoji: '👤', label: t('profile') },
+    { path: '/settings/privacy', emoji: '🔒', label: 'Riêng tư' },
+    { path: '/settings/security', emoji: '🛡️', label: 'Bảo mật' },
   ]
 
   return (

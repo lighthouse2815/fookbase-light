@@ -16,6 +16,13 @@ export interface AuthenticationResponse {
   refreshTokenExpiresAt: string
 }
 
+export interface TwoFactorChallengeResponse { twoFactorRequired: true; challenge: string; expiresAtUtc: string }
+export type LoginResponse = AuthenticationResponse | TwoFactorChallengeResponse
+export interface AuthSessionInfo { sessionId: string; device: string | null; createdAtUtc: string; lastSeenAtUtc: string; expiresAtUtc: string; isCurrent: boolean }
+export interface SecurityState { twoFactorEnabled: boolean; recoveryCodesRemaining: number; activeSessionCount: number }
+export interface TwoFactorSetup { sharedKey: string; otpauthUri: string }
+export interface RecoveryCodes { recoveryCodes: string[] }
+
 export interface Credentials {
   email: string
   password: string
@@ -47,7 +54,7 @@ export const authApi = {
       ...jsonBody(details),
     }),
   login: (credentials: Credentials) =>
-    apiRequest<AuthenticationResponse>('/api/auth/login', {
+    apiRequest<LoginResponse>('/api/auth/login', {
       method: 'POST',
       ...jsonBody(credentials),
     }),
@@ -56,6 +63,7 @@ export const authApi = {
       method: 'POST',
       ...jsonBody({ refreshToken }),
     }),
+  verifyTwoFactor: (challenge: string, code: string) => apiRequest<AuthenticationResponse>('/api/auth/2fa/verify', { method: 'POST', ...jsonBody({ challenge, code }) }),
   logout: (refreshToken: string) =>
     apiRequest<void>('/api/auth/logout', {
       method: 'POST',
@@ -84,4 +92,12 @@ export const authApi = {
     }),
   resendEmailVerification: () =>
     apiRequest<void>('/api/auth/email/verification', { method: 'POST' }),
+  sessions: () => apiRequest<AuthSessionInfo[]>('/api/auth/sessions'),
+  revokeSession: (sessionId: string) => apiRequest<void>(`/api/auth/sessions/${sessionId}`, { method: 'DELETE' }),
+  revokeOtherSessions: () => apiRequest<void>('/api/auth/sessions/revoke-others', { method: 'POST' }),
+  security: () => apiRequest<SecurityState>('/api/auth/security'),
+  setupTwoFactor: () => apiRequest<TwoFactorSetup>('/api/auth/2fa/setup', { method: 'POST' }),
+  enableTwoFactor: (code: string) => apiRequest<RecoveryCodes>('/api/auth/2fa/enable', { method: 'POST', ...jsonBody({ code }) }),
+  regenerateRecoveryCodes: () => apiRequest<RecoveryCodes>('/api/auth/2fa/recovery-codes/regenerate', { method: 'POST' }),
+  disableTwoFactor: (currentPassword: string) => apiRequest<void>('/api/auth/2fa/disable', { method: 'POST', ...jsonBody({ currentPassword }) }),
 }

@@ -14,8 +14,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (credentials: Credentials) => {
-    applySession(await authApi.login(credentials))
+    const response = await authApi.login(credentials)
+    if (!('twoFactorRequired' in response)) applySession(response)
+    return response
   }
+
+  const completeTwoFactor = async (challenge: string, code: string) => applySession(await authApi.verifyTwoFactor(challenge, code))
 
   const signUp = async (details: RegistrationDetails) => {
     applySession(await authApi.register(details))
@@ -60,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session])
 
   return (
-    <AuthContext.Provider value={{ session, signIn, signUp, changePassword, signOut }}>
+    <AuthContext.Provider value={{ session, signIn, completeTwoFactor, signUp, changePassword, signOut }}>
       {children}
     </AuthContext.Provider>
   )

@@ -6,7 +6,7 @@ import { useAuth } from '../../auth/useAuth'
 import { PreferenceControls, usePreferences } from '../../preferences'
 
 export default function LoginPage() {
-  const { session, signIn, signUp } = useAuth()
+  const { session, signIn, completeTwoFactor, signUp } = useAuth()
   const { t } = usePreferences()
   const features = [
     ['◌', t('shareWorld'), t('shareWorldDescription')],
@@ -23,6 +23,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState<string | null>(null)
+  const [twoFactorCode, setTwoFactorCode] = useState('')
   const [verificationState, setVerificationState] = useState<'loading' | 'success' | 'error'>('loading')
 
   const accountMode = searchParams.get('mode')
@@ -77,7 +79,8 @@ export default function LoginPage() {
       } else if (isRegistering) {
         await signUp({ email, username, password })
       } else {
-        await signIn({ email, password })
+        const response = await signIn({ email, password })
+        if ('twoFactorRequired' in response) setTwoFactorChallenge(response.challenge)
       }
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableAuthenticate'))
@@ -156,7 +159,9 @@ export default function LoginPage() {
             {error && <p role="alert" className="mb-5 rounded-xl border border-[#e15f5f]/45 bg-[#e15f5f]/10 px-4 py-3 text-sm leading-5 text-[#ff9b9b]">{error}</p>}
             {notice && <p role="status" className="mb-5 rounded-xl border border-primary/35 bg-primary/10 px-4 py-3 text-sm leading-5 text-primary-light">{notice}</p>}
 
-            {isVerifying ? (
+            {twoFactorChallenge ? (
+              <div className="flex flex-col gap-5"><label className="flex flex-col gap-2 text-sm font-semibold text-text">Mã xác thực<input autoFocus inputMode="numeric" autoComplete="one-time-code" value={twoFactorCode} onChange={(event) => setTwoFactorCode(event.target.value)} className={fieldClassName} /></label><button type="button" className="rounded-xl bg-primary px-4 py-3 font-bold text-white" disabled={isSubmitting || !twoFactorCode.trim()} onClick={() => { setIsSubmitting(true); void completeTwoFactor(twoFactorChallenge, twoFactorCode).catch((reason) => setError(reason instanceof ApiError ? reason.message : t('unableAuthenticate'))).finally(() => setIsSubmitting(false)) }}>Xác minh</button></div>
+            ) : isVerifying ? (
               <div className="rounded-xl border border-border bg-surface-2/60 p-5 text-sm leading-6 text-text-muted">
                 {(!linkedEmail || !linkedToken) && t('invalidVerificationLink')}
                 {linkedEmail && linkedToken && verificationState === 'loading' && t('verifyingEmail')}
