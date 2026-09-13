@@ -1068,6 +1068,7 @@ export default function ProfilePage() {
             <div className="border-b border-border pb-3">
               <h2 className="font-heading font-bold text-xl text-text">{t('photos')}</h2>
               <p className="text-sm text-text-muted">{t('photosFromPosts')}</p>
+              <Link to="/photos" className="mt-2 inline-block text-sm font-semibold text-primary">Albums</Link>
             </div>
             {isPhotosLoading ? <p className="text-sm text-text-muted">{t('loadingPhotos')}</p> : photos.length === 0 ? <p className="text-sm text-text-muted">{t('noPhotosPosted')}</p> : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

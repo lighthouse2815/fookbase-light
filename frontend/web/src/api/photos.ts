@@ -12,5 +12,7 @@ export const photosApi={
   get:(albumId:string)=>apiRequest<PhotoAlbum>(`/api/albums/${albumId}`),
   media:(albumId:string,cursor?:string)=>apiRequest<CursorPage<AlbumPhoto>>(`/api/albums/${albumId}/media?${query(cursor)}`),
   addMedia:(albumId:string,mediaId:string)=>apiRequest<AlbumPhoto>(`/api/albums/${albumId}/media`,{method:'POST',...body({mediaId})}),
+  updateCaption:(albumId:string,mediaId:string,caption:string)=>apiRequest<AlbumPhoto>(`/api/albums/${albumId}/media/${mediaId}`,{method:'PATCH',...body({caption})}),
+  removeMedia:(albumId:string,mediaId:string)=>apiRequest<void>(`/api/albums/${albumId}/media/${mediaId}`,{method:'DELETE'}),
   photo:(albumId:string,mediaId:string)=>apiRequest<PhotoDetail>(`/api/albums/${albumId}/media/${mediaId}`),
 }

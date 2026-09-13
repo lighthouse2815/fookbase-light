@@ -59,6 +59,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         if (!ValidLimit(limit)) return Bad<PhotoCursorPageResponse<PhotoAlbumSummaryResponse>>("invalid_limit", "Limit must be between 1 and 100.");
         if (!await db.UserProfiles.AsNoTracking().AnyAsync(item => item.UserId == ownerId, ct)) return NotFound<PhotoCursorPageResponse<PhotoAlbumSummaryResponse>>();
         var source = Active().Where(item => item.OwnerUserId == ownerId);
+        if (TryDecode(cursor, out var afterAt, out var afterId)) source = source.Where(item => item.CreatedAtUtc < afterAt || item.CreatedAtUtc == afterAt && item.Id.CompareTo(afterId) < 0);
         var all = await source.OrderByDescending(item => item.CreatedAtUtc).ThenByDescending(item => item.Id).Take(limit * 3 + 1).ToListAsync(ct);
         var allowed = new List<PhotoAlbum>();
         foreach (var album in all) if (await access.CanViewAsync(album, viewerId, ct)) allowed.Add(album);
@@ -77,9 +78,10 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
                     where item.AlbumId == albumId && asset.MediaType == MediaType.Image && asset.Status == MediaStatus.Ready && asset.DeletedAtUtc == null
                     orderby item.SortOrder, item.MediaId
                     select item;
+        if (TryDecode(cursor, out var sortAfter, out var mediaAfter)) query = query.Where(item => item.SortOrder > sortAfter.UtcTicks || item.SortOrder == sortAfter.UtcTicks && item.MediaId.CompareTo(mediaAfter) > 0);
         var rows = await query.Take(limit + 1).ToListAsync(ct);
         var visible = rows.Take(limit).Select(item => new AlbumMediaResponse(item.MediaId, item.Caption, item.SortOrder, item.AddedAtUtc, AccessPath(albumId, item.MediaId))).ToList();
-        return ApplicationResult<PhotoCursorPageResponse<AlbumMediaResponse>>.Success(new(visible, rows.Count > limit ? Encode(rows[limit].AddedAtUtc, rows[limit].MediaId) : null));
+        return ApplicationResult<PhotoCursorPageResponse<AlbumMediaResponse>>.Success(new(visible, rows.Count > limit ? Encode(new DateTimeOffset(rows[limit].SortOrder, TimeSpan.Zero), rows[limit].MediaId) : null));
     }
 
     public async Task<ApplicationResult<PhotoDetailResponse>> GetPhotoAsync(Guid albumId, Guid mediaId, Guid? viewerId, CancellationToken ct = default)
@@ -169,6 +171,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
     private static bool TryPrivacy(string? value, out PhotoAlbumPrivacy privacy) => Enum.TryParse(value, true, out privacy) && Enum.IsDefined(privacy);
     private static bool ValidLimit(int value) => value is >= 1 and <= MaximumPageSize;
     private static string Encode(DateTimeOffset value, Guid id) => Convert.ToBase64String(Encoding.UTF8.GetBytes($"{value.UtcTicks}|{id}"));
+    private static bool TryDecode(string? value, out DateTimeOffset at, out Guid id) { at=default;id=default; try { var parts=Encoding.UTF8.GetString(Convert.FromBase64String(value??string.Empty)).Split('|'); return parts.Length==2 && long.TryParse(parts[0],out var ticks) && Guid.TryParse(parts[1],out id) && (at=new DateTimeOffset(ticks,TimeSpan.Zero))!=default; } catch { return false; } }
     private static ApplicationResult<T> Bad<T>(string code, string message, ApplicationErrorType type = ApplicationErrorType.Validation) => ApplicationResult<T>.Failure(new(code, message, type));
     private static ApplicationResult Bad(string code = "album_not_found", string message = "The album was not found.", ApplicationErrorType type = ApplicationErrorType.NotFound) => ApplicationResult.Failure(new(code, message, type));
     private static ApplicationResult<T> NotFound<T>() => Bad<T>("album_not_found", "The album was not found.", ApplicationErrorType.NotFound);
