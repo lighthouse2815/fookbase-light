@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Posts;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Friends;
+using Fookbase.Api.Modules.Friends.Config;
 using Fookbase.Api.Modules.Feed;
 using Fookbase.Api.Modules.Feed.Config;
 using Fookbase.Api.Modules.Groups;
@@ -57,8 +58,11 @@ internal static class ModuleServiceCollectionExtensions
         services.AddUsersInfrastructure();
 
     public static IServiceCollection AddFriendsModule(
-        this IServiceCollection services) =>
-        services.AddFriendsInfrastructure();
+        this IServiceCollection services,
+        IConfiguration configuration) =>
+        services.AddFriendsInfrastructure(
+            configuration.GetSection(FriendSuggestionOptions.SectionName).Get<FriendSuggestionOptions>()
+                ?? new FriendSuggestionOptions());
 
     public static IServiceCollection AddFeedModule(
         this IServiceCollection services,

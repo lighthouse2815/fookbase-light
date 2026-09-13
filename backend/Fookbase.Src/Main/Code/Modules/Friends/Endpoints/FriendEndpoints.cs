@@ -23,6 +23,7 @@ public static class FriendEndpoints
         group.MapGet("", GetFriendsAsync);
         group.MapGet("/status/{userId:guid}", GetStatusAsync);
         group.MapGet("/mutual/{userId:guid}", GetMutualFriendsAsync);
+        group.MapGet("/suggestions", GetSuggestionsAsync);
         group.MapPost("/blocks/{userId:guid}", BlockAsync);
         group.MapDelete("/blocks/{userId:guid}", UnblockAsync);
         group.MapGet("/blocks", GetBlockedUsersAsync);
@@ -230,6 +231,22 @@ public static class FriendEndpoints
             offset,
             limit,
             cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetSuggestionsAsync(
+        ClaimsPrincipal principal,
+        FriendSuggestionService service,
+        CancellationToken cancellationToken,
+        string? cursor = null,
+        int? limit = null)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await service.GetSuggestionsAsync(actorUserId, cursor, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
