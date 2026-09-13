@@ -13,7 +13,8 @@ public sealed class JwtTokenService(JwtOptions options)
     public AccessTokenResult CreateAccessToken(
         User user,
         IEnumerable<string> roles,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        Guid sessionId)
     {
         var expiresAt = now.AddMinutes(options.AccessTokenExpirationMinutes);
         var claims = new List<Claim>
@@ -22,6 +23,7 @@ public sealed class JwtTokenService(JwtOptions options)
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            ,new Claim("sid", sessionId.ToString())
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
         var signingKey = new SymmetricSecurityKey(
@@ -42,13 +44,14 @@ public sealed class JwtTokenService(JwtOptions options)
             expiresAt);
     }
 
-    public RefreshTokenResult CreateRefreshToken(Guid userId, DateTimeOffset now)
+    public RefreshTokenResult CreateRefreshToken(Guid userId, Guid sessionId, DateTimeOffset now)
     {
         var rawToken = Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(64));
         var refreshToken = RefreshToken.Create(
             Guid.NewGuid(),
             userId,
             HashRefreshToken(rawToken),
+            sessionId,
             now,
             now.AddDays(options.RefreshTokenExpirationDays));
 

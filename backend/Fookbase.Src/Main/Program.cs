@@ -182,6 +182,10 @@ builder.Services.AddRateLimiter(options =>
         RateLimitPartition.GetFixedWindowLimiter(
             $"auth-resend-verification:{ClientAddress(context)}",
             _ => SensitiveAuthRateLimit(authResendVerificationPermitLimit, authRateLimitWindowSeconds)));
+    options.AddPolicy("auth-sensitive", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            $"auth-sensitive:{ClientAddress(context)}",
+            _ => SensitiveAuthRateLimit(authLoginPermitLimit, authRateLimitWindowSeconds)));
     options.AddPolicy("search", context =>
     {
         var userId = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;

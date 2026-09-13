@@ -20,6 +20,7 @@ internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refre
 
         builder.HasIndex(token => token.TokenHash).IsUnique();
         builder.HasIndex(token => new { token.UserId, token.ExpiresAt });
+        builder.HasIndex(token => new { token.SessionId, token.ExpiresAt });
 
         builder.HasOne<User>()
             .WithMany()
@@ -29,6 +30,11 @@ internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refre
         builder.HasOne<RefreshToken>()
             .WithMany()
             .HasForeignKey(token => token.ReplacedByTokenId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<AuthSession>()
+            .WithMany()
+            .HasForeignKey(token => token.SessionId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

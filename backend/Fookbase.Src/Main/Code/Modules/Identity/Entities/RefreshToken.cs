@@ -10,12 +10,14 @@ public sealed class RefreshToken
         Guid id,
         Guid userId,
         string tokenHash,
+        Guid sessionId,
         DateTimeOffset createdAt,
         DateTimeOffset expiresAt)
     {
         Id = id;
         UserId = userId;
         TokenHash = tokenHash;
+        SessionId = sessionId;
         CreatedAt = createdAt;
         ExpiresAt = expiresAt;
     }
@@ -25,6 +27,7 @@ public sealed class RefreshToken
     public Guid UserId { get; private set; }
 
     public string TokenHash { get; private set; } = string.Empty;
+    public Guid? SessionId { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -38,9 +41,10 @@ public sealed class RefreshToken
         Guid id,
         Guid userId,
         string tokenHash,
+        Guid sessionId,
         DateTimeOffset createdAt,
         DateTimeOffset expiresAt) =>
-        new(id, userId, tokenHash, createdAt, expiresAt);
+        new(id, userId, tokenHash, sessionId, createdAt, expiresAt);
 
     public bool IsActiveAt(DateTimeOffset now) =>
         RevokedAt is null && ExpiresAt > now;

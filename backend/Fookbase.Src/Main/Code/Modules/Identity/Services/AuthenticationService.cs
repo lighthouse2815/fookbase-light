@@ -5,8 +5,11 @@ using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Config;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using System.Text;
+using System.Security.Cryptography;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
@@ -19,6 +22,7 @@ public sealed class AuthenticationService(
     EmailOptions emailOptions,
     AdminOptions adminOptions,
     ILogger<AuthenticationService> logger,
+    IDataProtectionProvider dataProtectionProvider,
     TimeProvider timeProvider)
 {
     public async Task<ApplicationResult<AuthenticationResponse>> RegisterAsync(
@@ -50,11 +54,13 @@ public sealed class AuthenticationService(
 
         var now = timeProvider.GetUtcNow();
         var user = new User(Guid.NewGuid(), email, userName, now);
-        var refreshToken = tokenService.CreateRefreshToken(user.Id, now);
+        var session = AuthSession.Create(user.Id, null, now, now.AddDays(30));
+        var refreshToken = tokenService.CreateRefreshToken(user.Id, session.Id, now);
         var creationResult = await CreateUserAsync(
             user,
             request.Password!,
             refreshToken.RefreshToken,
+            session,
             cancellationToken);
 
         if (!creationResult.Succeeded)
@@ -91,32 +97,71 @@ public sealed class AuthenticationService(
 
         var roles = await GetRolesAsync(user);
         return ApplicationResult<AuthenticationResponse>.Success(
-            BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now), refreshToken));
+            BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now, session.Id), refreshToken));
     }
 
-    public async Task<ApplicationResult<AuthenticationResponse>> LoginAsync(
+    public async Task<ApplicationResult<object>> LoginAsync(
         LoginRequest request,
+        string? userAgent,
         CancellationToken cancellationToken = default)
     {
         var validationErrors = AuthenticationValidation.Validate(request);
         if (validationErrors.Count > 0)
         {
-            return ValidationFailure<AuthenticationResponse>(validationErrors);
+            return ValidationFailure<object>(validationErrors);
         }
 
         var user = await userManager.FindByEmailAsync(request.Email!.Trim());
-        if (user is null || !user.IsActive ||
-            !await userManager.CheckPasswordAsync(user, request.Password!))
+        if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user))
         {
-            return UnauthorizedFailure<AuthenticationResponse>(
+            return UnauthorizedFailure<object>(
                 "invalid_credentials",
                 "The email or password is invalid.");
         }
 
-        return await IssueNewTokenPairAsync(
-            user,
-            timeProvider.GetUtcNow(),
-            cancellationToken);
+        if (!await userManager.CheckPasswordAsync(user, request.Password!))
+        {
+            await userManager.AccessFailedAsync(user);
+            return UnauthorizedFailure<object>("invalid_credentials", "The email or password is invalid.");
+        }
+
+        await userManager.ResetAccessFailedCountAsync(user);
+
+        var now = timeProvider.GetUtcNow();
+        if (user.TwoFactorEnabled)
+        {
+            var payload = $"{user.Id:N}|{user.SecurityStamp}";
+            var challenge = dataProtectionProvider.CreateProtector("Fookbase.Auth.2fa.v1")
+                .ToTimeLimitedDataProtector().Protect(payload, TimeSpan.FromMinutes(5));
+            return ApplicationResult<object>.Success(new TwoFactorChallengeResponse(true, challenge, now.AddMinutes(5)));
+        }
+
+        var issued = await IssueNewTokenPairAsync(user, now, userAgent, cancellationToken);
+        return issued.Succeeded
+            ? ApplicationResult<object>.Success(issued.Value!)
+            : ApplicationResult<object>.Failure(issued.Error!);
+    }
+
+    public async Task<ApplicationResult<AuthenticationResponse>> VerifyTwoFactorAsync(TwoFactorVerifyRequest request,
+        string? userAgent, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Challenge) || string.IsNullOrWhiteSpace(request.Code))
+            return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
+        string payload;
+        try { payload = dataProtectionProvider.CreateProtector("Fookbase.Auth.2fa.v1").ToTimeLimitedDataProtector().Unprotect(request.Challenge); }
+        catch (Exception exception) when (exception is CryptographicException or ArgumentException)
+        { return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired."); }
+        var parts = payload.Split('|', 2);
+        if (parts.Length != 2 || !Guid.TryParseExact(parts[0], "N", out var userId))
+            return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive || !user.TwoFactorEnabled || user.SecurityStamp != parts[1])
+            return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
+        var code = request.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
+        var valid = await VerifyAuthenticatorCodeAsync(user, code) ||
+            (await userManager.RedeemTwoFactorRecoveryCodeAsync(user, code)).Succeeded;
+        if (!valid) return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_code", "The two-factor code is invalid.");
+        return await IssueNewTokenPairAsync(user, timeProvider.GetUtcNow(), userAgent, cancellationToken);
     }
 
     public async Task<ApplicationResult<AuthenticationResponse>> RefreshAsync(
@@ -151,7 +196,18 @@ public sealed class AuthenticationService(
                 "The refresh token is invalid or expired.");
         }
 
-        var replacement = tokenService.CreateRefreshToken(user.Id, now);
+        if (currentToken.SessionId is not { } sessionId)
+        {
+            return UnauthorizedFailure<AuthenticationResponse>("invalid_refresh_token", "The refresh token is invalid or expired.");
+        }
+
+        var session = await dbContext.AuthSessions.SingleOrDefaultAsync(item => item.Id == sessionId, cancellationToken);
+        if (session is null || session.UserId != user.Id || !session.IsActiveAt(now))
+        {
+            return UnauthorizedFailure<AuthenticationResponse>("invalid_refresh_token", "The refresh token is invalid or expired.");
+        }
+
+        var replacement = tokenService.CreateRefreshToken(user.Id, session.Id, now);
         var rotated = await RotateRefreshTokenAsync(
             currentToken.Id,
             replacement.RefreshToken,
@@ -165,9 +221,12 @@ public sealed class AuthenticationService(
                 "The refresh token is invalid or expired.");
         }
 
+        session.Touch(now);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
         var roles = await GetRolesAsync(user);
         return ApplicationResult<AuthenticationResponse>.Success(
-            BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now), replacement));
+            BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now, session.Id), replacement));
     }
 
     public async Task<ApplicationResult> LogoutAsync(
@@ -206,6 +265,68 @@ public sealed class AuthenticationService(
         return ApplicationResult<AuthenticatedUserResponse>.Success(
             ToResponse(user, await GetRolesAsync(user)));
     }
+
+    public async Task<ApplicationResult<SecurityStateResponse>> GetSecurityAsync(Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive) return UnauthorizedFailure<SecurityStateResponse>("invalid_access_token", "The access token is invalid.");
+        var now = timeProvider.GetUtcNow();
+        return ApplicationResult<SecurityStateResponse>.Success(new SecurityStateResponse(user.TwoFactorEnabled,
+            await userManager.CountRecoveryCodesAsync(user),
+            await dbContext.AuthSessions.CountAsync(session => session.UserId == userId && session.RevokedAtUtc == null && session.ExpiresAtUtc > now, cancellationToken)));
+    }
+
+    public async Task<ApplicationResult<TwoFactorSetupResponse>> SetupTwoFactorAsync(Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive) return UnauthorizedFailure<TwoFactorSetupResponse>("invalid_access_token", "The access token is invalid.");
+        await userManager.ResetAuthenticatorKeyAsync(user);
+        var key = await userManager.GetAuthenticatorKeyAsync(user);
+        if (string.IsNullOrWhiteSpace(key)) return ApplicationResult<TwoFactorSetupResponse>.Failure(new ApplicationError("two_factor_setup_failed", "Two-factor setup could not be initialized.", ApplicationErrorType.Validation));
+        var issuer = Uri.EscapeDataString("Fookbase");
+        var label = Uri.EscapeDataString($"Fookbase:{user.Email}");
+        return ApplicationResult<TwoFactorSetupResponse>.Success(new TwoFactorSetupResponse(key,
+            $"otpauth://totp/{label}?secret={Uri.EscapeDataString(key)}&issuer={issuer}&digits=6"));
+    }
+
+    public async Task<ApplicationResult<TwoFactorRecoveryCodesResponse>> EnableTwoFactorAsync(Guid userId, string? code,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive) return UnauthorizedFailure<TwoFactorRecoveryCodesResponse>("invalid_access_token", "The access token is invalid.");
+        if (!await VerifyAuthenticatorCodeAsync(user, code)) return ApplicationResult<TwoFactorRecoveryCodesResponse>.Failure(new ApplicationError("invalid_two_factor_code", "The authenticator code is invalid.", ApplicationErrorType.Validation));
+        var enable = await userManager.SetTwoFactorEnabledAsync(user, true);
+        if (!enable.Succeeded) return ApplicationResult<TwoFactorRecoveryCodesResponse>.Failure(new ApplicationError("two_factor_enable_failed", "Two-factor authentication could not be enabled.", ApplicationErrorType.Validation));
+        var codes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+        return ApplicationResult<TwoFactorRecoveryCodesResponse>.Success(new TwoFactorRecoveryCodesResponse(codes?.ToArray() ?? []));
+    }
+
+    public async Task<ApplicationResult<TwoFactorRecoveryCodesResponse>> RegenerateRecoveryCodesAsync(Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive || !user.TwoFactorEnabled) return ApplicationResult<TwoFactorRecoveryCodesResponse>.Failure(new ApplicationError("two_factor_not_enabled", "Two-factor authentication is not enabled.", ApplicationErrorType.Validation));
+        var codes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+        return ApplicationResult<TwoFactorRecoveryCodesResponse>.Success(new TwoFactorRecoveryCodesResponse(codes?.ToArray() ?? []));
+    }
+
+    public async Task<ApplicationResult> DisableTwoFactorAsync(Guid userId, string? currentPassword,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.IsActive) return ApplicationResult.Failure(new ApplicationError("invalid_access_token", "The access token is invalid.", ApplicationErrorType.Unauthorized));
+        if (string.IsNullOrWhiteSpace(currentPassword) || !await userManager.CheckPasswordAsync(user, currentPassword)) return ApplicationResult.Failure(new ApplicationError("invalid_credentials", "The current password is invalid.", ApplicationErrorType.Validation));
+        await userManager.SetTwoFactorEnabledAsync(user, false);
+        await userManager.ResetAuthenticatorKeyAsync(user);
+        await RevokeOtherSessionsAsync(userId, null, timeProvider.GetUtcNow(), cancellationToken);
+        return ApplicationResult.Success();
+    }
+
+    private async Task<bool> VerifyAuthenticatorCodeAsync(User user, string? code) =>
+        !string.IsNullOrWhiteSpace(code) && await userManager.VerifyTwoFactorTokenAsync(user,
+            TokenOptions.DefaultAuthenticatorProvider, code.Replace(" ", string.Empty).Replace("-", string.Empty));
 
     public async Task<ApplicationResult> SendEmailVerificationAsync(
         Guid userId,
@@ -355,19 +476,22 @@ public sealed class AuthenticationService(
         }
 
         var now = timeProvider.GetUtcNow();
-        await RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
-        return await IssueNewTokenPairAsync(user, now, cancellationToken);
+        await RevokeOtherSessionsAsync(user.Id, null, now, cancellationToken);
+        return await IssueNewTokenPairAsync(user, now, null, cancellationToken);
     }
 
     private async Task<ApplicationResult<AuthenticationResponse>> IssueNewTokenPairAsync(
         User user,
         DateTimeOffset now,
+        string? userAgent,
         CancellationToken cancellationToken)
     {
         var roles = await GetRolesAsync(user);
-        var accessToken = tokenService.CreateAccessToken(user, roles, now);
-        var refreshToken = tokenService.CreateRefreshToken(user.Id, now);
+        var session = AuthSession.Create(user.Id, userAgent, now, now.AddDays(30));
+        var accessToken = tokenService.CreateAccessToken(user, roles, now, session.Id);
+        var refreshToken = tokenService.CreateRefreshToken(user.Id, session.Id, now);
 
+        dbContext.AuthSessions.Add(session);
         dbContext.RefreshTokens.Add(refreshToken.RefreshToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -427,6 +551,7 @@ public sealed class AuthenticationService(
         User user,
         string password,
         RefreshToken refreshToken,
+        AuthSession session,
         CancellationToken cancellationToken)
     {
         var result = await userManager.CreateAsync(user, password);
@@ -436,6 +561,7 @@ public sealed class AuthenticationService(
             return result;
         }
 
+        dbContext.AuthSessions.Add(session);
         dbContext.RefreshTokens.Add(refreshToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         return result;
@@ -488,6 +614,52 @@ public sealed class AuthenticationService(
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(token => token.RevokedAt, revokedAt),
                 cancellationToken);
+
+    public async Task<ApplicationResult<IReadOnlyList<AuthSessionResponse>>> GetSessionsAsync(
+        Guid userId, Guid? currentSessionId, CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var sessions = await dbContext.AuthSessions.AsNoTracking()
+            .Where(session => session.UserId == userId && session.RevokedAtUtc == null && session.ExpiresAtUtc > now)
+            .OrderByDescending(session => session.LastSeenAtUtc)
+            .Select(session => new AuthSessionResponse(session.Id, session.UserAgent, session.CreatedAtUtc,
+                session.LastSeenAtUtc, session.ExpiresAtUtc, session.Id == currentSessionId))
+            .ToListAsync(cancellationToken);
+        return ApplicationResult<IReadOnlyList<AuthSessionResponse>>.Success(sessions);
+    }
+
+    public async Task<ApplicationResult> RevokeSessionAsync(
+        Guid userId, Guid sessionId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        var session = await dbContext.AuthSessions.SingleOrDefaultAsync(
+            item => item.Id == sessionId && item.UserId == userId, cancellationToken);
+        if (session is null) return ApplicationResult.Failure(new ApplicationError(
+            "session_not_found", "The session was not found.", ApplicationErrorType.NotFound));
+        session.Revoke(now);
+        await dbContext.RefreshTokens.Where(token => token.SessionId == sessionId && token.RevokedAt == null && token.ExpiresAt > now)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, now), cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ApplicationResult.Success();
+    }
+
+    public Task RevokeOtherSessionsAsync(Guid userId, Guid? currentSessionId, DateTimeOffset now,
+        CancellationToken cancellationToken) =>
+        RevokeSessionsAsync(userId, currentSessionId, now, cancellationToken);
+
+    private async Task RevokeSessionsAsync(Guid userId, Guid? preservedSessionId, DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var sessionIds = await dbContext.AuthSessions
+            .Where(session => session.UserId == userId && session.RevokedAtUtc == null && session.ExpiresAtUtc > now &&
+                              (preservedSessionId == null || session.Id != preservedSessionId))
+            .Select(session => session.Id)
+            .ToListAsync(cancellationToken);
+        if (sessionIds.Count == 0) return;
+        await dbContext.AuthSessions.Where(session => sessionIds.Contains(session.Id))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(session => session.RevokedAtUtc, now), cancellationToken);
+        await dbContext.RefreshTokens.Where(token => sessionIds.Contains(token.SessionId!.Value) && token.RevokedAt == null && token.ExpiresAt > now)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, now), cancellationToken);
+    }
 
     private async Task SendEmailVerificationForUserAsync(User user, CancellationToken cancellationToken)
     {

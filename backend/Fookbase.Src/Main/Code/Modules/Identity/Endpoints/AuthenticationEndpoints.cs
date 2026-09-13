@@ -17,6 +17,7 @@ public static class AuthenticationEndpoints
 
         group.MapPost("/register", RegisterAsync).AllowAnonymous();
         group.MapPost("/login", LoginAsync).AllowAnonymous().RequireRateLimiting("auth-login");
+        group.MapPost("/2fa/verify", VerifyTwoFactorAsync).AllowAnonymous().RequireRateLimiting("auth-login");
         group.MapPost("/refresh", RefreshAsync).AllowAnonymous();
         group.MapPost("/password/forgot", RequestPasswordResetAsync)
             .AllowAnonymous()
@@ -27,6 +28,14 @@ public static class AuthenticationEndpoints
         group.MapPost("/email/verify", VerifyEmailAsync).AllowAnonymous();
         group.MapPost("/logout", LogoutAsync).RequireAuthorization();
         group.MapPost("/password/change", ChangePasswordAsync).RequireAuthorization();
+        group.MapGet("/sessions", GetSessionsAsync).RequireAuthorization();
+        group.MapDelete("/sessions/{sessionId:guid}", RevokeSessionAsync).RequireAuthorization();
+        group.MapPost("/sessions/revoke-others", RevokeOtherSessionsAsync).RequireAuthorization();
+        group.MapGet("/security", GetSecurityAsync).RequireAuthorization();
+        group.MapPost("/2fa/setup", SetupTwoFactorAsync).RequireAuthorization().RequireRateLimiting("auth-sensitive");
+        group.MapPost("/2fa/enable", EnableTwoFactorAsync).RequireAuthorization().RequireRateLimiting("auth-sensitive");
+        group.MapPost("/2fa/disable", DisableTwoFactorAsync).RequireAuthorization().RequireRateLimiting("auth-sensitive");
+        group.MapPost("/2fa/recovery-codes/regenerate", RegenerateRecoveryCodesAsync).RequireAuthorization().RequireRateLimiting("auth-sensitive");
         group.MapPost("/email/verification", SendEmailVerificationAsync)
             .RequireAuthorization()
             .RequireRateLimiting("auth-resend-verification");
@@ -52,11 +61,18 @@ public static class AuthenticationEndpoints
         AuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
-        var result = await authenticationService.LoginAsync(request, cancellationToken);
+        var result = await authenticationService.LoginAsync(request, null, cancellationToken);
 
         return result.Succeeded
             ? Results.Ok(result.Value)
             : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> VerifyTwoFactorAsync(TwoFactorVerifyRequest request,
+        AuthenticationService authenticationService, CancellationToken cancellationToken)
+    {
+        var result = await authenticationService.VerifyTwoFactorAsync(request, null, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
     private static async Task<IResult> RefreshAsync(
@@ -144,6 +160,73 @@ public static class AuthenticationEndpoints
         return result.Succeeded
             ? Results.Ok(result.Value)
             : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetSessionsAsync(ClaimsPrincipal principal,
+        AuthenticationService authenticationService, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return InvalidAccessToken();
+        Guid.TryParse(principal.FindFirstValue("sid"), out var sessionId);
+        var result = await authenticationService.GetSessionsAsync(userId, sessionId == Guid.Empty ? null : sessionId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> RevokeSessionAsync(Guid sessionId, ClaimsPrincipal principal,
+        AuthenticationService authenticationService, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return InvalidAccessToken();
+        var result = await authenticationService.RevokeSessionAsync(userId, sessionId, TimeProvider.System.GetUtcNow(), cancellationToken);
+        return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> RevokeOtherSessionsAsync(ClaimsPrincipal principal,
+        AuthenticationService authenticationService, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return InvalidAccessToken();
+        Guid.TryParse(principal.FindFirstValue("sid"), out var currentSessionId);
+        await authenticationService.RevokeOtherSessionsAsync(userId,
+            currentSessionId == Guid.Empty ? null : currentSessionId, TimeProvider.System.GetUtcNow(), cancellationToken);
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> GetSecurityAsync(ClaimsPrincipal principal, AuthenticationService authenticationService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return InvalidAccessToken();
+        var result = await authenticationService.GetSecurityAsync(userId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> SetupTwoFactorAsync(ClaimsPrincipal principal, AuthenticationService authenticationService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return InvalidAccessToken();
+        var result = await authenticationService.SetupTwoFactorAsync(userId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> EnableTwoFactorAsync(TwoFactorCodeRequest request, ClaimsPrincipal principal,
+        AuthenticationService authenticationService, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return InvalidAccessToken();
+        var result = await authenticationService.EnableTwoFactorAsync(userId, request.Code, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> RegenerateRecoveryCodesAsync(ClaimsPrincipal principal,
+        AuthenticationService authenticationService, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return InvalidAccessToken();
+        var result = await authenticationService.RegenerateRecoveryCodesAsync(userId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> DisableTwoFactorAsync(DisableTwoFactorRequest request, ClaimsPrincipal principal,
+        AuthenticationService authenticationService, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return InvalidAccessToken();
+        var result = await authenticationService.DisableTwoFactorAsync(userId, request.CurrentPassword, cancellationToken);
+        return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
     }
 
     private static async Task<IResult> SendEmailVerificationAsync(

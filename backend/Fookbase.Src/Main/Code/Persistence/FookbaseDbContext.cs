@@ -22,6 +22,8 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 {
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
+
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     public DbSet<UserPrivacySettings> UserPrivacySettings => Set<UserPrivacySettings>();
