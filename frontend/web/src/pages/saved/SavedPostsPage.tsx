@@ -32,7 +32,7 @@ export default function SavedPostsPage() {
     }
   }, [])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { void Promise.resolve().then(() => load()) }, [load])
 
   const updatePost = (updated: Post) => {
     setPosts((current) => current.map((post) => post.id === updated.id ? updated : post))

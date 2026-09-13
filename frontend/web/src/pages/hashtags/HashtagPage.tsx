@@ -35,7 +35,7 @@ export default function HashtagPage() {
     }
   }, [tag])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { void Promise.resolve().then(() => load()) }, [load])
 
   if (!tag) return <main className="mx-auto min-h-screen w-full max-w-[680px] px-3 py-5 text-sm text-text-muted">Hashtag không hợp lệ.</main>
 
