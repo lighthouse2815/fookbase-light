@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { feedApi } from '../../api/feed'
 import type { FeedItem, FeedMode } from '../../api/feed'
 import { mediaApi } from '../../api/media'
 import { postsApi } from '../../api/posts'
 import type { Post } from '../../api/posts'
+import { birthdaysApi } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
 import PaginationControls from '../../shared/components/PaginationControls'
@@ -24,6 +26,7 @@ export default function FeedPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
+  const [todayBirthdayCount, setTodayBirthdayCount] = useState(0)
   const requestRef = useRef<AbortController | null>(null)
   const snapshotRef = useRef<{ asOfUtc: string; nextCursor: string | null; mode: FeedMode } | null>(null)
   const currentModeRef = useRef(mode)
@@ -93,6 +96,8 @@ export default function FeedPage() {
     }
   }, [loadFeed])
 
+  useEffect(() => { void birthdaysApi.getToday().then((items) => setTodayBirthdayCount(items.length)).catch(() => undefined) }, [])
+
   const chooseMode = (nextMode: FeedMode) => {
     if (nextMode === mode) return
     requestRef.current?.abort()
@@ -144,6 +149,7 @@ export default function FeedPage() {
     <div className="flex justify-center min-h-screen px-2 sm:px-4 py-4">
       <div className="w-full max-w-[680px] min-w-0 flex flex-col gap-4">
         <StoryTray />
+        {todayBirthdayCount > 0 && <Link to="/birthdays" className="rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-text no-underline">🎂 {todayBirthdayCount} bạn có sinh nhật hôm nay</Link>}
         <NewPostBox onPost={handleNewPost} />
         <section className="rounded-xl border border-border bg-surface p-3">
           <div className="flex items-center justify-between gap-2">
