@@ -70,6 +70,15 @@ printf '%s\n' 'Importing legacy data into fookbase_db'
       --exclude-table=public.__EFMigrationsHistory
   done
   printf '%s\n' "UPDATE public.\"Posts\" SET \"ContainerType\" = 0, \"ContainerId\" = \"AuthorUserId\" WHERE \"ContainerId\" = '00000000-0000-0000-0000-000000000000';"
+  printf '%s\n' 'INSERT INTO public."UserFollows" ("FollowerUserId", "FollowingUserId", "FollowedAtUtc")
+    SELECT "UserId1", "UserId2", "CreatedAtUtc"
+    FROM public."Friendships"
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public."UserFollows" ("FollowerUserId", "FollowingUserId", "FollowedAtUtc")
+    SELECT "UserId2", "UserId1", "CreatedAtUtc"
+    FROM public."Friendships"
+    ON CONFLICT DO NOTHING;'
   printf '%s\n' 'COMMIT;'
 } | psql "$target_connection_string" --set ON_ERROR_STOP=1 --quiet
 

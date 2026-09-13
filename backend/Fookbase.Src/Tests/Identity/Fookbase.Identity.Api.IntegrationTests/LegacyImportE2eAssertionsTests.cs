@@ -65,6 +65,20 @@ public sealed class LegacyImportE2eAssertionsTests
         Assert.Equal(UserOneId, friendship.UserId1);
         Assert.Equal(UserTwoId, friendship.UserId2);
         Assert.Equal(CreatedAtUtc, friendship.CreatedAtUtc);
+        var follows = await dbContext.UserFollows
+            .Where(follow =>
+                (follow.FollowerUserId == UserOneId && follow.FollowingUserId == UserTwoId) ||
+                (follow.FollowerUserId == UserTwoId && follow.FollowingUserId == UserOneId))
+            .ToListAsync();
+        Assert.Equal(2, follows.Count);
+        Assert.Contains(follows, follow =>
+            follow.FollowerUserId == UserOneId &&
+            follow.FollowingUserId == UserTwoId &&
+            follow.FollowedAtUtc == CreatedAtUtc);
+        Assert.Contains(follows, follow =>
+            follow.FollowerUserId == UserTwoId &&
+            follow.FollowingUserId == UserOneId &&
+            follow.FollowedAtUtc == CreatedAtUtc);
         Assert.Contains(
             await dbContext.BlockedUsers.ToListAsync(),
             block => block.BlockerUserId == UserTwoId &&
