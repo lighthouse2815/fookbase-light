@@ -78,8 +78,9 @@ export default function HashtagPage() {
 
     void loadInitial()
     return () => {
-      controller.abort()
-      if (requestRef.current === controller) requestRef.current = null
+      const activeController = requestRef.current
+      requestRef.current = null
+      activeController?.abort()
     }
   }, [tag])
 

@@ -225,3 +225,62 @@ aborted, unmounted, and route-replaced requests cannot commit response state;
 and the new optional `AbortSignal` arguments preserve every existing API call
 signature. This review-fix commit was intentionally not pushed per controller
 instruction.
+
+## Review fix round 2: abort the active request on cleanup
+
+The scoped re-review found that effect cleanup previously aborted only its
+captured initial controller. If a retry or pagination request had replaced
+`requestRef.current`, that newer request could survive unmount; it could still
+match the ref in `finally` and update state.
+
+Both page cleanups now use the same order:
+
+```ts
+const activeController = requestRef.current
+requestRef.current = null
+activeController?.abort()
+```
+
+Clearing the identity before aborting is required: an aborted active request
+then fails its `requestRef.current !== controller` guard in both response and
+`finally` paths. The initial controller, a retry controller, and a pagination
+controller are all represented by the same active ref, so the cleanup covers
+unmount and hashtag-route replacement without changing retry/page merge
+behavior.
+
+Focused validation was run from `frontend/web`:
+
+```bash
+npm run lint
+npm exec -- oxlint --deny react/set-state-in-effect \
+  src/pages/hashtags/HashtagPage.tsx src/pages/saved/SavedPostsPage.tsx
+npm run build
+rg -n -U 'const activeController = requestRef\.current\n      requestRef\.current = null\n      activeController\?\.abort\(\)' \
+  src/pages/hashtags/HashtagPage.tsx src/pages/saved/SavedPostsPage.tsx
+```
+
+Exact output summary:
+
+```text
+npm run lint
+> oxlint
+
+npm exec -- oxlint --deny react/set-state-in-effect ...
+
+npm run build
+> tsc -b && vite build
+✓ 111 modules transformed.
+✓ built in 404ms
+
+src/pages/saved/SavedPostsPage.tsx:64:      const activeController = requestRef.current
+src/pages/saved/SavedPostsPage.tsx:65:      requestRef.current = null
+src/pages/saved/SavedPostsPage.tsx:66:      activeController?.abort()
+src/pages/hashtags/HashtagPage.tsx:81:      const activeController = requestRef.current
+src/pages/hashtags/HashtagPage.tsx:82:      requestRef.current = null
+src/pages/hashtags/HashtagPage.tsx:83:      activeController?.abort()
+```
+
+All commands exited 0 and emitted no lint diagnostics. Self-review confirmed
+the ref is null before an abort can reject fetch, so no active request can pass
+the existing identity check after cleanup. This round is local-only and is not
+pushed.
