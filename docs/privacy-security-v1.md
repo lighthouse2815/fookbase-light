@@ -26,7 +26,7 @@ Mật khẩu vẫn dùng ASP.NET Core Identity policy hiện có: ít nhất 8 k
 
 TOTP dùng ASP.NET Core Identity authenticator token provider. Setup trả shared key và otpauth URI cho phiên đã xác thực; setup không tự bật 2FA. Enable yêu cầu mã TOTP và chỉ trả recovery codes một lần. Recovery codes do Identity lưu dạng bảo mật, dùng một lần; regeneration thay thế toàn bộ mã cũ.
 
-Khi 2FA bật, login email/password chỉ trả challenge Data Protection time-limited (5 phút), không trả access/refresh token. `POST /api/auth/2fa/verify` xác minh authenticator hoặc recovery code rồi mới tạo session. Disable yêu cầu mật khẩu hiện tại và thu hồi session khác.
+Khi 2FA bật, login email/password chỉ trả challenge single-use hết hạn sau 5 phút, không trả access/refresh token. `POST /api/auth/2fa/verify` xác minh authenticator hoặc recovery code rồi mới tạo session. Disable yêu cầu mật khẩu hiện tại và thu hồi session khác.
 
 ## Deferred
 

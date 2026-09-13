@@ -22,7 +22,6 @@ public sealed class AuthenticationService(
     EmailOptions emailOptions,
     AdminOptions adminOptions,
     ILogger<AuthenticationService> logger,
-    IDataProtectionProvider dataProtectionProvider,
     TimeProvider timeProvider)
 {
     public async Task<ApplicationResult<AuthenticationResponse>> RegisterAsync(
@@ -130,10 +129,10 @@ public sealed class AuthenticationService(
         var now = timeProvider.GetUtcNow();
         if (user.TwoFactorEnabled)
         {
-            var payload = $"{user.Id:N}|{user.SecurityStamp}";
-            var challenge = dataProtectionProvider.CreateProtector("Fookbase.Auth.2fa.v1")
-                .ToTimeLimitedDataProtector().Protect(payload, TimeSpan.FromMinutes(5));
-            return ApplicationResult<object>.Success(new TwoFactorChallengeResponse(true, challenge, now.AddMinutes(5)));
+            var challenge = TwoFactorLoginChallenge.Create(user.Id, now);
+            dbContext.TwoFactorLoginChallenges.Add(challenge);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ApplicationResult<object>.Success(new TwoFactorChallengeResponse(true, challenge.Id.ToString("N"), challenge.ExpiresAtUtc));
         }
 
         var issued = await IssueNewTokenPairAsync(user, now, userAgent, cancellationToken);
@@ -147,21 +146,21 @@ public sealed class AuthenticationService(
     {
         if (string.IsNullOrWhiteSpace(request.Challenge) || string.IsNullOrWhiteSpace(request.Code))
             return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
-        string payload;
-        try { payload = dataProtectionProvider.CreateProtector("Fookbase.Auth.2fa.v1").ToTimeLimitedDataProtector().Unprotect(request.Challenge); }
-        catch (Exception exception) when (exception is CryptographicException or ArgumentException)
-        { return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired."); }
-        var parts = payload.Split('|', 2);
-        if (parts.Length != 2 || !Guid.TryParseExact(parts[0], "N", out var userId))
+        if (!Guid.TryParseExact(request.Challenge, "N", out var challengeId))
             return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
-        var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive || !user.TwoFactorEnabled || user.SecurityStamp != parts[1])
+        var now = timeProvider.GetUtcNow();
+        var challenge = await dbContext.TwoFactorLoginChallenges.SingleOrDefaultAsync(item => item.Id == challengeId, cancellationToken);
+        if (challenge is null || !challenge.IsUsableAt(now)) return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
+        var user = await userManager.FindByIdAsync(challenge.UserId.ToString());
+        if (user is null || !user.IsActive || !user.TwoFactorEnabled)
             return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
-        var code = request.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
-        var valid = await VerifyAuthenticatorCodeAsync(user, code) ||
-            (await userManager.RedeemTwoFactorRecoveryCodeAsync(user, code)).Succeeded;
+        var recoveryCode = request.Code.Trim();
+        var valid = await VerifyAuthenticatorCodeAsync(user, recoveryCode) ||
+            (await userManager.RedeemTwoFactorRecoveryCodeAsync(user, recoveryCode)).Succeeded;
         if (!valid) return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_code", "The two-factor code is invalid.");
-        return await IssueNewTokenPairAsync(user, timeProvider.GetUtcNow(), userAgent, cancellationToken);
+        challenge.Consume(now);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return await IssueNewTokenPairAsync(user, now, userAgent, cancellationToken);
     }
 
     public async Task<ApplicationResult<AuthenticationResponse>> RefreshAsync(

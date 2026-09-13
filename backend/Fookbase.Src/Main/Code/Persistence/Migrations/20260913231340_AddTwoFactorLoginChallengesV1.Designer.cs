@@ -3,6 +3,7 @@ using System;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fookbase.Api.Persistence.Migrations
 {
     [DbContext(typeof(FookbaseDbContext))]
-    partial class FookbaseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913231340_AddTwoFactorLoginChallengesV1")]
+    partial class AddTwoFactorLoginChallengesV1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
