@@ -40,6 +40,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var migrations = dbContext.Database.GetMigrations().ToList();
         var followMigration = Assert.Single(migrations,
             migration => migration.EndsWith("_AddUserFollowV1", StringComparison.Ordinal));
+        var latestMigration = migrations[^1];
         var previousMigration = migrations[
             migrations.IndexOf(followMigration) - 1];
         var migrator = dbContext.Database.GetService<IMigrator>();
@@ -48,7 +49,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         dbContext.Friendships.Add(Friendship.Create(Guid.NewGuid(), userA, userB, followedAtUtc));
         await dbContext.SaveChangesAsync();
 
-        await migrator.MigrateAsync(followMigration);
+        await migrator.MigrateAsync(latestMigration);
 
         var follows = await dbContext.UserFollows
             .Where(follow =>
