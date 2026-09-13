@@ -6,6 +6,7 @@ using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
+using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Reels.Entities;
 using Fookbase.Api.Modules.Stories.Entities;
@@ -59,6 +60,10 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<PageFollower> PageFollowers => Set<PageFollower>();
 
     public DbSet<PageMediaReference> PageMediaReferences => Set<PageMediaReference>();
+
+    public DbSet<PhotoAlbum> PhotoAlbums => Set<PhotoAlbum>();
+
+    public DbSet<AlbumMedia> AlbumMedia => Set<AlbumMedia>();
 
     public DbSet<Conversation> Conversations => Set<Conversation>();
 

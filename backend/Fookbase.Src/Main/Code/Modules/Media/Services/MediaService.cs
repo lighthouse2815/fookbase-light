@@ -627,6 +627,8 @@ public sealed class MediaService(
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByEvent = await dbContext.EventCoverMediaReferences.AsNoTracking()
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
+        var isReferencedByAlbum = await dbContext.AlbumMedia.AsNoTracking()
+            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         if (isReferencedByPost ||
             isReferencedByProfile ||
             isReferencedByActiveProfile ||
@@ -637,7 +639,8 @@ public sealed class MediaService(
             isReferencedByMessage ||
             isReferencedByConversationPhoto ||
             isReferencedByStory ||
-            isReferencedByEvent)
+            isReferencedByEvent ||
+            isReferencedByAlbum)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.Conflict));

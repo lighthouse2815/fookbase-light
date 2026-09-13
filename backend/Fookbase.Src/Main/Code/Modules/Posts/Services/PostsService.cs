@@ -3,6 +3,8 @@ using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Events.Services;
+using Fookbase.Api.Modules.Photos.Entities;
+using Fookbase.Api.Modules.Photos.Services;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
@@ -18,6 +20,7 @@ public sealed class PostsService(
     GroupPostAccessService groupPostAccessService,
     PagePostAccessService pagePostAccessService,
     EventAccessService eventPostAccessService,
+    PhotosService photosService,
     TimeProvider timeProvider,
     PostsOptions options)
 {
@@ -489,6 +492,13 @@ public sealed class PostsService(
             dbContext.PostMedia.Add(PostMedia.Create(post.Id, mediaIds[index], index));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (containerType == PostContainerType.Profile && post.PostType == PostType.Standard)
+        {
+            foreach (var mediaId in mediaIds)
+            {
+                await photosService.AddSystemMediaAsync(authorUserId, PhotoAlbumType.TimelinePhotos, mediaId, cancellationToken);
+            }
+        }
         return PostsServiceResult<PostResponse>.Success(EmptySummary(post, mediaIds));
     }
 

@@ -21,6 +21,8 @@ using Fookbase.Api.Modules.Notifications.Endpoints;
 using Fookbase.Api.Modules.Notifications.Hubs;
 using Fookbase.Api.Modules.Posts.Endpoints;
 using Fookbase.Api.Modules.Pages.Endpoints;
+using Fookbase.Api.Modules.Photos;
+using Fookbase.Api.Modules.Photos.Endpoints;
 using Fookbase.Api.Modules.Reels.Endpoints;
 using Fookbase.Api.Modules.Stories.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
@@ -81,6 +83,7 @@ builder.Services.AddFriendsModule(builder.Configuration);
 builder.Services.AddFeedModule(builder.Configuration);
 builder.Services.AddGroupsModule();
 builder.Services.AddPagesModule();
+builder.Services.AddPhotosModule();
 builder.Services.AddMessagesModule();
 builder.Services.AddNotificationsModule();
 builder.Services.AddPostsModule(builder.Configuration);
@@ -240,6 +243,7 @@ app.MapReelEndpoints();
 app.MapStoryEndpoints();
 app.MapSearchEndpoints();
 app.MapEventEndpoints();
+app.MapPhotoAlbumEndpoints();
 
 app.Run();
 

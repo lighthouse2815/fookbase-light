@@ -5,6 +5,8 @@ using Fookbase.Api.Modules.Users.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Photos.Entities;
+using Fookbase.Api.Modules.Photos.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Services;
@@ -12,6 +14,7 @@ namespace Fookbase.Api.Modules.Users.Services;
 public sealed class UserProfileService(
     FookbaseDbContext dbContext,
     MediaService mediaService,
+    PhotosService photosService,
     TimeProvider timeProvider)
 {
     private const int MaximumSearchLimit = 50;
@@ -146,6 +149,14 @@ public sealed class UserProfileService(
                 request.CoverMediaId,
                 timeProvider.GetUtcNow());
             await dbContext.SaveChangesAsync(cancellationToken);
+            if (request.AvatarMediaId is not null)
+            {
+                await photosService.AddSystemMediaAsync(userId, PhotoAlbumType.ProfilePictures, request.AvatarMediaId.Value, cancellationToken);
+            }
+            if (request.CoverMediaId is not null)
+            {
+                await photosService.AddSystemMediaAsync(userId, PhotoAlbumType.CoverPhotos, request.CoverMediaId.Value, cancellationToken);
+            }
             await transaction.CommitAsync(cancellationToken);
         }
         catch
