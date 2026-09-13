@@ -5,12 +5,16 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
+using Fookbase.Api.Modules.Friends.Config;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Friends.Data;
+using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Users.Entities;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -591,57 +595,56 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     }
 
     [Fact]
-    public async Task Suggestions_rank_safe_candidates_exclude_relationships_and_use_a_viewer_bound_cursor()
+    public async Task Suggestions_rank_independent_sources_with_configurable_weights_and_a_viewer_bound_cursor()
     {
-        var viewerUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        var mutualUserId = Guid.Parse("00000000-0000-0000-0000-000000000002");
-        var strongestCandidateUserId = Guid.Parse("00000000-0000-0000-0000-000000000003");
-        var firstEqualCandidateUserId = Guid.Parse("00000000-0000-0000-0000-000000000010");
-        var secondEqualCandidateUserId = Guid.Parse("00000000-0000-0000-0000-000000000011");
-        var existingFriendUserId = Guid.Parse("00000000-0000-0000-0000-000000000012");
-        var outgoingPendingUserId = Guid.Parse("00000000-0000-0000-0000-000000000013");
-        var incomingPendingUserId = Guid.Parse("00000000-0000-0000-0000-000000000014");
-        var blockedUserId = Guid.Parse("00000000-0000-0000-0000-000000000015");
-        var viewerIds = new[]
-        {
-            viewerUserId, mutualUserId, strongestCandidateUserId, firstEqualCandidateUserId,
-            secondEqualCandidateUserId, existingFriendUserId, outgoingPendingUserId,
-            incomingPendingUserId, blockedUserId
-        };
-        await EnsureEligibleUsersAsync(viewerIds);
-        await SeedSuggestionGraphAsync(
+        var ids = CreateSortedUserIds(6);
+        var pageCandidateUserId = ids[0];
+        var firstGroupCandidateUserId = ids[1];
+        var secondGroupCandidateUserId = ids[2];
+        var mutualCandidateUserId = ids[3];
+        var mutualUserId = ids[4];
+        var viewerUserId = ids[5];
+        await EnsureEligibleUsersAsync(ids);
+        var secrets = await SeedRankedSuggestionGraphAsync(
             viewerUserId,
             mutualUserId,
-            strongestCandidateUserId,
-            firstEqualCandidateUserId,
-            secondEqualCandidateUserId,
-            existingFriendUserId,
-            outgoingPendingUserId,
-            incomingPendingUserId,
-            blockedUserId);
+            mutualCandidateUserId,
+            firstGroupCandidateUserId,
+            secondGroupCandidateUserId,
+            pageCandidateUserId);
         using var viewer = CreateAuthenticatedClient(viewerUserId);
         using var anotherViewer = CreateAuthenticatedClient(mutualUserId);
 
-        var firstPage = await viewer.GetFromJsonAsync<SuggestionPage>("/api/friends/suggestions?limit=2");
+        using var firstResponse = await viewer.GetAsync("/api/friends/suggestions?limit=2");
+        firstResponse.EnsureSuccessStatusCode();
+        var firstPayload = await firstResponse.Content.ReadAsStringAsync();
+        var firstPage = DeserializeSuggestionPage(firstPayload);
 
-        Assert.NotNull(firstPage);
-        Assert.Equal(3, firstPage.Total);
-        Assert.Equal(2, firstPage.Items.Count);
-        var strongest = Assert.Single(firstPage.Items, item => item.Profile.UserId == strongestCandidateUserId);
-        Assert.Equal(1, strongest.MutualFriendCount);
-        Assert.Equal(1, strongest.SharedGroupCount);
-        Assert.Equal(1, strongest.SharedPageCount);
-        Assert.Equal("none", strongest.RelationshipStatus);
-        Assert.True(strongest.IsFollowing);
-        Assert.Equal(firstEqualCandidateUserId, firstPage.Items[1].Profile.UserId);
-        Assert.DoesNotContain(firstPage.Items, item => item.Profile.UserId is viewerUserId or existingFriendUserId or outgoingPendingUserId or incomingPendingUserId or blockedUserId);
+        Assert.Equal(4, firstPage.Total);
+        Assert.Equal(
+            new[] { mutualCandidateUserId, firstGroupCandidateUserId },
+            firstPage.Items.Select(item => item.Profile.UserId));
+        var mutualCandidate = firstPage.Items[0];
+        Assert.Equal(1, mutualCandidate.MutualFriendCount);
+        Assert.Equal(0, mutualCandidate.SharedGroupCount);
+        Assert.Equal(0, mutualCandidate.SharedPageCount);
+        Assert.Equal("none", mutualCandidate.RelationshipStatus);
+        Assert.False(mutualCandidate.IsFollowing);
+        var groupCandidate = firstPage.Items[1];
+        Assert.Equal(0, groupCandidate.MutualFriendCount);
+        Assert.Equal(1, groupCandidate.SharedGroupCount);
+        Assert.Equal(0, groupCandidate.SharedPageCount);
+        Assert.False(firstPayload.Contains(secrets.SharedGroupName, StringComparison.Ordinal));
+        Assert.False(firstPayload.Contains(secrets.SharedPageName, StringComparison.Ordinal));
+        Assert.False(firstPayload.Contains("groupId", StringComparison.OrdinalIgnoreCase));
+        Assert.False(firstPayload.Contains("pageId", StringComparison.OrdinalIgnoreCase));
+        Assert.False(firstPayload.Contains("followerUserId", StringComparison.OrdinalIgnoreCase));
+        Assert.False(firstPayload.Contains("followingUserId", StringComparison.OrdinalIgnoreCase));
         Assert.False(string.IsNullOrWhiteSpace(firstPage.NextCursor));
         Assert.Equal(HttpStatusCode.BadRequest,
             (await viewer.GetAsync("/api/friends/suggestions?cursor=not-a-cursor")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest,
             (await anotherViewer.GetAsync($"/api/friends/suggestions?cursor={Uri.EscapeDataString(firstPage.NextCursor!)}")).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest,
-            (await viewer.GetAsync("/api/friends/suggestions?limit=51")).StatusCode);
 
         var secondRequest = $"/api/friends/suggestions?limit=2&cursor={Uri.EscapeDataString(firstPage.NextCursor!)}";
         var secondPage = await viewer.GetFromJsonAsync<SuggestionPage>(secondRequest);
@@ -649,10 +652,127 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
 
         Assert.NotNull(secondPage);
         Assert.NotNull(unchangedGraphPage);
-        var second = Assert.Single(secondPage.Items);
-        Assert.Equal(secondEqualCandidateUserId, second.Profile.UserId);
+        Assert.Equal(
+            new[] { secondGroupCandidateUserId, pageCandidateUserId },
+            secondPage.Items.Select(item => item.Profile.UserId));
+        Assert.Equal(1, secondPage.Items[1].SharedPageCount);
         Assert.Equal(secondPage.Items, unchangedGraphPage.Items);
         Assert.Null(secondPage.NextCursor);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var protectionProvider = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>();
+        var configuredService = new FriendSuggestionService(
+            dbContext,
+            protectionProvider,
+            new FriendSuggestionOptions
+            {
+                CandidateLimitPerSource = 51,
+                MutualFriendWeight = 1,
+                SharedGroupWeight = 2,
+                SharedPageWeight = 5
+            });
+
+        var configuredResult = await configuredService.GetSuggestionsAsync(viewerUserId, null, 50);
+
+        Assert.True(configuredResult.Succeeded);
+        Assert.Equal(
+            new[]
+            {
+                pageCandidateUserId,
+                firstGroupCandidateUserId,
+                secondGroupCandidateUserId,
+                mutualCandidateUserId
+            },
+            configuredResult.Value!.Items.Select(item => item.Profile.UserId));
+    }
+
+    [Fact]
+    public async Task Suggestions_default_to_twenty_and_allow_the_maximum_fifty_limit()
+    {
+        var emptyViewerUserId = Guid.NewGuid();
+        await EnsureEligibleUsersAsync(emptyViewerUserId);
+        using var emptyViewer = CreateAuthenticatedClient(emptyViewerUserId);
+        var emptyPage = await emptyViewer.GetFromJsonAsync<SuggestionPage>("/api/friends/suggestions");
+
+        Assert.NotNull(emptyPage);
+        Assert.Empty(emptyPage.Items);
+        Assert.Equal(0, emptyPage.Total);
+        Assert.Null(emptyPage.NextCursor);
+
+        var userIds = CreateUserIds(22);
+        var viewerUserId = userIds[0];
+        var candidateUserIds = userIds[1..];
+        await EnsureEligibleUsersAsync(userIds);
+        await SeedSharedGroupAsync(viewerUserId, candidateUserIds, "default-limit-private-group");
+        using var viewer = CreateAuthenticatedClient(viewerUserId);
+
+        var defaultPage = await viewer.GetFromJsonAsync<SuggestionPage>("/api/friends/suggestions");
+        var maximumPage = await viewer.GetFromJsonAsync<SuggestionPage>("/api/friends/suggestions?limit=50");
+
+        Assert.NotNull(defaultPage);
+        Assert.Equal(21, defaultPage.Total);
+        Assert.Equal(20, defaultPage.Items.Count);
+        Assert.False(string.IsNullOrWhiteSpace(defaultPage.NextCursor));
+        Assert.NotNull(maximumPage);
+        Assert.Equal(21, maximumPage.Total);
+        Assert.Equal(21, maximumPage.Items.Count);
+        Assert.Null(maximumPage.NextCursor);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await viewer.GetAsync("/api/friends/suggestions?limit=51")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Suggestions_exclude_incoming_blocks_ineligible_profiles_and_inactive_sources()
+    {
+        var userIds = CreateUserIds(10);
+        var viewerUserId = userIds[0];
+        var eligibleCandidateUserId = userIds[1];
+        var existingFriendUserId = userIds[2];
+        var outgoingPendingUserId = userIds[3];
+        var incomingPendingUserId = userIds[4];
+        var incomingBlockerUserId = userIds[5];
+        var inactiveUserId = userIds[6];
+        var profilelessUserId = userIds[7];
+        var deletedGroupCandidateUserId = userIds[8];
+        var unpublishedPageCandidateUserId = userIds[9];
+        await EnsureEligibleUsersAsync(
+            viewerUserId,
+            eligibleCandidateUserId,
+            existingFriendUserId,
+            outgoingPendingUserId,
+            incomingPendingUserId,
+            incomingBlockerUserId,
+            inactiveUserId,
+            deletedGroupCandidateUserId,
+            unpublishedPageCandidateUserId);
+        await EnsureAccountWithoutProfileAsync(profilelessUserId);
+        await DisableUserAsync(inactiveUserId);
+        var secrets = await SeedExcludedSuggestionGraphAsync(
+            viewerUserId,
+            eligibleCandidateUserId,
+            existingFriendUserId,
+            outgoingPendingUserId,
+            incomingPendingUserId,
+            incomingBlockerUserId,
+            inactiveUserId,
+            profilelessUserId,
+            deletedGroupCandidateUserId,
+            unpublishedPageCandidateUserId);
+        using var viewer = CreateAuthenticatedClient(viewerUserId);
+
+        using var response = await viewer.GetAsync("/api/friends/suggestions?limit=50");
+        response.EnsureSuccessStatusCode();
+        var payload = await response.Content.ReadAsStringAsync();
+        var page = DeserializeSuggestionPage(payload);
+
+        Assert.Equal(1, page.Total);
+        Assert.Equal(new[] { eligibleCandidateUserId }, page.Items.Select(item => item.Profile.UserId));
+        Assert.False(payload.Contains(secrets.ActiveGroupName, StringComparison.Ordinal));
+        Assert.False(payload.Contains(secrets.DeletedGroupName, StringComparison.Ordinal));
+        Assert.False(payload.Contains(secrets.UnpublishedPageName, StringComparison.Ordinal));
+        Assert.False(payload.Contains("groupId", StringComparison.OrdinalIgnoreCase));
+        Assert.False(payload.Contains("pageId", StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<FriendRequestResponse> SendRequestAsync(Guid senderUserId, Guid receiverUserId)
@@ -716,66 +836,126 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         await dbContext.SaveChangesAsync();
     }
 
-    private async Task SeedSuggestionGraphAsync(
+    private async Task<SuggestionGraphSecrets> SeedRankedSuggestionGraphAsync(
         Guid viewerUserId,
         Guid mutualUserId,
-        Guid strongestCandidateUserId,
-        Guid firstEqualCandidateUserId,
-        Guid secondEqualCandidateUserId,
-        Guid existingFriendUserId,
-        Guid outgoingPendingUserId,
-        Guid incomingPendingUserId,
-        Guid blockedUserId)
+        Guid mutualCandidateUserId,
+        Guid firstGroupCandidateUserId,
+        Guid secondGroupCandidateUserId,
+        Guid pageCandidateUserId)
     {
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var now = DateTimeOffset.UtcNow;
-        dbContext.Friendships.AddRange(
-            Friendship.Create(Guid.NewGuid(), viewerUserId, mutualUserId, now),
-            Friendship.Create(Guid.NewGuid(), mutualUserId, strongestCandidateUserId, now),
-            Friendship.Create(Guid.NewGuid(), viewerUserId, existingFriendUserId, now));
-        dbContext.FriendRequests.AddRange(
-            FriendRequest.Create(Guid.NewGuid(), viewerUserId, outgoingPendingUserId, now),
-            FriendRequest.Create(Guid.NewGuid(), incomingPendingUserId, viewerUserId, now));
-        dbContext.BlockedUsers.Add(BlockedUser.Create(viewerUserId, blockedUserId, now));
-        dbContext.UserFollows.Add(UserFollow.Create(viewerUserId, strongestCandidateUserId, now));
-
-        var sharedGroupId = Guid.NewGuid();
-        var firstEqualGroupId = Guid.NewGuid();
-        var secondEqualGroupId = Guid.NewGuid();
-        var excludedCandidatesGroupId = Guid.NewGuid();
-        dbContext.Groups.AddRange(
-            Group.Create(sharedGroupId, "Private shared group", null, GroupPrivacy.Private, viewerUserId, now),
-            Group.Create(firstEqualGroupId, "First tie group", null, GroupPrivacy.Private, viewerUserId, now),
-            Group.Create(secondEqualGroupId, "Second tie group", null, GroupPrivacy.Private, viewerUserId, now),
-            Group.Create(excludedCandidatesGroupId, "Excluded candidates group", null, GroupPrivacy.Private, viewerUserId, now));
-        dbContext.GroupMembers.AddRange(
-            GroupMember.Create(sharedGroupId, viewerUserId, GroupMemberRole.Owner, now),
-            GroupMember.Create(sharedGroupId, strongestCandidateUserId, GroupMemberRole.Member, now),
-            GroupMember.Create(firstEqualGroupId, viewerUserId, GroupMemberRole.Owner, now),
-            GroupMember.Create(firstEqualGroupId, firstEqualCandidateUserId, GroupMemberRole.Member, now),
-            GroupMember.Create(secondEqualGroupId, viewerUserId, GroupMemberRole.Owner, now),
-            GroupMember.Create(secondEqualGroupId, secondEqualCandidateUserId, GroupMemberRole.Member, now),
-            GroupMember.Create(excludedCandidatesGroupId, viewerUserId, GroupMemberRole.Owner, now),
-            GroupMember.Create(excludedCandidatesGroupId, existingFriendUserId, GroupMemberRole.Member, now),
-            GroupMember.Create(excludedCandidatesGroupId, outgoingPendingUserId, GroupMemberRole.Member, now),
-            GroupMember.Create(excludedCandidatesGroupId, incomingPendingUserId, GroupMemberRole.Member, now),
-            GroupMember.Create(excludedCandidatesGroupId, blockedUserId, GroupMemberRole.Member, now));
-
+        var sharedGroupName = $"private-group-{Guid.NewGuid():N}";
+        var sharedPageName = $"private-page-{Guid.NewGuid():N}";
+        var sharedGroup = Group.Create(
+            Guid.NewGuid(), sharedGroupName, null, GroupPrivacy.Private, viewerUserId, now);
         var sharedPage = Page.Create(
             Guid.NewGuid(),
-            "Shared page",
-            $"shared-{Guid.NewGuid():N}",
+            sharedPageName,
+            $"suggestion-{Guid.NewGuid():N}",
             "Test",
             null,
             viewerUserId,
             now);
         sharedPage.Publish(now);
+
+        dbContext.Friendships.AddRange(
+            Friendship.Create(Guid.NewGuid(), viewerUserId, mutualUserId, now),
+            Friendship.Create(Guid.NewGuid(), mutualUserId, mutualCandidateUserId, now));
+        dbContext.Groups.Add(sharedGroup);
+        dbContext.GroupMembers.AddRange(
+            GroupMember.Create(sharedGroup.Id, viewerUserId, GroupMemberRole.Owner, now),
+            GroupMember.Create(sharedGroup.Id, firstGroupCandidateUserId, GroupMemberRole.Member, now),
+            GroupMember.Create(sharedGroup.Id, secondGroupCandidateUserId, GroupMemberRole.Member, now));
         dbContext.Pages.Add(sharedPage);
         dbContext.PageFollowers.AddRange(
             PageFollower.Create(sharedPage.Id, viewerUserId, now),
-            PageFollower.Create(sharedPage.Id, strongestCandidateUserId, now));
+            PageFollower.Create(sharedPage.Id, pageCandidateUserId, now));
         await dbContext.SaveChangesAsync();
+
+        return new SuggestionGraphSecrets(sharedGroupName, sharedPageName);
+    }
+
+    private async Task SeedSharedGroupAsync(
+        Guid viewerUserId,
+        IEnumerable<Guid> candidateUserIds,
+        string namePrefix)
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var group = Group.Create(
+            Guid.NewGuid(),
+            $"{namePrefix}-{Guid.NewGuid():N}",
+            null,
+            GroupPrivacy.Private,
+            viewerUserId,
+            now);
+        dbContext.Groups.Add(group);
+        dbContext.GroupMembers.Add(GroupMember.Create(group.Id, viewerUserId, GroupMemberRole.Owner, now));
+        dbContext.GroupMembers.AddRange(candidateUserIds.Select(userId =>
+            GroupMember.Create(group.Id, userId, GroupMemberRole.Member, now)));
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task<ExcludedSuggestionGraphSecrets> SeedExcludedSuggestionGraphAsync(
+        Guid viewerUserId,
+        Guid eligibleCandidateUserId,
+        Guid existingFriendUserId,
+        Guid outgoingPendingUserId,
+        Guid incomingPendingUserId,
+        Guid incomingBlockerUserId,
+        Guid inactiveUserId,
+        Guid profilelessUserId,
+        Guid deletedGroupCandidateUserId,
+        Guid unpublishedPageCandidateUserId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var activeGroupName = $"active-private-group-{Guid.NewGuid():N}";
+        var deletedGroupName = $"deleted-private-group-{Guid.NewGuid():N}";
+        var unpublishedPageName = $"unpublished-private-page-{Guid.NewGuid():N}";
+        var activeGroup = Group.Create(
+            Guid.NewGuid(), activeGroupName, null, GroupPrivacy.Private, viewerUserId, now);
+        var deletedGroup = Group.Create(
+            Guid.NewGuid(), deletedGroupName, null, GroupPrivacy.Private, viewerUserId, now);
+        deletedGroup.Delete(now);
+        var unpublishedPage = Page.Create(
+            Guid.NewGuid(),
+            unpublishedPageName,
+            $"unpublished-{Guid.NewGuid():N}",
+            "Test",
+            null,
+            viewerUserId,
+            now);
+
+        dbContext.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewerUserId, existingFriendUserId, now));
+        dbContext.FriendRequests.AddRange(
+            FriendRequest.Create(Guid.NewGuid(), viewerUserId, outgoingPendingUserId, now),
+            FriendRequest.Create(Guid.NewGuid(), incomingPendingUserId, viewerUserId, now));
+        dbContext.BlockedUsers.Add(BlockedUser.Create(incomingBlockerUserId, viewerUserId, now));
+        dbContext.Groups.AddRange(activeGroup, deletedGroup);
+        dbContext.GroupMembers.AddRange(
+            GroupMember.Create(activeGroup.Id, viewerUserId, GroupMemberRole.Owner, now),
+            GroupMember.Create(activeGroup.Id, eligibleCandidateUserId, GroupMemberRole.Member, now),
+            GroupMember.Create(activeGroup.Id, existingFriendUserId, GroupMemberRole.Member, now),
+            GroupMember.Create(activeGroup.Id, outgoingPendingUserId, GroupMemberRole.Member, now),
+            GroupMember.Create(activeGroup.Id, incomingPendingUserId, GroupMemberRole.Member, now),
+            GroupMember.Create(activeGroup.Id, incomingBlockerUserId, GroupMemberRole.Member, now),
+            GroupMember.Create(activeGroup.Id, inactiveUserId, GroupMemberRole.Member, now),
+            GroupMember.Create(activeGroup.Id, profilelessUserId, GroupMemberRole.Member, now),
+            GroupMember.Create(deletedGroup.Id, viewerUserId, GroupMemberRole.Owner, now),
+            GroupMember.Create(deletedGroup.Id, deletedGroupCandidateUserId, GroupMemberRole.Member, now));
+        dbContext.Pages.Add(unpublishedPage);
+        dbContext.PageFollowers.AddRange(
+            PageFollower.Create(unpublishedPage.Id, viewerUserId, now),
+            PageFollower.Create(unpublishedPage.Id, unpublishedPageCandidateUserId, now));
+        await dbContext.SaveChangesAsync();
+
+        return new ExcludedSuggestionGraphSecrets(activeGroupName, deletedGroupName, unpublishedPageName);
     }
 
     private async Task DisableUserAsync(Guid userId)
@@ -789,6 +969,13 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
 
     private static Guid[] CreateUserIds(int count) =>
         Enumerable.Range(0, count).Select(_ => Guid.NewGuid()).ToArray();
+
+    private static Guid[] CreateSortedUserIds(int count) =>
+        CreateUserIds(count).OrderBy(userId => userId).ToArray();
+
+    private static SuggestionPage DeserializeSuggestionPage(string payload) =>
+        JsonSerializer.Deserialize<SuggestionPage>(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web))
+        ?? throw new InvalidOperationException("Suggestion response was empty.");
 
     private static async Task ExecuteFriendshipBackfillSqlAsync(
         FookbaseDbContext dbContext,
@@ -852,4 +1039,11 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         bool IsFollowing);
 
     private sealed record SuggestionProfile(Guid UserId);
+
+    private sealed record SuggestionGraphSecrets(string SharedGroupName, string SharedPageName);
+
+    private sealed record ExcludedSuggestionGraphSecrets(
+        string ActiveGroupName,
+        string DeletedGroupName,
+        string UnpublishedPageName);
 }

@@ -83,18 +83,20 @@ public sealed class FriendSuggestionService(
             let score = mutualFriendCount * options.MutualFriendWeight +
                         sharedGroupCount * options.SharedGroupWeight +
                         sharedPageCount * options.SharedPageWeight
-            select new SuggestionRow(
-                candidateUserId,
+            select new
+            {
+                UserId = candidateUserId,
                 profile.Username,
                 profile.DisplayName,
                 profile.AvatarUrl,
                 profile.AvatarMediaId,
-                mutualFriendCount,
-                sharedGroupCount,
-                sharedPageCount,
-                score,
-                dbContext.UserFollows.AsNoTracking().Any(follow =>
-                    follow.FollowerUserId == viewerUserId && follow.FollowingUserId == candidateUserId));
+                MutualFriendCount = mutualFriendCount,
+                SharedGroupCount = sharedGroupCount,
+                SharedPageCount = sharedPageCount,
+                Score = score,
+                IsFollowing = dbContext.UserFollows.AsNoTracking().Any(follow =>
+                    follow.FollowerUserId == viewerUserId && follow.FollowingUserId == candidateUserId)
+            };
 
         var total = await scored.CountAsync(cancellationToken);
         if (cursor is not null)
@@ -210,15 +212,4 @@ public sealed class FriendSuggestionService(
 
     private sealed record FriendSuggestionCursor(int Version, Guid ViewerUserId, int Score, Guid UserId);
 
-    private sealed record SuggestionRow(
-        Guid UserId,
-        string Username,
-        string DisplayName,
-        string? AvatarUrl,
-        Guid? AvatarMediaId,
-        int MutualFriendCount,
-        int SharedGroupCount,
-        int SharedPageCount,
-        int Score,
-        bool IsFollowing);
 }
