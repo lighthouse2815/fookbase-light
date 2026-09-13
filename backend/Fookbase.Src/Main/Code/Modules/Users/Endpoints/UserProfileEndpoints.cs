@@ -33,12 +33,14 @@ public static class UserProfileEndpoints
 
     private static async Task<IResult> SearchAsync(
         string? query,
+        ClaimsPrincipal principal,
         UserProfileService profileService,
         CancellationToken cancellationToken,
         int offset = 0,
         int limit = 20)
     {
-        var result = await profileService.SearchAsync(query, offset, limit, cancellationToken);
+        var viewerUserId = TryGetUserId(principal, out var userId) ? (Guid?)userId : null;
+        var result = await profileService.SearchAsync(query, offset, limit, viewerUserId, cancellationToken);
         return result.Succeeded
             ? Results.Ok(result.Value)
             : result.Error!.ToHttpResult();
@@ -110,10 +112,12 @@ public static class UserProfileEndpoints
 
     private static async Task<IResult> GetByIdAsync(
         Guid userId,
+        ClaimsPrincipal principal,
         UserProfileService profileService,
         CancellationToken cancellationToken)
     {
-        var result = await profileService.GetAsync(userId, cancellationToken);
+        var viewerUserId = TryGetUserId(principal, out var currentUserId) ? (Guid?)currentUserId : null;
+        var result = await profileService.GetAsync(userId, viewerUserId, cancellationToken);
         return result.Succeeded
             ? Results.Ok(result.Value)
             : result.Error!.ToHttpResult();
@@ -164,7 +168,7 @@ public static class UserProfileEndpoints
             return Results.Unauthorized();
         }
 
-        var result = await profileService.GetAsync(userId, cancellationToken);
+        var result = await profileService.GetAsync(userId, userId, cancellationToken);
         return result.Succeeded
             ? Results.Ok(result.Value)
             : result.Error!.ToHttpResult();

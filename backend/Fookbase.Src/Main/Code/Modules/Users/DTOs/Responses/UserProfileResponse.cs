@@ -10,4 +10,9 @@ public sealed record UserProfileResponse(
     DateOnly? DateOfBirth,
     string? CurrentCity,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    int FollowerCount,
+    int FollowingCount,
+    bool? IsFollowing,
+    bool? IsFollowedBy,
+    string? FriendshipState);

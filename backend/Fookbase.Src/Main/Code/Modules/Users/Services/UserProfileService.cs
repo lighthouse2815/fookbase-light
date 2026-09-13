@@ -3,6 +3,7 @@ using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Users.DTOs.Requests;
 using Fookbase.Api.Modules.Users.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Media.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,11 +41,17 @@ public sealed class UserProfileService(
         }
     }
 
+    public Task<ApplicationResult<UserProfileResponse>> GetAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        GetAsync(userId, null, cancellationToken);
+
     public async Task<ApplicationResult<UserProfileResponse>> GetAsync(
         Guid userId,
+        Guid? viewerUserId,
         CancellationToken cancellationToken = default)
     {
-        var profile = await dbContext.UserProfiles.AsNoTracking()
+        var profile = await ProjectProfiles(viewerUserId)
             .SingleOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
 
         return profile is null
@@ -52,10 +59,18 @@ public sealed class UserProfileService(
             : ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
     }
 
+    public Task<ApplicationResult<PagedResponse<UserProfileResponse>>> SearchAsync(
+        string? query,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default) =>
+        SearchAsync(query, offset, limit, null, cancellationToken);
+
     public async Task<ApplicationResult<PagedResponse<UserProfileResponse>>> SearchAsync(
         string? query,
         int offset,
         int limit,
+        Guid? viewerUserId,
         CancellationToken cancellationToken = default)
     {
         if (offset < 0 || limit is < 1 or > MaximumSearchLimit)
@@ -68,7 +83,7 @@ public sealed class UserProfileService(
         }
 
         var normalizedQuery = query?.Trim().ToLowerInvariant();
-        var profiles = dbContext.UserProfiles.AsNoTracking();
+        var profiles = ProjectProfiles(viewerUserId);
         if (!string.IsNullOrWhiteSpace(normalizedQuery))
         {
             profiles = profiles.Where(profile =>
@@ -139,7 +154,7 @@ public sealed class UserProfileService(
             throw;
         }
 
-        return ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
+        return await GetAsync(userId, userId, cancellationToken);
     }
 
     public async Task<Guid?> GetAvatarMediaIdAsync(
@@ -226,7 +241,58 @@ public sealed class UserProfileService(
                 "The user profile was not found.",
                 ApplicationErrorType.NotFound));
 
-    private static UserProfileResponse ToResponse(UserProfile profile) =>
+    private IQueryable<UserProfileProjection> ProjectProfiles(Guid? viewerUserId)
+    {
+        return dbContext.UserProfiles.AsNoTracking()
+            .Where(profile => viewerUserId == null ||
+                !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                    (block.BlockerUserId == viewerUserId && block.BlockedUserId == profile.UserId) ||
+                    (block.BlockerUserId == profile.UserId && block.BlockedUserId == viewerUserId)))
+            .Select(profile => new UserProfileProjection(
+                profile.UserId,
+                profile.Username,
+                profile.DisplayName,
+                profile.Bio,
+                profile.AvatarUrl,
+                profile.CoverUrl,
+                profile.AvatarMediaId,
+                profile.CoverMediaId,
+                profile.DateOfBirth,
+                profile.CurrentCity,
+                profile.CreatedAt,
+                profile.UpdatedAt,
+                dbContext.UserFollows.AsNoTracking().Count(follow =>
+                    follow.FollowingUserId == profile.UserId &&
+                    dbContext.Users.Any(user => user.Id == follow.FollowerUserId && user.IsActive) &&
+                    dbContext.UserProfiles.Any(other => other.UserId == follow.FollowerUserId) &&
+                    !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == profile.UserId) ||
+                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowerUserId))),
+                dbContext.UserFollows.AsNoTracking().Count(follow =>
+                    follow.FollowerUserId == profile.UserId &&
+                    dbContext.Users.Any(user => user.Id == follow.FollowingUserId && user.IsActive) &&
+                    dbContext.UserProfiles.Any(other => other.UserId == follow.FollowingUserId) &&
+                    !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowingUserId) ||
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == profile.UserId))),
+                viewerUserId == null ? null : dbContext.UserFollows.AsNoTracking().Any(follow =>
+                    follow.FollowerUserId == viewerUserId && follow.FollowingUserId == profile.UserId),
+                viewerUserId == null ? null : dbContext.UserFollows.AsNoTracking().Any(follow =>
+                    follow.FollowerUserId == profile.UserId && follow.FollowingUserId == viewerUserId),
+                viewerUserId == null ? null :
+                    profile.UserId == viewerUserId ? "self" :
+                    dbContext.Friendships.AsNoTracking().Any(friendship =>
+                        (friendship.UserId1 == viewerUserId && friendship.UserId2 == profile.UserId) ||
+                        (friendship.UserId1 == profile.UserId && friendship.UserId2 == viewerUserId)) ? "friends" :
+                    dbContext.FriendRequests.AsNoTracking().Any(request =>
+                        request.SenderUserId == viewerUserId && request.ReceiverUserId == profile.UserId &&
+                        request.Status == FriendRequestStatus.Pending) ? "request_sent" :
+                    dbContext.FriendRequests.AsNoTracking().Any(request =>
+                        request.SenderUserId == profile.UserId && request.ReceiverUserId == viewerUserId &&
+                        request.Status == FriendRequestStatus.Pending) ? "request_received" : "none"));
+    }
+
+    private static UserProfileResponse ToResponse(UserProfileProjection profile) =>
         new(
             profile.UserId,
             profile.Username,
@@ -237,5 +303,29 @@ public sealed class UserProfileService(
             profile.DateOfBirth,
             profile.CurrentCity,
             profile.CreatedAt,
-            profile.UpdatedAt);
+            profile.UpdatedAt,
+            profile.FollowerCount,
+            profile.FollowingCount,
+            profile.IsFollowing,
+            profile.IsFollowedBy,
+            profile.FriendshipState);
+
+    private sealed record UserProfileProjection(
+        Guid UserId,
+        string Username,
+        string DisplayName,
+        string? Bio,
+        string? AvatarUrl,
+        string? CoverUrl,
+        Guid? AvatarMediaId,
+        Guid? CoverMediaId,
+        DateOnly? DateOfBirth,
+        string? CurrentCity,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset UpdatedAt,
+        int FollowerCount,
+        int FollowingCount,
+        bool? IsFollowing,
+        bool? IsFollowedBy,
+        string? FriendshipState);
 }

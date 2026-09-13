@@ -7,7 +7,12 @@ public sealed record SearchPersonResponse(
     string Username,
     string DisplayName,
     string? AvatarUrl,
-    string? Bio);
+    string? Bio,
+    int FollowerCount,
+    int FollowingCount,
+    bool? IsFollowing,
+    bool? IsFollowedBy,
+    string? FriendshipState);
 
 public sealed record SearchGroupResponse(
     Guid GroupId,

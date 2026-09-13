@@ -10,6 +10,8 @@ using Fookbase.Api.Modules.Users.Data;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,6 +79,84 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Equal(1, page.Total);
         Assert.Single(page.Items);
         Assert.Equal(matchingUser.Id, page.Items[0].UserId);
+    }
+
+    [Fact]
+    public async Task Profile_and_people_search_project_visible_follow_counts_and_viewer_states()
+    {
+        var viewer = CreateUser();
+        var target = CreateUser();
+        var blockedRelation = CreateUser();
+        var now = DateTimeOffset.UtcNow;
+        await EnsureProfileAsync(viewer);
+        await EnsureProfileAsync(target);
+        await EnsureProfileAsync(blockedRelation);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.Users.AddRange(
+                new User(viewer.Id, $"{viewer.Username}@example.com", viewer.Username, now),
+                new User(target.Id, $"{target.Username}@example.com", target.Username, now),
+                new User(blockedRelation.Id, $"{blockedRelation.Username}@example.com", blockedRelation.Username, now));
+            db.UserFollows.AddRange(
+                UserFollow.Create(viewer.Id, target.Id, now),
+                UserFollow.Create(target.Id, viewer.Id, now),
+                UserFollow.Create(blockedRelation.Id, target.Id, now),
+                UserFollow.Create(target.Id, blockedRelation.Id, now));
+            db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewer.Id, target.Id, now));
+            db.BlockedUsers.Add(BlockedUser.Create(target.Id, blockedRelation.Id, now));
+            await db.SaveChangesAsync();
+        }
+
+        using var authenticated = CreateAuthenticatedClient(viewer.Id);
+        using var anonymous = factory.CreateClient();
+        var profile = await authenticated.GetFromJsonAsync<UserProfileResponse>($"/api/users/{target.Id}");
+        var search = await authenticated.GetFromJsonAsync<PagedResponse<UserProfileResponse>>(
+            $"/api/users/search?query={target.Username}&offset=0&limit=20");
+        var anonymousProfile = await anonymous.GetFromJsonAsync<UserProfileResponse>($"/api/users/{target.Id}");
+
+        Assert.NotNull(profile);
+        Assert.Equal(1, profile.FollowerCount);
+        Assert.Equal(1, profile.FollowingCount);
+        Assert.True(profile.IsFollowing);
+        Assert.True(profile.IsFollowedBy);
+        Assert.Equal("friends", profile.FriendshipState);
+        Assert.NotNull(search);
+        var searchedTarget = Assert.Single(search.Items);
+        Assert.Equal(profile.FollowerCount, searchedTarget.FollowerCount);
+        Assert.Equal(profile.FollowingCount, searchedTarget.FollowingCount);
+        Assert.True(searchedTarget.IsFollowing);
+        Assert.True(searchedTarget.IsFollowedBy);
+        Assert.Equal("friends", searchedTarget.FriendshipState);
+        Assert.NotNull(anonymousProfile);
+        Assert.Null(anonymousProfile.IsFollowing);
+        Assert.Null(anonymousProfile.IsFollowedBy);
+        Assert.Null(anonymousProfile.FriendshipState);
+    }
+
+    [Fact]
+    public async Task Profile_and_people_search_hide_profiles_in_a_blocked_relationship()
+    {
+        var viewer = CreateUser();
+        var target = CreateUser();
+        var now = DateTimeOffset.UtcNow;
+        await EnsureProfileAsync(viewer);
+        await EnsureProfileAsync(target);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.BlockedUsers.Add(BlockedUser.Create(target.Id, viewer.Id, now));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAuthenticatedClient(viewer.Id);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/users/{target.Id}")).StatusCode);
+        var search = await client.GetFromJsonAsync<PagedResponse<UserProfileResponse>>(
+            $"/api/users/search?query={target.Username}&offset=0&limit=20");
+
+        Assert.NotNull(search);
+        Assert.DoesNotContain(search.Items, item => item.UserId == target.Id);
     }
 
     [Fact]

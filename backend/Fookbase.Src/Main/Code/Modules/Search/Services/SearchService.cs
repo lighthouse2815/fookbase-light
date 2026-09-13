@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
@@ -153,6 +154,34 @@ public sealed class SearchService(
                 profile.AvatarUrl,
                 profile.AvatarMediaId,
                 profile.Bio,
+                FollowerCount = dbContext.UserFollows.AsNoTracking().Count(follow =>
+                    follow.FollowingUserId == profile.UserId &&
+                    dbContext.Users.Any(user => user.Id == follow.FollowerUserId && user.IsActive) &&
+                    dbContext.UserProfiles.Any(other => other.UserId == follow.FollowerUserId) &&
+                    !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == profile.UserId) ||
+                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowerUserId))),
+                FollowingCount = dbContext.UserFollows.AsNoTracking().Count(follow =>
+                    follow.FollowerUserId == profile.UserId &&
+                    dbContext.Users.Any(user => user.Id == follow.FollowingUserId && user.IsActive) &&
+                    dbContext.UserProfiles.Any(other => other.UserId == follow.FollowingUserId) &&
+                    !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowingUserId) ||
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == profile.UserId))),
+                IsFollowing = dbContext.UserFollows.AsNoTracking().Any(follow =>
+                    follow.FollowerUserId == context.Viewer.UserId && follow.FollowingUserId == profile.UserId),
+                IsFollowedBy = dbContext.UserFollows.AsNoTracking().Any(follow =>
+                    follow.FollowerUserId == profile.UserId && follow.FollowingUserId == context.Viewer.UserId),
+                FriendshipState = profile.UserId == context.Viewer.UserId ? "self" :
+                    dbContext.Friendships.AsNoTracking().Any(friendship =>
+                        (friendship.UserId1 == context.Viewer.UserId && friendship.UserId2 == profile.UserId) ||
+                        (friendship.UserId1 == profile.UserId && friendship.UserId2 == context.Viewer.UserId)) ? "friends" :
+                    dbContext.FriendRequests.AsNoTracking().Any(request =>
+                        request.SenderUserId == context.Viewer.UserId && request.ReceiverUserId == profile.UserId &&
+                        request.Status == FriendRequestStatus.Pending) ? "request_sent" :
+                    dbContext.FriendRequests.AsNoTracking().Any(request =>
+                        request.SenderUserId == profile.UserId && request.ReceiverUserId == context.Viewer.UserId &&
+                        request.Status == FriendRequestStatus.Pending) ? "request_received" : "none",
                 Rank = EF.Functions.ILike(profile.DisplayName, exact) || EF.Functions.ILike(profile.Username, exact)
                     ? 0
                     : EF.Functions.ILike(profile.DisplayName, prefix) || EF.Functions.ILike(profile.Username, prefix)
@@ -185,6 +214,11 @@ public sealed class SearchService(
                 item.AvatarUrl,
                 item.AvatarMediaId,
                 item.Bio,
+                item.FollowerCount,
+                item.FollowingCount,
+                item.IsFollowing,
+                item.IsFollowedBy,
+                item.FriendshipState,
                 item.Rank))
             .ToListAsync(cancellationToken);
         var visible = rows.Take(limit).ToList();
@@ -194,7 +228,12 @@ public sealed class SearchService(
                 item.Username,
                 item.DisplayName,
                 item.AvatarMediaId is null ? item.AvatarUrl : $"/api/users/{item.UserId}/avatar",
-                ShortBio(item.Bio))).ToList(),
+                ShortBio(item.Bio),
+                item.FollowerCount,
+                item.FollowingCount,
+                item.IsFollowing,
+                item.IsFollowedBy,
+                item.FriendshipState)).ToList(),
             rows.Count > limit ? EncodeCursor(SearchType.People, query, visible[^1].Rank, visible[^1].UserId,
                 name: visible[^1].DisplayName) : null);
     }
@@ -718,6 +757,11 @@ public sealed class SearchService(
         string? AvatarUrl,
         Guid? AvatarMediaId,
         string? Bio,
+        int FollowerCount,
+        int FollowingCount,
+        bool IsFollowing,
+        bool IsFollowedBy,
+        string FriendshipState,
         int Rank);
 
     private sealed record GroupRow(

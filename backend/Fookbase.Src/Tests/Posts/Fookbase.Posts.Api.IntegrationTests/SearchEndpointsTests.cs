@@ -58,6 +58,48 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task People_search_projects_follow_and_friendship_state_without_changing_order()
+    {
+        var viewerId = await CreateUserAsync("people-projection-viewer");
+        var firstTargetId = await CreateUserAsync("people-projection-first");
+        var secondTargetId = await CreateUserAsync("people-projection-second");
+        var query = "projection" + Guid.NewGuid().ToString("N")[..10];
+        var now = DateTimeOffset.UtcNow;
+        await UpdateProfileAsync(firstTargetId, query + " Alpha", "first");
+        await UpdateProfileAsync(secondTargetId, query + " Beta", "second");
+        using var viewer = CreateAuthenticatedClient(viewerId);
+
+        var before = await ReadAsync<GlobalSearchResponse>(
+            await viewer.GetAsync($"/api/search?q={query}&type=people"));
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.UserFollows.AddRange(
+                UserFollow.Create(viewerId, firstTargetId, now),
+                UserFollow.Create(firstTargetId, viewerId, now));
+            db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewerId, firstTargetId, now));
+            await db.SaveChangesAsync();
+        }
+
+        var after = await ReadAsync<GlobalSearchResponse>(
+            await viewer.GetAsync($"/api/search?q={query}&type=people"));
+
+        Assert.Equal(before.People.Select(item => item.UserId), after.People.Select(item => item.UserId));
+        var first = Assert.Single(after.People, item => item.UserId == firstTargetId);
+        Assert.Equal(1, first.FollowerCount);
+        Assert.Equal(1, first.FollowingCount);
+        Assert.True(first.IsFollowing);
+        Assert.True(first.IsFollowedBy);
+        Assert.Equal("friends", first.FriendshipState);
+        var second = Assert.Single(after.People, item => item.UserId == secondTargetId);
+        Assert.Equal(0, second.FollowerCount);
+        Assert.Equal(0, second.FollowingCount);
+        Assert.False(second.IsFollowing);
+        Assert.False(second.IsFollowedBy);
+        Assert.Equal("none", second.FriendshipState);
+    }
+
+    [Fact]
     public async Task Group_and_page_search_follow_existing_visibility_without_manager_leaks()
     {
         var viewerId = await CreateUserAsync("search-container-viewer");
