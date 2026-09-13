@@ -11,6 +11,7 @@ using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -345,14 +346,26 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             new UpdateUserProfileRequest(null, null, null, null, replacementAvatar));
         Assert.Equal(HttpStatusCode.OK, replaceAvatar.StatusCode);
 
-        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{cover}")).StatusCode);
-        using var verification = factory.Services.CreateScope();
-        var profile = await verification.ServiceProvider.GetRequiredService<FookbaseDbContext>()
-            .UserProfiles.AsNoTracking()
-            .SingleAsync(item => item.UserId == user.Id);
-        Assert.Equal(replacementAvatar, profile.AvatarMediaId);
-        Assert.Equal(cover, profile.CoverMediaId);
+        Guid profilePicturesAlbumId;
+        using (var verification = factory.Services.CreateScope())
+        {
+            var db = verification.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var profile = await db.UserProfiles.AsNoTracking()
+                .SingleAsync(item => item.UserId == user.Id);
+            Assert.Equal(replacementAvatar, profile.AvatarMediaId);
+            Assert.Equal(cover, profile.CoverMediaId);
+            profilePicturesAlbumId = await db.PhotoAlbums.AsNoTracking()
+                .Where(item => item.OwnerUserId == user.Id && item.AlbumType == PhotoAlbumType.ProfilePictures)
+                .Select(item => item.Id)
+                .SingleAsync();
+            Assert.True(await db.AlbumMedia.AsNoTracking()
+                .AnyAsync(item => item.AlbumId == profilePicturesAlbumId && item.MediaId == avatar));
+        }
+
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/albums/{profilePicturesAlbumId}/media/{avatar}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
     }
 
     private async Task<bool> EnsureProfileAsync(UserSeed user)
