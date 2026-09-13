@@ -95,19 +95,19 @@ export const postsApi = {
   },
   getByUser: (userId: string, offset = 0, limit = 20) =>
     apiRequest<PagedResponse<Post>>(`/api/posts/users/${userId}${pageQuery(offset, limit)}`),
-  getSaved: (cursor?: string, limit = 20) => {
+  getSaved: (cursor?: string, limit = 20, signal?: AbortSignal) => {
     const query = new URLSearchParams({ limit: String(limit) })
     if (cursor) query.set('cursor', cursor)
-    return apiRequest<SavedPostsPage>('/api/posts/saved?' + query.toString())
+    return apiRequest<SavedPostsPage>('/api/posts/saved?' + query.toString(), { signal })
   },
   save: (postId: string) => apiRequest<void>(`/api/posts/${postId}/save`, { method: 'POST' }),
   removeSaved: (postId: string) => apiRequest<void>(`/api/posts/${postId}/save`, { method: 'DELETE' }),
   share: (postId: string, details: CreatePostShareDetails) =>
     apiRequest<PostShare>(`/api/posts/${postId}/shares`, { method: 'POST', ...jsonBody(details) }),
-  getHashtagPosts: (tag: string, cursor?: string, limit = 20) => {
+  getHashtagPosts: (tag: string, cursor?: string, limit = 20, signal?: AbortSignal) => {
     const query = new URLSearchParams({ limit: String(limit) })
     if (cursor) query.set('cursor', cursor)
-    return apiRequest<HashtagPostsPage>(`/api/hashtags/${encodeURIComponent(tag)}/posts?${query.toString()}`)
+    return apiRequest<HashtagPostsPage>(`/api/hashtags/${encodeURIComponent(tag)}/posts?${query.toString()}`, { signal })
   },
   createComment: (postId: string, content: string, parentCommentId?: string) =>
     apiRequest<Comment>(`/api/posts/${postId}/comments`, {

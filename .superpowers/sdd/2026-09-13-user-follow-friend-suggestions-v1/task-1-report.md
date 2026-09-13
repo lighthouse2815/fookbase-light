@@ -163,3 +163,65 @@ Result: success; zero containers and zero named volumes remained for the smoke
 project, including the Data Protection key-ring volume. The temporary port
 override was outside the repository and was deleted after teardown. No source
 artifacts, key material, or disposable data remain in the repository.
+
+## Review fix round 1: initial request lifecycle
+
+Review identified that the prior `Promise.resolve().then(() => load())` change
+only deferred a synchronous loading/error state update and did not make the
+request lifecycle safe. That microtask workaround has been removed from both
+pages.
+
+`HashtagPage` now derives initial loading from `settledTag !== tag`, which is
+true on first render without a synchronous effect update. On a hashtag-route
+replacement it remains true until the new tag request settles. `SavedPostsPage`
+continues to derive initial loading from its existing `useState(true)` value.
+Initial requests are now local effect functions that update UI state only after
+their request resolves or rejects.
+
+Each saved/hashtag request creates an `AbortController`; the API helpers pass
+its signal to `apiRequest`. A new request aborts the old one, effect cleanup
+aborts on unmount/replacement, and every response checks both the abort signal
+and its controller identity before updating state. Retry and pagination retain
+their existing controls and page merge behavior; their loading state is cleared
+only by the request that is still current.
+
+The web package has no `test` script or installed test runner (its scripts are
+`dev`, `build`, `lint`, and `preview`), so no unit-test command exists without
+adding unrelated tooling. The focused validation commands and their exact
+successful output summaries were:
+
+```bash
+cd frontend/web
+npm run lint
+npm exec -- oxlint --deny react/set-state-in-effect \
+  src/pages/hashtags/HashtagPage.tsx src/pages/saved/SavedPostsPage.tsx
+npm run build
+! rg -n 'Promise\.resolve\(\)\.then' \
+  src/pages/hashtags/HashtagPage.tsx src/pages/saved/SavedPostsPage.tsx
+```
+
+```text
+npm run lint
+> oxlint
+
+npm exec -- oxlint --deny react/set-state-in-effect ...
+
+npm run build
+> tsc -b && vite build
+✓ 111 modules transformed.
+✓ built in 328ms
+```
+
+All four commands exited 0 with no lint diagnostics. Source diff was also
+checked with:
+
+```bash
+git diff --check -- src/api/posts.ts src/pages/hashtags/HashtagPage.tsx src/pages/saved/SavedPostsPage.tsx
+```
+
+Self-review: no render reads a mutable ref; no `Promise.resolve().then` remains;
+the initial effects have no synchronous `setState` before `await`; stale,
+aborted, unmounted, and route-replaced requests cannot commit response state;
+and the new optional `AbortSignal` arguments preserve every existing API call
+signature. This review-fix commit was intentionally not pushed per controller
+instruction.

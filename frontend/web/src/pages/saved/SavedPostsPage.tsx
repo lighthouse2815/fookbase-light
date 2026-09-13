@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { postsApi, type Post } from '../../api/posts'
 import { useAuth } from '../../auth/useAuth'
@@ -7,6 +7,7 @@ import LivePostCard from '../feed/components/LivePostCard'
 
 export default function SavedPostsPage() {
   const { session } = useAuth()
+  const requestRef = useRef<AbortController | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -15,24 +16,55 @@ export default function SavedPostsPage() {
 
   const load = useCallback(async (cursor?: string) => {
     const append = cursor !== undefined
+    requestRef.current?.abort()
+    const controller = new AbortController()
+    requestRef.current = controller
     if (append) setIsLoadingMore(true)
     else setIsLoading(true)
     setError(null)
     try {
-      const page = await postsApi.getSaved(cursor)
+      const page = await postsApi.getSaved(cursor, 20, controller.signal)
+      if (controller.signal.aborted || requestRef.current !== controller) return
       setPosts((current) => append
         ? [...current, ...page.items.filter((item) => !current.some((post) => post.id === item.id))]
         : page.items)
       setNextCursor(page.nextCursor)
     } catch (requestError) {
+      if (controller.signal.aborted || requestRef.current !== controller) return
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải bài viết đã lưu.')
     } finally {
-      if (append) setIsLoadingMore(false)
-      else setIsLoading(false)
+      if (requestRef.current === controller) {
+        if (append) setIsLoadingMore(false)
+        else setIsLoading(false)
+      }
     }
   }, [])
 
-  useEffect(() => { void Promise.resolve().then(() => load()) }, [load])
+  useEffect(() => {
+    const controller = new AbortController()
+    requestRef.current?.abort()
+    requestRef.current = controller
+
+    const loadInitial = async () => {
+      try {
+        const page = await postsApi.getSaved(undefined, 20, controller.signal)
+        if (controller.signal.aborted || requestRef.current !== controller) return
+        setPosts(page.items)
+        setNextCursor(page.nextCursor)
+      } catch (requestError) {
+        if (controller.signal.aborted || requestRef.current !== controller) return
+        setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải bài viết đã lưu.')
+      } finally {
+        if (requestRef.current === controller) setIsLoading(false)
+      }
+    }
+
+    void loadInitial()
+    return () => {
+      controller.abort()
+      if (requestRef.current === controller) requestRef.current = null
+    }
+  }, [])
 
   const updatePost = (updated: Post) => {
     setPosts((current) => current.map((post) => post.id === updated.id ? updated : post))
