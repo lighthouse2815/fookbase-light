@@ -13,7 +13,8 @@ public enum NotificationType
     GroupInvite,
     GroupJoinApproved,
     StoryReaction,
-    PageRoleInvite
+    PageRoleInvite,
+    UserFollowed
 }
 
 public enum NotificationEntityType
@@ -26,7 +27,8 @@ public enum NotificationEntityType
     GroupInvite,
     Story,
     Page,
-    PageRoleInvitation
+    PageRoleInvitation,
+    UserFollow
 }
 
 public sealed class Notification

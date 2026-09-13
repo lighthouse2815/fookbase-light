@@ -72,7 +72,7 @@ export default function TopNavbar() {
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
 
   const notificationDestination = (notification: typeof notifications[number]) => {
-    if ((notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted') && notification.actorUserId) {
+    if ((notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted' || notification.type === 'UserFollowed') && notification.actorUserId) {
       return '/profile/' + notification.actorUserId
     }
     if (notification.type === 'GroupInvite' || notification.type === 'GroupJoinApproved') {
@@ -92,6 +92,8 @@ export default function TopNavbar() {
         return actor + ' sent you a friend request.'
       case 'FriendRequestAccepted':
         return actor + ' accepted your friend request.'
+      case 'UserFollowed':
+        return actor + ' started following you.'
       case 'PostReaction':
         return actor + ' reacted to your post.'
       case 'PostComment':

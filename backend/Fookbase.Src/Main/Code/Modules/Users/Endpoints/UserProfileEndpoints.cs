@@ -4,6 +4,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Friends.Common;
+using Fookbase.Api.Modules.Friends.Services;
 
 namespace Fookbase.Api.Modules.Users.Endpoints;
 
@@ -13,7 +15,12 @@ public static class UserProfileEndpoints
         this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/users");
+        var followGroup = endpoints.MapGroup("/api/users").RequireAuthorization();
 
+        followGroup.MapPost("/{userId:guid}/follow", FollowAsync);
+        followGroup.MapDelete("/{userId:guid}/follow", UnfollowAsync);
+        followGroup.MapGet("/{userId:guid}/followers", GetFollowersAsync);
+        followGroup.MapGet("/{userId:guid}/following", GetFollowingAsync);
         group.MapGet("/search", SearchAsync).AllowAnonymous();
         group.MapGet("/{userId:guid}/avatar", GetAvatarAsync).AllowAnonymous();
         group.MapGet("/{userId:guid}/cover", GetCoverAsync).AllowAnonymous();
@@ -35,6 +42,70 @@ public static class UserProfileEndpoints
         return result.Succeeded
             ? Results.Ok(result.Value)
             : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> FollowAsync(
+        Guid userId,
+        ClaimsPrincipal principal,
+        FriendsService service,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var actorUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await service.FollowAsync(actorUserId, userId, cancellationToken);
+        return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> UnfollowAsync(
+        Guid userId,
+        ClaimsPrincipal principal,
+        FriendsService service,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var actorUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await service.UnfollowAsync(actorUserId, userId, cancellationToken);
+        return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetFollowersAsync(
+        Guid userId,
+        ClaimsPrincipal principal,
+        FriendsService service,
+        CancellationToken cancellationToken,
+        string? cursor = null,
+        int limit = FriendsService.DefaultFollowPageSize)
+    {
+        if (!TryGetUserId(principal, out var viewerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await service.GetFollowersAsync(viewerUserId, userId, cursor, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetFollowingAsync(
+        Guid userId,
+        ClaimsPrincipal principal,
+        FriendsService service,
+        CancellationToken cancellationToken,
+        string? cursor = null,
+        int limit = FriendsService.DefaultFollowPageSize)
+    {
+        if (!TryGetUserId(principal, out var viewerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await service.GetFollowingAsync(viewerUserId, userId, cursor, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
     private static async Task<IResult> GetByIdAsync(

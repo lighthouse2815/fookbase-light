@@ -6,8 +6,8 @@ export interface AppNotification {
   actorUserId: string | null
   actorUsername: string | null
   actorDisplayName: string | null
-  type: 'FriendRequestReceived' | 'FriendRequestAccepted' | 'PostReaction' | 'PostComment' | 'CommentReaction' | 'PostMention' | 'CommentMention' | 'GroupInvite' | 'GroupJoinApproved' | 'StoryReaction'
-  entityType: 'FriendRequest' | 'Post' | 'Comment' | 'Group' | 'GroupJoinRequest' | 'GroupInvite' | 'Story' | null
+  type: 'FriendRequestReceived' | 'FriendRequestAccepted' | 'UserFollowed' | 'PostReaction' | 'PostComment' | 'CommentReaction' | 'PostMention' | 'CommentMention' | 'GroupInvite' | 'GroupJoinApproved' | 'StoryReaction'
+  entityType: 'FriendRequest' | 'UserFollow' | 'Post' | 'Comment' | 'Group' | 'GroupJoinRequest' | 'GroupInvite' | 'Story' | null
   entityId: string | null
   isRead: boolean
   createdAtUtc: string

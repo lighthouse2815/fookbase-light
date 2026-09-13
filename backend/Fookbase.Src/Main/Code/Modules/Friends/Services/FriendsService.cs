@@ -5,8 +5,11 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace Fookbase.Api.Modules.Friends.Services;
 
@@ -14,9 +17,13 @@ public sealed class FriendsService(
     FookbaseDbContext dbContext,
     IHubContext<MessagesHub> hubContext,
     NotificationService notificationService,
+    IDataProtectionProvider protectionProvider,
     TimeProvider timeProvider)
 {
     private const int MaximumLimit = 100;
+    public const int DefaultFollowPageSize = 20;
+    public const int MaximumFollowPageSize = 100;
+    private const int FollowCursorVersion = 1;
 
     public async Task<ApplicationResult<FriendRequestResponse>> SendRequestAsync(
         Guid actorUserId,
@@ -61,6 +68,48 @@ public sealed class FriendsService(
 
         return Map(await UnfriendCoreAsync(actorUserId, otherUserId, cancellationToken));
     }
+
+    public async Task<ApplicationResult> FollowAsync(
+        Guid actorUserId,
+        Guid targetUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (actorUserId == targetUserId)
+        {
+            return ApplicationResult.Failure(SelfError("follow"));
+        }
+
+        return Map(await FollowCoreAsync(actorUserId, targetUserId, cancellationToken));
+    }
+
+    public async Task<ApplicationResult> UnfollowAsync(
+        Guid actorUserId,
+        Guid targetUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (actorUserId == targetUserId)
+        {
+            return ApplicationResult.Failure(SelfError("unfollow"));
+        }
+
+        return Map(await UnfollowCoreAsync(actorUserId, targetUserId, cancellationToken));
+    }
+
+    public Task<ApplicationResult<CursorPageResponse<UserFollowResponse>>> GetFollowersAsync(
+        Guid viewerUserId,
+        Guid targetUserId,
+        string? cursor,
+        int limit,
+        CancellationToken cancellationToken = default) =>
+        GetFollowPageAsync(viewerUserId, targetUserId, "followers", cursor, limit, cancellationToken);
+
+    public Task<ApplicationResult<CursorPageResponse<UserFollowResponse>>> GetFollowingAsync(
+        Guid viewerUserId,
+        Guid targetUserId,
+        string? cursor,
+        int limit,
+        CancellationToken cancellationToken = default) =>
+        GetFollowPageAsync(viewerUserId, targetUserId, "following", cursor, limit, cancellationToken);
 
     public async Task<ApplicationResult> BlockAsync(
         Guid actorUserId,
@@ -331,6 +380,31 @@ public sealed class FriendsService(
             now);
         dbContext.Friendships.Add(friendship);
         dbContext.FriendNotifications.Add(notification);
+        var follows = await dbContext.UserFollows
+            .Where(follow =>
+                (follow.FollowerUserId == request.SenderUserId && follow.FollowingUserId == request.ReceiverUserId) ||
+                (follow.FollowerUserId == request.ReceiverUserId && follow.FollowingUserId == request.SenderUserId))
+            .ToListAsync(cancellationToken);
+        if (!follows.Any(follow =>
+                follow.FollowerUserId == request.SenderUserId &&
+                follow.FollowingUserId == request.ReceiverUserId))
+        {
+            dbContext.UserFollows.Add(UserFollow.Create(
+                request.SenderUserId,
+                request.ReceiverUserId,
+                now));
+        }
+
+        if (!follows.Any(follow =>
+                follow.FollowerUserId == request.ReceiverUserId &&
+                follow.FollowingUserId == request.SenderUserId))
+        {
+            dbContext.UserFollows.Add(UserFollow.Create(
+                request.ReceiverUserId,
+                request.SenderUserId,
+                now));
+        }
+
         var generalNotification = await notificationService.QueueAsync(
             request.SenderUserId,
             actorUserId,
@@ -401,6 +475,92 @@ public sealed class FriendsService(
         return FriendsOperationError.None;
     }
 
+    private async Task<FriendsOperationError> FollowCoreAsync(
+        Guid actorUserId,
+        Guid targetUserId,
+        CancellationToken cancellationToken)
+    {
+        var pair = UserPair.Create(actorUserId, targetUserId);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await AcquirePairLockAsync(pair, cancellationToken);
+
+        var target = await (from user in dbContext.Users.AsNoTracking()
+                            join profile in dbContext.UserProfiles.AsNoTracking()
+                                on user.Id equals profile.UserId into profiles
+                            from profile in profiles.DefaultIfEmpty()
+                            where user.Id == targetUserId
+                            select new { user.IsActive, HasProfile = profile != null })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (target is null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return FriendsOperationError.UserNotFound;
+        }
+
+        if (!target.IsActive || !target.HasProfile)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return FriendsOperationError.UserIneligible;
+        }
+
+        if (await IsBlockedAsync(actorUserId, targetUserId, cancellationToken))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return FriendsOperationError.RelationshipBlocked;
+        }
+
+        if (await dbContext.UserFollows.AnyAsync(follow =>
+                follow.FollowerUserId == actorUserId && follow.FollowingUserId == targetUserId,
+                cancellationToken))
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return FriendsOperationError.None;
+        }
+
+        dbContext.UserFollows.Add(UserFollow.Create(actorUserId, targetUserId, timeProvider.GetUtcNow()));
+        Notification? generalNotification = null;
+        if (!await FriendshipExistsAsync(pair, cancellationToken))
+        {
+            generalNotification = await notificationService.QueueAsync(
+                targetUserId,
+                actorUserId,
+                NotificationType.UserFollowed,
+                NotificationEntityType.UserFollow,
+                actorUserId,
+                cancellationToken);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        if (generalNotification is not null)
+        {
+            await notificationService.PublishAsync(generalNotification, cancellationToken);
+        }
+
+        return FriendsOperationError.None;
+    }
+
+    private async Task<FriendsOperationError> UnfollowCoreAsync(
+        Guid actorUserId,
+        Guid targetUserId,
+        CancellationToken cancellationToken)
+    {
+        var pair = UserPair.Create(actorUserId, targetUserId);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await AcquirePairLockAsync(pair, cancellationToken);
+        var follow = await dbContext.UserFollows.SingleOrDefaultAsync(item =>
+            item.FollowerUserId == actorUserId && item.FollowingUserId == targetUserId,
+            cancellationToken);
+        if (follow is not null)
+        {
+            dbContext.UserFollows.Remove(follow);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return FriendsOperationError.None;
+    }
+
     private async Task<FriendsOperationError> BlockCoreAsync(
         Guid actorUserId,
         Guid blockedUserId,
@@ -428,6 +588,12 @@ public sealed class FriendsService(
         {
             dbContext.Friendships.Remove(friendship);
         }
+
+        var follows = await dbContext.UserFollows.Where(follow =>
+                (follow.FollowerUserId == actorUserId && follow.FollowingUserId == blockedUserId) ||
+                (follow.FollowerUserId == blockedUserId && follow.FollowingUserId == actorUserId))
+            .ToListAsync(cancellationToken);
+        dbContext.UserFollows.RemoveRange(follows);
 
         var pendingRequests = await dbContext.FriendRequests
             .Where(request =>
@@ -486,6 +652,85 @@ public sealed class FriendsService(
                 friendship.CreatedAtUtc))
             .ToListAsync(cancellationToken);
         return new PagedResponse<FriendResponse>(items, offset, limit, total);
+    }
+
+    private async Task<ApplicationResult<CursorPageResponse<UserFollowResponse>>> GetFollowPageAsync(
+        Guid viewerUserId,
+        Guid targetUserId,
+        string direction,
+        string? cursorValue,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        if (limit is < 1 or > MaximumFollowPageSize)
+        {
+            return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Failure(
+                FollowValidation("invalid_follow_limit", $"Limit must be between 1 and {MaximumFollowPageSize}."));
+        }
+
+        FollowCursor? cursor;
+        try
+        {
+            cursor = DecodeFollowCursor(cursorValue, viewerUserId, direction, targetUserId);
+        }
+        catch (FormatException)
+        {
+            return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Failure(
+                FollowValidation("invalid_follow_cursor", "The follow cursor is invalid."));
+        }
+
+        var isFollowers = direction == "followers";
+        var query =
+            from follow in dbContext.UserFollows.AsNoTracking()
+            join profile in dbContext.UserProfiles.AsNoTracking()
+                on (isFollowers ? follow.FollowerUserId : follow.FollowingUserId) equals profile.UserId
+            join user in dbContext.Users.AsNoTracking() on profile.UserId equals user.Id
+            where (isFollowers ? follow.FollowingUserId : follow.FollowerUserId) == targetUserId &&
+                  user.IsActive &&
+                  !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                      (block.BlockerUserId == viewerUserId && block.BlockedUserId == profile.UserId) ||
+                      (block.BlockerUserId == profile.UserId && block.BlockedUserId == viewerUserId))
+            select new FollowListItem(
+                profile.UserId,
+                profile.Username,
+                profile.DisplayName,
+                profile.AvatarUrl,
+                profile.AvatarMediaId,
+                follow.FollowedAtUtc);
+        var total = await query.CountAsync(cancellationToken);
+        if (cursor is not null)
+        {
+            query = query.Where(item =>
+                item.FollowedAtUtc < cursor.FollowedAtUtc ||
+                (item.FollowedAtUtc == cursor.FollowedAtUtc &&
+                 item.UserId.CompareTo(cursor.UserId) < 0));
+        }
+
+        var items = await query
+            .OrderByDescending(item => item.FollowedAtUtc)
+            .ThenByDescending(item => item.UserId)
+            .Take(limit + 1)
+            .ToListAsync(cancellationToken);
+        var page = items.Take(limit).ToList();
+        var nextCursor = items.Count > limit
+            ? EncodeFollowCursor(
+                new FollowCursor(page[^1].FollowedAtUtc, page[^1].UserId),
+                viewerUserId,
+                direction,
+                targetUserId)
+            : null;
+        return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Success(
+            new CursorPageResponse<UserFollowResponse>(
+                page.Select(item => new UserFollowResponse(
+                    item.UserId,
+                    item.Username,
+                    item.DisplayName,
+                    item.AvatarMediaId is null
+                        ? item.AvatarUrl
+                        : $"/api/users/{item.UserId}/avatar",
+                    item.FollowedAtUtc)).ToList(),
+                nextCursor,
+                total));
     }
 
     private Task<PagedResponse<FriendRequestResponse>> GetIncomingRequestsCoreAsync(
@@ -705,6 +950,53 @@ public sealed class FriendsService(
                 request.Status == FriendRequestStatus.Pending,
             cancellationToken);
 
+    private FollowCursor? DecodeFollowCursor(
+        string? value,
+        Guid viewerUserId,
+        string direction,
+        Guid targetUserId)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        try
+        {
+            if (value.Length is < 1 or > 4096)
+            {
+                throw new FormatException();
+            }
+
+            return JsonSerializer.Deserialize<FollowCursor>(
+                CreateFollowCursorProtector(viewerUserId, direction, targetUserId).Unprotect(value))
+                ?? throw new FormatException();
+        }
+        catch (Exception exception) when (exception is CryptographicException or JsonException or ArgumentException)
+        {
+            throw new FormatException("The follow cursor is invalid.", exception);
+        }
+    }
+
+    private string EncodeFollowCursor(
+        FollowCursor cursor,
+        Guid viewerUserId,
+        string direction,
+        Guid targetUserId) =>
+        CreateFollowCursorProtector(viewerUserId, direction, targetUserId)
+            .Protect(JsonSerializer.Serialize(cursor));
+
+    private IDataProtector CreateFollowCursorProtector(
+        Guid viewerUserId,
+        string direction,
+        Guid targetUserId) =>
+        protectionProvider.CreateProtector(
+            "Fookbase.Follows",
+            FollowCursorVersion.ToString(),
+            viewerUserId.ToString("N"),
+            direction,
+            targetUserId.ToString("N"));
+
     private Task<int> AcquirePairLockAsync(UserPair pair, CancellationToken cancellationToken) =>
         dbContext.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT pg_advisory_xact_lock(hashtextextended({PairLockKey(pair)}, 0))",
@@ -777,6 +1069,9 @@ public sealed class FriendsService(
         return null;
     }
 
+    private static ApplicationError FollowValidation(string code, string message) =>
+        new(code, message, ApplicationErrorType.Validation);
+
     private static ApplicationResult<T> Map<T>(FriendsOperationResult<T> result) =>
         result.Succeeded
             ? ApplicationResult<T>.Success(result.Value!)
@@ -800,6 +1095,10 @@ public sealed class FriendsService(
     {
         FriendsOperationError.RequestNotFound => new(
             "request_not_found", "The friend request was not found.", ApplicationErrorType.NotFound),
+        FriendsOperationError.UserNotFound => new(
+            "user_not_found", "The user was not found.", ApplicationErrorType.NotFound),
+        FriendsOperationError.UserIneligible => new(
+            "user_ineligible", "The user is not eligible for this relationship operation.", ApplicationErrorType.Conflict),
         FriendsOperationError.NotificationNotFound => new(
             "notification_not_found", "The notification was not found.", ApplicationErrorType.NotFound),
         FriendsOperationError.FriendshipNotFound => new(
@@ -830,6 +1129,8 @@ public sealed class FriendsService(
     {
         None,
         RequestNotFound,
+        UserNotFound,
+        UserIneligible,
         NotificationNotFound,
         FriendshipNotFound,
         Forbidden,
@@ -849,6 +1150,16 @@ public sealed class FriendsService(
         public static FriendsOperationResult<T> Failure(FriendsOperationError error) =>
             new(default, error);
     }
+
+    private sealed record FollowCursor(DateTimeOffset FollowedAtUtc, Guid UserId);
+
+    private sealed record FollowListItem(
+        Guid UserId,
+        string Username,
+        string DisplayName,
+        string? AvatarUrl,
+        Guid? AvatarMediaId,
+        DateTimeOffset FollowedAtUtc);
 }
 
 public sealed record RelationshipAccessSnapshot(
