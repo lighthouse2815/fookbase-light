@@ -10,6 +10,7 @@ namespace Fookbase.Api.Modules.Identity.Services;
 public sealed class RegistrationUseCase(
     AuthenticationService authenticationService,
     UserProfileService userProfileService,
+    UserPrivacySettingsService privacySettingsService,
     FookbaseDbContext dbContext)
 {
     public async Task<ApplicationResult<AuthenticationResponse>> ExecuteAsync(
@@ -28,6 +29,7 @@ public sealed class RegistrationUseCase(
 
             var user = result.Value!.User;
             await userProfileService.EnsureCreatedAsync(user.Id, user.Username, cancellationToken);
+            await privacySettingsService.EnsureCreatedAsync(user.Id, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return result;
         }

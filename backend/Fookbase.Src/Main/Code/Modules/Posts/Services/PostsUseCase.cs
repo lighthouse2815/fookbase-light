@@ -1,6 +1,7 @@
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Pages.Services;
+using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Services;
@@ -16,6 +17,7 @@ public sealed class PostsUseCase(
     PagePostAccessService pagePostAccessService,
     Fookbase.Api.Modules.Media.Services.MediaService mediaService,
     SocialInteractionsService socialInteractionsService,
+    UserPrivacySettingsService privacySettingsService,
     FookbaseDbContext dbContext)
 {
     public async Task<ApplicationResult<PostResponse>> CreateGroupPostAsync(
@@ -93,11 +95,14 @@ public sealed class PostsUseCase(
     public async Task<ApplicationResult<PostResponse>> CreatePostAsync(
         Guid actorUserId,
         string content,
-        string privacy,
+        string? privacy,
         IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default)
     {
-        var input = postsService.ValidatePostRequest(content, privacy, mediaIds);
+        var effectivePrivacy = string.IsNullOrWhiteSpace(privacy)
+            ? (await privacySettingsService.GetDefaultPostPrivacyAsync(actorUserId, cancellationToken)).ToString()
+            : privacy;
+        var input = postsService.ValidatePostRequest(content, effectivePrivacy, mediaIds);
         if (!input.Succeeded)
         {
             return ApplicationResult<PostResponse>.Failure(input.Error!);
@@ -113,7 +118,7 @@ public sealed class PostsUseCase(
         try
         {
             var result = await postsService.CreatePostAsync(
-                actorUserId, content, privacy, mediaIds, cancellationToken);
+                actorUserId, content, effectivePrivacy, mediaIds, cancellationToken);
             if (!result.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);

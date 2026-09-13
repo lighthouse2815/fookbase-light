@@ -5,6 +5,7 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
+using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
@@ -145,6 +146,30 @@ public sealed class FriendsService(
         ReadPageAsync(offset, limit, (normalizedOffset, normalizedLimit) =>
             GetFriendsCoreAsync(actorUserId, normalizedOffset, normalizedLimit, cancellationToken));
 
+    public async Task<ApplicationResult<PagedResponse<FriendResponse>>> GetVisibleFriendsAsync(
+        Guid viewerUserId,
+        Guid targetUserId,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var paginationError = ValidatePagination(offset, limit);
+        if (paginationError is not null)
+        {
+            return ApplicationResult<PagedResponse<FriendResponse>>.Failure(paginationError);
+        }
+
+        if (!await CanViewRelationshipListAsync(
+                viewerUserId, targetUserId, settings => settings.FriendListVisibility, cancellationToken))
+        {
+            return ApplicationResult<PagedResponse<FriendResponse>>.Failure(
+                ToApplicationError(FriendsOperationError.UserNotFound));
+        }
+
+        return ApplicationResult<PagedResponse<FriendResponse>>.Success(
+            await GetFriendsCoreAsync(targetUserId, offset, limit, cancellationToken));
+    }
+
     public Task<ApplicationResult<PagedResponse<FriendRequestResponse>>> GetIncomingRequestsAsync(
         Guid actorUserId,
         int offset,
@@ -276,6 +301,14 @@ public sealed class FriendsService(
             return Map(await RollbackFailureAsync<FriendRequestResponse>(
                 transaction,
                 FriendsOperationError.RelationshipBlocked,
+                cancellationToken));
+        }
+
+        if (!await CanSendFriendRequestAsync(senderUserId, receiverUserId, cancellationToken))
+        {
+            return Map(await RollbackFailureAsync<FriendRequestResponse>(
+                transaction,
+                FriendsOperationError.FriendRequestRestricted,
                 cancellationToken));
         }
 
@@ -675,7 +708,8 @@ public sealed class FriendsService(
                 FollowValidation("invalid_follow_limit", $"Limit must be between 1 and {MaximumFollowPageSize}."));
         }
 
-        if (!await CanViewFollowOwnerAsync(viewerUserId, targetUserId, cancellationToken))
+        if (!await CanViewRelationshipListAsync(
+                viewerUserId, targetUserId, settings => settings.FollowListVisibility, cancellationToken))
         {
             return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Failure(
                 ToApplicationError(FriendsOperationError.UserNotFound));
@@ -972,17 +1006,47 @@ public sealed class FriendsService(
                 request.Status == FriendRequestStatus.Pending,
             cancellationToken);
 
-    private Task<bool> CanViewFollowOwnerAsync(
+    private async Task<bool> CanViewRelationshipListAsync(
         Guid viewerUserId,
         Guid ownerUserId,
-        CancellationToken cancellationToken) =>
-        (from user in dbContext.Users.AsNoTracking()
-         join profile in dbContext.UserProfiles.AsNoTracking() on user.Id equals profile.UserId
-         where user.Id == ownerUserId && user.IsActive &&
-               !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                   (block.BlockerUserId == viewerUserId && block.BlockedUserId == ownerUserId) ||
-                   (block.BlockerUserId == ownerUserId && block.BlockedUserId == viewerUserId))
-         select user.Id).AnyAsync(cancellationToken);
+        Func<UserPrivacySettings, RelationshipListVisibility> visibilitySelector,
+        CancellationToken cancellationToken)
+    {
+        var ownerExists = await (from user in dbContext.Users.AsNoTracking()
+                                 join profile in dbContext.UserProfiles.AsNoTracking() on user.Id equals profile.UserId
+                                 where user.Id == ownerUserId && user.IsActive &&
+                                       !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                                           (block.BlockerUserId == viewerUserId && block.BlockedUserId == ownerUserId) ||
+                                           (block.BlockerUserId == ownerUserId && block.BlockedUserId == viewerUserId))
+                                 select user.Id).AnyAsync(cancellationToken);
+        if (!ownerExists || viewerUserId == ownerUserId)
+        {
+            return ownerExists;
+        }
+
+        var settings = await dbContext.UserPrivacySettings.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.UserId == ownerUserId, cancellationToken);
+        return (settings is null ? RelationshipListVisibility.Public : visibilitySelector(settings)) switch
+        {
+            RelationshipListVisibility.Public => true,
+            RelationshipListVisibility.Friends => await FriendshipExistsAsync(
+                UserPair.Create(viewerUserId, ownerUserId), cancellationToken),
+            _ => false
+        };
+    }
+
+    private async Task<bool> CanSendFriendRequestAsync(
+        Guid senderUserId,
+        Guid receiverUserId,
+        CancellationToken cancellationToken)
+    {
+        var policy = await dbContext.UserPrivacySettings.AsNoTracking()
+            .Where(settings => settings.UserId == receiverUserId)
+            .Select(settings => (FriendRequestPolicy?)settings.FriendRequestPolicy)
+            .SingleOrDefaultAsync(cancellationToken) ?? FriendRequestPolicy.Everyone;
+        return policy != FriendRequestPolicy.FriendsOfFriends ||
+               await FriendIds(senderUserId).Intersect(FriendIds(receiverUserId)).AnyAsync(cancellationToken);
+    }
 
     private FollowCursor? DecodeFollowCursor(
         string? value,
@@ -1145,6 +1209,8 @@ public sealed class FriendsService(
             "pending_request_exists", "A pending friend request already exists.", ApplicationErrorType.Conflict),
         FriendsOperationError.RelationshipBlocked => new(
             "relationship_unavailable", "This relationship operation is unavailable.", ApplicationErrorType.Conflict),
+        FriendsOperationError.FriendRequestRestricted => new(
+            "friend_request_restricted", "This user only accepts requests from friends of friends.", ApplicationErrorType.Forbidden),
         FriendsOperationError.RequestNotPending => new(
             "request_not_pending", "The friend request is no longer pending.", ApplicationErrorType.Conflict),
         _ => throw new ArgumentOutOfRangeException(nameof(error), error, null)
@@ -1171,6 +1237,7 @@ public sealed class FriendsService(
         AlreadyFriends,
         PendingRequestExists,
         RelationshipBlocked,
+        FriendRequestRestricted,
         RequestNotPending
     }
 

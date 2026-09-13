@@ -229,6 +229,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 });
 app.MapAuthenticationEndpoints();
 app.MapUserProfileEndpoints();
+app.MapPrivacySettingsEndpoints();
 app.MapFriendEndpoints();
 app.MapFeedEndpoints();
 app.MapGroupEndpoints();

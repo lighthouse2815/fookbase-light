@@ -9,6 +9,7 @@ public static class DependencyInjection
     {
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<UserProfileService>();
+        services.AddScoped<UserPrivacySettingsService>();
 
         return services;
     }

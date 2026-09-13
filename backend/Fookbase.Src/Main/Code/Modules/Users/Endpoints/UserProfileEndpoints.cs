@@ -22,6 +22,7 @@ public static class UserProfileEndpoints
         followGroup.MapDelete("/{userId:guid}/follow", UnfollowAsync);
         followGroup.MapGet("/{userId:guid}/followers", GetFollowersAsync);
         followGroup.MapGet("/{userId:guid}/following", GetFollowingAsync);
+        followGroup.MapGet("/{userId:guid}/friends", GetFriendsAsync);
         group.MapGet("/search", SearchAsync).AllowAnonymous();
         group.MapGet("/{userId:guid}/avatar", GetAvatarAsync).AllowAnonymous();
         group.MapGet("/{userId:guid}/cover", GetCoverAsync).AllowAnonymous();
@@ -110,6 +111,23 @@ public static class UserProfileEndpoints
         }
 
         var result = await service.GetFollowingAsync(viewerUserId, userId, cursor, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetFriendsAsync(
+        Guid userId,
+        ClaimsPrincipal principal,
+        FriendsService service,
+        CancellationToken cancellationToken,
+        int offset = 0,
+        int limit = 20)
+    {
+        if (!TryGetUserId(principal, out var viewerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await service.GetVisibleFriendsAsync(viewerUserId, userId, offset, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 

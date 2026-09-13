@@ -24,6 +24,8 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
+    public DbSet<UserPrivacySettings> UserPrivacySettings => Set<UserPrivacySettings>();
+
     public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
 
     public DbSet<Friendship> Friendships => Set<Friendship>();
