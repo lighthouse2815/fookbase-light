@@ -10,6 +10,7 @@ using Fookbase.Api.Modules.Friends.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -24,7 +25,8 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     {
         var userA = Guid.NewGuid();
         var userB = Guid.NewGuid();
-        var followedAtUtc = DateTimeOffset.UtcNow;
+        var followedAtUtc = new DateTimeOffset(2026, 9, 13, 13, 45, 30, 123, TimeSpan.Zero)
+            .AddTicks(4_560);
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var migrations = dbContext.Database.GetMigrations().ToList();
@@ -56,7 +58,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             follow.FollowingUserId == userA &&
             follow.FollowedAtUtc == followedAtUtc);
 
-        await migrator.MigrateAsync(followMigration);
+        await ExecuteFriendshipBackfillSqlAsync(dbContext, followMigration);
 
         Assert.Equal(2, await dbContext.UserFollows.CountAsync(follow =>
             (follow.FollowerUserId == userA && follow.FollowingUserId == userB) ||
@@ -365,6 +367,19 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
 
     private static Guid[] CreateUserIds(int count) =>
         Enumerable.Range(0, count).Select(_ => Guid.NewGuid()).ToArray();
+
+    private static async Task ExecuteFriendshipBackfillSqlAsync(
+        FookbaseDbContext dbContext,
+        string followMigration)
+    {
+        var migrationsAssembly = dbContext.Database.GetService<IMigrationsAssembly>();
+        var migration = migrationsAssembly.CreateMigration(
+            migrationsAssembly.Migrations[followMigration],
+            dbContext.Database.ProviderName!);
+        var backfillSql = Assert.Single(migration.UpOperations.OfType<SqlOperation>()).Sql;
+
+        await dbContext.Database.ExecuteSqlRawAsync(backfillSql);
+    }
 
     private HttpClient CreateAuthenticatedClient(Guid userId)
     {

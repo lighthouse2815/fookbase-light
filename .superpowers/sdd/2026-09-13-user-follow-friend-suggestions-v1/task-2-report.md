@@ -151,3 +151,66 @@ migrations and retained a normal migration ID/order.
 Install the matching `Microsoft.AspNetCore.App 10.0.0` shared runtime (and make
 the analyzer package available) in the verification environment, then rerun
 the focused integration test and `has-pending-model-changes` command above.
+
+## Review fix round 1: execute the conflict path and stabilize timestamp
+
+The prior second `MigrateAsync(followMigration)` only read
+`__EFMigrationsHistory`; it was a no-op and did not execute the migration's
+`ON CONFLICT DO NOTHING` statements. The migration itself was not changed.
+
+The integration test now creates the migration through the configured
+`IMigrationsAssembly`, selects the one `SqlOperation` in its `UpOperations`,
+and executes its SQL using the actual test database connection after the first
+up-migration has populated `UserFollows`. This runs the exact SQL owned by the
+migration a second time against existing directed pairs, so the final
+exactly-two assertion exercises the PostgreSQL conflict path rather than EF's
+migration history short circuit.
+
+`FollowedAtUtc` is now the fixed microsecond-aligned value
+`2026-09-13T13:45:30.1234560+00:00`; PostgreSQL `timestamptz` rounding cannot
+make its assertion flaky.
+
+### RED
+
+The test was changed first to require actual backfill replay, before the helper
+which materializes and executes the migration operation existed. A focused
+compile against the pre-fix test support failed as expected:
+
+```bash
+HOME=/tmp/fookbase-task2-dotnet-home \
+NUGET_PACKAGES=/home/lighthouse2815/Projects/light-meta/fookbase-light/.nuget/packages \
+dotnet build backend/Fookbase.Src/Tests/Friends/Fookbase.Friends.Api.IntegrationTests/Fookbase.Friends.Api.IntegrationTests.csproj \
+  --no-restore -v minimal
+```
+
+```text
+error CS0103: The name 'ExecuteFriendshipBackfillSqlAsync' does not exist in
+the current context
+Build FAILED.
+    0 Warning(s)
+    1 Error(s)
+```
+
+### GREEN
+
+After adding the test-only helper, the same build command completed with:
+
+```text
+Fookbase.Api -> .../Main/bin/Debug/net10.0/Fookbase.Api.dll
+Fookbase.Friends.Api.IntegrationTests -> .../Fookbase.Friends.Api.IntegrationTests.dll
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+```
+
+The focused `Friendship_backfill` test was run immediately afterward. It builds
+both projects but remains unable to launch because the host lacks
+`Microsoft.AspNetCore.App 10.0.0`; the exact runtime failure is the same as
+recorded above. Therefore this host has compilation evidence for the fix, but
+not a false claim of integration-test execution.
+
+Self-review: the helper takes the SQL from the registered migration's
+`UpOperations` rather than duplicating the SQL literal; it executes only the
+`SqlOperation`, not table/index creation operations; the timestamp has a tick
+count divisible by ten (one microsecond); and no production migration behavior
+changed.
