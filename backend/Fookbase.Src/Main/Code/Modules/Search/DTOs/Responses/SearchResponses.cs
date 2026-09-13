@@ -73,6 +73,19 @@ public sealed record SearchHashtagResponse(
     string Tag,
     string DisplayName);
 
+public sealed record SearchEventResponse(
+    Guid EventId,
+    string Name,
+    string HostType,
+    Guid HostId,
+    string HostName,
+    DateTimeOffset StartsAtUtc,
+    string LocationType,
+    string? LocationName,
+    string? CoverUrl,
+    int GoingCount,
+    int InterestedCount);
+
 public sealed record GlobalSearchResponse(
     IReadOnlyList<SearchPersonResponse> People,
     IReadOnlyList<SearchGroupResponse> Groups,
@@ -80,7 +93,8 @@ public sealed record GlobalSearchResponse(
     IReadOnlyList<SearchPostResponse> Posts,
     IReadOnlyList<SearchReelResponse> Reels,
     string? NextCursor = null,
-    IReadOnlyList<SearchHashtagResponse>? Hashtags = null);
+    IReadOnlyList<SearchHashtagResponse>? Hashtags = null,
+    IReadOnlyList<SearchEventResponse>? Events = null);
 
 public sealed record SearchSuggestionsResponse(
     IReadOnlyList<SearchPersonResponse> People,

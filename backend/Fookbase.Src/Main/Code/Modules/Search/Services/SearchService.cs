@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Media.Entities;
@@ -48,7 +49,7 @@ public sealed class SearchService(
         {
             return Validation<GlobalSearchResponse>(
                 "invalid_search_type",
-                "Type must be one of: all, people, groups, pages, posts, reels.");
+                "Type must be one of: all, people, groups, pages, posts, reels, events.");
         }
 
         if (limit is < 1 or > MaximumPageSize)
@@ -74,6 +75,7 @@ public sealed class SearchService(
             var pages = await SearchPagesAsync(context, query, null, previewLimit, cancellationToken);
             var posts = await SearchPostsAsync(context, query, null, previewLimit, cancellationToken);
             var reels = await SearchReelsAsync(context, query, null, previewLimit, cancellationToken);
+            var events = await SearchEventsAsync(query, null, previewLimit, cancellationToken);
             var hashtags = (await socialInteractionsService.SearchHashtagsAsync(query, previewLimit, cancellationToken))
                 .Select(hashtag => new SearchHashtagResponse(hashtag.NormalizedName, hashtag.DisplayName))
                 .ToList();
@@ -84,7 +86,8 @@ public sealed class SearchService(
                 posts.Items,
                 reels.Items,
                 null,
-                hashtags));
+                hashtags,
+                events.Items));
         }
 
         if (!TryDecodeCursor(cursorValue, type, query, out var cursor))
@@ -99,6 +102,7 @@ public sealed class SearchService(
             SearchType.Pages => ToGlobal(await SearchPagesAsync(context, query, cursor, limit, cancellationToken)),
             SearchType.Posts => ToGlobal(await SearchPostsAsync(context, query, cursor, limit, cancellationToken)),
             SearchType.Reels => ToGlobal(await SearchReelsAsync(context, query, cursor, limit, cancellationToken)),
+            SearchType.Events => ToGlobal(await SearchEventsAsync(query, cursor, limit, cancellationToken)),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
     }
@@ -456,6 +460,49 @@ public sealed class SearchService(
                 ticks: rows[limit - 1].Post.CreatedAtUtc.UtcDateTime.Ticks) : null);
     }
 
+    private async Task<SearchPage<SearchEventResponse>> SearchEventsAsync(
+        string query,
+        SearchCursor? cursor,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var contains = "%" + query + "%";
+        var events = dbContext.Events.AsNoTracking()
+            .Where(item => item.DeletedAtUtc == null && item.Status == EventStatus.Published &&
+                item.Privacy == EventPrivacy.Public && item.StartsAtUtc >= DateTimeOffset.UtcNow &&
+                (EF.Functions.ILike(item.Name, contains) ||
+                 item.Description != null && EF.Functions.ILike(item.Description, contains)));
+        if (cursor is not null)
+        {
+            if (cursor.Ticks is null) return new([], null);
+            var cursorTime = new DateTimeOffset(cursor.Ticks.Value, TimeSpan.Zero);
+            events = events.Where(item => item.StartsAtUtc > cursorTime ||
+                item.StartsAtUtc == cursorTime && item.Id.CompareTo(cursor.Id) > 0);
+        }
+        var rows = await events
+            .OrderBy(item => item.StartsAtUtc).ThenBy(item => item.Id).Take(limit + 1)
+            .Select(item => new
+            {
+                item.Id, item.Name, item.HostType, item.HostId, item.StartsAtUtc, item.LocationType,
+                item.LocationName, item.CoverMediaId,
+                Going = dbContext.EventParticipants.Count(p => p.EventId == item.Id && p.Status == EventParticipantStatus.Going),
+                Interested = dbContext.EventParticipants.Count(p => p.EventId == item.Id && p.Status == EventParticipantStatus.Interested)
+            }).ToListAsync(cancellationToken);
+        var visible = rows.Take(limit).ToList();
+        var groupIds = visible.Where(x => x.HostType == EventHostType.Group).Select(x => x.HostId).ToArray();
+        var pageIds = visible.Where(x => x.HostType == EventHostType.Page).Select(x => x.HostId).ToArray();
+        var userIds = visible.Where(x => x.HostType == EventHostType.User).Select(x => x.HostId).ToArray();
+        var names = await dbContext.Groups.AsNoTracking().Where(x => groupIds.Contains(x.Id)).Select(x => new { x.Id, x.Name })
+            .Concat(dbContext.Pages.AsNoTracking().Where(x => pageIds.Contains(x.Id)).Select(x => new { x.Id, x.Name }))
+            .Concat(dbContext.UserProfiles.AsNoTracking().Where(x => userIds.Contains(x.UserId)).Select(x => new { Id = x.UserId, Name = x.DisplayName }))
+            .ToDictionaryAsync(x => x.Id, x => x.Name, cancellationToken);
+        return new(visible.Select(x => new SearchEventResponse(x.Id, x.Name, x.HostType.ToString().ToLowerInvariant(),
+            x.HostId, names.GetValueOrDefault(x.HostId, "Event host"), x.StartsAtUtc,
+            x.LocationType.ToString().ToLowerInvariant(), x.LocationName,
+            x.CoverMediaId is null ? null : $"/api/events/{x.Id}/cover", x.Going, x.Interested)).ToList(),
+            rows.Count > limit ? EncodeCursor(SearchType.Events, query, 0, visible[^1].Id, ticks: visible[^1].StartsAtUtc.UtcTicks) : null);
+    }
+
     private async Task<SearchPage<SearchReelResponse>> SearchReelsAsync(
         SearchContext context,
         string query,
@@ -638,6 +685,9 @@ public sealed class SearchService(
     private static ApplicationResult<GlobalSearchResponse> ToGlobal(SearchPage<SearchReelResponse> page) =>
         ApplicationResult<GlobalSearchResponse>.Success(new([], [], [], [], page.Items, page.NextCursor));
 
+    private static ApplicationResult<GlobalSearchResponse> ToGlobal(SearchPage<SearchEventResponse> page) =>
+        ApplicationResult<GlobalSearchResponse>.Success(new([], [], [], [], [], page.NextCursor, null, page.Items));
+
     private static bool TryNormalizeQuery(string? queryValue, out string query, out ApplicationError? error)
     {
         query = queryValue?.Trim() ?? string.Empty;
@@ -664,6 +714,7 @@ public sealed class SearchService(
             "pages" => SearchType.Pages,
             "posts" => SearchType.Posts,
             "reels" => SearchType.Reels,
+            "events" => SearchType.Events,
             _ => SearchType.Invalid
         };
         return type != SearchType.Invalid;
@@ -739,7 +790,8 @@ public sealed class SearchService(
         Groups,
         Pages,
         Posts,
-        Reels
+        Reels,
+        Events
     }
 
     private sealed record SearchContext(PostViewerContext Viewer);
