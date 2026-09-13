@@ -209,12 +209,12 @@ export default function UserProfilePage() {
       case 'request_received':
         return (
           <div className="flex gap-2">
-            <button type="button" onClick={() => void updateRelationship(() => friendsApi.acceptRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-primary hover:bg-primary-dark text-white`}>{t('accept')}</button>
+            <button type="button" onClick={() => void updateRelationship(() => friendsApi.acceptRequest(relationship.requestId!), true)} disabled={isUpdating} className={`${actionClass} bg-primary hover:bg-primary-dark text-white`}>{t('accept')}</button>
             <button type="button" onClick={() => void updateRelationship(() => friendsApi.declineRequest(relationship.requestId!))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('decline')}</button>
           </div>
         )
       case 'friends':
-        return <button type="button" onClick={() => void updateRelationship(() => friendsApi.unfriend(userId))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('unfriend')}</button>
+        return <button type="button" onClick={() => void updateRelationship(() => friendsApi.unfriend(userId), true)} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('unfriend')}</button>
       case 'blocked':
         return isBlockedByMe
           ? <button type="button" onClick={() => void updateRelationship(() => friendsApi.unblock(userId), true)} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('unblock')}</button>
