@@ -25,6 +25,7 @@ using Fookbase.Api.Modules.Reels.Endpoints;
 using Fookbase.Api.Modules.Stories.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Fookbase.Api.Modules.Search.Endpoints;
+using Fookbase.Api.Modules.Events.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -88,6 +89,7 @@ builder.Services.AddReelsModule();
 builder.Services.AddStoriesModule(builder.Configuration);
 builder.Services.AddAdminModule();
 builder.Services.AddSearchModule();
+builder.Services.AddEventsModule();
 
 jwtOptions.Validate();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -237,6 +239,7 @@ app.MapMediaEndpoints();
 app.MapReelEndpoints();
 app.MapStoryEndpoints();
 app.MapSearchEndpoints();
+app.MapEventEndpoints();
 
 app.Run();
 

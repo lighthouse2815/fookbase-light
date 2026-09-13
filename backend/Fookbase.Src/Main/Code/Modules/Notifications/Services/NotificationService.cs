@@ -250,6 +250,8 @@ public sealed class NotificationService(
                 await CanAccessPageAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
             NotificationEntityType.PageRoleInvitation => notification.EntityId is not null &&
                 await CanSurfacePageRoleInvitationAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
+            NotificationEntityType.Event => notification.EntityId is not null &&
+                await CanSurfaceEventAsync(notification, recipientUserId, cancellationToken),
             _ => true
         };
     }
@@ -443,6 +445,28 @@ public sealed class NotificationService(
                invite.InviteeUserId == recipientUserId &&
                itemGroup.DeletedAtUtc == null
          select invite.Id).AnyAsync(cancellationToken);
+
+    private async Task<bool> CanSurfaceEventAsync(
+        Notification notification,
+        Guid recipientUserId,
+        CancellationToken cancellationToken)
+    {
+        if (notification.Type == NotificationType.EventInvite)
+        {
+            return await dbContext.EventInvitations.AsNoTracking().AnyAsync(invitation =>
+                invitation.Id == notification.EntityId && invitation.InviteeUserId == recipientUserId &&
+                invitation.Status == Fookbase.Api.Modules.Events.Entities.EventInvitationStatus.Pending &&
+                dbContext.Events.Any(item => item.Id == invitation.EventId && item.DeletedAtUtc == null &&
+                    item.Status == Fookbase.Api.Modules.Events.Entities.EventStatus.Published), cancellationToken);
+        }
+
+        return await dbContext.Events.AsNoTracking().AnyAsync(item => item.Id == notification.EntityId &&
+            item.DeletedAtUtc == null && item.Status != Fookbase.Api.Modules.Events.Entities.EventStatus.Draft &&
+            (item.Privacy == Fookbase.Api.Modules.Events.Entities.EventPrivacy.Public ||
+             dbContext.EventParticipants.Any(participant => participant.EventId == item.Id && participant.UserId == recipientUserId) ||
+             dbContext.EventInvitations.Any(invitation => invitation.EventId == item.Id && invitation.InviteeUserId == recipientUserId &&
+                 invitation.Status == Fookbase.Api.Modules.Events.Entities.EventInvitationStatus.Pending)), cancellationToken);
+    }
 
     private async Task<IReadOnlyList<NotificationResponse>> ToResponsesAsync(
         IReadOnlyList<Notification> notifications,

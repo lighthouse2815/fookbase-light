@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
@@ -29,6 +30,11 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<UserFollow> UserFollows => Set<UserFollow>();
 
     public DbSet<BlockedUser> BlockedUsers => Set<BlockedUser>();
+
+    public DbSet<Event> Events => Set<Event>();
+    public DbSet<EventParticipant> EventParticipants => Set<EventParticipant>();
+    public DbSet<EventInvitation> EventInvitations => Set<EventInvitation>();
+    public DbSet<EventCoverMediaReference> EventCoverMediaReferences => Set<EventCoverMediaReference>();
 
     public DbSet<FriendNotification> FriendNotifications => Set<FriendNotification>();
 

@@ -11,7 +11,8 @@ public enum PostContainerType
 {
     Profile,
     Group,
-    Page
+    Page,
+    Event
 }
 
 public enum PostType

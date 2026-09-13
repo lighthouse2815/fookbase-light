@@ -2,6 +2,7 @@ using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Pages.Services;
+using Fookbase.Api.Modules.Events.Services;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
@@ -16,6 +17,7 @@ public sealed class PostsService(
     NotificationService notificationService,
     GroupPostAccessService groupPostAccessService,
     PagePostAccessService pagePostAccessService,
+    EventAccessService eventPostAccessService,
     TimeProvider timeProvider,
     PostsOptions options)
 {
@@ -987,7 +989,11 @@ public sealed class PostsService(
 
     private IQueryable<Post> VisiblePosts(PostViewerContext? viewer)
     {
-        return PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer)
+        var source = dbContext.Posts.AsNoTracking();
+        return PostVisibility.ApplyDirectAccess(source, viewer)
+            .Concat(groupPostAccessService.ApplyDirectAccess(source, viewer))
+            .Concat(pagePostAccessService.ApplyPublishedAccess(source))
+            .Concat(eventPostAccessService.ApplyDirectAccess(source, viewer))
             .Where(post => post.PostType == PostType.Standard);
     }
 
@@ -1004,6 +1010,12 @@ public sealed class PostsService(
         if (post.ContainerType == PostContainerType.Page)
         {
             return await pagePostAccessService.CanAccessPostAsync(post, viewer, cancellationToken);
+        }
+
+        if (post.ContainerType == PostContainerType.Event)
+        {
+            return await eventPostAccessService.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer)
+                .AnyAsync(item => item.Id == post.Id, cancellationToken);
         }
 
         return PostVisibility.CanDirectlyAccess(post, viewer);
@@ -1031,6 +1043,13 @@ public sealed class PostsService(
             return await pagePostAccessService.CanParticipateAsync(post, actor, cancellationToken)
                 ? PostsServiceError.None
                 : PostsServiceError.Forbidden;
+        }
+
+        if (post.ContainerType == PostContainerType.Event)
+        {
+            var item = await dbContext.Events.AsNoTracking().SingleOrDefaultAsync(x => x.Id == post.ContainerId, cancellationToken);
+            return item is not null && await eventPostAccessService.CanPostAsync(item, actor.UserId, cancellationToken)
+                ? PostsServiceError.None : PostsServiceError.Forbidden;
         }
 
         if (actor.UserId == post.AuthorUserId)
