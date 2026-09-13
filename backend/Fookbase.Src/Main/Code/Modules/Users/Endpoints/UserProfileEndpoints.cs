@@ -16,6 +16,7 @@ public static class UserProfileEndpoints
     {
         var group = endpoints.MapGroup("/api/users");
         var followGroup = endpoints.MapGroup("/api/users").RequireAuthorization();
+        var birthdayGroup = endpoints.MapGroup("/api/birthdays").RequireAuthorization();
 
         followGroup.MapPost("/{userId:guid}/follow", FollowAsync);
         followGroup.MapDelete("/{userId:guid}/follow", UnfollowAsync);
@@ -27,6 +28,8 @@ public static class UserProfileEndpoints
         group.MapGet("/{userId:guid}", GetByIdAsync).AllowAnonymous();
         group.MapGet("/me", GetCurrentAsync).RequireAuthorization();
         group.MapPatch("/me", UpdateCurrentAsync).RequireAuthorization();
+        birthdayGroup.MapGet("/today", GetTodaysBirthdaysAsync);
+        birthdayGroup.MapGet("/upcoming", GetUpcomingBirthdaysAsync);
 
         return endpoints;
     }
@@ -189,6 +192,26 @@ public static class UserProfileEndpoints
         return result.Succeeded
             ? Results.Ok(result.Value)
             : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetTodaysBirthdaysAsync(
+        ClaimsPrincipal principal,
+        UserProfileService profileService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return Results.Unauthorized();
+        return Results.Ok(await profileService.GetTodaysBirthdaysAsync(userId, cancellationToken));
+    }
+
+    private static async Task<IResult> GetUpcomingBirthdaysAsync(
+        int? days,
+        ClaimsPrincipal principal,
+        UserProfileService profileService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId)) return Results.Unauthorized();
+        var result = await profileService.GetUpcomingBirthdaysAsync(userId, days ?? 7, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
     private static bool TryGetUserId(ClaimsPrincipal principal, out Guid userId) =>

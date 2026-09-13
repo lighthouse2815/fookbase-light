@@ -36,7 +36,17 @@ public sealed class UserProfile
 
     public DateOnly? DateOfBirth { get; private set; }
 
+    public BirthdayVisibility BirthdayVisibility { get; private set; } = BirthdayVisibility.OnlyMe;
+
     public string? CurrentCity { get; private set; }
+
+    public string? Hometown { get; private set; }
+
+    public string? Workplace { get; private set; }
+
+    public string? Education { get; private set; }
+
+    public string? Website { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -55,6 +65,11 @@ public sealed class UserProfile
         string? currentCity,
         Guid? avatarMediaId,
         Guid? coverMediaId,
+        BirthdayVisibility? birthdayVisibility,
+        string? hometown,
+        string? workplace,
+        string? education,
+        string? website,
         DateTimeOffset updatedAt)
     {
         if (displayName is not null)
@@ -75,6 +90,31 @@ public sealed class UserProfile
         if (currentCity is not null)
         {
             CurrentCity = NormalizeOptionalText(currentCity);
+        }
+
+        if (birthdayVisibility is not null)
+        {
+            BirthdayVisibility = birthdayVisibility.Value;
+        }
+
+        if (hometown is not null)
+        {
+            Hometown = NormalizeOptionalText(hometown);
+        }
+
+        if (workplace is not null)
+        {
+            Workplace = NormalizeOptionalText(workplace);
+        }
+
+        if (education is not null)
+        {
+            Education = NormalizeOptionalText(education);
+        }
+
+        if (website is not null)
+        {
+            Website = NormalizeOptionalText(website);
         }
 
         if (avatarMediaId is not null)

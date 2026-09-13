@@ -59,7 +59,7 @@ public sealed class UserProfileService(
 
         return profile is null
             ? NotFound()
-            : ApplicationResult<UserProfileResponse>.Success(ToResponse(profile));
+            : ApplicationResult<UserProfileResponse>.Success(ToResponse(profile, viewerUserId));
     }
 
     public Task<ApplicationResult<PagedResponse<UserProfileResponse>>> SearchAsync(
@@ -99,7 +99,7 @@ public sealed class UserProfileService(
             .OrderBy(profile => profile.Username)
             .Skip(offset)
             .Take(limit)
-            .Select(profile => ToResponse(profile))
+            .Select(profile => ToResponse(profile, viewerUserId))
             .ToListAsync(cancellationToken);
 
         return ApplicationResult<PagedResponse<UserProfileResponse>>.Success(
@@ -111,7 +111,7 @@ public sealed class UserProfileService(
         UpdateUserProfileRequest request,
         CancellationToken cancellationToken = default)
     {
-        var errors = Validate(request, timeProvider.GetUtcNow());
+        var errors = Validate(request, DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime));
         await ValidateProfileMediaAsync(userId, request, errors, cancellationToken);
         if (errors.Count > 0)
         {
@@ -147,6 +147,11 @@ public sealed class UserProfileService(
                 request.CurrentCity,
                 request.AvatarMediaId,
                 request.CoverMediaId,
+                request.BirthdayVisibility,
+                request.Hometown,
+                request.Workplace,
+                request.Education,
+                request.Website,
                 timeProvider.GetUtcNow());
             await dbContext.SaveChangesAsync(cancellationToken);
             if (request.AvatarMediaId is not null)
@@ -184,9 +189,39 @@ public sealed class UserProfileService(
             .Select(profile => profile.CoverMediaId)
             .SingleOrDefaultAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<BirthdayFriendResponse>> GetTodaysBirthdaysAsync(
+        Guid actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
+        var candidates = await GetBirthdayCandidatesAsync(actorUserId, cancellationToken);
+        return candidates.Where(candidate => EffectiveBirthday(candidate.DateOfBirth, today.Year) == today)
+            .OrderBy(candidate => candidate.DisplayName).Select(ToBirthdayResponse).ToList();
+    }
+
+    public async Task<ApplicationResult<IReadOnlyList<BirthdayFriendResponse>>> GetUpcomingBirthdaysAsync(
+        Guid actorUserId,
+        int days,
+        CancellationToken cancellationToken = default)
+    {
+        if (days is < 1 or > 30)
+        {
+            return ApplicationResult<IReadOnlyList<BirthdayFriendResponse>>.Failure(
+                new ApplicationError("invalid_days", "Days must be between 1 and 30.", ApplicationErrorType.Validation));
+        }
+
+        var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
+        var end = today.AddDays(days);
+        var candidates = await GetBirthdayCandidatesAsync(actorUserId, cancellationToken);
+        var matches = candidates.Select(candidate => new { Candidate = candidate, Next = NextBirthday(candidate.DateOfBirth, today) })
+            .Where(item => item.Next > today && item.Next <= end).OrderBy(item => item.Next)
+            .ThenBy(item => item.Candidate.DisplayName).Select(item => ToBirthdayResponse(item.Candidate)).ToList();
+        return ApplicationResult<IReadOnlyList<BirthdayFriendResponse>>.Success(matches);
+    }
+
     private static Dictionary<string, string[]> Validate(
         UpdateUserProfileRequest request,
-        DateTimeOffset now)
+        DateOnly today)
     {
         var errors = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
 
@@ -206,13 +241,72 @@ public sealed class UserProfileService(
             errors["currentCity"] = ["Current city cannot exceed 100 characters."];
         }
 
-        if (request.DateOfBirth > DateOnly.FromDateTime(now.UtcDateTime))
+        if (request.Hometown?.Length > 100)
+        {
+            errors["hometown"] = ["Hometown cannot exceed 100 characters."];
+        }
+
+        if (request.Workplace?.Length > 150)
+        {
+            errors["workplace"] = ["Workplace cannot exceed 150 characters."];
+        }
+
+        if (request.Education?.Length > 150)
+        {
+            errors["education"] = ["Education cannot exceed 150 characters."];
+        }
+
+        if (request.Website is { Length: > 2048 } ||
+            request.Website is { } website &&
+            (!Uri.TryCreate(website.Trim(), UriKind.Absolute, out var uri) ||
+             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)))
+        {
+            errors["website"] = ["Website must be a valid HTTP or HTTPS URL up to 2048 characters."];
+        }
+
+        if (request.BirthdayVisibility is { } visibility && !Enum.IsDefined(visibility))
+        {
+            errors["birthdayVisibility"] = ["Birthday visibility is invalid."];
+        }
+
+        if (request.DateOfBirth > today)
         {
             errors["dateOfBirth"] = ["Date of birth cannot be in the future."];
         }
 
         return errors;
     }
+
+    private async Task<IReadOnlyList<BirthdayCandidate>> GetBirthdayCandidatesAsync(Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var friendUserIds = dbContext.Friendships.AsNoTracking()
+            .Where(friendship => friendship.UserId1 == actorUserId || friendship.UserId2 == actorUserId)
+            .Select(friendship => friendship.UserId1 == actorUserId ? friendship.UserId2 : friendship.UserId1);
+
+        return await (from profile in dbContext.UserProfiles.AsNoTracking()
+                      join user in dbContext.Users.AsNoTracking() on profile.UserId equals user.Id
+                      where friendUserIds.Contains(profile.UserId) && user.IsActive && profile.DateOfBirth != null &&
+                            profile.BirthdayVisibility != BirthdayVisibility.OnlyMe &&
+                            !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                                (block.BlockerUserId == actorUserId && block.BlockedUserId == profile.UserId) ||
+                                (block.BlockerUserId == profile.UserId && block.BlockedUserId == actorUserId))
+                      select new BirthdayCandidate(profile.UserId, profile.Username, profile.DisplayName,
+                          profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar",
+                          profile.DateOfBirth!.Value)).ToListAsync(cancellationToken);
+    }
+
+    private static BirthdayFriendResponse ToBirthdayResponse(BirthdayCandidate candidate) =>
+        new(candidate.UserId, candidate.Username, candidate.DisplayName, candidate.AvatarUrl,
+            candidate.DateOfBirth.Month, candidate.DateOfBirth.Day);
+
+    private static DateOnly NextBirthday(DateOnly birthDate, DateOnly today)
+    {
+        var occurrence = EffectiveBirthday(birthDate, today.Year);
+        return occurrence < today ? EffectiveBirthday(birthDate, today.Year + 1) : occurrence;
+    }
+
+    private static DateOnly EffectiveBirthday(DateOnly birthDate, int year) =>
+        new(year, birthDate.Month, Math.Min(birthDate.Day, DateTime.DaysInMonth(year, birthDate.Month)));
 
     private async Task ValidateProfileMediaAsync(
         Guid userId,
@@ -270,7 +364,12 @@ public sealed class UserProfileService(
                 AvatarMediaId = profile.AvatarMediaId,
                 CoverMediaId = profile.CoverMediaId,
                 DateOfBirth = profile.DateOfBirth,
+                BirthdayVisibility = profile.BirthdayVisibility,
                 CurrentCity = profile.CurrentCity,
+                Hometown = profile.Hometown,
+                Workplace = profile.Workplace,
+                Education = profile.Education,
+                Website = profile.Website,
                 CreatedAt = profile.CreatedAt,
                 UpdatedAt = profile.UpdatedAt,
                 FollowerCount = dbContext.UserFollows.AsNoTracking().Count(follow =>
@@ -311,15 +410,22 @@ public sealed class UserProfileService(
             });
     }
 
-    private static UserProfileResponse ToResponse(UserProfileProjection profile) =>
-        new(
+    private static UserProfileResponse ToResponse(UserProfileProjection profile, Guid? viewerUserId)
+    {
+        var isOwner = viewerUserId == profile.UserId;
+        var canViewBirthday = profile.DateOfBirth is not null &&
+            (isOwner || viewerUserId is not null &&
+             (profile.BirthdayVisibility == BirthdayVisibility.Public ||
+              profile.BirthdayVisibility == BirthdayVisibility.Friends && profile.FriendshipState == "friends"));
+
+        return new UserProfileResponse(
             profile.UserId,
             profile.Username,
             profile.DisplayName,
             profile.Bio,
             profile.AvatarMediaId is null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar",
             profile.CoverMediaId is null ? profile.CoverUrl : $"/api/users/{profile.UserId}/cover",
-            profile.DateOfBirth,
+            isOwner ? profile.DateOfBirth : null,
             profile.CurrentCity,
             profile.CreatedAt,
             profile.UpdatedAt,
@@ -327,7 +433,14 @@ public sealed class UserProfileService(
             profile.FollowingCount,
             profile.IsFollowing,
             profile.IsFollowedBy,
-            profile.FriendshipState);
+            profile.FriendshipState,
+            canViewBirthday ? new BirthdayResponse(profile.DateOfBirth!.Value.Month, profile.DateOfBirth.Value.Day) : null,
+            isOwner ? profile.BirthdayVisibility.ToString().ToLowerInvariant() : null,
+            profile.Hometown,
+            profile.Workplace,
+            profile.Education,
+            profile.Website);
+    }
 
     private sealed class UserProfileProjection
     {
@@ -340,7 +453,12 @@ public sealed class UserProfileService(
         public Guid? AvatarMediaId { get; init; }
         public Guid? CoverMediaId { get; init; }
         public DateOnly? DateOfBirth { get; init; }
+        public BirthdayVisibility BirthdayVisibility { get; init; }
         public string? CurrentCity { get; init; }
+        public string? Hometown { get; init; }
+        public string? Workplace { get; init; }
+        public string? Education { get; init; }
+        public string? Website { get; init; }
         public DateTimeOffset CreatedAt { get; init; }
         public DateTimeOffset UpdatedAt { get; init; }
         public int FollowerCount { get; init; }
@@ -349,4 +467,6 @@ public sealed class UserProfileService(
         public bool? IsFollowedBy { get; init; }
         public string? FriendshipState { get; init; }
     }
+
+    private sealed record BirthdayCandidate(Guid UserId, string Username, string DisplayName, string? AvatarUrl, DateOnly DateOfBirth);
 }

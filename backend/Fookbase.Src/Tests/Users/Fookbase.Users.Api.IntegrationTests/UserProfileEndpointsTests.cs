@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Modules.Users.Data;
+using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Entities;
@@ -231,6 +232,82 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             item => item.UserId == userB.Id);
         Assert.Equal(userB.Username, otherProfile.DisplayName);
         Assert.Null(otherProfile.Bio);
+    }
+
+    [Fact]
+    public async Task Profile_hides_full_birth_date_from_non_owner()
+    {
+        var owner = CreateUser();
+        var friend = CreateUser();
+        await EnsureProfileAsync(owner);
+        await EnsureProfileAsync(friend);
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.Users.AddRange(
+                new User(owner.Id, $"{owner.Username}@example.com", owner.Username, now),
+                new User(friend.Id, $"{friend.Username}@example.com", friend.Username, now));
+            db.Friendships.Add(Friendship.Create(Guid.NewGuid(), owner.Id, friend.Id, now));
+            await db.SaveChangesAsync();
+        }
+
+        using var ownerClient = CreateAuthenticatedClient(owner.Id);
+        var update = await ownerClient.PatchAsJsonAsync(
+            "/api/users/me",
+            new UpdateUserProfileRequest("Owner", null, new DateOnly(2000, 1, 2), null));
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        var ownerProfile = await ownerClient.GetFromJsonAsync<UserProfileResponse>("/api/users/me");
+        using var friendClient = CreateAuthenticatedClient(friend.Id);
+        var friendProfile = await friendClient.GetFromJsonAsync<UserProfileResponse>($"/api/users/{owner.Id}");
+
+        Assert.NotNull(ownerProfile);
+        Assert.Equal(new DateOnly(2000, 1, 2), ownerProfile.DateOfBirth);
+        Assert.NotNull(friendProfile);
+        Assert.Null(friendProfile.DateOfBirth);
+    }
+
+    [Fact]
+    public async Task Birthday_today_includes_visible_friends_and_excludes_blocked_friends()
+    {
+        var actor = CreateUser();
+        var visibleFriend = CreateUser();
+        var blockedFriend = CreateUser();
+        await EnsureProfileAsync(actor);
+        await EnsureProfileAsync(visibleFriend);
+        await EnsureProfileAsync(blockedFriend);
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.Users.AddRange(
+                new User(actor.Id, $"{actor.Username}@example.com", actor.Username, now),
+                new User(visibleFriend.Id, $"{visibleFriend.Username}@example.com", visibleFriend.Username, now),
+                new User(blockedFriend.Id, $"{blockedFriend.Username}@example.com", blockedFriend.Username, now));
+            db.Friendships.AddRange(
+                Friendship.Create(Guid.NewGuid(), actor.Id, visibleFriend.Id, now),
+                Friendship.Create(Guid.NewGuid(), actor.Id, blockedFriend.Id, now));
+            db.BlockedUsers.Add(BlockedUser.Create(actor.Id, blockedFriend.Id, now));
+            await db.SaveChangesAsync();
+        }
+
+        var birthday = DateOnly.FromDateTime(DateTime.Now);
+        foreach (var friend in new[] { visibleFriend, blockedFriend })
+        {
+            using var friendClient = CreateAuthenticatedClient(friend.Id);
+            var update = await friendClient.PatchAsJsonAsync("/api/users/me",
+                new UpdateUserProfileRequest(null, null, new DateOnly(2000, birthday.Month, birthday.Day), null,
+                    BirthdayVisibility: BirthdayVisibility.Friends));
+            Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        }
+
+        using var actorClient = CreateAuthenticatedClient(actor.Id);
+        var birthdays = await actorClient.GetFromJsonAsync<IReadOnlyList<BirthdayFriendResponse>>("/api/birthdays/today");
+
+        Assert.NotNull(birthdays);
+        Assert.Contains(birthdays, item => item.UserId == visibleFriend.Id);
+        Assert.DoesNotContain(birthdays, item => item.UserId == blockedFriend.Id);
     }
 
     [Fact]

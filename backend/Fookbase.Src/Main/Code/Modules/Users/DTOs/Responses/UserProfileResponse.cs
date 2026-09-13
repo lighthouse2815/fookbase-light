@@ -1,5 +1,7 @@
 namespace Fookbase.Api.Modules.Users.DTOs.Responses;
 
+public sealed record BirthdayResponse(int Month, int Day);
+
 public sealed record UserProfileResponse(
     Guid UserId,
     string Username,
@@ -15,4 +17,10 @@ public sealed record UserProfileResponse(
     int FollowingCount,
     bool? IsFollowing,
     bool? IsFollowedBy,
-    string? FriendshipState);
+    string? FriendshipState,
+    BirthdayResponse? Birthday = null,
+    string? BirthdayVisibility = null,
+    string? Hometown = null,
+    string? Workplace = null,
+    string? Education = null,
+    string? Website = null);

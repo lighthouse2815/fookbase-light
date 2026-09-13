@@ -17,7 +17,13 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.CoverUrl).HasMaxLength(2048);
         builder.Property(profile => profile.AvatarMediaId);
         builder.Property(profile => profile.CoverMediaId);
+        builder.Property(profile => profile.BirthdayVisibility)
+            .HasDefaultValue(BirthdayVisibility.OnlyMe);
         builder.Property(profile => profile.CurrentCity).HasMaxLength(100);
+        builder.Property(profile => profile.Hometown).HasMaxLength(100);
+        builder.Property(profile => profile.Workplace).HasMaxLength(150);
+        builder.Property(profile => profile.Education).HasMaxLength(150);
+        builder.Property(profile => profile.Website).HasMaxLength(2048);
         builder.Property(profile => profile.CreatedAt).IsRequired();
         builder.Property(profile => profile.UpdatedAt).IsRequired();
         builder.HasIndex(profile => profile.Username).IsUnique();
