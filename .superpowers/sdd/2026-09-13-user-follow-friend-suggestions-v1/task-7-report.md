@@ -51,3 +51,26 @@ Result: passed with no whitespace errors in Task 7 source files.
 ## Scope and handoff
 
 Only `frontend/web/src` and this Task 7 report are intended for the focused commit. `README.md` remains an unrelated unstaged pre-existing change. No push was performed because Task 7 requested a local commit only.
+
+## Review follow-up
+
+- A successful block now immediately clears the viewed profile, relationship-bound post state, and cached follow control. The blocked state keeps an Unblock action without displaying a stale profile; profile requests also use a generation guard so an older response cannot restore that state.
+- Follow and unfollow now preserve loaded post pages and offsets. They update the completed mutation locally, then refresh only profile, relationship, and mutual-count state. Independent refresh failures do not overwrite the successful follow state with an update error.
+- Suggestion requests now pass an abort signal and use an incrementing request generation. Entering the tab, Refresh, a local Remove, Add Friend, and Follow/Unfollow cancel older loads; only the current mounted request may set cards, loading, or its error. The Friends Refresh button reloads suggestions, and a visible per-suggestion retry is shown on failure instead of an empty-state message.
+- Notification API unions now cover every current server enum value: `PostShared`, `PageRoleInvite`, `Page`, and `PageRoleInvitation`. The navbar renders a text and destination for Page-role invites and a user-visible generic text fallback for future runtime values.
+
+### Review validation
+
+Executed in `frontend/web` after the review fixes:
+
+```text
+npm ci && npm run lint && npm run build
+```
+
+Result: `npm ci` installed 77 packages and reported 0 vulnerabilities; `npm run lint` passed (`oxlint`); TypeScript and the Vite production build passed.
+
+```text
+git diff --check -- src
+```
+
+Result: passed with no whitespace errors in the changed web source files.

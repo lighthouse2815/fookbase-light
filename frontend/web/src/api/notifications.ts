@@ -7,11 +7,13 @@ export type AppNotificationType =
   | 'PostReaction'
   | 'PostComment'
   | 'CommentReaction'
+  | 'PostShared'
   | 'PostMention'
   | 'CommentMention'
   | 'GroupInvite'
   | 'GroupJoinApproved'
   | 'StoryReaction'
+  | 'PageRoleInvite'
 
 export type AppNotificationEntityType =
   | 'FriendRequest'
@@ -22,6 +24,8 @@ export type AppNotificationEntityType =
   | 'GroupJoinRequest'
   | 'GroupInvite'
   | 'Story'
+  | 'Page'
+  | 'PageRoleInvitation'
 
 export interface AppNotification {
   id: string

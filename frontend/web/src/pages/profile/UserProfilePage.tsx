@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { friendsApi } from '../../api/friends'
@@ -29,34 +29,79 @@ export default function UserProfilePage() {
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [postsPageError, setPostsPageError] = useState<string | null>(null)
+  const profileRequestGenerationRef = useRef(0)
 
   const loadProfile = useCallback(async () => {
     if (!userId) return
+    const requestGeneration = ++profileRequestGenerationRef.current
     setIsLoading(true)
     setError(null)
 
-    try {
-      const [userProfile, status, mutualFriends, userPosts, blockedUsers] = await Promise.all([
-        usersApi.getById(userId),
-        friendsApi.getStatus(userId),
-        friendsApi.getMutualFriends(userId),
-        postsApi.getByUser(userId),
-        friendsApi.getBlockedUsers(),
-      ])
-      setProfile(userProfile)
-      setRelationship(status)
-      setMutualFriendCount(mutualFriends.count)
-      setPosts(userPosts.items)
-      setPostsTotal(userPosts.total)
-      setPostsOffset(userPosts.offset + userPosts.items.length)
+    const [profileResult, statusResult, mutualFriendsResult, postsResult, blockedUsersResult] = await Promise.allSettled([
+      usersApi.getById(userId),
+      friendsApi.getStatus(userId),
+      friendsApi.getMutualFriends(userId),
+      postsApi.getByUser(userId),
+      friendsApi.getBlockedUsers(),
+    ])
+    if (requestGeneration !== profileRequestGenerationRef.current) return
+
+    if (profileResult.status === 'rejected') {
+      setProfile(null)
+      setRelationship(statusResult.status === 'fulfilled' ? statusResult.value : null)
+      setMutualFriendCount(0)
+      setPosts([])
+      setPostsTotal(0)
+      setPostsOffset(0)
       setPostsPageError(null)
-      setIsBlockedByMe(blockedUsers.items.some((blockedUser) => blockedUser.userId === userId))
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableLoadProfile'))
-    } finally {
+      setIsBlockedByMe(blockedUsersResult.status === 'fulfilled' && blockedUsersResult.value.items.some((blockedUser) => blockedUser.userId === userId))
+      setError(profileResult.reason instanceof ApiError ? profileResult.reason.message : t('unableLoadProfile'))
       setIsLoading(false)
+      return
     }
+
+    setProfile(profileResult.value)
+    if (statusResult.status === 'fulfilled') setRelationship(statusResult.value)
+    if (mutualFriendsResult.status === 'fulfilled') setMutualFriendCount(mutualFriendsResult.value.count)
+    if (postsResult.status === 'fulfilled') {
+      setPosts(postsResult.value.items)
+      setPostsTotal(postsResult.value.total)
+      setPostsOffset(postsResult.value.offset + postsResult.value.items.length)
+      setPostsPageError(null)
+    }
+    if (blockedUsersResult.status === 'fulfilled') {
+      setIsBlockedByMe(blockedUsersResult.value.items.some((blockedUser) => blockedUser.userId === userId))
+    }
+
+    const failedResult = [statusResult, mutualFriendsResult, postsResult, blockedUsersResult].find((result) => result.status === 'rejected')
+    if (failedResult?.status === 'rejected') {
+      setError(failedResult.reason instanceof ApiError ? failedResult.reason.message : t('unableLoadProfile'))
+    }
+    setIsLoading(false)
   }, [t, userId])
+
+  const refreshProfileRelationshipState = useCallback(async () => {
+    if (!userId) return
+    const requestGeneration = ++profileRequestGenerationRef.current
+    const [profileResult, statusResult, mutualFriendsResult] = await Promise.allSettled([
+      usersApi.getById(userId),
+      friendsApi.getStatus(userId),
+      friendsApi.getMutualFriends(userId),
+    ])
+    if (requestGeneration !== profileRequestGenerationRef.current) return
+
+    if (profileResult.status === 'fulfilled') {
+      setProfile(profileResult.value)
+    } else if (profileResult.reason instanceof ApiError && profileResult.reason.status === 404) {
+      setProfile(null)
+      setPosts([])
+      setPostsTotal(0)
+      setPostsOffset(0)
+      setPostsPageError(null)
+    }
+    if (statusResult.status === 'fulfilled') setRelationship(statusResult.value)
+    if (mutualFriendsResult.status === 'fulfilled') setMutualFriendCount(mutualFriendsResult.value.count)
+  }, [userId])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -68,13 +113,17 @@ export default function UserProfilePage() {
 
   if (!userId || userId === session!.user.id) return <Navigate to="/profile" replace />
 
-  const updateRelationship = async (action: () => Promise<unknown>) => {
+  const updateRelationship = async (action: () => Promise<unknown>, reloadPosts = false) => {
     setIsUpdating(true)
     setError(null)
 
     try {
       await action()
-      await loadProfile()
+      if (reloadPosts) {
+        await loadProfile()
+      } else {
+        await refreshProfileRelationshipState()
+      }
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateRelationship'))
     } finally {
@@ -94,7 +143,37 @@ export default function UserProfilePage() {
       } else {
         await usersApi.follow(profile.userId)
       }
-      await loadProfile()
+      setProfile((currentProfile) => currentProfile && currentProfile.userId === profile.userId
+        ? {
+            ...currentProfile,
+            isFollowing: !profile.isFollowing,
+            followerCount: currentProfile.followerCount + (profile.isFollowing ? -1 : 1),
+          }
+        : currentProfile)
+      await refreshProfileRelationshipState()
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateRelationship'))
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const blockProfile = async () => {
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      await friendsApi.block(userId)
+      ++profileRequestGenerationRef.current
+      setProfile(null)
+      setRelationship({ userId, status: 'blocked', requestId: null })
+      setIsBlockedByMe(true)
+      setMutualFriendCount(0)
+      setPosts([])
+      setPostsTotal(0)
+      setPostsOffset(0)
+      setPostsPageError(null)
+      setIsLoading(false)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateRelationship'))
     } finally {
@@ -138,7 +217,7 @@ export default function UserProfilePage() {
         return <button type="button" onClick={() => void updateRelationship(() => friendsApi.unfriend(userId))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('unfriend')}</button>
       case 'blocked':
         return isBlockedByMe
-          ? <button type="button" onClick={() => void updateRelationship(() => friendsApi.unblock(userId))} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('unblock')}</button>
+          ? <button type="button" onClick={() => void updateRelationship(() => friendsApi.unblock(userId), true)} disabled={isUpdating} className={`${actionClass} bg-surface-2 hover:bg-surface-hover text-text border border-border`}>{t('unblock')}</button>
           : <span className="text-sm text-text-muted">{t('relationshipUnavailable')}</span>
       default:
         return <span className="text-sm text-text-muted">{t('relationshipUnavailable')}</span>
@@ -149,6 +228,12 @@ export default function UserProfilePage() {
     <div className="min-h-screen bg-bg px-4 py-6 sm:px-8">
       {isLoading && <p className="text-sm text-text-muted">{t('loadingProfile')}</p>}
       {error && <p className="mb-4 rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]">{error}</p>}
+      {!profile && !isLoading && relationship?.status === 'blocked' && isBlockedByMe && (
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4">
+          <p className="text-sm text-text-muted">{t('relationshipUnavailable')}</p>
+          <button type="button" onClick={() => void updateRelationship(() => friendsApi.unblock(userId), true)} disabled={isUpdating} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text disabled:opacity-60">{t('unblock')}</button>
+        </div>
+      )}
       {profile && (
         <div className="max-w-3xl mx-auto flex flex-col gap-5">
           <section className="bg-surface border border-border rounded-2xl overflow-hidden">
@@ -178,7 +263,7 @@ export default function UserProfilePage() {
                       {profile.isFollowing ? t('following') : t('follow')}
                     </button>
                   )}
-                  {relationship?.status !== 'blocked' && <button type="button" onClick={() => void updateRelationship(() => friendsApi.block(userId))} disabled={isUpdating} className="px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface-hover text-text border border-border font-semibold text-sm cursor-pointer disabled:opacity-60">{t('block')}</button>}
+                  {relationship?.status !== 'blocked' && <button type="button" onClick={() => void blockProfile()} disabled={isUpdating} className="px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface-hover text-text border border-border font-semibold text-sm cursor-pointer disabled:opacity-60">{t('block')}</button>}
                   <ReportButton targetType="user" targetId={userId} />
                 </div>
               </div>

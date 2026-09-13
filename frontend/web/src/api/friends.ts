@@ -84,10 +84,10 @@ export const friendsApi = {
     apiRequest<RelationshipStatus>(`/api/friends/status/${userId}`),
   getMutualFriends: (userId: string, offset = 0, limit = 100) =>
     apiRequest<MutualFriends>(`/api/friends/mutual/${userId}${pageQuery(offset, limit)}`),
-  getSuggestions: (cursor?: string, limit = 20) => {
+  getSuggestions: (cursor?: string, limit = 20, init?: RequestInit) => {
     const query = new URLSearchParams({ limit: String(limit) })
     if (cursor) query.set('cursor', cursor)
-    return apiRequest<CursorPageResponse<FriendSuggestion>>(`/api/friends/suggestions?${query.toString()}`)
+    return apiRequest<CursorPageResponse<FriendSuggestion>>(`/api/friends/suggestions?${query.toString()}`, init)
   },
   sendRequest: (userId: string) =>
     apiRequest<FriendRequest>(`/api/friends/requests/${userId}`, { method: 'POST' }),

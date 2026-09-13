@@ -66,6 +66,7 @@ export default function ProfilePage() {
   const [isLoadingMoreFriends, setIsLoadingMoreFriends] = useState(false)
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
   const [relationshipError, setRelationshipError] = useState<string | null>(null)
+  const [suggestionsError, setSuggestionsError] = useState<string | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -92,6 +93,9 @@ export default function ProfilePage() {
   const [isResendingVerification, setIsResendingVerification] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  const isMountedRef = useRef(false)
+  const suggestionRequestGenerationRef = useRef(0)
+  const suggestionAbortControllerRef = useRef<AbortController | null>(null)
   const displayName = profile?.displayName ?? session!.user.username
   const username = profile?.username ?? session!.user.username
   const initials = displayName.slice(0, 2).toUpperCase()
@@ -208,18 +212,50 @@ export default function ProfilePage() {
     }
   }, [t])
 
+  const cancelPendingSuggestionLoad = useCallback(() => {
+    suggestionRequestGenerationRef.current += 1
+    suggestionAbortControllerRef.current?.abort()
+    suggestionAbortControllerRef.current = null
+    if (isMountedRef.current) setIsSuggestionsLoading(false)
+  }, [])
+
   const loadFriendSuggestions = useCallback(async () => {
-    setIsSuggestionsLoading(true)
+    cancelPendingSuggestionLoad()
+    const requestGeneration = ++suggestionRequestGenerationRef.current
+    const controller = new AbortController()
+    suggestionAbortControllerRef.current = controller
+    if (isMountedRef.current) {
+      setIsSuggestionsLoading(true)
+      setSuggestionsError(null)
+    }
 
     try {
-      const page = await friendsApi.getSuggestions(undefined, 12)
-      setFriendSuggestions(page.items)
+      const page = await friendsApi.getSuggestions(undefined, 12, { signal: controller.signal })
+      if (isMountedRef.current && requestGeneration === suggestionRequestGenerationRef.current) {
+        setFriendSuggestions(page.items)
+      }
     } catch (error) {
-      setRelationshipError(error instanceof ApiError ? error.message : t('unableLoadFriends'))
+      if (isMountedRef.current && requestGeneration === suggestionRequestGenerationRef.current && !controller.signal.aborted) {
+        setSuggestionsError(error instanceof ApiError ? error.message : t('unableLoadFriends'))
+      }
     } finally {
-      setIsSuggestionsLoading(false)
+      if (isMountedRef.current && requestGeneration === suggestionRequestGenerationRef.current) {
+        suggestionAbortControllerRef.current = null
+        setIsSuggestionsLoading(false)
+      }
     }
-  }, [t])
+  }, [cancelPendingSuggestionLoad, t])
+
+  useEffect(() => {
+    isMountedRef.current = true
+
+    return () => {
+      isMountedRef.current = false
+      suggestionRequestGenerationRef.current += 1
+      suggestionAbortControllerRef.current?.abort()
+      suggestionAbortControllerRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -265,23 +301,30 @@ export default function ProfilePage() {
 
   const addSuggestedFriend = async (suggestion: FriendSuggestion) => {
     const id = `suggestion-friend-${suggestion.profile.userId}`
+    cancelPendingSuggestionLoad()
     setActionId(id)
     setRelationshipError(null)
+    setSuggestionsError(null)
 
     try {
       await friendsApi.sendRequest(suggestion.profile.userId)
-      setFriendSuggestions((current) => current.filter((item) => item.profile.userId !== suggestion.profile.userId))
+      if (isMountedRef.current) {
+        cancelPendingSuggestionLoad()
+        setFriendSuggestions((current) => current.filter((item) => item.profile.userId !== suggestion.profile.userId))
+      }
     } catch (error) {
-      setRelationshipError(error instanceof ApiError ? error.message : t('unableUpdateRelationship'))
+      if (isMountedRef.current) setRelationshipError(error instanceof ApiError ? error.message : t('unableUpdateRelationship'))
     } finally {
-      setActionId(null)
+      if (isMountedRef.current) setActionId(null)
     }
   }
 
   const toggleSuggestedFollow = async (suggestion: FriendSuggestion) => {
     const id = `suggestion-follow-${suggestion.profile.userId}`
+    cancelPendingSuggestionLoad()
     setActionId(id)
     setRelationshipError(null)
+    setSuggestionsError(null)
 
     try {
       if (suggestion.isFollowing) {
@@ -289,14 +332,23 @@ export default function ProfilePage() {
       } else {
         await usersApi.follow(suggestion.profile.userId)
       }
-      setFriendSuggestions((current) => current.map((item) => item.profile.userId === suggestion.profile.userId
-        ? { ...item, isFollowing: !item.isFollowing }
-        : item))
+      if (isMountedRef.current) {
+        cancelPendingSuggestionLoad()
+        setFriendSuggestions((current) => current.map((item) => item.profile.userId === suggestion.profile.userId
+          ? { ...item, isFollowing: !item.isFollowing }
+          : item))
+      }
     } catch (error) {
-      setRelationshipError(error instanceof ApiError ? error.message : t('unableUpdateRelationship'))
+      if (isMountedRef.current) setRelationshipError(error instanceof ApiError ? error.message : t('unableUpdateRelationship'))
     } finally {
-      setActionId(null)
+      if (isMountedRef.current) setActionId(null)
     }
+  }
+
+  const removeSuggestedFriend = (userId: string) => {
+    cancelPendingSuggestionLoad()
+    setSuggestionsError(null)
+    setFriendSuggestions((current) => current.filter((item) => item.profile.userId !== userId))
   }
 
   const loadMoreFriends = async () => {
@@ -820,11 +872,14 @@ export default function ProfilePage() {
               </div>
               <button
                 type="button"
-                onClick={() => void loadRelationships()}
-                disabled={isRelationshipsLoading}
+                onClick={() => {
+                  void loadRelationships()
+                  void loadFriendSuggestions()
+                }}
+                disabled={isRelationshipsLoading || isSuggestionsLoading}
                 className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
               >
-                {isRelationshipsLoading ? t('loading') : t('refresh')}
+                {isRelationshipsLoading || isSuggestionsLoading ? t('loading') : t('refresh')}
               </button>
             </div>
 
@@ -839,7 +894,12 @@ export default function ProfilePage() {
                 <h3 className="font-heading font-bold text-lg text-text">{t('peopleYouMayKnow')}</h3>
                 <p className="text-sm text-text-muted">{t('peopleYouMayKnowDescription')}</p>
               </div>
-              {isSuggestionsLoading ? <p className="text-sm text-text-muted">{t('loading')}</p> : friendSuggestions.length === 0 ? <p className="text-sm text-text-muted">{t('noSuggestionsYet')}</p> : (
+              {suggestionsError ? (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-[#e41e3f]/40 bg-[#e41e3f]/10 px-3 py-2 text-sm text-[#ff8a9b]">
+                  <span>{suggestionsError}</span>
+                  <button type="button" onClick={() => void loadFriendSuggestions()} disabled={isSuggestionsLoading} className="shrink-0 border-0 bg-transparent text-xs font-semibold text-primary hover:underline disabled:opacity-60">{t('refresh')}</button>
+                </div>
+              ) : isSuggestionsLoading ? <p className="text-sm text-text-muted">{t('loading')}</p> : friendSuggestions.length === 0 ? <p className="text-sm text-text-muted">{t('noSuggestionsYet')}</p> : (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {friendSuggestions.map((suggestion) => {
                     const { profile: suggestionProfile } = suggestion
@@ -857,7 +917,7 @@ export default function ProfilePage() {
                         <div className="mt-2 flex flex-wrap gap-2">
                           {suggestion.relationshipStatus === 'none' && <button type="button" onClick={() => void addSuggestedFriend(suggestion)} disabled={actionId !== null} className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-60">{isAdding ? t('sending') : t('addFriend')}</button>}
                           <button type="button" onClick={() => void toggleSuggestedFollow(suggestion)} disabled={actionId !== null} className="rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-text disabled:opacity-60">{isFollowing ? t('updating') : suggestion.isFollowing ? t('following') : t('follow')}</button>
-                          <button type="button" onClick={() => setFriendSuggestions((current) => current.filter((item) => item.profile.userId !== suggestionProfile.userId))} disabled={actionId !== null} className="rounded-md border border-border bg-transparent px-2.5 py-1 text-xs font-semibold text-text-muted disabled:opacity-60">{t('remove')}</button>
+                          <button type="button" onClick={() => removeSuggestedFriend(suggestionProfile.userId)} disabled={actionId !== null} className="rounded-md border border-border bg-transparent px-2.5 py-1 text-xs font-semibold text-text-muted disabled:opacity-60">{t('remove')}</button>
                         </div>
                       </div>
                     </article>

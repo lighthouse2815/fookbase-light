@@ -78,8 +78,15 @@ export default function TopNavbar() {
     if (notification.type === 'GroupInvite' || notification.type === 'GroupJoinApproved') {
       return '/groups'
     }
+    if (notification.type === 'PageRoleInvite') {
+      return '/pages'
+    }
     if (notification.type === 'StoryReaction') {
       return '/feed'
+    }
+
+    if (notification.entityType === 'Page' || notification.entityType === 'PageRoleInvitation') {
+      return '/pages'
     }
 
     return notification.entityId ? '/feed?post=' + notification.entityId : '/feed'
@@ -100,6 +107,8 @@ export default function TopNavbar() {
         return actor + ' commented on your post.'
       case 'CommentReaction':
         return actor + ' reacted to your comment.'
+      case 'PostShared':
+        return actor + ' shared your post.'
       case 'PostMention':
         return actor + ' mentioned you in a post.'
       case 'CommentMention':
@@ -110,6 +119,10 @@ export default function TopNavbar() {
         return actor + ' approved your group join request.'
       case 'StoryReaction':
         return actor + ' reacted to your Story.'
+      case 'PageRoleInvite':
+        return actor + ' invited you to manage a Page.'
+      default:
+        return actor + ' sent you a notification.'
     }
   }
 
