@@ -18,6 +18,7 @@ public static class PhotoAlbumEndpoints
         albums.MapPost("/{albumId:guid}/media", AddMedia).RequireAuthorization();
         albums.MapGet("/{albumId:guid}/media", GetMedia);
         albums.MapGet("/{albumId:guid}/media/{mediaId:guid}", GetPhoto);
+        albums.MapGet("/{albumId:guid}/media/{mediaId:guid}/access", GetPhotoAccess);
         albums.MapPatch("/{albumId:guid}/media/{mediaId:guid}", UpdateCaption).RequireAuthorization();
         albums.MapDelete("/{albumId:guid}/media/{mediaId:guid}", RemoveMedia).RequireAuthorization();
         endpoints.MapGet("/api/users/{userId:guid}/albums", GetUserAlbums);
@@ -44,5 +45,7 @@ public static class PhotoAlbumEndpoints
     { var result = await service.GetMediaAsync(albumId, Actor(principal), cursor, limit, ct); return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult(); }
     private static async Task<IResult> GetPhoto(Guid albumId, Guid mediaId, ClaimsPrincipal principal, PhotosService service, CancellationToken ct)
     { var result = await service.GetPhotoAsync(albumId, mediaId, Actor(principal), ct); return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult(); }
+    private static async Task<IResult> GetPhotoAccess(Guid albumId, Guid mediaId, ClaimsPrincipal principal, PhotosService service, CancellationToken ct)
+    { var result = await service.GetPhotoAsync(albumId, mediaId, Actor(principal), ct); return result.Succeeded ? Results.Redirect(result.Value!.Url) : result.Error!.ToHttpResult(); }
     private static Guid? Actor(ClaimsPrincipal principal) => Guid.TryParse(principal.FindFirstValue(JwtRegisteredClaimNames.Sub), out var id) ? id : null;
 }

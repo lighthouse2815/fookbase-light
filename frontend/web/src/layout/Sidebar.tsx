@@ -24,6 +24,7 @@ export default function Sidebar() {
     { path: '/pages', emoji: '📣', label: 'Pages' },
     { path: '/reels', emoji: '🎞️', label: 'Reels' },
     { path: '/stories/archive', emoji: '🕘', label: 'Kho Story' },
+    { path: '/photos', emoji: '🖼️', label: 'Ảnh' },
     { path: '/games', emoji: '🎮', label: t('games') },
     { path: '/profile', emoji: '👤', label: t('profile') },
   ]
