@@ -110,11 +110,13 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     [Fact]
     public async Task Follow_rejects_self_missing_inactive_and_blocked_targets()
     {
-        var users = CreateUserIds(3);
+        var users = CreateUserIds(4);
         var actorUserId = users[0];
         var inactiveUserId = users[1];
         var blockedUserId = users[2];
+        var profilelessUserId = users[3];
         await EnsureEligibleUsersAsync(actorUserId, inactiveUserId, blockedUserId);
+        await EnsureAccountWithoutProfileAsync(profilelessUserId);
         await DisableUserAsync(inactiveUserId);
         using var actor = CreateAuthenticatedClient(actorUserId);
         using var blocked = CreateAuthenticatedClient(blockedUserId);
@@ -125,6 +127,8 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             (await actor.PostAsync($"/api/users/{Guid.NewGuid()}/follow", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict,
             (await actor.PostAsync($"/api/users/{inactiveUserId}/follow", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await actor.PostAsync($"/api/users/{profilelessUserId}/follow", null)).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent,
             (await blocked.PostAsync($"/api/friends/blocks/{actorUserId}", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict,
@@ -182,6 +186,89 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         Assert.NotNull(followers);
         Assert.Single(followers.Items);
         Assert.Equal(ownerUserId, followers.Items[0].UserId);
+    }
+
+    [Fact]
+    public async Task Follow_lists_traverse_both_directions_with_equal_times_and_reject_cross_bound_cursors()
+    {
+        var userIds = CreateUserIds(8);
+        var ownerUserId = userIds[0];
+        var otherOwnerUserId = userIds[1];
+        var followingUserIds = userIds[2..5];
+        var followerUserIds = userIds[5..8];
+        await EnsureEligibleUsersAsync(userIds);
+        var followedAtUtc = new DateTimeOffset(2026, 9, 13, 14, 15, 16, TimeSpan.Zero);
+        await AddFollowsAsync(
+            followingUserIds.Select(userId => (ownerUserId, userId, followedAtUtc))
+                .Concat(followerUserIds.Select(userId => (userId, ownerUserId, followedAtUtc))));
+        using var owner = CreateAuthenticatedClient(ownerUserId);
+
+        var followingFirstPage = await owner.GetFromJsonAsync<FollowPage>(
+            $"/api/users/{ownerUserId}/following?limit=2");
+        Assert.NotNull(followingFirstPage);
+        Assert.Equal(3, followingFirstPage.Total);
+        Assert.Equal(2, followingFirstPage.Items.Count);
+        Assert.False(string.IsNullOrWhiteSpace(followingFirstPage.NextCursor));
+        var followingSecondPage = await owner.GetFromJsonAsync<FollowPage>(
+            $"/api/users/{ownerUserId}/following?limit=2&cursor={Uri.EscapeDataString(followingFirstPage.NextCursor!)}");
+        Assert.NotNull(followingSecondPage);
+        Assert.Equal(followingUserIds.Order(), followingFirstPage.Items
+            .Concat(followingSecondPage.Items).Select(item => item.UserId).Order());
+
+        var followersFirstPage = await owner.GetFromJsonAsync<FollowPage>(
+            $"/api/users/{ownerUserId}/followers?limit=2");
+        Assert.NotNull(followersFirstPage);
+        Assert.Equal(3, followersFirstPage.Total);
+        Assert.Equal(2, followersFirstPage.Items.Count);
+        Assert.False(string.IsNullOrWhiteSpace(followersFirstPage.NextCursor));
+        var followersSecondPage = await owner.GetFromJsonAsync<FollowPage>(
+            $"/api/users/{ownerUserId}/followers?limit=2&cursor={Uri.EscapeDataString(followersFirstPage.NextCursor!)}");
+        Assert.NotNull(followersSecondPage);
+        Assert.Equal(followerUserIds.Order(), followersFirstPage.Items
+            .Concat(followersSecondPage.Items).Select(item => item.UserId).Order());
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await owner.GetAsync(
+            $"/api/users/{otherOwnerUserId}/following?cursor={Uri.EscapeDataString(followingFirstPage.NextCursor!)}")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await owner.GetAsync(
+            $"/api/users/{ownerUserId}/followers?cursor={Uri.EscapeDataString(followingFirstPage.NextCursor!)}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Follow_lists_do_not_enumerate_missing_ineligible_or_blocked_owners()
+    {
+        var userIds = CreateUserIds(4);
+        var viewerUserId = userIds[0];
+        var ownerUserId = userIds[1];
+        var followedUserId = userIds[2];
+        var profilelessOwnerUserId = userIds[3];
+        await EnsureEligibleUsersAsync(viewerUserId, ownerUserId, followedUserId);
+        await EnsureAccountWithoutProfileAsync(profilelessOwnerUserId);
+        await AddFollowsAsync([
+            (ownerUserId, followedUserId, DateTimeOffset.UtcNow),
+            (profilelessOwnerUserId, followedUserId, DateTimeOffset.UtcNow)
+        ]);
+        using var viewer = CreateAuthenticatedClient(viewerUserId);
+
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await viewer.PostAsync($"/api/friends/blocks/{ownerUserId}", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await viewer.GetAsync($"/api/users/{ownerUserId}/following")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await viewer.DeleteAsync($"/api/friends/blocks/{ownerUserId}")).StatusCode);
+        using var owner = CreateAuthenticatedClient(ownerUserId);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await owner.PostAsync($"/api/friends/blocks/{viewerUserId}", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await viewer.GetAsync($"/api/users/{ownerUserId}/following")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await owner.DeleteAsync($"/api/friends/blocks/{viewerUserId}")).StatusCode);
+        await DisableUserAsync(ownerUserId);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await viewer.GetAsync($"/api/users/{ownerUserId}/following")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await viewer.GetAsync($"/api/users/{profilelessOwnerUserId}/following")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await viewer.GetAsync($"/api/users/{Guid.NewGuid()}/following")).StatusCode);
     }
 
     [Fact]
@@ -529,6 +616,34 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         {
             dbContext.Users.Add(new User(userId, $"{userId:N}@test.local", userId.ToString("N"), now));
             dbContext.UserProfiles.Add(UserProfile.Create(userId, userId.ToString("N"), now));
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task EnsureAccountWithoutProfileAsync(Guid userId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        dbContext.Users.Add(new User(
+            userId,
+            $"{userId:N}@test.local",
+            userId.ToString("N"),
+            DateTimeOffset.UtcNow));
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task AddFollowsAsync(
+        IEnumerable<(Guid FollowerUserId, Guid FollowingUserId, DateTimeOffset FollowedAtUtc)> follows)
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        foreach (var follow in follows)
+        {
+            dbContext.UserFollows.Add(UserFollow.Create(
+                follow.FollowerUserId,
+                follow.FollowingUserId,
+                follow.FollowedAtUtc));
         }
 
         await dbContext.SaveChangesAsync();

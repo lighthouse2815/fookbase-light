@@ -668,6 +668,12 @@ public sealed class FriendsService(
                 FollowValidation("invalid_follow_limit", $"Limit must be between 1 and {MaximumFollowPageSize}."));
         }
 
+        if (!await CanViewFollowOwnerAsync(viewerUserId, targetUserId, cancellationToken))
+        {
+            return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Failure(
+                ToApplicationError(FriendsOperationError.UserNotFound));
+        }
+
         FollowCursor? cursor;
         try
         {
@@ -690,13 +696,15 @@ public sealed class FriendsService(
                   !dbContext.BlockedUsers.AsNoTracking().Any(block =>
                       (block.BlockerUserId == viewerUserId && block.BlockedUserId == profile.UserId) ||
                       (block.BlockerUserId == profile.UserId && block.BlockedUserId == viewerUserId))
-            select new FollowListItem(
+            select new
+            {
                 profile.UserId,
                 profile.Username,
                 profile.DisplayName,
                 profile.AvatarUrl,
                 profile.AvatarMediaId,
-                follow.FollowedAtUtc);
+                follow.FollowedAtUtc
+            };
         var total = await query.CountAsync(cancellationToken);
         if (cursor is not null)
         {
@@ -706,11 +714,18 @@ public sealed class FriendsService(
                  item.UserId.CompareTo(cursor.UserId) < 0));
         }
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(item => item.FollowedAtUtc)
             .ThenByDescending(item => item.UserId)
             .Take(limit + 1)
             .ToListAsync(cancellationToken);
+        var items = rows.Select(item => new FollowListItem(
+            item.UserId,
+            item.Username,
+            item.DisplayName,
+            item.AvatarUrl,
+            item.AvatarMediaId,
+            item.FollowedAtUtc)).ToList();
         var page = items.Take(limit).ToList();
         var nextCursor = items.Count > limit
             ? EncodeFollowCursor(
@@ -949,6 +964,18 @@ public sealed class FriendsService(
                 request.UserId2 == pair.UserId2 &&
                 request.Status == FriendRequestStatus.Pending,
             cancellationToken);
+
+    private Task<bool> CanViewFollowOwnerAsync(
+        Guid viewerUserId,
+        Guid ownerUserId,
+        CancellationToken cancellationToken) =>
+        (from user in dbContext.Users.AsNoTracking()
+         join profile in dbContext.UserProfiles.AsNoTracking() on user.Id equals profile.UserId
+         where user.Id == ownerUserId && user.IsActive &&
+               !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                   (block.BlockerUserId == viewerUserId && block.BlockedUserId == ownerUserId) ||
+                   (block.BlockerUserId == ownerUserId && block.BlockedUserId == viewerUserId))
+         select user.Id).AnyAsync(cancellationToken);
 
     private FollowCursor? DecodeFollowCursor(
         string? value,
