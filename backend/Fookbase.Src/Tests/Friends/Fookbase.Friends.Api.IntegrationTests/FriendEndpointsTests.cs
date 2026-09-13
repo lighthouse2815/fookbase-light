@@ -854,7 +854,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var sharedPage = Page.Create(
             Guid.NewGuid(),
             sharedPageName,
-            $"suggestion-{Guid.NewGuid():N}",
+            $"suggestion_{Guid.NewGuid():N}",
             "Test",
             null,
             viewerUserId,
@@ -926,7 +926,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var unpublishedPage = Page.Create(
             Guid.NewGuid(),
             unpublishedPageName,
-            $"unpublished-{Guid.NewGuid():N}",
+            $"unpublished_{Guid.NewGuid():N}",
             "Test",
             null,
             viewerUserId,

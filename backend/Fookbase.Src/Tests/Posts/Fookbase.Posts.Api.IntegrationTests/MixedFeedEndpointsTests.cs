@@ -295,11 +295,11 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var users = await CreateUsersAsync(2);
         var (viewer, friend) = (users[0], users[1]);
         await BefriendAsync(viewer, friend);
-        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
-        var ownPosts = Enumerable.Range(0, 4).Select(i => Standard(viewer, now.AddSeconds(-i))).ToArray();
+        var now = DateTimeOffset.UtcNow;
+        var ownPosts = Enumerable.Range(0, 4).Select(i => Standard(viewer, now.AddSeconds(-i - 2))).ToArray();
         await SaveAsync(db => db.Posts.AddRange(ownPosts));
-        var publicReel = await CreateReelAsync(friend, now.AddSeconds(-4));
-        var friendsReel = await CreateReelAsync(friend, now.AddSeconds(-5), PostPrivacy.Friends);
+        var publicReel = await CreateReelAsync(friend, now);
+        var friendsReel = await CreateReelAsync(friend, now.AddSeconds(-1), PostPrivacy.Friends);
         using var client = CreateClient(viewer);
 
         var beforeUnfollow = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
