@@ -28,6 +28,7 @@ using Fookbase.Api.Modules.Stories.Endpoints;
 using Fookbase.Api.Modules.Users.Endpoints;
 using Fookbase.Api.Modules.Search.Endpoints;
 using Fookbase.Api.Modules.Events.Endpoints;
+using Fookbase.Api.Modules.Memories.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -93,6 +94,7 @@ builder.Services.AddStoriesModule(builder.Configuration);
 builder.Services.AddAdminModule();
 builder.Services.AddSearchModule();
 builder.Services.AddEventsModule();
+builder.Services.AddMemoriesModule();
 
 jwtOptions.Validate();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -244,6 +246,7 @@ app.MapStoryEndpoints();
 app.MapSearchEndpoints();
 app.MapEventEndpoints();
 app.MapPhotoAlbumEndpoints();
+app.MapMemoryEndpoints();
 
 app.Run();
 

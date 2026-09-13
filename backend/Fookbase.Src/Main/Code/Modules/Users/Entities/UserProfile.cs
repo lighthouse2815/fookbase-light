@@ -65,6 +65,17 @@ public sealed class UserProfile
         string? currentCity,
         Guid? avatarMediaId,
         Guid? coverMediaId,
+        DateTimeOffset updatedAt) =>
+        Update(displayName, bio, dateOfBirth, currentCity, avatarMediaId, coverMediaId,
+            null, null, null, null, null, updatedAt);
+
+    public void Update(
+        string? displayName,
+        string? bio,
+        DateOnly? dateOfBirth,
+        string? currentCity,
+        Guid? avatarMediaId,
+        Guid? coverMediaId,
         BirthdayVisibility? birthdayVisibility,
         string? hometown,
         string? workplace,

@@ -22,6 +22,7 @@ using Fookbase.Api.Modules.Stories.Config;
 using Fookbase.Api.Modules.Pages;
 using Fookbase.Api.Modules.Search;
 using Fookbase.Api.Modules.Events;
+using Fookbase.Api.Modules.Memories;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -126,6 +127,9 @@ internal static class ModuleServiceCollectionExtensions
 
     public static IServiceCollection AddEventsModule(this IServiceCollection services) =>
         services.AddEventsInfrastructure();
+
+    public static IServiceCollection AddMemoriesModule(this IServiceCollection services) =>
+        services.AddMemoriesInfrastructure();
 
     private static string RequiredConnectionString(IConfiguration configuration, string name) =>
         configuration.GetConnectionString(name)
