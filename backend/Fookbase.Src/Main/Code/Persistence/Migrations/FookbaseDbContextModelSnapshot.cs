@@ -151,6 +151,31 @@ namespace Fookbase.Api.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.UserFollow", b =>
+                {
+                    b.Property<Guid>("FollowerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FollowingUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("FollowedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("FollowerUserId", "FollowingUserId");
+
+                    b.HasIndex("FollowerUserId", "FollowedAtUtc", "FollowingUserId");
+
+                    b.HasIndex("FollowingUserId", "FollowerUserId");
+
+                    b.HasIndex("FollowingUserId", "FollowedAtUtc", "FollowerUserId");
+
+                    b.ToTable("UserFollows", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserFollows_DifferentUsers", "\"FollowerUserId\" <> \"FollowingUserId\"");
+                        });
+                });
+
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.Group", b =>
                 {
                     b.Property<Guid>("Id")

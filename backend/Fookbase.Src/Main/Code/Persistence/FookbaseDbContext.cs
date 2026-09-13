@@ -26,6 +26,8 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<Friendship> Friendships => Set<Friendship>();
 
+    public DbSet<UserFollow> UserFollows => Set<UserFollow>();
+
     public DbSet<BlockedUser> BlockedUsers => Set<BlockedUser>();
 
     public DbSet<FriendNotification> FriendNotifications => Set<FriendNotification>();

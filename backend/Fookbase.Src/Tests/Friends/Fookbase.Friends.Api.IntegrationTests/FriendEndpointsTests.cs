@@ -8,6 +8,8 @@ using System.Text;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Friends.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -17,6 +19,59 @@ namespace Fookbase.Friends.Api.IntegrationTests;
 public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     : IClassFixture<FriendsApiFactory>
 {
+    [Fact]
+    public async Task Friendship_backfill_creates_bidirectional_follows_without_duplicates()
+    {
+        var userA = Guid.NewGuid();
+        var userB = Guid.NewGuid();
+        var followedAtUtc = DateTimeOffset.UtcNow;
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var migrations = dbContext.Database.GetMigrations().ToList();
+        var followMigration = Assert.Single(migrations,
+            migration => migration.EndsWith("_AddUserFollowV1", StringComparison.Ordinal));
+        var previousMigration = migrations[
+            migrations.IndexOf(followMigration) - 1];
+        var migrator = dbContext.Database.GetService<IMigrator>();
+
+        await migrator.MigrateAsync(previousMigration);
+        dbContext.Friendships.Add(Friendship.Create(Guid.NewGuid(), userA, userB, followedAtUtc));
+        await dbContext.SaveChangesAsync();
+
+        await migrator.MigrateAsync(followMigration);
+
+        var follows = await dbContext.UserFollows
+            .Where(follow =>
+                (follow.FollowerUserId == userA && follow.FollowingUserId == userB) ||
+                (follow.FollowerUserId == userB && follow.FollowingUserId == userA))
+            .ToListAsync();
+
+        Assert.Equal(2, follows.Count);
+        Assert.Contains(follows, follow =>
+            follow.FollowerUserId == userA &&
+            follow.FollowingUserId == userB &&
+            follow.FollowedAtUtc == followedAtUtc);
+        Assert.Contains(follows, follow =>
+            follow.FollowerUserId == userB &&
+            follow.FollowingUserId == userA &&
+            follow.FollowedAtUtc == followedAtUtc);
+
+        await migrator.MigrateAsync(followMigration);
+
+        Assert.Equal(2, await dbContext.UserFollows.CountAsync(follow =>
+            (follow.FollowerUserId == userA && follow.FollowingUserId == userB) ||
+            (follow.FollowerUserId == userB && follow.FollowingUserId == userA)));
+    }
+
+    [Fact]
+    public void User_follow_rejects_following_yourself()
+    {
+        var userId = Guid.NewGuid();
+
+        Assert.Throws<ArgumentException>(() =>
+            UserFollow.Create(userId, userId, DateTimeOffset.UtcNow));
+    }
+
     [Fact]
     public async Task Missing_jwt_returns_unauthorized()
     {
