@@ -41,6 +41,36 @@ export interface FriendNotification {
   readAtUtc: string | null
 }
 
+export interface CursorPageResponse<T> {
+  items: T[]
+  nextCursor: string | null
+  total: number
+}
+
+export interface UserFollow {
+  userId: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
+  followedAtUtc: string
+}
+
+export interface FriendSuggestionProfile {
+  userId: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
+}
+
+export interface FriendSuggestion {
+  profile: FriendSuggestionProfile
+  mutualFriendCount: number
+  sharedGroupCount: number
+  sharedPageCount: number
+  relationshipStatus: string
+  isFollowing: boolean
+}
+
 const pageQuery = (offset = 0, limit = 100) => `?offset=${offset}&limit=${limit}`
 
 export const friendsApi = {
@@ -54,6 +84,11 @@ export const friendsApi = {
     apiRequest<RelationshipStatus>(`/api/friends/status/${userId}`),
   getMutualFriends: (userId: string, offset = 0, limit = 100) =>
     apiRequest<MutualFriends>(`/api/friends/mutual/${userId}${pageQuery(offset, limit)}`),
+  getSuggestions: (cursor?: string, limit = 20) => {
+    const query = new URLSearchParams({ limit: String(limit) })
+    if (cursor) query.set('cursor', cursor)
+    return apiRequest<CursorPageResponse<FriendSuggestion>>(`/api/friends/suggestions?${query.toString()}`)
+  },
   sendRequest: (userId: string) =>
     apiRequest<FriendRequest>(`/api/friends/requests/${userId}`, { method: 'POST' }),
   acceptRequest: (requestId: string) =>

@@ -82,6 +82,26 @@ export default function UserProfilePage() {
     }
   }
 
+  const updateFollow = async () => {
+    if (!profile) return
+
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      if (profile.isFollowing) {
+        await usersApi.unfollow(profile.userId)
+      } else {
+        await usersApi.follow(profile.userId)
+      }
+      await loadProfile()
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateRelationship'))
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   const loadMorePosts = async () => {
     if (!userId) return
     setIsLoadingMorePosts(true)
@@ -145,9 +165,19 @@ export default function UserProfilePage() {
                   <p className="text-sm text-text-muted">@{profile.username}</p>
                   {profile.bio && <p className="mt-3 whitespace-pre-wrap text-sm text-text">{profile.bio}</p>}
                   <p className="mt-3 text-sm text-text-muted">{profile.currentCity ?? t('noCityListed')} · {mutualFriendCount} {t('mutualFriends')}</p>
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-text-muted">
+                    <span><strong className="text-text">{profile.followerCount}</strong> {t('followers')}</span>
+                    <span><strong className="text-text">{profile.followingCount}</strong> {t('followingCount')}</span>
+                    {profile.isFollowedBy && <span>{t('followsYou')}</span>}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {renderRelationshipAction()}
+                  {relationship?.status !== 'blocked' && profile.isFollowing !== null && (
+                    <button type="button" onClick={() => void updateFollow()} disabled={isUpdating} className="px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface-hover text-text border border-border font-semibold text-sm cursor-pointer disabled:opacity-60">
+                      {profile.isFollowing ? t('following') : t('follow')}
+                    </button>
+                  )}
                   {relationship?.status !== 'blocked' && <button type="button" onClick={() => void updateRelationship(() => friendsApi.block(userId))} disabled={isUpdating} className="px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface-hover text-text border border-border font-semibold text-sm cursor-pointer disabled:opacity-60">{t('block')}</button>}
                   <ReportButton targetType="user" targetId={userId} />
                 </div>

@@ -1,13 +1,36 @@
 import { apiRequest } from './client'
 
+export type AppNotificationType =
+  | 'FriendRequestReceived'
+  | 'FriendRequestAccepted'
+  | 'UserFollowed'
+  | 'PostReaction'
+  | 'PostComment'
+  | 'CommentReaction'
+  | 'PostMention'
+  | 'CommentMention'
+  | 'GroupInvite'
+  | 'GroupJoinApproved'
+  | 'StoryReaction'
+
+export type AppNotificationEntityType =
+  | 'FriendRequest'
+  | 'UserFollow'
+  | 'Post'
+  | 'Comment'
+  | 'Group'
+  | 'GroupJoinRequest'
+  | 'GroupInvite'
+  | 'Story'
+
 export interface AppNotification {
   id: string
   recipientUserId: string
   actorUserId: string | null
   actorUsername: string | null
   actorDisplayName: string | null
-  type: 'FriendRequestReceived' | 'FriendRequestAccepted' | 'UserFollowed' | 'PostReaction' | 'PostComment' | 'CommentReaction' | 'PostMention' | 'CommentMention' | 'GroupInvite' | 'GroupJoinApproved' | 'StoryReaction'
-  entityType: 'FriendRequest' | 'UserFollow' | 'Post' | 'Comment' | 'Group' | 'GroupJoinRequest' | 'GroupInvite' | 'Story' | null
+  type: AppNotificationType
+  entityType: AppNotificationEntityType | null
   entityId: string | null
   isRead: boolean
   createdAtUtc: string

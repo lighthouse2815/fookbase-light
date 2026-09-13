@@ -93,7 +93,7 @@ export default function TopNavbar() {
       case 'FriendRequestAccepted':
         return actor + ' accepted your friend request.'
       case 'UserFollowed':
-        return actor + ' started following you.'
+        return actor + ' ' + t('startedFollowingYou')
       case 'PostReaction':
         return actor + ' reacted to your post.'
       case 'PostComment':

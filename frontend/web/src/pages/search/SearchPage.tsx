@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { searchApi, type GlobalSearchResponse, type SearchGroup, type SearchHashtag, type SearchPage as SearchPageResult, type SearchPerson, type SearchPost, type SearchReel, type SearchType } from '../../api/search'
 import { resolveProfileImageUrl } from '../../api/users'
+import { usePreferences } from '../../preferences'
 
 const tabs: Array<{ type: SearchType; label: string }> = [
   { type: 'all', label: 'All' },
@@ -24,7 +25,16 @@ function Avatar({ src, label }: { src: string | null; label: string }) {
 }
 
 function PersonCard({ item }: { item: SearchPerson }) {
-  return <Link to={`/profile/${item.userId}`} className="flex gap-3 rounded-xl border border-border bg-surface p-4 no-underline transition-colors hover:bg-surface-2"><Avatar src={item.avatarUrl} label={item.displayName} /><div className="min-w-0"><h3 className="truncate font-semibold text-text">{item.displayName}</h3><p className="truncate text-sm text-text-muted">@{item.username}</p>{item.bio && <p className="mt-1 line-clamp-2 text-sm text-text-muted">{item.bio}</p>}</div></Link>
+  const { t } = usePreferences()
+  const relationshipLabel = item.friendshipState === 'friends'
+    ? t('friends')
+    : item.friendshipState === 'request_sent'
+      ? t('requestSent')
+      : item.friendshipState === 'request_received'
+        ? t('friendRequestReceived')
+        : null
+
+  return <Link to={`/profile/${item.userId}`} className="flex gap-3 rounded-xl border border-border bg-surface p-4 no-underline transition-colors hover:bg-surface-2"><Avatar src={item.avatarUrl} label={item.displayName} /><div className="min-w-0"><h3 className="truncate font-semibold text-text">{item.displayName}</h3><p className="truncate text-sm text-text-muted">@{item.username}</p>{item.bio && <p className="mt-1 line-clamp-2 text-sm text-text-muted">{item.bio}</p>}<p className="mt-2 text-xs text-text-muted">{item.followerCount} {t('followers')} · {item.followingCount} {t('followingCount')}{relationshipLabel ? ` · ${relationshipLabel}` : ''}{item.isFollowing ? ` · ${t('following')}` : ''}{item.isFollowedBy ? ` · ${t('followsYou')}` : ''}</p></div></Link>
 }
 
 function GroupCard({ item }: { item: SearchGroup }) {

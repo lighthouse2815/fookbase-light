@@ -29,6 +29,11 @@ function toAuthor(post: Post): UserProfile {
     currentCity: null,
     createdAt: post.createdAtUtc,
     updatedAt: post.updatedAtUtc ?? post.createdAtUtc,
+    followerCount: 0,
+    followingCount: 0,
+    isFollowing: null,
+    isFollowedBy: null,
+    friendshipState: null,
   }
 }
 

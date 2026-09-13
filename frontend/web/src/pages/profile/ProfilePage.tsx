@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { authApi } from '../../api/auth'
 import { friendsApi } from '../../api/friends'
-import type { BlockedUser, Friend, FriendRequest, PagedResponse } from '../../api/friends'
+import type { BlockedUser, Friend, FriendRequest, FriendSuggestion, PagedResponse } from '../../api/friends'
 import { mediaApi } from '../../api/media'
 import { postsApi } from '../../api/posts'
 import type { Post as ApiPost } from '../../api/posts'
@@ -60,9 +60,11 @@ export default function ProfilePage() {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([])
   const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([])
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([])
+  const [friendSuggestions, setFriendSuggestions] = useState<FriendSuggestion[]>([])
   const [friendProfiles, setFriendProfiles] = useState<Record<string, UserProfile>>({})
   const [isRelationshipsLoading, setIsRelationshipsLoading] = useState(true)
   const [isLoadingMoreFriends, setIsLoadingMoreFriends] = useState(false)
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
   const [relationshipError, setRelationshipError] = useState<string | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -206,6 +208,19 @@ export default function ProfilePage() {
     }
   }, [t])
 
+  const loadFriendSuggestions = useCallback(async () => {
+    setIsSuggestionsLoading(true)
+
+    try {
+      const page = await friendsApi.getSuggestions(undefined, 12)
+      setFriendSuggestions(page.items)
+    } catch (error) {
+      setRelationshipError(error instanceof ApiError ? error.message : t('unableLoadFriends'))
+    } finally {
+      setIsSuggestionsLoading(false)
+    }
+  }, [t])
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void loadRelationships(false)
@@ -222,6 +237,16 @@ export default function ProfilePage() {
     return () => window.clearTimeout(timeoutId)
   }, [loadCurrentProfile])
 
+  useEffect(() => {
+    if (tab !== 'friends') return
+
+    const timeoutId = window.setTimeout(() => {
+      void loadFriendSuggestions()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadFriendSuggestions, tab])
+
   const runRelationshipAction = async (id: string, action: () => Promise<unknown>) => {
     setActionId(id)
     setRelationshipError(null)
@@ -233,6 +258,42 @@ export default function ProfilePage() {
       setRelationshipError(
         error instanceof ApiError ? error.message : t('unableUpdateRelationship'),
       )
+    } finally {
+      setActionId(null)
+    }
+  }
+
+  const addSuggestedFriend = async (suggestion: FriendSuggestion) => {
+    const id = `suggestion-friend-${suggestion.profile.userId}`
+    setActionId(id)
+    setRelationshipError(null)
+
+    try {
+      await friendsApi.sendRequest(suggestion.profile.userId)
+      setFriendSuggestions((current) => current.filter((item) => item.profile.userId !== suggestion.profile.userId))
+    } catch (error) {
+      setRelationshipError(error instanceof ApiError ? error.message : t('unableUpdateRelationship'))
+    } finally {
+      setActionId(null)
+    }
+  }
+
+  const toggleSuggestedFollow = async (suggestion: FriendSuggestion) => {
+    const id = `suggestion-follow-${suggestion.profile.userId}`
+    setActionId(id)
+    setRelationshipError(null)
+
+    try {
+      if (suggestion.isFollowing) {
+        await usersApi.unfollow(suggestion.profile.userId)
+      } else {
+        await usersApi.follow(suggestion.profile.userId)
+      }
+      setFriendSuggestions((current) => current.map((item) => item.profile.userId === suggestion.profile.userId
+        ? { ...item, isFollowing: !item.isFollowing }
+        : item))
+    } catch (error) {
+      setRelationshipError(error instanceof ApiError ? error.message : t('unableUpdateRelationship'))
     } finally {
       setActionId(null)
     }
@@ -772,6 +833,38 @@ export default function ProfilePage() {
                 {relationshipError}
               </div>
             )}
+
+            <section className="flex flex-col gap-3 border-b border-border pb-5">
+              <div>
+                <h3 className="font-heading font-bold text-lg text-text">{t('peopleYouMayKnow')}</h3>
+                <p className="text-sm text-text-muted">{t('peopleYouMayKnowDescription')}</p>
+              </div>
+              {isSuggestionsLoading ? <p className="text-sm text-text-muted">{t('loading')}</p> : friendSuggestions.length === 0 ? <p className="text-sm text-text-muted">{t('noSuggestionsYet')}</p> : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {friendSuggestions.map((suggestion) => {
+                    const { profile: suggestionProfile } = suggestion
+                    const isAdding = actionId === `suggestion-friend-${suggestionProfile.userId}`
+                    const isFollowing = actionId === `suggestion-follow-${suggestionProfile.userId}`
+
+                    return <article key={suggestionProfile.userId} className="flex gap-3 rounded-xl border border-border bg-surface-2/60 p-3">
+                      <Link to={`/profile/${suggestionProfile.userId}`} className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-primary text-center leading-[3rem] text-sm font-bold text-white no-underline">
+                        {suggestionProfile.avatarUrl ? <img src={resolveProfileImageUrl(suggestionProfile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : suggestionProfile.displayName.slice(0, 2).toUpperCase()}
+                      </Link>
+                      <div className="min-w-0 flex-1">
+                        <Link to={`/profile/${suggestionProfile.userId}`} className="block truncate text-sm font-semibold text-text no-underline hover:underline">{suggestionProfile.displayName}</Link>
+                        <p className="truncate text-xs text-text-muted">@{suggestionProfile.username}</p>
+                        <p className="mt-1 text-xs text-text-muted">{suggestion.mutualFriendCount} {t('mutualFriends')}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {suggestion.relationshipStatus === 'none' && <button type="button" onClick={() => void addSuggestedFriend(suggestion)} disabled={actionId !== null} className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-60">{isAdding ? t('sending') : t('addFriend')}</button>}
+                          <button type="button" onClick={() => void toggleSuggestedFollow(suggestion)} disabled={actionId !== null} className="rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-text disabled:opacity-60">{isFollowing ? t('updating') : suggestion.isFollowing ? t('following') : t('follow')}</button>
+                          <button type="button" onClick={() => setFriendSuggestions((current) => current.filter((item) => item.profile.userId !== suggestionProfile.userId))} disabled={actionId !== null} className="rounded-md border border-border bg-transparent px-2.5 py-1 text-xs font-semibold text-text-muted disabled:opacity-60">{t('remove')}</button>
+                        </div>
+                      </div>
+                    </article>
+                  })}
+                </div>
+              )}
+            </section>
 
             {incomingRequests.length > 0 && (
               <section className="flex flex-col gap-3">

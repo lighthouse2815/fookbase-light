@@ -9,6 +9,11 @@ export interface SearchPerson {
   displayName: string
   avatarUrl: string | null
   bio: string | null
+  followerCount: number
+  followingCount: number
+  isFollowing: boolean | null
+  isFollowedBy: boolean | null
+  friendshipState: string | null
 }
 
 export interface SearchGroup {
