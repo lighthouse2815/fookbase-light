@@ -134,6 +134,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     [Theory]
     [InlineData("block")]
     [InlineData("reverse-block")]
+    [InlineData("unfriend")]
     [InlineData("leave")]
     [InlineData("remove")]
     [InlineData("unfollow")]
@@ -187,6 +188,11 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
             {
                 switch (change)
                 {
+                    case "unfriend":
+                        db.Friendships.Remove(db.Friendships.Single(item =>
+                            (item.UserId1 == viewer && item.UserId2 == friend) ||
+                            (item.UserId1 == friend && item.UserId2 == viewer)));
+                        break;
                     case "unfollow":
                         db.PageFollowers.Remove(db.PageFollowers.Single(item => item.PageId == page.Id && item.UserId == viewer));
                         break;
@@ -203,8 +209,16 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
             });
         }
 
+        if (change == "unfriend")
+        {
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            Assert.True(await db.UserFollows.AnyAsync(follow =>
+                follow.FollowerUserId == viewer && follow.FollowingUserId == friend));
+        }
+
         var remaining = await TraverseAsync(client, "/api/feed", 2, first.NextCursor);
-        var fresh = await ReadAsync(await client.GetAsync("/api/feed/following?limit=50"));
+        var fresh = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
         Assert.DoesNotContain(remaining, item => item.Id == target);
         Assert.DoesNotContain(fresh.Items, item => item.Id == target);
     }
@@ -273,6 +287,33 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
 
         Assert.DoesNotContain(refreshed.Items, item => item.Id == friendPost.Id);
         Assert.Contains(refreshed.Items, item => item.Id == followedPublic.Id && !item.IsSuggested);
+    }
+
+    [Fact]
+    public async Task Unfollowing_friend_removes_organic_reels_but_allows_public_reel_discovery()
+    {
+        var users = await CreateUsersAsync(2);
+        var (viewer, friend) = (users[0], users[1]);
+        await BefriendAsync(viewer, friend);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var ownPosts = Enumerable.Range(0, 4).Select(i => Standard(viewer, now.AddSeconds(-i))).ToArray();
+        await SaveAsync(db => db.Posts.AddRange(ownPosts));
+        var publicReel = await CreateReelAsync(friend, now.AddSeconds(-4));
+        var friendsReel = await CreateReelAsync(friend, now.AddSeconds(-5), PostPrivacy.Friends);
+        using var client = CreateClient(viewer);
+
+        var beforeUnfollow = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
+        Assert.All(new[] { publicReel.Id, friendsReel.Id }, id =>
+            Assert.Contains(beforeUnfollow.Items, item => item.Id == id && !item.IsSuggested));
+
+        await SaveAsync(db => db.UserFollows.Remove(db.UserFollows.Single(follow =>
+            follow.FollowerUserId == viewer && follow.FollowingUserId == friend)));
+        var refreshed = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
+
+        Assert.Equal(ownPosts.Select(post => post.Id), refreshed.Items.Where(item => !item.IsSuggested).Select(item => item.Id));
+        Assert.DoesNotContain(refreshed.Items, item => item.Id == publicReel.Id && !item.IsSuggested);
+        Assert.DoesNotContain(refreshed.Items, item => item.Id == friendsReel.Id);
+        Assert.Contains(refreshed.Items, item => item.Id == publicReel.Id && item.IsSuggested);
     }
 
     [Fact]
@@ -366,22 +407,24 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     [Fact]
     public async Task Affinity_and_freshness_are_predictable_and_changed_options_invalidate_old_cursors()
     {
-        var users = await CreateUsersAsync(3);
-        var (viewer, friend, owner) = (users[0], users[1], users[2]);
+        var users = await CreateUsersAsync(4);
+        var (viewer, friend, followedNonFriend, owner) = (users[0], users[1], users[2], users[3]);
         await BefriendAsync(viewer, friend);
+        await FollowAsync(viewer, followedNonFriend);
         var group = await CreateGroupAsync(owner, viewer);
         var page = await CreatePageAsync(owner, viewer);
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
         var own = Standard(viewer, now);
         var friendPost = Standard(friend, now);
+        var followedNonFriendPost = Standard(followedNonFriend, now);
         var groupPost = InContainer(owner, group.Id, PostContainerType.Group, now);
         var pagePost = InContainer(owner, page.Id, PostContainerType.Page, now);
         var oldOwn = Standard(viewer, now.AddHours(-48));
-        await SaveAsync(db => db.Posts.AddRange(own, friendPost, groupPost, pagePost, oldOwn));
+        await SaveAsync(db => db.Posts.AddRange(own, friendPost, followedNonFriendPost, groupPost, pagePost, oldOwn));
         using var client = CreateClient(viewer);
 
         var normal = await TraverseAsync(client, "/api/feed", 2);
-        Assert.Equal(new[] { own.Id, friendPost.Id, groupPost.Id, pagePost.Id, oldOwn.Id },
+        Assert.Equal(new[] { own.Id, friendPost.Id, followedNonFriendPost.Id, groupPost.Id, pagePost.Id, oldOwn.Id },
             normal.Where(item => !item.IsSuggested).Select(item => item.Id));
         var first = await ReadAsync(await client.GetAsync("/api/feed?limit=1"));
         var sharedProtection = factory.Services.GetRequiredService<IDataProtectionProvider>();
@@ -392,8 +435,9 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
             {
                 OwnAffinity = 0,
                 FriendAffinity = 30,
+                FollowedNonFriendProfile = 15,
                 GroupAffinity = 10,
-                PageAffinity = 20,
+                PageAffinity = 5,
                 FreshnessHoursPerPoint = 1,
                 CandidateLimitPerSource = 51
             });
@@ -403,7 +447,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         }));
         using var changedClient = CreateClient(viewer, changedFactory);
         var changed = await TraverseAsync(changedClient, "/api/feed", 2);
-        Assert.Equal(new[] { friendPost.Id, pagePost.Id, groupPost.Id, own.Id, oldOwn.Id },
+        Assert.Equal(new[] { friendPost.Id, followedNonFriendPost.Id, groupPost.Id, pagePost.Id, own.Id, oldOwn.Id },
             changed.Where(item => !item.IsSuggested).Select(item => item.Id));
         Assert.Equal(HttpStatusCode.BadRequest,
             (await changedClient.GetAsync(CursorUrl("/api/feed", 1, first.NextCursor))).StatusCode);
