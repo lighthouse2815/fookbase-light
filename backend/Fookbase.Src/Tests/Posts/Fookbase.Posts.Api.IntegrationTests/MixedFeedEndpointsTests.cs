@@ -134,7 +134,6 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     [Theory]
     [InlineData("block")]
     [InlineData("reverse-block")]
-    [InlineData("unfriend")]
     [InlineData("leave")]
     [InlineData("remove")]
     [InlineData("unfollow")]
@@ -188,11 +187,6 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
             {
                 switch (change)
                 {
-                    case "unfriend":
-                        db.Friendships.Remove(db.Friendships.Single(item =>
-                            (item.UserId1 == viewer && item.UserId2 == friend) ||
-                            (item.UserId1 == friend && item.UserId2 == viewer)));
-                        break;
                     case "unfollow":
                         db.PageFollowers.Remove(db.PageFollowers.Single(item => item.PageId == page.Id && item.UserId == viewer));
                         break;
@@ -248,6 +242,81 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var refreshed = await ReadAsync(await client.GetAsync("/api/feed?limit=2"));
         Assert.True(refreshed.AsOfUtc >= newer.CreatedAtUtc);
         Assert.Equal(newer.Id, refreshed.Items[0].Id);
+    }
+
+    [Fact]
+    public async Task Organic_profile_candidates_require_follow_and_keep_friend_and_non_friend_privacy_distinct()
+    {
+        var users = await CreateUsersAsync(4);
+        var (viewer, friend, followedNonFriend, stranger) = (users[0], users[1], users[2], users[3]);
+        await BefriendAsync(viewer, friend);
+        await FollowAsync(viewer, followedNonFriend);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var friendPost = Standard(friend, now, PostPrivacy.Friends);
+        var followedPublic = Standard(followedNonFriend, now.AddSeconds(-1));
+        var followedFriendsOnly = Standard(followedNonFriend, now.AddSeconds(-2), PostPrivacy.Friends);
+        var strangerPublic = Standard(stranger, now.AddSeconds(-3));
+        await SaveAsync(db => db.Posts.AddRange(friendPost, followedPublic, followedFriendsOnly, strangerPublic));
+        var followedReel = await CreateReelAsync(followedNonFriend, now.AddSeconds(-4));
+        using var client = CreateClient(viewer);
+
+        var feed = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
+
+        Assert.All(new[] { friendPost.Id, followedPublic.Id, followedReel.Id }, id =>
+            Assert.Contains(feed.Items, item => item.Id == id && !item.IsSuggested));
+        Assert.All(new[] { followedFriendsOnly.Id, strangerPublic.Id }, id =>
+            Assert.DoesNotContain(feed.Items, item => item.Id == id && !item.IsSuggested));
+
+        await SaveAsync(db => db.UserFollows.Remove(db.UserFollows.Single(follow =>
+            follow.FollowerUserId == viewer && follow.FollowingUserId == friend)));
+        var refreshed = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
+
+        Assert.DoesNotContain(refreshed.Items, item => item.Id == friendPost.Id);
+        Assert.Contains(refreshed.Items, item => item.Id == followedPublic.Id && !item.IsSuggested);
+    }
+
+    [Fact]
+    public async Task Old_cursor_rechecks_follow_eligibility_before_returning_profile_content()
+    {
+        var users = await CreateUsersAsync(2);
+        var (viewer, friend) = (users[0], users[1]);
+        await BefriendAsync(viewer, friend);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var own = Standard(viewer, now);
+        var friendPost = Standard(friend, now.AddSeconds(-1), PostPrivacy.Friends);
+        await SaveAsync(db => db.Posts.AddRange(own, friendPost));
+        using var client = CreateClient(viewer);
+
+        var first = await ReadAsync(await client.GetAsync("/api/feed?limit=1"));
+        Assert.Equal(own.Id, Assert.Single(first.Items).Id);
+        Assert.NotNull(first.NextCursor);
+
+        await SaveAsync(db => db.UserFollows.Remove(db.UserFollows.Single(follow =>
+            follow.FollowerUserId == viewer && follow.FollowingUserId == friend)));
+        var remaining = await TraverseAsync(client, "/api/feed", 1, first.NextCursor);
+
+        Assert.DoesNotContain(remaining, item => item.Id == friendPost.Id);
+    }
+
+    [Fact]
+    public async Task Following_mode_uses_follows_and_never_inserts_suggested_reels()
+    {
+        var users = await CreateUsersAsync(3);
+        var (viewer, followed, stranger) = (users[0], users[1], users[2]);
+        await FollowAsync(viewer, followed);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var followedPost = Standard(followed, now);
+        var strangerPost = Standard(stranger, now.AddSeconds(-1));
+        await SaveAsync(db => db.Posts.AddRange(followedPost, strangerPost));
+        var followedReel = await CreateReelAsync(followed, now.AddSeconds(-2));
+        var strangerReel = await CreateReelAsync(stranger, now.AddSeconds(-3));
+        using var client = CreateClient(viewer);
+
+        var following = await TraverseAsync(client, "/api/feed/following", 20);
+
+        Assert.All(following, item => Assert.False(item.IsSuggested));
+        Assert.All(new[] { followedPost.Id, followedReel.Id }, id => Assert.Contains(following, item => item.Id == id));
+        Assert.All(new[] { strangerPost.Id, strangerReel.Id }, id => Assert.DoesNotContain(following, item => item.Id == id));
     }
 
     [Fact]
@@ -489,7 +558,16 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     }
 
     private Task BefriendAsync(Guid viewer, Guid friend) => SaveAsync(db =>
-        db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewer, friend, DateTimeOffset.UtcNow)));
+    {
+        var now = DateTimeOffset.UtcNow;
+        db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewer, friend, now));
+        db.UserFollows.AddRange(
+            UserFollow.Create(viewer, friend, now),
+            UserFollow.Create(friend, viewer, now));
+    });
+
+    private Task FollowAsync(Guid follower, Guid following) => SaveAsync(db =>
+        db.UserFollows.Add(UserFollow.Create(follower, following, DateTimeOffset.UtcNow)));
 
     private async Task BlockAsync(Guid viewer, Guid other)
     {

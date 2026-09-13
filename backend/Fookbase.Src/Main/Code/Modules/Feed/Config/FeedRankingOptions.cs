@@ -6,6 +6,7 @@ public sealed class FeedRankingOptions
 
     public int OwnAffinity { get; init; } = 8;
     public int FriendAffinity { get; init; } = 6;
+    public int FollowedNonFriendProfile { get; init; } = 5;
     public int GroupAffinity { get; init; } = 4;
     public int PageAffinity { get; init; } = 3;
     public int SuggestedReelAffinity { get; init; } = 1;
@@ -19,7 +20,7 @@ public sealed class FeedRankingOptions
 
     public void Validate()
     {
-        if (new[] { OwnAffinity, FriendAffinity, GroupAffinity, PageAffinity, SuggestedReelAffinity }
+        if (new[] { OwnAffinity, FriendAffinity, FollowedNonFriendProfile, GroupAffinity, PageAffinity, SuggestedReelAffinity }
                 .Any(weight => weight is < 0 or > 100) ||
             FreshnessHoursPerPoint is < 1 or > 168 ||
             CandidateLimitPerSource is < 51 or > 500 ||

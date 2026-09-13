@@ -61,7 +61,7 @@ public sealed class FeedService(
         var relationships = await friendsService.GetAccessSnapshotAsync(viewerUserId, cancellationToken);
         var viewer = new PostViewerContext(viewerUserId, relationships.FriendUserIds, relationships.BlockedUserIds);
         var posts = dbContext.Posts.AsNoTracking().Where(post => post.CreatedAtUtc <= session.AsOfUtc);
-        var profile = PostVisibility.ApplyHomeFeed(posts, viewer)
+        var profile = PostVisibility.ApplyDirectAccess(posts, viewer)
             .Where(post => post.PostType == PostType.Standard ||
                 ReelMediaQuery.ApplyReadyMedia(dbContext.Posts, dbContext).Any(reel => reel.Id == post.Id));
         var groups = groupPostAccessService.ApplyDirectAccess(posts, viewer)
@@ -73,7 +73,13 @@ public sealed class FeedService(
 
         var organic = new List<Candidate>();
         await AddWindowAsync(profile.Where(post => post.AuthorUserId == viewerUserId), options.OwnAffinity);
-        await AddWindowAsync(profile.Where(post => post.AuthorUserId != viewerUserId), options.FriendAffinity);
+        await AddWindowAsync(profile.Where(post =>
+            relationships.FollowedUserIds.Contains(post.AuthorUserId) &&
+            viewer.FriendUserIds.Contains(post.AuthorUserId)), options.FriendAffinity);
+        await AddWindowAsync(profile.Where(post =>
+            relationships.FollowedUserIds.Contains(post.AuthorUserId) &&
+            !viewer.FriendUserIds.Contains(post.AuthorUserId) &&
+            post.Privacy == PostPrivacy.Public), options.FollowedNonFriendProfile);
         await AddWindowAsync(groups, options.GroupAffinity);
         await AddWindowAsync(pages, options.PageAffinity);
         var shares = dbContext.PostShares.AsNoTracking().Where(share =>
@@ -104,7 +110,7 @@ public sealed class FeedService(
             var discoverable = ReelMediaQuery.ApplyReadyMedia(
                 PostVisibility.ApplyDirectAccess(posts, viewer), dbContext)
                 .Where(post => post.PostType == PostType.Reel && post.Privacy == PostPrivacy.Public &&
-                    post.AuthorUserId != viewerUserId && !viewer.FriendUserIds.Contains(post.AuthorUserId) &&
+                    post.AuthorUserId != viewerUserId && !relationships.FollowedUserIds.Contains(post.AuthorUserId) &&
                     post.CreatedAtUtc >= oldest);
             suggestions = await LoadWindowAsync(discoverable, options.SuggestedReelAffinity,
                 session.Suggestion, session.AsOfUtc, true, cancellationToken);

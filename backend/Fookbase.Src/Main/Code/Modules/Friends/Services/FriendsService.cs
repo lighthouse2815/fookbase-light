@@ -225,8 +225,15 @@ public sealed class FriendsService(
                 ? block.BlockedUserId
                 : block.BlockerUserId)
             .ToHashSetAsync(cancellationToken);
+        var followedUserIds = await dbContext.UserFollows.AsNoTracking()
+            .Where(follow => follow.FollowerUserId == userId &&
+                !dbContext.BlockedUsers.Any(block =>
+                    (block.BlockerUserId == userId && block.BlockedUserId == follow.FollowingUserId) ||
+                    (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == userId)))
+            .Select(follow => follow.FollowingUserId)
+            .ToHashSetAsync(cancellationToken);
 
-        return new RelationshipAccessSnapshot(friendUserIds, blockedUserIds);
+        return new RelationshipAccessSnapshot(friendUserIds, blockedUserIds, followedUserIds);
     }
 
     public async Task<ApplicationResult<MutualFriendsResponse>> GetMutualFriendsAsync(
@@ -1191,4 +1198,5 @@ public sealed class FriendsService(
 
 public sealed record RelationshipAccessSnapshot(
     IReadOnlySet<Guid> FriendUserIds,
-    IReadOnlySet<Guid> BlockedUserIds);
+    IReadOnlySet<Guid> BlockedUserIds,
+    IReadOnlySet<Guid> FollowedUserIds);
