@@ -239,10 +239,16 @@ public sealed class AuthenticationService(
             return ApplicationResult.Failure(InvalidRefreshToken());
         }
 
-        var revoked = await RevokeRefreshTokenAsync(
-            tokenService.HashRefreshToken(request.RefreshToken),
-            userId,
-            timeProvider.GetUtcNow(),
+        var now = timeProvider.GetUtcNow();
+        var currentToken = await dbContext.RefreshTokens.AsNoTracking().SingleOrDefaultAsync(
+            token => token.TokenHash == tokenService.HashRefreshToken(request.RefreshToken) && token.UserId == userId,
+            cancellationToken);
+        if (currentToken?.SessionId is { } sessionId)
+        {
+            return await RevokeSessionAsync(userId, sessionId, now, cancellationToken);
+        }
+
+        var revoked = await RevokeRefreshTokenAsync(tokenService.HashRefreshToken(request.RefreshToken), userId, now,
             cancellationToken);
 
         return revoked
