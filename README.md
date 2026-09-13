@@ -1,8 +1,8 @@
 # Fookbase Light
 
-Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Feed, Groups, Messages, Notifications, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`; không còn API Gateway, service-to-service HTTP hay RabbitMQ.
+Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Feed, Groups, Messages, Notifications, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`;
 
-Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`. Không dùng message broker, event bus, outbox hoặc inbox.
+Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`.
 
 Chi tiết về ranh giới module và kế hoạch hợp nhất database được ghi tại [docs/modular-monolith.md](docs/modular-monolith.md).
 
