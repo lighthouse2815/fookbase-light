@@ -16,6 +16,22 @@ export interface UserProfile {
   isFollowing: boolean | null
   isFollowedBy: boolean | null
   friendshipState: string | null
+  birthday?: { month: number; day: number } | null
+  birthdayVisibility?: 'onlyme' | 'friends' | 'public' | null
+  hometown?: string | null
+  workplace?: string | null
+  education?: string | null
+  website?: string | null
+}
+
+export interface BirthdayFriend {
+  userId: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
+  month: number
+  day: number
+  friendshipState: string
 }
 
 export interface CursorPageResponse<T> {
@@ -62,6 +78,11 @@ export const usersApi = {
   },
 }
 
+export const birthdaysApi = {
+  getToday: () => apiRequest<BirthdayFriend[]>('/api/birthdays/today'),
+  getUpcoming: (days = 7) => apiRequest<BirthdayFriend[]>(`/api/birthdays/upcoming?days=${days}`),
+}
+
 export interface UserSearchResponse {
   items: UserProfile[]
   offset: number
@@ -76,6 +97,11 @@ export interface UpdateUserProfileDetails {
   currentCity?: string | null
   avatarMediaId?: string | null
   coverMediaId?: string | null
+  birthdayVisibility?: number | null
+  hometown?: string | null
+  workplace?: string | null
+  education?: string | null
+  website?: string | null
 }
 
 export function resolveProfileImageUrl(url: string) {

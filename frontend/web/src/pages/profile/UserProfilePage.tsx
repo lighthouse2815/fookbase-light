@@ -250,6 +250,13 @@ export default function UserProfilePage() {
                   <p className="text-sm text-text-muted">@{profile.username}</p>
                   {profile.bio && <p className="mt-3 whitespace-pre-wrap text-sm text-text">{profile.bio}</p>}
                   <p className="mt-3 text-sm text-text-muted">{profile.currentCity ?? t('noCityListed')} · {mutualFriendCount} {t('mutualFriends')}</p>
+                  <div className="mt-2 flex flex-col gap-1 text-sm text-text-muted">
+                    {profile.hometown && <span>🏠 Đến từ {profile.hometown}</span>}
+                    {profile.workplace && <span>💼 Làm việc tại {profile.workplace}</span>}
+                    {profile.education && <span>🎓 Học tại {profile.education}</span>}
+                    {profile.birthday && <span>🎂 {profile.birthday.day}/{profile.birthday.month}</span>}
+                    {profile.website && <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-primary">🔗 {profile.website}</a>}
+                  </div>
                   <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-text-muted">
                     <span><strong className="text-text">{profile.followerCount}</strong> {t('followers')}</span>
                     <span><strong className="text-text">{profile.followingCount}</strong> {t('followingCount')}</span>

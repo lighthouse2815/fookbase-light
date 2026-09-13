@@ -25,6 +25,8 @@ export default function Sidebar() {
     { path: '/reels', emoji: '🎞️', label: 'Reels' },
     { path: '/stories/archive', emoji: '🕘', label: 'Kho Story' },
     { path: '/photos', emoji: '🖼️', label: 'Ảnh' },
+    { path: '/memories', emoji: '🕰️', label: 'Kỷ niệm' },
+    { path: '/birthdays', emoji: '🎂', label: 'Sinh nhật' },
     { path: '/games', emoji: '🎮', label: t('games') },
     { path: '/profile', emoji: '👤', label: t('profile') },
   ]

@@ -24,6 +24,8 @@ const eventCreatePage = lazy(() => import('../pages/events/EventCreatePage'))
 const eventDetailPage = lazy(() => import('../pages/events/EventDetailPage'))
 const photosPage = lazy(() => import('../pages/photos/PhotosPage'))
 const albumDetailPage = lazy(() => import('../pages/photos/AlbumDetailPage'))
+const memoriesPage = lazy(() => import('../pages/memories/MemoriesPage'))
+const birthdaysPage = lazy(() => import('../pages/birthdays/BirthdaysPage'))
 
 function page(Page: ComponentType) {
   return <Suspense fallback={<main className="min-h-screen grid place-items-center text-text-muted">Đang tải…</main>}><Page /></Suspense>
@@ -83,6 +85,8 @@ export const router = createBrowserRouter([
       { path: 'events/:eventId', element: page(eventDetailPage) },
       { path: 'photos', element: page(photosPage) },
       { path: 'albums/:albumId', element: page(albumDetailPage) },
+      { path: 'memories', element: page(memoriesPage) },
+      { path: 'birthdays', element: page(birthdaysPage) },
       {
         path: 'pages',
         element: page(pagesPage),

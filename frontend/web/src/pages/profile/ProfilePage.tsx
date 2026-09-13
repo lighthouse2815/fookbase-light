@@ -83,6 +83,12 @@ export default function ProfilePage() {
   const [displayNameDraft, setDisplayNameDraft] = useState('')
   const [bioDraft, setBioDraft] = useState('')
   const [cityDraft, setCityDraft] = useState('')
+  const [hometownDraft, setHometownDraft] = useState('')
+  const [workplaceDraft, setWorkplaceDraft] = useState('')
+  const [educationDraft, setEducationDraft] = useState('')
+  const [websiteDraft, setWebsiteDraft] = useState('')
+  const [birthdayDraft, setBirthdayDraft] = useState('')
+  const [birthdayVisibilityDraft, setBirthdayVisibilityDraft] = useState('0')
   const [profileMediaUpload, setProfileMediaUpload] = useState<{ kind: 'avatar' | 'cover'; progress: number } | null>(null)
   const [currentPasswordDraft, setCurrentPasswordDraft] = useState('')
   const [newPasswordDraft, setNewPasswordDraft] = useState('')
@@ -384,6 +390,12 @@ export default function ProfilePage() {
     setDisplayNameDraft(profile?.displayName ?? session!.user.username)
     setBioDraft(profile?.bio ?? '')
     setCityDraft(profile?.currentCity ?? '')
+    setHometownDraft(profile?.hometown ?? '')
+    setWorkplaceDraft(profile?.workplace ?? '')
+    setEducationDraft(profile?.education ?? '')
+    setWebsiteDraft(profile?.website ?? '')
+    setBirthdayDraft(profile?.dateOfBirth ?? '')
+    setBirthdayVisibilityDraft(profile?.birthdayVisibility === 'friends' ? '1' : profile?.birthdayVisibility === 'public' ? '2' : '0')
     setIsProfileEditing(true)
   }
 
@@ -396,6 +408,12 @@ export default function ProfilePage() {
         displayName: displayNameDraft,
         bio: bioDraft,
         currentCity: cityDraft,
+        hometown: hometownDraft,
+        workplace: workplaceDraft,
+        education: educationDraft,
+        website: websiteDraft,
+        dateOfBirth: birthdayDraft || null,
+        birthdayVisibility: Number(birthdayVisibilityDraft),
       }))
       setIsProfileEditing(false)
     } catch (error) {
@@ -606,6 +624,12 @@ export default function ProfilePage() {
               <label className="flex flex-col gap-1 text-sm text-text">{t('currentCity')}
                 <input value={cityDraft} onChange={(event) => setCityDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" />
               </label>
+              <label className="flex flex-col gap-1 text-sm text-text">Quê quán<input value={hometownDraft} onChange={(event) => setHometownDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" /></label>
+              <label className="flex flex-col gap-1 text-sm text-text">Nơi làm việc<input value={workplaceDraft} onChange={(event) => setWorkplaceDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" /></label>
+              <label className="flex flex-col gap-1 text-sm text-text">Học vấn<input value={educationDraft} onChange={(event) => setEducationDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" /></label>
+              <label className="flex flex-col gap-1 text-sm text-text">Website<input type="url" value={websiteDraft} onChange={(event) => setWebsiteDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" /></label>
+              <label className="flex flex-col gap-1 text-sm text-text">Ngày sinh<input type="date" value={birthdayDraft} onChange={(event) => setBirthdayDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none" /></label>
+              <label className="flex flex-col gap-1 text-sm text-text">Hiển thị ngày sinh<select value={birthdayVisibilityDraft} onChange={(event) => setBirthdayVisibilityDraft(event.target.value)} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none"><option value="0">Chỉ mình tôi</option><option value="1">Bạn bè</option><option value="2">Công khai</option></select></label>
               <label className="sm:col-span-2 flex flex-col gap-1 text-sm text-text">{t('bio')}
                 <textarea value={bioDraft} onChange={(event) => setBioDraft(event.target.value)} rows={3} className="rounded-lg border border-border bg-surface px-3 py-2 text-text outline-none resize-y" />
               </label>
@@ -844,6 +868,11 @@ export default function ProfilePage() {
                     <p className="text-xs text-text-muted">{t('currentCity')}</p>
                   </div>
                 </div>
+                {profile?.hometown && <p className="text-sm text-text">🏠 Đến từ {profile.hometown}</p>}
+                {profile?.workplace && <p className="text-sm text-text">💼 Làm việc tại {profile.workplace}</p>}
+                {profile?.education && <p className="text-sm text-text">🎓 Học tại {profile.education}</p>}
+                {profile?.website && <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-sm text-primary">🔗 {profile.website}</a>}
+                {profile?.birthday && <p className="text-sm text-text">🎂 {profile.birthday.day}/{profile.birthday.month}</p>}
                 <div className="flex items-start gap-3">
                   <span className="text-xl">📅</span>
                   <div>
