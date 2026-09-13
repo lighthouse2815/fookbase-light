@@ -28,16 +28,16 @@ The owner may create a normal new Profile post/share from a selected memory. The
 
 ## Birthday data and privacy
 
-`UserProfile` gains these nullable fields:
+`UserProfile` already has nullable `DateOfBirth` and `CurrentCity`; M15 completes their privacy-aware behavior and adds the remaining nullable fields:
 
-- `DateOfBirth` (`DateOnly?`)
-- `CurrentCity` (100 chars)
+- `DateOfBirth` (`DateOnly?`, existing)
+- `CurrentCity` (100 chars, existing)
 - `Hometown` (100 chars)
 - `Workplace` (150 chars)
 - `Education` (150 chars)
 - `Website` (a bounded URL string)
 
-It also gains `BirthdayVisibility`: `OnlyMe`, `Friends`, or `Public`, defaulting to `OnlyMe`. Existing rows receive null dates and `OnlyMe` through one new migration. Profile update validation rejects future birth dates and malformed/out-of-range values, enforces the string limits, and accepts website URLs only with `https` or `http` schemes. The server never fetches a submitted URL.
+It also gains `BirthdayVisibility`: `OnlyMe`, `Friends`, or `Public`, defaulting to `OnlyMe`. Existing rows retain their existing nullable birth dates and receive `OnlyMe` through one new migration. Profile update validation rejects future birth dates and malformed/out-of-range values, enforces the string limits, and accepts website URLs only with `https` or `http` schemes. The server never fetches a submitted URL.
 
 Profile response mapping is viewer-aware. The owner can receive their full `DateOfBirth`; all other viewers receive only a safe birthday presentation when visibility permits (month/day and a relevant occurrence indicator), never the birth year or age. `OnlyMe` is owner-only. `Friends` requires an active friendship. `Public` requires an authenticated, non-blocked viewer under the existing profile-access rules. Intro fields follow the existing profile/block visibility rules and do not gain per-field audiences.
 
