@@ -248,38 +248,45 @@ public sealed class UserProfileService(
                 !dbContext.BlockedUsers.AsNoTracking().Any(block =>
                     (block.BlockerUserId == viewerUserId && block.BlockedUserId == profile.UserId) ||
                     (block.BlockerUserId == profile.UserId && block.BlockedUserId == viewerUserId)))
-            .Select(profile => new UserProfileProjection(
-                profile.UserId,
-                profile.Username,
-                profile.DisplayName,
-                profile.Bio,
-                profile.AvatarUrl,
-                profile.CoverUrl,
-                profile.AvatarMediaId,
-                profile.CoverMediaId,
-                profile.DateOfBirth,
-                profile.CurrentCity,
-                profile.CreatedAt,
-                profile.UpdatedAt,
-                dbContext.UserFollows.AsNoTracking().Count(follow =>
+            .Select(profile => new UserProfileProjection
+            {
+                UserId = profile.UserId,
+                Username = profile.Username,
+                DisplayName = profile.DisplayName,
+                Bio = profile.Bio,
+                AvatarUrl = profile.AvatarUrl,
+                CoverUrl = profile.CoverUrl,
+                AvatarMediaId = profile.AvatarMediaId,
+                CoverMediaId = profile.CoverMediaId,
+                DateOfBirth = profile.DateOfBirth,
+                CurrentCity = profile.CurrentCity,
+                CreatedAt = profile.CreatedAt,
+                UpdatedAt = profile.UpdatedAt,
+                FollowerCount = dbContext.UserFollows.AsNoTracking().Count(follow =>
                     follow.FollowingUserId == profile.UserId &&
                     dbContext.Users.Any(user => user.Id == follow.FollowerUserId && user.IsActive) &&
                     dbContext.UserProfiles.Any(other => other.UserId == follow.FollowerUserId) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
                         (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == profile.UserId) ||
-                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowerUserId))),
-                dbContext.UserFollows.AsNoTracking().Count(follow =>
+                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowerUserId)) &&
+                    (viewerUserId == null || !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                        (block.BlockerUserId == viewerUserId && block.BlockedUserId == follow.FollowerUserId) ||
+                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == viewerUserId)))),
+                FollowingCount = dbContext.UserFollows.AsNoTracking().Count(follow =>
                     follow.FollowerUserId == profile.UserId &&
                     dbContext.Users.Any(user => user.Id == follow.FollowingUserId && user.IsActive) &&
                     dbContext.UserProfiles.Any(other => other.UserId == follow.FollowingUserId) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
                         (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowingUserId) ||
-                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == profile.UserId))),
-                viewerUserId == null ? null : dbContext.UserFollows.AsNoTracking().Any(follow =>
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == profile.UserId)) &&
+                    (viewerUserId == null || !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                        (block.BlockerUserId == viewerUserId && block.BlockedUserId == follow.FollowingUserId) ||
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == viewerUserId)))),
+                IsFollowing = viewerUserId == null ? null : dbContext.UserFollows.AsNoTracking().Any(follow =>
                     follow.FollowerUserId == viewerUserId && follow.FollowingUserId == profile.UserId),
-                viewerUserId == null ? null : dbContext.UserFollows.AsNoTracking().Any(follow =>
+                IsFollowedBy = viewerUserId == null ? null : dbContext.UserFollows.AsNoTracking().Any(follow =>
                     follow.FollowerUserId == profile.UserId && follow.FollowingUserId == viewerUserId),
-                viewerUserId == null ? null :
+                FriendshipState = viewerUserId == null ? null :
                     profile.UserId == viewerUserId ? "self" :
                     dbContext.Friendships.AsNoTracking().Any(friendship =>
                         (friendship.UserId1 == viewerUserId && friendship.UserId2 == profile.UserId) ||
@@ -289,7 +296,8 @@ public sealed class UserProfileService(
                         request.Status == FriendRequestStatus.Pending) ? "request_sent" :
                     dbContext.FriendRequests.AsNoTracking().Any(request =>
                         request.SenderUserId == profile.UserId && request.ReceiverUserId == viewerUserId &&
-                        request.Status == FriendRequestStatus.Pending) ? "request_received" : "none"));
+                        request.Status == FriendRequestStatus.Pending) ? "request_received" : "none"
+            });
     }
 
     private static UserProfileResponse ToResponse(UserProfileProjection profile) =>
@@ -310,22 +318,24 @@ public sealed class UserProfileService(
             profile.IsFollowedBy,
             profile.FriendshipState);
 
-    private sealed record UserProfileProjection(
-        Guid UserId,
-        string Username,
-        string DisplayName,
-        string? Bio,
-        string? AvatarUrl,
-        string? CoverUrl,
-        Guid? AvatarMediaId,
-        Guid? CoverMediaId,
-        DateOnly? DateOfBirth,
-        string? CurrentCity,
-        DateTimeOffset CreatedAt,
-        DateTimeOffset UpdatedAt,
-        int FollowerCount,
-        int FollowingCount,
-        bool? IsFollowing,
-        bool? IsFollowedBy,
-        string? FriendshipState);
+    private sealed class UserProfileProjection
+    {
+        public Guid UserId { get; init; }
+        public string Username { get; init; } = null!;
+        public string DisplayName { get; init; } = null!;
+        public string? Bio { get; init; }
+        public string? AvatarUrl { get; init; }
+        public string? CoverUrl { get; init; }
+        public Guid? AvatarMediaId { get; init; }
+        public Guid? CoverMediaId { get; init; }
+        public DateOnly? DateOfBirth { get; init; }
+        public string? CurrentCity { get; init; }
+        public DateTimeOffset CreatedAt { get; init; }
+        public DateTimeOffset UpdatedAt { get; init; }
+        public int FollowerCount { get; init; }
+        public int FollowingCount { get; init; }
+        public bool? IsFollowing { get; init; }
+        public bool? IsFollowedBy { get; init; }
+        public string? FriendshipState { get; init; }
+    }
 }

@@ -63,6 +63,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var viewerId = await CreateUserAsync("people-projection-viewer");
         var firstTargetId = await CreateUserAsync("people-projection-first");
         var secondTargetId = await CreateUserAsync("people-projection-second");
+        var viewerBlockedRelationId = await CreateUserAsync("people-projection-viewer-blocked");
         var query = "projection" + Guid.NewGuid().ToString("N")[..10];
         var now = DateTimeOffset.UtcNow;
         await UpdateProfileAsync(firstTargetId, query + " Alpha", "first");
@@ -75,26 +76,27 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.UserFollows.AddRange(
-                UserFollow.Create(viewerId, firstTargetId, now),
-                UserFollow.Create(firstTargetId, viewerId, now));
-            db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewerId, firstTargetId, now));
+                UserFollow.Create(viewerId, secondTargetId, now),
+                UserFollow.Create(viewerBlockedRelationId, secondTargetId, now),
+                UserFollow.Create(secondTargetId, viewerBlockedRelationId, now));
             await db.SaveChangesAsync();
         }
+        await BlockAsync(viewerId, viewerBlockedRelationId);
 
         var after = await ReadAsync<GlobalSearchResponse>(
             await viewer.GetAsync($"/api/search?q={query}&type=people"));
 
         Assert.Equal(before.People.Select(item => item.UserId), after.People.Select(item => item.UserId));
         var first = Assert.Single(after.People, item => item.UserId == firstTargetId);
-        Assert.Equal(1, first.FollowerCount);
-        Assert.Equal(1, first.FollowingCount);
-        Assert.True(first.IsFollowing);
-        Assert.True(first.IsFollowedBy);
-        Assert.Equal("friends", first.FriendshipState);
+        Assert.Equal(0, first.FollowerCount);
+        Assert.Equal(0, first.FollowingCount);
+        Assert.False(first.IsFollowing);
+        Assert.False(first.IsFollowedBy);
+        Assert.Equal("none", first.FriendshipState);
         var second = Assert.Single(after.People, item => item.UserId == secondTargetId);
-        Assert.Equal(0, second.FollowerCount);
+        Assert.Equal(1, second.FollowerCount);
         Assert.Equal(0, second.FollowingCount);
-        Assert.False(second.IsFollowing);
+        Assert.True(second.IsFollowing);
         Assert.False(second.IsFollowedBy);
         Assert.Equal("none", second.FriendshipState);
     }

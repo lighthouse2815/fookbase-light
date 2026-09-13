@@ -87,24 +87,31 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         var viewer = CreateUser();
         var target = CreateUser();
         var blockedRelation = CreateUser();
+        var viewerBlockedRelation = CreateUser();
         var now = DateTimeOffset.UtcNow;
         await EnsureProfileAsync(viewer);
         await EnsureProfileAsync(target);
         await EnsureProfileAsync(blockedRelation);
+        await EnsureProfileAsync(viewerBlockedRelation);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.Users.AddRange(
                 new User(viewer.Id, $"{viewer.Username}@example.com", viewer.Username, now),
                 new User(target.Id, $"{target.Username}@example.com", target.Username, now),
-                new User(blockedRelation.Id, $"{blockedRelation.Username}@example.com", blockedRelation.Username, now));
+                new User(blockedRelation.Id, $"{blockedRelation.Username}@example.com", blockedRelation.Username, now),
+                new User(viewerBlockedRelation.Id, $"{viewerBlockedRelation.Username}@example.com", viewerBlockedRelation.Username, now));
             db.UserFollows.AddRange(
                 UserFollow.Create(viewer.Id, target.Id, now),
                 UserFollow.Create(target.Id, viewer.Id, now),
                 UserFollow.Create(blockedRelation.Id, target.Id, now),
-                UserFollow.Create(target.Id, blockedRelation.Id, now));
+                UserFollow.Create(target.Id, blockedRelation.Id, now),
+                UserFollow.Create(viewerBlockedRelation.Id, target.Id, now),
+                UserFollow.Create(target.Id, viewerBlockedRelation.Id, now));
             db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewer.Id, target.Id, now));
-            db.BlockedUsers.Add(BlockedUser.Create(target.Id, blockedRelation.Id, now));
+            db.BlockedUsers.AddRange(
+                BlockedUser.Create(target.Id, blockedRelation.Id, now),
+                BlockedUser.Create(viewer.Id, viewerBlockedRelation.Id, now));
             await db.SaveChangesAsync();
         }
 
@@ -114,6 +121,8 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         var search = await authenticated.GetFromJsonAsync<PagedResponse<UserProfileResponse>>(
             $"/api/users/search?query={target.Username}&offset=0&limit=20");
         var anonymousProfile = await anonymous.GetFromJsonAsync<UserProfileResponse>($"/api/users/{target.Id}");
+        var anonymousSearch = await anonymous.GetFromJsonAsync<PagedResponse<UserProfileResponse>>(
+            $"/api/users/search?query={target.Username}&offset=0&limit=20");
 
         Assert.NotNull(profile);
         Assert.Equal(1, profile.FollowerCount);
@@ -132,6 +141,13 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Null(anonymousProfile.IsFollowing);
         Assert.Null(anonymousProfile.IsFollowedBy);
         Assert.Null(anonymousProfile.FriendshipState);
+        Assert.NotNull(anonymousSearch);
+        var anonymouslySearchedTarget = Assert.Single(anonymousSearch.Items);
+        Assert.Equal(2, anonymouslySearchedTarget.FollowerCount);
+        Assert.Equal(2, anonymouslySearchedTarget.FollowingCount);
+        Assert.Null(anonymouslySearchedTarget.IsFollowing);
+        Assert.Null(anonymouslySearchedTarget.IsFollowedBy);
+        Assert.Null(anonymouslySearchedTarget.FriendshipState);
     }
 
     [Fact]

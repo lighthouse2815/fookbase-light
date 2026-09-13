@@ -67,3 +67,44 @@ count.
   frontend code, README, environment files, or key material.
 - Remaining blocker: install the ASP.NET Core 10 shared runtime to execute the
   integration assertions.
+
+## Review correction — EF composability and viewer-visible counts
+
+### RED evidence
+
+1. Strengthened the profile/local-search fixture before changing production
+   code: it now creates a mutually-followed unrelated account that the viewer
+   has blocked. Authenticated profile and local-search counts are expected to
+   exclude that account, while anonymous local search retains it and still has
+   null viewer-state fields. This also preserves coverage of a block between
+   the profile owner and another follow edge.
+2. Changed global people search to follow the `Beta` result (rather than the
+   naturally first `Alpha` result), with only the `viewer -> Beta` direction.
+   The assertion therefore catches a follow-rank boost and verifies the
+   asymmetric `IsFollowing = true` / `IsFollowedBy = false` contract. Its
+   additional viewer-blocked unrelated mutual edge must not affect Beta's
+   counts.
+3. Focused RED test invocation for the user test built both API and test DLLs,
+   but aborted before executing the new assertion because the host lacks
+   `Microsoft.AspNetCore.App 10.0.0`.
+
+### GREEN implementation and checks
+
+- Replaced the positional `UserProfileProjection` record construction with an
+  EF-composable member-init projection. `GetAsync`, `/me`, local search
+  filtering/order/paging, and the post-update read can now continue to use
+  projected members in SQL rather than requiring positional-record member
+  translation.
+- Profile/local-search and global people-search follower/following counts now
+  exclude an eligible follow edge when its other account is blocked in either
+  direction with the authenticated viewer, in addition to the existing
+  owner/other-account block exclusion. Anonymous profile/local-search keeps
+  owner-edge visibility only, because there is no viewer relation to apply.
+- `dotnet build backend/Fookbase.Src/Tests/Users/Fookbase.Users.Api.IntegrationTests/Fookbase.Users.Api.IntegrationTests.csproj --no-restore -p:AllowMissingPrunePackageData=true -v:minimal`
+  — succeeded, 0 warnings, 0 errors.
+- `dotnet build backend/Fookbase.Src/Tests/Posts/Fookbase.Posts.Api.IntegrationTests/Fookbase.Posts.Api.IntegrationTests.csproj --no-restore -p:AllowMissingPrunePackageData=true -v:minimal`
+  — succeeded, 0 warnings, 0 errors.
+- Focused user and global-search `dotnet test --no-restore --filter ...`
+  commands both build successfully, then abort before assertions for the same
+  missing ASP.NET Core 10 shared runtime. `Microsoft.NETCore.App 10.0.12` is
+  installed, but `Microsoft.AspNetCore.App 10.0.0` is not.

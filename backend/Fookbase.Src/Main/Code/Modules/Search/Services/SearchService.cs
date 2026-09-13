@@ -160,14 +160,20 @@ public sealed class SearchService(
                     dbContext.UserProfiles.Any(other => other.UserId == follow.FollowerUserId) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
                         (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == profile.UserId) ||
-                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowerUserId))),
+                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowerUserId)) &&
+                    !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                        (block.BlockerUserId == context.Viewer.UserId && block.BlockedUserId == follow.FollowerUserId) ||
+                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == context.Viewer.UserId))),
                 FollowingCount = dbContext.UserFollows.AsNoTracking().Count(follow =>
                     follow.FollowerUserId == profile.UserId &&
                     dbContext.Users.Any(user => user.Id == follow.FollowingUserId && user.IsActive) &&
                     dbContext.UserProfiles.Any(other => other.UserId == follow.FollowingUserId) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
                         (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowingUserId) ||
-                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == profile.UserId))),
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == profile.UserId)) &&
+                    !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                        (block.BlockerUserId == context.Viewer.UserId && block.BlockedUserId == follow.FollowingUserId) ||
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == context.Viewer.UserId))),
                 IsFollowing = dbContext.UserFollows.AsNoTracking().Any(follow =>
                     follow.FollowerUserId == context.Viewer.UserId && follow.FollowingUserId == profile.UserId),
                 IsFollowedBy = dbContext.UserFollows.AsNoTracking().Any(follow =>
