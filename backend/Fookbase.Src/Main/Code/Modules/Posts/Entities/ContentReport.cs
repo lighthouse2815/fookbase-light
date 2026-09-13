@@ -67,6 +67,7 @@ public sealed class ContentReport
     public ContentReportStatus Status { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
+    public DateTimeOffset? ResolvedAtUtc { get; private set; }
 
     public static ContentReport Create(
         Guid reporterUserId,
@@ -77,7 +78,7 @@ public sealed class ContentReport
         DateTimeOffset createdAtUtc) =>
         new(Guid.NewGuid(), reporterUserId, targetType, targetId, reason, details, createdAtUtc);
 
-    public void UpdateStatus(ContentReportStatus status)
+    public void UpdateStatus(ContentReportStatus status, DateTimeOffset resolvedAtUtc)
     {
         if (status == ContentReportStatus.Pending)
         {
@@ -85,5 +86,6 @@ public sealed class ContentReport
         }
 
         Status = status;
+        ResolvedAtUtc ??= resolvedAtUtc;
     }
 }

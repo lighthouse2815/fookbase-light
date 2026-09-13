@@ -50,6 +50,10 @@ public sealed class AdministrationService(
             .Take(limit)
             .ToListAsync(cancellationToken);
         var userIds = items.Select(user => user.Id).ToArray();
+        var moderationStates = userIds.Length == 0
+            ? new Dictionary<Guid, Fookbase.Api.Modules.Admin.Entities.UserModerationState>()
+            : await dbContext.UserModerationStates.AsNoTracking().Where(state => userIds.Contains(state.UserId))
+                .ToDictionaryAsync(state => state.UserId, cancellationToken);
         var rolesByUserId = userIds.Length == 0
             ? new Dictionary<Guid, string[]>()
             : (await (
@@ -67,7 +71,7 @@ public sealed class AdministrationService(
                         .Order(StringComparer.OrdinalIgnoreCase)
                         .ToArray());
         var responses = items
-            .Select(user => ToResponse(user, rolesByUserId.GetValueOrDefault(user.Id, [])))
+            .Select(user => ToResponse(user, rolesByUserId.GetValueOrDefault(user.Id, []), moderationStates.GetValueOrDefault(user.Id)))
             .ToArray();
 
         return ApplicationResult<PagedResponse<AdminUserResponse>>.Success(
@@ -125,10 +129,12 @@ public sealed class AdministrationService(
     private async Task<AdminUserResponse> ToResponseAsync(User user) =>
         ToResponse(
             user,
-            (await userManager.GetRolesAsync(user)).Order(StringComparer.OrdinalIgnoreCase).ToArray());
+            (await userManager.GetRolesAsync(user)).Order(StringComparer.OrdinalIgnoreCase).ToArray(), null);
 
-    private static AdminUserResponse ToResponse(User user, IReadOnlyList<string> roles) =>
-        new(user.Id, user.Email!, user.UserName!, user.IsActive, user.CreatedAt, roles);
+    private static AdminUserResponse ToResponse(User user, IReadOnlyList<string> roles,
+        Fookbase.Api.Modules.Admin.Entities.UserModerationState? state = null) =>
+        new(user.Id, user.Email!, user.UserName!, user.IsActive, user.CreatedAt, roles,
+            state?.WarningCount ?? 0, state?.SuspendedUntilUtc, state?.DisabledAtUtc);
 
     private static ApplicationError Forbidden(string message) =>
         new("admin_action_forbidden", message, ApplicationErrorType.Forbidden);

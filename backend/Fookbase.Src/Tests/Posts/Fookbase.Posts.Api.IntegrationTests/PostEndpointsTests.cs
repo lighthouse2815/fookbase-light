@@ -16,6 +16,7 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Modules.Admin.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -139,6 +140,71 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.NotNull((await dbContext.Posts.SingleAsync(item => item.Id == post.Id)).DeletedAtUtc);
+    }
+
+    [Fact]
+    public async Task Admin_removing_a_reported_post_records_action_and_marks_report_reviewed()
+    {
+        var users = await CreateUserIdsAsync(3);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var reporter = CreateAuthenticatedClient(users[1]);
+        using var administrator = CreateAuthenticatedClient(users[2], ["Admin"]);
+        var post = await CreatePostAsync(author, "moderation target", "public");
+        var report = await ReadAsync<ContentReportResponse>(await reporter.PostAsJsonAsync(
+            $"/api/reports/posts/{post.Id}", new { reason = "harassment" }));
+
+        var removed = await administrator.PostAsJsonAsync($"/api/admin/reports/{report.Id}/remove-content", new { reason = "Policy violation" });
+
+        Assert.Equal(HttpStatusCode.OK, removed.StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.NotNull((await db.Posts.SingleAsync(item => item.Id == post.Id)).DeletedAtUtc);
+        Assert.Equal(ContentReportStatus.Reviewed, (await db.ContentReports.SingleAsync(item => item.Id == report.Id)).Status);
+        Assert.Contains(await db.ModerationActions.ToListAsync(), action => action.ReportId == report.Id && action.ActionType == ModerationActionType.RemovePost);
+    }
+
+    [Fact]
+    public async Task Dismissing_a_report_is_idempotent_and_keeps_a_single_audit_action()
+    {
+        var users = await CreateUserIdsAsync(3);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var reporter = CreateAuthenticatedClient(users[1]);
+        using var administrator = CreateAuthenticatedClient(users[2], ["Admin"]);
+        var post = await CreatePostAsync(author, "dismiss target", "public");
+        var report = await ReadAsync<ContentReportResponse>(await reporter.PostAsJsonAsync(
+            $"/api/reports/posts/{post.Id}", new { reason = "spam" }));
+
+        Assert.Equal(HttpStatusCode.OK, (await administrator.PostAsJsonAsync($"/api/admin/reports/{report.Id}/dismiss", new { reason = "No violation" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await administrator.PostAsJsonAsync($"/api/admin/reports/{report.Id}/dismiss", new { reason = "No violation" })).StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Equal(ContentReportStatus.Dismissed, (await db.ContentReports.SingleAsync(item => item.Id == report.Id)).Status);
+        Assert.Equal(1, await db.ModerationActions.CountAsync(action => action.ReportId == report.Id && action.ActionType == ModerationActionType.DismissReport));
+    }
+
+    [Fact]
+    public async Task Suspension_blocks_mutations_until_an_admin_unsuspends_the_account()
+    {
+        var users = await CreateUserIdsAsync(2);
+        using var member = CreateAuthenticatedClient(users[0]);
+        using var administrator = CreateAuthenticatedClient(users[1], ["Admin"]);
+
+        Assert.Equal(HttpStatusCode.OK, (await administrator.PostAsJsonAsync($"/api/admin/users/{users[0]}/suspend", new { reason = "Cooling off", durationHours = 24 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.PostAsJsonAsync("/api/posts", new { content = "blocked", privacy = "public" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await administrator.PostAsJsonAsync($"/api/admin/users/{users[0]}/unsuspend", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await member.PostAsJsonAsync("/api/posts", new { content = "allowed again", privacy = "public" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_cannot_suspend_their_own_account()
+    {
+        var administratorUserId = (await CreateUserIdsAsync(1))[0];
+        using var administrator = CreateAuthenticatedClient(administratorUserId, ["Admin"]);
+
+        var response = await administrator.PostAsJsonAsync($"/api/admin/users/{administratorUserId}/suspend", new { reason = "unsafe", durationHours = 1 });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

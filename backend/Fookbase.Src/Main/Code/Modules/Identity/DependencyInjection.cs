@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
+        services.AddScoped<AccountModerationService>();
         services.AddScoped<RegistrationUseCase>();
         services.AddScoped<AdministrationService>();
 

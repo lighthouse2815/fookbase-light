@@ -15,6 +15,7 @@ internal sealed class ContentReportConfiguration : IEntityTypeConfiguration<Cont
         builder.Property(report => report.Status).HasConversion<int>().IsRequired();
         builder.Property(report => report.Details).HasMaxLength(ContentReport.MaximumDetailsLength);
         builder.Property(report => report.CreatedAtUtc).IsRequired();
+        builder.HasIndex(report => new { report.Status, report.CreatedAtUtc, report.Id });
         builder.HasIndex(report => new { report.ReporterUserId, report.TargetType, report.TargetId }).IsUnique();
         builder.HasIndex(report => new { report.TargetType, report.TargetId, report.Status, report.CreatedAtUtc });
     }

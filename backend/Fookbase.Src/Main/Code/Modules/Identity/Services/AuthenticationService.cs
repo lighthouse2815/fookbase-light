@@ -22,6 +22,7 @@ public sealed class AuthenticationService(
     EmailOptions emailOptions,
     AdminOptions adminOptions,
     ILogger<AuthenticationService> logger,
+    AccountModerationService accountModerationService,
     TimeProvider timeProvider)
 {
     public async Task<ApplicationResult<AuthenticationResponse>> RegisterAsync(
@@ -111,7 +112,8 @@ public sealed class AuthenticationService(
         }
 
         var user = await userManager.FindByEmailAsync(request.Email!.Trim());
-        if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user))
+        if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
+            await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
             return UnauthorizedFailure<object>(
                 "invalid_credentials",
@@ -152,7 +154,8 @@ public sealed class AuthenticationService(
         var challenge = await dbContext.TwoFactorLoginChallenges.SingleOrDefaultAsync(item => item.Id == challengeId, cancellationToken);
         if (challenge is null || !challenge.IsUsableAt(now)) return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
         var user = await userManager.FindByIdAsync(challenge.UserId.ToString());
-        if (user is null || !user.IsActive || !user.TwoFactorEnabled)
+        if (user is null || !user.IsActive || !user.TwoFactorEnabled ||
+            await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
             return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
         var recoveryCode = request.Code.Trim();
         var valid = await VerifyAuthenticatorCodeAsync(user, recoveryCode) ||
@@ -188,7 +191,7 @@ public sealed class AuthenticationService(
         }
 
         var user = await userManager.FindByIdAsync(currentToken.UserId.ToString());
-        if (user is null || !user.IsActive)
+        if (user is null || !user.IsActive || await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
             return UnauthorizedFailure<AuthenticationResponse>(
                 "invalid_refresh_token",

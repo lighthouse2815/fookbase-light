@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Admin.Entities;
 using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
@@ -24,6 +25,8 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
     public DbSet<TwoFactorLoginChallenge> TwoFactorLoginChallenges => Set<TwoFactorLoginChallenge>();
+    public DbSet<ModerationAction> ModerationActions => Set<ModerationAction>();
+    public DbSet<UserModerationState> UserModerationStates => Set<UserModerationState>();
 
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 

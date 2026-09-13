@@ -6,4 +6,7 @@ public sealed record AdminUserResponse(
     string Username,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    IReadOnlyList<string> Roles);
+    IReadOnlyList<string> Roles,
+    int WarningCount = 0,
+    DateTimeOffset? SuspendedUntilUtc = null,
+    DateTimeOffset? ModerationDisabledAtUtc = null);

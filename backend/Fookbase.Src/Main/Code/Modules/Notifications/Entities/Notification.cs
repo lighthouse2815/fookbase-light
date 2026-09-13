@@ -18,6 +18,7 @@ public enum NotificationType
     EventInvite,
     EventUpdated,
     EventCancelled
+    ,AccountWarning
 }
 
 public enum NotificationEntityType

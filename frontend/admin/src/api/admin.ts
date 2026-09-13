@@ -14,9 +14,41 @@ export interface AdminUser {
   isActive: boolean
   createdAt: string
   roles: string[]
+  warningCount: number
+  suspendedUntilUtc: string | null
+  moderationDisabledAtUtc: string | null
 }
 
 export type ReportStatus = 'pending' | 'reviewed' | 'resolved' | 'dismissed'
+
+export interface ModerationAction {
+  id: string
+  reportId: string | null
+  subjectUserId: string
+  targetType: 'user' | 'post'
+  targetId: string
+  actionType: string
+  reason: string
+  internalNote: string | null
+  createdAtUtc: string
+  expiresAtUtc: string | null
+}
+
+export interface UserModerationState {
+  userId: string
+  warningCount: number
+  suspendedUntilUtc: string | null
+  disabledAtUtc: string | null
+  updatedAtUtc: string
+}
+
+export interface ReportDetail extends ModerationReport {
+  resolvedAtUtc: string | null
+  targetPreview: string | null
+  subjectUserId: string | null
+  recentActions: ModerationAction[]
+  reportCount: number
+}
 
 export interface ModerationReport {
   id: string
@@ -59,4 +91,23 @@ export const adminApi = {
     ...jsonBody({ status }),
   }),
   deletePost: (postId: string) => apiRequest<void>(`/api/admin/posts/${postId}`, { method: 'DELETE' }),
+  getReport: (reportId: string) => apiRequest<ReportDetail>(`/api/admin/reports/${reportId}`),
+  dismissReport: (reportId: string, reason?: string) => apiRequest<ModerationAction>(`/api/admin/reports/${reportId}/dismiss`, {
+    method: 'POST', ...jsonBody({ reason }),
+  }),
+  removeReportedContent: (reportId: string, reason?: string) => apiRequest<ModerationAction>(`/api/admin/reports/${reportId}/remove-content`, {
+    method: 'POST', ...jsonBody({ reason }),
+  }),
+  warnReportedUser: (reportId: string, reason?: string) => apiRequest<ModerationAction>(`/api/admin/reports/${reportId}/warn-user`, {
+    method: 'POST', ...jsonBody({ reason }),
+  }),
+  suspendReportedUser: (reportId: string, durationHours: number, reason?: string) => apiRequest<ModerationAction>(`/api/admin/reports/${reportId}/suspend-user`, {
+    method: 'POST', ...jsonBody({ reason, durationHours }),
+  }),
+  getModerationState: (userId: string) => apiRequest<UserModerationState>(`/api/admin/users/${userId}/moderation-state`),
+  warnUser: (userId: string, reason?: string) => apiRequest<ModerationAction>(`/api/admin/users/${userId}/warn`, { method: 'POST', ...jsonBody({ reason }) }),
+  suspendUser: (userId: string, durationHours: number, reason?: string) => apiRequest<ModerationAction>(`/api/admin/users/${userId}/suspend`, { method: 'POST', ...jsonBody({ reason, durationHours }) }),
+  unsuspendUser: (userId: string) => apiRequest<ModerationAction>(`/api/admin/users/${userId}/unsuspend`, { method: 'POST', ...jsonBody({}) }),
+  disableUser: (userId: string, reason?: string) => apiRequest<ModerationAction>(`/api/admin/users/${userId}/disable`, { method: 'POST', ...jsonBody({ reason }) }),
+  enableUser: (userId: string) => apiRequest<ModerationAction>(`/api/admin/users/${userId}/enable`, { method: 'POST', ...jsonBody({}) }),
 }

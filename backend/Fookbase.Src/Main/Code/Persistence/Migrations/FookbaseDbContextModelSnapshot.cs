@@ -23,6 +23,36 @@ namespace Fookbase.Api.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ModerationAction", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
+                    b.Property<int>("ActionType").HasColumnType("integer");
+                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<DateTimeOffset?>("ExpiresAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<string>("InternalNote").HasMaxLength(2000).HasColumnType("character varying(2000)");
+                    b.Property<Guid>("ModeratorUserId").HasColumnType("uuid");
+                    b.Property<string>("Reason").IsRequired().HasMaxLength(500).HasColumnType("character varying(500)");
+                    b.Property<Guid?>("ReportId").HasColumnType("uuid");
+                    b.Property<Guid>("SubjectUserId").HasColumnType("uuid");
+                    b.Property<Guid>("TargetId").HasColumnType("uuid");
+                    b.Property<int>("TargetType").HasColumnType("integer");
+                    b.HasKey("Id");
+                    b.HasIndex("SubjectUserId", "CreatedAtUtc");
+                    b.HasIndex("TargetType", "TargetId", "CreatedAtUtc");
+                    b.ToTable("ModerationActions", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.UserModerationState", b =>
+                {
+                    b.Property<Guid>("UserId").HasColumnType("uuid");
+                    b.Property<DateTimeOffset?>("DisabledAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<DateTimeOffset?>("SuspendedUntilUtc").HasColumnType("timestamp with time zone");
+                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<int>("WarningCount").HasColumnType("integer");
+                    b.HasKey("UserId");
+                    b.ToTable("UserModerationStates", (string)null);
+                });
+
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.Event", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1498,6 +1528,9 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<Guid>("ReporterUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -1511,6 +1544,8 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasIndex("ReporterUserId", "TargetType", "TargetId")
                         .IsUnique();
+
+                    b.HasIndex("Status", "CreatedAtUtc", "Id");
 
                     b.HasIndex("TargetType", "TargetId", "Status", "CreatedAtUtc");
 

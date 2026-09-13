@@ -154,7 +154,7 @@ public sealed class ReportsService(
             return ApplicationResult<ModerationReportResponse>.Failure(NotFound("The report was not found."));
         }
 
-        report.UpdateStatus(parsedStatus);
+        report.UpdateStatus(parsedStatus, timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult<ModerationReportResponse>.Success(ToModerationResponse(report));
     }

@@ -13,6 +13,7 @@ using Fookbase.Api.Modules.Admin.Endpoints;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Endpoints;
 using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Identity.Middleware;
 using Fookbase.Api.Modules.Media.Endpoints;
 using Fookbase.Api.Modules.Media.HealthChecks;
 using Fookbase.Api.Modules.Messages.Endpoints;
@@ -33,6 +34,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
@@ -144,7 +146,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization(options => options.AddPolicy(AdminPolicy.Name, policy =>
     policy.RequireRole(AdminRole.Name)));
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options => options.AddFilter<AccountModerationHubFilter>());
 if (allowedOrigins.Length > 0)
 {
     builder.Services.AddCors(options => options.AddPolicy("Client", policy => policy
@@ -220,6 +222,7 @@ if (allowedOrigins.Length > 0)
 }
 app.UseAuthentication();
 app.UseRateLimiter();
+app.UseMiddleware<AccountModerationMiddleware>();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
