@@ -92,6 +92,7 @@ function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps
   const total = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0)
 
   const chooseFilter = (nextFilter: ReactionType | 'all') => {
+    if (nextFilter === filter) return
     setIsLoading(true)
     setError(null)
     setFilter(nextFilter)
