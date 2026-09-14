@@ -6,6 +6,7 @@ import type { Comment, MediaAccess, Post } from '../../../api/posts'
 import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
+import { formatPostTimestamp } from '../../../shared/formatPostTimestamp'
 import TextWithReferences from '../../../shared/components/TextWithReferences'
 import { usePreferences } from '../../../preferences'
 import PaginationControls from '../../../shared/components/PaginationControls'
@@ -20,19 +21,31 @@ interface LivePostCardProps {
   onPostDeleted: (postId: string) => void
 }
 
-function relativeDate(value: string, locale: string) {
-  return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
-    Math.round((new Date(value).getTime() - Date.now()) / 60_000),
-    'minute',
-  )
-}
-
 function MoreIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current"><circle cx="5" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="19" cy="12" r="1.7" /></svg>
 }
 
 function GlobeIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="1.8"><circle cx="12" cy="12" r="8.25" /><path d="M3.9 12h16.2M12 3.75c2.1 2.2 3.1 5 3.1 8.25S14.1 18.05 12 20.25C9.9 18.05 8.9 15.25 8.9 12S9.9 5.95 12 3.75Z" /></svg>
+}
+
+function FriendsIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3" /><path d="M3.75 20.25c.5-3.25 2.33-5 5.25-5s4.75 1.75 5.25 5M16.25 5.5a2.75 2.75 0 0 1 0 5.5M17 15.4c1.8.38 2.95 1.9 3.25 4.1" /></svg>
+}
+
+function LockIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5.25" y="10" width="13.5" height="10" rx="2" /><path d="M8.25 10V7.5a3.75 3.75 0 0 1 7.5 0V10" /></svg>
+}
+
+function PrivacyIcon({ privacy }: { privacy: string }) {
+  const normalizedPrivacy = privacy.toLowerCase()
+  if (normalizedPrivacy === 'friends') {
+    return <span role="img" aria-label="Bạn bè" title="Bạn bè"><FriendsIcon /></span>
+  }
+  if (normalizedPrivacy === 'onlyme' || normalizedPrivacy === 'only me') {
+    return <span role="img" aria-label="Chỉ mình tôi" title="Chỉ mình tôi"><LockIcon /></span>
+  }
+  return <span role="img" aria-label="Công khai" title="Công khai"><GlobeIcon /></span>
 }
 
 function LikeIcon() {
@@ -59,7 +72,7 @@ export default function LivePostCard({
   onPostUpdated,
   onPostDeleted,
 }: LivePostCardProps) {
-  const { language, t } = usePreferences()
+  const { t } = usePreferences()
   const [comments, setComments] = useState<Comment[]>([])
   const [commentsTotal, setCommentsTotal] = useState(0)
   const [commentsOffset, setCommentsOffset] = useState(0)
@@ -85,6 +98,7 @@ export default function LivePostCard({
     0,
   )
   const isLiked = post.viewerReaction === 'like'
+  const postTimestamp = formatPostTimestamp(post.createdAtUtc)
 
   useEffect(() => {
     let isActive = true
@@ -233,7 +247,11 @@ export default function LivePostCard({
         <div className="flex-1 min-w-0">
           <Link to={authorDestination} className="block truncate text-[15px] font-bold leading-5 text-text no-underline hover:underline">{authorName}</Link>
           {group && <p className="truncate text-xs leading-4 text-text-muted">{t('inGroup')} <Link to={`/groups/${group.id}`} className="font-semibold text-primary no-underline hover:underline">{group.name}</Link></p>}
-          <p className="flex items-center gap-1 text-xs leading-4 text-text-muted"><span>{relativeDate(post.createdAtUtc, language === 'vi' ? 'vi-VN' : 'en-US')}</span><span>·</span><GlobeIcon /></p>
+          <p className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap text-[12px] font-medium leading-4 text-text-muted">
+            <time dateTime={post.createdAtUtc} title={postTimestamp.absolute} aria-label={`Đăng lúc ${postTimestamp.absolute}`} className="min-w-0 cursor-help truncate rounded-sm hover:text-text focus:outline-none focus:ring-1 focus:ring-primary" tabIndex={0}>{postTimestamp.compact}</time>
+            <span aria-hidden="true" className="text-text-light">·</span>
+            <span className="inline-flex shrink-0 items-center text-text-muted"><PrivacyIcon privacy={post.privacy} /></span>
+          </p>
         </div>
         <button type="button" onClick={() => setIsPostMenuOpen((current) => !current)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-0 bg-transparent text-text-muted transition-colors hover:bg-surface-2 hover:text-text" aria-label={t('moreOptions')} aria-expanded={isPostMenuOpen}><MoreIcon /></button>
         {isPostMenuOpen && <div className="absolute right-3 top-12 z-20 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-2xl">
