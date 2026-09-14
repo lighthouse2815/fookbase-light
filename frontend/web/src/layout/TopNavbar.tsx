@@ -76,7 +76,7 @@ export default function TopNavbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
-  const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'messages' | 'notifications' | null>(null)
+  const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'messages' | 'notifications' | 'profile' | null>(null)
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all')
   const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false)
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
@@ -86,15 +86,19 @@ export default function TopNavbar() {
   const [messageFilter, setMessageFilter] = useState<'all' | 'unread'>('all')
   const [isMessagesLoading, setIsMessagesLoading] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState(session!.user.username)
+  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false)
   const menuDropdownRef = useRef<HTMLDivElement>(null)
   const zolaLightDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
+  const profileDropdownRef = useRef<HTMLDivElement>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
   const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
   const isNotificationsPage = location.pathname === '/notifications'
   const isMenuOpen = activeHeaderPopup === 'menu'
   const isMessagesOpen = activeHeaderPopup === 'messages'
   const isNotificationsOpen = activeHeaderPopup === 'notifications'
+  const isProfileOpen = activeHeaderPopup === 'profile'
   const navItems: NavItem[] = [
     { path: '/feed', icon: <HomeIcon />, label: t('home') },
     { path: '/reels', icon: <ReelsIcon />, label: 'Reels' },
@@ -134,14 +138,20 @@ export default function TopNavbar() {
     let isCurrent = true
     void usersApi.getCurrent()
       .then((profile) => {
-        if (isCurrent) setAvatarUrl(profile.avatarUrl)
+        if (isCurrent) {
+          setAvatarUrl(profile.avatarUrl)
+          setDisplayName(profile.displayName)
+        }
       })
       .catch(() => {
-        if (isCurrent) setAvatarUrl(null)
+        if (isCurrent) {
+          setAvatarUrl(null)
+          setDisplayName(session!.user.username)
+        }
       })
 
     return () => { isCurrent = false }
-  }, [session?.user.id])
+  }, [session?.user.id, session?.user.username])
 
   useEffect(() => {
     if (!isMessagesOpen) return
@@ -177,11 +187,14 @@ export default function TopNavbar() {
       ? menuDropdownRef
       : activeHeaderPopup === 'messages'
         ? zolaLightDropdownRef
-        : notificationDropdownRef
+        : activeHeaderPopup === 'notifications'
+          ? notificationDropdownRef
+          : profileDropdownRef
     const closePopupWhenClickingOutside = (event: PointerEvent) => {
       if (!activePopupRef.current?.contains(event.target as Node)) {
         setActiveHeaderPopup(null)
         setIsNotificationMenuOpen(false)
+        setIsAppearanceOpen(false)
       }
     }
 
@@ -453,14 +466,39 @@ export default function TopNavbar() {
             </div>
           )}
         </div>
-        <Link
-          to="/profile"
-          className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-visible text-[11px] font-bold text-white shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline bg-primary"
-          title={t('profile')}
-        >
-          <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-text"><ChevronDownIcon /></span>
-        </Link>
+        <div ref={profileDropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveHeaderPopup((current) => current === 'profile' ? null : 'profile')
+              setIsNotificationMenuOpen(false)
+              setIsAppearanceOpen(false)
+            }}
+            className={`relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-full border-none text-[11px] font-bold text-white transition ${isProfileOpen ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : 'hover:brightness-110 cursor-pointer'} bg-primary`}
+            title={t('profile')}
+            aria-label={t('profile')}
+            aria-expanded={isProfileOpen}
+          >
+            <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-text"><ChevronDownIcon /></span>
+          </button>
+          {isProfileOpen && <div className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface p-3 shadow-2xl">
+            <Link to="/profile" onClick={() => setActiveHeaderPopup(null)} className="block rounded-xl p-1.5 no-underline hover:bg-surface-2">
+              <div className="flex items-center gap-3 rounded-xl border-2 border-primary p-2">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
+                <span className="min-w-0"><span className="block truncate text-base font-bold text-text">{displayName}</span><span className="block truncate text-sm text-text-muted">@{session!.user.username}</span></span>
+              </div>
+              <span className="mt-2 block rounded-lg bg-surface-2 px-3 py-2 text-center text-sm font-semibold text-text">◉ Xem trang cá nhân</span>
+            </Link>
+            <div className="my-2 border-t border-border" />
+            <Link to="/settings/privacy" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">⚙</span><span className="flex-1 font-medium">Cài đặt và quyền riêng tư</span><span className="text-2xl text-text-muted">›</span></Link>
+            <Link to="/settings/security" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">?</span><span className="flex-1 font-medium">Trợ giúp và bảo mật</span><span className="text-2xl text-text-muted">›</span></Link>
+            <button type="button" onClick={() => setIsAppearanceOpen((current) => !current)} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">◐</span><span className="flex-1 font-medium">Màn hình và trợ năng</span><span className="text-2xl text-text-muted">›</span></button>
+            {isAppearanceOpen && <div className="mx-2 mb-2 rounded-xl bg-surface-2 p-3"><p className="mb-2 text-sm font-semibold text-text">Giao diện và ngôn ngữ</p><PreferenceControls /></div>}
+            <button type="button" onClick={() => void signOut()} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">↪</span><span className="font-medium">{t('signOut')}</span></button>
+            <p className="px-2 pt-2 text-xs leading-4 text-text-light">Quyền riêng tư · Điều khoản · Quảng cáo · Cookie · Thêm</p>
+          </div>}
+        </div>
       </div>
     </header>
   )
