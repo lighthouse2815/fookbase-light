@@ -23,11 +23,8 @@ jobs:
       - name: Check EF model has no pending changes
         env:
           ConnectionStrings__FookbaseDatabase: Host=postgres;Port=5432;Database=fookbase_ci;Username=fookbase_ci;Password=ci-only-not-production
-        run: |
-          dotnet tool restore
-          dotnet tool run dotnet-ef migrations has-pending-model-changes \
-            --project backend/Fookbase.Src/Main/Fookbase.Api.csproj \
-            --startup-project backend/Fookbase.Src/Main/Fookbase.Api.csproj
+          CHECK_EF_MODEL: true
+        run: bash scripts/check-migrations.sh
 
   frontend:
     runs-on: ubuntu-24.04
