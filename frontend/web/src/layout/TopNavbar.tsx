@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
@@ -61,7 +61,6 @@ export default function TopNavbar() {
     unreadNotificationCount,
   } = useRealtime()
   const { t } = usePreferences()
-  const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
@@ -291,7 +290,7 @@ export default function TopNavbar() {
               setIsNotificationsOpen((current) => !current)
               setIsNotificationMenuOpen(false)
             }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer border-none text-sm relative ${isNotificationsOpen || location.pathname === '/notifications' ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50]'}`}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer border-none text-sm relative ${isNotificationsOpen ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50]'}`}
             title={t('messageNotifications')}
             aria-expanded={isNotificationsOpen}
           >
