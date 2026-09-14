@@ -48,7 +48,7 @@ ForwardedHeaders__KnownProxies__0=172.20.0.2
 ForwardedHeaders__ForwardLimit=1
 ```
 
-API không tin `X-Forwarded-*` khi setting này tắt hoặc proxy không nằm trong allow-list. Production dùng explicit origins với credentials, không dùng `AllowAnyOrigin`. Proxy/front-end host có thể bổ sung CSP phù hợp với asset của React; API chỉ đặt header an toàn không phá SignalR: `nosniff`, `no-referrer`, frame deny, permissions policy và HSTS ở Production.
+API không tin `X-Forwarded-*` khi setting này tắt hoặc proxy không nằm trong allow-list. HTTPS redirection trong API chỉ bật cùng forwarded headers, tránh redirect loop hoặc endpoint nội bộ không có TLS; proxy phải enforce HTTP→HTTPS khi forwarded headers không được bật. Production dùng explicit origins với credentials, không dùng `AllowAnyOrigin`. Proxy/front-end host có thể bổ sung CSP phù hợp với asset của React; API chỉ đặt header an toàn không phá SignalR: `nosniff`, `no-referrer`, frame deny, permissions policy và HSTS ở Production.
 
 ## Deploy
 

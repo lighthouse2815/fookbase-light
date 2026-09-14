@@ -251,9 +251,9 @@ if (forwardedHeadersOptions.Enabled)
 
     app.UseForwardedHeaders(forwardedHeaders);
 }
-if (app.Environment.IsProduction())
+if (app.Environment.IsProduction() && forwardedHeadersOptions.Enabled)
 {
-app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
 }
 app.UseMiddleware<SecurityHeadersMiddleware>();
 if (allowedOrigins.Length > 0)
