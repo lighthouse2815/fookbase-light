@@ -49,6 +49,34 @@ function ChevronDownIcon() {
   return <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3 w-3 fill-current"><path d="m4.1 5.9 3.9 3.9 3.9-3.9 1.1 1.1L8 11.1 3 7l1.1-1.1Z" /></svg>
 }
 
+function ProfileMenuIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current" strokeWidth="2.3"><circle cx="12" cy="8" r="3.5" /><path d="M5.5 20c.65-4 2.9-6 6.5-6s5.85 2 6.5 6" /></svg>
+}
+
+function SettingsIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.18 2.18-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20.4h-3.08v-.13a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.18-2.18.06-.06A1.7 1.7 0 0 0 6.86 15a1.7 1.7 0 0 0-1.55-1.03h-.13v-3.08h.13A1.7 1.7 0 0 0 6.86 9.86 1.7 1.7 0 0 0 6.52 8l-.06-.06 2.18-2.18.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.55v-.13h3.08v.13a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.18 2.18-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03h.13v3.08h-.13A1.7 1.7 0 0 0 19.4 15Z" /></svg>
+}
+
+function HelpIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current" strokeWidth="2.3" strokeLinecap="round"><circle cx="12" cy="12" r="8.5" /><path d="M9.8 9.25a2.35 2.35 0 1 1 3.95 1.7c-.94.88-1.75 1.22-1.75 2.55M12 16.7h.01" /></svg>
+}
+
+function MoonIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current"><path d="M20.65 15.42A8.75 8.75 0 0 1 8.58 3.35 8.75 8.75 0 1 0 20.65 15.42Z" /></svg>
+}
+
+function LanguageIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5h10M9 3v2c0 5-2.25 8.5-5 10.5M5.5 10.5c1.3 1.55 3.1 2.85 5.5 3.75M14 19l3.25-9L20.5 19M15.3 16h3.9" /></svg>
+}
+
+function LogoutIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 4H5.7A1.7 1.7 0 0 0 4 5.7v12.6A1.7 1.7 0 0 0 5.7 20H10" /><path d="m14 8 4 4-4 4M18 12H9" /></svg>
+}
+
+function BackIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-none stroke-current" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m14.5 5-7 7 7 7" /></svg>
+}
+
 function formatMessageTime(value: string) {
   const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60_000)
   if (minutes < 1) return 'Vừa xong'
@@ -490,24 +518,24 @@ export default function TopNavbar() {
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
                     <span className="min-w-0"><span className="block truncate text-base font-bold text-text">{displayName}</span><span className="block truncate text-sm text-text-muted">@{session!.user.username}</span></span>
                   </div>
-                  <span className="mt-2 block rounded-lg bg-surface-2 px-3 py-2 text-center text-sm font-semibold text-text">◉ Xem trang cá nhân</span>
+                  <span className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-center text-sm font-semibold text-text"><ProfileMenuIcon />Xem trang cá nhân</span>
                 </Link>
                 <div className="my-2 border-t border-border" />
-                <Link to="/settings/privacy" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">⚙</span><span className="flex-1 font-medium">Cài đặt và quyền riêng tư</span><span className="text-2xl text-text-muted">›</span></Link>
-                <Link to="/settings/security" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">?</span><span className="flex-1 font-medium">Trợ giúp và bảo mật</span><span className="text-2xl text-text-muted">›</span></Link>
-                <button type="button" onClick={() => setIsAppearanceOpen(true)} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">◐</span><span className="flex-1 font-medium">Màn hình và trợ năng</span><span className="text-2xl text-text-muted">›</span></button>
-                <button type="button" onClick={() => void signOut()} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">↪</span><span className="font-medium">{t('signOut')}</span></button>
+                <Link to="/settings/privacy" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2"><SettingsIcon /></span><span className="flex-1 font-medium">Cài đặt và quyền riêng tư</span><span className="text-2xl text-text-muted">›</span></Link>
+                <Link to="/settings/security" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2"><HelpIcon /></span><span className="flex-1 font-medium">Trợ giúp và bảo mật</span><span className="text-2xl text-text-muted">›</span></Link>
+                <button type="button" onClick={() => setIsAppearanceOpen(true)} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2"><MoonIcon /></span><span className="flex-1 font-medium">Màn hình và trợ năng</span><span className="text-2xl text-text-muted">›</span></button>
+                <button type="button" onClick={() => void signOut()} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2"><LogoutIcon /></span><span className="font-medium">{t('signOut')}</span></button>
                 <p className="px-2 pt-2 text-xs leading-4 text-text-light">Quyền riêng tư · Điều khoản · Quảng cáo · Cookie · Thêm</p>
               </section>
               <section className="w-1/2 shrink-0 p-3">
-                <div className="mb-3 flex items-center gap-2"><button type="button" onClick={() => setIsAppearanceOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border-2 border-primary bg-surface-2 text-3xl leading-none text-text cursor-pointer hover:bg-surface-3" aria-label="Quay lại">‹</button><h2 className="text-2xl font-bold text-text">Màn hình và trợ năng</h2></div>
-                <div className="flex gap-3 px-1 py-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-xl">◐</span><div><h3 className="font-bold text-text">Chế độ tối</h3><p className="mt-1 text-sm leading-5 text-text-muted">Điều chỉnh giao diện để giảm độ chói và cho đôi mắt được nghỉ ngơi.</p></div></div>
+                <div className="mb-3 flex items-center gap-2"><button type="button" onClick={() => setIsAppearanceOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border-2 border-primary bg-surface-2 text-text cursor-pointer hover:bg-surface-3" aria-label="Quay lại"><BackIcon /></button><h2 className="text-2xl font-bold text-text">Màn hình và trợ năng</h2></div>
+                <div className="flex gap-3 px-1 py-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2"><MoonIcon /></span><div><h3 className="font-bold text-text">Chế độ tối</h3><p className="mt-1 text-sm leading-5 text-text-muted">Điều chỉnh giao diện để giảm độ chói và cho đôi mắt được nghỉ ngơi.</p></div></div>
                 <div className="mt-2 space-y-1 px-1">
                   <button type="button" onClick={() => setTheme('light')} className="flex w-full items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span>Tắt</span><span className={`h-5 w-5 rounded-full border-2 ${theme === 'light' ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_var(--color-surface)]' : 'border-text-light'}`} /></button>
                   <button type="button" onClick={() => setTheme('dark')} className="flex w-full items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span>Bật</span><span className={`h-5 w-5 rounded-full border-2 ${theme === 'dark' ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_var(--color-surface)]' : 'border-text-light'}`} /></button>
                 </div>
                 <div className="my-3 border-t border-border" />
-                <div className="flex gap-3 px-1 py-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-lg">文</span><div><h3 className="font-bold text-text">Ngôn ngữ</h3><p className="mt-1 text-sm leading-5 text-text-muted">Chọn ngôn ngữ hiển thị của Fookbase.</p></div></div>
+                <div className="flex gap-3 px-1 py-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2"><LanguageIcon /></span><div><h3 className="font-bold text-text">Ngôn ngữ</h3><p className="mt-1 text-sm leading-5 text-text-muted">Chọn ngôn ngữ hiển thị của Fookbase.</p></div></div>
                 <div className="mt-2 space-y-1 px-1">
                   <button type="button" onClick={() => setLanguage('vi')} className="flex w-full items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span>Tiếng Việt</span><span className={`h-5 w-5 rounded-full border-2 ${language === 'vi' ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_var(--color-surface)]' : 'border-text-light'}`} /></button>
                   <button type="button" onClick={() => setLanguage('en')} className="flex w-full items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span>English</span><span className={`h-5 w-5 rounded-full border-2 ${language === 'en' ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_var(--color-surface)]' : 'border-text-light'}`} /></button>
