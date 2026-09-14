@@ -13,6 +13,7 @@ internal sealed class CommentConfiguration : IEntityTypeConfiguration<Comment>
         builder.Property(comment => comment.Content).HasMaxLength(Comment.MaximumContentLength).IsRequired();
         builder.Property(comment => comment.CreatedAtUtc).IsRequired();
         builder.HasIndex(comment => new { comment.PostId, comment.DeletedAtUtc, comment.CreatedAtUtc });
+        builder.HasIndex(comment => new { comment.AuthorUserId, comment.DeletedAtUtc, comment.CreatedAtUtc, comment.PostId });
         builder.HasOne<Post>()
             .WithMany()
             .HasForeignKey(comment => comment.PostId)

@@ -16,6 +16,7 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Reels.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Hosting;
@@ -313,7 +314,9 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         Assert.Equal(ownPosts.Select(post => post.Id), refreshed.Items.Where(item => !item.IsSuggested).Select(item => item.Id));
         Assert.DoesNotContain(refreshed.Items, item => item.Id == publicReel.Id && !item.IsSuggested);
         Assert.DoesNotContain(refreshed.Items, item => item.Id == friendsReel.Id);
-        Assert.Contains(refreshed.Items, item => item.Id == publicReel.Id && item.IsSuggested);
+        Assert.DoesNotContain(refreshed.Items, item => item.Id == friendsReel.Id);
+        Assert.All(refreshed.Items.Where(item => item.IsSuggested), item =>
+            Assert.True(item.ContentType is "reel" or "standardPost" && item.Privacy == "public"));
     }
 
     [Fact]
@@ -454,6 +457,121 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     }
 
     [Fact]
+    public async Task Recent_creator_interactions_rank_a_followed_creator_ahead_of_a_comparable_creator()
+    {
+        var users = await CreateUsersAsync(3);
+        var (viewer, bob, carol) = (users[0], users[1], users[2]);
+        await FollowAsync(viewer, bob);
+        await FollowAsync(viewer, carol);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var bobPost = Standard(bob, now);
+        var carolPost = Standard(carol, now);
+        await SaveAsync(db =>
+        {
+            db.Posts.AddRange(bobPost, carolPost);
+            db.PostReactions.Add(PostReaction.Create(bobPost.Id, viewer, ReactionType.Love, now));
+            db.Comments.AddRange(
+                Comment.Create(Guid.NewGuid(), bobPost.Id, viewer, null, "Great post", now),
+                Comment.Create(Guid.NewGuid(), bobPost.Id, viewer, null, "Following along", now));
+        });
+        using var client = CreateClient(viewer);
+
+        var feed = await ReadAsync(await client.GetAsync("/api/feed?limit=10"));
+
+        Assert.Equal(bobPost.Id, feed.Items.First(item => !item.IsSuggested).Id);
+        Assert.Contains(feed.Items, item => item.Id == carolPost.Id);
+    }
+
+    [Fact]
+    public async Task Group_and_page_interactions_raise_their_eligible_source_content()
+    {
+        var users = await CreateUsersAsync(2);
+        var (viewer, owner) = (users[0], users[1]);
+        var group = await CreateGroupAsync(owner, viewer);
+        var otherGroup = await CreateGroupAsync(owner, viewer);
+        var page = await CreatePageAsync(owner, viewer);
+        var otherPage = await CreatePageAsync(owner, viewer);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var preferredGroup = InContainer(owner, group.Id, PostContainerType.Group, now);
+        var otherGroupPost = InContainer(owner, otherGroup.Id, PostContainerType.Group, now);
+        var preferredPage = InContainer(owner, page.Id, PostContainerType.Page, now);
+        var otherPagePost = InContainer(owner, otherPage.Id, PostContainerType.Page, now);
+        await SaveAsync(db =>
+        {
+            db.Posts.AddRange(preferredGroup, otherGroupPost, preferredPage, otherPagePost);
+            db.Comments.Add(Comment.Create(Guid.NewGuid(), preferredGroup.Id, viewer, null, "Useful group", now));
+            db.PostReactions.Add(PostReaction.Create(preferredPage.Id, viewer, ReactionType.Like, now));
+        });
+        using var client = CreateClient(viewer);
+
+        var feed = await ReadAsync(await client.GetAsync("/api/feed?limit=10"));
+        var organic = feed.Items.Where(item => !item.IsSuggested).Select(item => item.Id).ToList();
+
+        Assert.True(organic.IndexOf(preferredGroup.Id) < organic.IndexOf(otherGroupPost.Id));
+        Assert.True(organic.IndexOf(preferredPage.Id) < organic.IndexOf(otherPagePost.Id));
+    }
+
+    [Fact]
+    public async Task Strong_recent_reel_completion_ranks_the_creator_reel_higher()
+    {
+        var users = await CreateUsersAsync(3);
+        var (viewer, bob, carol) = (users[0], users[1], users[2]);
+        await FollowAsync(viewer, bob);
+        await FollowAsync(viewer, carol);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var bobReel = await CreateReelAsync(bob, now);
+        var carolReel = await CreateReelAsync(carol, now);
+        await SaveAsync(db => db.ReelViews.Add(ReelView.Create(bobReel.Id, viewer, 2_000, true, false, now)));
+        using var client = CreateClient(viewer);
+
+        var feed = await ReadAsync(await client.GetAsync("/api/feed?limit=10"));
+
+        Assert.Equal(bobReel.Id, feed.Items.First(item => !item.IsSuggested).Id);
+        Assert.Contains(feed.Items, item => item.Id == carolReel.Id);
+    }
+
+    [Fact]
+    public async Task Suggested_items_are_labeled_and_do_not_repeat_the_same_creator_consecutively()
+    {
+        var users = await CreateUsersAsync(3);
+        var (viewer, firstCreator, secondCreator) = (users[0], users[1], users[2]);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        await SaveAsync(db => db.Posts.AddRange(Enumerable.Range(0, 12).Select(i => Standard(viewer, now.AddSeconds(-i)))));
+        await CreateReelAsync(firstCreator, now);
+        await CreateReelAsync(secondCreator, now.AddSeconds(-1));
+        using var client = CreateClient(viewer);
+
+        var feed = await TraverseAsync(client, "/api/feed", 2);
+        var suggestions = feed.Where(item => item.IsSuggested).ToArray();
+
+        Assert.NotEmpty(suggestions);
+        Assert.All(suggestions, item => Assert.Equal("Suggested for you", item.RecommendationReason));
+        Assert.All(suggestions.Zip(suggestions.Skip(1)), pair => Assert.NotEqual(pair.First.Author.UserId, pair.Second.Author.UserId));
+    }
+
+    [Fact]
+    public async Task Ranking_affinity_never_overrides_a_new_block()
+    {
+        var users = await CreateUsersAsync(2);
+        var (viewer, creator) = (users[0], users[1]);
+        await FollowAsync(viewer, creator);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var post = Standard(creator, now);
+        await SaveAsync(db =>
+        {
+            db.Posts.Add(post);
+            db.PostReactions.Add(PostReaction.Create(post.Id, viewer, ReactionType.Love, now));
+            db.Comments.Add(Comment.Create(Guid.NewGuid(), post.Id, viewer, null, "Previously interested", now));
+        });
+        await BlockAsync(viewer, creator);
+        using var client = CreateClient(viewer);
+
+        var feed = await ReadAsync(await client.GetAsync("/api/feed?limit=10"));
+
+        Assert.DoesNotContain(feed.Items, item => item.Id == post.Id);
+    }
+
+    [Fact]
     public async Task Suggested_public_reels_have_a_session_wide_quota_and_never_enter_following()
     {
         var users = await CreateUsersAsync(2);
@@ -476,8 +594,9 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
             if (item.IsSuggested)
             {
                 suggested++;
-                Assert.Equal("reel", item.ContentType);
+                Assert.Contains(item.ContentType, new[] { "reel", "standardPost" });
                 Assert.Equal("public", item.Privacy);
+                Assert.Equal("Suggested for you", item.RecommendationReason);
                 Assert.True(suggested <= organic / 4, "Discovery exceeded one suggestion per four organic items across cursors.");
             }
             else

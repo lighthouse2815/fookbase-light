@@ -13,6 +13,7 @@ internal sealed class PostReactionConfiguration : IEntityTypeConfiguration<PostR
         builder.Property(reaction => reaction.Type).HasConversion<int>().IsRequired();
         builder.Property(reaction => reaction.CreatedAtUtc).IsRequired();
         builder.HasIndex(reaction => new { reaction.PostId, reaction.Type });
+        builder.HasIndex(reaction => new { reaction.UserId, reaction.CreatedAtUtc, reaction.PostId });
         builder.HasOne<Post>()
             .WithMany()
             .HasForeignKey(reaction => reaction.PostId)

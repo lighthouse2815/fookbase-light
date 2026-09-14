@@ -173,14 +173,16 @@ export default function FeedPage() {
               onOriginalDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.share?.originalPost.id !== postId))}
             />
           ) : post.contentType === 'reel' ? <FeedReelCard key={post.id} item={post} /> : (
-            <LivePostCard
-              key={post.id}
-              post={{ ...post, authorUserId: post.author.userId, contentType: 'standardPost' }}
-              group={post.containerType === 'group' ? post.container : undefined}
-              currentUserId={session!.user.id}
-              onPostUpdated={mergeUpdatedPost}
-              onPostDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))}
-            />
+            <div key={post.id} className="flex flex-col gap-1">
+              {post.isSuggested && <span className="px-2 text-xs font-semibold text-primary">{post.recommendationReason ?? t('suggestedReel')}</span>}
+              <LivePostCard
+                post={{ ...post, authorUserId: post.author.userId, contentType: 'standardPost' }}
+                group={post.containerType === 'group' ? post.container : undefined}
+                currentUserId={session!.user.id}
+                onPostUpdated={mergeUpdatedPost}
+                onPostDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))}
+              />
+            </div>
           ))}
           {!isLoading && <PaginationControls hasMore={nextCursor !== null} isLoading={isLoadingMore} error={loadMoreError} label={t('loadMorePosts')} onLoadMore={() => void loadFeed(nextCursor ?? undefined)} />}
         </div>

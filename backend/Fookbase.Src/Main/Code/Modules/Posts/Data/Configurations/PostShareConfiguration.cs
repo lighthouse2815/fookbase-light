@@ -14,6 +14,7 @@ internal sealed class PostShareConfiguration : IEntityTypeConfiguration<PostShar
         builder.Property(share => share.Caption).HasMaxLength(PostShare.MaximumCaptionLength);
         builder.Property(share => share.CreatedAtUtc).IsRequired();
         builder.HasIndex(share => new { share.OriginalPostId, share.DeletedAtUtc });
+        builder.HasIndex(share => new { share.SharingUserId, share.DeletedAtUtc, share.CreatedAtUtc, share.OriginalPostId });
         builder.HasIndex(share => new
         {
             share.DestinationType,

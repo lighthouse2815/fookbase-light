@@ -11,6 +11,7 @@ using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Reels.DTOs.Responses;
+using Fookbase.Api.Modules.Reels.Entities;
 using Fookbase.Api.Modules.Reels.Services;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.DataProtection;
@@ -30,7 +31,7 @@ public sealed class FeedService(
 {
     public const int DefaultPageSize = 20;
     public const int MaximumPageSize = 50;
-    private const int CursorVersion = 1;
+    private const int CursorVersion = 2;
     private readonly string rankingVersion = Convert.ToHexString(
         SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(options))));
 
@@ -100,6 +101,9 @@ public sealed class FeedService(
             share.DestinationType == PostShareDestinationType.Page &&
             dbContext.PageFollowers.Any(follower =>
                 follower.PageId == share.DestinationId && follower.UserId == viewerUserId)), options.PageAffinity);
+        organic = (await RankCandidatesAsync(organic, viewerUserId, session.AsOfUtc, cancellationToken))
+            .Where(candidate => session.Organic is null || IsAfterPosition(candidate, session.Organic))
+            .ToList();
         organic = organic.OrderByDescending(item => item.Score)
             .ThenByDescending(item => item.CreatedAtUtc).ThenByDescending(item => item.SortId).ToList();
 
@@ -113,7 +117,18 @@ public sealed class FeedService(
                     post.AuthorUserId != viewerUserId && !relationships.FollowedUserIds.Contains(post.AuthorUserId) &&
                     post.CreatedAtUtc >= oldest);
             suggestions = await LoadWindowAsync(discoverable, options.SuggestedReelAffinity,
-                session.Suggestion, session.AsOfUtc, true, cancellationToken);
+                null, session.AsOfUtc, true, cancellationToken);
+            var suggestedPosts = PostVisibility.ApplyDirectAccess(posts, viewer)
+                .Where(post => post.PostType == PostType.Standard && post.Privacy == PostPrivacy.Public &&
+                    post.ContainerType == PostContainerType.Profile && post.AuthorUserId != viewerUserId &&
+                    !relationships.FollowedUserIds.Contains(post.AuthorUserId));
+            suggestions.AddRange(await LoadWindowAsync(suggestedPosts, options.SuggestedReelAffinity,
+                null, session.AsOfUtc, true, cancellationToken));
+            suggestions = (await RankCandidatesAsync(suggestions, viewerUserId, session.AsOfUtc, cancellationToken))
+                .Where(candidate => session.Suggestion is null || IsAfterPosition(candidate, session.Suggestion))
+                .Where(candidate => candidate.Post.AuthorUserId != session.LastSuggestedCreatorId)
+                .OrderByDescending(candidate => candidate.Score).ThenByDescending(candidate => candidate.CreatedAtUtc)
+                .ThenByDescending(candidate => candidate.SortId).ToList();
         }
 
         // Organic score order is stable. Discovery uses its own frontier so quota-deferred
@@ -128,8 +143,35 @@ public sealed class FeedService(
             if (!following && state.OrganicSinceSuggestion >= options.OrganicItemsPerSuggestion &&
                 suggestionIndex < suggestions.Count)
             {
-                candidate = suggestions[suggestionIndex++];
-                state = state with { Suggestion = Position(candidate), OrganicSinceSuggestion = 0 };
+                while (suggestionIndex < suggestions.Count &&
+                       suggestions[suggestionIndex].Post.AuthorUserId == state.LastSuggestedCreatorId)
+                {
+                    suggestionIndex++;
+                }
+
+                if (suggestionIndex < suggestions.Count)
+                {
+                    candidate = suggestions[suggestionIndex++];
+                    state = state with
+                    {
+                        Suggestion = Position(candidate),
+                        OrganicSinceSuggestion = 0,
+                        LastSuggestedCreatorId = candidate.Post.AuthorUserId
+                    };
+                }
+                else if (organicIndex < organic.Count)
+                {
+                    candidate = organic[organicIndex++];
+                    state = state with
+                    {
+                        Organic = Position(candidate),
+                        OrganicSinceSuggestion = Math.Min(options.OrganicItemsPerSuggestion, state.OrganicSinceSuggestion + 1)
+                    };
+                }
+                else
+                {
+                    break;
+                }
             }
             else if (organicIndex < organic.Count)
             {
@@ -203,7 +245,8 @@ public sealed class FeedService(
             post.CreatedAtUtc,
             post.Id,
             affinityTicks - (asOfUtc.Ticks - post.CreatedAtUtc.Ticks),
-            suggested)).ToList();
+            suggested,
+            affinity)).ToList();
     }
 
     private async Task<List<Candidate>> LoadShareWindowAsync(
@@ -263,7 +306,8 @@ public sealed class FeedService(
                     row.Share.CreatedAtUtc,
                     row.Share.Id,
                     affinityTicks - (asOfUtc.Ticks - row.Share.CreatedAtUtc.Ticks),
-                    false));
+                    false,
+                    affinity));
                 if (candidates.Count >= options.CandidateLimitPerSource)
                 {
                     break;
@@ -279,13 +323,166 @@ public sealed class FeedService(
         return candidates;
     }
 
+    // All interaction queries are grouped in PostgreSQL and constrained to candidate authors/sources,
+    // the bounded lookback window, and the cursor snapshot. No per-candidate query is issued here.
+    private async Task<List<Candidate>> RankCandidatesAsync(
+        List<Candidate> candidates,
+        Guid viewerUserId,
+        DateTimeOffset asOfUtc,
+        CancellationToken cancellationToken)
+    {
+        if (candidates.Count == 0)
+        {
+            return candidates;
+        }
+
+        var candidatePostIds = candidates.Select(candidate => candidate.Post.Id).Distinct().ToArray();
+        var creatorIds = candidates.Where(candidate => candidate.Post.ContainerType == PostContainerType.Profile)
+            .Select(candidate => candidate.Post.AuthorUserId).Distinct().ToArray();
+        var sourceKeys = candidates.Where(candidate => candidate.Post.ContainerType is PostContainerType.Group or PostContainerType.Page)
+            .Select(candidate => new SourceKey(candidate.Post.ContainerType, candidate.Post.ContainerId)).Distinct().ToArray();
+        var sourceIds = sourceKeys.Select(key => key.Id).Distinct().ToArray();
+        var lookbackStart = asOfUtc.AddDays(-options.InteractionLookbackDays);
+        var creatorSignals = new Dictionary<Guid, int>();
+        var sourceSignals = new Dictionary<SourceKey, int>();
+
+        var reactions = await (
+            from reaction in dbContext.PostReactions.AsNoTracking()
+            join post in dbContext.Posts.AsNoTracking() on reaction.PostId equals post.Id
+            where reaction.UserId == viewerUserId && reaction.CreatedAtUtc >= lookbackStart && reaction.CreatedAtUtc <= asOfUtc &&
+                  (creatorIds.Contains(post.AuthorUserId) || sourceIds.Contains(post.ContainerId))
+            group reaction by new { post.AuthorUserId, post.ContainerType, post.ContainerId } into grouped
+            select new InteractionAggregate(grouped.Key.AuthorUserId, grouped.Key.ContainerType, grouped.Key.ContainerId, grouped.Count()))
+            .ToListAsync(cancellationToken);
+        AddSignals(reactions, options.ReactionAffinityWeight, creatorSignals, sourceSignals, creatorIds, sourceKeys);
+
+        var comments = await (
+            from comment in dbContext.Comments.AsNoTracking()
+            join post in dbContext.Posts.AsNoTracking() on comment.PostId equals post.Id
+            where comment.AuthorUserId == viewerUserId && comment.DeletedAtUtc == null &&
+                  comment.CreatedAtUtc >= lookbackStart && comment.CreatedAtUtc <= asOfUtc &&
+                  (creatorIds.Contains(post.AuthorUserId) || sourceIds.Contains(post.ContainerId))
+            group comment by new { post.AuthorUserId, post.ContainerType, post.ContainerId } into grouped
+            select new InteractionAggregate(grouped.Key.AuthorUserId, grouped.Key.ContainerType, grouped.Key.ContainerId, grouped.Count()))
+            .ToListAsync(cancellationToken);
+        AddSignals(comments, options.CommentAffinityWeight, creatorSignals, sourceSignals, creatorIds, sourceKeys);
+
+        var saves = await (
+            from save in dbContext.PostSaves.AsNoTracking()
+            join post in dbContext.Posts.AsNoTracking() on save.PostId equals post.Id
+            where save.UserId == viewerUserId && save.SavedAtUtc >= lookbackStart && save.SavedAtUtc <= asOfUtc &&
+                  (creatorIds.Contains(post.AuthorUserId) || sourceIds.Contains(post.ContainerId))
+            group save by new { post.AuthorUserId, post.ContainerType, post.ContainerId } into grouped
+            select new InteractionAggregate(grouped.Key.AuthorUserId, grouped.Key.ContainerType, grouped.Key.ContainerId, grouped.Count()))
+            .ToListAsync(cancellationToken);
+        AddSignals(saves, options.SaveAffinityWeight, creatorSignals, sourceSignals, creatorIds, sourceKeys);
+
+        var shares = await (
+            from share in dbContext.PostShares.AsNoTracking()
+            join post in dbContext.Posts.AsNoTracking() on share.OriginalPostId equals post.Id
+            where share.SharingUserId == viewerUserId && share.DeletedAtUtc == null &&
+                  share.CreatedAtUtc >= lookbackStart && share.CreatedAtUtc <= asOfUtc &&
+                  (creatorIds.Contains(post.AuthorUserId) || sourceIds.Contains(post.ContainerId))
+            group share by new { post.AuthorUserId, post.ContainerType, post.ContainerId } into grouped
+            select new InteractionAggregate(grouped.Key.AuthorUserId, grouped.Key.ContainerType, grouped.Key.ContainerId, grouped.Count()))
+            .ToListAsync(cancellationToken);
+        AddSignals(shares, options.ShareAffinityWeight, creatorSignals, sourceSignals, creatorIds, sourceKeys);
+
+        var sourcePosts = await dbContext.Posts.AsNoTracking()
+            .Where(post => post.AuthorUserId == viewerUserId && post.CreatedAtUtc >= lookbackStart && post.CreatedAtUtc <= asOfUtc &&
+                sourceIds.Contains(post.ContainerId) && (post.ContainerType == PostContainerType.Group || post.ContainerType == PostContainerType.Page))
+            .GroupBy(post => new { post.ContainerType, post.ContainerId })
+            .Select(group => new SourceAggregate(group.Key.ContainerType, group.Key.ContainerId, group.Count()))
+            .ToListAsync(cancellationToken);
+        foreach (var sourcePost in sourcePosts)
+        {
+            var key = new SourceKey(sourcePost.ContainerType, sourcePost.ContainerId);
+            if (sourceKeys.Contains(key)) Add(sourceSignals, key, sourcePost.Count * options.CommentAffinityWeight);
+        }
+
+        var watches = await (
+            from view in dbContext.ReelViews.AsNoTracking()
+            join post in dbContext.Posts.AsNoTracking() on view.ReelPostId equals post.Id
+            join attachment in dbContext.PostMedia.AsNoTracking() on post.Id equals attachment.PostId
+            join media in dbContext.MediaAssets.AsNoTracking() on attachment.MediaId equals media.Id
+            where view.ViewerUserId == viewerUserId && view.ViewedAtUtc >= lookbackStart && view.ViewedAtUtc <= asOfUtc &&
+                  creatorIds.Contains(post.AuthorUserId) && media.DurationMs != null
+            group new { view, media } by post.AuthorUserId into grouped
+            select new WatchAggregate(
+                grouped.Key,
+                grouped.Count(item => item.view.Completed || item.view.WatchDurationMs * 100 >= item.media.DurationMs!.Value * options.ReelStrongCompletionThreshold),
+                grouped.Count(item => !item.view.Completed && item.view.WatchDurationMs * 100 <= item.media.DurationMs!.Value * 20)))
+            .ToListAsync(cancellationToken);
+        var watchSignals = watches.ToDictionary(
+            watch => watch.AuthorUserId,
+            watch => Math.Clamp(
+                watch.StrongCount * options.ReelCompletionWeight - watch.EarlyExitCount * options.ReelEarlyExitPenalty,
+                -options.ReelWatchAffinityCap,
+                options.ReelWatchAffinityCap));
+
+        var reactionEngagement = await dbContext.PostReactions.AsNoTracking()
+            .Where(reaction => candidatePostIds.Contains(reaction.PostId) && reaction.CreatedAtUtc <= asOfUtc)
+            .GroupBy(reaction => reaction.PostId).Select(group => new PostCount(group.Key, group.Count()))
+            .ToDictionaryAsync(row => row.PostId, row => row.Count, cancellationToken);
+        var commentEngagement = await dbContext.Comments.AsNoTracking()
+            .Where(comment => candidatePostIds.Contains(comment.PostId) && comment.DeletedAtUtc == null && comment.CreatedAtUtc <= asOfUtc)
+            .GroupBy(comment => comment.PostId).Select(group => new PostCount(group.Key, group.Count()))
+            .ToDictionaryAsync(row => row.PostId, row => row.Count, cancellationToken);
+        var shareEngagement = await dbContext.PostShares.AsNoTracking()
+            .Where(share => candidatePostIds.Contains(share.OriginalPostId) && share.DeletedAtUtc == null && share.CreatedAtUtc <= asOfUtc)
+            .GroupBy(share => share.OriginalPostId).Select(group => new PostCount(group.Key, group.Count()))
+            .ToDictionaryAsync(row => row.PostId, row => row.Count, cancellationToken);
+
+        var scoreTicksPerPoint = (long)options.FreshnessHoursPerPoint * TimeSpan.TicksPerHour;
+        return candidates.Select(candidate =>
+        {
+            var post = candidate.Post;
+            var creatorAffinity = post.ContainerType == PostContainerType.Profile
+                ? Math.Min(options.CreatorAffinityCap, creatorSignals.GetValueOrDefault(post.AuthorUserId))
+                : 0;
+            var sourceAffinity = post.ContainerType is PostContainerType.Group or PostContainerType.Page
+                ? Math.Min(options.SourceAffinityCap, sourceSignals.GetValueOrDefault(new SourceKey(post.ContainerType, post.ContainerId)))
+                : 0;
+            var watchAffinity = post.ContainerType == PostContainerType.Profile
+                ? watchSignals.GetValueOrDefault(post.AuthorUserId)
+                : 0;
+            var engagement = Math.Min(options.EngagementNormalizationCap, reactionEngagement.GetValueOrDefault(post.Id)) * options.ReactionEngagementWeight +
+                Math.Min(options.EngagementNormalizationCap, commentEngagement.GetValueOrDefault(post.Id)) * options.CommentEngagementWeight +
+                Math.Min(options.EngagementNormalizationCap, shareEngagement.GetValueOrDefault(post.Id)) * options.ShareEngagementWeight;
+            var score = (candidate.BaseAffinity + creatorAffinity + sourceAffinity + watchAffinity) * scoreTicksPerPoint +
+                (long)engagement * options.EngagementMinutesPerPoint * TimeSpan.TicksPerMinute -
+                (asOfUtc.Ticks - candidate.CreatedAtUtc.Ticks);
+            return candidate with { Score = score };
+        }).ToList();
+    }
+
+    private static void AddSignals(
+        IReadOnlyList<InteractionAggregate> aggregates,
+        int weight,
+        Dictionary<Guid, int> creatorSignals,
+        Dictionary<SourceKey, int> sourceSignals,
+        IReadOnlyCollection<Guid> creatorIds,
+        IReadOnlyCollection<SourceKey> sourceKeys)
+    {
+        foreach (var aggregate in aggregates)
+        {
+            var amount = aggregate.Count * weight;
+            if (creatorIds.Contains(aggregate.AuthorUserId)) Add(creatorSignals, aggregate.AuthorUserId, amount);
+            var source = new SourceKey(aggregate.ContainerType, aggregate.ContainerId);
+            if (sourceKeys.Contains(source)) Add(sourceSignals, source, amount);
+        }
+    }
+
+    private static void Add<TKey>(Dictionary<TKey, int> values, TKey key, int amount) where TKey : notnull =>
+        values[key] = values.GetValueOrDefault(key) + amount;
+
     private FeedCursor DecodeCursor(string? value, IDataProtector protector)
     {
         var now = timeProvider.GetUtcNow();
         if (value is null)
         {
             // PostgreSQL timestamps have microsecond precision.
-            return new FeedCursor(CursorVersion, now.AddTicks(-(now.Ticks % 10)), null, null, 0);
+            return new FeedCursor(CursorVersion, now.AddTicks(-(now.Ticks % 10)), null, null, 0, null);
         }
 
         try
@@ -320,6 +517,12 @@ public sealed class FeedService(
 
     private static FeedPosition Position(Candidate candidate) =>
         new(candidate.Score, candidate.CreatedAtUtc, candidate.SortId);
+
+    private static bool IsAfterPosition(Candidate candidate, FeedPosition position) =>
+        candidate.Score < position.Score ||
+        candidate.Score == position.Score &&
+        (candidate.CreatedAtUtc < position.CreatedAtUtc ||
+         candidate.CreatedAtUtc == position.CreatedAtUtc && candidate.SortId.CompareTo(position.Id) < 0);
 
     private async Task<IReadOnlyList<FeedItemResponse>> BuildItemsAsync(
         IReadOnlyList<Candidate> candidates, Guid viewerUserId, CancellationToken cancellationToken)
@@ -508,7 +711,8 @@ public sealed class FeedService(
                 assets.Select(asset => new FeedMediaResponse(asset.Id, asset.MediaType.ToString().ToLowerInvariant(), asset.ContentType)).ToList(),
                 summary.CommentCount, summary.ReactionCounts.Values.Sum(), summary.ReactionCounts, summary.ViewerReaction,
                 contentType, containerType,
-                container, displayAuthor, video, candidate.IsSuggested, summary.Mentions ?? [], shareResponse));
+                container, displayAuthor, video, candidate.IsSuggested, summary.Mentions ?? [], shareResponse,
+                candidate.IsSuggested ? "Suggested for you" : null));
         }
 
         return results;
@@ -520,9 +724,15 @@ public sealed class FeedService(
         DateTimeOffset CreatedAtUtc,
         Guid SortId,
         long Score,
-        bool IsSuggested);
+        bool IsSuggested,
+        int BaseAffinity = 0);
     private sealed record PageDestinationIdentity(Guid Id, string Username, string Name, Guid? AvatarMediaId);
     private sealed record FeedPosition(long Score, DateTimeOffset CreatedAtUtc, Guid Id);
     private sealed record FeedCursor(int Version, DateTimeOffset AsOfUtc, FeedPosition? Organic,
-        FeedPosition? Suggestion, int OrganicSinceSuggestion);
+        FeedPosition? Suggestion, int OrganicSinceSuggestion, Guid? LastSuggestedCreatorId);
+    private sealed record SourceKey(PostContainerType ContainerType, Guid Id);
+    private sealed record InteractionAggregate(Guid AuthorUserId, PostContainerType ContainerType, Guid ContainerId, int Count);
+    private sealed record SourceAggregate(PostContainerType ContainerType, Guid ContainerId, int Count);
+    private sealed record WatchAggregate(Guid AuthorUserId, int StrongCount, int EarlyExitCount);
+    private sealed record PostCount(Guid PostId, int Count);
 }

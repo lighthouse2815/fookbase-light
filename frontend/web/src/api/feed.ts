@@ -44,6 +44,7 @@ export interface FeedItem extends Omit<Post, 'authorUserId' | 'contentType'> {
   video: ReelVideo | null
   reactionCount: number
   isSuggested: boolean
+  recommendationReason?: string | null
   share?: FeedShare | null
 }
 
