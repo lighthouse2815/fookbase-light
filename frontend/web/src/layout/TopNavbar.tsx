@@ -289,7 +289,11 @@ export default function TopNavbar() {
         <div ref={menuDropdownRef} className="relative">
           <button
             type="button"
-            onClick={() => setIsMenuOpen((current) => !current)}
+            onClick={() => {
+              setIsMenuOpen((current) => !current)
+              setIsNotificationsOpen(false)
+              setIsNotificationMenuOpen(false)
+            }}
             className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             title="Menu"
             aria-label="Menu"
@@ -307,6 +311,11 @@ export default function TopNavbar() {
         </div>
         <a
           href={messengerUrl}
+          onClick={() => {
+            setIsMenuOpen(false)
+            setIsNotificationsOpen(false)
+            setIsNotificationMenuOpen(false)
+          }}
           className="relative w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer no-underline"
           title={t('messages')}
           aria-label={t('messages')}
@@ -321,6 +330,7 @@ export default function TopNavbar() {
               if (isNotificationsPage) return
               setIsNotificationsOpen((current) => !current)
               setIsNotificationMenuOpen(false)
+              setIsMenuOpen(false)
             }}
             disabled={isNotificationsPage}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none text-sm relative ${isNotificationsOpen || isNotificationsPage ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50] cursor-pointer'} ${isNotificationsPage ? 'cursor-default' : ''}`}
