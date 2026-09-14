@@ -66,17 +66,18 @@ export default function TopNavbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'notifications' | null>(null)
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all')
   const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false)
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const menuDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
   const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
   const isNotificationsPage = location.pathname === '/notifications'
+  const isMenuOpen = activeHeaderPopup === 'menu'
+  const isNotificationsOpen = activeHeaderPopup === 'notifications'
   const navItems: NavItem[] = [
     { path: '/feed', icon: <HomeIcon />, label: t('home') },
     { path: '/reels', icon: <ReelsIcon />, label: 'Reels' },
@@ -126,31 +127,19 @@ export default function TopNavbar() {
   }, [session?.user.id])
 
   useEffect(() => {
-    if (!isNotificationsOpen) return
+    if (!activeHeaderPopup) return
 
-    const closeNotificationsWhenClickingOutside = (event: PointerEvent) => {
-      if (!notificationDropdownRef.current?.contains(event.target as Node)) {
-        setIsNotificationsOpen(false)
+    const activePopupRef = activeHeaderPopup === 'menu' ? menuDropdownRef : notificationDropdownRef
+    const closePopupWhenClickingOutside = (event: PointerEvent) => {
+      if (!activePopupRef.current?.contains(event.target as Node)) {
+        setActiveHeaderPopup(null)
         setIsNotificationMenuOpen(false)
       }
     }
 
-    document.addEventListener('pointerdown', closeNotificationsWhenClickingOutside, true)
-    return () => document.removeEventListener('pointerdown', closeNotificationsWhenClickingOutside, true)
-  }, [isNotificationsOpen])
-
-  useEffect(() => {
-    if (!isMenuOpen) return
-
-    const closeMenuWhenClickingOutside = (event: PointerEvent) => {
-      if (!menuDropdownRef.current?.contains(event.target as Node)) {
-        setIsMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('pointerdown', closeMenuWhenClickingOutside, true)
-    return () => document.removeEventListener('pointerdown', closeMenuWhenClickingOutside, true)
-  }, [isMenuOpen])
+    document.addEventListener('pointerdown', closePopupWhenClickingOutside, true)
+    return () => document.removeEventListener('pointerdown', closePopupWhenClickingOutside, true)
+  }, [activeHeaderPopup])
 
   const hasSuggestions = Boolean(suggestions &&
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
@@ -290,8 +279,7 @@ export default function TopNavbar() {
           <button
             type="button"
             onClick={() => {
-              setIsMenuOpen((current) => !current)
-              setIsNotificationsOpen(false)
+              setActiveHeaderPopup((current) => current === 'menu' ? null : 'menu')
               setIsNotificationMenuOpen(false)
             }}
             className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
@@ -312,8 +300,7 @@ export default function TopNavbar() {
         <a
           href={messengerUrl}
           onClick={() => {
-            setIsMenuOpen(false)
-            setIsNotificationsOpen(false)
+            setActiveHeaderPopup(null)
             setIsNotificationMenuOpen(false)
           }}
           className="relative w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer no-underline"
@@ -328,9 +315,8 @@ export default function TopNavbar() {
             type="button"
             onClick={() => {
               if (isNotificationsPage) return
-              setIsNotificationsOpen((current) => !current)
+              setActiveHeaderPopup((current) => current === 'notifications' ? null : 'notifications')
               setIsNotificationMenuOpen(false)
-              setIsMenuOpen(false)
             }}
             disabled={isNotificationsPage}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none text-sm relative ${isNotificationsOpen || isNotificationsPage ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50] cursor-pointer'} ${isNotificationsPage ? 'cursor-default' : ''}`}
@@ -348,14 +334,14 @@ export default function TopNavbar() {
                 <button type="button" onClick={() => setNotificationFilter('unread')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'unread' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Chưa đọc</button>
               </div>
               <div className="max-h-[calc(100vh-11rem)] overflow-y-auto px-2 pb-2">
-                <div className="flex items-center justify-between px-2 pb-1"><h3 className="text-base font-bold text-text">Trước đó</h3><Link to="/notifications" onClick={() => setIsNotificationsOpen(false)} className="text-sm font-medium text-primary no-underline hover:underline">Xem tất cả</Link></div>
+                <div className="flex items-center justify-between px-2 pb-1"><h3 className="text-base font-bold text-text">Trước đó</h3><Link to="/notifications" onClick={() => setActiveHeaderPopup(null)} className="text-sm font-medium text-primary no-underline hover:underline">Xem tất cả</Link></div>
                 {visibleNotifications.length === 0 ? <p className="px-4 py-6 text-center text-sm text-text-muted">{notificationFilter === 'unread' ? 'Bạn không có thông báo chưa đọc.' : t('allCaughtUp')}</p> : (
                   <>
                     {visibleNotifications.map((notification, index) => {
                       const actor = notification.actorDisplayName ?? notification.actorUsername ?? t('user')
                       const badge = notificationBadge(notification)
                       const avatarTone = ['bg-[#87433b]', 'bg-[#5f7997]', 'bg-[#8e5b88]', 'bg-[#607b57]', 'bg-[#9b6c45]'][index % 5]
-                      return <Link key={notification.id} to={notificationDestination(notification)} onClick={() => { markNotificationRead(notification.id); setIsNotificationsOpen(false) }} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
+                      return <Link key={notification.id} to={notificationDestination(notification)} onClick={() => { markNotificationRead(notification.id); setActiveHeaderPopup(null) }} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
                         <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${avatarTone}`}>{actor.slice(0, 2).toUpperCase()}<span className={`absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-surface text-[11px] font-bold text-white ${badge.className}`}>{badge.icon}</span></span>
                         <span className="min-w-0 flex-1 pr-4"><span className="block text-sm leading-5 text-text"><strong>{actor}</strong> {notificationText(notification)}</span><span className={`mt-0.5 block text-xs font-semibold ${notification.isRead ? 'text-text-light' : 'text-primary'}`}>{notificationTime(notification.createdAtUtc)}</span></span>
                         {!notification.isRead && <span className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary" />}
