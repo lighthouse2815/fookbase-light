@@ -350,6 +350,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{cover}")).StatusCode);
         Guid profilePicturesAlbumId;
+        Guid avatarUpdatePostId;
         using (var verification = factory.Services.CreateScope())
         {
             var db = verification.ServiceProvider.GetRequiredService<FookbaseDbContext>();
@@ -363,9 +364,15 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
                 .SingleAsync();
             Assert.True(await db.AlbumMedia.AsNoTracking()
                 .AnyAsync(item => item.AlbumId == profilePicturesAlbumId && item.MediaId == avatar));
+            avatarUpdatePostId = await db.PostMedia.AsNoTracking()
+                .Where(item => item.MediaId == avatar)
+                .Select(item => item.PostId)
+                .SingleAsync();
         }
 
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/albums/{profilePicturesAlbumId}/media/{avatar}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/posts/{avatarUpdatePostId}")).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
     }
 

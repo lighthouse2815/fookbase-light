@@ -455,7 +455,8 @@ public sealed class PostsService(
         string content,
         PostPrivacy privacy,
         IReadOnlyList<Guid> mediaIds,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool addToTimelinePhotos = true)
     {
         return await CreatePostInContainerCoreAsync(
             authorUserId,
@@ -464,7 +465,8 @@ public sealed class PostsService(
             PostContainerType.Profile,
             authorUserId,
             mediaIds,
-            cancellationToken);
+            cancellationToken,
+            addToTimelinePhotos);
     }
 
     public async Task<PostsServiceResult<PostResponse>> CreatePostInContainerCoreAsync(
@@ -474,7 +476,8 @@ public sealed class PostsService(
         PostContainerType containerType,
         Guid containerId,
         IReadOnlyList<Guid> mediaIds,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool addToTimelinePhotos = true)
     {
         var now = timeProvider.GetUtcNow();
         var post = Post.CreateInContainer(
@@ -492,7 +495,7 @@ public sealed class PostsService(
             dbContext.PostMedia.Add(PostMedia.Create(post.Id, mediaIds[index], index));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
-        if (containerType == PostContainerType.Profile && post.PostType == PostType.Standard)
+        if (addToTimelinePhotos && containerType == PostContainerType.Profile && post.PostType == PostType.Standard)
         {
             foreach (var mediaId in mediaIds)
             {

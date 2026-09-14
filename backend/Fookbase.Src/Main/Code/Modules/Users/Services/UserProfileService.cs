@@ -201,7 +201,7 @@ public sealed class UserProfileService(
     {
         var privacy = await privacySettingsService.GetDefaultPostPrivacyAsync(userId, cancellationToken);
         var created = await postsService.CreatePostCoreAsync(
-            userId, content, privacy, [mediaId], cancellationToken);
+            userId, content, privacy, [mediaId], cancellationToken, addToTimelinePhotos: false);
         if (!created.Succeeded)
         {
             throw new InvalidOperationException("The profile media post could not be created.");
