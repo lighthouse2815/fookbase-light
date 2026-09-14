@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import type { Comment } from '../../../api/posts'
 import { resolveProfileImageUrl } from '../../../api/users'
@@ -5,6 +6,8 @@ import type { UserProfile } from '../../../api/users'
 import TextWithReferences from '../../../shared/components/TextWithReferences'
 import { formatPostTimestamp } from '../../../shared/formatPostTimestamp'
 import PaginationControls from '../../../shared/components/PaginationControls'
+import { reactionChoices } from './reactionChoices'
+import type { ReactionType } from './reactionChoices'
 
 interface DiscussionListProps {
   comments: readonly Comment[]
@@ -22,6 +25,41 @@ interface DiscussionListProps {
   onLoadMore: () => void
   onEdit: (comment: Comment) => void
   onDelete: (comment: Comment) => void
+  onReact: (comment: Comment, type: ReactionType) => void
+  onRemoveReaction: (comment: Comment) => void
+  reactingCommentId: string | null
+}
+
+function CommentReactionControl({
+  comment,
+  isReacting,
+  onReact,
+  onRemoveReaction,
+}: {
+  comment: Comment
+  isReacting: boolean
+  onReact: (type: ReactionType) => void
+  onRemoveReaction: () => void
+}) {
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const selectedReaction = reactionChoices.find(({ type }) => type === comment.viewerReaction)
+  const reactionTotal = Object.values(comment.reactionCounts).reduce((total, count) => total + count, 0)
+
+  return <div className="group relative flex items-center gap-2">
+    <button type="button" disabled={isReacting} onClick={() => {
+      if (selectedReaction) onRemoveReaction()
+      else setIsPickerOpen((current) => !current)
+    }} className={`border-0 bg-transparent p-0 text-xs font-semibold disabled:cursor-wait disabled:opacity-70 ${selectedReaction?.color ?? 'text-text-muted hover:text-text'}`} aria-label={selectedReaction ? `Bỏ cảm xúc ${selectedReaction.label}` : 'Thêm cảm xúc'}>
+      {selectedReaction ? `${selectedReaction.icon} ${selectedReaction.label}` : 'Thích'}
+    </button>
+    {reactionTotal > 0 && <span className="text-xs font-medium text-text-muted">{reactionTotal}</span>}
+    <div className={`absolute bottom-[calc(100%+6px)] left-0 z-30 items-center rounded-full border border-border bg-surface px-1.5 py-1 shadow-xl ${isPickerOpen ? 'flex' : 'hidden'} group-hover:flex group-focus-within:flex`} role="group" aria-label="Chọn cảm xúc cho bình luận">
+      {reactionChoices.map(({ type, icon, label }) => <button key={type} type="button" disabled={isReacting} onClick={() => {
+        setIsPickerOpen(false)
+        onReact(type)
+      }} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent p-0 text-[22px] leading-none transition-transform hover:-translate-y-1 hover:scale-125 disabled:opacity-70" aria-label={label} title={label}>{icon}</button>)}
+    </div>
+  </div>
 }
 
 export function DiscussionList({
@@ -40,6 +78,9 @@ export function DiscussionList({
   onLoadMore,
   onEdit,
   onDelete,
+  onReact,
+  onRemoveReaction,
+  reactingCommentId,
 }: DiscussionListProps) {
   return <>
     {isLoading && <p className="text-center text-sm text-text-muted">{loadingLabel}</p>}
@@ -59,6 +100,7 @@ export function DiscussionList({
             </div>
             <div className="flex items-center gap-3 px-2 pt-1 text-xs font-semibold text-text-muted">
               <time dateTime={comment.createdAtUtc} title={formatPostTimestamp(comment.createdAtUtc).absolute}>{formatPostTimestamp(comment.createdAtUtc).compact}</time>
+              <CommentReactionControl comment={comment} isReacting={reactingCommentId === comment.id} onReact={(type) => onReact(comment, type)} onRemoveReaction={() => onRemoveReaction(comment)} />
               {comment.authorUserId === currentUserId && <><button type="button" onClick={() => onEdit(comment)} className="border-0 bg-transparent p-0 text-xs font-semibold text-text-muted hover:text-text">{editLabel}</button><button type="button" onClick={() => onDelete(comment)} className="border-0 bg-transparent p-0 text-xs font-semibold text-[#ff8a9b]">{deleteLabel}</button></>}
             </div>
           </div>

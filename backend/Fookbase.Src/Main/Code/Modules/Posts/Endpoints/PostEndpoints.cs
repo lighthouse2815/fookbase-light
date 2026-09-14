@@ -336,19 +336,19 @@ public static class PostEndpoints
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
-    private static Task<IResult> SetCommentReactionAsync(
+    private static async Task<IResult> SetCommentReactionAsync(
         Guid commentId,
         SetReactionRequest request,
         ClaimsPrincipal principal,
         PostsUseCase useCase,
-        CancellationToken cancellationToken) =>
-        ExecuteCommandAsync(
-            principal,
-            actorUserId => useCase.SetCommentReactionAsync(
-                actorUserId,
-                commentId,
-                request.Type,
-                cancellationToken));
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId)) return InvalidAccessToken();
+
+        var result = await useCase.SetCommentReactionAsync(
+            actorUserId, commentId, request.Type, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
 
     private static async Task<IResult> RemoveReactionAsync(
         Guid postId,
@@ -365,17 +365,17 @@ public static class PostEndpoints
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
-    private static Task<IResult> RemoveCommentReactionAsync(
+    private static async Task<IResult> RemoveCommentReactionAsync(
         Guid commentId,
         ClaimsPrincipal principal,
         PostsUseCase useCase,
-        CancellationToken cancellationToken) =>
-        ExecuteCommandAsync(
-            principal,
-            actorUserId => useCase.RemoveCommentReactionAsync(
-                actorUserId,
-                commentId,
-                cancellationToken));
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId)) return InvalidAccessToken();
+
+        var result = await useCase.RemoveCommentReactionAsync(actorUserId, commentId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
 
     private static async Task<IResult> GetMediaAccessAsync(
         Guid postId, Guid mediaId, ClaimsPrincipal principal, PostsUseCase useCase,

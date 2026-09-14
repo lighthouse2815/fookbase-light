@@ -8,4 +8,6 @@ public sealed record CommentResponse(
     string Content,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc,
+    IReadOnlyDictionary<string, int> ReactionCounts,
+    string? ViewerReaction,
     IReadOnlyList<ContentMentionResponse>? Mentions = null);

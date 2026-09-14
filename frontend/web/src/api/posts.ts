@@ -41,6 +41,8 @@ export interface Comment {
   content: string
   createdAtUtc: string
   updatedAtUtc: string | null
+  reactionCounts: Record<string, number>
+  viewerReaction: string | null
   mentions?: ContentMention[]
 }
 
@@ -133,6 +135,13 @@ export const postsApi = {
     }),
   deleteComment: (commentId: string) =>
     apiRequest<void>(`/api/posts/comments/${commentId}`, { method: 'DELETE' }),
+  setCommentReaction: (commentId: string, type: string) =>
+    apiRequest<Comment>(`/api/posts/comments/${commentId}/reaction`, {
+      method: 'PUT',
+      ...jsonBody({ type }),
+    }),
+  removeCommentReaction: (commentId: string) =>
+    apiRequest<Comment>(`/api/posts/comments/${commentId}/reaction`, { method: 'DELETE' }),
   setReaction: (postId: string, type: string) =>
     apiRequest<Post>(`/api/posts/${postId}/reaction`, {
       method: 'PUT',

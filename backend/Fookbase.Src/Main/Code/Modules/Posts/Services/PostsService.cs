@@ -289,6 +289,7 @@ public sealed class PostsService(
 
     public async Task<CommentResponse?> GetCommentResponseAsync(
         Guid commentId,
+        Guid? viewerUserId,
         CancellationToken cancellationToken = default)
     {
         var comment = await dbContext.Comments.AsNoTracking().SingleOrDefaultAsync(
@@ -296,7 +297,7 @@ public sealed class PostsService(
             cancellationToken);
         return comment is null
             ? null
-            : (await LoadCommentResponsesAsync([comment], cancellationToken))[0];
+            : (await LoadCommentResponsesAsync([comment], viewerUserId, cancellationToken))[0];
     }
 
     public async Task<ApplicationResult<PostResponse>> SetReactionAsync(
@@ -360,7 +361,7 @@ public sealed class PostsService(
             viewer, postId, parsedReaction, offset, limit, cancellationToken));
     }
 
-    public async Task<ApplicationResult> SetCommentReactionAsync(
+    public async Task<ApplicationResult<CommentResponse>> SetCommentReactionAsync(
         PostViewerContext actor,
         Guid commentId,
         string reactionType,
@@ -369,30 +370,46 @@ public sealed class PostsService(
         if (!Enum.TryParse<ReactionType>(reactionType, true, out var parsedReaction) ||
             !Enum.IsDefined(parsedReaction))
         {
-            return ApplicationResult.Failure(new ApplicationError(
+            return ApplicationResult<CommentResponse>.Failure(new ApplicationError(
                 "invalid_reaction_type",
                 "Reaction type must be one of: like, love, haha, wow, sad, angry.",
                 ApplicationErrorType.Validation));
         }
 
-        return Map(await ChangeCommentReactionAsync(
+        var error = await ChangeCommentReactionAsync(
             actor.UserId,
             commentId,
             parsedReaction,
             actor,
-            cancellationToken));
+            cancellationToken);
+        if (error != PostsServiceError.None)
+        {
+            return ApplicationResult<CommentResponse>.Failure(ToApplicationError(error));
+        }
+
+        return ApplicationResult<CommentResponse>.Success(
+            (await GetCommentResponseAsync(commentId, actor.UserId, cancellationToken))!);
     }
 
-    public async Task<ApplicationResult> RemoveCommentReactionAsync(
+    public async Task<ApplicationResult<CommentResponse>> RemoveCommentReactionAsync(
         PostViewerContext actor,
         Guid commentId,
-        CancellationToken cancellationToken = default) =>
-        Map(await ChangeCommentReactionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var error = await ChangeCommentReactionAsync(
             actor.UserId,
             commentId,
             null,
             actor,
-            cancellationToken));
+            cancellationToken);
+        if (error != PostsServiceError.None)
+        {
+            return ApplicationResult<CommentResponse>.Failure(ToApplicationError(error));
+        }
+
+        return ApplicationResult<CommentResponse>.Success(
+            (await GetCommentResponseAsync(commentId, actor.UserId, cancellationToken))!);
+    }
 
     public async Task<ApplicationResult> AuthorizeMediaAccessAsync(
         PostViewerContext viewer, Guid postId, Guid mediaId, CancellationToken cancellationToken = default)
@@ -781,7 +798,7 @@ public sealed class PostsService(
             await notificationService.PublishAsync(notification, cancellationToken);
         }
         return PostsServiceResult<CommentResponse>.Success(
-            (await LoadCommentResponsesAsync([comment], cancellationToken))[0]);
+            (await LoadCommentResponsesAsync([comment], actor.UserId, cancellationToken))[0]);
     }
 
     public async Task<PostsServiceResult<CommentResponse>> UpdateCommentCoreAsync(
@@ -813,7 +830,7 @@ public sealed class PostsService(
         comment.Update(content, timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
         return PostsServiceResult<CommentResponse>.Success(
-            (await LoadCommentResponsesAsync([comment], cancellationToken))[0]);
+            (await LoadCommentResponsesAsync([comment], actorUserId, cancellationToken))[0]);
     }
 
     public async Task<PostsServiceError> DeleteCommentCoreAsync(
@@ -866,7 +883,7 @@ public sealed class PostsService(
             .ToListAsync(cancellationToken);
         return PostsServiceResult<PagedResponse<CommentResponse>>.Success(
             new PagedResponse<CommentResponse>(
-                await LoadCommentResponsesAsync(comments, cancellationToken), offset, limit, total));
+                await LoadCommentResponsesAsync(comments, viewer?.UserId, cancellationToken), offset, limit, total));
     }
 
     public async Task<PostsServiceResult<PagedResponse<PostReactionResponse>>> GetReactionsCoreAsync(
@@ -1292,6 +1309,7 @@ public sealed class PostsService(
 
     private async Task<IReadOnlyList<CommentResponse>> LoadCommentResponsesAsync(
         IReadOnlyList<Comment> comments,
+        Guid? viewerUserId,
         CancellationToken cancellationToken)
     {
         if (comments.Count == 0)
@@ -1314,6 +1332,22 @@ public sealed class PostsService(
             : await dbContext.UserProfiles.AsNoTracking()
                 .Where(profile => mentionedUserIds.Contains(profile.UserId))
                 .ToDictionaryAsync(profile => profile.UserId, profile => profile.Username, cancellationToken);
+        var reactionRows = await dbContext.CommentReactions.AsNoTracking()
+            .Where(reaction => commentIds.Contains(reaction.CommentId))
+            .Select(reaction => new { reaction.CommentId, reaction.UserId, reaction.Type })
+            .ToListAsync(cancellationToken);
+        var reactionCounts = reactionRows
+            .GroupBy(reaction => reaction.CommentId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyDictionary<string, int>)group
+                    .GroupBy(reaction => reaction.Type.ToString().ToLowerInvariant())
+                    .ToDictionary(reaction => reaction.Key, reaction => reaction.Count()));
+        var viewerReactions = viewerUserId is null
+            ? new Dictionary<Guid, string>()
+            : reactionRows
+                .Where(reaction => reaction.UserId == viewerUserId)
+                .ToDictionary(reaction => reaction.CommentId, reaction => reaction.Type.ToString().ToLowerInvariant());
 
         return comments.Select(comment => new CommentResponse(
             comment.Id,
@@ -1323,6 +1357,8 @@ public sealed class PostsService(
             comment.Content,
             comment.CreatedAtUtc,
             comment.UpdatedAtUtc,
+            reactionCounts.GetValueOrDefault(comment.Id, new Dictionary<string, int>()),
+            viewerReactions.GetValueOrDefault(comment.Id),
             mentionRows
                 .Where(mention => mention.SourceId == comment.Id && profiles.ContainsKey(mention.UserId))
                 .OrderBy(mention => mention.StartIndex)

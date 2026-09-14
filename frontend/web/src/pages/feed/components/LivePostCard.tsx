@@ -13,6 +13,8 @@ import TextWithReferences from '../../../shared/components/TextWithReferences'
 import { usePreferences } from '../../../preferences'
 import ShareDialog from './ShareDialog'
 import { CommentComposer, DiscussionList } from './PostDiscussion'
+import { reactionChoices } from './reactionChoices'
+import type { ReactionType } from './reactionChoices'
 
 interface LivePostCardProps {
   post: Post
@@ -53,17 +55,6 @@ function PrivacyIcon({ privacy }: { privacy: string }) {
 function LikeIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M7.1 21H4.4a1.4 1.4 0 0 1-1.4-1.4v-7.2A1.4 1.4 0 0 1 4.4 11H7l2.2-6.2a2.05 2.05 0 0 1 4 .7l-.3 4.5h4.3a2.8 2.8 0 0 1 2.7 3.5l-1.2 5a3.2 3.2 0 0 1-3.1 2.5H7.1V11" /></svg>
 }
-
-type ReactionType = 'like' | 'love' | 'haha' | 'wow' | 'sad' | 'angry'
-
-const reactionChoices: ReadonlyArray<{ type: ReactionType; icon: string; label: string; color: string }> = [
-  { type: 'like', icon: '👍', label: 'Thích', color: 'text-[#1877f2]' },
-  { type: 'love', icon: '❤️', label: 'Yêu thích', color: 'text-[#f33e58]' },
-  { type: 'haha', icon: '😆', label: 'Haha', color: 'text-[#f7b125]' },
-  { type: 'wow', icon: '😮', label: 'Wow', color: 'text-[#f7b125]' },
-  { type: 'sad', icon: '😢', label: 'Buồn', color: 'text-[#f7b125]' },
-  { type: 'angry', icon: '😡', label: 'Phẫn nộ', color: 'text-[#e9710f]' },
-]
 
 function ReactionSummary({ reactionCounts, onClick }: { reactionCounts: Record<string, number>; onClick: () => void }) {
   const reactions = reactionChoices.filter(({ type }) => (reactionCounts[type] ?? 0) > 0)
@@ -295,6 +286,7 @@ export default function LivePostCard({
   const [isLoadingComments, setIsLoadingComments] = useState(false)
   const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false)
   const [commentsPageError, setCommentsPageError] = useState<string | null>(null)
+  const [reactingCommentId, setReactingCommentId] = useState<string | null>(null)
   const [commentAuthors, setCommentAuthors] = useState<Record<string, UserProfile>>({})
   const [commentText, setCommentText] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -488,6 +480,22 @@ export default function LivePostCard({
     }
   }
 
+  const updateCommentReaction = async (comment: Comment, type?: ReactionType) => {
+    setReactingCommentId(comment.id)
+    try {
+      const updatedComment = type
+        ? await postsApi.setCommentReaction(comment.id, type)
+        : await postsApi.removeCommentReaction(comment.id)
+      setComments((currentComments) => currentComments.map((item) =>
+        item.id === updatedComment.id ? updatedComment : item,
+      ))
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReaction'))
+    } finally {
+      setReactingCommentId(null)
+    }
+  }
+
   const editPost = async () => {
     const content = window.prompt(t('editPostPrompt'), post.content)
     if (content === null || !content.trim()) return
@@ -623,7 +631,7 @@ export default function LivePostCard({
             </div>
 
             <div className="space-y-4 px-4 py-4">
-              <DiscussionList comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} />
+              <DiscussionList comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} />
             </div>
           </div>
 
@@ -662,7 +670,7 @@ export default function LivePostCard({
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-            <div className="space-y-4"><DiscussionList comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} /></div>
+            <div className="space-y-4"><DiscussionList comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} /></div>
           </div>
           <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserName} value={commentText} placeholder={t('writeComment')} sendLabel={t('send')} onChange={(event) => setCommentText(event.target.value)} onSubmit={(event) => void createComment(event)} />
         </aside>

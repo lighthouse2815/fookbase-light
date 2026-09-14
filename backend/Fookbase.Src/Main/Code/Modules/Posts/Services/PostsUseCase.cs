@@ -390,7 +390,7 @@ public sealed class PostsUseCase(
 
         await socialInteractionsService.SynchronizeCommentMentionsAsync(
             result.Value!.Id, actorUserId, cancellationToken);
-        return await RefreshedCommentAsync(result.Value.Id, result, cancellationToken);
+        return await RefreshedCommentAsync(result.Value.Id, actorUserId, result, cancellationToken);
     }
 
     public async Task<ApplicationResult<CommentResponse>> UpdateCommentAsync(
@@ -406,7 +406,7 @@ public sealed class PostsUseCase(
         }
 
         await socialInteractionsService.SynchronizeCommentMentionsAsync(commentId, actorUserId, cancellationToken);
-        return await RefreshedCommentAsync(commentId, result, cancellationToken);
+        return await RefreshedCommentAsync(commentId, actorUserId, result, cancellationToken);
     }
 
     public async Task<ApplicationResult> SavePostAsync(
@@ -560,7 +560,7 @@ public sealed class PostsUseCase(
         await postsService.RemoveReactionAsync(
             await CreateRequiredViewerContextAsync(actorUserId, cancellationToken), postId, cancellationToken);
 
-    public async Task<ApplicationResult> SetCommentReactionAsync(
+    public async Task<ApplicationResult<CommentResponse>> SetCommentReactionAsync(
         Guid actorUserId,
         Guid commentId,
         string reactionType,
@@ -571,7 +571,7 @@ public sealed class PostsUseCase(
             reactionType,
             cancellationToken);
 
-    public async Task<ApplicationResult> RemoveCommentReactionAsync(
+    public async Task<ApplicationResult<CommentResponse>> RemoveCommentReactionAsync(
         Guid actorUserId,
         Guid commentId,
         CancellationToken cancellationToken = default) =>
@@ -640,10 +640,11 @@ public sealed class PostsUseCase(
 
     private async Task<ApplicationResult<CommentResponse>> RefreshedCommentAsync(
         Guid commentId,
+        Guid viewerUserId,
         ApplicationResult<CommentResponse> fallback,
         CancellationToken cancellationToken)
     {
-        var refreshed = await postsService.GetCommentResponseAsync(commentId, cancellationToken);
+        var refreshed = await postsService.GetCommentResponseAsync(commentId, viewerUserId, cancellationToken);
         return refreshed is null ? fallback : ApplicationResult<CommentResponse>.Success(refreshed);
     }
 

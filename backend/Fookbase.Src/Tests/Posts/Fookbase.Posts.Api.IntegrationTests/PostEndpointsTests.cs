@@ -555,7 +555,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             "/api/posts/comments/" + comment.Id + "/reaction",
             new { type = "love" });
 
-        Assert.Equal(HttpStatusCode.NoContent, reaction.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, reaction.StatusCode);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Contains(await db.Notifications.AsNoTracking().ToListAsync(), item =>
