@@ -234,6 +234,70 @@ public sealed class FriendsService(
         return Map(await GetStatusCoreAsync(actorUserId, otherUserId, cancellationToken));
     }
 
+    public async Task<IReadOnlyDictionary<Guid, RelationshipStatusResponse>> GetStatusesAsync(
+        Guid actorUserId,
+        IReadOnlyCollection<Guid> otherUserIds,
+        CancellationToken cancellationToken = default)
+    {
+        var userIds = otherUserIds.Distinct().ToArray();
+        var statuses = userIds.ToDictionary(
+            userId => userId,
+            userId => new RelationshipStatusResponse(
+                userId,
+                userId == actorUserId ? "self" : "none"));
+        var relationshipUserIds = userIds.Where(userId => userId != actorUserId).ToArray();
+        if (relationshipUserIds.Length == 0)
+        {
+            return statuses;
+        }
+
+        var pendingRequests = await dbContext.FriendRequests.AsNoTracking()
+            .Where(request =>
+                request.Status == FriendRequestStatus.Pending &&
+                ((request.SenderUserId == actorUserId && relationshipUserIds.Contains(request.ReceiverUserId)) ||
+                 (request.ReceiverUserId == actorUserId && relationshipUserIds.Contains(request.SenderUserId))))
+            .Select(request => new { request.Id, request.SenderUserId, request.ReceiverUserId })
+            .ToListAsync(cancellationToken);
+        foreach (var request in pendingRequests)
+        {
+            var otherUserId = request.SenderUserId == actorUserId
+                ? request.ReceiverUserId
+                : request.SenderUserId;
+            statuses[otherUserId] = new RelationshipStatusResponse(
+                otherUserId,
+                request.SenderUserId == actorUserId ? "request_sent" : "request_received",
+                request.Id);
+        }
+
+        var friendUserIds = await dbContext.Friendships.AsNoTracking()
+            .Where(friendship =>
+                (friendship.UserId1 == actorUserId && relationshipUserIds.Contains(friendship.UserId2)) ||
+                (friendship.UserId2 == actorUserId && relationshipUserIds.Contains(friendship.UserId1)))
+            .Select(friendship => friendship.UserId1 == actorUserId
+                ? friendship.UserId2
+                : friendship.UserId1)
+            .ToListAsync(cancellationToken);
+        foreach (var friendUserId in friendUserIds)
+        {
+            statuses[friendUserId] = new RelationshipStatusResponse(friendUserId, "friends");
+        }
+
+        var blockedUserIds = await dbContext.BlockedUsers.AsNoTracking()
+            .Where(block =>
+                (block.BlockerUserId == actorUserId && relationshipUserIds.Contains(block.BlockedUserId)) ||
+                (block.BlockedUserId == actorUserId && relationshipUserIds.Contains(block.BlockerUserId)))
+            .Select(block => block.BlockerUserId == actorUserId
+                ? block.BlockedUserId
+                : block.BlockerUserId)
+            .ToListAsync(cancellationToken);
+        foreach (var blockedUserId in blockedUserIds)
+        {
+            statuses[blockedUserId] = new RelationshipStatusResponse(blockedUserId, "blocked");
+        }
+
+        return statuses;
+    }
+
     public async Task<RelationshipAccessSnapshot> GetAccessSnapshotAsync(
         Guid userId,
         CancellationToken cancellationToken = default)

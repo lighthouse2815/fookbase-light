@@ -510,14 +510,37 @@ public sealed class PostsUseCase(
         string? reactionType,
         int offset,
         int limit,
-        CancellationToken cancellationToken = default) =>
-        await postsService.GetReactionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var reactions = await postsService.GetReactionsAsync(
             await CreateRequiredViewerContextAsync(actorUserId, cancellationToken),
             postId,
             reactionType,
             offset,
             limit,
             cancellationToken);
+        if (!reactions.Succeeded)
+        {
+            return reactions;
+        }
+
+        var page = reactions.Value!;
+        var statuses = await friendsService.GetStatusesAsync(
+            actorUserId,
+            page.Items.Select(reaction => reaction.UserId).ToArray(),
+            cancellationToken);
+        var items = page.Items.Select(reaction =>
+        {
+            var status = statuses[reaction.UserId];
+            return reaction with
+            {
+                RelationshipStatus = status.Status,
+                RelationshipRequestId = status.RequestId
+            };
+        }).ToList();
+        return ApplicationResult<PagedResponse<PostReactionResponse>>.Success(
+            new PagedResponse<PostReactionResponse>(items, page.Offset, page.Limit, page.Total));
+    }
 
     public async Task<ApplicationResult<PostResponse>> SetReactionAsync(
         Guid actorUserId,

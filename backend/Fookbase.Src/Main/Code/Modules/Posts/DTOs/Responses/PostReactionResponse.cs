@@ -5,4 +5,6 @@ public sealed record PostReactionResponse(
     string Username,
     string DisplayName,
     string? AvatarUrl,
-    string Type);
+    string Type,
+    string RelationshipStatus = "none",
+    Guid? RelationshipRequestId = null);
