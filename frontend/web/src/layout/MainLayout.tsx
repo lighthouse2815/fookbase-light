@@ -22,7 +22,7 @@ export default function MainLayout() {
         {/* Main content */}
         <main
           key={location.pathname}
-          className="ml-[280px] min-h-full flex-1 max-lg:ml-0"
+          className="ml-[360px] min-h-full flex-1 max-lg:ml-0"
           style={{ animation: 'fade-in 0.25s ease both' }}
         >
           <Outlet />

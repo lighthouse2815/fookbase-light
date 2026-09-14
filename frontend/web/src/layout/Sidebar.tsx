@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { groupsApi, type Group } from '../api/groups'
+import { resolveProfileImageUrl, usersApi } from '../api/users'
 import { useAuth } from '../auth/useAuth'
-import { useRealtime } from '../realtime/useRealtime'
 import { usePreferences } from '../preferences'
 
 interface NavItem {
@@ -9,107 +11,100 @@ interface NavItem {
   label: string
 }
 
+const primaryItems: NavItem[] = [
+  { path: '/explore', emoji: '👥', label: 'Bạn bè' },
+  { path: '/groups', emoji: '👥', label: 'Nhóm' },
+  { path: '/memories', emoji: '🕘', label: 'Kỷ niệm' },
+  { path: '/saved', emoji: '🔖', label: 'Đã lưu' },
+  { path: '/reels', emoji: '🎞️', label: 'Reels' },
+  { path: '/games', emoji: '🎮', label: 'Chơi game' },
+]
+
+const moreItems: NavItem[] = [
+  { path: '/pages', emoji: '📣', label: 'Trang' },
+  { path: '/events', emoji: '📅', label: 'Sự kiện' },
+  { path: '/stories/archive', emoji: '🕘', label: 'Kho lưu trữ tin' },
+  { path: '/photos', emoji: '🖼️', label: 'Ảnh' },
+  { path: '/birthdays', emoji: '🎂', label: 'Sinh nhật' },
+  { path: '/settings/privacy', emoji: '🔒', label: 'Quyền riêng tư' },
+  { path: '/settings/security', emoji: '🛡️', label: 'Bảo mật' },
+]
+
+function SidebarLink({ item }: { item: NavItem }) {
+  return <NavLink
+    to={item.path}
+    className={({ isActive }) => [
+      'group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left no-underline transition-colors',
+      isActive ? 'bg-surface-2' : 'hover:bg-surface-2',
+    ].join(' ')}
+  >
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[25px] leading-none" aria-hidden="true">{item.emoji}</span>
+    <span className="text-[15px] font-semibold text-text">{item.label}</span>
+  </NavLink>
+}
+
 export default function Sidebar() {
   const { session } = useAuth()
-  const { unreadMessageCount } = useRealtime()
   const { t } = usePreferences()
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [shortcuts, setShortcuts] = useState<Group[]>([])
   const initials = session!.user.username.slice(0, 2).toUpperCase()
-  const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
-  const navItems: NavItem[] = [
-    { path: '/feed', emoji: '🏠', label: t('feed') },
-    { path: '/saved', emoji: '🔖', label: 'Đã lưu' },
-    { path: '/explore', emoji: '🔍', label: t('explore') },
-    { path: '/messages', emoji: '💬', label: t('messages') },
-    { path: '/groups', emoji: '👥', label: t('groups') },
-    { path: '/pages', emoji: '📣', label: 'Pages' },
-    { path: '/reels', emoji: '🎞️', label: 'Reels' },
-    { path: '/stories/archive', emoji: '🕘', label: 'Kho Story' },
-    { path: '/photos', emoji: '🖼️', label: 'Ảnh' },
-    { path: '/memories', emoji: '🕰️', label: 'Kỷ niệm' },
-    { path: '/birthdays', emoji: '🎂', label: 'Sinh nhật' },
-    { path: '/games', emoji: '🎮', label: t('games') },
-    { path: '/profile', emoji: '👤', label: t('profile') },
-    { path: '/settings/privacy', emoji: '🔒', label: 'Riêng tư' },
-    { path: '/settings/security', emoji: '🛡️', label: 'Bảo mật' },
-  ]
+
+  useEffect(() => {
+    let isCurrent = true
+    void Promise.all([usersApi.getCurrent(), groupsApi.getMine()])
+      .then(([profile, groups]) => {
+        if (!isCurrent) return
+        setAvatarUrl(profile.avatarUrl)
+        setShortcuts(groups.items.slice(0, 5))
+      })
+      .catch(() => undefined)
+
+    return () => { isCurrent = false }
+  }, [session?.user.id])
 
   return (
-    <aside className="fixed top-14 left-0 w-[280px] h-[calc(100vh-56px)] flex flex-col bg-bg z-40 max-lg:hidden overflow-y-auto scroll-smooth">
-      {/* ── Navigation ───────────────────────────────────── */}
-      <nav className="flex flex-col gap-0.5 px-2 py-3">
-        {/* User profile link */}
+    <aside className="fixed left-0 top-14 z-40 flex h-[calc(100vh-56px)] w-[360px] flex-col overflow-y-auto bg-bg px-3 max-lg:hidden">
+      <nav className="flex flex-col gap-0.5 py-3" aria-label="Lối tắt">
         <Link
           to="/profile"
-          className="group flex items-center gap-3 px-2 py-2 rounded-lg w-full text-left transition-all duration-200 cursor-pointer border-0 bg-transparent hover:bg-surface-2 no-underline"
+          className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 no-underline transition-colors hover:bg-surface-2"
         >
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 bg-primary"
-          >
-            {initials}
-          </div>
-          <span className="font-semibold text-[15px] text-text">
-            {session!.user.username}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[11px] font-bold text-white">
+            {avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}
           </span>
+          <span className="text-[15px] font-semibold text-text">{session!.user.username}</span>
         </Link>
 
-        {navItems.map((item) => item.path === '/messages' ? (
-          <a
-            key={item.path}
-            href={messengerUrl}
-            className="group flex items-center gap-3 px-2 py-2 rounded-lg w-full text-left transition-all duration-200 cursor-pointer border-0 no-underline bg-transparent hover:bg-surface-2"
-          >
-            <span className="w-9 h-9 rounded-full flex items-center justify-center text-xl shrink-0 bg-surface-2 text-text">{item.emoji}</span>
-            <span className="font-semibold text-[15px] transition-colors text-text-muted group-hover:text-text">{item.label}</span>
-            {unreadMessageCount > 0 && <span className="ml-auto text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-[#e41e3f] text-white min-w-[20px] text-center">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
-          </a>
-        ) : (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              [
-                'group flex items-center gap-3 px-2 py-2 rounded-lg w-full text-left transition-all duration-200 cursor-pointer border-0 no-underline',
-                isActive ? 'bg-surface-2' : 'bg-transparent hover:bg-surface-2',
-              ].join(' ')
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <span
-                  className={[
-                    'w-9 h-9 rounded-full flex items-center justify-center text-xl shrink-0',
-                    isActive ? 'bg-primary text-white' : 'bg-surface-2 text-text',
-                  ].join(' ')}
-                >
-                  {item.emoji}
-                </span>
+        {primaryItems.map((item) => <SidebarLink key={item.path} item={item} />)}
 
-                <span
-                  className={[
-                    'font-semibold text-[15px] transition-colors',
-                    isActive ? 'text-text' : 'text-text-muted group-hover:text-text',
-                  ].join(' ')}
-                >
-                  {item.label}
-                </span>
+        {isExpanded && moreItems.map((item) => <SidebarLink key={item.path} item={item} />)}
 
-                {item.path === '/messages' && unreadMessageCount > 0 && (
-                  <span className="ml-auto text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-[#e41e3f] text-white min-w-[20px] text-center">
-                    {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
-                  </span>
-                )}
-              </>
-            )}
-          </NavLink>
-        ))}
+        <button
+          type="button"
+          onClick={() => setIsExpanded((current) => !current)}
+          className="flex w-full items-center gap-3 rounded-lg border-0 bg-transparent px-2 py-2 text-left text-text cursor-pointer transition-colors hover:bg-surface-2"
+          aria-expanded={isExpanded}
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-lg" aria-hidden="true">{isExpanded ? '⌃' : '⌄'}</span>
+          <span className="text-[15px] font-semibold">{isExpanded ? 'Ẩn bớt' : 'Xem thêm'}</span>
+        </button>
       </nav>
 
-      {/* ── Footer ───────────────────────────────────────── */}
-      <div className="mt-auto px-4 pb-4 pt-2">
-        <p className="text-[11px] text-text-light leading-relaxed">
-          {t('appearance')} · {t('language')} · © 2026 Fookbase
-        </p>
-      </div>
+      {shortcuts.length > 0 && <section className="border-t border-border py-3">
+        <h2 className="px-2 pb-1 text-[17px] font-bold text-text-muted">Lối tắt của bạn</h2>
+        <div className="flex flex-col gap-0.5">
+          {shortcuts.map((group) => <Link key={group.id} to={`/groups/${group.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2 no-underline transition-colors hover:bg-surface-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2 text-base text-text">{group.coverUrl ? <img src={group.coverUrl} alt="" className="h-full w-full object-cover" /> : '👥'}</span>
+            <span className="line-clamp-2 text-[15px] font-semibold leading-5 text-text">{group.name}</span>
+          </Link>)}
+        </div>
+      </section>}
+
+      <footer className="mt-auto px-2 py-4 text-[11px] leading-relaxed text-text-light">
+        {t('appearance')} · {t('language')} · © 2026 Fookbase · Quyền riêng tư · Điều khoản
+      </footer>
     </aside>
   )
 }
