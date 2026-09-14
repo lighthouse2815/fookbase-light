@@ -1,5 +1,7 @@
 # Photos & Albums V1 Implementation Plan
 
+> Cập nhật trạng thái 2026-09-15: chỉ các bước triển khai/tài liệu có mã nguồn hoặc tài liệu hiện hữu được đánh dấu; test, migration validation và smoke-test chưa được chạy trong phạm vi hiện tại.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Let users organize existing ready image MediaAssets into private custom and lazy system albums, then browse them safely from the web client.
@@ -103,7 +105,7 @@ Run: `dotnet test backend/Fookbase.Src/Tests/Posts/Fookbase.Posts.Api.Integratio
 
 Expected: compilation fails because `PhotoAlbum` and `PhotoAlbumType` do not exist.
 
-- [ ] **Step 3: Add the minimal aggregate, mapping, and EF migration**
+- [x] **Step 3: Add the minimal aggregate, mapping, and EF migration**
 
 ```csharp
 public enum PhotoAlbumType { Custom, ProfilePictures, CoverPhotos, TimelinePhotos }
@@ -185,7 +187,7 @@ Run: `dotnet test backend/Fookbase.Src/Tests/Posts/Fookbase.Posts.Api.Integratio
 
 Expected: 404 because `/api/albums` is not mapped.
 
-- [ ] **Step 3: Implement central access and projection-only reads**
+- [x] **Step 3: Implement central access and projection-only reads**
 
 ```csharp
 public async Task<bool> CanViewAsync(PhotoAlbum album, Guid? viewerUserId, CancellationToken ct)
@@ -252,7 +254,7 @@ Run: `dotnet test backend/Fookbase.Src/Tests/Posts/Fookbase.Posts.Api.Integratio
 
 Expected: foreign media is not yet rejected or deletion succeeds because album references are not checked.
 
-- [ ] **Step 3: Implement the smallest mutation surface**
+- [x] **Step 3: Implement the smallest mutation surface**
 
 ```csharp
 public async Task<ApplicationResult> AddMediaAsync(Guid actorId, Guid albumId, Guid mediaId, CancellationToken ct)
@@ -322,7 +324,7 @@ Run: `dotnet test backend/Fookbase.Src/Tests/Posts/Fookbase.Posts.Api.Integratio
 
 Expected: Profile media is absent from TimelinePhotos.
 
-- [ ] **Step 3: Add idempotent, concurrency-safe system membership calls**
+- [x] **Step 3: Add idempotent, concurrency-safe system membership calls**
 
 ```csharp
 public async Task AddSystemMediaAsync(Guid ownerId, PhotoAlbumType albumType, Guid mediaId, CancellationToken ct)
@@ -368,7 +370,7 @@ git push origin main
 - Consumes: `/api/albums`, `/api/users/{userId}/albums`, `mediaApi.uploadFiles`, existing `apiRequest` and auth layout.
 - Produces: `photosApi`, routes `/photos` and `/albums/:albumId`, and `PhotoViewer` props `{ items, initialIndex, onClose }`.
 
-- [ ] **Step 1: Define type-safe API client contracts before UI use**
+- [x] **Step 1: Define type-safe API client contracts before UI use**
 
 ```ts
 export interface PhotoAlbumSummary {
@@ -383,11 +385,11 @@ export const photosApi = {
 }
 ```
 
-- [ ] **Step 2: Build the photos page and album detail with bounded loading**
+- [x] **Step 2: Build the photos page and album detail with bounded loading**
 
 Create form state for Custom name, description, privacy, and a maximum selection constant of 20 image files. On submit call `mediaApi.uploadFiles(files)` then `photosApi.addMedia` in sequence; display a request error and retain no base64 data. Render album summary cards, photos grid, and a Load more button only when the cursor is present.
 
-- [ ] **Step 3: Implement the reusable accessible viewer**
+- [x] **Step 3: Implement the reusable accessible viewer**
 
 ```tsx
 useEffect(() => {
@@ -403,11 +405,11 @@ useEffect(() => {
 
 Use a dialog-style fixed overlay, image alt based on caption, previous/next disabled at page bounds, caption, owner profile link, album link, and Close control. Do not manufacture download controls or preload every album image.
 
-- [ ] **Step 4: Wire routes and profile navigation**
+- [x] **Step 4: Wire routes and profile navigation**
 
 Add lazy imports and routes in `routes/index.tsx`, a Photos item in the existing sidebar, and profile links/album previews by calling `photosApi.userAlbums(userId)`. Resolve only endpoint-provided signed/redirect URLs; do not call owner-only Media `/access` for another profile.
 
-- [ ] **Step 5: Verify the frontend production checks**
+- [x] **Step 5: Verify the frontend production checks**
 
 Run:
 
@@ -437,7 +439,7 @@ git push origin main
 - Consumes: all completed Photos APIs, migration, frontend routes, and established Docker test workflow.
 - Produces: concise product/maintenance documentation and verified M14 handoff evidence.
 
-- [ ] **Step 1: Write concise product documentation**
+- [x] **Step 1: Write concise product documentation**
 
 Document exact album types/privacy, lazy system albums, one-Custom-membership policy, `MediaAsset` references, avatar/cover/timeline conditions, public API routes, cursor behavior, deletion safety, and deferred tags/search/recognition/feed/notifications.
 

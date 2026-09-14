@@ -1,5 +1,7 @@
 # User Follow + Friend Suggestions V1 Implementation Plan
 
+> Cập nhật trạng thái 2026-09-15: chỉ các bước triển khai có mã nguồn hiện hữu được đánh dấu; test, migration validation và smoke-test chưa được chạy trong phạm vi hiện tại.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a safe directional user-follow graph, follow-aware feeds, and deterministic People You May Know to the existing Fookbase modular monolith.
@@ -97,7 +99,7 @@ Run: `dotnet test backend/Fookbase.Src/Tests/Friends/Fookbase.Friends.Api.Integr
 
 Expected: FAIL because `UserFollows` and its migration do not exist.
 
-- [ ] **Step 3: Implement the entity and configuration**
+- [x] **Step 3: Implement the entity and configuration**
 
 Use private construction and a static factory matching `BlockedUser`; map both GUIDs and `FollowedAtUtc`, reject equal IDs in the factory, and add the required indexes. Add the DbSet to `FookbaseDbContext`.
 
@@ -141,15 +143,15 @@ Run: `dotnet test backend/Fookbase.Src/Tests/Friends/Fookbase.Friends.Api.Integr
 
 Expected: FAIL because API/service contracts do not exist.
 
-- [ ] **Step 3: Implement mutations within the current pair lock and transaction**
+- [x] **Step 3: Implement mutations within the current pair lock and transaction**
 
 Validate target profile/account eligibility and bidirectional blocks. Insert only if absent; delete only matching direction if present. In `AcceptRequestCoreAsync`, add both follows before `SaveChangesAsync`. In `BlockCoreAsync`, delete both directed pair rows before the transaction commits. Leave `UnfriendCoreAsync` follow rows untouched.
 
-- [ ] **Step 4: Implement safe cursor projections and endpoint handlers**
+- [x] **Step 4: Implement safe cursor projections and endpoint handlers**
 
 Use a Data Protection purpose including cursor version, viewer ID, list direction, and target ID. Order by descending follow time then GUID. Join/profile-project safe fields in one query, filter block relations in both directions, and return no private Identity fields.
 
-- [ ] **Step 5: Implement general notification policy**
+- [x] **Step 5: Implement general notification policy**
 
 Add `UserFollowed` to the normal notification enum and mappings. Queue/publish only when a manual insert succeeds and actors are distinct and not friends; do not route automatic friendship rows through it.
 
@@ -187,7 +189,7 @@ Run: `dotnet test FookbaseLight.sln --filter "FullyQualifiedName~UserProfileEndp
 
 Expected: FAIL because response fields and authenticated viewer projection are absent.
 
-- [ ] **Step 3: Add optional JWT viewer extraction and query projections**
+- [x] **Step 3: Add optional JWT viewer extraction and query projections**
 
 Pass optional viewer ID through profile/search read paths. Build counts with correlated SQL `Count` and state with `Any`; project list pages as a set, never issue one follow query per result. Reuse existing block visibility rules.
 
@@ -225,11 +227,11 @@ Run: `dotnet test backend/Fookbase.Src/Tests/Posts/Fookbase.Posts.Api.Integratio
 
 Expected: FAIL under friend-only profile eligibility.
 
-- [ ] **Step 3: Load follow IDs in the relationship snapshot and separate profile candidate sets**
+- [x] **Step 3: Load follow IDs in the relationship snapshot and separate profile candidate sets**
 
 Query followed users once with blocks; feed profile candidates become self, followed friends, and followed non-friends. Apply Friends privacy only to the friend subset and Public only to the non-friend subset. Do not change group/page/share discovery rules except their existing block filters.
 
-- [ ] **Step 4: Rank sources without changing cursor stability**
+- [x] **Step 4: Rank sources without changing cursor stability**
 
 Add source windows for followed friends at `FriendAffinity` and non-friends at `FollowedNonFriendProfile`; use score zero in Following mode. Preserve `AsOfUtc`, ranking-version purpose, lookahead, and per-request relationship rebuild.
 
@@ -269,15 +271,15 @@ Run: `dotnet test backend/Fookbase.Src/Tests/Friends/Fookbase.Friends.Api.Integr
 
 Expected: FAIL because endpoint/service/options do not exist.
 
-- [ ] **Step 3: Implement bounded candidate source queries and exclusion predicate**
+- [x] **Step 3: Implement bounded candidate source queries and exclusion predicate**
 
 Generate candidates via two-hop friendship query and active shared group/page membership, each bounded by options. Union IDs in SQL, apply all exclusions before scoring, and join `UserProfiles` only after eligibility. Never materialize all users or names of groups/pages.
 
-- [ ] **Step 4: Implement configurable deterministic score and opaque cursor**
+- [x] **Step 4: Implement configurable deterministic score and opaque cursor**
 
 Compute `mutual * MutualFriendWeight + groups * SharedGroupWeight + pages * SharedPageWeight`; order score descending then candidate GUID. Protect cursor JSON `{version, viewerId, score, userId}` with a purpose unique to suggestions and validate its viewer/version on decode.
 
-- [ ] **Step 5: Register service/options and map the endpoint**
+- [x] **Step 5: Register service/options and map the endpoint**
 
 Bind/validate `FriendSuggestionOptions` in the existing module registration style; use the same JWT subject parsing/error handling as other Friends endpoints.
 
@@ -308,19 +310,19 @@ Run: `git add backend/Fookbase.Src/Main/Code/Modules/Friends backend/Fookbase.Sr
 - Adds TypeScript contracts for cursor pages, follows, suggestion cards, profile counts/states, and `UserFollowed`.
 - Adds local-only suggestion dismissal and reuses `friendsApi.sendRequest` for Add Friend.
 
-- [ ] **Step 1: Extend typed API clients before rendering new controls**
+- [x] **Step 1: Extend typed API clients before rendering new controls**
 
 Add `follow`, `unfollow`, follower/following cursor readers, and `getSuggestions`. Extend profile and notification unions to mirror server responses exactly; retain existing Friends offset API contracts unchanged.
 
-- [ ] **Step 2: Add separate follow controls and counts to the viewed profile**
+- [x] **Step 2: Add separate follow controls and counts to the viewed profile**
 
 Keep the existing friend-request status switch intact. Render a distinct Follow/Following button, optimistic only after a successful mutation, and refresh the profile state/counts. Do not label a friend automatically as “Following” unless the profile contract says so.
 
-- [ ] **Step 3: Add People You May Know to the Friends profile tab**
+- [x] **Step 3: Add People You May Know to the Friends profile tab**
 
 Load one bounded suggestion cursor page with existing relationship data. Render avatar/name, mutual count, Add Friend, optional Follow, and Remove; Remove changes component state only. After Add Friend, remove the card locally and rely on backend pending-request exclusion after refresh.
 
-- [ ] **Step 4: Update search and notification display mappings**
+- [x] **Step 4: Update search and notification display mappings**
 
 Show non-invasive person relationship/follow state in existing search rows, and map `UserFollowed` to a localized notification label/action without changing search order or notification pagination.
 

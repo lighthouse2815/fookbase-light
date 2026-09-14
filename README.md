@@ -197,11 +197,27 @@ JWT signing key chỉ được đọc từ `Jwt__SigningKey`. Refresh token raw 
 | GET | `/api/friends` |
 | GET | `/api/friends/status/{userId}` |
 | GET | `/api/friends/mutual/{userId}` |
+| GET | `/api/friends/suggestions?cursor=&limit=` |
+| GET | `/api/friends/notifications/unread` |
+| POST | `/api/friends/notifications/{notificationId}/read` |
 | POST | `/api/friends/blocks/{userId}` |
 | DELETE | `/api/friends/blocks/{userId}` |
 | GET | `/api/friends/blocks` |
 
 Tất cả Friends endpoint yêu cầu Bearer JWT. Collection endpoint dùng offset pagination, `limit` mặc định 20 và tối đa 100.
+
+### Follows và sinh nhật
+
+| Method | Endpoint | Authentication |
+| --- | --- | --- |
+| POST/DELETE | `/api/users/{userId}/follow` | Bearer JWT |
+| GET | `/api/users/{userId}/followers?cursor=&limit=` | Bearer JWT |
+| GET | `/api/users/{userId}/following?cursor=&limit=` | Bearer JWT |
+| GET | `/api/users/{userId}/friends?offset=&limit=` | Bearer JWT |
+| GET | `/api/birthdays/today` | Bearer JWT |
+| GET | `/api/birthdays/upcoming?days=` | Bearer JWT |
+
+Follow dùng cursor pagination; danh sách sinh nhật chỉ trả các hồ sơ mà người xem được phép thấy theo quan hệ và cài đặt riêng tư ngày sinh.
 
 ### Messages
 
@@ -295,6 +311,22 @@ Privacy hợp lệ gồm `public`, `friends`, `onlyMe`; reaction gồm `like`, `
 Profile posts giữ `ContainerType=Profile` và `ContainerId=AuthorUserId`; Group posts dùng
 `ContainerType=Group`. `GET /api/posts/{postId}` cùng comment/reaction/media access luôn kiểm
 tra Group membership/privacy khi post nằm trong Group.
+
+### Albums và memories
+
+| Method | Endpoint | Authentication |
+| --- | --- | --- |
+| POST | `/api/albums` | Bearer JWT |
+| GET/PATCH/DELETE | `/api/albums/{albumId}` | GET tùy chọn; mutation là chủ album Custom |
+| GET | `/api/albums/{albumId}/media?cursor=&limit=` | Tùy chọn, theo privacy album |
+| POST | `/api/albums/{albumId}/media` | Bearer JWT, chủ album Custom |
+| GET | `/api/albums/{albumId}/media/{mediaId}` | Tùy chọn, theo privacy album |
+| GET | `/api/albums/{albumId}/media/{mediaId}/access` | Tùy chọn, redirect URL được authorize |
+| PATCH/DELETE | `/api/albums/{albumId}/media/{mediaId}` | Bearer JWT, chủ album Custom |
+| GET | `/api/users/{userId}/albums?cursor=&limit=` | Tùy chọn, theo privacy album |
+| GET | `/api/memories/today` | Bearer JWT, chỉ ký ức của chính người xem |
+
+Album có loại `custom`, `profilePictures`, `coverPhotos`, `timelinePhotos`; album hệ thống được tạo khi cần và không thể chỉnh sửa trực tiếp. Albums dùng cursor pagination; memories không tạo bản sao bài viết hay thông báo tự động.
 
 ### Media
 

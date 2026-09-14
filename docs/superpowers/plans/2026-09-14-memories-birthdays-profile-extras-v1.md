@@ -1,5 +1,7 @@
 # Memories, Birthdays, and Profile Extras V1 Implementation Plan
 
+> Cập nhật trạng thái 2026-09-15: chỉ các bước triển khai/tài liệu có mã nguồn hoặc tài liệu hiện hữu được đánh dấu; test và migration validation chưa được chạy trong phạm vi hiện tại.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (- [ ]) syntax for tracking.
 
 **Goal:** Deliver private on-this-day memories, privacy-aware friend birthday views, and optional profile Intro fields.
@@ -67,7 +69,7 @@ Run: dotnet test backend/Fookbase.Src/Tests/Users/Fookbase.Users.Api.Integration
 
 Expected: FAIL on the current unconditional DateOfBirth response.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ~~~csharp
 public enum BirthdayVisibility { OnlyMe, Friends, Public }
@@ -126,7 +128,7 @@ Run: dotnet test backend/Fookbase.Src/Tests/Users/Fookbase.Users.Api.Integration
 
 Expected: FAIL with 404 or missing response contracts.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ~~~csharp
 public Task<IReadOnlyList<BirthdayFriendResponse>> GetTodaysBirthdaysAsync(Guid actor, CancellationToken ct);
@@ -184,7 +186,7 @@ Run: dotnet test backend/Fookbase.Src/Tests/Posts/Fookbase.Posts.Api.Integration
 
 Expected: FAIL with 404.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ~~~csharp
 public Task<MemoryTodayResponse> GetTodayAsync(Guid ownerUserId, CancellationToken ct = default);
@@ -269,7 +271,7 @@ git push origin main
 
 **Interfaces:** Consumes memory, post, birthday friend, and UserProfile JSON contracts. Produces /memories and /birthdays, with memoriesApi.getToday(), birthdaysApi.getToday(), and birthdaysApi.getUpcoming(days?: number).
 
-- [ ] **Step 1: Add type-first client contracts**
+- [x] **Step 1: Add type-first client contracts**
 
 ~~~ts
 export interface MemoryYear { year: number; yearsAgo: number; items: Post[] }
@@ -281,7 +283,7 @@ export const birthdaysApi = {
 }
 ~~~
 
-- [ ] **Step 2: Implement route pages with existing UI components**
+- [x] **Step 2: Implement route pages with existing UI components**
 
 ~~~tsx
 // MemoriesPage maps each MemoryYear to a heading and <PostCard post={post} />.
@@ -317,7 +319,7 @@ git push origin main
 
 **Interfaces:** Consumes profile birthday, birthdayVisibility, hometown, workplace, education, website and birthdaysApi.getToday(). Produces owner-only fields in the existing edit form, viewer-safe Intro rendering, and a small Home summary link.
 
-- [ ] **Step 1: Extend existing profile draft and save payload**
+- [x] **Step 1: Extend existing profile draft and save payload**
 
 ~~~tsx
 const [birthdayDraft, setBirthdayDraft] = useState('')
@@ -328,7 +330,7 @@ const [birthdayVisibilityDraft, setBirthdayVisibilityDraft] = useState<BirthdayV
 
 Use input type=date, select, and ordinary text/URL controls with labels; retain existing image fields and profile form behavior.
 
-- [ ] **Step 2: Render conditional Intro section**
+- [x] **Step 2: Render conditional Intro section**
 
 ~~~tsx
 {profile.website && <a href={profile.website} target="_blank" rel="noopener noreferrer">{profile.website}</a>}
@@ -337,7 +339,7 @@ Use input type=date, select, and ordinary text/URL controls with labels; retain 
 
 Use only viewer-safe birthday presentation, never calculate/render age. Preserve block behavior by rendering only the loaded profile response.
 
-- [ ] **Step 3: Add Home widget and verify web gates**
+- [x] **Step 3: Add Home widget and verify web gates**
 
 ~~~tsx
 // FeedPage loads birthdaysApi.getToday() once; render a compact link only when count > 0.
@@ -365,7 +367,7 @@ git push origin main
 
 **Interfaces:** Documents endpoint behavior, owner-only memory rule, birthday visibility, Feb 29=Feb 28 behavior, date-window cap, profile extras, and deferred scope.
 
-- [ ] **Step 1: Write concise product documentation**
+- [x] **Step 1: Write concise product documentation**
 
 ~~~markdown
 ## Leap-day policy
@@ -397,4 +399,3 @@ git commit -m "docs: bổ sung hướng dẫn memories birthdays v1"
 git push origin main
 git status --short --branch
 ~~~
-
