@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
 import { searchApi, type SearchSuggestions } from '../api/search'
-import { resolveProfileImageUrl, usersApi } from '../api/users'
+import { messagesApi, type Conversation } from '../api/messages'
+import { resolveProfileImageUrl, usersApi, type UserProfile } from '../api/users'
 
 interface NavItem {
   path: string
@@ -48,6 +49,15 @@ function ChevronDownIcon() {
   return <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3 w-3 fill-current"><path d="m4.1 5.9 3.9 3.9 3.9-3.9 1.1 1.1L8 11.1 3 7l1.1-1.1Z" /></svg>
 }
 
+function formatMessageTime(value: string) {
+  const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60_000)
+  if (minutes < 1) return 'Vừa xong'
+  if (minutes < 60) return `${minutes} phút`
+  if (minutes < 1_440) return `${Math.floor(minutes / 60)} giờ`
+  if (minutes < 10_080) return `${Math.floor(minutes / 1_440)} ngày`
+  return new Intl.DateTimeFormat('vi-VN', { day: 'numeric', month: 'numeric' }).format(new Date(value))
+}
+
 export default function TopNavbar() {
   const { session, signOut } = useAuth()
   const {
@@ -66,17 +76,24 @@ export default function TopNavbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
-  const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'notifications' | null>(null)
+  const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'messages' | 'notifications' | null>(null)
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all')
   const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false)
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
+  const [messageConversations, setMessageConversations] = useState<Conversation[]>([])
+  const [messageProfiles, setMessageProfiles] = useState<Record<string, UserProfile>>({})
+  const [messageSearch, setMessageSearch] = useState('')
+  const [messageFilter, setMessageFilter] = useState<'all' | 'unread'>('all')
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const menuDropdownRef = useRef<HTMLDivElement>(null)
+  const messengerDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
   const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
   const isNotificationsPage = location.pathname === '/notifications'
   const isMenuOpen = activeHeaderPopup === 'menu'
+  const isMessagesOpen = activeHeaderPopup === 'messages'
   const isNotificationsOpen = activeHeaderPopup === 'notifications'
   const navItems: NavItem[] = [
     { path: '/feed', icon: <HomeIcon />, label: t('home') },
@@ -127,9 +144,40 @@ export default function TopNavbar() {
   }, [session?.user.id])
 
   useEffect(() => {
+    if (!isMessagesOpen) return
+
+    let isCurrent = true
+    void messagesApi.getConversations()
+      .then(async (page) => {
+        if (!isCurrent) return
+        setMessageConversations(page.items)
+
+        const participantUserIds = [...new Set(page.items.map((conversation) => conversation.participantUserId))]
+        const profiles = await Promise.allSettled(participantUserIds.map((userId) => usersApi.getById(userId)))
+        if (!isCurrent) return
+        setMessageProfiles((current) => ({
+          ...current,
+          ...Object.fromEntries(profiles.flatMap((result) => result.status === 'fulfilled' ? [[result.value.userId, result.value]] : [])),
+        }))
+      })
+      .catch(() => {
+        if (isCurrent) setMessageConversations([])
+      })
+      .finally(() => {
+        if (isCurrent) setIsMessagesLoading(false)
+      })
+
+    return () => { isCurrent = false }
+  }, [isMessagesOpen])
+
+  useEffect(() => {
     if (!activeHeaderPopup) return
 
-    const activePopupRef = activeHeaderPopup === 'menu' ? menuDropdownRef : notificationDropdownRef
+    const activePopupRef = activeHeaderPopup === 'menu'
+      ? menuDropdownRef
+      : activeHeaderPopup === 'messages'
+        ? messengerDropdownRef
+        : notificationDropdownRef
     const closePopupWhenClickingOutside = (event: PointerEvent) => {
       if (!activePopupRef.current?.contains(event.target as Node)) {
         setActiveHeaderPopup(null)
@@ -143,6 +191,17 @@ export default function TopNavbar() {
 
   const hasSuggestions = Boolean(suggestions &&
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
+
+  const visibleMessageConversations = useMemo(() => {
+    const query = messageSearch.trim().toLocaleLowerCase('vi-VN')
+    return messageConversations.filter((conversation) => {
+      if (messageFilter === 'unread' && conversation.unreadCount === 0) return false
+      const profile = messageProfiles[conversation.participantUserId]
+      return !query || [profile?.displayName, profile?.username, conversation.lastMessage?.content]
+        .filter(Boolean)
+        .some((value) => value!.toLocaleLowerCase('vi-VN').includes(query))
+    })
+  }, [messageConversations, messageFilter, messageProfiles, messageSearch])
 
   const notificationDestination = (notification: typeof notifications[number]) => {
     if ((notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted' || notification.type === 'UserFollowed') && notification.actorUserId) {
@@ -297,19 +356,59 @@ export default function TopNavbar() {
             </button>
           </div>}
         </div>
-        <a
-          href={messengerUrl}
-          onClick={() => {
-            setActiveHeaderPopup(null)
-            setIsNotificationMenuOpen(false)
-          }}
-          className="relative w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer no-underline"
-          title={t('messages')}
-          aria-label={t('messages')}
-        >
-          <MessengerIcon />
-          {unreadMessageCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
-        </a>
+        <div ref={messengerDropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              const willOpenMessages = activeHeaderPopup !== 'messages'
+              setActiveHeaderPopup(willOpenMessages ? 'messages' : null)
+              if (willOpenMessages) setIsMessagesLoading(true)
+              setIsNotificationMenuOpen(false)
+            }}
+            className={`relative flex h-10 w-10 items-center justify-center rounded-full border-0 text-text transition-colors ${isMessagesOpen ? 'bg-primary text-white' : 'bg-surface-2 hover:bg-[#4e4f50] cursor-pointer'}`}
+            title={t('messages')}
+            aria-label={t('messages')}
+            aria-expanded={isMessagesOpen}
+          >
+            <MessengerIcon />
+            {unreadMessageCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
+          </button>
+          {isMessagesOpen && <div className="absolute right-0 top-12 z-50 flex h-[min(42rem,calc(100vh-5rem))] w-[min(25rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+            <div className="flex items-center justify-between px-4 pb-2 pt-3">
+              <h2 className="font-heading text-2xl font-bold text-text">Đoạn chat</h2>
+              <div className="flex items-center gap-1 text-text-muted">
+                <button type="button" className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-xl cursor-pointer hover:bg-surface-2" title="Tùy chọn">•••</button>
+                <a href={messengerUrl} className="grid h-9 w-9 place-items-center rounded-full text-lg text-text-muted no-underline hover:bg-surface-2" title="Mở Messenger">↗</a>
+                <a href={`${messengerUrl}?new=1`} className="grid h-9 w-9 place-items-center rounded-full text-lg text-text-muted no-underline hover:bg-surface-2" title="Tin nhắn mới">✎</a>
+              </div>
+            </div>
+            <div className="px-3 pb-3">
+              <label className="relative block">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-light">⌕</span>
+                <input type="search" value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Tìm kiếm trên Messenger" className="h-10 w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-3 text-sm text-text outline-none placeholder:text-text-light focus:input-focus" />
+              </label>
+            </div>
+            <div className="flex gap-2 px-4 pb-2">
+              <button type="button" onClick={() => setMessageFilter('all')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${messageFilter === 'all' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Tất cả</button>
+              <button type="button" onClick={() => setMessageFilter('unread')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${messageFilter === 'unread' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Chưa đọc</button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+              {isMessagesLoading && <p className="px-3 py-6 text-center text-sm text-text-muted">Đang tải đoạn chat...</p>}
+              {!isMessagesLoading && visibleMessageConversations.length === 0 && <p className="px-3 py-6 text-center text-sm text-text-muted">Không có đoạn chat phù hợp.</p>}
+              {!isMessagesLoading && visibleMessageConversations.map((conversation) => {
+                const profile = messageProfiles[conversation.participantUserId]
+                const name = profile?.displayName ?? profile?.username ?? 'Người dùng'
+                const preview = conversation.lastMessage?.content ?? 'Bắt đầu cuộc trò chuyện'
+                return <a key={conversation.id} href={`${messengerUrl}?conversation=${conversation.id}`} onClick={() => setActiveHeaderPopup(null)} className="relative flex items-center gap-3 rounded-xl px-2 py-2.5 text-text no-underline hover:bg-surface-2">
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-3 text-sm font-bold text-text-muted">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : name.slice(0, 2).toUpperCase()}</span>
+                  <span className="min-w-0 flex-1"><span className={`block truncate text-sm ${conversation.unreadCount > 0 ? 'font-bold text-text' : 'font-medium text-text-muted'}`}>{name}</span><span className={`block truncate text-xs ${conversation.unreadCount > 0 ? 'font-semibold text-text' : 'text-text-light'}`}>{preview} · {formatMessageTime(conversation.lastMessageAtUtc)}</span></span>
+                  {conversation.unreadCount > 0 && <span className="h-3 w-3 shrink-0 rounded-full bg-primary" />}
+                </a>
+              })}
+            </div>
+            <a href={messengerUrl} onClick={() => setActiveHeaderPopup(null)} className="border-t border-border px-4 py-3 text-center text-sm font-semibold text-primary no-underline hover:bg-surface-2">Xem tất cả trong Messenger</a>
+          </div>}
+        </div>
         <div ref={notificationDropdownRef} className="relative">
           <button
             type="button"
