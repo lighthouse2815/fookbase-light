@@ -9,11 +9,13 @@ using System.Text;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Data;
+using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Messages.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Minio;
 
 namespace Fookbase.Media.Api.IntegrationTests;
 
@@ -23,6 +25,35 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02, 0x03];
     private static readonly byte[] Mp4 =
         [0x00, 0x00, 0x00, 0x18, (byte)'f', (byte)'t', (byte)'y', (byte)'p', (byte)'i', (byte)'s', (byte)'o', (byte)'m'];
+
+    [Fact]
+    public async Task Presigned_urls_use_the_public_endpoint_when_configured()
+    {
+        var options = new MinioOptions
+        {
+            Endpoint = "minio:9000",
+            PublicEndpoint = "localhost:9000",
+            AccessKey = "test-access-key",
+            SecretKey = "test-secret-key",
+            BucketName = "fookbase-media"
+        };
+        var internalClient = new MinioClient()
+            .WithEndpoint(options.Endpoint)
+            .WithCredentials(options.AccessKey, options.SecretKey)
+            .Build();
+        var publicClient = new MinioClient()
+            .WithEndpoint(options.PresignedUrlEndpoint)
+            .WithCredentials(options.AccessKey, options.SecretKey)
+            .Build();
+        var storage = new MinioObjectStorage(
+            internalClient,
+            new MinioPresignedUrlClient(publicClient),
+            options);
+        var url = await storage.CreatePresignedPutUrlAsync("user/avatar.png", TimeSpan.FromMinutes(5));
+
+        Assert.StartsWith("http://localhost:9000/fookbase-media/user/avatar.png?", url);
+        Assert.DoesNotContain("minio:9000", url);
+    }
 
     [Fact]
     public async Task Upload_intent_requires_jwt_and_validates_type_and_size()

@@ -6,16 +6,19 @@ using Minio.Exceptions;
 
 namespace Fookbase.Api.Modules.Media.Services;
 
-internal sealed class MinioObjectStorage(IMinioClient client, MinioOptions options) : IObjectStorage
+internal sealed class MinioObjectStorage(
+    IMinioClient client,
+    MinioPresignedUrlClient presignedUrlClient,
+    MinioOptions options) : IObjectStorage
 {
     public Task<string> CreatePresignedPutUrlAsync(string objectKey, TimeSpan expiry,
         CancellationToken cancellationToken = default) =>
-        client.PresignedPutObjectAsync(new PresignedPutObjectArgs()
+        presignedUrlClient.Client.PresignedPutObjectAsync(new PresignedPutObjectArgs()
             .WithBucket(options.BucketName).WithObject(objectKey).WithExpiry((int)expiry.TotalSeconds));
 
     public Task<string> CreatePresignedGetUrlAsync(string objectKey, TimeSpan expiry,
         CancellationToken cancellationToken = default) =>
-        client.PresignedGetObjectAsync(new PresignedGetObjectArgs()
+        presignedUrlClient.Client.PresignedGetObjectAsync(new PresignedGetObjectArgs()
             .WithBucket(options.BucketName).WithObject(objectKey).WithExpiry((int)expiry.TotalSeconds));
 
     public async Task<StoredObjectInfo?> GetInfoAsync(string objectKey,

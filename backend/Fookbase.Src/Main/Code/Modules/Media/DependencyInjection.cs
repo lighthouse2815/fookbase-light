@@ -18,18 +18,9 @@ public static class DependencyInjection
 
         services.AddSingleton(minioOptions);
         services.AddSingleton(mediaOptions);
-        services.AddSingleton<IMinioClient>(_ =>
-        {
-            var client = new MinioClient()
-                .WithEndpoint(minioOptions.Endpoint)
-                .WithCredentials(minioOptions.AccessKey, minioOptions.SecretKey);
-            if (minioOptions.Secure)
-            {
-                client = client.WithSSL();
-            }
-
-            return client.Build();
-        });
+        services.AddSingleton<IMinioClient>(_ => CreateClient(minioOptions, minioOptions.Endpoint));
+        services.AddSingleton<MinioPresignedUrlClient>(_ =>
+            new(CreateClient(minioOptions, minioOptions.PresignedUrlEndpoint)));
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IObjectStorage, MinioObjectStorage>();
         services.AddSingleton<IVideoProcessor, FfmpegVideoProcessor>();
@@ -42,5 +33,18 @@ public static class DependencyInjection
             services.AddHostedService<VideoProcessingWorker>();
         }
         return services;
+    }
+
+    private static IMinioClient CreateClient(MinioOptions options, string endpoint)
+    {
+        var client = new MinioClient()
+            .WithEndpoint(endpoint)
+            .WithCredentials(options.AccessKey, options.SecretKey);
+        if (options.Secure)
+        {
+            client = client.WithSSL();
+        }
+
+        return client.Build();
     }
 }

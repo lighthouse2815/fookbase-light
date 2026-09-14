@@ -6,6 +6,10 @@ public sealed class MinioOptions
 
     public string Endpoint { get; init; } = "localhost:9000";
 
+    // The browser-facing endpoint used in presigned URLs. This can differ from
+    // Endpoint when the API reaches MinIO over a private Docker network.
+    public string? PublicEndpoint { get; init; }
+
     public string AccessKey { get; init; } = string.Empty;
 
     public string SecretKey { get; init; } = string.Empty;
@@ -19,6 +23,10 @@ public sealed class MinioOptions
     public int BucketInitializationMaxAttempts { get; init; } = 5;
 
     public int BucketInitializationRetrySeconds { get; init; } = 2;
+
+    public string PresignedUrlEndpoint => string.IsNullOrWhiteSpace(PublicEndpoint)
+        ? Endpoint
+        : PublicEndpoint;
 
     public void Validate()
     {

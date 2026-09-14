@@ -12,6 +12,7 @@ Cors__AllowedOrigins__1=https://admin.example.com
 Cors__AllowedOrigins__2=https://zola-light.example.com
 MINIO_CORS_ALLOWED_ORIGIN=https://app.example.com
 Minio__Endpoint=storage.example.com
+Minio__PublicEndpoint=storage.example.com
 Minio__Secure=true
 Minio__BucketInitializationEnabled=false
 ```
