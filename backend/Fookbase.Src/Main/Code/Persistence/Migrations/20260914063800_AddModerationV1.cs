@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 namespace Fookbase.Api.Persistence.Migrations;
 
 [DbContext(typeof(FookbaseDbContext))]
-[Migration("20260914090000_AddModerationV1")]
+[Migration("20260914063800_AddModerationV1")]
 public partial class AddModerationV1 : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
