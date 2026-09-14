@@ -3,7 +3,7 @@ import { useAuth } from '../auth/useAuth'
 import TopNavbar from './TopNavbar'
 import Sidebar from './Sidebar'
 
-const sidebarPaths = new Set(['/explore', '/saved', '/memories'])
+const sidebarPaths = new Set(['/feed', '/explore', '/saved', '/memories'])
 
 export default function MainLayout() {
   const location = useLocation()
