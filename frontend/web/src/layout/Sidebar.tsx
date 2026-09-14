@@ -43,7 +43,7 @@ function SidebarLink({ item }: { item: NavItem }) {
   </NavLink>
 }
 
-export default function Sidebar() {
+export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCenteredFeed?: boolean }) {
   const { session } = useAuth()
   const { t } = usePreferences()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -65,7 +65,7 @@ export default function Sidebar() {
   }, [session?.user.id])
 
   return (
-    <aside className="fixed left-[max(1rem,calc(50%-520px))] top-14 z-40 flex h-[calc(100vh-56px)] w-[280px] flex-col overflow-y-auto bg-bg px-3 max-xl:hidden">
+    <aside className={`fixed ${alignWithCenteredFeed ? 'left-[max(1rem,calc(50%-700px))]' : 'left-[max(1rem,calc(50%-520px))]'} top-14 z-40 flex h-[calc(100vh-56px)] w-[280px] flex-col overflow-y-auto bg-bg px-3 max-xl:hidden`}>
       <nav className="flex flex-col gap-0.5 py-3" aria-label="Lối tắt">
         <Link
           to="/profile"
