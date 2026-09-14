@@ -253,15 +253,15 @@ if (forwardedHeadersOptions.Enabled)
 }
 if (app.Environment.IsProduction())
 {
-    app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 }
 app.UseMiddleware<SecurityHeadersMiddleware>();
-app.UseMiddleware<RequestLoggingMiddleware>();
 if (allowedOrigins.Length > 0)
 {
     app.UseCors("Client");
 }
 app.UseAuthentication();
+app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseRateLimiter();
 app.UseMiddleware<AccountModerationMiddleware>();
 app.UseAuthorization();
