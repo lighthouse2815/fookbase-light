@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fookbase.Api.Code.Persistence.Migrations
 {
     [DbContext(typeof(FookbaseDbContext))]
-    [Migration("20260914100000_AddFeedRankingV2Indexes")]
+    [Migration("20260914074422_AddFeedRankingV2Indexes")]
     partial class AddFeedRankingV2Indexes
     {
         /// <inheritdoc />

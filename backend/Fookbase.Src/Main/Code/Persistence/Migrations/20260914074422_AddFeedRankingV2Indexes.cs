@@ -5,7 +5,7 @@
 namespace Fookbase.Api.Code.Persistence.Migrations
 {
     /// <inheritdoc />
-    // This migration intentionally follows Moderation V1 in the production sequence.
+    // This migration follows Moderation V1 in the production sequence.
     public partial class AddFeedRankingV2Indexes : Migration
     {
         /// <inheritdoc />
