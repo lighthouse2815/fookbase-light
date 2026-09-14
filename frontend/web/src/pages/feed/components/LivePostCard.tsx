@@ -102,6 +102,10 @@ export default function LivePostCard({
   const postTimestamp = formatPostTimestamp(post.createdAtUtc)
   const currentUserProfile = commentAuthors[currentUserId] ?? (isAuthor ? author : undefined)
   const currentUserName = currentUserProfile?.displayName ?? 'Bạn'
+  const profileMediaUpdateStatus = post.content === 'đã cập nhật ảnh đại diện.' ||
+    post.content === 'đã cập nhật ảnh bìa.'
+    ? post.content
+    : null
 
   useEffect(() => {
     let isActive = true
@@ -281,7 +285,10 @@ export default function LivePostCard({
           {authorAvatarUrl ? <img src={resolveProfileImageUrl(authorAvatarUrl)} alt="" className="w-full h-full object-cover" /> : authorName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <Link to={authorDestination} className="block truncate text-[15px] font-bold leading-5 text-text no-underline hover:underline">{authorName}</Link>
+          <div className="flex min-w-0 items-baseline gap-1 text-[15px] leading-5">
+            <Link to={authorDestination} className="max-w-[48%] shrink-0 truncate font-bold text-text no-underline hover:underline">{authorName}</Link>
+            {profileMediaUpdateStatus && <span className="min-w-0 truncate text-text-muted">{profileMediaUpdateStatus}</span>}
+          </div>
           {group && <p className="truncate text-xs leading-4 text-text-muted">{t('inGroup')} <Link to={`/groups/${group.id}`} className="font-semibold text-primary no-underline hover:underline">{group.name}</Link></p>}
           <p className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap text-[12px] font-medium leading-4 text-text-muted">
             <time dateTime={post.createdAtUtc} title={postTimestamp.absolute} aria-label={`Đăng lúc ${postTimestamp.absolute}`} className="min-w-0 cursor-help truncate rounded-sm hover:text-text focus:outline-none focus:ring-1 focus:ring-primary" tabIndex={0}>{postTimestamp.compact}</time>
@@ -299,7 +306,7 @@ export default function LivePostCard({
         </div>}
       </header>
 
-      {post.content && <div className="px-4 pb-3 pt-1"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>}
+      {post.content && !profileMediaUpdateStatus && <div className="px-4 pb-3 pt-1"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>}
       {media.length > 0 && (
         <div className={`grid overflow-hidden bg-black ${media.length > 1 ? 'grid-cols-2 gap-0.5' : 'grid-cols-1'}`}>
           {media.map((item) => item.mediaType === 'video' ? (
@@ -341,7 +348,7 @@ export default function LivePostCard({
 
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="border-b border-border">
-              {post.content && <div className="px-4 py-3"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>}
+              {post.content && !profileMediaUpdateStatus && <div className="px-4 py-3"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>}
               {media.length > 0 && (
                 <div className={`grid overflow-hidden bg-black ${media.length > 1 ? 'grid-cols-2 gap-0.5' : 'grid-cols-1'}`}>
                   {media.map((item) => item.mediaType === 'video' ? (
