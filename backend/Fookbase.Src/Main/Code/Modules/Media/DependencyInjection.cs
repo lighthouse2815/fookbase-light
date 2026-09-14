@@ -18,8 +18,13 @@ public static class DependencyInjection
 
         services.AddSingleton(cloudinaryOptions);
         services.AddSingleton(mediaOptions);
-        services.AddSingleton(_ => new Cloudinary(new Account(
-            cloudinaryOptions.CloudName, cloudinaryOptions.ApiKey, cloudinaryOptions.ApiSecret)));
+        services.AddSingleton(_ =>
+        {
+            var client = new Cloudinary(new Account(
+                cloudinaryOptions.CloudName, cloudinaryOptions.ApiKey, cloudinaryOptions.ApiSecret));
+            client.Api.SignatureAlgorithm = SignatureAlgorithm.SHA256;
+            return client;
+        });
         services.AddHttpClient();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IObjectStorage, CloudinaryObjectStorage>();
