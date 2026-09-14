@@ -288,9 +288,10 @@ Group post tái sử dụng Posts, Comments, Reactions, Reports và private Medi
 | PUT/DELETE | `/api/posts/comments/{commentId}` | Bearer JWT, tác giả |
 | PUT/DELETE | `/api/posts/comments/{commentId}/reaction` | Bearer JWT |
 | PUT/DELETE | `/api/posts/{postId}/reaction` | Bearer JWT |
+| GET | `/api/posts/{postId}/reactions?type=&offset=&limit=` | Bearer JWT, theo quyền xem bài viết |
 | GET | `/api/posts/{postId}/media/{mediaId}/access` | Bearer JWT |
 
-Privacy hợp lệ gồm `public`, `friends`, `onlyMe`; reaction gồm `like`, `love`, `haha`, `wow`, `sad`, `angry`.
+Privacy hợp lệ gồm `public`, `friends`, `onlyMe`; reaction gồm `like`, `love`, `haha`, `wow`, `sad`, `angry`. Danh sách người thả cảm xúc hỗ trợ lọc `type`, phân trang `offset`/`limit`, và trả trạng thái quan hệ của người xem với từng tài khoản.
 Profile posts giữ `ContainerType=Profile` và `ContainerId=AuthorUserId`; Group posts dùng
 `ContainerType=Group`. `GET /api/posts/{postId}` cùng comment/reaction/media access luôn kiểm
 tra Group membership/privacy khi post nằm trong Group.

@@ -38,14 +38,13 @@
 - Modify: `backend/Fookbase.Src/Main/Code/Modules/Friends/Services/FriendsService.cs`
 - Modify: `backend/Fookbase.Src/Main/Code/Modules/Posts/DTOs/Responses/PostReactionResponse.cs`
 - Modify: `backend/Fookbase.Src/Main/Code/Modules/Posts/Services/PostsUseCase.cs`
-- Modify: `backend/Fookbase.Src/Main/Code/Modules/Posts/Services/PostsService.cs`
 
 **Interfaces:**
 - Produces `FriendsService.GetStatusesAsync(Guid actorUserId, IReadOnlyCollection<Guid> otherUserIds, CancellationToken)` returning `IReadOnlyDictionary<Guid, RelationshipStatusResponse>`.
 - Extends `PostReactionResponse` with `string RelationshipStatus` and `Guid? RelationshipRequestId`.
 - Consumes the existing `GET /api/posts/{postId}/reactions?type=&offset=&limit=` contract.
 
-- [ ] **Step 1: Add the minimal batched relationship projection**
+- [x] **Step 1: Add the minimal batched relationship projection**
 
 ```csharp
 public async Task<IReadOnlyDictionary<Guid, RelationshipStatusResponse>> GetStatusesAsync(
@@ -59,15 +58,15 @@ public async Task<IReadOnlyDictionary<Guid, RelationshipStatusResponse>> GetStat
 }
 ```
 
-Call the method from `PostsUseCase.GetReactionsAsync`, pass its result to `PostsService.GetReactionsAsync`, and map each reactor to the returned status/request ID. Keep the current post authorization before reading reactor identities.
+Call the method from `PostsUseCase.GetReactionsAsync` after the authorized post reaction page is read, then map each reactor to the returned status/request ID.
 
-- [ ] **Step 2: Build the backend image**
+- [x] **Step 2: Build the backend image**
 
 Run: `docker compose build api`.
 
 Expected: the API image builds without warnings/errors.
 
-- [ ] **Step 3: Commit and push the backend slice**
+- [x] **Step 3: Commit and push the backend slice**
 
 ```bash
 git add backend/Fookbase.Src/Main/Code/Modules/Friends/Services/FriendsService.cs \
@@ -88,17 +87,17 @@ git push origin HEAD
 - Consumes `PostReaction.relationshipStatus`, `PostReaction.relationshipRequestId`, `postsApi.getReactions(postId, type, offset, limit)`, and `friendsApi.sendRequest(userId)`.
 - Produces `ReactionDialog` behavior with `offset`, `total`, `isLoadingMore`, and a per-user pending state.
 
-- [ ] **Step 1: Implement the typed dialog state and UI**
+- [x] **Step 1: Implement the typed dialog state and UI**
 
 Use `limit=20`, clear rows when changing filter, append rows on `Xem thêm`, disable its button while loading, and preserve the displayed rows on a load-more failure. Render `Thêm bạn bè` only for `relationshipStatus === 'none'`; after `friendsApi.sendRequest`, update that row to `request_sent` without closing the dialog.
 
-- [ ] **Step 2: Run the frontend checks**
+- [x] **Step 2: Run the frontend checks**
 
 Run: `npm run lint && npm run build` from `frontend/web`.
 
 Expected: both commands pass with no lint warnings.
 
-- [ ] **Step 3: Commit and push the web reaction dialog slice**
+- [x] **Step 3: Commit and push the web reaction dialog slice**
 
 ```bash
 git add frontend/web/src/api/posts.ts frontend/web/src/pages/feed/components/LivePostCard.tsx
@@ -118,7 +117,7 @@ git push origin HEAD
 - Extends `CommentResponse` and the web `Comment` type with `reactionCounts: Record<string, number>` and `viewerReaction: string | null`.
 - Consumes the existing `PUT|DELETE /api/posts/comments/{commentId}/reaction` endpoints.
 
-- [ ] **Step 1: Add minimal backend summary mapping and frontend controls**
+- [x] **Step 1: Add minimal backend summary mapping and frontend controls**
 
 ```ts
 setCommentReaction: (commentId: string, type: string) =>
@@ -131,13 +130,13 @@ removeCommentReaction: (commentId: string) =>
 
 Use the same six-choice emoji picker on each comment. The selected reaction is the compact action label; clicking it removes it, and selecting another updates it. Update the in-memory comment item only from the server response.
 
-- [ ] **Step 2: Run backend and frontend validation**
+- [x] **Step 2: Run backend and frontend validation**
 
 Run: `docker compose build api`, then `npm run lint && npm run build` from `frontend/web`.
 
 Expected: the API image, lint, and web build all pass.
 
-- [ ] **Step 3: Commit and push comment reactions**
+- [x] **Step 3: Commit and push comment reactions**
 
 ```bash
 git add backend/Fookbase.Src/Main/Code/Modules/Posts \
@@ -159,7 +158,7 @@ git push origin HEAD
 - Documents `GET /api/posts/{postId}/reactions?type=&offset=&limit=` as Bearer JWT and its relation to post visibility.
 - Documents the existing post/comment reaction mutation routes and supported reaction types.
 
-- [ ] **Step 1: Audit evidence for each existing plan task**
+- [x] **Step 1: Audit evidence for each existing plan task**
 
 Run:
 
@@ -168,9 +167,9 @@ git log --oneline -- docs/superpowers/plans
 rg -n "MapMemoryEndpoints|MapPhotoAlbumEndpoints|GetSuggestions|follow|PhotoAlbum" backend/Fookbase.Src/Main frontend/web/src
 ```
 
-Record only tasks whose listed deliverables exist in source and whose tests/build evidence is available from current CI or commit history.
+The follow, suggestion, memories, birthdays, and photos deliverables are present in source. Their historical task checkboxes remain unchanged because task-specific test evidence was not rerun in this no-test scope.
 
-- [ ] **Step 2: Update the API reference and checked plan items**
+- [x] **Step 2: Update the API reference and checked plan items**
 
 Add the following README row in the Posts table:
 
@@ -180,13 +179,13 @@ Add the following README row in the Posts table:
 
 Change only supported plan task checkboxes from `- [ ]` to `- [x]`; do not mark smoke, migration, or full-regression steps as complete without recorded evidence.
 
-- [ ] **Step 3: Verify documentation changes**
+- [x] **Step 3: Verify documentation changes**
 
 Run: `git diff --check && rg -n "posts/\{postId\}/reactions|^- \[x\]" README.md docs/superpowers/plans`
 
 Expected: no whitespace errors; API row and only evidence-backed checklist updates appear.
 
-- [ ] **Step 4: Commit and push documentation**
+- [x] **Step 4: Commit and push documentation**
 
 ```bash
 git add README.md docs/superpowers/plans
