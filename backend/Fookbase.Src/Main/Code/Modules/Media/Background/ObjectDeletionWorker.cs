@@ -21,8 +21,12 @@ internal sealed class ObjectDeletionWorker(
                 using var scope = scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
                 var storage = scope.ServiceProvider.GetRequiredService<IObjectStorage>();
-                var jobs = await db.ObjectDeletions.Where(x => x.ProcessedAtUtc == null)
-                    .OrderBy(x => x.CreatedAtUtc).Take(options.CleanupBatchSize).ToListAsync(stoppingToken);
+                var now = timeProvider.GetUtcNow();
+                var jobs = await db.ObjectDeletions
+                    .Where(x => x.ProcessedAtUtc == null && x.FailedAtUtc == null && x.NextAttemptAtUtc <= now)
+                    .OrderBy(x => x.NextAttemptAtUtc).ThenBy(x => x.CreatedAtUtc)
+                    .Take(options.CleanupBatchSize)
+                    .ToListAsync(stoppingToken);
                 foreach (var job in jobs)
                 {
                     try
@@ -32,8 +36,17 @@ internal sealed class ObjectDeletionWorker(
                     }
                     catch (Exception exception)
                     {
-                        job.RecordFailure(exception.Message);
-                        logger.LogWarning(exception, "Object deletion {DeletionId} remains pending.", job.Id);
+                        var failedAt = timeProvider.GetUtcNow();
+                        job.RecordFailure(
+                            failedAt,
+                            failedAt.AddSeconds(options.ObjectDeletionRetryDelaySeconds),
+                            options.ObjectDeletionRetryLimit,
+                            exception.Message);
+                        logger.LogWarning(exception,
+                            "Object deletion {DeletionId} failed on attempt {Attempt}; it is {State}.",
+                            job.Id,
+                            job.RetryCount,
+                            job.FailedAtUtc is null ? "scheduled for retry" : "permanently failed");
                     }
                     await db.SaveChangesAsync(stoppingToken);
                 }

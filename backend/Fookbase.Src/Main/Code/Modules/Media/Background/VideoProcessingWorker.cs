@@ -21,13 +21,9 @@ internal sealed class VideoProcessingWorker(
         {
             try
             {
-                for (var index = 0; index < options.VideoProcessingBatchSize; index++)
-                {
-                    if (!await ProcessNextAsync(stoppingToken))
-                    {
-                        break;
-                    }
-                }
+                var jobsToRun = Math.Min(options.VideoProcessingBatchSize, options.MaxConcurrentJobs);
+                await Task.WhenAll(Enumerable.Range(0, jobsToRun)
+                    .Select(_ => ProcessNextAsync(stoppingToken)));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -38,10 +34,13 @@ internal sealed class VideoProcessingWorker(
                 logger.LogError(exception, "Video processing reconciliation failed; pending jobs will retry.");
             }
 
-            await Task.Delay(
-                TimeSpan.FromSeconds(options.VideoProcessingIntervalSeconds),
-                timeProvider,
-                stoppingToken);
+            if (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(
+                    TimeSpan.FromSeconds(options.VideoProcessingIntervalSeconds),
+                    timeProvider,
+                    stoppingToken);
+            }
         }
     }
 
@@ -51,21 +50,36 @@ internal sealed class VideoProcessingWorker(
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var now = timeProvider.GetUtcNow();
         var staleBefore = now.AddSeconds(-options.VideoProcessingTimeoutSeconds);
-        var job = await db.MediaProcessingJobs
+        var candidate = await db.MediaProcessingJobs.AsNoTracking()
             .Where(item =>
                 (item.Status == MediaProcessingJobStatus.Pending && item.NextAttemptAtUtc <= now) ||
                 (item.Status == MediaProcessingJobStatus.Processing &&
                  item.StartedAtUtc != null && item.StartedAtUtc < staleBefore))
             .OrderBy(item => item.NextAttemptAtUtc)
             .ThenBy(item => item.CreatedAtUtc)
+            .Select(item => new { item.Id })
             .FirstOrDefaultAsync(stoppingToken);
-        if (job is null)
+        if (candidate is null)
         {
             return false;
         }
 
-        job.Claim(now);
-        await db.SaveChangesAsync(stoppingToken);
+        var claimed = await db.MediaProcessingJobs
+            .Where(item => item.Id == candidate.Id &&
+                ((item.Status == MediaProcessingJobStatus.Pending && item.NextAttemptAtUtc <= now) ||
+                 (item.Status == MediaProcessingJobStatus.Processing &&
+                  item.StartedAtUtc != null && item.StartedAtUtc < staleBefore)))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(item => item.Status, MediaProcessingJobStatus.Processing)
+                .SetProperty(item => item.AttemptCount, item => item.AttemptCount + 1)
+                .SetProperty(item => item.StartedAtUtc, now)
+                .SetProperty(item => item.LastError, (string?)null), stoppingToken);
+        if (claimed == 0)
+        {
+            return true;
+        }
+
+        var job = await db.MediaProcessingJobs.SingleAsync(item => item.Id == candidate.Id, stoppingToken);
 
         var asset = await db.MediaAssets.SingleOrDefaultAsync(asset => asset.Id == job.MediaId, stoppingToken);
         if (asset is null || asset.Status != MediaStatus.Processing || asset.MediaType != MediaType.Video)
@@ -135,7 +149,14 @@ internal sealed class VideoProcessingWorker(
         {
             if (Directory.Exists(jobDirectory))
             {
-                Directory.Delete(jobDirectory, recursive: true);
+                try
+                {
+                    Directory.Delete(jobDirectory, recursive: true);
+                }
+                catch (Exception exception)
+                {
+                    logger.LogWarning(exception, "Could not remove temporary video directory for job {JobId}.", job.Id);
+                }
             }
         }
 

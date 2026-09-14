@@ -8,9 +8,11 @@ internal sealed class ObjectDeletionConfiguration : IEntityTypeConfiguration<Obj
 {
     public void Configure(EntityTypeBuilder<ObjectDeletion> builder)
     {
-        builder.ToTable("ObjectDeletions"); builder.HasKey(x => x.Id);
+        builder.ToTable("ObjectDeletions");
+        builder.HasKey(x => x.Id);
         builder.Property(x => x.ObjectKey).HasMaxLength(256).IsRequired();
+        builder.Property(x => x.NextAttemptAtUtc).IsRequired();
         builder.Property(x => x.LastError).HasMaxLength(2000);
-        builder.HasIndex(x => new { x.ProcessedAtUtc, x.CreatedAtUtc });
+        builder.HasIndex(x => new { x.ProcessedAtUtc, x.FailedAtUtc, x.NextAttemptAtUtc, x.CreatedAtUtc });
     }
 }
