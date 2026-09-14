@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
 import { postsApi } from '../../../api/posts'
-import type { Comment, MediaAccess, Post } from '../../../api/posts'
+import type { Comment, MediaAccess, Post, PostReaction } from '../../../api/posts'
 import { resolveProfileImageUrl, usersApi } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
@@ -64,18 +64,84 @@ const reactionChoices: ReadonlyArray<{ type: ReactionType; icon: string; label: 
   { type: 'angry', icon: '😡', label: 'Phẫn nộ', color: 'text-[#e9710f]' },
 ]
 
-function ReactionSummary({ reactionCounts }: { reactionCounts: Record<string, number> }) {
+function ReactionSummary({ reactionCounts, onClick }: { reactionCounts: Record<string, number>; onClick: () => void }) {
   const reactions = reactionChoices.filter(({ type }) => (reactionCounts[type] ?? 0) > 0)
   const total = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0)
 
   if (total === 0) return null
 
-  return <span className="flex items-center gap-1.5" aria-label={`${total} cảm xúc`}>
+  return <button type="button" onClick={onClick} className="flex items-center gap-1.5 rounded border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline" aria-label={`Xem ${total} cảm xúc`}>
     <span className="flex -space-x-1.5 text-base leading-none" aria-hidden="true">
       {reactions.slice(0, 3).map(({ type, icon }) => <span key={type}>{icon}</span>)}
     </span>
     <span>{total}</span>
-  </span>
+  </button>
+}
+
+interface ReactionDialogProps {
+  postId: string
+  reactionCounts: Record<string, number>
+  onClose: () => void
+}
+
+function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps) {
+  const [filter, setFilter] = useState<ReactionType | 'all'>('all')
+  const [reactions, setReactions] = useState<PostReaction[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const total = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0)
+
+  const chooseFilter = (nextFilter: ReactionType | 'all') => {
+    setIsLoading(true)
+    setError(null)
+    setFilter(nextFilter)
+  }
+
+  useEffect(() => {
+    let isActive = true
+    void postsApi.getReactions(postId, filter === 'all' ? undefined : filter)
+      .then((page) => {
+        if (isActive) setReactions(page.items)
+      })
+      .catch((requestError: unknown) => {
+        if (isActive) setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải danh sách cảm xúc.')
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false)
+      })
+    return () => { isActive = false }
+  }, [filter, postId])
+
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={onClose}>
+      <section role="dialog" aria-modal="true" aria-label="Người đã bày tỏ cảm xúc" onMouseDown={(event) => event.stopPropagation()} className="flex max-h-[min(80vh,620px)] w-full max-w-[540px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+        <header className="relative border-b border-border px-4 pb-3 pt-4">
+          <h2 className="text-center text-[17px] font-bold text-text">Cảm xúc</h2>
+          <button type="button" onClick={onClose} aria-label="Đóng" className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full border-0 bg-surface-2 text-2xl leading-none text-text-muted hover:bg-surface-hover hover:text-text">×</button>
+          <nav className="mt-3 flex gap-1 overflow-x-auto" aria-label="Lọc cảm xúc">
+            <button type="button" onClick={() => chooseFilter('all')} className={`shrink-0 border-b-2 px-3 py-2 text-sm font-semibold ${filter === 'all' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}>Tất cả <span className="text-xs">{total}</span></button>
+            {reactionChoices.filter(({ type }) => (reactionCounts[type] ?? 0) > 0).map(({ type, icon, label }) => <button key={type} type="button" onClick={() => chooseFilter(type)} aria-label={label} className={`shrink-0 border-b-2 px-3 py-2 text-sm font-semibold ${filter === type ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}><span className="text-base leading-none">{icon}</span> <span className="text-xs">{reactionCounts[type]}</span></button>)}
+          </nav>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+          {isLoading && <p className="p-4 text-center text-sm text-text-muted">Đang tải cảm xúc…</p>}
+          {error && <p className="p-4 text-center text-sm text-[#ff8a9b]">{error}</p>}
+          {!isLoading && !error && reactions.length === 0 && <p className="p-4 text-center text-sm text-text-muted">Chưa có cảm xúc nào.</p>}
+          {!isLoading && reactions.map((reaction) => {
+            const choice = reactionChoices.find(({ type }) => type === reaction.type)
+            return <Link key={reaction.userId} to={`/profile/${reaction.userId}`} onClick={onClose} className="flex items-center gap-3 rounded-xl px-2 py-2.5 no-underline hover:bg-surface-2">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">
+                {reaction.avatarUrl ? <img src={resolveProfileImageUrl(reaction.avatarUrl)} alt="" className="h-full w-full object-cover" /> : reaction.displayName.slice(0, 2).toUpperCase()}
+              </div>
+              <span className="min-w-0 flex-1 truncate font-semibold text-text">{reaction.displayName}</span>
+              {choice && <span className="text-xl" aria-label={choice.label}>{choice.icon}</span>}
+            </Link>
+          })}
+        </div>
+      </section>
+    </div>,
+    document.body,
+  )
 }
 
 interface ReactionPickerProps {
@@ -172,6 +238,7 @@ export default function LivePostCard({
   const [commentsTotal, setCommentsTotal] = useState(0)
   const [commentsOffset, setCommentsOffset] = useState(0)
   const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(false)
+  const [isReactionDialogOpen, setIsReactionDialogOpen] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<MediaAccess | null>(null)
   const [isLoadingComments, setIsLoadingComments] = useState(false)
   const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false)
@@ -215,17 +282,18 @@ export default function LivePostCard({
   }, [post.id, post.mediaIds])
 
   useEffect(() => {
-    if (!isCommentsDialogOpen && !selectedPhoto) return
+    if (!isCommentsDialogOpen && !isReactionDialogOpen && !selectedPhoto) return
 
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsCommentsDialogOpen(false)
+        setIsReactionDialogOpen(false)
         setSelectedPhoto(null)
       }
     }
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [isCommentsDialogOpen, selectedPhoto])
+  }, [isCommentsDialogOpen, isReactionDialogOpen, selectedPhoto])
 
   const loadCommentAuthors = async (items: readonly Comment[]) => {
     const authorIds = [...new Set(items.map((comment) => comment.authorUserId))]
@@ -440,7 +508,7 @@ export default function LivePostCard({
       {error && <p className="px-4 pt-3 text-xs text-[#ff8a9b]">{error}</p>}
 
       <div className="mx-4 flex min-h-11 items-center justify-between gap-3 border-b border-border text-[13px] text-text-muted">
-        <ReactionSummary reactionCounts={post.reactionCounts} />
+        <ReactionSummary reactionCounts={post.reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
         <button type="button" onClick={openCommentsDialog} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{post.commentCount > 0 ? `${post.commentCount} ${t('comments')}` : ''}</button>
       </div>
       <div className="mx-2 grid grid-cols-3 gap-1 py-1">
@@ -454,6 +522,7 @@ export default function LivePostCard({
       </div>
       {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} />}
     </article>
+    {isReactionDialogOpen && <ReactionDialog postId={post.id} reactionCounts={post.reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
     {isCommentsDialogOpen && createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
         <section role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
@@ -478,7 +547,7 @@ export default function LivePostCard({
                 </div>
               )}
               <div className="flex items-center justify-between px-4 py-2 text-[13px] text-text-muted">
-                <ReactionSummary reactionCounts={post.reactionCounts} />
+                <ReactionSummary reactionCounts={post.reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
                 <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
               </div>
               <div className="grid grid-cols-3 border-t border-border px-2 py-1">
@@ -518,7 +587,7 @@ export default function LivePostCard({
           </header>
 
           <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[13px] text-text-muted">
-            <ReactionSummary reactionCounts={post.reactionCounts} />
+            <ReactionSummary reactionCounts={post.reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
             <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
           </div>
           <div className="grid grid-cols-3 border-b border-border px-2 py-1">

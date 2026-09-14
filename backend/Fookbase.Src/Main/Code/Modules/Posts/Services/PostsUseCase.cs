@@ -504,6 +504,21 @@ public sealed class PostsUseCase(
             limit,
             cancellationToken);
 
+    public async Task<ApplicationResult<PagedResponse<PostReactionResponse>>> GetReactionsAsync(
+        Guid actorUserId,
+        Guid postId,
+        string? reactionType,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default) =>
+        await postsService.GetReactionsAsync(
+            await CreateRequiredViewerContextAsync(actorUserId, cancellationToken),
+            postId,
+            reactionType,
+            offset,
+            limit,
+            cancellationToken);
+
     public async Task<ApplicationResult<PostResponse>> SetReactionAsync(
         Guid actorUserId,
         Guid postId,

@@ -328,6 +328,38 @@ public sealed class PostsService(
         CancellationToken cancellationToken = default) =>
         Map(await RemoveReactionCoreAsync(actor.UserId, postId, actor, cancellationToken));
 
+    public async Task<ApplicationResult<PagedResponse<PostReactionResponse>>> GetReactionsAsync(
+        PostViewerContext viewer,
+        Guid postId,
+        string? reactionType,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var paginationError = ValidatePagination(offset, limit);
+        if (paginationError is not null)
+        {
+            return ApplicationResult<PagedResponse<PostReactionResponse>>.Failure(paginationError);
+        }
+
+        ReactionType? parsedReaction = null;
+        if (!string.IsNullOrWhiteSpace(reactionType) &&
+            (!Enum.TryParse<ReactionType>(reactionType, true, out var parsed) || !Enum.IsDefined(parsed)))
+        {
+            return ApplicationResult<PagedResponse<PostReactionResponse>>.Failure(new ApplicationError(
+                "invalid_reaction_type",
+                "Reaction type must be one of: like, love, haha, wow, sad, angry.",
+                ApplicationErrorType.Validation));
+        }
+        else if (!string.IsNullOrWhiteSpace(reactionType))
+        {
+            parsedReaction = Enum.Parse<ReactionType>(reactionType, true);
+        }
+
+        return Map(await GetReactionsCoreAsync(
+            viewer, postId, parsedReaction, offset, limit, cancellationToken));
+    }
+
     public async Task<ApplicationResult> SetCommentReactionAsync(
         PostViewerContext actor,
         Guid commentId,
@@ -837,6 +869,68 @@ public sealed class PostsService(
                 await LoadCommentResponsesAsync(comments, cancellationToken), offset, limit, total));
     }
 
+    public async Task<PostsServiceResult<PagedResponse<PostReactionResponse>>> GetReactionsCoreAsync(
+        PostViewerContext viewer,
+        Guid postId,
+        ReactionType? reactionType,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
+            item => item.Id == postId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (post is null || !await CanViewPostAsync(post, viewer, cancellationToken))
+        {
+            return PostsServiceResult<PagedResponse<PostReactionResponse>>.Failure(PostsServiceError.PostNotFound);
+        }
+
+        var query = dbContext.PostReactions.AsNoTracking().Where(reaction => reaction.PostId == postId);
+        if (reactionType is not null)
+        {
+            query = query.Where(reaction => reaction.Type == reactionType.Value);
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+        var reactions = await query
+            .OrderByDescending(reaction => reaction.UpdatedAtUtc ?? reaction.CreatedAtUtc)
+            .ThenByDescending(reaction => reaction.UserId)
+            .Skip(offset)
+            .Take(limit)
+            .Select(reaction => new ReactionListRow(reaction.UserId, reaction.Type))
+            .ToListAsync(cancellationToken);
+        var userIds = reactions.Select(reaction => reaction.UserId).ToArray();
+        var profiles = userIds.Length == 0
+            ? new Dictionary<Guid, UserReactionProfile>()
+            : await dbContext.UserProfiles.AsNoTracking()
+                .Where(profile => userIds.Contains(profile.UserId))
+                .Select(profile => new UserReactionProfile(
+                    profile.UserId,
+                    profile.Username,
+                    profile.DisplayName,
+                    profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar"))
+                .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
+        var usernames = userIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await dbContext.Users.AsNoTracking()
+                .Where(user => userIds.Contains(user.Id))
+                .ToDictionaryAsync(user => user.Id, user => user.UserName ?? user.Id.ToString(), cancellationToken);
+        var items = reactions.Select(reaction =>
+        {
+            var profile = profiles.GetValueOrDefault(reaction.UserId);
+            var username = profile?.Username ?? usernames.GetValueOrDefault(reaction.UserId, reaction.UserId.ToString());
+            return new PostReactionResponse(
+                reaction.UserId,
+                username,
+                profile?.DisplayName ?? username,
+                profile?.AvatarUrl,
+                reaction.Type.ToString().ToLowerInvariant());
+        }).ToList();
+
+        return PostsServiceResult<PagedResponse<PostReactionResponse>>.Success(
+            new PagedResponse<PostReactionResponse>(items, offset, limit, total));
+    }
+
     public async Task<PostsServiceResult<PostResponse>> SetReactionCoreAsync(
         Guid actorUserId,
         Guid postId,
@@ -1189,6 +1283,10 @@ public sealed class PostsService(
             null);
 
     private sealed record PagePostIdentity(Guid Id, string Username, string Name, Guid? AvatarMediaId);
+
+    private sealed record ReactionListRow(Guid UserId, ReactionType Type);
+
+    private sealed record UserReactionProfile(Guid UserId, string Username, string DisplayName, string? AvatarUrl);
 
     private sealed record MentionRow(Guid SourceId, Guid UserId, int StartIndex, int Length);
 

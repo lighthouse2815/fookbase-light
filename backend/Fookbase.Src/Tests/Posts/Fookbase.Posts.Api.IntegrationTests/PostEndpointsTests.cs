@@ -453,6 +453,30 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Reaction_list_returns_reactors_and_supports_filtering_by_type()
+    {
+        var users = await CreateUserIdsAsync(3);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var firstReactor = CreateAuthenticatedClient(users[1]);
+        using var secondReactor = CreateAuthenticatedClient(users[2]);
+        var post = await CreatePostAsync(author, "reaction list", "public");
+
+        await firstReactor.PutAsJsonAsync($"/api/posts/{post.Id}/reaction", new { type = "love" });
+        await secondReactor.PutAsJsonAsync($"/api/posts/{post.Id}/reaction", new { type = "haha" });
+        var all = await ReadAsync<PagedResponse<PostReactionResponse>>(
+            await author.GetAsync($"/api/posts/{post.Id}/reactions"));
+        var loves = await ReadAsync<PagedResponse<PostReactionResponse>>(
+            await author.GetAsync($"/api/posts/{post.Id}/reactions?type=love"));
+
+        Assert.Equal(2, all.Total);
+        Assert.Contains(all.Items, item => item.UserId == users[1] && item.Type == "love");
+        Assert.Contains(all.Items, item => item.UserId == users[2] && item.Type == "haha");
+        Assert.Equal(1, loves.Total);
+        Assert.Equal(users[1], Assert.Single(loves.Items).UserId);
+        Assert.Equal("love", Assert.Single(loves.Items).Type);
+    }
+
+    [Fact]
     public async Task Friend_request_and_acceptance_create_general_notifications()
     {
         var users = await CreateUserIdsAsync(2);

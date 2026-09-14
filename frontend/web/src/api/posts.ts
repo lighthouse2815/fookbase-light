@@ -44,6 +44,14 @@ export interface Comment {
   mentions?: ContentMention[]
 }
 
+export interface PostReaction {
+  userId: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
+  type: string
+}
+
 export interface SavedPostsPage {
   items: Post[]
   nextCursor: string | null
@@ -130,6 +138,11 @@ export const postsApi = {
     }),
   removeReaction: (postId: string) =>
     apiRequest<Post>(`/api/posts/${postId}/reaction`, { method: 'DELETE' }),
+  getReactions: (postId: string, type?: string, offset = 0, limit = 100) => {
+    const query = new URLSearchParams({ offset: String(offset), limit: String(limit) })
+    if (type) query.set('type', type)
+    return apiRequest<PagedResponse<PostReaction>>(`/api/posts/${postId}/reactions?${query.toString()}`)
+  },
   getMediaAccess: (postId: string, mediaId: string) =>
     apiRequest<MediaAccess>(`/api/posts/${postId}/media/${mediaId}/access`),
 }

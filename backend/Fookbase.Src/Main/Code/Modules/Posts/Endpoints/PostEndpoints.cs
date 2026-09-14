@@ -23,6 +23,7 @@ public static class PostEndpoints
         group.MapGet("/users/{authorUserId:guid}", GetUserPostsAsync);
         group.MapPost("/{postId:guid}/comments", CreateCommentAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}/comments", GetCommentsAsync);
+        group.MapGet("/{postId:guid}/reactions", GetReactionsAsync).RequireAuthorization();
         group.MapPut("/comments/{commentId:guid}", UpdateCommentAsync).RequireAuthorization();
         group.MapDelete("/comments/{commentId:guid}", DeleteCommentAsync).RequireAuthorization();
         group.MapPut("/comments/{commentId:guid}/reaction", SetCommentReactionAsync).RequireAuthorization();
@@ -296,6 +297,25 @@ public static class PostEndpoints
 
         var result = await useCase.GetCommentsAsync(
             viewerUserId, postId, offset, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetReactionsAsync(
+        Guid postId,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken,
+        string? type = null,
+        int offset = 0,
+        int limit = 100)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await useCase.GetReactionsAsync(
+            actorUserId, postId, type, offset, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
