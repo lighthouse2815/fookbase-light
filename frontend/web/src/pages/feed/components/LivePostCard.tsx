@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
 import { postsApi } from '../../../api/posts'
@@ -338,7 +339,7 @@ export default function LivePostCard({
       </div>
       {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} />}
     </article>
-    {isCommentsDialogOpen && (
+    {isCommentsDialogOpen && createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
         <section role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
           <header className="relative flex h-13 shrink-0 items-center justify-center border-b border-border px-14">
@@ -411,7 +412,7 @@ export default function LivePostCard({
           </form>
         </section>
       </div>
-    )}
+    , document.body)}
     </>
   )
 }
