@@ -66,6 +66,7 @@ export default function TopNavbar() {
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
@@ -143,38 +144,52 @@ export default function TopNavbar() {
   }
 
   const notificationText = (notification: typeof notifications[number]) => {
-    const actor = notification.actorDisplayName ?? notification.actorUsername ?? t('user')
     switch (notification.type) {
       case 'FriendRequestReceived':
-        return actor + ' sent you a friend request.'
+        return 'đã gửi cho bạn lời mời kết bạn.'
       case 'FriendRequestAccepted':
-        return actor + ' accepted your friend request.'
+        return 'đã chấp nhận lời mời kết bạn của bạn.'
       case 'UserFollowed':
-        return actor + ' ' + t('startedFollowingYou')
+        return t('startedFollowingYou')
       case 'PostReaction':
-        return actor + ' reacted to your post.'
+        return 'đã bày tỏ cảm xúc về bài viết của bạn.'
       case 'PostComment':
-        return actor + ' commented on your post.'
+        return 'đã bình luận về bài viết của bạn.'
       case 'CommentReaction':
-        return actor + ' reacted to your comment.'
+        return 'đã bày tỏ cảm xúc về bình luận của bạn.'
       case 'PostShared':
-        return actor + ' shared your post.'
+        return 'đã chia sẻ bài viết của bạn.'
       case 'PostMention':
-        return actor + ' mentioned you in a post.'
+        return 'đã nhắc đến bạn trong một bài viết.'
       case 'CommentMention':
-        return actor + ' mentioned you in a comment.'
+        return 'đã nhắc đến bạn trong một bình luận.'
       case 'GroupInvite':
-        return actor + ' invited you to a group.'
+        return 'đã mời bạn tham gia một nhóm.'
       case 'GroupJoinApproved':
-        return actor + ' approved your group join request.'
+        return 'đã chấp nhận yêu cầu tham gia nhóm của bạn.'
       case 'StoryReaction':
-        return actor + ' reacted to your Story.'
+        return 'đã bày tỏ cảm xúc về Story của bạn.'
       case 'PageRoleInvite':
-        return actor + ' invited you to manage a Page.'
+        return 'đã mời bạn quản lý một Trang.'
       default:
-        return actor + ' sent you a notification.'
+        return 'đã gửi cho bạn một thông báo.'
     }
   }
+
+  const notificationBadge = (notification: typeof notifications[number]) => {
+    if (notification.type === 'PostReaction' || notification.type === 'CommentReaction' || notification.type === 'StoryReaction') return { icon: '♥', className: 'bg-[#f02849]' }
+    if (notification.type === 'PostComment' || notification.type === 'CommentMention') return { icon: '●', className: 'bg-[#1877f2]' }
+    if (notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted' || notification.type === 'UserFollowed') return { icon: '♟', className: 'bg-[#31a24c]' }
+    return { icon: '●', className: 'bg-[#1877f2]' }
+  }
+
+  const notificationTime = (createdAtUtc: string) => {
+    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(createdAtUtc))
+  }
+
+  const visibleNotifications = notificationFilter === 'unread'
+    ? notifications.filter((notification) => !notification.isRead)
+    : notifications
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center px-4 z-50">
@@ -264,7 +279,7 @@ export default function TopNavbar() {
           <button
             type="button"
             onClick={() => setIsNotificationsOpen((current) => !current)}
-            className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none text-sm relative"
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer border-none text-sm relative ${isNotificationsOpen ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50]'}`}
             title={t('messageNotifications')}
             aria-expanded={isNotificationsOpen}
           >
@@ -272,18 +287,27 @@ export default function TopNavbar() {
             {unreadNotificationCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
           </button>
           {isNotificationsOpen && (
-            <div className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="font-heading text-base font-bold text-text">{t('notifications')}</h2>{unreadNotificationCount > 0 && <button type="button" onClick={markAllNotificationsRead} className="border-0 bg-transparent text-xs font-semibold text-primary cursor-pointer hover:underline">Mark all read</button>}</div>
-              <div className="max-h-96 overflow-y-auto">
-                {notifications.length === 0 ? <p className="px-4 py-6 text-center text-sm text-text-muted">{t('allCaughtUp')}</p> : (
+            <div className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+              <div className="flex items-center justify-between px-4 pt-3"><h2 className="font-heading text-2xl font-bold text-text">{t('notifications')}</h2><button type="button" onClick={markAllNotificationsRead} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-xl text-text-muted cursor-pointer hover:bg-surface-2" title="Đánh dấu tất cả là đã đọc" aria-label="Đánh dấu tất cả là đã đọc">•••</button></div>
+              <div className="flex gap-2 px-4 pb-3 pt-2">
+                <button type="button" onClick={() => setNotificationFilter('all')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'all' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Tất cả</button>
+                <button type="button" onClick={() => setNotificationFilter('unread')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'unread' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Chưa đọc</button>
+              </div>
+              <div className="max-h-[calc(100vh-11rem)] overflow-y-auto px-2 pb-2">
+                <div className="flex items-center justify-between px-2 pb-1"><h3 className="text-base font-bold text-text">Trước đó</h3>{unreadNotificationCount > 0 && <button type="button" onClick={markAllNotificationsRead} className="border-0 bg-transparent text-sm font-medium text-primary cursor-pointer hover:underline">Đánh dấu đã đọc</button>}</div>
+                {visibleNotifications.length === 0 ? <p className="px-4 py-6 text-center text-sm text-text-muted">{notificationFilter === 'unread' ? 'Bạn không có thông báo chưa đọc.' : t('allCaughtUp')}</p> : (
                   <>
-                    {notifications.map((notification) => (
-                      <Link key={notification.id} to={notificationDestination(notification)} onClick={() => { markNotificationRead(notification.id); setIsNotificationsOpen(false) }} className="block border-b border-border px-4 py-3 no-underline transition-colors last:border-0 hover:bg-surface-2">
-                        <p className={notification.isRead ? 'text-sm text-text-muted' : 'text-sm font-semibold text-text'}>{notificationText(notification)}</p>
-                        <p className="mt-1 text-xs text-text-light">{new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(notification.createdAtUtc))}</p>
+                    {visibleNotifications.map((notification, index) => {
+                      const actor = notification.actorDisplayName ?? notification.actorUsername ?? t('user')
+                      const badge = notificationBadge(notification)
+                      const avatarTone = ['bg-[#87433b]', 'bg-[#5f7997]', 'bg-[#8e5b88]', 'bg-[#607b57]', 'bg-[#9b6c45]'][index % 5]
+                      return <Link key={notification.id} to={notificationDestination(notification)} onClick={() => { markNotificationRead(notification.id); setIsNotificationsOpen(false) }} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
+                        <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${avatarTone}`}>{actor.slice(0, 2).toUpperCase()}<span className={`absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-surface text-[11px] font-bold text-white ${badge.className}`}>{badge.icon}</span></span>
+                        <span className="min-w-0 flex-1 pr-4"><span className="block text-sm leading-5 text-text"><strong>{actor}</strong> {notificationText(notification)}</span><span className={`mt-0.5 block text-xs font-semibold ${notification.isRead ? 'text-text-light' : 'text-primary'}`}>{notificationTime(notification.createdAtUtc)}</span></span>
+                        {!notification.isRead && <span className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary" />}
                       </Link>
-                    ))}
-                    {hasMoreNotifications && <button type="button" onClick={loadMoreNotifications} disabled={isLoadingMoreNotifications} className="w-full border-0 bg-surface-2 px-4 py-3 text-sm font-semibold text-primary cursor-pointer disabled:cursor-wait">{isLoadingMoreNotifications ? t('loading') : 'Load more'}</button>}
+                    })}
+                    {hasMoreNotifications && <button type="button" onClick={loadMoreNotifications} disabled={isLoadingMoreNotifications} className="mt-2 w-full rounded-lg border-0 bg-surface-2 px-4 py-2.5 text-sm font-semibold text-text cursor-pointer hover:bg-surface-3 disabled:cursor-wait">{isLoadingMoreNotifications ? t('loading') : 'Xem thông báo trước đó'}</button>}
                   </>
                 )}
               </div>
