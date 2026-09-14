@@ -178,7 +178,7 @@ export default function TopNavbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center px-4 z-50">
-      <div className="flex items-center gap-2 w-[280px] shrink-0">
+      <div className="flex items-center gap-2 w-[280px] shrink-0 max-lg:hidden">
         <Link
           to="/feed"
           className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline"
@@ -209,7 +209,7 @@ export default function TopNavbar() {
         </form>
       </div>
 
-      <nav aria-label="Điều hướng chính" className="flex flex-1 items-center justify-center gap-1 self-stretch px-2 max-w-[600px] mx-auto">
+      <nav aria-label="Điều hướng chính" className="flex flex-1 items-center justify-center gap-1 self-stretch px-2 max-w-[600px] mx-auto max-lg:w-full max-lg:max-w-[680px]">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -231,7 +231,7 @@ export default function TopNavbar() {
         ))}
       </nav>
 
-      <div className="flex items-center gap-2 w-[280px] shrink-0 justify-end">
+      <div className="flex items-center gap-2 w-[280px] shrink-0 justify-end max-lg:hidden">
         <div className="relative">
           <button
             type="button"
