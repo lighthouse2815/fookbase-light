@@ -22,9 +22,9 @@ public static class ProductionConfigurationValidator
             ?? throw new InvalidOperationException("JWT configuration is required in Production.");
         jwt.Validate();
 
-        var minio = configuration.GetSection(MinioOptions.SectionName).Get<MinioOptions>()
-            ?? throw new InvalidOperationException("MinIO configuration is required in Production.");
-        minio.Validate();
+        var cloudinary = configuration.GetSection(CloudinaryOptions.SectionName).Get<CloudinaryOptions>()
+            ?? throw new InvalidOperationException("Cloudinary configuration is required in Production.");
+        cloudinary.Validate();
 
         var dataProtection = configuration.GetSection(DataProtectionOptions.SectionName)
             .Get<DataProtectionOptions>() ?? new DataProtectionOptions();

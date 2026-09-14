@@ -9,7 +9,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Minio" Version="7.0.0" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.29.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.2" />
   </ItemGroup>

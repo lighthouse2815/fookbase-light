@@ -114,11 +114,11 @@ internal static class ModuleServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var minioOptions = configuration.GetSection(MinioOptions.SectionName).Get<MinioOptions>()
-            ?? throw new InvalidOperationException("MinIO configuration is required.");
+        var cloudinaryOptions = configuration.GetSection(CloudinaryOptions.SectionName).Get<CloudinaryOptions>()
+            ?? throw new InvalidOperationException("Cloudinary configuration is required.");
 
         return services.AddMediaInfrastructure(
-            minioOptions,
+            cloudinaryOptions,
             configuration.GetSection(MediaOptions.SectionName).Get<MediaOptions>()
                 ?? new MediaOptions());
     }

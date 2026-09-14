@@ -218,7 +218,7 @@ builder.Services.AddRateLimiter(options =>
 });
 builder.Services.AddHealthChecks()
     .AddCheck<FookbaseDatabaseHealthCheck>("postgresql", tags: ["ready"])
-    .AddCheck<MinioBucketHealthCheck>("minio", tags: ["ready"]);
+    .AddCheck<CloudinaryHealthCheck>("cloudinary", tags: ["ready"]);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 

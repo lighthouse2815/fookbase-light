@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Media.Config;
+using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,15 @@ internal sealed class ObjectDeletionWorker(
                 {
                     try
                     {
-                        await storage.DeleteAsync(job.ObjectKey, stoppingToken);
+                        var asset = await db.MediaAssets.AsNoTracking()
+                            .SingleOrDefaultAsync(asset => asset.Id == job.MediaId, stoppingToken);
+                        if (asset is null)
+                            throw new InvalidOperationException("Media asset for object deletion was not found.");
+                        var mediaType = job.ObjectKey == asset.ObjectKey ? asset.MediaType
+                            : job.ObjectKey == MediaAsset.ProcessedKey(asset.OwnerUserId, asset.Id) ? MediaType.Video
+                            : job.ObjectKey == MediaAsset.PosterKey(asset.OwnerUserId, asset.Id) ? MediaType.Image
+                            : throw new InvalidOperationException("Object deletion key does not belong to its media asset.");
+                        await storage.DeleteAsync(job.ObjectKey, mediaType, stoppingToken);
                         job.MarkProcessed(timeProvider.GetUtcNow());
                     }
                     catch (Exception exception)

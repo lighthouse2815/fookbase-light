@@ -68,10 +68,10 @@ public sealed class MediaService(
         dbContext.MediaAssets.Add(asset);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var uploadUrl = await objectStorage.CreatePresignedPutUrlAsync(
-            objectKey, TimeSpan.FromMinutes(options.UploadUrlExpiryMinutes), cancellationToken);
+        var uploadIntent = await objectStorage.CreateDirectUploadIntentAsync(
+            objectKey, format.MediaType, TimeSpan.FromMinutes(options.UploadUrlExpiryMinutes), cancellationToken);
         return ApplicationResult<UploadIntentResponse>.Success(
-            new UploadIntentResponse(id, uploadUrl, expiresAt));
+            new UploadIntentResponse(id, uploadIntent.UploadUrl, "POST", uploadIntent.UploadParameters, expiresAt));
     }
 
     public async Task<ApplicationResult<MediaResponse>> CompleteAsync(
@@ -111,7 +111,7 @@ public sealed class MediaService(
             return Conflict<MediaResponse>("upload_expired", "The upload intent has expired.");
         }
 
-        var storedObject = await objectStorage.GetInfoAsync(asset.ObjectKey, cancellationToken);
+        var storedObject = await objectStorage.GetInfoAsync(asset.ObjectKey, asset.MediaType, cancellationToken);
         if (storedObject is null)
         {
             return Conflict<MediaResponse>("upload_object_missing", "The uploaded object was not found.");
@@ -120,7 +120,8 @@ public sealed class MediaService(
         var maximumSize = asset.MediaType == MediaType.Image
             ? options.MaximumImageSizeBytes
             : options.MaximumVideoSizeBytes;
-        if (storedObject.SizeBytes != asset.DeclaredSizeBytes || storedObject.SizeBytes > maximumSize)
+        if (storedObject.MediaType != asset.MediaType || !storedObject.IsAuthenticated ||
+            storedObject.SizeBytes != asset.DeclaredSizeBytes || storedObject.SizeBytes > maximumSize)
         {
             asset.MarkFailed();
             await SaveFailedAsync(asset, cancellationToken);
@@ -129,7 +130,7 @@ public sealed class MediaService(
         }
 
         var prefixLength = checked((int)Math.Min(32L, storedObject.SizeBytes));
-        var prefix = await objectStorage.ReadPrefixAsync(asset.ObjectKey, prefixLength, cancellationToken);
+        var prefix = await objectStorage.ReadPrefixAsync(asset.ObjectKey, asset.MediaType, prefixLength, cancellationToken);
         var detectedContentType = DetectContentType(prefix);
         if (!string.Equals(detectedContentType, asset.ContentType, StringComparison.OrdinalIgnoreCase))
         {
@@ -187,7 +188,7 @@ public sealed class MediaService(
             return ApplicationResult<MediaReadUrlResponse>.Failure(NotFound());
         }
 
-        var url = await objectStorage.CreatePresignedGetUrlAsync(objectKey, expiry, cancellationToken);
+        var url = await objectStorage.CreateSignedGetUrlAsync(objectKey, asset.MediaType, cancellationToken);
         return ApplicationResult<MediaReadUrlResponse>.Success(
             new MediaReadUrlResponse(
                 asset.Id,
@@ -211,8 +212,8 @@ public sealed class MediaService(
         }
 
         var expiry = TimeSpan.FromMinutes(options.DownloadUrlExpiryMinutes);
-        var url = await objectStorage.CreatePresignedGetUrlAsync(
-            asset.PosterObjectKey, expiry, cancellationToken);
+        var url = await objectStorage.CreateSignedGetUrlAsync(
+            asset.PosterObjectKey, MediaType.Image, cancellationToken);
         return ApplicationResult<MediaReadUrlResponse>.Success(
             new MediaReadUrlResponse(
                 asset.Id,

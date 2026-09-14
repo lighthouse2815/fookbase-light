@@ -98,7 +98,7 @@ internal sealed class VideoProcessingWorker(
             Directory.CreateDirectory(jobDirectory);
             var storage = scope.ServiceProvider.GetRequiredService<IObjectStorage>();
             var processor = scope.ServiceProvider.GetRequiredService<IVideoProcessor>();
-            await storage.DownloadToFileAsync(asset.ObjectKey, inputPath, stoppingToken);
+            await storage.DownloadToFileAsync(asset.ObjectKey, MediaType.Video, inputPath, stoppingToken);
             var metadata = await processor.ProcessAsync(
                 inputPath,
                 normalizedPath,
@@ -107,8 +107,8 @@ internal sealed class VideoProcessingWorker(
                 stoppingToken);
             var processedKey = MediaAsset.ProcessedKey(asset.OwnerUserId, asset.Id);
             var posterKey = MediaAsset.PosterKey(asset.OwnerUserId, asset.Id);
-            await storage.UploadFileAsync(processedKey, normalizedPath, "video/mp4", stoppingToken);
-            await storage.UploadFileAsync(posterKey, posterPath, "image/jpeg", stoppingToken);
+            await storage.UploadFileAsync(processedKey, MediaType.Video, normalizedPath, "video/mp4", stoppingToken);
+            await storage.UploadFileAsync(posterKey, MediaType.Image, posterPath, "image/jpeg", stoppingToken);
             var completedAt = timeProvider.GetUtcNow();
             asset.MarkVideoReady(
                 processedKey,

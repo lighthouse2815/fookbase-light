@@ -1,8 +1,8 @@
 using Fookbase.Api.Modules.Media.Background;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Services;
+using CloudinaryDotNet;
 using Microsoft.Extensions.DependencyInjection;
-using Minio;
 
 namespace Fookbase.Api.Modules.Media;
 
@@ -10,22 +10,21 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddMediaInfrastructure(
         this IServiceCollection services,
-        MinioOptions minioOptions,
+        CloudinaryOptions cloudinaryOptions,
         MediaOptions mediaOptions)
     {
-        minioOptions.Validate();
+        cloudinaryOptions.Validate();
         mediaOptions.Validate();
 
-        services.AddSingleton(minioOptions);
+        services.AddSingleton(cloudinaryOptions);
         services.AddSingleton(mediaOptions);
-        services.AddSingleton<IMinioClient>(_ => CreateClient(minioOptions, minioOptions.Endpoint));
-        services.AddSingleton<MinioPresignedUrlClient>(_ =>
-            new(CreateClient(minioOptions, minioOptions.PresignedUrlEndpoint)));
+        services.AddSingleton(_ => new Cloudinary(new Account(
+            cloudinaryOptions.CloudName, cloudinaryOptions.ApiKey, cloudinaryOptions.ApiSecret)));
+        services.AddHttpClient();
         services.AddSingleton(TimeProvider.System);
-        services.AddScoped<IObjectStorage, MinioObjectStorage>();
+        services.AddScoped<IObjectStorage, CloudinaryObjectStorage>();
         services.AddSingleton<IVideoProcessor, FfmpegVideoProcessor>();
         services.AddScoped<MediaService>();
-        services.AddHostedService<MinioBucketInitializer>();
         services.AddHostedService<PendingUploadCleanupWorker>();
         services.AddHostedService<ObjectDeletionWorker>();
         if (mediaOptions.VideoProcessingEnabled)
@@ -35,16 +34,4 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IMinioClient CreateClient(MinioOptions options, string endpoint)
-    {
-        var client = new MinioClient()
-            .WithEndpoint(endpoint)
-            .WithCredentials(options.AccessKey, options.SecretKey);
-        if (options.Secure)
-        {
-            client = client.WithSSL();
-        }
-
-        return client.Build();
-    }
 }
