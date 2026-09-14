@@ -16,6 +16,7 @@ public static class GroupEndpoints
 
         group.MapGet("/discover", DiscoverAsync).AllowAnonymous();
         group.MapGet("/mine", GetMineAsync).RequireAuthorization();
+        group.MapGet("/feed", GetFeedAsync).RequireAuthorization();
         group.MapGet("/invites/mine", GetMyInvitesAsync).RequireAuthorization();
         group.MapPost("", CreateAsync).RequireAuthorization();
         group.MapGet("/{groupId:guid}", GetAsync).AllowAnonymous();
@@ -106,6 +107,22 @@ public static class GroupEndpoints
         int limit = GroupsService.DefaultPageSize)
     {
         var result = await service.DiscoverAsync(query, cursor, limit, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetFeedAsync(
+        ClaimsPrincipal principal,
+        GroupsService service,
+        CancellationToken cancellationToken,
+        string? cursor = null,
+        int limit = GroupsService.DefaultPageSize)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await service.GetFeedAsync(actorUserId, cursor, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 

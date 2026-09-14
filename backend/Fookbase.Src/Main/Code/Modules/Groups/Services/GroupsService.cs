@@ -192,25 +192,82 @@ public sealed class GroupsService(
             where invite.InviteeUserId == actorUserId &&
                   invite.Status == GroupInviteStatus.Pending &&
                   itemGroup.DeletedAtUtc == null
-            select invite;
+            select new { Invite = invite, Group = itemGroup };
         if (cursor is not null)
         {
-            query = query.Where(invite =>
-                invite.CreatedAtUtc < cursor.CreatedAtUtc ||
-                (invite.CreatedAtUtc == cursor.CreatedAtUtc &&
-                 invite.Id.CompareTo(cursor.Id) < 0));
+            query = query.Where(item =>
+                item.Invite.CreatedAtUtc < cursor.CreatedAtUtc ||
+                (item.Invite.CreatedAtUtc == cursor.CreatedAtUtc &&
+                 item.Invite.Id.CompareTo(cursor.Id) < 0));
         }
 
         var candidates = await query
-            .OrderByDescending(invite => invite.CreatedAtUtc)
-            .ThenByDescending(invite => invite.Id)
+            .OrderByDescending(item => item.Invite.CreatedAtUtc)
+            .ThenByDescending(item => item.Invite.Id)
             .Take(limit + 1)
             .ToListAsync(cancellationToken);
         var page = candidates.Take(limit).ToList();
+        var counts = await LoadMemberCountsAsync(page.Select(item => item.Group.Id), cancellationToken);
         return ApplicationResult<GroupCursorPageResponse<GroupInviteResponse>>.Success(
             new GroupCursorPageResponse<GroupInviteResponse>(
-                page.Select(ToResponse).ToList(),
-                candidates.Count > limit ? EncodeCursor(page[^1].CreatedAtUtc, page[^1].Id) : null));
+                page.Select(item => ToResponse(
+                    item.Invite,
+                    ToResponse(item.Group, counts.GetValueOrDefault(item.Group.Id), null))).ToList(),
+                candidates.Count > limit ? EncodeCursor(page[^1].Invite.CreatedAtUtc, page[^1].Invite.Id) : null));
+    }
+
+    public async Task<ApplicationResult<GroupFeedPageResponse>> GetFeedAsync(
+        Guid actorUserId,
+        string? cursorValue,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsValidCursor(cursorValue) || !IsValidLimit(limit))
+        {
+            return InvalidPage<GroupFeedPageResponse>();
+        }
+
+        var cursor = DecodeCursorOrNull(cursorValue);
+        var blockedUserIds = (await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken)).BlockedUserIds;
+        var joinedGroupIds = dbContext.GroupMembers.AsNoTracking()
+            .Where(member => member.UserId == actorUserId)
+            .Select(member => member.GroupId);
+        var query = dbContext.Posts.AsNoTracking().Where(post =>
+            post.DeletedAtUtc == null &&
+            post.ContainerType == PostContainerType.Group &&
+            joinedGroupIds.Contains(post.ContainerId) &&
+            !blockedUserIds.Contains(post.AuthorUserId));
+        if (cursor is not null)
+        {
+            query = query.Where(post =>
+                post.CreatedAtUtc < cursor.CreatedAtUtc ||
+                (post.CreatedAtUtc == cursor.CreatedAtUtc && post.Id.CompareTo(cursor.Id) < 0));
+        }
+
+        var candidates = await query
+            .OrderByDescending(post => post.CreatedAtUtc)
+            .ThenByDescending(post => post.Id)
+            .Take(limit + 1)
+            .ToListAsync(cancellationToken);
+        var page = candidates.Take(limit).ToList();
+        var groupIds = page.Select(post => post.ContainerId).Distinct().ToArray();
+        var groups = await dbContext.Groups.AsNoTracking()
+            .Where(group => groupIds.Contains(group.Id) && group.DeletedAtUtc == null)
+            .ToDictionaryAsync(group => group.Id, cancellationToken);
+        var counts = await LoadMemberCountsAsync(groupIds, cancellationToken);
+        var roles = await dbContext.GroupMembers.AsNoTracking()
+            .Where(member => member.UserId == actorUserId && groupIds.Contains(member.GroupId))
+            .ToDictionaryAsync(member => member.GroupId, member => member.Role, cancellationToken);
+        var posts = await postsService.LoadResponsesAsync(page, actorUserId, cancellationToken);
+        var items = posts.Zip(page, (post, entity) => new { Post = post, GroupId = entity.ContainerId })
+            .Where(item => groups.ContainsKey(item.GroupId))
+            .Select(item => new GroupFeedItemResponse(
+                ToResponse(groups[item.GroupId], counts.GetValueOrDefault(item.GroupId), roles.GetValueOrDefault(item.GroupId)),
+                item.Post))
+            .ToList();
+        return ApplicationResult<GroupFeedPageResponse>.Success(new GroupFeedPageResponse(
+            items,
+            candidates.Count > limit ? EncodeCursor(page[^1]) : null));
     }
 
     public async Task<ApplicationResult<GroupResponse>> UpdateAsync(
@@ -1160,7 +1217,7 @@ public sealed class GroupsService(
             request.RespondedAtUtc,
             request.RespondedByUserId);
 
-    private static GroupInviteResponse ToResponse(GroupInvite invite) =>
+    private static GroupInviteResponse ToResponse(GroupInvite invite, GroupResponse? group = null) =>
         new(
             invite.Id,
             invite.GroupId,
@@ -1168,7 +1225,8 @@ public sealed class GroupsService(
             invite.InviteeUserId,
             invite.Status.ToString().ToLowerInvariant(),
             invite.CreatedAtUtc,
-            invite.RespondedAtUtc);
+            invite.RespondedAtUtc,
+            group);
 
     private static GroupRuleResponse ToResponse(GroupRule rule) =>
         new(rule.Id, rule.GroupId, rule.Title, rule.Description, rule.SortOrder);

@@ -2,18 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { groupsApi } from '../../api/groups'
-import type { Group, GroupInvite } from '../../api/groups'
+import type { Group, GroupFeedItem, GroupInvite } from '../../api/groups'
 import type { Post } from '../../api/posts'
 import { resolveProfileImageUrl } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import LivePostCard from '../feed/components/LivePostCard'
 
 type GroupView = 'feed' | 'discover' | 'mine'
-
-interface GroupFeedItem {
-  group: Group
-  post: Post
-}
 
 function GroupGlyph({ className = 'h-5 w-5' }: { className?: string }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3" /><path d="M5 21c.5-3.8 2.75-6 7-6s6.5 2.2 7 6M3.5 10.5a2.5 2.5 0 1 1 2.75-4.4M20.5 10.5a2.5 2.5 0 1 0-2.75-4.4" /></svg>
@@ -101,18 +96,11 @@ export default function GroupsPage() {
   const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null)
   const [requestedGroupIds, setRequestedGroupIds] = useState<ReadonlySet<string>>(() => new Set())
 
-  const loadGroupFeed = useCallback(async (joinedGroups: Group[]) => {
+  const loadGroupFeed = useCallback(async () => {
     setIsLoadingFeed(true)
     try {
-      const pages = await Promise.all(joinedGroups.slice(0, 8).map(async (group) => {
-        try {
-          const page = await groupsApi.getPosts(group.id)
-          return page.items.map((post) => ({ group, post }))
-        } catch {
-          return [] as GroupFeedItem[]
-        }
-      }))
-      setFeed(pages.flat().sort((first, second) => new Date(second.post.createdAtUtc).getTime() - new Date(first.post.createdAtUtc).getTime()))
+      const page = await groupsApi.getFeed()
+      setFeed(page.items)
     } finally {
       setIsLoadingFeed(false)
     }
@@ -132,7 +120,7 @@ export default function GroupsPage() {
       setDiscover(publicGroups.items)
       setDiscoverCursor(publicGroups.nextCursor)
       setInvites(pendingInvites.items)
-      await loadGroupFeed(myGroups.items)
+      await loadGroupFeed()
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải danh sách nhóm.')
     } finally {
@@ -255,7 +243,7 @@ export default function GroupsPage() {
 
           {activeView === 'discover' && <section><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="font-heading text-xl font-extrabold text-text">Gợi ý cho bạn</h2><p className="text-sm text-text-muted">Nhóm mà bạn có thể quan tâm.</p></div>{query && <button type="button" onClick={() => { setQuery(''); void load() }} className="border-0 bg-transparent text-sm font-semibold text-primary-light cursor-pointer">Xóa tìm kiếm</button>}</div>{isLoading ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-65 animate-pulse rounded-xl bg-surface" />)}</div> : discover.length > 0 ? <><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{discover.map((group) => <GroupCard key={group.id} group={group} onJoin={joinGroup} isJoining={joiningGroupId === group.id} isRequested={requestedGroupIds.has(group.id)} />)}</div>{discoverCursor && <button type="button" onClick={() => void loadMoreDiscover()} className="mt-5 rounded-md border-0 bg-surface-2 px-4 py-2 text-sm font-bold text-primary-light cursor-pointer">Xem thêm nhóm</button>}</> : <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-text-muted">Không tìm thấy nhóm công khai phù hợp.</div>}</section>}
 
-          {activeView === 'mine' && <section><div className="mb-4 flex items-end justify-between gap-3"><div><h2 className="font-heading text-xl font-extrabold text-text">Nhóm của bạn</h2><p className="text-sm text-text-muted">{mine.length} nhóm bạn đã tham gia hoặc quản lý.</p></div><button type="button" onClick={() => setIsCreateOpen(true)} className="hidden rounded-md border-0 bg-primary px-4 py-2 text-sm font-bold text-white sm:block cursor-pointer">Tạo nhóm mới</button></div>{invites.length > 0 && <section className="mb-6"><div className="mb-3 flex items-center justify-between"><h3 className="font-heading text-base font-bold text-text">Lời mời tham gia nhóm đang chờ ({invites.length})</h3></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{invites.map((invite) => <article key={invite.id} className="flex items-center gap-3 rounded-xl bg-surface p-3"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary-light"><GroupGlyph className="h-6 w-6" /></span><div className="min-w-0 flex-1"><p className="text-sm font-bold text-text">Lời mời tham gia nhóm</p><p className="truncate text-xs text-text-light">Được gửi gần đây</p><div className="mt-2 flex gap-2"><button type="button" onClick={() => void respondToInvite(invite, true)} className="h-8 flex-1 rounded-md border-0 bg-primary px-2 text-xs font-bold text-white cursor-pointer">Chấp nhận</button><button type="button" onClick={() => void respondToInvite(invite, false)} className="grid h-8 w-8 place-items-center rounded-md border-0 bg-surface-2 text-text-muted cursor-pointer" aria-label="Từ chối lời mời"><MoreGlyph /></button></div></div></article>)}</div></section>}{isLoading ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="h-64 animate-pulse rounded-xl bg-surface" /><div className="h-64 animate-pulse rounded-xl bg-surface" /></div> : mine.length > 0 ? <><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{mine.map((group) => <GroupCard key={group.id} group={group} />)}</div>{mineCursor && <button type="button" onClick={() => void loadMoreMine()} className="mt-5 rounded-md border-0 bg-surface-2 px-4 py-2 text-sm font-bold text-primary-light cursor-pointer">Xem thêm nhóm</button>}</> : <div className="rounded-xl border border-border bg-surface p-8 text-center"><h3 className="font-heading text-lg font-bold text-text">Bạn chưa tham gia nhóm nào</h3><button type="button" onClick={() => setActiveView('discover')} className="mt-3 border-0 bg-transparent text-sm font-bold text-primary-light cursor-pointer">Khám phá nhóm</button></div>}</section>}
+          {activeView === 'mine' && <section><div className="mb-4 flex items-end justify-between gap-3"><div><h2 className="font-heading text-xl font-extrabold text-text">Nhóm của bạn</h2><p className="text-sm text-text-muted">{mine.length} nhóm bạn đã tham gia hoặc quản lý.</p></div><button type="button" onClick={() => setIsCreateOpen(true)} className="hidden rounded-md border-0 bg-primary px-4 py-2 text-sm font-bold text-white sm:block cursor-pointer">Tạo nhóm mới</button></div>{invites.length > 0 && <section className="mb-6"><div className="mb-3 flex items-center justify-between"><h3 className="font-heading text-base font-bold text-text">Lời mời tham gia nhóm đang chờ ({invites.length})</h3></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{invites.map((invite) => <article key={invite.id} className="flex items-center gap-3 rounded-xl bg-surface p-3">{invite.group ? <GroupCover group={invite.group} className="h-12 w-12 shrink-0 rounded-lg" /> : <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary-light"><GroupGlyph className="h-6 w-6" /></span>}<div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-text">{invite.group?.name ?? 'Lời mời tham gia nhóm'}</p><p className="truncate text-xs text-text-light">{invite.group ? memberLabel(invite.group.memberCount) : 'Được gửi gần đây'}</p><div className="mt-2 flex gap-2"><button type="button" onClick={() => void respondToInvite(invite, true)} className="h-8 flex-1 rounded-md border-0 bg-primary px-2 text-xs font-bold text-white cursor-pointer">Chấp nhận</button><button type="button" onClick={() => void respondToInvite(invite, false)} className="grid h-8 w-8 place-items-center rounded-md border-0 bg-surface-2 text-text-muted cursor-pointer" aria-label="Từ chối lời mời"><MoreGlyph /></button></div></div></article>)}</div></section>}{isLoading ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="h-64 animate-pulse rounded-xl bg-surface" /><div className="h-64 animate-pulse rounded-xl bg-surface" /></div> : mine.length > 0 ? <><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{mine.map((group) => <GroupCard key={group.id} group={group} />)}</div>{mineCursor && <button type="button" onClick={() => void loadMoreMine()} className="mt-5 rounded-md border-0 bg-surface-2 px-4 py-2 text-sm font-bold text-primary-light cursor-pointer">Xem thêm nhóm</button>}</> : <div className="rounded-xl border border-border bg-surface p-8 text-center"><h3 className="font-heading text-lg font-bold text-text">Bạn chưa tham gia nhóm nào</h3><button type="button" onClick={() => setActiveView('discover')} className="mt-3 border-0 bg-transparent text-sm font-bold text-primary-light cursor-pointer">Khám phá nhóm</button></div>}</section>}
         </div>
       </main>
 

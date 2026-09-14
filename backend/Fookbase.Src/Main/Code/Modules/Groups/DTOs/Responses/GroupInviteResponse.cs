@@ -7,4 +7,5 @@ public sealed record GroupInviteResponse(
     Guid InviteeUserId,
     string Status,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? RespondedAtUtc);
+    DateTimeOffset? RespondedAtUtc,
+    GroupResponse? Group = null);

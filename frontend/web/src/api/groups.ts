@@ -50,6 +50,12 @@ export interface GroupInvite {
   status: string
   createdAtUtc: string
   respondedAtUtc: string | null
+  group: Group | null
+}
+
+export interface GroupFeedItem {
+  group: Group
+  post: Post
 }
 
 export interface CreateGroupDetails {
@@ -80,6 +86,8 @@ export const groupsApi = {
   delete: (groupId: string) => apiRequest<void>(`/api/groups/${groupId}`, { method: 'DELETE' }),
   getMine: (cursor?: string) =>
     apiRequest<CursorPage<Group>>(`/api/groups/mine?${cursorQuery(cursor)}`),
+  getFeed: (cursor?: string) =>
+    apiRequest<CursorPage<GroupFeedItem>>(`/api/groups/feed?${cursorQuery(cursor)}`),
   getMyInvites: (cursor?: string) =>
     apiRequest<CursorPage<GroupInvite>>(`/api/groups/invites/mine?${cursorQuery(cursor)}`),
   discover: (queryText = '', cursor?: string) => {
