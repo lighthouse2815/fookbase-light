@@ -209,7 +209,7 @@ export default function TopNavbar() {
         </form>
       </div>
 
-      <nav aria-label="Điều hướng chính" className="flex flex-1 items-center justify-center gap-1 self-stretch px-2 max-w-[600px] mx-auto max-lg:w-full max-lg:max-w-[680px]">
+      <nav aria-label="Điều hướng chính" className="flex flex-1 items-center justify-center gap-1 self-stretch px-2 max-w-[680px] mx-auto max-lg:w-full">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
