@@ -12,6 +12,7 @@ using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Photos.Entities;
+using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -366,6 +367,44 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
 
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/albums/{profilePicturesAlbumId}/media/{avatar}")).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/media/{avatar}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Changing_avatar_or_cover_creates_a_profile_media_post_once()
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        var avatar = await CreateReadyImageAsync(user.Id);
+        var cover = await CreateReadyImageAsync(user.Id);
+        using var client = CreateAuthenticatedClient(user.Id);
+
+        Assert.Equal(HttpStatusCode.OK, (await client.PatchAsJsonAsync(
+            "/api/users/me",
+            new UpdateUserProfileRequest(null, null, null, null, avatar, cover))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PatchAsJsonAsync(
+            "/api/users/me",
+            new UpdateUserProfileRequest(null, null, null, null, avatar, cover))).StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var posts = await db.Posts.AsNoTracking()
+            .Where(post => post.AuthorUserId == user.Id)
+            .ToListAsync();
+
+        Assert.Collection(
+            posts.OrderBy(post => post.Content),
+            post =>
+            {
+                Assert.Equal("đã cập nhật ảnh bìa.", post.Content);
+                Assert.Equal(PostPrivacy.Public, post.Privacy);
+                Assert.True(db.PostMedia.Any(media => media.PostId == post.Id && media.MediaId == cover));
+            },
+            post =>
+            {
+                Assert.Equal("đã cập nhật ảnh đại diện.", post.Content);
+                Assert.Equal(PostPrivacy.Public, post.Privacy);
+                Assert.True(db.PostMedia.Any(media => media.PostId == post.Id && media.MediaId == avatar));
+            });
     }
 
     private async Task<bool> EnsureProfileAsync(UserSeed user)

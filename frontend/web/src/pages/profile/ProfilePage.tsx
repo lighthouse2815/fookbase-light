@@ -451,6 +451,10 @@ export default function ProfilePage() {
         kind === 'avatar' ? { avatarMediaId: mediaId } : { coverMediaId: mediaId },
       )
       setProfile(updatedProfile)
+      await Promise.all([
+        loadProfilePosts(updatedProfile.userId),
+        loadProfilePhotos(updatedProfile.userId),
+      ])
     } catch (error) {
       setProfileError(error instanceof ApiError ? error.message : t('unableUpdateProfilePhoto'))
     } finally {

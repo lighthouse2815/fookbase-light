@@ -7,6 +7,7 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Photos.Services;
+using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Services;
@@ -15,9 +16,14 @@ public sealed class UserProfileService(
     FookbaseDbContext dbContext,
     MediaService mediaService,
     PhotosService photosService,
+    PostsService postsService,
+    SocialInteractionsService socialInteractionsService,
+    UserPrivacySettingsService privacySettingsService,
     TimeProvider timeProvider)
 {
     private const int MaximumSearchLimit = 50;
+    private const string AvatarUpdatedPostContent = "đã cập nhật ảnh đại diện.";
+    private const string CoverUpdatedPostContent = "đã cập nhật ảnh bìa.";
 
     public async Task EnsureCreatedAsync(
         Guid userId,
@@ -133,6 +139,10 @@ public sealed class UserProfileService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
+            var avatarChanged = request.AvatarMediaId is { } requestedAvatarMediaId &&
+                requestedAvatarMediaId != profile.AvatarMediaId;
+            var coverChanged = request.CoverMediaId is { } requestedCoverMediaId &&
+                requestedCoverMediaId != profile.CoverMediaId;
             var avatarMediaId = request.AvatarMediaId ?? profile.AvatarMediaId;
             var coverMediaId = request.CoverMediaId ?? profile.CoverMediaId;
             await mediaService.SynchronizeProfileReferencesAsync(
@@ -162,6 +172,16 @@ public sealed class UserProfileService(
             {
                 await photosService.AddSystemMediaAsync(userId, PhotoAlbumType.CoverPhotos, request.CoverMediaId.Value, cancellationToken);
             }
+            if (avatarChanged)
+            {
+                await CreateProfileMediaPostAsync(
+                    userId, AvatarUpdatedPostContent, request.AvatarMediaId!.Value, cancellationToken);
+            }
+            if (coverChanged)
+            {
+                await CreateProfileMediaPostAsync(
+                    userId, CoverUpdatedPostContent, request.CoverMediaId!.Value, cancellationToken);
+            }
             await transaction.CommitAsync(cancellationToken);
         }
         catch
@@ -171,6 +191,31 @@ public sealed class UserProfileService(
         }
 
         return await GetAsync(userId, userId, cancellationToken);
+    }
+
+    private async Task CreateProfileMediaPostAsync(
+        Guid userId,
+        string content,
+        Guid mediaId,
+        CancellationToken cancellationToken)
+    {
+        var privacy = await privacySettingsService.GetDefaultPostPrivacyAsync(userId, cancellationToken);
+        var created = await postsService.CreatePostCoreAsync(
+            userId, content, privacy, [mediaId], cancellationToken);
+        if (!created.Succeeded)
+        {
+            throw new InvalidOperationException("The profile media post could not be created.");
+        }
+
+        var references = await mediaService.SynchronizePostReferencesAsync(
+            userId, created.Value!.Id, [mediaId], cancellationToken);
+        if (!references.Succeeded)
+        {
+            throw new InvalidOperationException("The profile media post references could not be synchronized.");
+        }
+
+        await socialInteractionsService.SynchronizePostMetadataAsync(
+            created.Value.Id, userId, cancellationToken);
     }
 
     public async Task<Guid?> GetAvatarMediaIdAsync(
