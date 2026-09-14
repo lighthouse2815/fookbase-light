@@ -3,7 +3,8 @@ set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 migrations_directory="${repository_root}/backend/Fookbase.Src/Main/Code/Persistence/Migrations"
-now="$(date +%Y%m%d%H%M%S)"
+migration_time_zone="${MIGRATION_TIME_ZONE:-Asia/Ho_Chi_Minh}"
+now="$(TZ="${migration_time_zone}" date +%Y%m%d%H%M%S)"
 
 mapfile -t migration_ids < <(find "${migrations_directory}" -maxdepth 1 -type f \
   -name '*.cs' ! -name '*.Designer.cs' -printf '%f\n' | \

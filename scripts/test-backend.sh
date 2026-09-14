@@ -37,7 +37,7 @@ run_project() {
 
   create_database "${database_name}"
   printf 'RUN  %s\n' "${label}"
-  docker run --rm \
+  if ! docker run --rm \
     --network "container:${database_container}" \
     --user "${host_user}" \
     --env DOTNET_CLI_HOME=/tmp \
@@ -46,7 +46,9 @@ run_project() {
     --volume "${repository_root}:/workspace" \
     --workdir /workspace \
     mcr.microsoft.com/dotnet/sdk:10.0 \
-    dotnet test "${project}" --logger 'console;verbosity=minimal'
+    dotnet test "${project}" --logger 'console;verbosity=minimal'; then
+    return 1
+  fi
   printf 'PASS %s\n' "${label}"
 }
 

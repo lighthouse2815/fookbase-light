@@ -688,8 +688,9 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
 
         Assert.Equal(5, small.Items.Count);
         Assert.Equal(50, large.Items.Count);
-        Assert.InRange(smallCount, 1, 40);
-        Assert.InRange(largeCount, 1, 40);
+        // Ranking V2 adds a fixed interaction/engagement aggregate batch; the cap still guards against per-item SQL.
+        Assert.InRange(smallCount, 1, 45);
+        Assert.InRange(largeCount, 1, 45);
         Assert.True(largeCount <= smallCount + 6,
             $"SQL command count grew from {smallCount} for 5 items to {largeCount} for 50 items.");
         Assert.True(watch.Elapsed < TimeSpan.FromSeconds(15), $"A mixed Feed page took {watch.Elapsed}.");

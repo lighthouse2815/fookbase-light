@@ -1,5 +1,7 @@
 # EF Core migration history
 
+`scripts/check-migrations.sh` validates generated migration timestamps in the repository convention, `Asia/Ho_Chi_Minh`; set `MIGRATION_TIME_ZONE` only when a controlled migration workflow uses another timezone.
+
 Only one migration source is active at runtime:
 
 ```text
