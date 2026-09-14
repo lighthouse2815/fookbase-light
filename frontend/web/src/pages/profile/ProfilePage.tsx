@@ -509,11 +509,13 @@ export default function ProfilePage() {
       {/* ── Top Section: Cover + Header + Tabs ─────────────────────── */}
       <div className="bg-surface border-b border-border shadow-sm">
         {/* 1. Cover photo area: Full-width dark gradient banner */}
-        <div className="relative mx-auto h-[260px] w-full max-w-[1120px] overflow-hidden rounded-b-2xl bg-gradient-to-b from-surface-3 via-surface-2 to-surface-3 sm:h-[300px] md:h-[340px]">
-          {profile?.coverUrl && <img src={resolveProfileImageUrl(profile.coverUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-          {/* Subtle dark texture overlay */}
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3e4042_1px,transparent_1px)] [background-size:16px_16px]" />
-          <div className="absolute inset-0 bg-gradient-to-t from-surface/50 via-transparent to-transparent" />
+        <div className="relative mx-auto h-[260px] w-full max-w-[1120px] sm:h-[300px] md:h-[340px]">
+          <div className="absolute inset-0 overflow-hidden rounded-b-2xl bg-gradient-to-b from-surface-3 via-surface-2 to-surface-3">
+            {profile?.coverUrl && <img src={resolveProfileImageUrl(profile.coverUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+            {/* Subtle dark texture overlay */}
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3e4042_1px,transparent_1px)] [background-size:16px_16px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface/50 via-transparent to-transparent" />
+          </div>
 
           {/* 2. Avatar: Large circle overlapping the bottom of cover photo */}
           <div className="absolute -bottom-[84px] left-1/2 -translate-x-1/2 md:translate-x-0 md:left-8 z-20">
