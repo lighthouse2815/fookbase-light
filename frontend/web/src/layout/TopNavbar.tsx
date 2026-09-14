@@ -68,6 +68,7 @@ export default function TopNavbar() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all')
   const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false)
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
@@ -189,8 +190,14 @@ export default function TopNavbar() {
   }
 
   const visibleNotifications = notificationFilter === 'unread'
-    ? notifications.filter((notification) => !notification.isRead)
-    : notifications
+    ? notifications.filter((notification) => !notification.isRead && !dismissedNotificationIds.has(notification.id))
+    : notifications.filter((notification) => !dismissedNotificationIds.has(notification.id))
+
+  const markAllNotificationsReadAndDismiss = () => {
+    setDismissedNotificationIds((current) => new Set([...current, ...notifications.map((notification) => notification.id)]))
+    markAllNotificationsRead()
+    setIsNotificationMenuOpen(false)
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center px-4 z-50">
@@ -292,7 +299,7 @@ export default function TopNavbar() {
           </button>
           {isNotificationsOpen && (
             <div className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
-              <div className="relative flex items-center justify-between px-4 pt-3"><h2 className="font-heading text-2xl font-bold text-text">{t('notifications')}</h2><button type="button" onClick={() => setIsNotificationMenuOpen((current) => !current)} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-xl text-text-muted cursor-pointer hover:bg-surface-2" title="Tùy chọn thông báo" aria-label="Tùy chọn thông báo" aria-expanded={isNotificationMenuOpen}>•••</button>{isNotificationMenuOpen && <div className="absolute right-4 top-12 z-10 w-56 rounded-xl border border-border bg-surface p-2 shadow-xl"><button type="button" onClick={() => { markAllNotificationsRead(); setIsNotificationMenuOpen(false) }} disabled={unreadNotificationCount === 0} className="w-full rounded-lg border-0 bg-transparent px-3 py-2 text-left text-sm font-semibold text-text cursor-pointer hover:bg-surface-2 disabled:cursor-default disabled:opacity-50">Đánh dấu tất cả là đã đọc</button></div>}</div>
+              <div className="relative flex items-center justify-between px-4 pt-3"><h2 className="font-heading text-2xl font-bold text-text">{t('notifications')}</h2><button type="button" onClick={() => setIsNotificationMenuOpen((current) => !current)} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-xl text-text-muted cursor-pointer hover:bg-surface-2" title="Tùy chọn thông báo" aria-label="Tùy chọn thông báo" aria-expanded={isNotificationMenuOpen}>•••</button>{isNotificationMenuOpen && <div className="absolute right-4 top-12 z-10 w-56 rounded-xl border border-border bg-surface p-2 shadow-xl"><button type="button" onClick={markAllNotificationsReadAndDismiss} disabled={unreadNotificationCount === 0} className="w-full rounded-lg border-0 bg-transparent px-3 py-2 text-left text-sm font-semibold text-text cursor-pointer hover:bg-surface-2 disabled:cursor-default disabled:opacity-50">Đánh dấu tất cả là đã đọc</button></div>}</div>
               <div className="flex gap-2 px-4 pb-3 pt-2">
                 <button type="button" onClick={() => setNotificationFilter('all')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'all' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Tất cả</button>
                 <button type="button" onClick={() => setNotificationFilter('unread')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'unread' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Chưa đọc</button>
