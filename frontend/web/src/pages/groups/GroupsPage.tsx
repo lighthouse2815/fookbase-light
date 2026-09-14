@@ -83,10 +83,12 @@ export default function GroupsPage() {
   const [discoverCursor, setDiscoverCursor] = useState<string | null>(null)
   const [invites, setInvites] = useState<GroupInvite[]>([])
   const [feed, setFeed] = useState<GroupFeedItem[]>([])
+  const [feedCursor, setFeedCursor] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [sidebarQuery, setSidebarQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingFeed, setIsLoadingFeed] = useState(true)
+  const [isLoadingMoreFeed, setIsLoadingMoreFeed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [name, setName] = useState('')
@@ -101,6 +103,7 @@ export default function GroupsPage() {
     try {
       const page = await groupsApi.getFeed()
       setFeed(page.items)
+      setFeedCursor(page.nextCursor)
     } finally {
       setIsLoadingFeed(false)
     }
@@ -194,6 +197,20 @@ export default function GroupsPage() {
     }
   }
 
+  const loadMoreFeed = async () => {
+    if (!feedCursor || isLoadingMoreFeed) return
+    setIsLoadingMoreFeed(true)
+    try {
+      const page = await groupsApi.getFeed(feedCursor)
+      setFeed((current) => [...current, ...page.items.filter((item) => !current.some((existing) => existing.post.id === item.post.id))])
+      setFeedCursor(page.nextCursor)
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải thêm hoạt động nhóm.')
+    } finally {
+      setIsLoadingMoreFeed(false)
+    }
+  }
+
   const respondToInvite = async (invite: GroupInvite, accept: boolean) => {
     try {
       if (accept) {
@@ -239,7 +256,7 @@ export default function GroupsPage() {
 
           {error && <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-[#ff9aaa]"><span>{error}</span><button type="button" onClick={() => void load(query)} className="border-0 bg-transparent text-xs font-bold text-inherit underline cursor-pointer">Thử lại</button></div>}
 
-          {activeView === 'feed' && <section className="mx-auto max-w-[680px]"><div className="mb-3 px-1"><h2 className="text-base font-bold text-text">Hoạt động mới đây</h2><p className="text-xs text-text-light">Bài viết mới từ các nhóm bạn đã tham gia.</p></div>{isLoadingFeed || isLoading ? <div className="flex flex-col gap-4"><div className="h-64 animate-pulse rounded-xl bg-surface" /><div className="h-52 animate-pulse rounded-xl bg-surface" /></div> : feed.length > 0 ? <div className="flex flex-col gap-4">{feed.map(({ group, post }) => <LivePostCard key={post.id} post={post} group={{ id: group.id, name: group.name }} currentUserId={session!.user.id} onPostUpdated={updateFeedPost} onPostDeleted={(postId) => setFeed((current) => current.filter((item) => item.post.id !== postId))} />)}</div> : <div className="rounded-xl border border-border bg-surface p-8 text-center"><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-primary-light"><FeedGlyph className="h-6 w-6" /></span><h3 className="mt-3 font-heading text-lg font-bold text-text">Chưa có hoạt động mới</h3><p className="mx-auto mt-1 max-w-sm text-sm text-text-muted">Khám phá thêm nhóm để cập nhật những cuộc trò chuyện mới nhất trên bảng feed của bạn.</p><button type="button" onClick={() => setActiveView('discover')} className="mt-4 rounded-md border-0 bg-primary px-4 py-2 text-sm font-bold text-white cursor-pointer">Khám phá nhóm</button></div>}</section>}
+          {activeView === 'feed' && <section className="mx-auto max-w-[680px]"><div className="mb-3 px-1"><h2 className="text-base font-bold text-text">Hoạt động mới đây</h2><p className="text-xs text-text-light">Bài viết mới từ các nhóm bạn đã tham gia.</p></div>{isLoadingFeed || isLoading ? <div className="flex flex-col gap-4"><div className="h-64 animate-pulse rounded-xl bg-surface" /><div className="h-52 animate-pulse rounded-xl bg-surface" /></div> : feed.length > 0 ? <><div className="flex flex-col gap-4">{feed.map(({ group, post }) => <LivePostCard key={post.id} post={post} group={{ id: group.id, name: group.name }} currentUserId={session!.user.id} onPostUpdated={updateFeedPost} onPostDeleted={(postId) => setFeed((current) => current.filter((item) => item.post.id !== postId))} />)}</div>{feedCursor && <div className="mt-4 text-center"><button type="button" disabled={isLoadingMoreFeed} onClick={() => void loadMoreFeed()} className="rounded-md border-0 bg-surface-2 px-4 py-2 text-sm font-bold text-primary-light cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">{isLoadingMoreFeed ? 'Đang tải thêm…' : 'Xem thêm hoạt động'}</button></div>}</> : <div className="rounded-xl border border-border bg-surface p-8 text-center"><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-primary-light"><FeedGlyph className="h-6 w-6" /></span><h3 className="mt-3 font-heading text-lg font-bold text-text">Chưa có hoạt động mới</h3><p className="mx-auto mt-1 max-w-sm text-sm text-text-muted">Khám phá thêm nhóm để cập nhật những cuộc trò chuyện mới nhất trên bảng feed của bạn.</p><button type="button" onClick={() => setActiveView('discover')} className="mt-4 rounded-md border-0 bg-primary px-4 py-2 text-sm font-bold text-white cursor-pointer">Khám phá nhóm</button></div>}</section>}
 
           {activeView === 'discover' && <section><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="font-heading text-xl font-extrabold text-text">Gợi ý cho bạn</h2><p className="text-sm text-text-muted">Nhóm mà bạn có thể quan tâm.</p></div>{query && <button type="button" onClick={() => { setQuery(''); void load() }} className="border-0 bg-transparent text-sm font-semibold text-primary-light cursor-pointer">Xóa tìm kiếm</button>}</div>{isLoading ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-65 animate-pulse rounded-xl bg-surface" />)}</div> : discover.length > 0 ? <><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{discover.map((group) => <GroupCard key={group.id} group={group} onJoin={joinGroup} isJoining={joiningGroupId === group.id} isRequested={requestedGroupIds.has(group.id)} />)}</div>{discoverCursor && <button type="button" onClick={() => void loadMoreDiscover()} className="mt-5 rounded-md border-0 bg-surface-2 px-4 py-2 text-sm font-bold text-primary-light cursor-pointer">Xem thêm nhóm</button>}</> : <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-text-muted">Không tìm thấy nhóm công khai phù hợp.</div>}</section>}
 
