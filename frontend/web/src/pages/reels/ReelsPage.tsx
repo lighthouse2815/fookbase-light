@@ -3,19 +3,20 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { mediaApi, type Media } from '../../api/media'
 import { postsApi, type Comment } from '../../api/posts'
-import { reelsApi, type Reel } from '../../api/reels'
+import { reelsApi, type Reel, type ReelFeedMode } from '../../api/reels'
+import { usersApi } from '../../api/users'
 import TextWithReferences from '../../shared/components/TextWithReferences'
 import ShareDialog from '../feed/components/ShareDialog'
 
 const supportedVideoTypes = new Set(['video/mp4', 'video/webm'])
 const maximumVideoBytes = 500 * 1024 * 1024
 
-function ReelsSidebar({ onCreate }: { onCreate: () => void }) {
+function ReelsSidebar({ activeMode, onCreate, onSelectMode }: { activeMode: ReelFeedMode; onCreate: () => void; onSelectMode: (mode: ReelFeedMode) => void }) {
   return <aside className="absolute inset-y-0 left-0 z-20 hidden w-48 border-r border-white/10 bg-black px-3 py-2 lg:flex lg:flex-col">
     <h1 className="px-1 text-xl font-bold text-white">Reels</h1>
     <nav className="mt-1 flex flex-col gap-1" aria-label="Điều hướng Reels">
-      <button type="button" className="flex h-9 items-center gap-3 rounded-md border-0 bg-[#27292d] px-2.5 text-sm font-semibold text-white cursor-pointer"><span aria-hidden="true">★</span>Dành cho bạn</button>
-      <button type="button" className="flex h-9 items-center gap-3 rounded-md border-0 bg-transparent px-2.5 text-sm font-semibold text-white/70 hover:bg-white/10 cursor-pointer"><span aria-hidden="true">▣</span>Đang theo dõi</button>
+      <button type="button" onClick={() => onSelectMode('forYou')} className={'flex h-9 items-center gap-3 rounded-md border-0 px-2.5 text-sm font-semibold cursor-pointer ' + (activeMode === 'forYou' ? 'bg-[#27292d] text-white' : 'bg-transparent text-white/70 hover:bg-white/10')}><span aria-hidden="true">★</span>Dành cho bạn</button>
+      <button type="button" onClick={() => onSelectMode('following')} className={'flex h-9 items-center gap-3 rounded-md border-0 px-2.5 text-sm font-semibold cursor-pointer ' + (activeMode === 'following' ? 'bg-[#27292d] text-white' : 'bg-transparent text-white/70 hover:bg-white/10')}><span aria-hidden="true">▣</span>Đang theo dõi</button>
       <Link to="/profile" className="flex h-9 items-center gap-3 rounded-md px-2.5 text-sm font-semibold text-white/70 no-underline hover:bg-white/10"><span aria-hidden="true">◎</span>Trang cá nhân</Link>
     </nav>
     <button type="button" onClick={onCreate} className="mt-4 rounded-md border-0 bg-primary px-3 py-2 text-sm font-bold text-white cursor-pointer">＋ Tạo Reel</button>
@@ -35,6 +36,7 @@ export default function ReelsPage() {
   const [reels, setReels] = useState<Reel[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [feedMode, setFeedMode] = useState<ReelFeedMode>('forYou')
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,7 +50,7 @@ export default function ReelsPage() {
     try {
       const page = requestedReelId && !cursor
         ? { items: [await reelsApi.get(requestedReelId)], nextCursor: null }
-        : await reelsApi.getFeed(cursor)
+        : await reelsApi.getFeed(feedMode, cursor)
       setReels((current) => append
         ? [...current, ...page.items.filter((item) => !current.some((reel) => reel.id === item.id))]
         : page.items)
@@ -59,7 +61,7 @@ export default function ReelsPage() {
       if (append) setIsLoadingMore(false)
       else setIsLoading(false)
     }
-  }, [requestedReelId])
+  }, [feedMode, requestedReelId])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)
@@ -79,7 +81,7 @@ export default function ReelsPage() {
 
   return (
     <div className="relative h-[calc(100vh-56px)] overflow-hidden bg-black">
-      <ReelsSidebar onCreate={() => setIsCreateOpen(true)} />
+      <ReelsSidebar activeMode={feedMode} onCreate={() => setIsCreateOpen(true)} onSelectMode={(mode) => { if (mode !== feedMode) { setActiveIndex(0); setFeedMode(mode) } }} />
       <div ref={listRef} className="h-full snap-y snap-mandatory overflow-y-auto scroll-smooth lg:pl-18">
         {isLoading && <div className="grid h-full place-items-center text-sm text-text-muted">Đang tải Reels…</div>}
         {error && <div className="grid h-full place-items-center p-6"><div className="max-w-md rounded-xl border border-[#e41e3f]/40 bg-[#e41e3f]/10 p-4 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void load()} className="mt-3 rounded-lg bg-primary px-3 py-2 text-white">Thử lại</button></div></div>}
@@ -130,9 +132,10 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
   const [hasRecordedCompletion, setHasRecordedCompletion] = useState(false)
   const [isSavingComment, setIsSavingComment] = useState(false)
   const [currentMs, setCurrentMs] = useState(0)
-  const [isSaved, setIsSaved] = useState(false)
+  const [isSaved, setIsSaved] = useState(reel.viewerHasSaved)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const [isFollowingAuthor, setIsFollowingAuthor] = useState(false)
 
   useEffect(() => {
     const card = cardRef.current
@@ -203,6 +206,16 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
     }
   }
 
+  const followAuthor = async () => {
+    if (isFollowingAuthor) return
+    try {
+      await usersApi.follow(reel.author.userId)
+      setIsFollowingAuthor(true)
+    } catch {
+      // The follow action can be retried without interrupting playback.
+    }
+  }
+
   const submitComment = async () => {
     const content = commentText.trim()
     if (!content || isSavingComment) return
@@ -242,7 +255,7 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
         <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/95 via-black/55 to-transparent px-4 pb-3 pt-24 text-white pointer-events-none">
           <div className="flex items-end gap-3 pointer-events-auto">
             <div className="h-10 w-10 shrink-0 rounded-full bg-primary text-center text-xs font-bold leading-10">{initial}</div>
-            <div className="min-w-0 flex-1"><p className="font-semibold">{reel.author.displayName} <button type="button" className="ml-1 rounded border border-white/60 bg-transparent px-1.5 py-0.5 text-[11px] font-bold text-white cursor-pointer">Theo dõi</button></p>{reel.caption && <TextWithReferences content={reel.caption} mentions={reel.mentions} className="mt-1 whitespace-pre-wrap text-sm leading-relaxed" />}<p className="mt-2 text-xs text-white/70">{reel.viewCount.toLocaleString()} lượt xem</p></div>
+            <div className="min-w-0 flex-1"><p className="font-semibold">{reel.author.displayName} <button type="button" onClick={() => void followAuthor()} disabled={isFollowingAuthor} className="ml-1 rounded border border-white/60 bg-transparent px-1.5 py-0.5 text-[11px] font-bold text-white cursor-pointer disabled:opacity-70">{isFollowingAuthor ? 'Đã theo dõi' : 'Theo dõi'}</button></p>{reel.caption && <TextWithReferences content={reel.caption} mentions={reel.mentions} className="mt-1 whitespace-pre-wrap text-sm leading-relaxed" />}<p className="mt-2 text-xs text-white/70">{reel.viewCount.toLocaleString()} lượt xem</p></div>
           </div>
           <input aria-label="Tiến trình Reel" type="range" min="0" max={reel.video.durationMs} value={Math.min(currentMs, reel.video.durationMs)} onChange={(event) => { const next = Number(event.target.value); if (videoRef.current) videoRef.current.currentTime = next / 1000; setCurrentMs(next) }} className="mt-3 w-full accent-primary pointer-events-auto" />
         </div>

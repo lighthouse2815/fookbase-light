@@ -26,7 +26,10 @@ export interface Reel extends Omit<Post, 'authorUserId' | 'content' | 'mediaIds'
   reactionCount: number
   viewCount: number
   completionCount: number
+  viewerHasSaved: boolean
 }
+
+export type ReelFeedMode = 'forYou' | 'following'
 
 export interface ReelPage {
   items: Reel[]
@@ -43,8 +46,9 @@ export const reelsApi = {
   create: (details: CreateReelDetails) =>
     apiRequest<Reel>('/api/reels', { method: 'POST', body: JSON.stringify(details) }),
   get: (reelId: string) => apiRequest<Reel>(`/api/reels/${reelId}`),
-  getFeed: (cursor?: string, limit = 20) => {
+  getFeed: (mode: ReelFeedMode = 'forYou', cursor?: string, limit = 20) => {
     const query = new URLSearchParams({ limit: String(limit) })
+    query.set('mode', mode)
     if (cursor) query.set('cursor', cursor)
     return apiRequest<ReelPage>('/api/reels?' + query.toString())
   },

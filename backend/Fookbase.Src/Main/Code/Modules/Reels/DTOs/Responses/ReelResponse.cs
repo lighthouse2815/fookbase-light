@@ -31,4 +31,5 @@ public sealed record ReelResponse(
     string? ViewerReaction,
     long ViewCount,
     long CompletionCount,
+    bool ViewerHasSaved,
     IReadOnlyList<ContentMentionResponse>? Mentions = null);

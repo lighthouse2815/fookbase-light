@@ -102,6 +102,7 @@ public sealed class ReelsService(
 
     public async Task<ApplicationResult<ReelPageResponse>> GetFeedAsync(
         Guid viewerUserId,
+        string? mode,
         string? cursorValue,
         int limit,
         CancellationToken cancellationToken = default)
@@ -110,6 +111,12 @@ public sealed class ReelsService(
         {
             return Validation<ReelPageResponse>("invalid_pagination",
                 $"Limit must be between 1 and {MaximumPageSize}.");
+        }
+
+        if (!TryParseFeedMode(mode, out var feedMode))
+        {
+            return Validation<ReelPageResponse>("invalid_reel_feed_mode",
+                "Reel feed mode must be forYou or following.");
         }
 
         ReelCursor? cursor;
@@ -126,6 +133,13 @@ public sealed class ReelsService(
         var query = ReelMediaQuery.ApplyReadyMedia(
             PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer), dbContext)
             .Where(post => post.PostType == PostType.Reel);
+        if (feedMode == ReelFeedMode.Following)
+        {
+            var followingUserIds = dbContext.UserFollows.AsNoTracking()
+                .Where(follow => follow.FollowerUserId == viewerUserId)
+                .Select(follow => follow.FollowingUserId);
+            query = query.Where(post => followingUserIds.Contains(post.AuthorUserId));
+        }
         if (cursor is not null)
         {
             query = query.Where(post =>
@@ -283,6 +297,13 @@ public sealed class ReelsService(
                     reaction => reaction.PostId,
                     reaction => reaction.Type.ToString().ToLowerInvariant(),
                     cancellationToken);
+        var savedReelIds = viewerUserId is null
+            ? new HashSet<Guid>()
+            : (await dbContext.PostSaves.AsNoTracking()
+                .Where(save => save.UserId == viewerUserId.Value && reelIds.Contains(save.PostId))
+                .Select(save => save.PostId)
+                .ToListAsync(cancellationToken))
+                .ToHashSet();
         var mentionRows = await dbContext.ContentMentions.AsNoTracking()
             .Where(mention => mention.SourceType == MentionSourceType.Post && reelIds.Contains(mention.SourceId))
             .Select(mention => new MentionRow(
@@ -343,6 +364,7 @@ public sealed class ReelsService(
                 viewerReactions.GetValueOrDefault(reel.Id),
                 views?.ViewCount ?? 0,
                 views?.CompletionCount ?? 0,
+                savedReelIds.Contains(reel.Id),
                 mentionRows
                     .Where(mention => mention.SourceId == reel.Id && mentionedProfiles.ContainsKey(mention.UserId))
                     .OrderBy(mention => mention.StartIndex)
@@ -393,6 +415,19 @@ public sealed class ReelsService(
 
     private static bool TryParsePrivacy(string privacy, out PostPrivacy parsedPrivacy) =>
         Enum.TryParse(privacy, true, out parsedPrivacy) && Enum.IsDefined(parsedPrivacy);
+
+    private static bool TryParseFeedMode(string? value, out ReelFeedMode mode)
+    {
+        mode = value?.ToLowerInvariant() switch
+        {
+            null or "" or "foryou" => ReelFeedMode.ForYou,
+            "following" => ReelFeedMode.Following,
+            _ => default,
+        };
+        return string.IsNullOrWhiteSpace(value) ||
+            string.Equals(value, "forYou", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "following", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static string PrivacyName(PostPrivacy privacy) => privacy switch
     {
@@ -459,4 +494,5 @@ public sealed class ReelsService(
     private sealed record ReactionRow(Guid PostId, ReactionType Type, int Count);
     private sealed record ViewCountRow(Guid ReelPostId, long ViewCount, long CompletionCount);
     private sealed record MentionRow(Guid SourceId, Guid UserId, int StartIndex, int Length);
+    private enum ReelFeedMode { ForYou, Following }
 }

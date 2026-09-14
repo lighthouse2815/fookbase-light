@@ -31,10 +31,11 @@ public static class ReelEndpoints
     }
 
     private static async Task<IResult> GetFeedAsync(ClaimsPrincipal principal, ReelsService service,
-        CancellationToken cancellationToken, string? cursor = null, int limit = ReelsService.DefaultPageSize)
+        CancellationToken cancellationToken, string? mode = null, string? cursor = null,
+        int limit = ReelsService.DefaultPageSize)
     {
         if (!TryGetActorUserId(principal, out var actorUserId)) return Results.Unauthorized();
-        var result = await service.GetFeedAsync(actorUserId, cursor, limit, cancellationToken);
+        var result = await service.GetFeedAsync(actorUserId, mode, cursor, limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
