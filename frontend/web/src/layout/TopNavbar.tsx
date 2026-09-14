@@ -128,28 +128,28 @@ export default function TopNavbar() {
   useEffect(() => {
     if (!isNotificationsOpen) return
 
-    const closeNotificationsWhenClickingOutside = (event: MouseEvent) => {
+    const closeNotificationsWhenClickingOutside = (event: PointerEvent) => {
       if (!notificationDropdownRef.current?.contains(event.target as Node)) {
         setIsNotificationsOpen(false)
         setIsNotificationMenuOpen(false)
       }
     }
 
-    window.addEventListener('click', closeNotificationsWhenClickingOutside)
-    return () => window.removeEventListener('click', closeNotificationsWhenClickingOutside)
+    document.addEventListener('pointerdown', closeNotificationsWhenClickingOutside, true)
+    return () => document.removeEventListener('pointerdown', closeNotificationsWhenClickingOutside, true)
   }, [isNotificationsOpen])
 
   useEffect(() => {
     if (!isMenuOpen) return
 
-    const closeMenuWhenClickingOutside = (event: MouseEvent) => {
+    const closeMenuWhenClickingOutside = (event: PointerEvent) => {
       if (!menuDropdownRef.current?.contains(event.target as Node)) {
         setIsMenuOpen(false)
       }
     }
 
-    window.addEventListener('click', closeMenuWhenClickingOutside)
-    return () => window.removeEventListener('click', closeMenuWhenClickingOutside)
+    document.addEventListener('pointerdown', closeMenuWhenClickingOutside, true)
+    return () => document.removeEventListener('pointerdown', closeMenuWhenClickingOutside, true)
   }, [isMenuOpen])
 
   const hasSuggestions = Boolean(suggestions &&
