@@ -3,9 +3,12 @@ import { useAuth } from '../auth/useAuth'
 import TopNavbar from './TopNavbar'
 import Sidebar from './Sidebar'
 
+const sidebarPaths = new Set(['/feed', '/explore', '/saved', '/memories', '/reels', '/games'])
+
 export default function MainLayout() {
   const location = useLocation()
   const { session } = useAuth()
+  const shouldShowSidebar = sidebarPaths.has(location.pathname)
 
   if (!session) return <Navigate to="/login" replace />
 
@@ -16,13 +19,12 @@ export default function MainLayout() {
 
       {/* Body: Sidebar + Main Content */}
       <div className="flex mt-14 min-h-[calc(100vh-56px)]">
-        {/* Sidebar */}
-        <Sidebar />
+        {shouldShowSidebar && <Sidebar />}
 
         {/* Main content */}
         <main
           key={location.pathname}
-          className="ml-[360px] min-h-full flex-1 max-xl:ml-0"
+          className={shouldShowSidebar ? 'ml-[360px] min-h-full flex-1 max-xl:ml-0' : 'min-h-full flex-1'}
           style={{ animation: 'fade-in 0.25s ease both' }}
         >
           <Outlet />
