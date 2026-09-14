@@ -72,6 +72,7 @@ export default function TopNavbar() {
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const menuDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
   const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
@@ -137,6 +138,19 @@ export default function TopNavbar() {
     window.addEventListener('click', closeNotificationsWhenClickingOutside)
     return () => window.removeEventListener('click', closeNotificationsWhenClickingOutside)
   }, [isNotificationsOpen])
+
+  useEffect(() => {
+    if (!isMenuOpen) return
+
+    const closeMenuWhenClickingOutside = (event: MouseEvent) => {
+      if (!menuDropdownRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('click', closeMenuWhenClickingOutside)
+    return () => window.removeEventListener('click', closeMenuWhenClickingOutside)
+  }, [isMenuOpen])
 
   const hasSuggestions = Boolean(suggestions &&
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
@@ -272,7 +286,7 @@ export default function TopNavbar() {
       </nav>
 
       <div className="flex items-center gap-2 w-[280px] shrink-0 justify-end max-lg:hidden">
-        <div className="relative">
+        <div ref={menuDropdownRef} className="relative">
           <button
             type="button"
             onClick={() => setIsMenuOpen((current) => !current)}
