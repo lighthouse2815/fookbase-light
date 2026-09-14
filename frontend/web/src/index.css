@@ -102,6 +102,16 @@ body {
   min-height: 100vh;
 }
 
+button:enabled,
+[role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 .fookbase-login {
   color-scheme: light;
   --color-bg: #f0f2f5;
