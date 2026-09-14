@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
@@ -72,6 +72,7 @@ export default function TopNavbar() {
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
   const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
   const isNotificationsPage = location.pathname === '/notifications'
@@ -122,6 +123,20 @@ export default function TopNavbar() {
 
     return () => { isCurrent = false }
   }, [session?.user.id])
+
+  useEffect(() => {
+    if (!isNotificationsOpen) return
+
+    const closeNotificationsWhenClickingOutside = (event: MouseEvent) => {
+      if (!notificationDropdownRef.current?.contains(event.target as Node)) {
+        setIsNotificationsOpen(false)
+        setIsNotificationMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('click', closeNotificationsWhenClickingOutside)
+    return () => window.removeEventListener('click', closeNotificationsWhenClickingOutside)
+  }, [isNotificationsOpen])
 
   const hasSuggestions = Boolean(suggestions &&
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
@@ -285,7 +300,7 @@ export default function TopNavbar() {
           <MessengerIcon />
           {unreadMessageCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
         </a>
-        <div className="relative">
+        <div ref={notificationDropdownRef} className="relative">
           <button
             type="button"
             onClick={() => {
