@@ -8,8 +8,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_started
       data-protection-init:
         condition: service_completed_successfully
     environment:
@@ -24,15 +22,9 @@ services:
       Cors__AllowedOrigins__0: ${Cors__AllowedOrigins__0:-http://localhost:5173}
       Cors__AllowedOrigins__1: ${Cors__AllowedOrigins__1:-http://localhost:5174}
       Cors__AllowedOrigins__2: ${Cors__AllowedOrigins__2:-http://localhost:5175}
-      Minio__Endpoint: minio:9000
-      Minio__PublicEndpoint: ${Minio__PublicEndpoint:-localhost:9000}
-      Minio__AccessKey: ${MINIO_ROOT_USER}
-      Minio__SecretKey: ${MINIO_ROOT_PASSWORD}
-      Minio__BucketName: fookbase-media
-      Minio__Secure: "false"
-      Minio__BucketInitializationEnabled: "true"
-      Minio__BucketInitializationMaxAttempts: ${Minio__BucketInitializationMaxAttempts:-10}
-      Minio__BucketInitializationRetrySeconds: ${Minio__BucketInitializationRetrySeconds:-2}
+      Cloudinary__CloudName: ${Cloudinary__CloudName:?Set Cloudinary__CloudName in .env}
+      Cloudinary__ApiKey: ${Cloudinary__ApiKey:?Set Cloudinary__ApiKey in .env}
+      Cloudinary__ApiSecret: ${Cloudinary__ApiSecret:?Set Cloudinary__ApiSecret in .env}
       DataProtection__ApplicationName: ${DataProtection__ApplicationName:-Fookbase}
       DataProtection__KeyRingPath: /var/fookbase/data-protection-keys
     ports:
@@ -66,50 +58,7 @@ services:
       retries: 10
     restart: unless-stopped
 
-  minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_CORS_ALLOWED_ORIGIN:-http://localhost:5173}
-    ports:
-      - "9001:9001"
-    volumes:
-      - minio-data:/data
-    restart: unless-stopped
-
-  minio-cors:
-    image: nginx:1.28.0-alpine
-    depends_on:
-      - minio
-    ports:
-      - "9000:9000"
-    volumes:
-      - ./infrastructure/minio/nginx.conf:/etc/nginx/templates/default.conf.template:ro
-    environment:
-      MINIO_CORS_ALLOWED_ORIGIN: ${MINIO_CORS_ALLOWED_ORIGIN:-http://localhost:5173}
-    restart: unless-stopped
-
-  minio-bootstrap:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
-    depends_on:
-      - minio
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    entrypoint: /bin/sh
-    command:
-      - -c
-      - >-
-        set -eu;
-        until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do sleep 2; done;
-        mc mb --ignore-existing local/fookbase-media;
-        mc anonymous set none local/fookbase-media;
-        mc stat local/fookbase-media
-    restart: "no"
 
 volumes:
   identity-postgres-data:
-  minio-data:
   data-protection-keys:

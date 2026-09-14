@@ -3,7 +3,7 @@
 Fookbase V1 chạy một API ASP.NET Core duy nhất. Kiến trúc được hỗ trợ là:
 
 ```text
-React clients → reverse proxy / HTTPS → one API → PostgreSQL + private MinIO
+React clients → reverse proxy / HTTPS → one API → PostgreSQL + Cloudinary
                                       ↘ SignalR (single instance)
 ```
 
@@ -12,35 +12,35 @@ Không chạy nhiều replica API trong V1. SignalR và Zola Light presence là 
 ## Thành phần và persistence
 
 - `backend/Fookbase.Src/Main/Dockerfile` là multi-stage image, có FFmpeg/ffprobe và chạy user non-root UID 10001.
-- Compose giữ named volume cho PostgreSQL (`identity-postgres-data`), MinIO (`minio-data`) và Data Protection (`data-protection-keys`). Ba volume này phải sống qua recreation container.
-- API không ghi media vào filesystem container. Bucket `fookbase-media` private; client chỉ nhận presigned URL.
-- `/health/live` chỉ xác nhận process còn sống. `/health/ready` kiểm tra PostgreSQL và bucket MinIO, nên chỉ endpoint này dùng để nhận traffic.
+- Compose giữ named volume cho PostgreSQL (`identity-postgres-data`) và Data Protection (`data-protection-keys`); hai volume này phải sống qua recreation container.
+- API không ghi media vào filesystem container. Browser upload trực tiếp bằng Cloudinary signed form; asset dùng authenticated delivery.
+- `/health/live` chỉ xác nhận process còn sống. `/health/ready` kiểm tra PostgreSQL và Cloudinary, nên chỉ endpoint này dùng để nhận traffic.
 
 ## Chuẩn bị cấu hình
 
 Tạo file môi trường ngoài Git từ `.env.example`. Không commit file này, dump, key ring, token hoặc credential.
 
-Production fail fast khi thiếu database URL, JWT signing key, MinIO endpoint/credential/bucket, key-ring Data Protection, origin CORS HTTPS rõ ràng hoặc `AllowedHosts` cụ thể. Thay toàn bộ giá trị mẫu. Thiết lập tối thiểu:
+Production fail fast khi thiếu database URL, JWT signing key, Cloudinary credential, key-ring Data Protection, origin CORS HTTPS rõ ràng hoặc `AllowedHosts` cụ thể. Thay toàn bộ giá trị mẫu. Thiết lập tối thiểu:
 
 ```dotenv
 POSTGRES_USER=fookbase_prod
 POSTGRES_PASSWORD=<secret>
 POSTGRES_DB=fookbase_db
-MINIO_ROOT_USER=<secret>
-MINIO_ROOT_PASSWORD=<secret>
+Cloudinary__CloudName=<cloud-name>
+Cloudinary__ApiKey=<api-key>
+Cloudinary__ApiSecret=<api-secret>
 Jwt__SigningKey=<random-secret-at-least-32-characters>
 AllowedHosts=api.example.com
 Cors__AllowedOrigins__0=https://app.example.com
 Cors__AllowedOrigins__1=https://admin.example.com
 Cors__AllowedOrigins__2=https://zola-light.example.com
-MINIO_CORS_ALLOWED_ORIGIN=https://app.example.com
 ```
 
 `DataProtection__KeyRingPath` được Compose đặt là `/var/fookbase/data-protection-keys`; backup volume này cùng application data. `Database__CommandTimeoutSeconds` mặc định 30 giây. Npgsql vẫn nhận `Connection Timeout` và `Maximum Pool Size` từ connection string; với một API instance, chỉ tăng pool sau khi tính rõ giới hạn connection PostgreSQL.
 
 ## Reverse proxy, HTTPS và CORS
 
-Đặt proxy đáng tin cậy trước API, chuyển WebSocket cho `/hubs/messages` và `/hubs/notifications`, và không public PostgreSQL, MinIO API hay MinIO console. Nếu proxy terminate TLS, bật forwarded headers và chỉ khai báo IP trực tiếp của proxy:
+Đặt proxy đáng tin cậy trước API, chuyển WebSocket cho `/hubs/messages` và `/hubs/notifications`, và không public PostgreSQL. Nếu proxy terminate TLS, bật forwarded headers và chỉ khai báo IP trực tiếp của proxy:
 
 ```dotenv
 ForwardedHeaders__Enabled=true
@@ -88,7 +88,7 @@ Nếu deploy lỗi, giữ volume, rollback image/application tương thích sche
 
 Video jobs có claim PostgreSQL điều kiện, lease timeout, retry giới hạn và output key deterministic. `Media__MaxConcurrentJobs=1` là default production an toàn; chỉ tăng cùng giới hạn CPU/RAM thực tế và `Media__VideoProcessingBatchSize`. Object deletion chạy durable, retry có delay và chuyển sang `FailedAtUtc` sau giới hạn để dễ chẩn đoán, không busy-loop.
 
-Compose production đặt grace period API 45 giây để `BackgroundService` nhận SIGTERM/cancellation; job đang `Processing` sẽ được claim lại sau timeout nếu container dừng giữa chừng. API 1 CPU/1 GiB, PostgreSQL 2 CPU/2 GiB và MinIO 1 CPU/1 GiB là guardrail khởi đầu, không phải sizing guarantee. Theo dõi FFmpeg trước khi tăng concurrency.
+Compose production đặt grace period API 45 giây để `BackgroundService` nhận SIGTERM/cancellation; job đang `Processing` sẽ được claim lại sau timeout nếu container dừng giữa chừng. API 1 CPU/1 GiB và PostgreSQL 2 CPU/2 GiB là guardrail khởi đầu, không phải sizing guarantee. Theo dõi FFmpeg trước khi tăng concurrency.
 
 Application logs JSON ra stdout ở Production, không ghi file log trong container. Runtime Docker phải cấu hình log rotation (ví dụ `json-file` với `max-size`/`max-file`) hoặc thu stdout. Log request gồm method/path/status/duration/request ID và UserId khi đã xác thực; không log body, token, password, key, recovery code hay connection string. Client có thể cung cấp `X-Request-Id` từ error ProblemDetails để operator tìm log.
 

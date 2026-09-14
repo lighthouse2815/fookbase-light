@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Fookbase Light V1 là một modular monolith cho mạng xã hội. Toàn bộ domain chạy trong một ASP.NET Core process tại cổng `5000`, với một PostgreSQL database (`fookbase_db`), private MinIO và SignalR.
+Fookbase Light V1 là một modular monolith cho mạng xã hội. Toàn bộ domain chạy trong một ASP.NET Core process tại cổng `5000`, với một PostgreSQL database (`fookbase_db`), Cloudinary và SignalR.
 
 Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`.
 
@@ -23,7 +23,7 @@ Fookbase.Api :5000
   `-- Moderation and administration
       |
       |-- PostgreSQL
-      `-- MinIO
+      `-- Cloudinary
 ```
 
 Backend chỉ có một entry point: `backend/Fookbase.Src/Main`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
@@ -48,17 +48,17 @@ Các credential mẫu chỉ dành cho local development. Hãy thay password và 
 
 ## Khởi động
 
-Khởi động đầy đủ local stack (PostgreSQL, MinIO và API):
+Khởi động local stack (PostgreSQL và API):
 
 ```bash
 docker compose up --build -d
 docker compose ps
 ```
 
-Compose chỉ lấy secrets từ `.env`; Docker image không chứa `.env` hoặc credential. Local
-compose tự apply migration hợp nhất khi API start. MinIO Console chạy tại
-<http://localhost:9001>, API object storage chạy tại <http://localhost:9000>, và API chạy tại
-<http://localhost:5000>.
+Compose chỉ lấy secrets từ `.env`; Docker image không chứa `.env` hoặc credential. Điền
+`Cloudinary__CloudName`, `Cloudinary__ApiKey` và `Cloudinary__ApiSecret` trong `.env` trước
+khi chạy. Local compose tự apply migration hợp nhất khi API start và API chạy tại
+<http://localhost:5000>. Cloudinary phải cho phép origin của các frontend dùng upload trực tiếp.
 
 Kiểm tra health:
 
@@ -68,7 +68,7 @@ curl -fsS http://localhost:5000/health/ready
 ```
 
 `/health` vẫn là liveness-compatible endpoint. `/health/live` chỉ xác nhận process sống;
-`/health/ready` yêu cầu PostgreSQL và private MinIO bucket sẵn sàng.
+`/health/ready` yêu cầu PostgreSQL và Cloudinary sẵn sàng.
 
 Để chạy API trực tiếp thay vì container, apply migration thủ công rồi chạy backend:
 
