@@ -148,9 +148,9 @@ export default function FeedPage() {
   return (
     <div className="flex justify-center min-h-screen px-2 sm:px-4 py-4">
       <div className="w-full max-w-[680px] min-w-0 flex flex-col gap-4">
+        <NewPostBox onPost={handleNewPost} />
         <StoryTray />
         {todayBirthdayCount > 0 && <Link to="/birthdays" className="rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-text no-underline">🎂 {todayBirthdayCount} bạn có sinh nhật hôm nay</Link>}
-        <NewPostBox onPost={handleNewPost} />
         <section className="rounded-xl border border-border bg-surface p-3">
           <div className="flex items-center justify-between gap-2">
             <nav aria-label={t('feedModes')} className="flex gap-2">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { resolveProfileImageUrl, usersApi } from '../../../api/users'
 import { useAuth } from '../../../auth/useAuth'
 import { usePreferences } from '../../../preferences'
 
@@ -24,6 +25,18 @@ interface Attachment {
   previewUrl: string
 }
 
+function VideoCameraIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current"><path d="M4.5 5.5A2.5 2.5 0 0 0 2 8v8a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 16 16V8a2.5 2.5 0 0 0-2.5-2.5h-9ZM18 10.25l3.17-1.9c.37-.22.83.04.83.47v6.36c0 .43-.46.7-.83.47L18 13.75v-3.5Z" /></svg>
+}
+
+function PhotoIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8" cy="9" r="1.5" /><path d="m4.5 18 5.1-5.1 3.4 3.2 2.3-2.2 4.8 4.1" /></svg>
+}
+
+function FeelingIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-none stroke-current" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14.5c.9 1.05 2.07 1.58 3.5 1.58s2.6-.53 3.5-1.58M9 9.5h.01M15 9.5h.01" /></svg>
+}
+
 function validateFile(file: File, t: (key: string) => string) {
   if (!SUPPORTED_TYPES.has(file.type)) {
     return `${file.name}: ${t('onlyJpegPngWebpMp4Webm')}`
@@ -46,6 +59,7 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [isFeelingPickerOpen, setIsFeelingPickerOpen] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const previewUrlsRef = useRef(new Set<string>())
   const remaining = MAX_CHARS - content.length
   const isOverLimit = remaining < 0
@@ -54,6 +68,15 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   useEffect(() => () => {
     previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
   }, [])
+
+  useEffect(() => {
+    if (identityName) return
+    let isCurrent = true
+    void usersApi.getCurrent()
+      .then((profile) => { if (isCurrent) setAvatarUrl(profile.avatarUrl) })
+      .catch(() => undefined)
+    return () => { isCurrent = false }
+  }, [identityName, session?.user.id])
 
   const selectFiles = (selectedFiles: FileList | null) => {
     if (!selectedFiles) return
@@ -122,20 +145,17 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   const openComposer = () => setIsExpanded(true)
 
   return (
-    <div className="bg-surface rounded-xl border border-border p-3 sm:p-4 transition-all">
+    <div className="bg-surface rounded-xl border border-border p-3 transition-all shadow-sm">
       {!isExpanded ? (
-        <>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{initials}</div>
-            <button type="button" onClick={openComposer} className="flex-1 bg-surface-2 hover:bg-surface-3 text-text-muted text-left rounded-full px-4 py-2.5 text-[14px] cursor-pointer transition-colors border-none outline-none">{postingLabel ?? t('whatsOnMind')}, {username}?</button>
+        <div className="flex items-center gap-2">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[12px] font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
+          <button type="button" onClick={openComposer} className="h-10 flex-1 bg-surface-2 hover:bg-surface-3 text-text-muted text-left rounded-full px-4 text-[14px] cursor-pointer transition-colors border-none outline-none">{postingLabel ?? t('whatsOnMind')}, {username}?</button>
+          <div className="flex shrink-0 items-center gap-1">
+            <button type="button" onClick={openComposer} className="grid h-10 w-10 place-items-center rounded-lg border-0 bg-transparent text-[#f02849] cursor-pointer transition-colors hover:bg-surface-2" title={t('video')} aria-label={t('video')}><VideoCameraIcon /></button>
+            <button type="button" onClick={openComposer} className="grid h-10 w-10 place-items-center rounded-lg border-0 bg-transparent text-[#45bd62] cursor-pointer transition-colors hover:bg-surface-2" title={t('photoVideo')} aria-label={t('photoVideo')}><PhotoIcon /></button>
+            <button type="button" onClick={openComposer} className="grid h-10 w-10 place-items-center rounded-lg border-0 bg-transparent text-[#f7b928] cursor-pointer transition-colors hover:bg-surface-2" title={t('feelingActivity')} aria-label={t('feelingActivity')}><FeelingIcon /></button>
           </div>
-          <div className="border-t border-border my-2.5" />
-          <div className="flex items-center justify-between">
-            <button type="button" onClick={openComposer} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer border-none bg-transparent text-text-muted hover:text-text text-[13px] sm:text-[14px] font-medium"><span className="text-lg">🎬</span><span>{t('video')}</span></button>
-            <button type="button" onClick={openComposer} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer border-none bg-transparent text-text-muted hover:text-text text-[13px] sm:text-[14px] font-medium"><span className="text-lg">🖼️</span><span>{t('photoVideo')}</span></button>
-            <button type="button" onClick={openComposer} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer border-none bg-transparent text-text-muted hover:text-text text-[13px] sm:text-[14px] font-medium"><span className="text-lg">😊</span><span>{t('feelingActivity')}</span></button>
-          </div>
-        </>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between pb-1 border-b border-border">
