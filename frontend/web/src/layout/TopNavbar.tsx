@@ -70,7 +70,7 @@ export default function TopNavbar() {
     unreadMessageCount,
     unreadNotificationCount,
   } = useRealtime()
-  const { t } = usePreferences()
+  const { language, setLanguage, setTheme, t, theme } = usePreferences()
   const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
@@ -482,21 +482,38 @@ export default function TopNavbar() {
             <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
             <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-text"><ChevronDownIcon /></span>
           </button>
-          {isProfileOpen && <div className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface p-3 shadow-2xl">
-            <Link to="/profile" onClick={() => setActiveHeaderPopup(null)} className="block rounded-xl p-1.5 no-underline hover:bg-surface-2">
-              <div className="flex items-center gap-3 rounded-xl border-2 border-primary p-2">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
-                <span className="min-w-0"><span className="block truncate text-base font-bold text-text">{displayName}</span><span className="block truncate text-sm text-text-muted">@{session!.user.username}</span></span>
-              </div>
-              <span className="mt-2 block rounded-lg bg-surface-2 px-3 py-2 text-center text-sm font-semibold text-text">◉ Xem trang cá nhân</span>
-            </Link>
-            <div className="my-2 border-t border-border" />
-            <Link to="/settings/privacy" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">⚙</span><span className="flex-1 font-medium">Cài đặt và quyền riêng tư</span><span className="text-2xl text-text-muted">›</span></Link>
-            <Link to="/settings/security" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">?</span><span className="flex-1 font-medium">Trợ giúp và bảo mật</span><span className="text-2xl text-text-muted">›</span></Link>
-            <button type="button" onClick={() => setIsAppearanceOpen((current) => !current)} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">◐</span><span className="flex-1 font-medium">Màn hình và trợ năng</span><span className="text-2xl text-text-muted">›</span></button>
-            {isAppearanceOpen && <div className="mx-2 mb-2 rounded-xl bg-surface-2 p-3"><p className="mb-2 text-sm font-semibold text-text">Giao diện và ngôn ngữ</p><PreferenceControls /></div>}
-            <button type="button" onClick={() => void signOut()} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">↪</span><span className="font-medium">{t('signOut')}</span></button>
-            <p className="px-2 pt-2 text-xs leading-4 text-text-light">Quyền riêng tư · Điều khoản · Quảng cáo · Cookie · Thêm</p>
+          {isProfileOpen && <div className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+            <div className={`flex w-[200%] transition-transform duration-300 ease-out ${isAppearanceOpen ? '-translate-x-1/2' : 'translate-x-0'}`}>
+              <section className="w-1/2 shrink-0 p-3">
+                <Link to="/profile" onClick={() => setActiveHeaderPopup(null)} className="block rounded-xl p-1.5 no-underline hover:bg-surface-2">
+                  <div className="flex items-center gap-3 rounded-xl border-2 border-primary p-2">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
+                    <span className="min-w-0"><span className="block truncate text-base font-bold text-text">{displayName}</span><span className="block truncate text-sm text-text-muted">@{session!.user.username}</span></span>
+                  </div>
+                  <span className="mt-2 block rounded-lg bg-surface-2 px-3 py-2 text-center text-sm font-semibold text-text">◉ Xem trang cá nhân</span>
+                </Link>
+                <div className="my-2 border-t border-border" />
+                <Link to="/settings/privacy" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">⚙</span><span className="flex-1 font-medium">Cài đặt và quyền riêng tư</span><span className="text-2xl text-text-muted">›</span></Link>
+                <Link to="/settings/security" onClick={() => setActiveHeaderPopup(null)} className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm text-text no-underline hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">?</span><span className="flex-1 font-medium">Trợ giúp và bảo mật</span><span className="text-2xl text-text-muted">›</span></Link>
+                <button type="button" onClick={() => setIsAppearanceOpen(true)} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">◐</span><span className="flex-1 font-medium">Màn hình và trợ năng</span><span className="text-2xl text-text-muted">›</span></button>
+                <button type="button" onClick={() => void signOut()} className="flex w-full items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-lg">↪</span><span className="font-medium">{t('signOut')}</span></button>
+                <p className="px-2 pt-2 text-xs leading-4 text-text-light">Quyền riêng tư · Điều khoản · Quảng cáo · Cookie · Thêm</p>
+              </section>
+              <section className="w-1/2 shrink-0 p-3">
+                <div className="mb-3 flex items-center gap-2"><button type="button" onClick={() => setIsAppearanceOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border-2 border-primary bg-surface-2 text-3xl leading-none text-text cursor-pointer hover:bg-surface-3" aria-label="Quay lại">‹</button><h2 className="text-2xl font-bold text-text">Màn hình và trợ năng</h2></div>
+                <div className="flex gap-3 px-1 py-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-xl">◐</span><div><h3 className="font-bold text-text">Chế độ tối</h3><p className="mt-1 text-sm leading-5 text-text-muted">Điều chỉnh giao diện để giảm độ chói và cho đôi mắt được nghỉ ngơi.</p></div></div>
+                <div className="mt-2 space-y-1 px-1">
+                  <button type="button" onClick={() => setTheme('light')} className="flex w-full items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span>Tắt</span><span className={`h-5 w-5 rounded-full border-2 ${theme === 'light' ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_var(--color-surface)]' : 'border-text-light'}`} /></button>
+                  <button type="button" onClick={() => setTheme('dark')} className="flex w-full items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span>Bật</span><span className={`h-5 w-5 rounded-full border-2 ${theme === 'dark' ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_var(--color-surface)]' : 'border-text-light'}`} /></button>
+                </div>
+                <div className="my-3 border-t border-border" />
+                <div className="flex gap-3 px-1 py-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-lg">文</span><div><h3 className="font-bold text-text">Ngôn ngữ</h3><p className="mt-1 text-sm leading-5 text-text-muted">Chọn ngôn ngữ hiển thị của Fookbase.</p></div></div>
+                <div className="mt-2 space-y-1 px-1">
+                  <button type="button" onClick={() => setLanguage('vi')} className="flex w-full items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span>Tiếng Việt</span><span className={`h-5 w-5 rounded-full border-2 ${language === 'vi' ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_var(--color-surface)]' : 'border-text-light'}`} /></button>
+                  <button type="button" onClick={() => setLanguage('en')} className="flex w-full items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-text cursor-pointer hover:bg-surface-2"><span>English</span><span className={`h-5 w-5 rounded-full border-2 ${language === 'en' ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_var(--color-surface)]' : 'border-text-light'}`} /></button>
+                </div>
+              </section>
+            </div>
           </div>}
         </div>
       </div>
