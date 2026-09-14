@@ -135,7 +135,10 @@ function ReactionPicker({ viewerReaction, onToggleDefault, onSelect, className =
       {reactionChoices.map(({ type, icon, label }) => <button
         key={type}
         type="button"
-        onClick={() => chooseReaction(type)}
+        onClick={(event) => {
+          event.currentTarget.blur()
+          chooseReaction(type)
+        }}
         className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent p-0 text-[26px] leading-none transition-transform hover:-translate-y-1 hover:scale-125 focus-visible:-translate-y-1 focus-visible:scale-125 focus-visible:outline-none"
         aria-label={label}
         title={label}
