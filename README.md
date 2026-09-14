@@ -1,6 +1,6 @@
 # Fookbase Light
 
-Fookbase Light là một modular monolith cho mạng xã hội. Toàn bộ Identity, Users, Friends, Feed, Groups, Messages, Notifications, Posts và Media chạy trong một ASP.NET Core process tại cổng `5000`;
+Fookbase Light V1 là một modular monolith cho mạng xã hội. Toàn bộ domain chạy trong một ASP.NET Core process tại cổng `5000`, với một PostgreSQL database (`fookbase_db`), private MinIO và SignalR.
 
 Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`.
 
@@ -13,16 +13,14 @@ React frontend
       |
       v
 Fookbase.Api :5000
-  |-- Identity module
-  |-- Users module
-  |-- Friends module
-  |-- Feed module
-  |-- Groups module
-  |-- Messages module (SignalR)
-  |-- Notifications module (SignalR)
-  |-- Posts module
-  |-- Admin module
-  `-- Media module
+  |-- Identity, account security and privacy
+  |-- Users, profiles, friends and follows
+  |-- Posts, comments, reactions, saves, shares and media
+  |-- Feed Ranking V2, search and notifications (SignalR)
+  |-- Messenger / Zola Light (SignalR)
+  |-- Groups, Pages, Reels and Stories
+  |-- Events, photos/albums, memories and birthdays
+  `-- Moderation and administration
       |
       |-- PostgreSQL
       `-- MinIO
@@ -31,6 +29,8 @@ Fookbase.Api :5000
 Backend chỉ có một entry point: `backend/Fookbase.Src/Main`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
 
 Toàn bộ persistence runtime dùng duy nhất `FookbaseDbContext` và PostgreSQL database `fookbase_db`. Module vẫn giữ entity, configuration và service trong folder riêng; chỉ DbContext và migration history được hợp nhất.
+
+Ba React app được triển khai độc lập: `frontend/web`, `frontend/zola-light` và `frontend/admin`. V1 chỉ hỗ trợ **một API instance**; không có SignalR/presence horizontal scaling. Xem chi tiết tại [kiến trúc](docs/modular-monolith.md), [vận hành production](docs/production-deployment.md), [Zola Light](docs/zola-light-v1.md), [Feed Ranking V2](docs/feed-ranking-v2.md), [privacy/security](docs/privacy-security-v1.md) và [moderation](docs/moderation-v1.md).
 
 ## Yêu cầu
 
@@ -90,7 +90,7 @@ Chạy frontend:
 
 ```bash
 cd frontend/web
-npm install
+npm ci
 npm run dev
 ```
 
@@ -100,7 +100,7 @@ Chạy web Admin riêng:
 
 ```bash
 cd frontend/admin
-npm install
+npm ci
 npm run dev
 ```
 
@@ -111,7 +111,7 @@ Chạy Zola Light riêng:
 
 ```bash
 cd frontend/zola-light
-npm install
+npm ci
 npm run dev
 ```
 
@@ -123,14 +123,20 @@ Zola Light chạy tại <http://localhost:5175>. Khi dùng local, thêm origin n
 ```bash
 dotnet restore FookbaseLight.sln
 dotnet build FookbaseLight.sln --no-restore
-
-set -a
-source .env
-set +a
-dotnet test FookbaseLight.sln --no-build
-
-./scripts/test-legacy-import-e2e.sh
+bash scripts/test-backend.sh
 ```
+
+`scripts/test-backend.sh` là regression backend đầy đủ chuẩn: script chạy tuần tự từng integration project trên PostgreSQL database riêng. Không dùng `dotnet test FookbaseLight.sln` làm full integration regression vì workflow shared database có thể race migration. Direct solution test vẫn phù hợp cho kiểm tra không-integration có phạm vi rõ ràng.
+
+Mỗi frontend dùng npm và package-lock riêng. Kiểm tra đầy đủ frontend:
+
+```bash
+for app in web zola-light admin; do
+  (cd "frontend/$app" && npm ci && npm run lint && npm run build)
+done
+```
+
+Chỉ chạy `./scripts/test-legacy-import-e2e.sh` khi thay đổi migration, backend import hoặc legacy data flow.
 
 `test-legacy-import-e2e.sh` tạo một PostgreSQL container tạm, apply active
 `FookbaseDbContext` migration, tạo sáu source database legacy đại diện và chạy chính

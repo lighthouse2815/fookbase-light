@@ -1,4 +1,6 @@
-# Mixed Home Feed và ranking V1 (M10)
+# Mixed Home Feed và ranking V1 (M10) — historical
+
+Tài liệu này ghi lại thiết kế M10 tại thời điểm hoàn thành. Feed V1 đã được thay thế bởi [Feed Ranking V2](feed-ranking-v2.md), là tài liệu hiện hành cho behavior và configuration production.
 
 Feed tiếp tục là query module trên `FookbaseDbContext`; không có bảng timeline,
 cache hoặc event/fan-out mới. Stories vẫn ở tray riêng. Search không đổi.

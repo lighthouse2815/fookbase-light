@@ -4,17 +4,19 @@
 
 Tạo file môi trường ngoài Git từ `.env.example`. Thay toàn bộ mật khẩu mẫu và tạo JWT signing key ngẫu nhiên tối thiểu 32 ký tự.
 
-Khi frontend và API dùng domain khác nhau, đặt đúng origin HTTPS của frontend:
+Khi frontend và API dùng domain khác nhau, đặt explicit HTTPS origin cho cả ba app:
 
 ```dotenv
 Cors__AllowedOrigins__0=https://app.example.com
+Cors__AllowedOrigins__1=https://admin.example.com
+Cors__AllowedOrigins__2=https://zola-light.example.com
 MINIO_CORS_ALLOWED_ORIGIN=https://app.example.com
 Minio__Endpoint=storage.example.com
 Minio__Secure=true
 Minio__BucketInitializationEnabled=false
 ```
 
-`VITE_API_BASE_URL` phải là origin HTTPS của API nếu frontend không reverse-proxy `/api` và `/hubs` về cùng domain.
+`VITE_API_BASE_URL` phải là origin HTTPS của API nếu frontend không reverse-proxy `/api` và `/hubs` về cùng domain. Đặt `VITE_ZOLA_LIGHT_URL` khi build main web và `VITE_WEB_URL` khi build Zola Light; các biến này chỉ chứa public URL, không chứa token hoặc credential.
 
 Khi API và MinIO cùng khởi động, bootstrap bucket sẽ retry 5 lần với khoảng cách 2 giây. Điều chỉnh `Minio__BucketInitializationMaxAttempts` và `Minio__BucketInitializationRetrySeconds` nếu storage cần thời gian sẵn sàng lâu hơn.
 
