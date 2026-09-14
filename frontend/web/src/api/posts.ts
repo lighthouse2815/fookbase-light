@@ -50,6 +50,8 @@ export interface PostReaction {
   displayName: string
   avatarUrl: string | null
   type: string
+  relationshipStatus: string
+  relationshipRequestId: string | null
 }
 
 export interface SavedPostsPage {
@@ -138,7 +140,7 @@ export const postsApi = {
     }),
   removeReaction: (postId: string) =>
     apiRequest<Post>(`/api/posts/${postId}/reaction`, { method: 'DELETE' }),
-  getReactions: (postId: string, type?: string, offset = 0, limit = 100) => {
+  getReactions: (postId: string, type?: string, offset = 0, limit = 20) => {
     const query = new URLSearchParams({ offset: String(offset), limit: String(limit) })
     if (type) query.set('type', type)
     return apiRequest<PagedResponse<PostReaction>>(`/api/posts/${postId}/reactions?${query.toString()}`)

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
+import { friendsApi } from '../../../api/friends'
 import { postsApi } from '../../../api/posts'
 import type { Comment, MediaAccess, Post, PostReaction } from '../../../api/posts'
 import { resolveProfileImageUrl, usersApi } from '../../../api/users'
@@ -85,24 +86,34 @@ interface ReactionDialogProps {
 }
 
 function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps) {
+  const pageSize = 20
   const [filter, setFilter] = useState<ReactionType | 'all'>('all')
   const [reactions, setReactions] = useState<PostReaction[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
+  const [reactionTotal, setReactionTotal] = useState(0)
+  const [requestingUserId, setRequestingUserId] = useState<string | null>(null)
   const total = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0)
 
   const chooseFilter = (nextFilter: ReactionType | 'all') => {
     if (nextFilter === filter) return
     setIsLoading(true)
     setError(null)
+    setLoadMoreError(null)
+    setReactions([])
+    setReactionTotal(0)
     setFilter(nextFilter)
   }
 
   useEffect(() => {
     let isActive = true
-    void postsApi.getReactions(postId, filter === 'all' ? undefined : filter)
+    void postsApi.getReactions(postId, filter === 'all' ? undefined : filter, 0, pageSize)
       .then((page) => {
-        if (isActive) setReactions(page.items)
+        if (!isActive) return
+        setReactions(page.items)
+        setReactionTotal(page.total)
       })
       .catch((requestError: unknown) => {
         if (isActive) setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải danh sách cảm xúc.')
@@ -112,6 +123,39 @@ function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps
       })
     return () => { isActive = false }
   }, [filter, postId])
+
+  const loadMore = async () => {
+    if (isLoadingMore || reactions.length >= reactionTotal) return
+
+    setIsLoadingMore(true)
+    setLoadMoreError(null)
+    try {
+      const page = await postsApi.getReactions(postId, filter === 'all' ? undefined : filter, reactions.length, pageSize)
+      setReactions((current) => {
+        const existingUserIds = new Set(current.map((reaction) => reaction.userId))
+        return [...current, ...page.items.filter((reaction) => !existingUserIds.has(reaction.userId))]
+      })
+      setReactionTotal(page.total)
+    } catch (requestError) {
+      setLoadMoreError(requestError instanceof ApiError ? requestError.message : 'Không thể tải thêm cảm xúc.')
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
+
+  const sendFriendRequest = async (userId: string) => {
+    setRequestingUserId(userId)
+    try {
+      const request = await friendsApi.sendRequest(userId)
+      setReactions((current) => current.map((reaction) => reaction.userId === userId
+        ? { ...reaction, relationshipStatus: 'request_sent', relationshipRequestId: request.id }
+        : reaction))
+    } catch (requestError) {
+      setLoadMoreError(requestError instanceof ApiError ? requestError.message : 'Không thể gửi lời mời kết bạn.')
+    } finally {
+      setRequestingUserId(null)
+    }
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={onClose}>
@@ -130,14 +174,21 @@ function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps
           {!isLoading && !error && reactions.length === 0 && <p className="p-4 text-center text-sm text-text-muted">Chưa có cảm xúc nào.</p>}
           {!isLoading && reactions.map((reaction) => {
             const choice = reactionChoices.find(({ type }) => type === reaction.type)
-            return <Link key={reaction.userId} to={`/profile/${reaction.userId}`} onClick={onClose} className="flex items-center gap-3 rounded-xl px-2 py-2.5 no-underline hover:bg-surface-2">
+            return <div key={reaction.userId} className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-surface-2">
+              <Link to={`/profile/${reaction.userId}`} onClick={onClose} className="flex min-w-0 flex-1 items-center gap-3 no-underline">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">
                 {reaction.avatarUrl ? <img src={resolveProfileImageUrl(reaction.avatarUrl)} alt="" className="h-full w-full object-cover" /> : reaction.displayName.slice(0, 2).toUpperCase()}
               </div>
               <span className="min-w-0 flex-1 truncate font-semibold text-text">{reaction.displayName}</span>
-              {choice && <span className="text-xl" aria-label={choice.label}>{choice.icon}</span>}
-            </Link>
+              </Link>
+              {reaction.relationshipStatus === 'none' && <button type="button" onClick={() => void sendFriendRequest(reaction.userId)} disabled={requestingUserId === reaction.userId} className="shrink-0 rounded-lg border-0 bg-surface-2 px-3 py-1.5 text-xs font-bold text-text hover:bg-surface-hover disabled:cursor-wait disabled:opacity-70">{requestingUserId === reaction.userId ? 'Đang gửi…' : 'Thêm bạn bè'}</button>}
+              {choice && <span className="shrink-0 text-xl" aria-label={choice.label}>{choice.icon}</span>}
+            </div>
           })}
+          {!isLoading && reactions.length > 0 && reactions.length < reactionTotal && <div className="p-2 text-center">
+            {loadMoreError && <p className="mb-2 text-sm text-[#ff8a9b]">{loadMoreError}</p>}
+            <button type="button" onClick={() => void loadMore()} disabled={isLoadingMore} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-hover disabled:cursor-wait disabled:opacity-70">{isLoadingMore ? 'Đang tải…' : 'Xem thêm'}</button>
+          </div>}
         </div>
       </section>
     </div>,
@@ -536,7 +587,7 @@ export default function LivePostCard({
       </div>
       {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} />}
     </article>
-    {isReactionDialogOpen && <ReactionDialog postId={post.id} reactionCounts={post.reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
+    {isReactionDialogOpen && <ReactionDialog key={post.id} postId={post.id} reactionCounts={post.reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
     {isCommentsDialogOpen && createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
         <section role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
