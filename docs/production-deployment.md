@@ -31,8 +31,8 @@ MINIO_ROOT_PASSWORD=<secret>
 Jwt__SigningKey=<random-secret-at-least-32-characters>
 AllowedHosts=api.example.com
 Cors__AllowedOrigins__0=https://app.example.com
-Cors__AllowedOrigins__1=https://messenger.example.com
-Cors__AllowedOrigins__2=https://admin.example.com
+Cors__AllowedOrigins__1=https://admin.example.com
+Cors__AllowedOrigins__2=https://messenger.example.com
 MINIO_CORS_ALLOWED_ORIGIN=https://app.example.com
 ```
 

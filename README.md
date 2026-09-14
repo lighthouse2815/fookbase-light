@@ -107,6 +107,17 @@ npm run dev
 Admin Center chạy tại <http://localhost:5174>. Khi dùng local, thêm origin này vào
 `Cors__AllowedOrigins__1` (đã có sẵn trong `.env.example`).
 
+Chạy Messenger riêng:
+
+```bash
+cd frontend/messenger
+npm install
+npm run dev
+```
+
+Messenger chạy tại <http://localhost:5175>. Khi dùng local, thêm origin này vào
+`Cors__AllowedOrigins__2` (đã có sẵn trong `.env.example`).
+
 ## Build và test
 
 ```bash

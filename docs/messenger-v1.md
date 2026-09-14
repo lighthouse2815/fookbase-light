@@ -13,7 +13,7 @@ web and Messenger applications on origins explicitly listed in
 Messenger, and `VITE_MESSENGER_URL` for the main web navigation.
 
 An independent login is intentional: browser local storage is origin-scoped,
-so local development on ports 5173 and 5174 cannot safely share the main web
+so local development on ports 5173 and 5175 cannot safely share the main web
 session without an additional, security-sensitive SSO/cookie design.
 
 ## Conversation access and block rule

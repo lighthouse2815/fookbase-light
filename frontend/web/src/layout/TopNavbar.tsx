@@ -90,7 +90,7 @@ export default function TopNavbar() {
   const messengerDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
-  const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
+  const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5175'
   const isNotificationsPage = location.pathname === '/notifications'
   const isMenuOpen = activeHeaderPopup === 'menu'
   const isMessagesOpen = activeHeaderPopup === 'messages'
