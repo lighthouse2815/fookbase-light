@@ -3,6 +3,8 @@ import { apiRequest } from './client'
 export interface UploadIntent {
   mediaId: string
   uploadUrl: string
+  uploadMethod: 'POST'
+  uploadParameters: Record<string, string>
   expiresAtUtc: string
 }
 
@@ -46,7 +48,7 @@ export const mediaApi = {
   },
   uploadFileWithMetadata: async (file: File, onProgress?: (progress: number) => void) => {
     const uploadIntent = await mediaApi.createUpload(file)
-    await uploadToStorage(uploadIntent.uploadUrl, file, onProgress)
+    await uploadToStorage(uploadIntent, file, onProgress)
 
     return mediaApi.complete(uploadIntent.mediaId)
   },
@@ -73,14 +75,13 @@ export interface MediaReadUrl {
 }
 
 function uploadToStorage(
-  uploadUrl: string,
+  uploadIntent: UploadIntent,
   file: File,
   onProgress?: (progress: number) => void,
 ) {
   return new Promise<void>((resolve, reject) => {
     const request = new XMLHttpRequest()
-    request.open('PUT', uploadUrl)
-    request.setRequestHeader('Content-Type', file.type || 'application/octet-stream')
+    request.open(uploadIntent.uploadMethod, uploadIntent.uploadUrl)
     request.upload.addEventListener('progress', (event) => {
       if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100))
     })
@@ -94,6 +95,9 @@ function uploadToStorage(
     })
     request.addEventListener('error', () => reject(new Error('Không thể tải tệp lên kho lưu trữ.')))
     request.addEventListener('abort', () => reject(new Error('Tải tệp lên đã bị hủy.')))
-    request.send(file)
+    const body = new FormData()
+    for (const [name, value] of Object.entries(uploadIntent.uploadParameters)) body.append(name, value)
+    body.append('file', file)
+    request.send(body)
   })
 }

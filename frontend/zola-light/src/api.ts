@@ -193,10 +193,13 @@ export const messengerApi = {
   user: (userId: string) => request<UserProfile>(`/api/users/${userId}`),
   searchUsers: (value: string) => request<{ items: UserProfile[] }>(`/api/users/search?${query({ query: value, offset: '0', limit: '10' })}`),
   upload: async (file: File) => {
-    const intent = await request<{ mediaId: string; uploadUrl: string }>('/api/media/uploads', {
+    const intent = await request<{ mediaId: string; uploadUrl: string; uploadMethod: 'POST'; uploadParameters: Record<string, string> }>('/api/media/uploads', {
       method: 'POST', body: JSON.stringify({ fileName: file.name, contentType: file.type, sizeBytes: file.size }),
     })
-    const upload = await fetch(intent.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+    const body = new FormData()
+    for (const [name, value] of Object.entries(intent.uploadParameters)) body.append(name, value)
+    body.append('file', file)
+    const upload = await fetch(intent.uploadUrl, { method: intent.uploadMethod, body })
     if (!upload.ok) throw new ApiError('Không thể tải media lên.', upload.status)
     await request(`/api/media/${intent.mediaId}/complete`, { method: 'POST' })
     return intent.mediaId
