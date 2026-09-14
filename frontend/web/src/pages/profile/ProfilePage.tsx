@@ -509,7 +509,7 @@ export default function ProfilePage() {
       {/* ── Top Section: Cover + Header + Tabs ─────────────────────── */}
       <div className="bg-surface border-b border-border shadow-sm">
         {/* 1. Cover photo area: Full-width dark gradient banner */}
-        <div className="relative w-full h-[260px] sm:h-[300px] md:h-[340px] bg-gradient-to-b from-surface-3 via-surface-2 to-surface-3">
+        <div className="relative mx-auto h-[260px] w-full max-w-[1120px] overflow-hidden rounded-b-2xl bg-gradient-to-b from-surface-3 via-surface-2 to-surface-3 sm:h-[300px] md:h-[340px]">
           {profile?.coverUrl && <img src={resolveProfileImageUrl(profile.coverUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
           {/* Subtle dark texture overlay */}
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3e4042_1px,transparent_1px)] [background-size:16px_16px]" />
@@ -551,7 +551,7 @@ export default function ProfilePage() {
         </div>
 
         {/* 3. Below cover: Profile info section */}
-        <div className="max-w-[1250px] mx-auto px-4 sm:px-8">
+        <div className="mx-auto max-w-[1120px] px-4 sm:px-8">
           <div className="pt-[96px] md:pt-4 md:pl-[216px] pb-4 flex flex-col xl:flex-row xl:items-end justify-between gap-4">
             {/* User Details */}
             <div className="flex flex-col items-center md:items-start text-center md:text-left">
@@ -580,17 +580,18 @@ export default function ProfilePage() {
                   <strong className="font-semibold text-text">{formatNumber(profilePostsTotal)}</strong> {t('posts').toLowerCase()}
                 </span>
               </div>
+              {(profile?.currentCity || profile?.education || profile?.workplace) && <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-text-muted md:justify-start"><span>{profile.currentCity ? `⌖ ${profile.currentCity}` : null}</span>{profile.education && <span>· {profile.education}</span>}{profile.workplace && <span>· {profile.workplace}</span>}</p>}
             </div>
 
             {/* Action buttons */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 shrink-0 mt-2 xl:mt-0">
               <button
                 type="button"
-                onClick={() => setTab('friends')}
+                onClick={() => setTab('posts')}
                 className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
               >
-                <span>👥</span>
-                <span>{t('friends')}</span>
+                <span>＋</span>
+                <span>Thêm vào tin</span>
               </button>
 
               {/* Edit profile button: bg-surface-2 text-text rounded-lg, not a pill button */}
@@ -599,7 +600,7 @@ export default function ProfilePage() {
                 onClick={openProfileEditor}
                 className="px-4 py-2 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
               >
-                <span>✏️</span>
+                <span>✎</span>
                 <span>{t('editProfile')}</span>
               </button>
 
@@ -610,7 +611,7 @@ export default function ProfilePage() {
                 onClick={() => setIsAccountSecurityOpen((current) => !current)}
                 className="h-9 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center justify-center px-3 transition-colors cursor-pointer border border-border"
               >
-                <span>{t('security')}</span>
+                <span>⌄</span>
               </button>
             </div>
           </div>
@@ -704,11 +705,11 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Body: Two-column layout below tabs ─────────────────────── */}
-      <div className="max-w-[1250px] mx-auto px-4 sm:px-8 py-5">
+      <div className="mx-auto max-w-[1120px] px-4 py-5 sm:px-8">
         {tab === 'posts' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             {/* ── Left column (posts) ── */}
-            <div className="order-2 lg:order-1 lg:col-span-7 xl:col-span-7 2xl:col-span-8 flex flex-col gap-4">
+            <div className="order-2 lg:order-2 lg:col-span-7 xl:col-span-7 2xl:col-span-8 flex flex-col gap-4">
               <NewPostBox onPost={createProfilePost} />
 
               {/* Manage posts header */}
@@ -746,7 +747,7 @@ export default function ProfilePage() {
             </div>
 
             {/* ── Right column (Intro card with bio, location, join date) ── */}
-            <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-5 2xl:col-span-4 flex flex-col gap-4">
+            <div className="order-1 lg:order-1 lg:col-span-5 xl:col-span-5 2xl:col-span-4 flex flex-col gap-4">
               {/* 6. Intro Card */}
               <div className="bg-surface rounded-xl card-shadow border border-border p-4 flex flex-col gap-3.5">
                 <h2 className="font-heading font-bold text-[18px] text-text">{t('intro')}</h2>
