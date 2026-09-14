@@ -63,7 +63,7 @@ function Login({ onSession }: { onSession: (session: AuthSession) => void }) {
     }
   }
   return <main className="login-shell"><form className="login-card" onSubmit={submit}>
-    <div className="brand-mark">f</div><h1>Fookbase Messenger</h1><p>Đăng nhập bằng tài khoản Fookbase của bạn.</p>
+    <div className="brand-mark">z</div><h1>Zola Light</h1><p>Đăng nhập bằng tài khoản Fookbase của bạn.</p>
     {error && <p className="alert">{error}</p>}
     {challenge ? <><label>Mã xác thực<input autoFocus autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} required /></label><button type="button" className="primary" disabled={busy || !code} onClick={() => { setBusy(true); void authApi.verifyTwoFactor(challenge, code).then((next) => { saveSession(next); onSession(next) }).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Mã không hợp lệ.')).finally(() => setBusy(false)) }}>Xác minh</button></> : <><label>Email<input autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Mật khẩu<input autoComplete="current-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="primary" disabled={busy}>{busy ? 'Đang đăng nhập…' : 'Đăng nhập'}</button></>}
     <a href={import.meta.env.VITE_WEB_URL ?? 'http://localhost:5173'}>Quay lại Fookbase</a>
@@ -280,8 +280,8 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const addParticipants = async () => { if (!active) return; const value = window.prompt('Nhập các UUID, cách nhau bởi dấu phẩy'); const ids = value?.split(',').map((id) => id.trim()).filter(Boolean) ?? []; if (ids.length) { await messengerApi.addParticipants(active.id, ids); const updated = await messengerApi.conversation(active.id); setConversations((current) => current.map((item) => item.id === active.id ? updated : item)) } }
   const myParticipant = active?.participants.find((participant) => participant.userId === session.user.id)
 
-  return <main className="messenger-shell">
-    <aside className="conversation-pane"><header className="pane-header"><div><strong>Messenger</strong><small>@{session.user.username}</small></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
+  return <main className="zola-light-shell">
+    <aside className="conversation-pane"><header className="pane-header"><div><strong>Zola Light</strong><small>@{session.user.username}</small></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
       <input className="conversation-filter" placeholder="Tìm cuộc trò chuyện" onChange={(event) => { const value = event.target.value.toLowerCase(); document.querySelectorAll<HTMLElement>('[data-conversation]').forEach((node) => { node.hidden = !node.dataset.conversation?.includes(value) }) }} />
       <div className="conversation-list">{conversations.map((conversation) => <button key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} hidden={false} className={`conversation-item ${conversation.id === activeId ? 'selected' : ''}`} onClick={() => setActiveId(conversation.id)}>
         <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}

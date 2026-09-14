@@ -1,6 +1,6 @@
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
 
-const sessionKey = 'fookbase.messenger.session'
+const sessionKey = 'fookbase.zola-light.session'
 
 export interface AuthenticatedUser {
   id: string

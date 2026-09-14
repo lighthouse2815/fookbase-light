@@ -7,7 +7,7 @@ React clients → reverse proxy / HTTPS → one API → PostgreSQL + private Min
                                       ↘ SignalR (single instance)
 ```
 
-Không chạy nhiều replica API trong V1. SignalR và Messenger presence là process-local; jobs media là durable trong PostgreSQL nhưng không phải lý do để tuyên bố hệ thống đã scale ngang. Redis không cần thiết và không được thêm vào stack này.
+Không chạy nhiều replica API trong V1. SignalR và Zola Light presence là process-local; jobs media là durable trong PostgreSQL nhưng không phải lý do để tuyên bố hệ thống đã scale ngang. Redis không cần thiết và không được thêm vào stack này.
 
 ## Thành phần và persistence
 
@@ -32,7 +32,7 @@ Jwt__SigningKey=<random-secret-at-least-32-characters>
 AllowedHosts=api.example.com
 Cors__AllowedOrigins__0=https://app.example.com
 Cors__AllowedOrigins__1=https://admin.example.com
-Cors__AllowedOrigins__2=https://messenger.example.com
+Cors__AllowedOrigins__2=https://zola-light.example.com
 MINIO_CORS_ALLOWED_ORIGIN=https://app.example.com
 ```
 

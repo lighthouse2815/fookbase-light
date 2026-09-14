@@ -37,7 +37,7 @@ function MenuIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current"><circle cx="5" cy="5" r="2" /><circle cx="12" cy="5" r="2" /><circle cx="19" cy="5" r="2" /><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /><circle cx="5" cy="19" r="2" /><circle cx="12" cy="19" r="2" /><circle cx="19" cy="19" r="2" /></svg>
 }
 
-function MessengerIcon() {
+function ZolaLightIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current"><path d="M12 2.5C6.53 2.5 2.1 6.66 2.1 11.8c0 2.93 1.44 5.54 3.69 7.24v3.97l3.74-2.06c.8.22 1.63.34 2.47.34 5.47 0 9.9-4.16 9.9-9.29C21.9 6.66 17.47 2.5 12 2.5Zm1.08 12.58-2.52-2.69-4.92 2.72 5.42-5.75 2.6 2.7 4.81-2.72-5.39 5.74Z" /></svg>
 }
 
@@ -87,10 +87,10 @@ export default function TopNavbar() {
   const [isMessagesLoading, setIsMessagesLoading] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const menuDropdownRef = useRef<HTMLDivElement>(null)
-  const messengerDropdownRef = useRef<HTMLDivElement>(null)
+  const zolaLightDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
-  const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5175'
+  const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
   const isNotificationsPage = location.pathname === '/notifications'
   const isMenuOpen = activeHeaderPopup === 'menu'
   const isMessagesOpen = activeHeaderPopup === 'messages'
@@ -176,7 +176,7 @@ export default function TopNavbar() {
     const activePopupRef = activeHeaderPopup === 'menu'
       ? menuDropdownRef
       : activeHeaderPopup === 'messages'
-        ? messengerDropdownRef
+        ? zolaLightDropdownRef
         : notificationDropdownRef
     const closePopupWhenClickingOutside = (event: PointerEvent) => {
       if (!activePopupRef.current?.contains(event.target as Node)) {
@@ -356,7 +356,7 @@ export default function TopNavbar() {
             </button>
           </div>}
         </div>
-        <div ref={messengerDropdownRef} className="relative">
+        <div ref={zolaLightDropdownRef} className="relative">
           <button
             type="button"
             onClick={() => {
@@ -370,7 +370,7 @@ export default function TopNavbar() {
             aria-label={t('messages')}
             aria-expanded={isMessagesOpen}
           >
-            <MessengerIcon />
+            <ZolaLightIcon />
             {unreadMessageCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
           </button>
           {isMessagesOpen && <div className="absolute right-0 top-12 z-50 flex h-[min(42rem,calc(100vh-5rem))] w-[min(25rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
@@ -378,14 +378,14 @@ export default function TopNavbar() {
               <h2 className="font-heading text-2xl font-bold text-text">Đoạn chat</h2>
               <div className="flex items-center gap-1 text-text-muted">
                 <button type="button" className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-xl cursor-pointer hover:bg-surface-2" title="Tùy chọn">•••</button>
-                <a href={messengerUrl} className="grid h-9 w-9 place-items-center rounded-full text-lg text-text-muted no-underline hover:bg-surface-2" title="Mở Messenger">↗</a>
-                <a href={`${messengerUrl}?new=1`} className="grid h-9 w-9 place-items-center rounded-full text-lg text-text-muted no-underline hover:bg-surface-2" title="Tin nhắn mới">✎</a>
+                <a href={zolaLightUrl} className="grid h-9 w-9 place-items-center rounded-full text-lg text-text-muted no-underline hover:bg-surface-2" title="Mở Zola Light">↗</a>
+                <a href={`${zolaLightUrl}?new=1`} className="grid h-9 w-9 place-items-center rounded-full text-lg text-text-muted no-underline hover:bg-surface-2" title="Tin nhắn mới">✎</a>
               </div>
             </div>
             <div className="px-3 pb-3">
               <label className="relative block">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-light">⌕</span>
-                <input type="search" value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Tìm kiếm trên Messenger" className="h-10 w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-3 text-sm text-text outline-none placeholder:text-text-light focus:input-focus" />
+                <input type="search" value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Tìm kiếm trên Zola Light" className="h-10 w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-3 text-sm text-text outline-none placeholder:text-text-light focus:input-focus" />
               </label>
             </div>
             <div className="flex gap-2 px-4 pb-2">
@@ -399,14 +399,14 @@ export default function TopNavbar() {
                 const profile = messageProfiles[conversation.participantUserId]
                 const name = profile?.displayName ?? profile?.username ?? 'Người dùng'
                 const preview = conversation.lastMessage?.content ?? 'Bắt đầu cuộc trò chuyện'
-                return <a key={conversation.id} href={`${messengerUrl}?conversation=${conversation.id}`} onClick={() => setActiveHeaderPopup(null)} className="relative flex items-center gap-3 rounded-xl px-2 py-2.5 text-text no-underline hover:bg-surface-2">
+                return <a key={conversation.id} href={`${zolaLightUrl}?conversation=${conversation.id}`} onClick={() => setActiveHeaderPopup(null)} className="relative flex items-center gap-3 rounded-xl px-2 py-2.5 text-text no-underline hover:bg-surface-2">
                   <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-3 text-sm font-bold text-text-muted">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : name.slice(0, 2).toUpperCase()}</span>
                   <span className="min-w-0 flex-1"><span className={`block truncate text-sm ${conversation.unreadCount > 0 ? 'font-bold text-text' : 'font-medium text-text-muted'}`}>{name}</span><span className={`block truncate text-xs ${conversation.unreadCount > 0 ? 'font-semibold text-text' : 'text-text-light'}`}>{preview} · {formatMessageTime(conversation.lastMessageAtUtc)}</span></span>
                   {conversation.unreadCount > 0 && <span className="h-3 w-3 shrink-0 rounded-full bg-primary" />}
                 </a>
               })}
             </div>
-            <a href={messengerUrl} onClick={() => setActiveHeaderPopup(null)} className="border-t border-border px-4 py-3 text-center text-sm font-semibold text-primary no-underline hover:bg-surface-2">Xem tất cả trong Messenger</a>
+            <a href={zolaLightUrl} onClick={() => setActiveHeaderPopup(null)} className="border-t border-border px-4 py-3 text-center text-sm font-semibold text-primary no-underline hover:bg-surface-2">Xem tất cả trong Zola Light</a>
           </div>}
         </div>
         <div ref={notificationDropdownRef} className="relative">

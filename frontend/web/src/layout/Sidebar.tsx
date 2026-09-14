@@ -24,7 +24,7 @@ const primaryItems: NavItem[] = [
 
 const moreItems: NavItem[] = [
   { path: '/feed', icon: 'feed', label: 'Bảng feed' },
-  { path: '/messages', icon: 'messages', label: 'Messenger' },
+  { path: '/messages', icon: 'messages', label: 'Zola Light' },
   { path: '/birthdays', icon: 'birthdays', label: 'Sinh nhật' },
   { path: '/events', icon: 'events', label: 'Sự kiện' },
   { path: '/pages', icon: 'pages', label: 'Trang' },

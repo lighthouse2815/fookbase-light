@@ -1,16 +1,16 @@
-# Messenger V1
+# Zola Light V1
 
-`frontend/messenger` is a separate Vite application, backed by the existing
+`frontend/zola-light` is a separate Vite application, backed by the existing
 Fookbase monolith and its `FookbaseDbContext`. It does not introduce another
 database, service, queue, or identity provider.
 
 ## Authentication and deployment
 
-Messenger uses the normal Identity login and refresh APIs at its own origin.
+Zola Light uses the normal Identity login and refresh APIs at its own origin.
 It never accepts a token in a URL or query string. In production, deploy the
-web and Messenger applications on origins explicitly listed in
+web and Zola Light applications on origins explicitly listed in
 `Cors:AllowedOrigins`; configure `VITE_API_BASE_URL` and `VITE_WEB_URL` for
-Messenger, and `VITE_MESSENGER_URL` for the main web navigation.
+Zola Light, and `VITE_ZOLA_LIGHT_URL` for the main web navigation.
 
 An independent login is intentional: browser local storage is origin-scoped,
 so local development on ports 5173 and 5175 cannot safely share the main web
@@ -26,7 +26,7 @@ Groups do not force a member to leave merely because a later block exists.
 Instead, V1 filters the blocked pair in both directions: their messages do not
 appear in one another's history and no Message, Typing, Presence, or read
 realtime event is delivered across that pair. There are no user mentions in
-Messenger V1. Other group participants continue normally.
+Zola Light V1. Other group participants continue normally.
 
 The same filter applies to conversation previews, search, reply previews,
 reaction lists, attachment read URLs, reaction operations and message-specific
@@ -53,7 +53,7 @@ reaction; deleting the reaction removes that single row.
 ## Realtime and presence
 
 SignalR accelerates UI updates only; the HTTP API/database remains authoritative
-and Messenger reloads conversations and history after reconnect. Typing is
+and Zola Light reloads conversations and history after reconnect. Typing is
 ephemeral. Presence uses in-memory authenticated connection counts and is thus
 correct for one backend instance only. A Redis SignalR backplane and distributed
 presence are deliberately deferred until multi-instance deployment is needed.
