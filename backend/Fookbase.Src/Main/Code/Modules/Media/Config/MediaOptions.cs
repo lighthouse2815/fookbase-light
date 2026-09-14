@@ -13,6 +13,7 @@ public sealed class MediaOptions
     public bool VideoProcessingEnabled { get; init; } = true;
     public int VideoProcessingIntervalSeconds { get; init; } = 5;
     public int VideoProcessingBatchSize { get; init; } = 1;
+    public int MaxConcurrentJobs { get; init; } = 1;
     public int VideoProcessingTimeoutSeconds { get; init; } = 120;
     public int VideoProcessingRetryLimit { get; init; } = 3;
     public int VideoProcessingRetryDelaySeconds { get; init; } = 15;
@@ -25,7 +26,7 @@ public sealed class MediaOptions
         if (MaximumImageSizeBytes <= 0 || MaximumVideoSizeBytes <= 0 ||
             UploadUrlExpiryMinutes <= 0 || DownloadUrlExpiryMinutes <= 0 ||
             CleanupIntervalSeconds <= 0 || CleanupBatchSize <= 0 ||
-            VideoProcessingIntervalSeconds <= 0 || VideoProcessingBatchSize <= 0 ||
+            VideoProcessingIntervalSeconds <= 0 || VideoProcessingBatchSize <= 0 || MaxConcurrentJobs <= 0 ||
             VideoProcessingTimeoutSeconds <= 0 || VideoProcessingRetryLimit <= 0 ||
             VideoProcessingRetryDelaySeconds <= 0 || MinimumReelDurationMs <= 0 ||
             MaximumReelDurationMs < MinimumReelDurationMs || MaximumStoryVideoDurationMs <= 0)

@@ -25,6 +25,7 @@ using Fookbase.Api.Modules.Events;
 using Fookbase.Api.Modules.Memories;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,9 +35,22 @@ internal static class ModuleServiceCollectionExtensions
 {
     public static IServiceCollection AddFookbasePersistence(
         this IServiceCollection services,
-        IConfiguration configuration) =>
+        IConfiguration configuration)
+    {
+        var connectionString = RequiredConnectionString(configuration, "FookbaseDatabase");
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+        var dataSource = dataSourceBuilder.Build();
+        var commandTimeoutSeconds = configuration.GetValue("Database:CommandTimeoutSeconds", 30);
+        if (commandTimeoutSeconds <= 0)
+        {
+            throw new InvalidOperationException("Database:CommandTimeoutSeconds must be positive.");
+        }
+
+        services.AddSingleton(dataSource);
         services.AddDbContext<FookbaseDbContext>(options =>
-            options.UseNpgsql(RequiredConnectionString(configuration, "FookbaseDatabase")));
+            options.UseNpgsql(dataSource, npgsql => npgsql.CommandTimeout(commandTimeoutSeconds)));
+        return services;
+    }
 
     public static IServiceCollection AddIdentityModule(
         this IServiceCollection services,

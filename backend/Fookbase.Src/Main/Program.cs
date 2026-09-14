@@ -3,7 +3,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Fookbase.Api;
 using Fookbase.Api.Shared.ErrorHandling;
+using Fookbase.Api.Shared.Observability;
+using Fookbase.Api.Shared.Security;
 using AppDataProtectionOptions = Fookbase.Api.Shared.Config.DataProtectionOptions;
+using AppForwardedHeadersOptions = Fookbase.Api.Shared.Config.ForwardedHeadersOptions;
+using Fookbase.Api.Shared.Config;
 using Fookbase.Api.Shared.HealthChecks;
 using Fookbase.Api.Modules.Friends.Endpoints;
 using Fookbase.Api.Modules.Feed.Endpoints;
@@ -35,12 +39,22 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsProduction())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole();
+}
+
+ProductionConfigurationValidator.Validate(builder.Configuration, builder.Environment.IsProduction());
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is required.");
@@ -56,6 +70,9 @@ if (!string.IsNullOrWhiteSpace(dataProtectionOptions.KeyRingPath))
 }
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var forwardedHeadersOptions = builder.Configuration.GetSection(AppForwardedHeadersOptions.SectionName)
+    .Get<AppForwardedHeadersOptions>() ?? new AppForwardedHeadersOptions();
+forwardedHeadersOptions.Validate(builder.Environment.IsProduction());
 var rateLimitPermitLimit = builder.Configuration.GetValue("RateLimiting:PermitLimit", 120);
 var rateLimitWindowSeconds = builder.Configuration.GetValue("RateLimiting:WindowSeconds", 60);
 var authLoginPermitLimit = builder.Configuration.GetValue("RateLimiting:SensitiveAuth:LoginPermitLimit", 10);
@@ -140,6 +157,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     Detail = "A valid access token is required."
                 };
                 problem.Extensions["code"] = "invalid_access_token";
+                problem.Extensions["requestId"] = RequestCorrelation.GetId(context.HttpContext);
                 await context.Response.WriteAsJsonAsync(problem);
             }
         };
@@ -216,6 +234,29 @@ if (builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", false))
 }
 
 app.UseExceptionHandler();
+if (forwardedHeadersOptions.Enabled)
+{
+    var forwardedHeaders = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+        ForwardLimit = forwardedHeadersOptions.ForwardLimit,
+        RequireHeaderSymmetry = true
+    };
+    forwardedHeaders.KnownIPNetworks.Clear();
+    forwardedHeaders.KnownProxies.Clear();
+    foreach (var proxy in forwardedHeadersOptions.KnownProxies)
+    {
+        forwardedHeaders.KnownProxies.Add(IPAddress.Parse(proxy));
+    }
+
+    app.UseForwardedHeaders(forwardedHeaders);
+}
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 if (allowedOrigins.Length > 0)
 {
     app.UseCors("Client");
@@ -225,15 +266,15 @@ app.UseRateLimiter();
 app.UseMiddleware<AccountModerationMiddleware>();
 app.UseAuthorization();
 
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").DisableRateLimiting();
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false
-});
+}).DisableRateLimiting();
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("ready")
-});
+}).DisableRateLimiting();
 app.MapAuthenticationEndpoints();
 app.MapUserProfileEndpoints();
 app.MapPrivacySettingsEndpoints();

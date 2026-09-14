@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Fookbase.Api.Shared.Observability;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,11 +16,13 @@ public sealed class GlobalExceptionHandler(
         var isBadRequest = exception is BadHttpRequestException or JsonException or InvalidDataException;
         if (isBadRequest)
         {
-            logger.LogWarning("An invalid HTTP request was rejected.");
+            logger.LogWarning("An invalid HTTP request was rejected. RequestId: {RequestId}",
+                RequestCorrelation.GetId(httpContext));
         }
         else
         {
-            logger.LogError(exception, "An unexpected error occurred while processing the request.");
+            logger.LogError(exception, "An unexpected error occurred while processing the request. RequestId: {RequestId}",
+                RequestCorrelation.GetId(httpContext));
         }
 
         var statusCode = isBadRequest
@@ -36,6 +39,7 @@ public sealed class GlobalExceptionHandler(
         problem.Extensions["code"] = isBadRequest
             ? "invalid_request"
             : "internal_server_error";
+        problem.Extensions["requestId"] = RequestCorrelation.GetId(httpContext);
 
         httpContext.Response.StatusCode = statusCode;
         httpContext.Response.ContentType = "application/problem+json";
