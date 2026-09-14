@@ -1,0 +1,45 @@
+services:
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__ApplyMigrationsOnStartup: "false"
+      AllowedHosts: ${AllowedHosts:?Set the public API host.}
+      Cors__AllowedOrigins__0: ${Cors__AllowedOrigins__0:?Set the main web HTTPS origin.}
+      Cors__AllowedOrigins__1: ${Cors__AllowedOrigins__1:?Set the messenger HTTPS origin.}
+      Cors__AllowedOrigins__2: ${Cors__AllowedOrigins__2:?Set the admin HTTPS origin.}
+      ForwardedHeaders__Enabled: ${ForwardedHeaders__Enabled:-false}
+      ForwardedHeaders__KnownProxies__0: ${ForwardedHeaders__KnownProxies__0:-}
+      ForwardedHeaders__ForwardLimit: ${ForwardedHeaders__ForwardLimit:-1}
+      Media__MaxConcurrentJobs: ${Media__MaxConcurrentJobs:-1}
+    ports: !reset []
+    restart: unless-stopped
+    stop_grace_period: 45s
+    cpus: 1.50
+    mem_limit: 1g
+
+  postgres:
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER.}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD.}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB.}
+    ports: !reset []
+    restart: unless-stopped
+    cpus: 2.00
+    mem_limit: 2g
+
+  minio:
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER.}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD.}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_CORS_ALLOWED_ORIGIN:?Set the allowed HTTPS browser origin.}
+    ports: !reset []
+    restart: unless-stopped
+    cpus: 1.00
+    mem_limit: 1g
+
+  minio-cors:
+    ports: !reset []
+    restart: unless-stopped
+
+  data-protection-init:
+    restart: "no"

@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    env:
+      DOTNET_NOLOGO: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore and build API
+        run: |
+          dotnet restore backend/Fookbase.Src/Main/Fookbase.Api.csproj
+          dotnet build backend/Fookbase.Src/Main/Fookbase.Api.csproj --no-restore --configuration Release
+      - name: Run isolated backend integration tests
+        run: bash scripts/test-backend.sh
+      - name: Check EF model has no pending changes
+        env:
+          ConnectionStrings__FookbaseDatabase: Host=postgres;Port=5432;Database=fookbase_ci;Username=fookbase_ci;Password=ci-only-not-production
+        run: |
+          dotnet tool restore
+          dotnet tool run dotnet-ef migrations has-pending-model-changes \
+            --project backend/Fookbase.Src/Main/Fookbase.Api.csproj \
+            --startup-project backend/Fookbase.Src/Main/Fookbase.Api.csproj
+
+  frontend:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [web, messenger, admin]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/${{ matrix.app }}/package-lock.json
+      - name: Install, lint and build ${{ matrix.app }}
+        working-directory: frontend/${{ matrix.app }}
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+
+  container:
+    runs-on: ubuntu-24.04
+    env:
+      POSTGRES_USER: fookbase_ci
+      POSTGRES_PASSWORD: ci-only-not-production
+      POSTGRES_DB: fookbase_db
+      MINIO_ROOT_USER: fookbase-ci
+      MINIO_ROOT_PASSWORD: ci-only-not-production
+      Jwt__SigningKey: ci-signing-key-with-more-than-thirty-two-characters
+      AllowedHosts: api.ci.example.test
+      Cors__AllowedOrigins__0: https://web.ci.example.test
+      Cors__AllowedOrigins__1: https://messenger.ci.example.test
+      Cors__AllowedOrigins__2: https://admin.ci.example.test
+      MINIO_CORS_ALLOWED_ORIGIN: https://web.ci.example.test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production Compose configuration
+        run: docker compose -f compose.yml -f compose.prod.yml config --quiet
+      - name: Build production API image
+        run: docker build --file backend/Fookbase.Src/Main/Dockerfile --tag fookbase-api:ci .
