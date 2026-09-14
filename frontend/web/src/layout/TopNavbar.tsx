@@ -199,7 +199,6 @@ export default function TopNavbar() {
     setDismissedNotificationIds((current) => new Set([...current, ...notifications.map((notification) => notification.id)]))
     markAllNotificationsRead()
     setIsNotificationMenuOpen(false)
-    setIsNotificationsOpen(false)
   }
 
   return (
