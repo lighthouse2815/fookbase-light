@@ -114,7 +114,7 @@ run_sdk \
   mcr.microsoft.com/dotnet/sdk:10.0 \
   sh -c 'dotnet tool restore && dotnet tool run dotnet-ef database update --project backend/Fookbase.Src/Main --startup-project backend/Fookbase.Src/Main --context FookbaseDbContext'
 
-copy_legacy_schema legacy_identity AspNetUsers RefreshTokens
+copy_legacy_schema legacy_identity AspNetUsers AuthSessions RefreshTokens
 copy_legacy_schema legacy_users UserProfiles
 copy_legacy_schema legacy_friends Friendships BlockedUsers
 copy_legacy_schema legacy_messages Stories Conversations ConversationReadCursors Messages
