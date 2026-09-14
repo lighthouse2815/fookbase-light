@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
@@ -7,8 +7,28 @@ import { searchApi, type SearchSuggestions } from '../api/search'
 
 interface NavItem {
   path: string
-  icon: string
+  icon: ReactNode
   label: string
+}
+
+function HomeIcon() {
+  return <svg viewBox="0 0 28 28" aria-hidden="true" className="h-7 w-7 fill-current"><path d="M25.825 12.29 14.743 2.47a1.12 1.12 0 0 0-1.486 0L2.175 12.29a1.12 1.12 0 0 0 .743 1.96h2.237v9.29c0 1.082.878 1.96 1.96 1.96h4.06v-6.227h5.65V25.5h4.06c1.082 0 1.96-.878 1.96-1.96v-9.29h2.237a1.12 1.12 0 0 0 .743-1.96Z" /></svg>
+}
+
+function ReelsIcon() {
+  return <svg viewBox="0 0 28 28" aria-hidden="true" className="h-7 w-7 fill-none stroke-current" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="22" height="20" rx="4" /><path d="m3.5 9.5 5-5M10 9.5l5-5M16.5 9.5l5-5M12 12.25l5.25 3.25L12 18.75v-6.5Z" /></svg>
+}
+
+function GroupsIcon() {
+  return <svg viewBox="0 0 28 28" aria-hidden="true" className="h-7 w-7 fill-none stroke-current" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><circle cx="14" cy="9" r="4" /><path d="M6 24c.55-4.12 3.12-6.5 8-6.5s7.45 2.38 8 6.5M4.5 12.75a3 3 0 1 1 3.08-5.99M23.5 12.75a3 3 0 1 0-3.08-5.99M3.25 22.25c.2-2.1 1.22-3.7 3.2-4.62M24.75 22.25c-.2-2.1-1.22-3.7-3.2-4.62" /></svg>
+}
+
+function GamesIcon() {
+  return <svg viewBox="0 0 28 28" aria-hidden="true" className="h-7 w-7 fill-none stroke-current" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M7.2 10.5h13.6c2.4 0 3.8 1.84 3.35 4.18l-1.05 5.43c-.42 2.14-2.48 3.22-4.37 2.28l-3.3-1.64a3.04 3.04 0 0 0-2.66 0l-3.3 1.64c-1.89.94-3.95-.14-4.37-2.28l-1.05-5.43C3.4 12.34 4.8 10.5 7.2 10.5Z" /><path d="M9 15h4M11 13v4M18.5 14.5h.01M21 17h.01" /></svg>
+}
+
+function ProfileIcon() {
+  return <svg viewBox="0 0 28 28" aria-hidden="true" className="h-7 w-7 fill-none stroke-current" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><circle cx="14" cy="9" r="4.25" /><path d="M5.25 24c.7-4.38 3.58-7 8.75-7s8.05 2.62 8.75 7" /></svg>
 }
 
 export default function TopNavbar() {
@@ -29,17 +49,12 @@ export default function TopNavbar() {
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
-  const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
   const navItems: NavItem[] = [
-    { path: '/feed', icon: '🏠', label: t('home') },
-    { path: '/explore', icon: '🔍', label: t('explore') },
-    { path: '/messages', icon: '💬', label: t('messages') },
-    { path: '/groups', icon: '👥', label: t('groups') },
-    { path: '/pages', icon: '📣', label: 'Pages' },
-    { path: '/events', icon: '📅', label: 'Events' },
-    { path: '/reels', icon: '🎞️', label: 'Reels' },
-    { path: '/games', icon: '🎮', label: t('games') },
-    { path: '/profile', icon: '👤', label: t('profile') },
+    { path: '/feed', icon: <HomeIcon />, label: t('home') },
+    { path: '/reels', icon: <ReelsIcon />, label: 'Reels' },
+    { path: '/groups', icon: <GroupsIcon />, label: t('groups') },
+    { path: '/games', icon: <GamesIcon />, label: t('games') },
+    { path: '/profile', icon: <ProfileIcon />, label: t('profile') },
   ]
 
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
@@ -160,30 +175,22 @@ export default function TopNavbar() {
         </form>
       </div>
 
-      <nav className="flex-1 flex items-center justify-center gap-1 max-w-[600px] mx-auto">
-        {navItems.map((item) => item.path === '/messages' ? (
-          <a
-            key={item.path}
-            href={messengerUrl}
-            className="flex-1 flex items-center justify-center py-2 rounded-lg transition-all duration-200 cursor-pointer relative max-w-[120px] text-2xl no-underline text-text-muted hover:bg-surface-2"
-            title={item.label}
-          >
-            <span>{item.icon}</span>
-          </a>
-        ) : (
+      <nav aria-label="Điều hướng chính" className="flex flex-1 items-center justify-center gap-1 self-stretch px-2 max-w-[600px] mx-auto">
+        {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) => [
-              'flex-1 flex items-center justify-center py-2 rounded-lg transition-all duration-200 cursor-pointer relative max-w-[120px] text-2xl no-underline',
+              'flex flex-1 items-center justify-center self-stretch rounded-lg transition-colors duration-200 cursor-pointer relative max-w-[120px] no-underline',
               isActive ? 'text-primary' : 'text-text-muted hover:bg-surface-2',
             ].join(' ')}
             title={item.label}
+            aria-label={item.label}
           >
             {({ isActive }) => (
               <>
-                <span>{item.icon}</span>
-                {isActive && <div className="absolute bottom-0 left-2 right-2 h-[3px] bg-primary rounded-t-full" />}
+                {item.icon}
+                {isActive && <div className="absolute bottom-0 left-1 right-1 h-[3px] bg-primary rounded-t-full" />}
               </>
             )}
           </NavLink>
