@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
 import { searchApi, type SearchSuggestions } from '../api/search'
+import { resolveProfileImageUrl, usersApi } from '../api/users'
 
 interface NavItem {
   path: string
@@ -31,6 +32,22 @@ function ProfileIcon() {
   return <svg viewBox="0 0 28 28" aria-hidden="true" className="h-7 w-7 fill-none stroke-current" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><circle cx="14" cy="9" r="4.25" /><path d="M5.25 24c.7-4.38 3.58-7 8.75-7s8.05 2.62 8.75 7" /></svg>
 }
 
+function MenuIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current"><circle cx="5" cy="5" r="2" /><circle cx="12" cy="5" r="2" /><circle cx="19" cy="5" r="2" /><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /><circle cx="5" cy="19" r="2" /><circle cx="12" cy="19" r="2" /><circle cx="19" cy="19" r="2" /></svg>
+}
+
+function MessengerIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current"><path d="M12 2.5C6.53 2.5 2.1 6.66 2.1 11.8c0 2.93 1.44 5.54 3.69 7.24v3.97l3.74-2.06c.8.22 1.63.34 2.47.34 5.47 0 9.9-4.16 9.9-9.29C21.9 6.66 17.47 2.5 12 2.5Zm1.08 12.58-2.52-2.69-4.92 2.72 5.42-5.75 2.6 2.7 4.81-2.72-5.39 5.74Z" /></svg>
+}
+
+function BellIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current"><path d="M19.2 16.4v-5.1c0-3.68-2.2-6.16-5.2-6.75V3.5a2 2 0 1 0-4 0v1.05c-3 .59-5.2 3.07-5.2 6.75v5.1L3.2 18v1.5h17.6V18l-1.6-1.6ZM12 22a2.75 2.75 0 0 0 2.59-1.8H9.4A2.75 2.75 0 0 0 12 22Z" /></svg>
+}
+
+function ChevronDownIcon() {
+  return <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3 w-3 fill-current"><path d="m4.1 5.9 3.9 3.9 3.9-3.9 1.1 1.1L8 11.1 3 7l1.1-1.1Z" /></svg>
+}
+
 export default function TopNavbar() {
   const { session, signOut } = useAuth()
   const {
@@ -40,6 +57,7 @@ export default function TopNavbar() {
     hasMoreNotifications,
     isLoadingMoreNotifications,
     loadMoreNotifications,
+    unreadMessageCount,
     unreadNotificationCount,
   } = useRealtime()
   const { t } = usePreferences()
@@ -48,7 +66,10 @@ export default function TopNavbar() {
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
+  const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
   const navItems: NavItem[] = [
     { path: '/feed', icon: <HomeIcon />, label: t('home') },
     { path: '/reels', icon: <ReelsIcon />, label: 'Reels' },
@@ -83,6 +104,19 @@ export default function TopNavbar() {
       window.clearTimeout(timeoutId)
     }
   }, [searchQuery])
+
+  useEffect(() => {
+    let isCurrent = true
+    void usersApi.getCurrent()
+      .then((profile) => {
+        if (isCurrent) setAvatarUrl(profile.avatarUrl)
+      })
+      .catch(() => {
+        if (isCurrent) setAvatarUrl(null)
+      })
+
+    return () => { isCurrent = false }
+  }, [session?.user.id])
 
   const hasSuggestions = Boolean(suggestions &&
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
@@ -198,15 +232,34 @@ export default function TopNavbar() {
       </nav>
 
       <div className="flex items-center gap-2 w-[280px] shrink-0 justify-end">
-        <PreferenceControls className="max-sm:hidden" />
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none text-sm"
-          title={t('signOut')}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((current) => !current)}
+            className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            title="Menu"
+            aria-label="Menu"
+            aria-expanded={isMenuOpen}
+          >
+            <MenuIcon />
+          </button>
+          {isMenuOpen && <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-border bg-surface p-3 shadow-2xl">
+            <p className="px-1 pb-2 text-sm font-semibold text-text">Tùy chỉnh</p>
+            <div className="border-t border-border pt-3"><PreferenceControls /></div>
+            <button type="button" onClick={() => void signOut()} className="mt-3 flex w-full items-center gap-2 rounded-lg border-0 bg-surface-2 px-3 py-2 text-left text-sm font-semibold text-text cursor-pointer transition-colors hover:bg-surface-hover">
+              <span aria-hidden="true">↪</span>{t('signOut')}
+            </button>
+          </div>}
+        </div>
+        <a
+          href={messengerUrl}
+          className="relative w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer no-underline"
+          title={t('messages')}
+          aria-label={t('messages')}
         >
-          ↪
-        </button>
+          <MessengerIcon />
+          {unreadMessageCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
+        </a>
         <div className="relative">
           <button
             type="button"
@@ -215,7 +268,7 @@ export default function TopNavbar() {
             title={t('messageNotifications')}
             aria-expanded={isNotificationsOpen}
           >
-            🔔
+            <BellIcon />
             {unreadNotificationCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
           </button>
           {isNotificationsOpen && (
@@ -239,10 +292,11 @@ export default function TopNavbar() {
         </div>
         <Link
           to="/profile"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline bg-primary"
+          className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-visible text-[11px] font-bold text-white shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline bg-primary"
           title={t('profile')}
         >
-          {initials}
+          <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-text"><ChevronDownIcon /></span>
         </Link>
       </div>
     </header>
