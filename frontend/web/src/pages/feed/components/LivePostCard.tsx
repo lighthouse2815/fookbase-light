@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
 import { postsApi } from '../../../api/posts'
 import type { Comment, MediaAccess, Post } from '../../../api/posts'
-import { resolveProfileImageUrl } from '../../../api/users'
+import { resolveProfileImageUrl, usersApi } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
 import { formatPostTimestamp } from '../../../shared/formatPostTimestamp'
@@ -76,10 +76,11 @@ export default function LivePostCard({
   const [comments, setComments] = useState<Comment[]>([])
   const [commentsTotal, setCommentsTotal] = useState(0)
   const [commentsOffset, setCommentsOffset] = useState(0)
-  const [showComments, setShowComments] = useState(false)
+  const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(false)
   const [isLoadingComments, setIsLoadingComments] = useState(false)
   const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false)
   const [commentsPageError, setCommentsPageError] = useState<string | null>(null)
+  const [commentAuthors, setCommentAuthors] = useState<Record<string, UserProfile>>({})
   const [commentText, setCommentText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
@@ -99,6 +100,8 @@ export default function LivePostCard({
   )
   const isLiked = post.viewerReaction === 'like'
   const postTimestamp = formatPostTimestamp(post.createdAtUtc)
+  const currentUserProfile = commentAuthors[currentUserId] ?? (isAuthor ? author : undefined)
+  const currentUserName = currentUserProfile?.displayName ?? 'Bạn'
 
   useEffect(() => {
     let isActive = true
@@ -116,6 +119,31 @@ export default function LivePostCard({
     }
   }, [post.id, post.mediaIds])
 
+  useEffect(() => {
+    if (!isCommentsDialogOpen) return
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsCommentsDialogOpen(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [isCommentsDialogOpen])
+
+  const loadCommentAuthors = async (items: readonly Comment[]) => {
+    const authorIds = [...new Set(items.map((comment) => comment.authorUserId))]
+      .filter((userId) => !commentAuthors[userId])
+    if (authorIds.length === 0) return
+
+    const results = await Promise.allSettled(authorIds.map((userId) => usersApi.getById(userId)))
+    setCommentAuthors((current) => {
+      const next = { ...current }
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') next[authorIds[index]] = result.value
+      })
+      return next
+    })
+  }
+
   const loadComments = async () => {
     setIsLoadingComments(true)
     setCommentsPageError(null)
@@ -124,7 +152,7 @@ export default function LivePostCard({
       setComments(page.items)
       setCommentsTotal(page.total)
       setCommentsOffset(page.offset + page.items.length)
-      setShowComments(true)
+      await loadCommentAuthors(page.items)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
     } finally {
@@ -140,11 +168,17 @@ export default function LivePostCard({
       setComments((current) => [...current, ...page.items.filter((comment) => !current.some((item) => item.id === comment.id))])
       setCommentsTotal(page.total)
       setCommentsOffset(page.offset + page.items.length)
+      await loadCommentAuthors(page.items)
     } catch (requestError) {
       setCommentsPageError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
     } finally {
       setIsLoadingMoreComments(false)
     }
+  }
+
+  const openCommentsDialog = () => {
+    setIsCommentsDialogOpen(true)
+    if (comments.length === 0) void loadComments()
   }
 
   const toggleLike = async () => {
@@ -168,6 +202,7 @@ export default function LivePostCard({
       setCommentsTotal((currentTotal) => currentTotal + 1)
       setCommentsOffset((currentOffset) => currentOffset + 1)
       setCommentText('')
+      await loadCommentAuthors([comment])
       onPostUpdated({ ...post, commentCount: post.commentCount + 1 })
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableCreateComment'))
@@ -239,6 +274,7 @@ export default function LivePostCard({
   }
 
   return (
+    <>
     <article className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
       <header className="relative flex items-center gap-3 px-4 pb-2 pt-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">
@@ -280,41 +316,95 @@ export default function LivePostCard({
 
       <div className="mx-4 flex min-h-11 items-center justify-between gap-3 border-b border-border text-[13px] text-text-muted">
         <span className="flex items-center gap-1.5">{reactionCount > 0 && <><span className="flex -space-x-1 text-base leading-none"><span>👍</span><span>❤️</span></span><span>{reactionCount}</span></>}</span>
-        <button type="button" onClick={() => void (showComments ? setShowComments(false) : loadComments())} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{post.commentCount > 0 ? `${post.commentCount} ${t('comments')}` : ''}</button>
+        <button type="button" onClick={openCommentsDialog} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{post.commentCount > 0 ? `${post.commentCount} ${t('comments')}` : ''}</button>
       </div>
       <div className="mx-2 grid grid-cols-3 gap-1 py-1">
         <button type="button" onClick={() => void toggleLike()} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition-colors ${isLiked ? 'bg-primary/10 text-primary' : 'bg-transparent text-text-muted hover:bg-surface-2'}`}>
           <LikeIcon />{isLiked ? t('liked') : t('like')}
         </button>
-        <button type="button" onClick={() => void (showComments ? setShowComments(false) : loadComments())} className="flex items-center justify-center gap-2 rounded-lg border-0 bg-transparent py-2 text-sm font-semibold text-text-muted transition-colors hover:bg-surface-2">
+        <button type="button" onClick={openCommentsDialog} className="flex items-center justify-center gap-2 rounded-lg border-0 bg-transparent py-2 text-sm font-semibold text-text-muted transition-colors hover:bg-surface-2">
           <CommentIcon />{t('comment')}
         </button>
         <button type="button" onClick={() => setIsShareOpen(true)} className="flex items-center justify-center gap-2 rounded-lg border-0 bg-transparent py-2 text-sm font-semibold text-text-muted transition-colors hover:bg-surface-2">
           <ShareIcon />{t('share')}
         </button>
       </div>
-      {showComments && (
-        <div className="flex flex-col gap-2 border-t border-border px-4 pb-4 pt-3">
-          {isLoadingComments && <p className="text-sm text-text-muted">{t('loading')}</p>}
-          {comments.map((comment) => (
-            <div key={comment.id} className="flex items-start gap-2 bg-surface-2 rounded-lg px-3 py-2">
-              <TextWithReferences content={comment.content} mentions={comment.mentions} className="flex-1 text-sm text-text whitespace-pre-wrap" />
-              {comment.authorUserId === currentUserId && (
-                <div className="flex gap-1">
-                  <button type="button" onClick={() => void editComment(comment)} className="bg-transparent border-none text-xs text-text-muted hover:text-text cursor-pointer">{t('edit')}</button>
-                  <button type="button" onClick={() => void deleteComment(comment)} className="bg-transparent border-none text-xs text-[#ff8a9b] cursor-pointer">{t('delete')}</button>
-                </div>
-              )}
-            </div>
-          ))}
-          <PaginationControls hasMore={commentsOffset < commentsTotal} isLoading={isLoadingMoreComments} error={commentsPageError} label={t('loadMoreComments')} onLoadMore={() => void loadMoreComments()} />
-          <form onSubmit={(event) => void createComment(event)} className="flex gap-2">
-            <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder={t('writeComment')} className="min-w-0 flex-1 bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text outline-none" />
-            <button className="px-3 rounded-lg bg-primary text-white border-none cursor-pointer text-sm">{t('send')}</button>
-          </form>
-        </div>
-      )}
       {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} />}
     </article>
+    {isCommentsDialogOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
+        <section role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+          <header className="relative flex h-13 shrink-0 items-center justify-center border-b border-border px-14">
+            <h2 id={`comments-dialog-${post.id}`} className="truncate text-center text-[17px] font-bold text-text">Bài viết của {authorName}</h2>
+            <button type="button" onClick={() => setIsCommentsDialogOpen(false)} aria-label="Đóng bình luận" className="absolute right-3 grid h-9 w-9 place-items-center rounded-full border-0 bg-surface-2 text-2xl leading-none text-text-muted hover:bg-surface-hover hover:text-text">×</button>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="border-b border-border">
+              {post.content && <div className="px-4 py-3"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>}
+              {media.length > 0 && (
+                <div className={`grid overflow-hidden bg-black ${media.length > 1 ? 'grid-cols-2 gap-0.5' : 'grid-cols-1'}`}>
+                  {media.map((item) => item.mediaType === 'video' ? (
+                    <video key={item.mediaId} controls preload="metadata" className={`w-full bg-black object-contain ${media.length > 1 ? 'max-h-72' : 'max-h-[48vh]'}`}>
+                      <source src={item.url} type={item.contentType} />
+                      {t('browserNoVideo')}
+                    </video>
+                  ) : (
+                    <img key={item.mediaId} src={item.url} alt={t('postAttachment')} className={`w-full bg-black ${media.length > 1 ? 'h-52 object-cover' : 'max-h-[48vh] object-contain'}`} />
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center justify-between px-4 py-2 text-[13px] text-text-muted">
+                <span className="flex items-center gap-1.5">{reactionCount > 0 && <><span className="text-base leading-none">👍</span><span>{reactionCount}</span></>}</span>
+                <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
+              </div>
+              <div className="grid grid-cols-3 border-t border-border px-2 py-1">
+                <button type="button" onClick={() => void toggleLike()} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${isLiked ? 'text-primary' : 'text-text-muted hover:bg-surface-2'}`}><LikeIcon />{isLiked ? t('liked') : t('like')}</button>
+                <span className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-text-muted"><CommentIcon />{t('comment')}</span>
+                <button type="button" onClick={() => { setIsCommentsDialogOpen(false); setIsShareOpen(true) }} className="flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-text-muted hover:bg-surface-2"><ShareIcon />{t('share')}</button>
+              </div>
+            </div>
+
+            <div className="space-y-4 px-4 py-4">
+              {isLoadingComments && <p className="text-center text-sm text-text-muted">{t('loading')}</p>}
+              {error && <p className="text-center text-xs text-[#ff8a9b]">{error}</p>}
+              {comments.map((comment) => {
+                const commentAuthor = commentAuthors[comment.authorUserId]
+                const commentAuthorName = commentAuthor?.displayName ?? t('user')
+                const commentAvatarUrl = commentAuthor?.avatarUrl
+                return (
+                  <div key={comment.id} className="flex items-start gap-2.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">
+                      {commentAvatarUrl ? <img src={resolveProfileImageUrl(commentAvatarUrl)} alt="" className="h-full w-full object-cover" /> : commentAuthorName.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="inline-block max-w-full rounded-2xl bg-surface-2 px-3 py-2">
+                        <p className="text-[13px] font-bold text-text">{commentAuthorName}</p>
+                        <TextWithReferences content={comment.content} mentions={comment.mentions} className="mt-0.5 text-sm leading-5 text-text whitespace-pre-wrap" />
+                      </div>
+                      <div className="flex items-center gap-3 px-2 pt-1 text-xs font-semibold text-text-muted">
+                        <time dateTime={comment.createdAtUtc} title={formatPostTimestamp(comment.createdAtUtc).absolute}>{formatPostTimestamp(comment.createdAtUtc).compact}</time>
+                        {comment.authorUserId === currentUserId && <><button type="button" onClick={() => void editComment(comment)} className="border-0 bg-transparent p-0 text-xs font-semibold text-text-muted hover:text-text">{t('edit')}</button><button type="button" onClick={() => void deleteComment(comment)} className="border-0 bg-transparent p-0 text-xs font-semibold text-[#ff8a9b]">{t('delete')}</button></>}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              {!isLoadingComments && comments.length === 0 && <p className="py-5 text-center text-sm text-text-muted">Chưa có bình luận nào.</p>}
+              <PaginationControls hasMore={commentsOffset < commentsTotal} isLoading={isLoadingMoreComments} error={commentsPageError} label={t('loadMoreComments')} onLoadMore={() => void loadMoreComments()} />
+            </div>
+          </div>
+
+          <form onSubmit={(event) => void createComment(event)} className="flex shrink-0 items-center gap-2 border-t border-border bg-surface px-3 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">
+              {currentUserProfile?.avatarUrl ? <img src={resolveProfileImageUrl(currentUserProfile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : currentUserName.slice(0, 2).toUpperCase()}
+            </div>
+            <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder={t('writeComment')} className="min-w-0 flex-1 rounded-full border-0 bg-surface-2 px-4 py-2.5 text-sm text-text outline-none ring-1 ring-transparent focus:ring-primary" />
+            <button type="submit" disabled={!commentText.trim()} className="rounded-full border-0 bg-transparent px-2 text-sm font-bold text-primary disabled:cursor-not-allowed disabled:opacity-40">{t('send')}</button>
+          </form>
+        </section>
+      </div>
+    )}
+    </>
   )
 }
