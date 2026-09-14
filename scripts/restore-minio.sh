@@ -26,13 +26,14 @@ done
 network="${MINIO_DOCKER_NETWORK:-host}"
 docker run --rm \
   --network "${network}" \
+  --entrypoint /bin/sh \
   --volume "${source_directory}:/restore:ro" \
   --env "MINIO_ENDPOINT=${MINIO_ENDPOINT}" \
   --env "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}" \
   --env "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}" \
   --env "MINIO_TARGET_BUCKET=${target_bucket}" \
   minio/mc:RELEASE.2025-08-13T08-35-41Z \
-  sh -c 'set -eu
+  -c 'set -eu
     mc alias set target "$MINIO_ENDPOINT" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >/dev/null
     mc mb --ignore-existing "target/$MINIO_TARGET_BUCKET" >/dev/null
     mc mirror --overwrite /restore "target/$MINIO_TARGET_BUCKET"'
