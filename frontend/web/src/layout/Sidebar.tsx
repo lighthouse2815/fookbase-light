@@ -65,7 +65,7 @@ export default function Sidebar() {
   }, [session?.user.id])
 
   return (
-    <aside className="fixed left-[max(1rem,calc(50%-700px))] top-14 z-40 flex h-[calc(100vh-56px)] w-[280px] flex-col overflow-y-auto bg-bg px-3 max-xl:hidden">
+    <aside className="fixed left-[max(1rem,calc(50%-520px))] top-14 z-40 flex h-[calc(100vh-56px)] w-[280px] flex-col overflow-y-auto bg-bg px-3 max-xl:hidden">
       <nav className="flex flex-col gap-0.5 py-3" aria-label="Lối tắt">
         <Link
           to="/profile"
