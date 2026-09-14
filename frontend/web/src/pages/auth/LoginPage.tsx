@@ -5,14 +5,33 @@ import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
 import { PreferenceControls, usePreferences } from '../../preferences'
 
+function LoginArtwork() {
+  return <div className="relative h-[590px] w-full max-w-[560px]">
+    <div className="absolute left-[26%] top-4 h-[430px] w-[290px] overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#36b5da_0%,#1978d4_45%,#8ed7f0_100%)] shadow-2xl shadow-[#1877f2]/20">
+      <div className="absolute inset-x-6 top-6 h-1 rounded-full bg-white/70" />
+      <div className="absolute -right-16 bottom-[-20%] h-72 w-72 rounded-full bg-white/30 blur-2xl" />
+      <div className="absolute bottom-12 left-9 h-36 w-52 -rotate-12 rounded-[2rem] border-[10px] border-white/85 bg-[#f2b778] shadow-xl" />
+      <div className="absolute bottom-20 left-[43%] h-32 w-28 rotate-12 rounded-[2rem] bg-[#1b2638] shadow-xl" />
+    </div>
+    <div className="absolute left-[4%] top-32 h-64 w-64 overflow-hidden rounded-[1.6rem] bg-[linear-gradient(145deg,#ffd1b6,#fa8d62)] shadow-xl">
+      <div className="absolute -left-12 top-10 h-52 w-72 rotate-12 rounded-[3rem] bg-[#8fd7ee]" />
+      <div className="absolute bottom-6 left-8 h-24 w-36 rounded-3xl bg-white/65" />
+    </div>
+    <div className="absolute bottom-4 left-[17%] h-[260px] w-[245px] rounded-[1.7rem] bg-white p-4 shadow-2xl">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-black text-white">★</div>
+      <div className="mt-4 h-36 rounded-xl bg-[linear-gradient(140deg,#8f2735,#df7359_55%,#ead3a8)]" />
+      <div className="mt-4 h-4 w-4/5 rounded-full bg-[#e4e6eb]" />
+      <div className="mt-2 h-3 w-3/5 rounded-full bg-[#e4e6eb]" />
+    </div>
+    <div className="absolute bottom-[-2%] left-[49%] h-40 w-40 rounded-full border-[5px] border-primary bg-[radial-gradient(circle_at_55%_34%,#f5d0c3_0_28%,#934f42_29%_32%,#f8bf9f_33%_66%,#3d2a29_67%)] shadow-xl" />
+    <div className="absolute right-[1%] top-[59%] grid h-20 w-20 place-items-center rounded-full bg-[#f02849] text-4xl text-white shadow-xl">♥</div>
+    <div className="absolute left-[1%] top-[4%] grid h-16 w-16 place-items-center rounded-full bg-[#ffd35c] text-4xl shadow-lg">☺</div>
+  </div>
+}
+
 export default function LoginPage() {
   const { session, signIn, completeTwoFactor, signUp } = useAuth()
   const { t } = usePreferences()
-  const features = [
-    ['◌', t('shareWorld'), t('shareWorldDescription')],
-    ['⌁', t('stayConnected'), t('stayConnectedDescription')],
-    ['⌘', t('madeForCircle'), t('madeForCircleDescription')],
-  ]
   const [searchParams, setSearchParams] = useSearchParams()
   const [isRegistering, setIsRegistering] = useState(false)
   const [email, setEmail] = useState(() => searchParams.get('email') ?? '')
@@ -104,45 +123,20 @@ export default function LoginPage() {
     setConfirmPassword('')
   }
 
-  const fieldClassName = 'w-full rounded-xl border border-border bg-surface-2/70 px-11 py-3 text-[15px] text-text outline-none transition placeholder:text-text-light focus:border-primary focus:bg-surface-2 focus:ring-4 focus:ring-primary/15'
+  const fieldClassName = 'w-full rounded-lg border border-border bg-surface px-11 py-3 text-[15px] text-text outline-none transition placeholder:text-text-light focus:border-primary focus:bg-surface focus:ring-4 focus:ring-primary/15'
 
   return (
-    <main className="relative isolate min-h-screen overflow-hidden bg-bg px-4 py-6 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-8">
-      <PreferenceControls className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6" />
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-48 top-[-15%] h-[32rem] w-[32rem] rounded-full bg-primary/20 blur-[130px]" />
-        <div className="absolute -bottom-56 right-[-8%] h-[34rem] w-[34rem] rounded-full bg-[#7f5af0]/15 blur-[150px]" />
-        <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
-      </div>
-
-      <div className="grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-surface/85 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="relative hidden min-h-[640px] overflow-hidden border-r border-white/10 p-10 lg:flex lg:flex-col">
-          <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#15284d] to-transparent opacity-80" />
-          <div className="relative flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-2xl font-extrabold text-white shadow-lg shadow-primary/30">f</div>
-            <span className="font-heading text-xl font-extrabold tracking-tight text-text">fookbase</span>
-          </div>
-
-          <div className="relative mt-auto max-w-lg">
-            <span className="mb-5 inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary-light">{t('socialSpace')}</span>
-            <h1 className="font-heading text-4xl font-extrabold leading-[1.15] tracking-tight text-text xl:text-5xl">{t('quieterCorner')}</h1>
-            <p className="mt-5 max-w-md text-base leading-7 text-text-muted">{t('socialDescription')}</p>
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              {features.map(([icon, title, description]) => (
-                <div key={title} className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-lg text-primary-light">{icon}</span>
-                  <h2 className="mt-3 text-sm font-bold text-text">{title}</h2>
-                  <p className="mt-1 text-xs leading-5 text-text-muted">{description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+    <main className="fookbase-login relative flex min-h-screen flex-col overflow-hidden bg-[#f5f6f7] px-4 py-5 sm:px-6 lg:p-0">
+      <PreferenceControls className="absolute right-5 top-5 z-20 sm:right-8 sm:top-8" />
+      <div className="grid flex-1 overflow-hidden border border-[#e4e6eb] bg-white lg:grid-cols-[minmax(230px,0.78fr)_minmax(470px,1.2fr)_minmax(360px,0.78fr)]">
+        <section className="relative hidden min-h-[760px] border-r border-[#e4e6eb] p-9 xl:flex xl:flex-col">
+          <div className="flex items-center gap-3 text-primary"><div className="grid h-12 w-12 place-items-center rounded-full bg-primary text-4xl font-bold text-white">f</div><span className="font-heading text-xl font-extrabold tracking-tight text-[#1c1e21]">Fookbase</span></div>
+          <div className="mt-auto pb-6"><h1 className="font-heading text-4xl font-extrabold leading-[1.08] tracking-tight text-[#1c1e21]">Khám phá<br />những điều<br /><span className="text-primary">bạn yêu<br />thích.</span></h1></div>
         </section>
-
-        <section className="flex min-h-[620px] items-center justify-center p-5 sm:p-10 lg:p-12">
+        <section className="relative hidden min-h-[760px] items-center justify-center overflow-hidden border-r border-[#e4e6eb] bg-white px-8 xl:flex"><LoginArtwork /></section>
+        <section className="flex min-h-[620px] items-center justify-center bg-white p-5 sm:p-10 lg:p-12">
           <form onSubmit={isVerifying ? (event) => event.preventDefault() : submit} className="w-full max-w-md">
-            <div className="mb-9 flex items-center justify-between lg:hidden">
+            <div className="mb-9 flex items-center justify-between xl:hidden">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-xl font-extrabold text-white">f</div>
                 <span className="font-heading text-lg font-extrabold tracking-tight text-text">fookbase</span>
@@ -231,6 +225,7 @@ export default function LoginPage() {
           </form>
         </section>
       </div>
+      <footer className="hidden border-t border-[#e4e6eb] bg-white px-8 py-5 text-center text-xs leading-6 text-[#8a8d91] xl:block">Tiếng Việt · English (UK) · Français (France) · 日本語 · Đăng ký · Đăng nhập · Zola Light · Fookbase · Điều khoản · Quyền riêng tư · Cookie</footer>
     </main>
   )
 }

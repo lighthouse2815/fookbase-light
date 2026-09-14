@@ -102,6 +102,22 @@ body {
   min-height: 100vh;
 }
 
+.fookbase-login {
+  color-scheme: light;
+  --color-bg: #f0f2f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f2f5;
+  --color-surface-3: #e4e6eb;
+  --color-surface-hover: #e4e6eb;
+  --color-text: #1c1e21;
+  --color-text-muted: #606770;
+  --color-text-light: #8a8d91;
+  --color-border: #ccd0d5;
+  --color-primary: #1877f2;
+  --color-primary-light: #1877f2;
+  --color-primary-dark: #166fe5;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 5px;
