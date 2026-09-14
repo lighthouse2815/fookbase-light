@@ -32,4 +32,5 @@ public sealed record ReelResponse(
     long ViewCount,
     long CompletionCount,
     bool ViewerHasSaved,
+    bool ViewerFollowsAuthor,
     IReadOnlyList<ContentMentionResponse>? Mentions = null);

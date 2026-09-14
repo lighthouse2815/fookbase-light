@@ -140,22 +140,75 @@ public sealed class ReelsService(
                 .Select(follow => follow.FollowingUserId);
             query = query.Where(post => followingUserIds.Contains(post.AuthorUserId));
         }
-        if (cursor is not null)
+        List<Post> reels;
+        string? nextCursor;
+        if (feedMode == ReelFeedMode.ForYou)
         {
-            query = query.Where(post =>
-                post.CreatedAtUtc < cursor.CreatedAtUtc ||
-                (post.CreatedAtUtc == cursor.CreatedAtUtc && post.Id.CompareTo(cursor.Id) < 0));
-        }
+            var followedAuthorIds = dbContext.UserFollows.AsNoTracking()
+                .Where(follow => follow.FollowerUserId == viewerUserId)
+                .Select(follow => follow.FollowingUserId);
+            var reactedReelIds = dbContext.PostReactions.AsNoTracking()
+                .Where(reaction => reaction.UserId == viewerUserId)
+                .Select(reaction => reaction.PostId);
+            var commentedReelIds = dbContext.Comments.AsNoTracking()
+                .Where(comment => comment.AuthorUserId == viewerUserId && comment.DeletedAtUtc == null)
+                .Select(comment => comment.PostId);
+            var completedReelIds = dbContext.ReelViews.AsNoTracking()
+                .Where(view => view.ViewerUserId == viewerUserId && view.Completed)
+                .Select(view => view.ReelPostId);
+            var viewedReelIds = dbContext.ReelViews.AsNoTracking()
+                .Where(view => view.ViewerUserId == viewerUserId)
+                .Select(view => view.ReelPostId);
+            var ranked = query.Select(reel => new
+            {
+                Reel = reel,
+                Score = (followedAuthorIds.Contains(reel.AuthorUserId) ? 100 : 0) +
+                    (reactedReelIds.Contains(reel.Id) ? 40 : 0) +
+                    (commentedReelIds.Contains(reel.Id) ? 25 : 0) -
+                    (completedReelIds.Contains(reel.Id) ? 80 : 0) -
+                    (viewedReelIds.Contains(reel.Id) ? 15 : 0),
+            });
+            if (cursor is not null)
+            {
+                ranked = ranked.Where(item =>
+                    item.Score < cursor.Score ||
+                    (item.Score == cursor.Score &&
+                     (item.Reel.CreatedAtUtc < cursor.CreatedAtUtc ||
+                      (item.Reel.CreatedAtUtc == cursor.CreatedAtUtc && item.Reel.Id.CompareTo(cursor.Id) < 0))));
+            }
 
-        var candidates = await query
-            .OrderByDescending(post => post.CreatedAtUtc)
-            .ThenByDescending(post => post.Id)
-            .Take(limit + 1)
-            .ToListAsync(cancellationToken);
-        var reels = candidates.Take(limit).ToList();
+            var candidates = await ranked
+                .OrderByDescending(item => item.Score)
+                .ThenByDescending(item => item.Reel.CreatedAtUtc)
+                .ThenByDescending(item => item.Reel.Id)
+                .Take(limit + 1)
+                .ToListAsync(cancellationToken);
+            var page = candidates.Take(limit).ToList();
+            reels = page.Select(item => item.Reel).ToList();
+            nextCursor = candidates.Count > limit
+                ? EncodeCursor(page[^1].Score, page[^1].Reel)
+                : null;
+        }
+        else
+        {
+            if (cursor is not null)
+            {
+                query = query.Where(post =>
+                    post.CreatedAtUtc < cursor.CreatedAtUtc ||
+                    (post.CreatedAtUtc == cursor.CreatedAtUtc && post.Id.CompareTo(cursor.Id) < 0));
+            }
+
+            var candidates = await query
+                .OrderByDescending(post => post.CreatedAtUtc)
+                .ThenByDescending(post => post.Id)
+                .Take(limit + 1)
+                .ToListAsync(cancellationToken);
+            reels = candidates.Take(limit).ToList();
+            nextCursor = candidates.Count > limit ? EncodeCursor(0, reels[^1]) : null;
+        }
         return ApplicationResult<ReelPageResponse>.Success(new ReelPageResponse(
             await LoadResponsesAsync(reels, viewerUserId, cancellationToken),
-            candidates.Count > limit ? EncodeCursor(reels[^1]) : null));
+            nextCursor));
     }
 
     public async Task<ApplicationResult<ReelMediaAccessResponse>> GetMediaAccessAsync(
@@ -304,6 +357,13 @@ public sealed class ReelsService(
                 .Select(save => save.PostId)
                 .ToListAsync(cancellationToken))
                 .ToHashSet();
+        var followedAuthorIds = viewerUserId is null
+            ? new HashSet<Guid>()
+            : (await dbContext.UserFollows.AsNoTracking()
+                .Where(follow => follow.FollowerUserId == viewerUserId.Value && authorIds.Contains(follow.FollowingUserId))
+                .Select(follow => follow.FollowingUserId)
+                .ToListAsync(cancellationToken))
+                .ToHashSet();
         var mentionRows = await dbContext.ContentMentions.AsNoTracking()
             .Where(mention => mention.SourceType == MentionSourceType.Post && reelIds.Contains(mention.SourceId))
             .Select(mention => new MentionRow(
@@ -365,6 +425,7 @@ public sealed class ReelsService(
                 views?.ViewCount ?? 0,
                 views?.CompletionCount ?? 0,
                 savedReelIds.Contains(reel.Id),
+                followedAuthorIds.Contains(reel.AuthorUserId),
                 mentionRows
                     .Where(mention => mention.SourceId == reel.Id && mentionedProfiles.ContainsKey(mention.UserId))
                     .OrderBy(mention => mention.StartIndex)
@@ -437,10 +498,11 @@ public sealed class ReelsService(
         _ => throw new ArgumentOutOfRangeException(nameof(privacy), privacy, null)
     };
 
-    private static string EncodeCursor(Post reel)
+    private static string EncodeCursor(int score, Post reel)
     {
-        var payload = reel.CreatedAtUtc.UtcDateTime.Ticks.ToString(CultureInfo.InvariantCulture) +
-            ":" + reel.Id.ToString("N");
+        var payload = score.ToString(CultureInfo.InvariantCulture) + ":" +
+            reel.CreatedAtUtc.UtcDateTime.Ticks.ToString(CultureInfo.InvariantCulture) + ":" +
+            reel.Id.ToString("N");
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(payload))
             .TrimEnd('=')
             .Replace('+', '-')
@@ -453,15 +515,17 @@ public sealed class ReelsService(
         {
             var encoded = value.Replace('-', '+').Replace('_', '/');
             encoded = encoded.PadRight(encoded.Length + (4 - encoded.Length % 4) % 4, '=');
-            var parts = Encoding.UTF8.GetString(Convert.FromBase64String(encoded)).Split(':', 2);
-            if (parts.Length != 2 ||
-                !long.TryParse(parts[0], CultureInfo.InvariantCulture, out var ticks) ||
-                !Guid.TryParseExact(parts[1], "N", out var id))
+            var parts = Encoding.UTF8.GetString(Convert.FromBase64String(encoded)).Split(':', 3);
+            var isLegacyCursor = parts.Length == 2;
+            if ((!isLegacyCursor && parts.Length != 3) ||
+                !int.TryParse(isLegacyCursor ? "0" : parts[0], CultureInfo.InvariantCulture, out var score) ||
+                !long.TryParse(isLegacyCursor ? parts[0] : parts[1], CultureInfo.InvariantCulture, out var ticks) ||
+                !Guid.TryParseExact(isLegacyCursor ? parts[1] : parts[2], "N", out var id))
             {
                 throw new FormatException("The reel cursor is invalid.");
             }
 
-            return new ReelCursor(new DateTimeOffset(new DateTime(ticks, DateTimeKind.Utc)), id);
+            return new ReelCursor(score, new DateTimeOffset(new DateTime(ticks, DateTimeKind.Utc)), id);
         }
         catch (ArgumentException exception)
         {
@@ -486,7 +550,7 @@ public sealed class ReelsService(
     private static ApplicationError ToPostError(Fookbase.Api.Modules.Media.Common.ApplicationError error) =>
         new(error.Code, error.Message, (ApplicationErrorType)(int)error.Type);
 
-    private sealed record ReelCursor(DateTimeOffset CreatedAtUtc, Guid Id);
+    private sealed record ReelCursor(int Score, DateTimeOffset CreatedAtUtc, Guid Id);
     private sealed record ReelMediaRow(Guid PostId, Guid MediaId, long DurationMs, int Width, int Height);
     private sealed record AuthorProfile(Guid UserId, string Username, string DisplayName, string? AvatarUrl, Guid? AvatarMediaId);
     private sealed record AuthorUser(Guid UserId, string? Username);

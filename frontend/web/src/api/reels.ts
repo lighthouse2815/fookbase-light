@@ -27,6 +27,7 @@ export interface Reel extends Omit<Post, 'authorUserId' | 'content' | 'mediaIds'
   viewCount: number
   completionCount: number
   viewerHasSaved: boolean
+  viewerFollowsAuthor: boolean
 }
 
 export type ReelFeedMode = 'forYou' | 'following'

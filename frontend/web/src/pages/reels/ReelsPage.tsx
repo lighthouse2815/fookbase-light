@@ -135,7 +135,7 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
   const [isSaved, setIsSaved] = useState(reel.viewerHasSaved)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isMoreOpen, setIsMoreOpen] = useState(false)
-  const [isFollowingAuthor, setIsFollowingAuthor] = useState(false)
+  const [isFollowingAuthor, setIsFollowingAuthor] = useState(reel.viewerFollowsAuthor)
 
   useEffect(() => {
     const card = cardRef.current
