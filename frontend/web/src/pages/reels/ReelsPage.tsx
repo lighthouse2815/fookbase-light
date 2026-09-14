@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { mediaApi, type Media } from '../../api/media'
 import { postsApi, type Comment } from '../../api/posts'
@@ -9,6 +9,25 @@ import ShareDialog from '../feed/components/ShareDialog'
 
 const supportedVideoTypes = new Set(['video/mp4', 'video/webm'])
 const maximumVideoBytes = 500 * 1024 * 1024
+
+function ReelsSidebar({ onCreate }: { onCreate: () => void }) {
+  return <aside className="absolute inset-y-0 left-0 z-20 hidden w-48 border-r border-white/10 bg-black px-3 py-2 lg:flex lg:flex-col">
+    <h1 className="px-1 text-xl font-bold text-white">Reels</h1>
+    <nav className="mt-1 flex flex-col gap-1" aria-label="Điều hướng Reels">
+      <button type="button" className="flex h-9 items-center gap-3 rounded-md border-0 bg-[#27292d] px-2.5 text-sm font-semibold text-white cursor-pointer"><span aria-hidden="true">★</span>Dành cho bạn</button>
+      <button type="button" className="flex h-9 items-center gap-3 rounded-md border-0 bg-transparent px-2.5 text-sm font-semibold text-white/70 hover:bg-white/10 cursor-pointer"><span aria-hidden="true">▣</span>Đang theo dõi</button>
+      <Link to="/profile" className="flex h-9 items-center gap-3 rounded-md px-2.5 text-sm font-semibold text-white/70 no-underline hover:bg-white/10"><span aria-hidden="true">◎</span>Trang cá nhân</Link>
+    </nav>
+    <button type="button" onClick={onCreate} className="mt-4 rounded-md border-0 bg-primary px-3 py-2 text-sm font-bold text-white cursor-pointer">＋ Tạo Reel</button>
+  </aside>
+}
+
+function ReelAction({ label, count, active, onClick, children }: { label: string; count?: number; active?: boolean; onClick: () => void; children: ReactNode }) {
+  return <button type="button" aria-label={label} onClick={onClick} className={'flex w-11 flex-col items-center gap-0.5 border-0 bg-transparent text-xs font-semibold text-white cursor-pointer ' + (active ? 'text-primary-light' : 'hover:text-white/70')}>
+    <span className="grid h-9 w-9 place-items-center rounded-full text-2xl leading-none">{children}</span>
+    {count !== undefined && <span>{count.toLocaleString()}</span>}
+  </button>
+}
 
 export default function ReelsPage() {
   const [searchParams] = useSearchParams()
@@ -59,8 +78,9 @@ export default function ReelsPage() {
   }
 
   return (
-    <div className="relative h-[calc(100vh-56px)] overflow-hidden bg-[#0d0e10]">
-      <div ref={listRef} className="h-full snap-y snap-mandatory overflow-y-auto scroll-smooth">
+    <div className="relative h-[calc(100vh-56px)] overflow-hidden bg-black">
+      <ReelsSidebar onCreate={() => setIsCreateOpen(true)} />
+      <div ref={listRef} className="h-full snap-y snap-mandatory overflow-y-auto scroll-smooth lg:pl-18">
         {isLoading && <div className="grid h-full place-items-center text-sm text-text-muted">Đang tải Reels…</div>}
         {error && <div className="grid h-full place-items-center p-6"><div className="max-w-md rounded-xl border border-[#e41e3f]/40 bg-[#e41e3f]/10 p-4 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void load()} className="mt-3 rounded-lg bg-primary px-3 py-2 text-white">Thử lại</button></div></div>}
         {!isLoading && !error && reels.length === 0 && <div className="grid h-full place-items-center text-center"><div><p className="text-lg font-semibold text-text">Chưa có Reel để xem</p><button type="button" onClick={() => setIsCreateOpen(true)} className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Tạo Reel đầu tiên</button></div></div>}
@@ -78,12 +98,12 @@ export default function ReelsPage() {
         {isLoadingMore && <div className="py-4 text-center text-xs text-text-muted">Đang tải thêm…</div>}
       </div>
 
-      {reels.length > 0 && <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2">
-        <button type="button" disabled={activeIndex === 0} onClick={() => selectIndex(activeIndex - 1)} className="h-10 w-10 rounded-full border-0 bg-surface/90 text-xl text-text shadow-lg disabled:opacity-30" aria-label="Reel trước">↑</button>
-        <button type="button" disabled={activeIndex >= reels.length - 1} onClick={() => selectIndex(activeIndex + 1)} className="h-10 w-10 rounded-full border-0 bg-surface/90 text-xl text-text shadow-lg disabled:opacity-30" aria-label="Reel tiếp theo">↓</button>
+      {reels.length > 0 && <div className="absolute right-3 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-3">
+        <button type="button" disabled={activeIndex === 0} onClick={() => selectIndex(activeIndex - 1)} className="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-transparent text-xl text-white disabled:opacity-30 cursor-pointer" aria-label="Reel trước">⌃</button>
+        <button type="button" disabled={activeIndex >= reels.length - 1} onClick={() => selectIndex(activeIndex + 1)} className="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-transparent text-xl text-white disabled:opacity-30 cursor-pointer" aria-label="Reel tiếp theo">⌄</button>
         {nextCursor && activeIndex >= reels.length - 1 && <button type="button" disabled={isLoadingMore} onClick={() => void load(nextCursor, true)} className="rounded-full bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Thêm</button>}
       </div>}
-      <button type="button" onClick={() => setIsCreateOpen(true)} className="absolute right-4 top-4 z-10 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg">＋ Tạo Reel</button>
+      <button type="button" onClick={() => setIsCreateOpen(true)} className="absolute left-3 top-3 z-20 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white lg:hidden">＋ Tạo Reel</button>
       {isCreateOpen && <CreateReelDialog onClose={() => setIsCreateOpen(false)} onCreated={(reel) => { setReels((current) => [reel, ...current]); setActiveIndex(0); setIsCreateOpen(false) }} />}
     </div>
   )
@@ -112,6 +132,7 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
   const [currentMs, setCurrentMs] = useState(0)
   const [isSaved, setIsSaved] = useState(false)
   const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isMoreOpen, setIsMoreOpen] = useState(false)
 
   useEffect(() => {
     const card = cardRef.current
@@ -213,24 +234,24 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
 
   const initial = reel.author.displayName.slice(0, 2).toUpperCase()
   return (
-    <section ref={cardRef} data-reel-index={index} className="relative flex min-h-full snap-start items-center justify-center bg-black px-2 py-3 sm:px-4" onMouseEnter={onActivate}>
-      <div className="relative h-[min(92vh,900px)] w-full max-w-[560px] overflow-hidden rounded-2xl bg-surface shadow-2xl">
+    <section ref={cardRef} data-reel-index={index} className="relative flex min-h-full snap-start items-center justify-center bg-black px-2 py-2 sm:px-4" onMouseEnter={onActivate}>
+      <div className="relative aspect-[9/16] h-[calc(100vh-72px)] max-w-[calc(100vw-8rem)] overflow-hidden rounded-lg bg-surface shadow-2xl">
         {videoUrl ? <video ref={videoRef} src={videoUrl} poster={posterUrl ?? undefined} muted={isMuted} playsInline className="h-full w-full object-contain" onPlay={() => { onActivate(); setIsPaused(false) }} onTimeUpdate={() => { const milliseconds = Math.floor((videoRef.current?.currentTime ?? 0) * 1000); setCurrentMs(milliseconds); const threshold = Math.min(3_000, reel.video.durationMs * 0.25); if (milliseconds >= threshold) recordThreshold(false) }} onEnded={() => { setIsPaused(true); recordThreshold(true) }} /> : <div className="grid h-full place-items-center text-sm text-text-muted">Đang chuẩn bị video…</div>}
         <button type="button" onClick={() => { const video = videoRef.current; if (!video) return; if (video.paused) { if (video.ended) video.currentTime = 0; void video.play(); setIsPaused(false) } else { video.pause(); setIsPaused(true) } }} className="absolute inset-0 border-0 bg-transparent" aria-label={isPaused ? 'Phát Reel' : 'Tạm dừng Reel'} />
-        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 via-black/45 to-transparent px-4 pb-4 pt-20 text-white pointer-events-none">
+        <button type="button" onClick={() => setIsMuted((current) => !current)} className="absolute left-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full border-0 bg-black/45 text-lg text-white cursor-pointer" aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}>{isMuted ? '🔇' : '🔊'}</button>
+        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/95 via-black/55 to-transparent px-4 pb-3 pt-24 text-white pointer-events-none">
           <div className="flex items-end gap-3 pointer-events-auto">
             <div className="h-10 w-10 shrink-0 rounded-full bg-primary text-center text-xs font-bold leading-10">{initial}</div>
-            <div className="min-w-0 flex-1"><p className="font-semibold">{reel.author.displayName} <span className="font-normal text-white/70">@{reel.author.username}</span></p>{reel.caption && <TextWithReferences content={reel.caption} mentions={reel.mentions} className="mt-1 whitespace-pre-wrap text-sm leading-relaxed" />}<p className="mt-2 text-xs text-white/70">{reel.viewCount.toLocaleString()} lượt xem</p></div>
-          </div>
-          <div className="mt-3 flex items-center gap-2 pointer-events-auto">
-            <button type="button" onClick={toggleReaction} className="rounded-full bg-white/15 px-3 py-2 text-sm text-white">{reel.viewerReaction ? '♥ Đã thích' : '♡ Thích'} {reel.reactionCount > 0 ? reel.reactionCount : ''}</button>
-            <button type="button" onClick={() => void openComments()} className="rounded-full bg-white/15 px-3 py-2 text-sm text-white">💬 {reel.commentCount}</button>
-            <button type="button" onClick={() => void saveReel()} className="rounded-full bg-white/15 px-3 py-2 text-sm text-white">🔖 {isSaved ? 'Đã lưu' : 'Lưu'}</button>
-            <button type="button" onClick={() => setIsShareOpen(true)} className="rounded-full bg-white/15 px-3 py-2 text-sm text-white">↗ Chia sẻ</button>
-            <button type="button" onClick={() => setIsMuted((current) => !current)} className="ml-auto rounded-full bg-white/15 px-3 py-2 text-sm text-white">{isMuted ? '🔇' : '🔊'}</button>
+            <div className="min-w-0 flex-1"><p className="font-semibold">{reel.author.displayName} <button type="button" className="ml-1 rounded border border-white/60 bg-transparent px-1.5 py-0.5 text-[11px] font-bold text-white cursor-pointer">Theo dõi</button></p>{reel.caption && <TextWithReferences content={reel.caption} mentions={reel.mentions} className="mt-1 whitespace-pre-wrap text-sm leading-relaxed" />}<p className="mt-2 text-xs text-white/70">{reel.viewCount.toLocaleString()} lượt xem</p></div>
           </div>
           <input aria-label="Tiến trình Reel" type="range" min="0" max={reel.video.durationMs} value={Math.min(currentMs, reel.video.durationMs)} onChange={(event) => { const next = Number(event.target.value); if (videoRef.current) videoRef.current.currentTime = next / 1000; setCurrentMs(next) }} className="mt-3 w-full accent-primary pointer-events-auto" />
         </div>
+      </div>
+      <div className="absolute bottom-12 left-[calc(50%+min(29vw,290px))] z-10 flex flex-col items-center gap-3 max-md:left-auto max-md:right-3">
+        <ReelAction label="Thích Reel" count={reel.reactionCount} active={Boolean(reel.viewerReaction)} onClick={() => void toggleReaction()}>♡</ReelAction>
+        <ReelAction label="Xem bình luận" count={reel.commentCount} onClick={() => void openComments()}>◯</ReelAction>
+        <ReelAction label="Chia sẻ Reel" onClick={() => setIsShareOpen(true)}>↗</ReelAction>
+        <div className="relative"><ReelAction label="Tùy chọn khác" onClick={() => setIsMoreOpen((current) => !current)}>•••</ReelAction>{isMoreOpen && <button type="button" onClick={() => void saveReel()} className="absolute bottom-0 right-12 whitespace-nowrap rounded-md border-0 bg-surface px-3 py-2 text-xs font-bold text-text shadow-lg cursor-pointer">{isSaved ? 'Bỏ lưu Reel' : 'Lưu Reel'}</button>}</div>
       </div>
       {isCommentsOpen && <aside className="absolute bottom-4 left-1/2 z-20 w-[min(34rem,calc(100%-1rem))] -translate-x-1/2 rounded-xl border border-border bg-surface p-3 shadow-2xl"><div className="flex items-center justify-between"><h2 className="font-semibold text-text">Bình luận ({reel.commentCount})</h2><button type="button" onClick={() => setIsCommentsOpen(false)} className="border-0 bg-transparent text-text-muted">✕</button></div><div className="mt-2 max-h-44 space-y-2 overflow-y-auto">{comments.map((comment) => <TextWithReferences key={comment.id} content={comment.content} mentions={comment.mentions} className="block rounded-lg bg-surface-2 px-3 py-2 text-sm text-text" />)}{comments.length === 0 && <p className="py-2 text-sm text-text-muted">Chưa có bình luận.</p>}</div><div className="mt-3 flex gap-2"><input value={commentText} onChange={(event) => setCommentText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void submitComment() }} placeholder="Viết bình luận…" className="min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none" /><button type="button" disabled={!commentText.trim() || isSavingComment} onClick={() => void submitComment()} className="rounded-lg bg-primary px-3 text-sm font-semibold text-white disabled:opacity-40">Gửi</button></div></aside>}
       {isShareOpen && <ShareDialog postId={reel.id} onClose={() => setIsShareOpen(false)} />}
