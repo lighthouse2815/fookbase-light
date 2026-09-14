@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
@@ -61,6 +61,7 @@ export default function TopNavbar() {
     unreadNotificationCount,
   } = useRealtime()
   const { t } = usePreferences()
+  const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
@@ -73,6 +74,7 @@ export default function TopNavbar() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
   const messengerUrl = import.meta.env.VITE_MESSENGER_URL ?? 'http://localhost:5174'
+  const isNotificationsPage = location.pathname === '/notifications'
   const navItems: NavItem[] = [
     { path: '/feed', icon: <HomeIcon />, label: t('home') },
     { path: '/reels', icon: <ReelsIcon />, label: 'Reels' },
@@ -287,10 +289,12 @@ export default function TopNavbar() {
           <button
             type="button"
             onClick={() => {
+              if (isNotificationsPage) return
               setIsNotificationsOpen((current) => !current)
               setIsNotificationMenuOpen(false)
             }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer border-none text-sm relative ${isNotificationsOpen ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50]'}`}
+            disabled={isNotificationsPage}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none text-sm relative ${isNotificationsOpen || isNotificationsPage ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50] cursor-pointer'} ${isNotificationsPage ? 'cursor-default' : ''}`}
             title={t('messageNotifications')}
             aria-expanded={isNotificationsOpen}
           >
