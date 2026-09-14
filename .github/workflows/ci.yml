@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [web, messenger, admin]
+        app: [web, zola-light, admin]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,8 +57,8 @@ jobs:
       Jwt__SigningKey: ci-signing-key-with-more-than-thirty-two-characters
       AllowedHosts: api.ci.example.test
       Cors__AllowedOrigins__0: https://web.ci.example.test
-      Cors__AllowedOrigins__1: https://messenger.ci.example.test
-      Cors__AllowedOrigins__2: https://admin.ci.example.test
+      Cors__AllowedOrigins__1: https://admin.ci.example.test
+      Cors__AllowedOrigins__2: https://zola-light.ci.example.test
       MINIO_CORS_ALLOWED_ORIGIN: https://web.ci.example.test
     steps:
       - uses: actions/checkout@v4

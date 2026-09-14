@@ -1,11 +1,11 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import MainLayout from '../layout/MainLayout'
+import ZolaLightRedirect from '../pages/ZolaLightRedirect'
 
 const feedPage = lazy(() => import('../pages/feed/FeedPage'))
 const explorePage = lazy(() => import('../pages/explore/ExplorePage'))
 const gamesPage = lazy(() => import('../pages/games/GamesPage'))
-const messagesPage = lazy(() => import('../pages/messages/MessagesPage'))
 const profilePage = lazy(() => import('../pages/profile/ProfilePage'))
 const userProfilePage = lazy(() => import('../pages/profile/UserProfilePage'))
 const loginPage = lazy(() => import('../pages/auth/LoginPage'))
@@ -77,7 +77,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'messages',
-        element: page(messagesPage),
+        element: <ZolaLightRedirect />,
       },
       {
         path: 'groups',

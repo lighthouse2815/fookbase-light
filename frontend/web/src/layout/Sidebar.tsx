@@ -24,7 +24,6 @@ const primaryItems: NavItem[] = [
 
 const moreItems: NavItem[] = [
   { path: '/feed', icon: 'feed', label: 'Bảng feed' },
-  { path: '/messages', icon: 'messages', label: 'Zola Light' },
   { path: '/birthdays', icon: 'birthdays', label: 'Sinh nhật' },
   { path: '/events', icon: 'events', label: 'Sự kiện' },
   { path: '/pages', icon: 'pages', label: 'Trang' },
@@ -68,6 +67,7 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [shortcuts, setShortcuts] = useState<Group[]>([])
   const initials = session!.user.username.slice(0, 2).toUpperCase()
+  const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
 
   useEffect(() => {
     let isCurrent = true
@@ -97,7 +97,13 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
 
         {primaryItems.map((item) => <SidebarLink key={item.path} item={item} />)}
 
-        {isExpanded && moreItems.map((item) => <SidebarLink key={item.path} item={item} />)}
+        {isExpanded && <>
+          <a href={zolaLightUrl} className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left no-underline transition-colors hover:bg-surface-2">
+            <SidebarIcon name="messages" />
+            <span className="text-[15px] font-semibold text-text">Zola Light</span>
+          </a>
+          {moreItems.map((item) => <SidebarLink key={item.path} item={item} />)}
+        </>}
 
         <button
           type="button"
