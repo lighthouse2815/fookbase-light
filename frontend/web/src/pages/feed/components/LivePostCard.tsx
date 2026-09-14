@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
@@ -53,6 +53,97 @@ function LikeIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M7.1 21H4.4a1.4 1.4 0 0 1-1.4-1.4v-7.2A1.4 1.4 0 0 1 4.4 11H7l2.2-6.2a2.05 2.05 0 0 1 4 .7l-.3 4.5h4.3a2.8 2.8 0 0 1 2.7 3.5l-1.2 5a3.2 3.2 0 0 1-3.1 2.5H7.1V11" /></svg>
 }
 
+type ReactionType = 'like' | 'love' | 'haha' | 'wow' | 'sad' | 'angry'
+
+const reactionChoices: ReadonlyArray<{ type: ReactionType; icon: string; label: string; color: string }> = [
+  { type: 'like', icon: '👍', label: 'Thích', color: 'text-[#1877f2]' },
+  { type: 'love', icon: '❤️', label: 'Yêu thích', color: 'text-[#f33e58]' },
+  { type: 'haha', icon: '😆', label: 'Haha', color: 'text-[#f7b125]' },
+  { type: 'wow', icon: '😮', label: 'Wow', color: 'text-[#f7b125]' },
+  { type: 'sad', icon: '😢', label: 'Buồn', color: 'text-[#f7b125]' },
+  { type: 'angry', icon: '😡', label: 'Phẫn nộ', color: 'text-[#e9710f]' },
+]
+
+function ReactionSummary({ reactionCounts }: { reactionCounts: Record<string, number> }) {
+  const reactions = reactionChoices.filter(({ type }) => (reactionCounts[type] ?? 0) > 0)
+  const total = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0)
+
+  if (total === 0) return null
+
+  return <span className="flex items-center gap-1.5" aria-label={`${total} cảm xúc`}>
+    <span className="flex -space-x-1.5 text-base leading-none" aria-hidden="true">
+      {reactions.slice(0, 3).map(({ type, icon }) => <span key={type}>{icon}</span>)}
+    </span>
+    <span>{total}</span>
+  </span>
+}
+
+interface ReactionPickerProps {
+  viewerReaction: string | null
+  onToggleDefault: () => void
+  onSelect: (type: ReactionType) => void
+  className?: string
+}
+
+function ReactionPicker({ viewerReaction, onToggleDefault, onSelect, className = '' }: ReactionPickerProps) {
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const pressTimerRef = useRef<number | null>(null)
+  const skipClickRef = useRef(false)
+  const selectedReaction = reactionChoices.find(({ type }) => type === viewerReaction)
+
+  const clearPressTimer = () => {
+    if (pressTimerRef.current === null) return
+    window.clearTimeout(pressTimerRef.current)
+    pressTimerRef.current = null
+  }
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType !== 'touch') return
+    pressTimerRef.current = window.setTimeout(() => {
+      skipClickRef.current = true
+      setIsPickerOpen(true)
+    }, 450)
+  }
+
+  const chooseReaction = (type: ReactionType) => {
+    setIsPickerOpen(false)
+    onSelect(type)
+  }
+
+  return <div className={`group relative ${className}`} onMouseLeave={() => setIsPickerOpen(false)}>
+    <button
+      type="button"
+      onPointerDown={handlePointerDown}
+      onPointerUp={clearPressTimer}
+      onPointerCancel={clearPressTimer}
+      onClick={() => {
+        if (skipClickRef.current) {
+          skipClickRef.current = false
+          return
+        }
+        setIsPickerOpen(false)
+        onToggleDefault()
+      }}
+      className={`flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition-colors ${selectedReaction ? `${selectedReaction.color} bg-primary/10` : 'text-text-muted hover:bg-surface-2'}`}
+      aria-label={selectedReaction ? `Bỏ cảm xúc ${selectedReaction.label}` : 'Thích'}
+      aria-expanded={isPickerOpen}
+    >
+      {selectedReaction ? <span className="text-[19px] leading-none" aria-hidden="true">{selectedReaction.icon}</span> : <LikeIcon />}
+      {selectedReaction?.label ?? 'Thích'}
+    </button>
+    <div className={`absolute bottom-[calc(100%+4px)] left-1/2 z-30 -translate-x-1/2 items-center rounded-full border border-border bg-surface px-1.5 py-1 shadow-xl ${isPickerOpen ? 'flex' : 'hidden'} group-hover:flex group-focus-within:flex`} role="group" aria-label="Chọn cảm xúc">
+      {reactionChoices.map(({ type, icon, label }) => <button
+        key={type}
+        type="button"
+        onClick={() => chooseReaction(type)}
+        className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent p-0 text-[26px] leading-none transition-transform hover:-translate-y-1 hover:scale-125 focus-visible:-translate-y-1 focus-visible:scale-125 focus-visible:outline-none"
+        aria-label={label}
+        title={label}
+      >{icon}</button>)}
+    </div>
+  </div>
+}
+
 function CommentIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20.25 11.5a7.75 7.75 0 0 1-8.1 7.74 8.55 8.55 0 0 1-3.1-.62L4 20l1.38-4.08A7.7 7.7 0 1 1 20.25 11.5Z" /></svg>
 }
@@ -96,11 +187,6 @@ export default function LivePostCard({
   const authorDestination = displayAuthor?.type === 'page'
     ? `/pages/${displayAuthor.username}`
     : post.authorUserId ? `/profile/${post.authorUserId}` : '/'
-  const reactionCount = Object.values(post.reactionCounts).reduce(
-    (total, count) => total + count,
-    0,
-  )
-  const isLiked = post.viewerReaction === 'like'
   const postTimestamp = formatPostTimestamp(post.createdAtUtc)
   const currentUserProfile = commentAuthors[currentUserId] ?? (isAuthor ? author : undefined)
   const currentUserName = currentUserProfile?.displayName ?? 'Bạn'
@@ -201,11 +287,22 @@ export default function LivePostCard({
     setSelectedPhoto(null)
   }
 
-  const toggleLike = async () => {
+  const toggleDefaultReaction = async () => {
     try {
-      const updatedPost = isLiked
+      const updatedPost = post.viewerReaction
         ? await postsApi.removeReaction(post.id)
         : await postsApi.setReaction(post.id, 'like')
+      onPostUpdated(updatedPost)
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReaction'))
+    }
+  }
+
+  const setReaction = async (type: ReactionType) => {
+    try {
+      const updatedPost = post.viewerReaction === type
+        ? await postsApi.removeReaction(post.id)
+        : await postsApi.setReaction(post.id, type)
       onPostUpdated(updatedPost)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReaction'))
@@ -340,13 +437,11 @@ export default function LivePostCard({
       {error && <p className="px-4 pt-3 text-xs text-[#ff8a9b]">{error}</p>}
 
       <div className="mx-4 flex min-h-11 items-center justify-between gap-3 border-b border-border text-[13px] text-text-muted">
-        <span className="flex items-center gap-1.5">{reactionCount > 0 && <><span className="flex -space-x-1 text-base leading-none"><span>👍</span><span>❤️</span></span><span>{reactionCount}</span></>}</span>
+        <ReactionSummary reactionCounts={post.reactionCounts} />
         <button type="button" onClick={openCommentsDialog} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{post.commentCount > 0 ? `${post.commentCount} ${t('comments')}` : ''}</button>
       </div>
       <div className="mx-2 grid grid-cols-3 gap-1 py-1">
-        <button type="button" onClick={() => void toggleLike()} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition-colors ${isLiked ? 'bg-primary/10 text-primary' : 'bg-transparent text-text-muted hover:bg-surface-2'}`}>
-          <LikeIcon />{isLiked ? t('liked') : t('like')}
-        </button>
+        <ReactionPicker viewerReaction={post.viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
         <button type="button" onClick={openCommentsDialog} className="flex items-center justify-center gap-2 rounded-lg border-0 bg-transparent py-2 text-sm font-semibold text-text-muted transition-colors hover:bg-surface-2">
           <CommentIcon />{t('comment')}
         </button>
@@ -380,11 +475,11 @@ export default function LivePostCard({
                 </div>
               )}
               <div className="flex items-center justify-between px-4 py-2 text-[13px] text-text-muted">
-                <span className="flex items-center gap-1.5">{reactionCount > 0 && <><span className="text-base leading-none">👍</span><span>{reactionCount}</span></>}</span>
+                <ReactionSummary reactionCounts={post.reactionCounts} />
                 <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
               </div>
               <div className="grid grid-cols-3 border-t border-border px-2 py-1">
-                <button type="button" onClick={() => void toggleLike()} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${isLiked ? 'text-primary' : 'text-text-muted hover:bg-surface-2'}`}><LikeIcon />{isLiked ? t('liked') : t('like')}</button>
+                <ReactionPicker viewerReaction={post.viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
                 <span className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-text-muted"><CommentIcon />{t('comment')}</span>
                 <button type="button" onClick={() => { setIsCommentsDialogOpen(false); setIsShareOpen(true) }} className="flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-text-muted hover:bg-surface-2"><ShareIcon />{t('share')}</button>
               </div>
@@ -420,11 +515,11 @@ export default function LivePostCard({
           </header>
 
           <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[13px] text-text-muted">
-            <span className="flex items-center gap-1.5">{reactionCount > 0 && <><span className="text-base leading-none">👍</span><span>{reactionCount}</span></>}</span>
+            <ReactionSummary reactionCounts={post.reactionCounts} />
             <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
           </div>
           <div className="grid grid-cols-3 border-b border-border px-2 py-1">
-            <button type="button" onClick={() => void toggleLike()} className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${isLiked ? 'text-primary' : 'text-text-muted hover:bg-surface-2'}`}><LikeIcon />{isLiked ? t('liked') : t('like')}</button>
+            <ReactionPicker viewerReaction={post.viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
             <span className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-text-muted"><CommentIcon />{t('comment')}</span>
             <button type="button" onClick={() => { closeDiscussion(); setIsShareOpen(true) }} className="flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-text-muted hover:bg-surface-2"><ShareIcon />{t('share')}</button>
           </div>
