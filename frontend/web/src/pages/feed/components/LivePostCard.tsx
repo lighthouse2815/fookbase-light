@@ -251,6 +251,7 @@ export default function LivePostCard({
   const [isSaved, setIsSaved] = useState(false)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false)
+  const postMenuRef = useRef<HTMLDivElement>(null)
   const isAuthor = post.authorUserId === currentUserId
   const displayAuthor = post.displayAuthor
   const authorName = displayAuthor?.name ?? author?.displayName ?? t('user')
@@ -295,6 +296,16 @@ export default function LivePostCard({
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [isCommentsDialogOpen, isReactionDialogOpen, selectedPhoto])
+
+  useEffect(() => {
+    if (!isPostMenuOpen) return
+
+    const closeOnOutsidePointerDown = (event: PointerEvent) => {
+      if (!postMenuRef.current?.contains(event.target as Node)) setIsPostMenuOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOnOutsidePointerDown)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointerDown)
+  }, [isPostMenuOpen])
 
   const loadCommentAuthors = async (items: readonly Comment[]) => {
     const authorIds = [...new Set(items.map((comment) => comment.authorUserId))]
@@ -481,14 +492,16 @@ export default function LivePostCard({
             <span className="inline-flex shrink-0 items-center text-text-muted"><PrivacyIcon privacy={post.privacy} /></span>
           </p>
         </div>
-        <button type="button" onClick={() => setIsPostMenuOpen((current) => !current)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-0 bg-transparent text-text-muted transition-colors hover:bg-surface-2 hover:text-text" aria-label={t('moreOptions')} aria-expanded={isPostMenuOpen}><MoreIcon /></button>
-        {isPostMenuOpen && <div className="absolute right-3 top-12 z-20 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-2xl">
-          <button type="button" onClick={() => { void savePost(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
-          {isAuthor ? <>
-            <button type="button" onClick={() => { void editPost(); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2">{t('edit')}</button>
-            <button type="button" onClick={() => { void deletePost(); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2">{t('delete')}</button>
-          </> : <ReportButton targetType="post" targetId={post.id} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-[#ff8a9b]" />}
-        </div>}
+        <div ref={postMenuRef} className="shrink-0">
+          <button type="button" onClick={() => setIsPostMenuOpen((current) => !current)} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-text-muted transition-colors hover:bg-surface-2 hover:text-text" aria-label={t('moreOptions')} aria-expanded={isPostMenuOpen}><MoreIcon /></button>
+          {isPostMenuOpen && <div className="absolute right-3 top-12 z-20 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-2xl">
+            <button type="button" onClick={() => { void savePost(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
+            {isAuthor ? <>
+              <button type="button" onClick={() => { void editPost(); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2">{t('edit')}</button>
+              <button type="button" onClick={() => { void deletePost(); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2">{t('delete')}</button>
+            </> : <ReportButton targetType="post" targetId={post.id} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-[#ff8a9b]" />}
+          </div>}
+        </div>
       </header>
 
       {post.content && !profileMediaUpdateStatus && <div className="px-4 pb-3 pt-1"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>}
