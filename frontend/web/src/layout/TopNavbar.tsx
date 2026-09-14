@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
@@ -61,6 +61,7 @@ export default function TopNavbar() {
     unreadNotificationCount,
   } = useRealtime()
   const { t } = usePreferences()
+  const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
@@ -290,7 +291,7 @@ export default function TopNavbar() {
               setIsNotificationsOpen((current) => !current)
               setIsNotificationMenuOpen(false)
             }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer border-none text-sm relative ${isNotificationsOpen ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50]'}`}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer border-none text-sm relative ${isNotificationsOpen || location.pathname === '/notifications' ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50]'}`}
             title={t('messageNotifications')}
             aria-expanded={isNotificationsOpen}
           >
@@ -305,7 +306,7 @@ export default function TopNavbar() {
                 <button type="button" onClick={() => setNotificationFilter('unread')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'unread' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Chưa đọc</button>
               </div>
               <div className="max-h-[calc(100vh-11rem)] overflow-y-auto px-2 pb-2">
-                <div className="flex items-center justify-between px-2 pb-1"><h3 className="text-base font-bold text-text">Trước đó</h3><button type="button" onClick={() => setNotificationFilter('all')} className="border-0 bg-transparent text-sm font-medium text-primary cursor-pointer hover:underline">Xem tất cả</button></div>
+                <div className="flex items-center justify-between px-2 pb-1"><h3 className="text-base font-bold text-text">Trước đó</h3><Link to="/notifications" onClick={() => setIsNotificationsOpen(false)} className="text-sm font-medium text-primary no-underline hover:underline">Xem tất cả</Link></div>
                 {visibleNotifications.length === 0 ? <p className="px-4 py-6 text-center text-sm text-text-muted">{notificationFilter === 'unread' ? 'Bạn không có thông báo chưa đọc.' : t('allCaughtUp')}</p> : (
                   <>
                     {visibleNotifications.map((notification, index) => {

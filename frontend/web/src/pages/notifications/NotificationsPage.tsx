@@ -1,0 +1,54 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import type { AppNotification } from '../../api/notifications'
+import { useRealtime } from '../../realtime/useRealtime'
+
+function destination(notification: AppNotification) {
+  if ((notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted' || notification.type === 'UserFollowed') && notification.actorUserId) return `/profile/${notification.actorUserId}`
+  if (notification.type === 'GroupInvite' || notification.type === 'GroupJoinApproved') return '/groups'
+  if (notification.type === 'PageRoleInvite' || notification.entityType === 'Page' || notification.entityType === 'PageRoleInvitation') return '/pages'
+  if (notification.type === 'StoryReaction') return '/feed'
+  return notification.entityId ? `/feed?post=${notification.entityId}` : '/feed'
+}
+
+function message(notification: AppNotification) {
+  const messages: Record<AppNotification['type'], string> = {
+    FriendRequestReceived: 'đã gửi cho bạn lời mời kết bạn.', FriendRequestAccepted: 'đã chấp nhận lời mời kết bạn của bạn.', UserFollowed: 'đã bắt đầu theo dõi bạn.', PostReaction: 'đã bày tỏ cảm xúc về bài viết của bạn.', PostComment: 'đã bình luận về bài viết của bạn.', CommentReaction: 'đã bày tỏ cảm xúc về bình luận của bạn.', PostShared: 'đã chia sẻ bài viết của bạn.', PostMention: 'đã nhắc đến bạn trong một bài viết.', CommentMention: 'đã nhắc đến bạn trong một bình luận.', GroupInvite: 'đã mời bạn tham gia một nhóm.', GroupJoinApproved: 'đã chấp nhận yêu cầu tham gia nhóm của bạn.', StoryReaction: 'đã bày tỏ cảm xúc về Story của bạn.', PageRoleInvite: 'đã mời bạn quản lý một Trang.',
+  }
+  return messages[notification.type]
+}
+
+function badge(notification: AppNotification) {
+  if (notification.type === 'PostReaction' || notification.type === 'CommentReaction' || notification.type === 'StoryReaction') return { icon: '♥', className: 'bg-[#f02849]' }
+  if (notification.type === 'PostComment' || notification.type === 'CommentMention') return { icon: '●', className: 'bg-[#1877f2]' }
+  if (notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted' || notification.type === 'UserFollowed') return { icon: '♟', className: 'bg-[#31a24c]' }
+  return { icon: '●', className: 'bg-[#1877f2]' }
+}
+
+export default function NotificationsPage() {
+  const { notifications, unreadNotificationCount, markAllNotificationsRead, markNotificationRead, hasMoreNotifications, isLoadingMoreNotifications, loadMoreNotifications } = useRealtime()
+  const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  const visibleNotifications = filter === 'unread' ? notifications.filter((notification) => !notification.isRead) : notifications
+
+  return <main className="min-h-screen px-3 py-4 sm:px-4">
+    <section className="mx-auto w-full max-w-[680px] rounded-xl border border-border bg-surface p-3 shadow-sm">
+      <div className="flex items-center justify-between px-1"><h1 className="font-heading text-2xl font-bold text-text">Thông báo</h1><button type="button" onClick={markAllNotificationsRead} disabled={unreadNotificationCount === 0} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-xl text-text-muted cursor-pointer hover:bg-surface-2 disabled:cursor-default disabled:opacity-50" title="Đánh dấu tất cả là đã đọc">•••</button></div>
+      <div className="flex gap-2 py-2"><button type="button" onClick={() => setFilter('all')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${filter === 'all' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Tất cả</button><button type="button" onClick={() => setFilter('unread')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${filter === 'unread' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Chưa đọc</button></div>
+      <h2 className="px-1 pb-1 text-base font-bold text-text">Trước đó</h2>
+      <div className="space-y-0.5">
+        {visibleNotifications.length === 0 ? <p className="px-4 py-8 text-center text-sm text-text-muted">Không có thông báo để hiển thị.</p> : visibleNotifications.map((notification, index) => {
+          const actor = notification.actorDisplayName ?? notification.actorUsername ?? 'Người dùng'
+          const action = badge(notification)
+          const avatarTone = ['bg-[#87433b]', 'bg-[#5f7997]', 'bg-[#8e5b88]', 'bg-[#607b57]', 'bg-[#9b6c45]'][index % 5]
+          const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(notification.createdAtUtc))
+          return <Link key={notification.id} to={destination(notification)} onClick={() => markNotificationRead(notification.id)} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
+            <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${avatarTone}`}>{actor.slice(0, 2).toUpperCase()}<span className={`absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-surface text-[11px] font-bold text-white ${action.className}`}>{action.icon}</span></span>
+            <span className="min-w-0 flex-1 pr-4"><span className="block text-sm leading-5 text-text"><strong>{actor}</strong> {message(notification)}</span><span className={`mt-0.5 block text-xs font-semibold ${notification.isRead ? 'text-text-light' : 'text-primary'}`}>{time}</span></span>
+            {!notification.isRead && <span className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary" />}
+          </Link>
+        })}
+      </div>
+      {hasMoreNotifications && <button type="button" onClick={loadMoreNotifications} disabled={isLoadingMoreNotifications} className="mt-3 w-full rounded-lg border-0 bg-surface-2 px-4 py-2.5 text-sm font-semibold text-text cursor-pointer hover:bg-surface-3 disabled:cursor-wait">{isLoadingMoreNotifications ? 'Đang tải…' : 'Xem thông báo trước đó'}</button>}
+    </section>
+  </main>
+}
