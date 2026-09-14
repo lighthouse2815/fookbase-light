@@ -29,6 +29,10 @@ if [[ "${CHECK_EF_MODEL:-false}" == "true" ]]; then
   : "${ConnectionStrings__FookbaseDatabase:?Set ConnectionStrings__FookbaseDatabase for the EF model check.}"
   cd "${repository_root}"
   dotnet tool restore
+  # Integration tests run in a container and can leave project.assets.json
+  # pointing at its /workspace NuGet cache. Restore again on this runner so
+  # dotnet-ef resolves packages from the current environment.
+  dotnet restore backend/Fookbase.Src/Main/Fookbase.Api.csproj
   dotnet tool run dotnet-ef migrations has-pending-model-changes \
     --project backend/Fookbase.Src/Main/Fookbase.Api.csproj \
     --startup-project backend/Fookbase.Src/Main/Fookbase.Api.csproj
