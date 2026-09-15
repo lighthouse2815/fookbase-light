@@ -8,6 +8,7 @@ import type { Comment, CommentAuthor, MediaAccess, Post, PostReaction } from '..
 import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
+import AppDialog from '../../../shared/components/AppDialog'
 import { formatPostTimestamp } from '../../../shared/formatPostTimestamp'
 import TextWithReferences from '../../../shared/components/TextWithReferences'
 import { usePreferences } from '../../../preferences'
@@ -298,6 +299,11 @@ export default function LivePostCard({
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false)
   const [isMediaVisible, setIsMediaVisible] = useState(false)
+  const [editingPostContent, setEditingPostContent] = useState<string | null>(null)
+  const [editingComment, setEditingComment] = useState<Comment | null>(null)
+  const [editingCommentContent, setEditingCommentContent] = useState('')
+  const [commentPendingDeletion, setCommentPendingDeletion] = useState<Comment | null>(null)
+  const [isPostPendingDeletion, setIsPostPendingDeletion] = useState(false)
   const postMenuRef = useRef<HTMLDivElement>(null)
   const postCardRef = useRef<HTMLElement>(null)
   const isAuthor = post.authorUserId === currentUserId
@@ -476,30 +482,32 @@ export default function LivePostCard({
     }
   }
 
-  const editComment = async (comment: Comment) => {
-    const content = window.prompt(t('editCommentPrompt'), comment.content)
-    if (content === null || !content.trim()) return
+  const saveCommentEdit = async () => {
+    if (!editingComment || !editingCommentContent.trim()) return
 
     try {
-      const updatedComment = await postsApi.updateComment(comment.id, content.trim())
+      const updatedComment = await postsApi.updateComment(editingComment.id, editingCommentContent.trim())
       setComments((currentComments) => currentComments.map((item) =>
         item.id === updatedComment.id ? updatedComment : item,
       ))
+      setEditingComment(null)
+      setEditingCommentContent('')
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableEditComment'))
     }
   }
 
-  const deleteComment = async (comment: Comment) => {
-    if (!window.confirm(t('deleteCommentConfirm'))) return
+  const deleteComment = async () => {
+    if (!commentPendingDeletion) return
 
     try {
-      await postsApi.deleteComment(comment.id)
-      setComments((currentComments) => currentComments.filter((item) => item.id !== comment.id))
-      if (replyTarget?.id === comment.id || replyTarget?.parentCommentId === comment.id) setReplyTarget(null)
+      await postsApi.deleteComment(commentPendingDeletion.id)
+      setComments((currentComments) => currentComments.filter((item) => item.id !== commentPendingDeletion.id))
+      if (replyTarget?.id === commentPendingDeletion.id || replyTarget?.parentCommentId === commentPendingDeletion.id) setReplyTarget(null)
       setCommentsTotal((currentTotal) => Math.max(0, currentTotal - 1))
       setCommentsOffset((currentOffset) => Math.max(0, currentOffset - 1))
       onPostUpdated({ ...post, commentCount: Math.max(0, post.commentCount - 1) })
+      setCommentPendingDeletion(null)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableDeleteComment'))
     }
@@ -521,24 +529,22 @@ export default function LivePostCard({
     }
   }
 
-  const editPost = async () => {
-    const content = window.prompt(t('editPostPrompt'), post.content)
-    if (content === null || !content.trim()) return
+  const savePostEdit = async () => {
+    if (!editingPostContent?.trim()) return
 
     try {
       onPostUpdated(await postsApi.update(post.id, {
-        content: content.trim(),
+        content: editingPostContent.trim(),
         privacy: post.privacy,
         mediaIds: post.mediaIds,
       }))
+      setEditingPostContent(null)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableEditPost'))
     }
   }
 
   const deletePost = async () => {
-    if (!window.confirm(t('deletePostConfirm'))) return
-
     try {
       await postsApi.delete(post.id)
       onPostDeleted(post.id)
@@ -581,8 +587,8 @@ export default function LivePostCard({
           {isPostMenuOpen && <div className="absolute right-3 top-12 z-20 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-2xl">
             <button type="button" onClick={() => { void savePost(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
             {isAuthor ? <>
-              <button type="button" onClick={() => { void editPost(); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2">{t('edit')}</button>
-              <button type="button" onClick={() => { void deletePost(); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2">{t('delete')}</button>
+              <button type="button" onClick={() => { setEditingPostContent(post.content); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2">{t('edit')}</button>
+              <button type="button" onClick={() => { setIsPostPendingDeletion(true); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2">{t('delete')}</button>
             </> : <ReportButton targetType="post" targetId={post.id} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-[#ff8a9b]" />}
           </div>}
         </div>
@@ -656,7 +662,7 @@ export default function LivePostCard({
             </div>
 
             <div className="space-y-4 px-4 py-4">
-              <DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={setReplyTarget} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} />
+              <DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={setReplyTarget} onEdit={(comment) => { setEditingComment(comment); setEditingCommentContent(comment.content) }} onDelete={setCommentPendingDeletion} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} />
             </div>
           </div>
 
@@ -695,12 +701,36 @@ export default function LivePostCard({
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-            <div className="space-y-4"><DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={setReplyTarget} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} /></div>
+            <div className="space-y-4"><DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={setReplyTarget} onEdit={(comment) => { setEditingComment(comment); setEditingCommentContent(comment.content) }} onDelete={setCommentPendingDeletion} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} /></div>
           </div>
           <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserName} value={commentText} placeholder={replyTargetName ? `Trả lời ${replyTargetName}` : t('writeComment')} sendLabel={t('send')} replyingToName={replyTargetName} onCancelReply={() => setReplyTarget(null)} onChange={(event) => setCommentText(event.target.value)} onSubmit={(event) => void createComment(event)} />
         </aside>
       </div>
     , document.body)}
+    {editingPostContent !== null && <AppDialog title="Chỉnh sửa bài viết" onClose={() => setEditingPostContent(null)}>
+      <form onSubmit={(event) => { event.preventDefault(); void savePostEdit() }}>
+        <label className="mt-4 block text-sm font-semibold text-text">Nội dung bài viết
+          <textarea data-dialog-initial-focus value={editingPostContent} onChange={(event) => setEditingPostContent(event.target.value)} maxLength={10_000} rows={6} className="mt-1.5 w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none focus:border-primary" />
+        </label>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingPostContent(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingPostContent.trim()} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Lưu</button></div>
+      </form>
+    </AppDialog>}
+    {editingComment && <AppDialog title="Chỉnh sửa bình luận" onClose={() => { setEditingComment(null); setEditingCommentContent('') }}>
+      <form onSubmit={(event) => { event.preventDefault(); void saveCommentEdit() }}>
+        <label className="mt-4 block text-sm font-semibold text-text">Nội dung bình luận
+          <textarea data-dialog-initial-focus value={editingCommentContent} onChange={(event) => setEditingCommentContent(event.target.value)} maxLength={5_000} rows={4} className="mt-1.5 w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none focus:border-primary" />
+        </label>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => { setEditingComment(null); setEditingCommentContent('') }} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingCommentContent.trim()} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Lưu</button></div>
+      </form>
+    </AppDialog>}
+    {isPostPendingDeletion && <AppDialog title="Xóa bài viết?" onClose={() => setIsPostPendingDeletion(false)}>
+      <p className="mt-3 text-sm text-text-muted">Bài viết này sẽ bị xóa khỏi Fookbase.</p>
+      <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setIsPostPendingDeletion(false)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" onClick={() => { setIsPostPendingDeletion(false); void deletePost() }} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Xóa</button></div>
+    </AppDialog>}
+    {commentPendingDeletion && <AppDialog title="Xóa bình luận?" onClose={() => setCommentPendingDeletion(null)}>
+      <p className="mt-3 text-sm text-text-muted">Bình luận này sẽ bị xóa khỏi Fookbase.</p>
+      <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setCommentPendingDeletion(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" onClick={() => void deleteComment()} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Xóa</button></div>
+    </AppDialog>}
     </>
   )
 }
