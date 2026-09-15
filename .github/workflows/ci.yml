@@ -10,8 +10,8 @@ jobs:
     env:
       DOTNET_NOLOGO: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
       - name: Restore and build API
@@ -33,8 +33,8 @@ jobs:
       matrix:
         app: [web, zola-light, admin]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -52,16 +52,16 @@ jobs:
       POSTGRES_USER: fookbase_ci
       POSTGRES_PASSWORD: ci-only-not-production
       POSTGRES_DB: fookbase_db
-      MINIO_ROOT_USER: fookbase-ci
-      MINIO_ROOT_PASSWORD: ci-only-not-production
       Jwt__SigningKey: ci-signing-key-with-more-than-thirty-two-characters
       AllowedHosts: api.ci.example.test
       Cors__AllowedOrigins__0: https://web.ci.example.test
       Cors__AllowedOrigins__1: https://admin.ci.example.test
       Cors__AllowedOrigins__2: https://zola-light.ci.example.test
-      MINIO_CORS_ALLOWED_ORIGIN: https://web.ci.example.test
+      Cloudinary__CloudName: fookbase-ci
+      Cloudinary__ApiKey: ci-only-not-production
+      Cloudinary__ApiSecret: ci-only-not-production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate production Compose configuration
         run: docker compose -f compose.yml -f compose.prod.yml config --quiet
       - name: Build production API image
