@@ -20,7 +20,7 @@ const reactions = ['like', 'love', 'haha', 'wow', 'sad', 'angry']
 function displayConversation(conversation: Conversation, profiles?: ReadonlyMap<string, UserProfile>) {
   if (conversation.type === 'group') return conversation.title ?? 'Nhóm không tên'
   return conversation.participantUserId
-    ? profiles?.get(conversation.participantUserId)?.displayName ?? `@${conversation.participantUserId.slice(0, 8)}`
+    ? profiles?.get(conversation.participantUserId)?.displayName ?? 'Người dùng'
     : 'Cuộc trò chuyện'
 }
 
