@@ -472,6 +472,28 @@ public sealed class NotificationService(
         IReadOnlyList<Notification> notifications,
         CancellationToken cancellationToken)
     {
+        var commentIds = notifications
+            .Where(notification => notification.EntityType == NotificationEntityType.Comment && notification.EntityId is not null)
+            .Select(notification => notification.EntityId!.Value)
+            .Distinct()
+            .ToArray();
+        var commentPostIds = commentIds.Length == 0
+            ? new Dictionary<Guid, Guid>()
+            : await dbContext.Comments.AsNoTracking()
+                .Where(comment => commentIds.Contains(comment.Id) && comment.DeletedAtUtc == null)
+                .Select(comment => new { comment.Id, comment.PostId })
+                .ToDictionaryAsync(item => item.Id, item => item.PostId, cancellationToken);
+        var eventInviteIds = notifications
+            .Where(notification => notification.Type == NotificationType.EventInvite && notification.EntityId is not null)
+            .Select(notification => notification.EntityId!.Value)
+            .Distinct()
+            .ToArray();
+        var eventInviteEventIds = eventInviteIds.Length == 0
+            ? new Dictionary<Guid, Guid>()
+            : await dbContext.EventInvitations.AsNoTracking()
+                .Where(invitation => eventInviteIds.Contains(invitation.Id))
+                .Select(invitation => new { invitation.Id, invitation.EventId })
+                .ToDictionaryAsync(item => item.Id, item => item.EventId, cancellationToken);
         var actorUserIds = notifications
             .Where(notification => notification.ActorUserId is not null)
             .Select(notification => notification.ActorUserId!.Value)
@@ -492,6 +514,13 @@ public sealed class NotificationService(
             var profile = notification.ActorUserId is null
                 ? null
                 : profiles.GetValueOrDefault(notification.ActorUserId.Value);
+            Guid? parentEntityId = notification.EntityId is Guid entityId
+                ? notification.EntityType == NotificationEntityType.Comment
+                    ? commentPostIds.GetValueOrDefault(entityId)
+                    : notification.Type == NotificationType.EventInvite
+                        ? eventInviteEventIds.GetValueOrDefault(entityId)
+                        : null
+                : null;
             return new NotificationResponse(
                 notification.Id,
                 notification.RecipientUserId,
@@ -501,6 +530,7 @@ public sealed class NotificationService(
                 notification.Type.ToString(),
                 notification.EntityType?.ToString(),
                 notification.EntityId,
+                parentEntityId,
                 notification.IsRead,
                 notification.CreatedAtUtc,
                 notification.ReadAtUtc);

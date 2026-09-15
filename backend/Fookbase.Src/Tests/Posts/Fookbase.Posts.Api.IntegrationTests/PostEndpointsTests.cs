@@ -573,6 +573,27 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Comment_reaction_notification_includes_its_parent_post_id()
+    {
+        var users = await CreateUserIdsAsync(3);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var commenter = CreateAuthenticatedClient(users[1]);
+        using var reactor = CreateAuthenticatedClient(users[2]);
+        var post = await CreatePostAsync(author, "notification comment target", "public");
+        var comment = await ReadAsync<CommentResponse>(await commenter.PostAsJsonAsync(
+            $"/api/posts/{post.Id}/comments", new { content = "comment", parentCommentId = (Guid?)null }));
+
+        (await reactor.PutAsJsonAsync($"/api/posts/comments/{comment.Id}/reaction", new { type = "love" }))
+            .EnsureSuccessStatusCode();
+        var notifications = await ReadAsync<NotificationPageResponse>(
+            await commenter.GetAsync("/api/notifications"));
+
+        var notification = Assert.Single(notifications.Items, item => item.Type == "CommentReaction");
+        Assert.Equal(comment.Id, notification.EntityId);
+        Assert.Equal(post.Id, notification.ParentEntityId);
+    }
+
+    [Fact]
     public async Task Notification_cursor_ownership_and_read_operations_are_scoped_to_recipient()
     {
         var users = await CreateUserIdsAsync(2);

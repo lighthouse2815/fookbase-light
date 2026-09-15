@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Events.DTOs.Responses;
 using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
@@ -74,6 +75,24 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.True(await db.EventParticipants.AnyAsync(x => x.EventId == item.Id && x.UserId == users[1] &&
             x.Status == EventParticipantStatus.Going));
+    }
+
+    [Fact]
+    public async Task Event_invite_notification_includes_its_event_id()
+    {
+        var users = await CreateUsersAsync(2);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        using var invitee = CreateAuthenticatedClient(users[1]);
+        var item = await CreateEventAsync(owner, "public");
+        var invitation = await ReadAsync<EventInvitationResponse>(await owner.PostAsJsonAsync(
+            $"/api/events/{item.Id}/invites", new { userId = users[1] }));
+
+        var notifications = await ReadAsync<NotificationPageResponse>(
+            await invitee.GetAsync("/api/notifications"));
+
+        var notification = Assert.Single(notifications.Items, x => x.Type == "EventInvite");
+        Assert.Equal(invitation.Id, notification.EntityId);
+        Assert.Equal(item.Id, notification.ParentEntityId);
     }
 
     [Fact]

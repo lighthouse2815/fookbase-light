@@ -9,6 +9,7 @@ public sealed record NotificationResponse(
     string Type,
     string? EntityType,
     Guid? EntityId,
+    Guid? ParentEntityId,
     bool IsRead,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? ReadAtUtc);
