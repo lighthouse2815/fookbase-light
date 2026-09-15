@@ -14,6 +14,10 @@ export type AppNotificationType =
   | 'GroupJoinApproved'
   | 'StoryReaction'
   | 'PageRoleInvite'
+  | 'EventInvite'
+  | 'EventUpdated'
+  | 'EventCancelled'
+  | 'AccountWarning'
 
 export type AppNotificationEntityType =
   | 'FriendRequest'
@@ -26,6 +30,8 @@ export type AppNotificationEntityType =
   | 'Story'
   | 'Page'
   | 'PageRoleInvitation'
+  | 'UserFollow'
+  | 'Event'
 
 export interface AppNotification {
   id: string
@@ -36,6 +42,7 @@ export interface AppNotification {
   type: AppNotificationType
   entityType: AppNotificationEntityType | null
   entityId: string | null
+  parentEntityId: string | null
   isRead: boolean
   createdAtUtc: string
   readAtUtc: string | null

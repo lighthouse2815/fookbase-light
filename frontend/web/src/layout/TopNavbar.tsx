@@ -5,6 +5,7 @@ import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
 import { searchApi, type SearchSuggestions } from '../api/search'
 import { resolveProfileImageUrl, usersApi } from '../api/users'
+import { getNotificationBadge, getNotificationDestination, getNotificationMessage } from '../shared/notificationPresentation'
 
 interface NavItem {
   path: string
@@ -187,67 +188,6 @@ export default function TopNavbar() {
   const hasSuggestions = Boolean(suggestions &&
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
 
-  const notificationDestination = (notification: typeof notifications[number]) => {
-    if ((notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted' || notification.type === 'UserFollowed') && notification.actorUserId) {
-      return '/profile/' + notification.actorUserId
-    }
-    if (notification.type === 'GroupInvite' || notification.type === 'GroupJoinApproved') {
-      return '/groups'
-    }
-    if (notification.type === 'PageRoleInvite') {
-      return '/pages'
-    }
-    if (notification.type === 'StoryReaction') {
-      return '/feed'
-    }
-
-    if (notification.entityType === 'Page' || notification.entityType === 'PageRoleInvitation') {
-      return '/pages'
-    }
-
-    return notification.entityId ? '/feed?post=' + notification.entityId : '/feed'
-  }
-
-  const notificationText = (notification: typeof notifications[number]) => {
-    switch (notification.type) {
-      case 'FriendRequestReceived':
-        return 'đã gửi cho bạn lời mời kết bạn.'
-      case 'FriendRequestAccepted':
-        return 'đã chấp nhận lời mời kết bạn của bạn.'
-      case 'UserFollowed':
-        return t('startedFollowingYou')
-      case 'PostReaction':
-        return 'đã bày tỏ cảm xúc về bài viết của bạn.'
-      case 'PostComment':
-        return 'đã bình luận về bài viết của bạn.'
-      case 'CommentReaction':
-        return 'đã bày tỏ cảm xúc về bình luận của bạn.'
-      case 'PostShared':
-        return 'đã chia sẻ bài viết của bạn.'
-      case 'PostMention':
-        return 'đã nhắc đến bạn trong một bài viết.'
-      case 'CommentMention':
-        return 'đã nhắc đến bạn trong một bình luận.'
-      case 'GroupInvite':
-        return 'đã mời bạn tham gia một nhóm.'
-      case 'GroupJoinApproved':
-        return 'đã chấp nhận yêu cầu tham gia nhóm của bạn.'
-      case 'StoryReaction':
-        return 'đã bày tỏ cảm xúc về Story của bạn.'
-      case 'PageRoleInvite':
-        return 'đã mời bạn quản lý một Trang.'
-      default:
-        return 'đã gửi cho bạn một thông báo.'
-    }
-  }
-
-  const notificationBadge = (notification: typeof notifications[number]) => {
-    if (notification.type === 'PostReaction' || notification.type === 'CommentReaction' || notification.type === 'StoryReaction') return { icon: '♥', className: 'bg-[#f02849]' }
-    if (notification.type === 'PostComment' || notification.type === 'CommentMention') return { icon: '●', className: 'bg-[#1877f2]' }
-    if (notification.type === 'FriendRequestReceived' || notification.type === 'FriendRequestAccepted' || notification.type === 'UserFollowed') return { icon: '♟', className: 'bg-[#31a24c]' }
-    return { icon: '●', className: 'bg-[#1877f2]' }
-  }
-
   const notificationTime = (createdAtUtc: string) => {
     return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(createdAtUtc))
   }
@@ -378,11 +318,11 @@ export default function TopNavbar() {
                   <>
                     {visibleNotifications.map((notification, index) => {
                       const actor = notification.actorDisplayName ?? notification.actorUsername ?? t('user')
-                      const badge = notificationBadge(notification)
+                      const badge = getNotificationBadge(notification)
                       const avatarTone = ['bg-[#87433b]', 'bg-[#5f7997]', 'bg-[#8e5b88]', 'bg-[#607b57]', 'bg-[#9b6c45]'][index % 5]
-                      return <Link key={notification.id} to={notificationDestination(notification)} onClick={() => { markNotificationRead(notification.id); setActiveHeaderPopup(null) }} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
+                      return <Link key={notification.id} to={getNotificationDestination(notification)} onClick={() => { markNotificationRead(notification.id); setActiveHeaderPopup(null) }} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
                         <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${avatarTone}`}>{actor.slice(0, 2).toUpperCase()}<span className={`absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-surface text-[11px] font-bold text-white ${badge.className}`}>{badge.icon}</span></span>
-                        <span className="min-w-0 flex-1 pr-4"><span className="block text-sm leading-5 text-text"><strong>{actor}</strong> {notificationText(notification)}</span><span className={`mt-0.5 block text-xs font-semibold ${notification.isRead ? 'text-text-light' : 'text-primary'}`}>{notificationTime(notification.createdAtUtc)}</span></span>
+                        <span className="min-w-0 flex-1 pr-4"><span className="block text-sm leading-5 text-text"><strong>{actor}</strong> {getNotificationMessage(notification)}</span><span className={`mt-0.5 block text-xs font-semibold ${notification.isRead ? 'text-text-light' : 'text-primary'}`}>{notificationTime(notification.createdAtUtc)}</span></span>
                         {!notification.isRead && <span className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary" />}
                       </Link>
                     })}
