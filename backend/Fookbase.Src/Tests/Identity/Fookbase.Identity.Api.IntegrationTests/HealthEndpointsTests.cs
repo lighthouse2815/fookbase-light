@@ -24,7 +24,7 @@ public sealed class HealthEndpointsTests
         Assert.Contains(registrations, registration =>
             registration.Name == "postgresql" && registration.Tags.Contains("ready"));
         Assert.Contains(registrations, registration =>
-            registration.Name == "minio" && registration.Tags.Contains("ready"));
+            registration.Name == "cloudinary" && registration.Tags.Contains("ready"));
     }
 
     [Fact]

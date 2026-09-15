@@ -37,6 +37,9 @@ public class PostsApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Minio:AccessKey", "integration-tests");
         builder.UseSetting("Minio:SecretKey", "integration-tests");
         builder.UseSetting("Minio:BucketInitializationEnabled", "false");
+        builder.UseSetting("Cloudinary:CloudName", "integration-tests");
+        builder.UseSetting("Cloudinary:ApiKey", "test-api-key");
+        builder.UseSetting("Cloudinary:ApiSecret", "test-api-secret");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.ConfigureServices(services =>
         {
