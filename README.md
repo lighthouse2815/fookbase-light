@@ -169,11 +169,17 @@ docker run --rm --user "$(id -u):$(id -g)" \
 | --- | --- | --- |
 | POST | `/api/auth/register` | Không |
 | POST | `/api/auth/login` | Không |
+| GET | `/api/auth/providers` | Không |
+| GET | `/api/auth/google/start?client=web\|zola-light` | Không |
+| POST | `/api/auth/google/exchange` | Không |
+| POST | `/api/auth/google/link` | Không |
 | POST | `/api/auth/refresh` | Không |
 | POST | `/api/auth/logout` | Bearer JWT |
 | GET | `/api/auth/me` | Bearer JWT |
 
 JWT signing key chỉ được đọc từ `Jwt__SigningKey`. Refresh token raw chỉ trả cho client; database lưu SHA-256 hash.
+
+Google OAuth là tùy chọn và chỉ bật khi `GoogleAuthentication__Enabled=true`. Khai báo callback duy nhất tại Google Cloud là `https://<api-host>/signin-google`; API sau đó trả về đúng trang `/login` của Fookbase Web hoặc Zola Light bằng một completion code ngắn hạn, dùng một lần. `exchange` và `link` nhận `{ code, client }`, với `client` là `web` hoặc `zola-light`; `link` yêu cầu thêm mật khẩu Fookbase khi email đã thuộc một tài khoản hiện có. Access token và refresh token không bao giờ nằm trong URL redirect.
 
 ### Users
 

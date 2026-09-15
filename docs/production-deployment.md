@@ -39,6 +39,22 @@ Cors__AllowedOrigins__2=https://zola-light.example.com
 
 `DataProtection__KeyRingPath` được Compose đặt là `/var/fookbase/data-protection-keys`; backup volume này cùng application data. `Database__CommandTimeoutSeconds` mặc định 30 giây. Npgsql vẫn nhận `Connection Timeout` và `Maximum Pool Size` từ connection string; với một API instance, chỉ tăng pool sau khi tính rõ giới hạn connection PostgreSQL.
 
+## Google OAuth
+
+Google login chỉ bật khi có toàn bộ cấu hình server-side sau; không đưa client secret vào source code, static build hoặc biến `VITE_*`:
+
+```dotenv
+GoogleAuthentication__Enabled=true
+GoogleAuthentication__ClientId=<google-oauth-client-id>
+GoogleAuthentication__ClientSecret=<google-oauth-client-secret>
+GoogleAuthentication__WebBaseUrl=https://app.example.com
+GoogleAuthentication__ZolaLightBaseUrl=https://zola-light.example.com
+```
+
+Trong Google Cloud Console, cấu hình OAuth consent screen, xác minh domain HTTPS bạn sở hữu và khai báo chính xác Authorized redirect URI: `https://api.example.com/signin-google`. Dùng homepage, privacy policy và terms URL công khai thuộc domain đã xác minh khi Google yêu cầu. Không khai báo callback SPA trực tiếp: API sẽ kiểm tra Google claims (`sub`, `email`, `email_verified`) rồi redirect về một trong hai đích cố định `https://app.example.com/login` hoặc `https://zola-light.example.com/login` với completion code dùng một lần.
+
+Thêm cả hai SPA vào `Cors__AllowedOrigins`; restart API sau khi inject secret. Với Zalo, Messenger và các embedded WebView tương tự, giao diện chỉ hướng người dùng mở Chrome/Safari cho Google OAuth. Đăng nhập mật khẩu vẫn hoạt động trong các WebView này.
+
 ## Reverse proxy, HTTPS và CORS
 
 Đặt proxy đáng tin cậy trước API, chuyển WebSocket cho `/hubs/messages` và `/hubs/notifications`, và không public PostgreSQL. Nếu proxy terminate TLS, bật forwarded headers và chỉ khai báo IP trực tiếp của proxy:

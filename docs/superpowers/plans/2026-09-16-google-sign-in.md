@@ -526,6 +526,8 @@
 - Modify: `docs/production-deployment.md`
 - Modify: `docs/superpowers/plans/2026-09-16-google-sign-in.md`
 
+**Implementation status (2026-09-16):** Tasks 1–6 are implemented and committed. Task 7 documentation and automated verification are completed with the final commit for this plan.
+
 **Interfaces:**
 - Documents `GoogleAuthentication__Enabled`, `GoogleAuthentication__ClientId`, `GoogleAuthentication__ClientSecret`, `GoogleAuthentication__WebBaseUrl`, and `GoogleAuthentication__ZolaLightBaseUrl` without values.
 - Documents fixed API callback `https://<api-host>/signin-google` and both SPA login destinations.
@@ -558,6 +560,14 @@
   git diff --check
   rg -n "GoogleAuthentication__(ClientSecret|ClientId)=.+[^[:space:]]" .env.example README.md docs backend frontend
   ```
+
+## Manual acceptance checklist
+
+- [ ] A new verified Google account creates one confirmed Fookbase user, profile and privacy settings, then signs in from both Web and Zola Light.
+- [ ] An existing password account rejects an incorrect password, then links Google only after the correct password and (when enabled) 2FA.
+- [ ] Reopening or replaying a callback URL cannot create another session.
+- [ ] Zalo/Messenger embedded WebViews show the external-browser instruction; Chrome/Safari can continue Google OAuth.
+- [ ] No redirect URL, browser build, Git diff or server log contains a Google client secret or Fookbase access/refresh token.
 
   Expected: migration/model check, Identity integration suite, both frontend lint/build checks, and whitespace check pass. The final `rg` output has no credential values; it may list only prose or blank variable declarations.
 
