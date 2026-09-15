@@ -25,6 +25,11 @@ services:
       Cloudinary__CloudName: ${Cloudinary__CloudName:?Set Cloudinary__CloudName in .env}
       Cloudinary__ApiKey: ${Cloudinary__ApiKey:?Set Cloudinary__ApiKey in .env}
       Cloudinary__ApiSecret: ${Cloudinary__ApiSecret:?Set Cloudinary__ApiSecret in .env}
+      GoogleAuthentication__Enabled: ${GoogleAuthentication__Enabled:-false}
+      GoogleAuthentication__ClientId: ${GoogleAuthentication__ClientId:-}
+      GoogleAuthentication__ClientSecret: ${GoogleAuthentication__ClientSecret:-}
+      GoogleAuthentication__WebBaseUrl: ${GoogleAuthentication__WebBaseUrl:-}
+      GoogleAuthentication__ZolaLightBaseUrl: ${GoogleAuthentication__ZolaLightBaseUrl:-}
       DataProtection__ApplicationName: ${DataProtection__ApplicationName:-Fookbase}
       DataProtection__KeyRingPath: /var/fookbase/data-protection-keys
     ports:
