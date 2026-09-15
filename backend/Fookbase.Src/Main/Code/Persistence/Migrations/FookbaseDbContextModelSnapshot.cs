@@ -115,6 +115,11 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<DateTimeOffset?>("DeletedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsPinned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Description")
                         .HasMaxLength(10000)
                         .HasColumnType("character varying(10000)");
@@ -1734,6 +1739,9 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasIndex("DeletedAtUtc", "CreatedAtUtc");
 
                     b.HasIndex("AuthorUserId", "CreatedAtUtc", "Id")
+                        .HasFilter("\"DeletedAtUtc\" IS NULL");
+
+                    b.HasIndex("AuthorUserId", "IsPinned", "CreatedAtUtc", "Id")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
                     b.HasIndex("PostType", "CreatedAtUtc", "Id")

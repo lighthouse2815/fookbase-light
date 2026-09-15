@@ -246,6 +246,32 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Author_can_pin_one_profile_post_and_it_is_listed_first()
+    {
+        var users = await CreateUserIdsAsync(2);
+        using var author = CreateAuthenticatedClient(users[0]);
+        using var other = CreateAuthenticatedClient(users[1]);
+        var first = await CreatePostAsync(author, "first profile post", "public");
+        var second = await CreatePostAsync(author, "second profile post", "public");
+
+        var forbidden = await other.PutAsync($"/api/posts/{first.Id}/pin", null);
+        var pinned = await ReadAsync<PostResponse>(await author.PutAsync($"/api/posts/{first.Id}/pin", null));
+        var pinnedSecond = await ReadAsync<PostResponse>(await author.PutAsync($"/api/posts/{second.Id}/pin", null));
+        var firstAfterSecondPin = await ReadAsync<PostResponse>(await author.GetAsync($"/api/posts/{first.Id}"));
+        var profilePosts = await ReadAsync<PagedResponse<PostResponse>>(
+            await author.GetAsync($"/api/posts/users/{users[0]}"));
+        var unpinned = await ReadAsync<PostResponse>(await author.DeleteAsync($"/api/posts/{second.Id}/pin"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        Assert.True(pinned.IsPinned);
+        Assert.True(pinnedSecond.IsPinned);
+        Assert.False(firstAfterSecondPin.IsPinned);
+        Assert.Equal(second.Id, profilePosts.Items[0].Id);
+        Assert.True(profilePosts.Items[0].IsPinned);
+        Assert.False(unpinned.IsPinned);
+    }
+
+    [Fact]
     public async Task Saved_posts_are_idempotent_private_and_rechecked_when_access_changes()
     {
         var users = await CreateUserIdsAsync(2);
@@ -263,6 +289,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var saved = await ReadAsync<SavedPostsPageResponse>(savedResponse);
         Assert.Single(saved.Items);
         Assert.Equal(post.Id, saved.Items[0].Id);
+        Assert.True(saved.Items[0].ViewerHasSaved);
         Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().GetAsync("/api/posts/saved")).StatusCode);
 
         using (var scope = factory.Services.CreateScope())

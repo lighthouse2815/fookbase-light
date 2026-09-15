@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
+using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Services;
 
 namespace Fookbase.Api.Modules.Posts.Endpoints;
@@ -17,6 +18,8 @@ public static class PostEndpoints
         group.MapGet("/saved", GetSavedPostsAsync).RequireAuthorization();
         group.MapPut("/{postId:guid}", UpdatePostAsync).RequireAuthorization();
         group.MapDelete("/{postId:guid}", DeletePostAsync).RequireAuthorization();
+        group.MapPut("/{postId:guid}/pin", PinPostAsync).RequireAuthorization();
+        group.MapDelete("/{postId:guid}/pin", UnpinPostAsync).RequireAuthorization();
         group.MapGet("/{postId:guid}", GetPostAsync);
         group.MapGet("/feed", GetFeedAsync).RequireAuthorization();
         group.MapGet("/search", SearchPostsAsync).RequireAuthorization();
@@ -83,6 +86,24 @@ public static class PostEndpoints
         ExecuteCommandAsync(
             principal,
             actorUserId => useCase.DeletePostAsync(actorUserId, postId, cancellationToken));
+
+    private static Task<IResult> PinPostAsync(
+        Guid postId,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken) =>
+        ExecutePostMutationAsync(
+            principal,
+            actorUserId => useCase.SetPostPinnedAsync(actorUserId, postId, true, cancellationToken));
+
+    private static Task<IResult> UnpinPostAsync(
+        Guid postId,
+        ClaimsPrincipal principal,
+        PostsUseCase useCase,
+        CancellationToken cancellationToken) =>
+        ExecutePostMutationAsync(
+            principal,
+            actorUserId => useCase.SetPostPinnedAsync(actorUserId, postId, false, cancellationToken));
 
     private static async Task<IResult> GetSavedPostsAsync(
         ClaimsPrincipal principal,
@@ -397,6 +418,19 @@ public static class PostEndpoints
 
         var result = await command(actorUserId);
         return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> ExecutePostMutationAsync(
+        ClaimsPrincipal principal,
+        Func<Guid, Task<ApplicationResult<PostResponse>>> command)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return InvalidAccessToken();
+        }
+
+        var result = await command(actorUserId);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
     private static bool TryGetViewerUserId(ClaimsPrincipal principal, out Guid? userId)

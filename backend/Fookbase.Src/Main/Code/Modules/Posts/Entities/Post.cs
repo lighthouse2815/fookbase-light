@@ -63,6 +63,8 @@ public sealed class Post
 
     public PostType PostType { get; private set; }
 
+    public bool IsPinned { get; private set; }
+
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
@@ -110,6 +112,12 @@ public sealed class Post
     {
         EnsureActive();
         DeletedAtUtc = deletedAtUtc;
+    }
+
+    public void SetPinned(bool isPinned)
+    {
+        EnsureActive();
+        IsPinned = isPinned;
     }
 
     private void EnsureActive()

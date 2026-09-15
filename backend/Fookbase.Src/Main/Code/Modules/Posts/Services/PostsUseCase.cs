@@ -304,6 +304,13 @@ public sealed class PostsUseCase(
         }
     }
 
+    public Task<ApplicationResult<PostResponse>> SetPostPinnedAsync(
+        Guid actorUserId,
+        Guid postId,
+        bool isPinned,
+        CancellationToken cancellationToken = default) =>
+        postsService.SetPostPinnedAsync(actorUserId, postId, isPinned, cancellationToken);
+
     public async Task<ApplicationResult> DeletePostForModerationAsync(
         Guid postId,
         CancellationToken cancellationToken = default)

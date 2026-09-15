@@ -109,6 +109,42 @@ public sealed class PostsService(
         CancellationToken cancellationToken = default) =>
         Map(await DeletePostCoreAsync(null, postId, cancellationToken));
 
+    public async Task<ApplicationResult<PostResponse>> SetPostPinnedAsync(
+        Guid actorUserId,
+        Guid postId,
+        bool isPinned,
+        CancellationToken cancellationToken = default)
+    {
+        var post = await dbContext.Posts.SingleOrDefaultAsync(
+            item => item.Id == postId && item.DeletedAtUtc == null,
+            cancellationToken);
+        if (post is null)
+        {
+            return ApplicationResult<PostResponse>.Failure(ToApplicationError(PostsServiceError.PostNotFound));
+        }
+
+        if (post.AuthorUserId != actorUserId || post.ContainerType != PostContainerType.Profile)
+        {
+            return ApplicationResult<PostResponse>.Failure(ToApplicationError(PostsServiceError.Forbidden));
+        }
+
+        if (isPinned)
+        {
+            await dbContext.Posts
+                .Where(item => item.AuthorUserId == actorUserId &&
+                    item.ContainerType == PostContainerType.Profile &&
+                    item.DeletedAtUtc == null && item.Id != postId && item.IsPinned)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(item => item.IsPinned, false),
+                    cancellationToken);
+        }
+
+        post.SetPinned(isPinned);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ApplicationResult<PostResponse>.Success(
+            (await LoadResponsesAsync([post], actorUserId, cancellationToken))[0]);
+    }
+
     public ApplicationResult ValidatePostRequest(
         string content,
         string privacy,
@@ -734,7 +770,8 @@ public sealed class PostsService(
         var query = VisiblePosts(viewer).Where(post => post.ContainerType == PostContainerType.Profile && post.AuthorUserId == authorUserId);
         var total = await query.CountAsync(cancellationToken);
         var posts = await query
-            .OrderByDescending(post => post.CreatedAtUtc)
+            .OrderByDescending(post => post.IsPinned)
+            .ThenByDescending(post => post.CreatedAtUtc)
             .ThenByDescending(post => post.Id)
             .Skip(offset)
             .Take(limit)
@@ -1256,6 +1293,12 @@ public sealed class PostsService(
                     reaction => reaction.PostId,
                     reaction => reaction.Type.ToString().ToLowerInvariant(),
                     cancellationToken);
+        var savedPostIds = viewerUserId is null
+            ? new HashSet<Guid>()
+            : await dbContext.PostSaves.AsNoTracking()
+                .Where(save => postIds.Contains(save.PostId) && save.UserId == viewerUserId.Value)
+                .Select(save => save.PostId)
+                .ToHashSetAsync(cancellationToken);
         var attachments = await dbContext.PostMedia.AsNoTracking()
             .Where(x => postIds.Contains(x.PostId)).OrderBy(x => x.SortOrder)
             .ToListAsync(cancellationToken);
@@ -1310,7 +1353,9 @@ public sealed class PostsService(
                     mention.Length))
                 .ToList(),
             post.PostType == PostType.Reel ? "reel" : "standardPost",
-            shareCounts.GetValueOrDefault(post.Id));
+            shareCounts.GetValueOrDefault(post.Id),
+            post.IsPinned,
+            savedPostIds.Contains(post.Id));
         }).ToList();
     }
 

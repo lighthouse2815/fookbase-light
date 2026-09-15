@@ -270,6 +270,18 @@ function BookmarkIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 3.75h11a1.75 1.75 0 0 1 1.75 1.75v14.75L12 16.4l-7.25 3.85V5.5A1.75 1.75 0 0 1 6.5 3.75Z" /></svg>
 }
 
+function PinIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m14.2 3.8 6 6-2.1 2.1-1.55-.5-4.2 4.2.55 4.1-1.15 1.15-3.7-5.1-5.1-3.7 1.15-1.15 4.1.55 4.2-4.2-.5-2.1Z" /><path d="m8.1 15.75-4.75 4.75" /></svg>
+}
+
+function EditIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m4 20 4.1-1 10.4-10.4a2.1 2.1 0 0 0-3-3L5.1 16 4 20Z" /><path d="m13.9 7.1 3 3" /></svg>
+}
+
+function TrashIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5 fill-none stroke-current" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 7.25h15M9.25 3.75h5.5l.75 3.5h-7l.75-3.5ZM6.5 7.25l.8 12h9.4l.8-12M10 11v4.5M14 11v4.5" /></svg>
+}
+
 export default function LivePostCard({
   post,
   author,
@@ -295,13 +307,15 @@ export default function LivePostCard({
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
-  const [isSaved, setIsSaved] = useState(false)
+  const [isSaved, setIsSaved] = useState(post.viewerHasSaved)
   const [isSavingPost, setIsSavingPost] = useState(false)
-  const [saveNotice, setSaveNotice] = useState<string | null>(null)
+  const [postActionNotice, setPostActionNotice] = useState<string | null>(null)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false)
   const [isMediaVisible, setIsMediaVisible] = useState(false)
   const [editingPostContent, setEditingPostContent] = useState<string | null>(null)
+  const [editingPostPrivacy, setEditingPostPrivacy] = useState<string | null>(null)
+  const [isUpdatingPostPin, setIsUpdatingPostPin] = useState(false)
   const [editingComment, setEditingComment] = useState<Comment | null>(null)
   const [editingCommentContent, setEditingCommentContent] = useState('')
   const [commentPendingDeletion, setCommentPendingDeletion] = useState<Comment | null>(null)
@@ -309,6 +323,7 @@ export default function LivePostCard({
   const postMenuRef = useRef<HTMLDivElement>(null)
   const postCardRef = useRef<HTMLElement>(null)
   const isAuthor = post.authorUserId === currentUserId
+  const canPinPost = isAuthor && post.containerType === 'profile'
   const displayAuthor = post.displayAuthor
   const authorName = displayAuthor?.name ?? author?.displayName ?? t('user')
   const authorAvatarUrl = displayAuthor?.avatarUrl ?? author?.avatarUrl
@@ -546,6 +561,22 @@ export default function LivePostCard({
     }
   }
 
+  const savePostPrivacy = async () => {
+    if (!editingPostPrivacy) return
+
+    try {
+      onPostUpdated(await postsApi.update(post.id, {
+        content: post.content,
+        privacy: editingPostPrivacy,
+        mediaIds: post.mediaIds,
+      }))
+      setEditingPostPrivacy(null)
+      setPostActionNotice('Đã cập nhật đối tượng xem bài viết.')
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : t('unableEditPost'))
+    }
+  }
+
   const deletePost = async () => {
     try {
       await postsApi.delete(post.id)
@@ -564,7 +595,8 @@ export default function LivePostCard({
       if (wasSaved) await postsApi.removeSaved(post.id)
       else await postsApi.save(post.id)
       setIsSaved(!wasSaved)
-      setSaveNotice(wasSaved ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết.')
+      onPostUpdated({ ...post, viewerHasSaved: !wasSaved })
+      setPostActionNotice(wasSaved ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết.')
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật bài viết đã lưu.')
     } finally {
@@ -572,12 +604,27 @@ export default function LivePostCard({
     }
   }
 
-  useEffect(() => {
-    if (!saveNotice) return
+  const togglePostPin = async () => {
+    if (isUpdatingPostPin) return
 
-    const timeoutId = window.setTimeout(() => setSaveNotice(null), 3_000)
+    setIsUpdatingPostPin(true)
+    try {
+      const updatedPost = post.isPinned ? await postsApi.unpin(post.id) : await postsApi.pin(post.id)
+      onPostUpdated(updatedPost)
+      setPostActionNotice(updatedPost.isPinned ? 'Đã ghim bài viết trên trang cá nhân.' : 'Đã bỏ ghim bài viết.')
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật trạng thái ghim bài viết.')
+    } finally {
+      setIsUpdatingPostPin(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!postActionNotice) return
+
+    const timeoutId = window.setTimeout(() => setPostActionNotice(null), 3_000)
     return () => window.clearTimeout(timeoutId)
-  }, [saveNotice])
+  }, [postActionNotice])
 
   return (
     <>
@@ -596,15 +643,19 @@ export default function LivePostCard({
             <time dateTime={post.createdAtUtc} title={postTimestamp.absolute} aria-label={`Đăng lúc ${postTimestamp.absolute}`} className="min-w-0 cursor-help truncate rounded-sm hover:text-text focus:outline-none focus:ring-1 focus:ring-primary" tabIndex={0}>{postTimestamp.compact}</time>
             <span aria-hidden="true" className="text-text-light">·</span>
             <span className="inline-flex shrink-0 items-center text-text-muted"><PrivacyIcon privacy={post.privacy} /></span>
+            {post.isPinned && post.containerType === 'profile' && <><span aria-hidden="true" className="text-text-light">·</span><span className="inline-flex shrink-0 items-center gap-1 text-primary"><PinIcon />Đã ghim</span></>}
           </p>
         </div>
         <div ref={postMenuRef} className="shrink-0">
           <button type="button" onClick={() => setIsPostMenuOpen((current) => !current)} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-text-muted transition-colors hover:bg-surface-2 hover:text-text" aria-label={t('moreOptions')} aria-expanded={isPostMenuOpen}><MoreIcon /></button>
-          {isPostMenuOpen && <div className="absolute right-3 top-12 z-20 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-2xl">
+          {isPostMenuOpen && <div className="absolute right-3 top-12 z-20 min-w-56 rounded-xl border border-border bg-surface p-1.5 shadow-2xl">
+            {canPinPost && <button type="button" disabled={isUpdatingPostPin} onClick={() => { void togglePostPin(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><PinIcon />{post.isPinned ? 'Bỏ ghim bài viết' : 'Ghim bài viết'}</button>}
             <button type="button" disabled={isSavingPost} onClick={() => { void savePost(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
             {isAuthor ? <>
-              <button type="button" onClick={() => { setEditingPostContent(post.content); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2">{t('edit')}</button>
-              <button type="button" onClick={() => { setIsPostPendingDeletion(true); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2">{t('delete')}</button>
+              <button type="button" onClick={() => { setEditingPostContent(post.content); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><EditIcon />Chỉnh sửa bài viết</button>
+              <button type="button" onClick={() => { setEditingPostPrivacy(post.privacy); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><PrivacyIcon privacy={post.privacy} />Chỉnh sửa đối tượng</button>
+              <div className="my-1 border-t border-border" />
+              <button type="button" onClick={() => { setIsPostPendingDeletion(true); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2"><TrashIcon />{t('delete')}</button>
             </> : <ReportButton targetType="post" targetId={post.id} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-[#ff8a9b]" />}
           </div>}
         </div>
@@ -642,7 +693,7 @@ export default function LivePostCard({
       </div>
       {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} onShared={() => onPostUpdated({ ...post, shareCount: post.shareCount + 1 })} />}
     </article>
-    {saveNotice && createPortal(<p role="status" className="fixed bottom-5 right-5 z-50 rounded-xl bg-[#1c1e21] px-4 py-3 text-sm font-semibold text-white shadow-2xl">{saveNotice}</p>, document.body)}
+    {postActionNotice && createPortal(<p role="status" className="fixed bottom-5 right-5 z-50 rounded-xl bg-[#1c1e21] px-4 py-3 text-sm font-semibold text-white shadow-2xl">{postActionNotice}</p>, document.body)}
     {isReactionDialogOpen && <ReactionDialog key={post.id} postId={post.id} reactionCounts={post.reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
     {isCommentsDialogOpen && createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
@@ -730,6 +781,15 @@ export default function LivePostCard({
           <textarea data-dialog-initial-focus value={editingPostContent} onChange={(event) => setEditingPostContent(event.target.value)} maxLength={10_000} rows={6} className="mt-1.5 w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none focus:border-primary" />
         </label>
         <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingPostContent(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingPostContent.trim()} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Lưu</button></div>
+      </form>
+    </AppDialog>}
+    {editingPostPrivacy !== null && <AppDialog title="Chỉnh sửa đối tượng" onClose={() => setEditingPostPrivacy(null)}>
+      <form onSubmit={(event) => { event.preventDefault(); void savePostPrivacy() }}>
+        <p className="mt-3 text-sm text-text-muted">Chọn những ai có thể xem bài viết này.</p>
+        <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input data-dialog-initial-focus type="radio" name={`post-privacy-${post.id}`} value="public" checked={editingPostPrivacy === 'public'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Công khai</label>
+        <label className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input type="radio" name={`post-privacy-${post.id}`} value="friends" checked={editingPostPrivacy === 'friends'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Bạn bè</label>
+        <label className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input type="radio" name={`post-privacy-${post.id}`} value="onlyMe" checked={editingPostPrivacy === 'onlyMe'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Chỉ mình tôi</label>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingPostPrivacy(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white">Lưu</button></div>
       </form>
     </AppDialog>}
     {editingComment && <AppDialog title="Chỉnh sửa bình luận" onClose={() => { setEditingComment(null); setEditingCommentContent('') }}>

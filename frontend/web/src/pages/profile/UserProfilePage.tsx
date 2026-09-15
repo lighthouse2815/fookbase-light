@@ -287,7 +287,9 @@ export default function UserProfilePage() {
                 post={post}
                 author={profile}
                 currentUserId={session!.user.id}
-                onPostUpdated={(updatedPost) => setPosts((currentPosts) => currentPosts.map((item) => item.id === updatedPost.id ? updatedPost : item))}
+                onPostUpdated={(updatedPost) => setPosts((currentPosts) => currentPosts
+                  .map((item) => item.id === updatedPost.id ? updatedPost : item)
+                  .sort((left, right) => Number(right.isPinned) - Number(left.isPinned)))}
                 onPostDeleted={(postId) => setPosts((currentPosts) => currentPosts.filter((item) => item.id !== postId))}
               />
             ))}

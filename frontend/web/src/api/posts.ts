@@ -32,6 +32,8 @@ export interface Post {
   containerType?: 'profile' | 'group' | 'page'
   mentions?: ContentMention[]
   contentType?: 'standardPost' | 'reel'
+  isPinned: boolean
+  viewerHasSaved: boolean
 }
 
 export interface Comment {
@@ -105,6 +107,8 @@ export const postsApi = {
   update: (postId: string, details: CreatePostDetails) =>
     apiRequest<Post>(`/api/posts/${postId}`, { method: 'PUT', ...jsonBody(details) }),
   delete: (postId: string) => apiRequest<void>(`/api/posts/${postId}`, { method: 'DELETE' }),
+  pin: (postId: string) => apiRequest<Post>(`/api/posts/${postId}/pin`, { method: 'PUT' }),
+  unpin: (postId: string) => apiRequest<Post>(`/api/posts/${postId}/pin`, { method: 'DELETE' }),
   getById: (postId: string) => apiRequest<Post>(`/api/posts/${postId}`),
   getFeed: (offset = 0, limit = 20) =>
     apiRequest<PagedResponse<Post>>(`/api/posts/feed${pageQuery(offset, limit)}`),
