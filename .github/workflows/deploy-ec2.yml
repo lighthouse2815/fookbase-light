@@ -14,12 +14,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-24.04
-    env:
-      EC2_HOST: ${{ secrets.EC2_HOST }}
-      EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-      EC2_KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
-      EC2_USER: ubuntu
+    runs-on: [self-hosted, linux, x64, fookbase-production]
 
     steps:
       - name: Check out source
@@ -38,50 +33,28 @@ jobs:
           npm ci
           npm run build
 
-      - name: Configure deploy SSH key
+      - name: Publish release source
         shell: bash
         run: |
           set -Eeuo pipefail
-          test -n "$EC2_HOST"
-          test -n "$EC2_SSH_PRIVATE_KEY"
-          test -n "$EC2_KNOWN_HOSTS"
-          umask 077
-          printf '%s\n' "$EC2_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ec2_deploy_key"
-          printf '%s\n' "$EC2_KNOWN_HOSTS" > "$RUNNER_TEMP/ec2_known_hosts"
-
-      - name: Upload release source
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          git archive --format=tar "$GITHUB_SHA" | ssh \
-            -i "$RUNNER_TEMP/ec2_deploy_key" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$RUNNER_TEMP/ec2_known_hosts" \
-            "$EC2_USER@$EC2_HOST" 'tar -x -C /srv/fookbase-light'
+          git archive --format=tar "$GITHUB_SHA" | tar -x -C /srv/fookbase-light
 
       - name: Deploy API and apply migrations
         shell: bash
         run: |
           set -Eeuo pipefail
-          ssh \
-            -i "$RUNNER_TEMP/ec2_deploy_key" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$RUNNER_TEMP/ec2_known_hosts" \
-            "$EC2_USER@$EC2_HOST" 'bash /srv/fookbase-light/scripts/deploy-ec2.sh'
+          bash /srv/fookbase-light/scripts/deploy-ec2.sh
 
       - name: Publish main web
         shell: bash
         run: |
           set -Eeuo pipefail
-          tar -C frontend/web/dist -cf - . | ssh \
-            -i "$RUNNER_TEMP/ec2_deploy_key" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$RUNNER_TEMP/ec2_known_hosts" \
-            "$EC2_USER@$EC2_HOST" 'sudo tar -xf - -C /var/www/fookbase && sudo chown -R www-data:www-data /var/www/fookbase'
+          tar -C frontend/web/dist -cf - . | sudo tar -xf - -C /var/www/fookbase
+          sudo chown -R www-data:www-data /var/www/fookbase
 
       - name: Verify public deployment
         shell: bash
         run: |
           set -Eeuo pipefail
-          curl --fail --silent --show-error "https://$EC2_HOST/health/ready"
-          curl --fail --silent --show-error --output /dev/null "https://$EC2_HOST/"
+          curl --fail --silent --show-error https://fookbase-light.duckdns.org/health/ready
+          curl --fail --silent --show-error --output /dev/null https://fookbase-light.duckdns.org/

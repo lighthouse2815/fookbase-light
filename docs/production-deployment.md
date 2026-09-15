@@ -87,13 +87,9 @@ Nếu deploy lỗi, giữ volume, rollback image/application tương thích sche
 
 ## GitHub Actions deploy tự động
 
-Workflow `.github/workflows/deploy-ec2.yml` chạy sau mỗi push vào `main`. Nó build main web, upload source release, build API, chạy migration, chờ `/health/ready`, rồi publish static assets. Trước khi bật workflow, thêm các GitHub Actions repository secrets sau:
+Workflow `.github/workflows/deploy-ec2.yml` chạy sau mỗi push vào `main`. Nó chạy trên self-hosted runner mang label `fookbase-production` tại EC2, build main web, publish source release, build API, chạy migration, chờ `/health/ready`, rồi publish static assets. Runner chủ động kết nối GitHub nên không phải mở port SSH cho dải IP GitHub Actions.
 
-- `EC2_HOST`: domain hoặc IP SSH của EC2.
-- `EC2_SSH_PRIVATE_KEY`: private key chuyên cho GitHub Actions deploy.
-- `EC2_KNOWN_HOSTS`: dòng host key tương ứng với `EC2_HOST` từ `ssh-keyscan -H <host>`.
-
-Workflow dùng `StrictHostKeyChecking=yes`; không thay bằng `ssh-keyscan` lúc deploy để tránh tin một host key chưa được xác thực. Web hiện được publish là `frontend/web`; admin và Zola Light chỉ nên thêm vào workflow sau khi có host/path production riêng.
+Runner phải chạy qua systemd service `actions.runner.lighthouse2815-fookbase-light.fookbase-production.service` dưới user `ubuntu`, có quyền chạy Docker và `sudo` cho các thao tác deploy. Web hiện được publish là `frontend/web`; admin và Zola Light chỉ nên thêm vào workflow sau khi có host/path production riêng.
 
 ## Jobs, shutdown và capacity
 
