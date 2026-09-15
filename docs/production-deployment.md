@@ -85,6 +85,16 @@ docker compose -f compose.yml -f compose.prod.yml logs --tail=200 api
 
 Nếu deploy lỗi, giữ volume, rollback image/application tương thích schema hoặc khôi phục backup đã được diễn tập. Không force-push, không xóa volume như một bước rollback.
 
+## GitHub Actions deploy tự động
+
+Workflow `.github/workflows/deploy-ec2.yml` chạy sau mỗi push vào `main`. Nó build main web, upload source release, build API, chạy migration, chờ `/health/ready`, rồi publish static assets. Trước khi bật workflow, thêm các GitHub Actions repository secrets sau:
+
+- `EC2_HOST`: domain hoặc IP SSH của EC2.
+- `EC2_SSH_PRIVATE_KEY`: private key chuyên cho GitHub Actions deploy.
+- `EC2_KNOWN_HOSTS`: dòng host key tương ứng với `EC2_HOST` từ `ssh-keyscan -H <host>`.
+
+Workflow dùng `StrictHostKeyChecking=yes`; không thay bằng `ssh-keyscan` lúc deploy để tránh tin một host key chưa được xác thực. Web hiện được publish là `frontend/web`; admin và Zola Light chỉ nên thêm vào workflow sau khi có host/path production riêng.
+
 ## Jobs, shutdown và capacity
 
 Video jobs có claim PostgreSQL điều kiện, lease timeout, retry giới hạn và output key deterministic. `Media__MaxConcurrentJobs=1` là default production an toàn; chỉ tăng cùng giới hạn CPU/RAM thực tế và `Media__VideoProcessingBatchSize`. Object deletion chạy durable, retry có delay và chuyển sang `FailedAtUtc` sau giới hạn để dễ chẩn đoán, không busy-loop.

@@ -1,0 +1,11 @@
+services:
+  api:
+    image: fookbase-light-api:production
+    ports:
+      - "127.0.0.1:5000:5000"
+    cpus: 0.75
+    mem_limit: 768m
+
+  postgres:
+    cpus: 1.00
+    mem_limit: 768m
