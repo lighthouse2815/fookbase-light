@@ -29,6 +29,7 @@ const birthdaysPage = lazy(() => import('../pages/birthdays/BirthdaysPage'))
 const privacySettingsPage = lazy(() => import('../pages/settings/PrivacySettingsPage'))
 const securitySettingsPage = lazy(() => import('../pages/settings/SecuritySettingsPage'))
 const notificationsPage = lazy(() => import('../pages/notifications/NotificationsPage'))
+const postDetailPage = lazy(() => import('../pages/posts/PostDetailPage'))
 
 function page(Page: ComponentType) {
   return <Suspense fallback={<main className="min-h-screen grid place-items-center text-text-muted">Đang tải…</main>}><Page /></Suspense>
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
         path: 'notifications',
         element: page(notificationsPage),
       },
+      { path: 'posts/:postId', element: page(postDetailPage) },
       {
         path: 'saved',
         element: page(savedPostsPage),

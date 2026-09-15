@@ -10,6 +10,7 @@ import { reactionChoices } from './reactionChoices'
 import type { ReactionType } from './reactionChoices'
 
 interface DiscussionListProps {
+  initialCommentId?: string
   comments: readonly Comment[]
   commentAuthors: Readonly<Record<string, UserProfile>>
   currentUserId: string
@@ -63,6 +64,7 @@ function CommentReactionControl({
 }
 
 export function DiscussionList({
+  initialCommentId,
   comments,
   commentAuthors,
   currentUserId,
@@ -89,7 +91,7 @@ export function DiscussionList({
       const commentAuthor = commentAuthors[comment.authorUserId]
       const commentAuthorName = commentAuthor?.displayName ?? 'Người dùng'
       return (
-        <div key={comment.id} className="flex items-start gap-2.5">
+        <div key={comment.id} id={`comment-${comment.id}`} ref={(element) => { if (element && comment.id === initialCommentId) element.scrollIntoView({ block: 'center' }) }} className="flex items-start gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">
             {commentAuthor?.avatarUrl ? <img src={resolveProfileImageUrl(commentAuthor.avatarUrl)} alt="" className="h-full w-full object-cover" /> : commentAuthorName.slice(0, 2).toUpperCase()}
           </div>

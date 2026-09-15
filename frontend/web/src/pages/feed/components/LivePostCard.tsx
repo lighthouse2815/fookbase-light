@@ -23,6 +23,7 @@ interface LivePostCardProps {
   currentUserId: string
   onPostUpdated: (post: Post) => void
   onPostDeleted: (postId: string) => void
+  initialCommentId?: string
 }
 
 function MoreIcon() {
@@ -275,6 +276,7 @@ export default function LivePostCard({
   currentUserId,
   onPostUpdated,
   onPostDeleted,
+  initialCommentId,
 }: LivePostCardProps) {
   const { t } = usePreferences()
   const [comments, setComments] = useState<Comment[]>([])
@@ -380,6 +382,12 @@ export default function LivePostCard({
       setIsLoadingComments(false)
     }
   }
+
+  useEffect(() => {
+    if (!initialCommentId) return
+    setIsCommentsDialogOpen(true)
+    if (comments.length === 0) void loadComments()
+  }, [initialCommentId])
 
   const loadMoreComments = async () => {
     setIsLoadingMoreComments(true)
@@ -631,7 +639,7 @@ export default function LivePostCard({
             </div>
 
             <div className="space-y-4 px-4 py-4">
-              <DiscussionList comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} />
+              <DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} />
             </div>
           </div>
 
@@ -670,7 +678,7 @@ export default function LivePostCard({
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-            <div className="space-y-4"><DiscussionList comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} /></div>
+            <div className="space-y-4"><DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onEdit={(comment) => void editComment(comment)} onDelete={(comment) => void deleteComment(comment)} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} /></div>
           </div>
           <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserName} value={commentText} placeholder={t('writeComment')} sendLabel={t('send')} onChange={(event) => setCommentText(event.target.value)} onSubmit={(event) => void createComment(event)} />
         </aside>
