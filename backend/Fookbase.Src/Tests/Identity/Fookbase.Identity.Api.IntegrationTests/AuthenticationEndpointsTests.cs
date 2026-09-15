@@ -8,6 +8,8 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +18,35 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     : IClassFixture<IdentityApiFactory>
 {
+    [Fact]
+    public async Task External_login_completion_stores_hash_and_can_only_be_consumed_once()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var rawCode = "raw-completion";
+        var codeHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawCode)));
+        var completion = ExternalLoginCompletion.Create(
+            codeHash,
+            ExternalLoginCompletionPurpose.IssueSession,
+            "web",
+            "Google",
+            "google-subject",
+            "person@example.test",
+            null,
+            now);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        dbContext.ExternalLoginCompletions.Add(completion);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var stored = await dbContext.ExternalLoginCompletions.SingleAsync(item => item.Id == completion.Id);
+        Assert.Equal(64, stored.CodeHash.Length);
+        Assert.NotEqual(rawCode, stored.CodeHash);
+        Assert.True(stored.TryConsumeAt(now.AddSeconds(1)));
+        Assert.False(stored.TryConsumeAt(now.AddSeconds(2)));
+    }
+
     [Fact]
     public async Task Register_with_malformed_json_returns_bad_request()
     {
