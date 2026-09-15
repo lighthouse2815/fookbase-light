@@ -278,7 +278,7 @@ export default function UserProfilePage() {
           </section>
 
           <section className="flex flex-col gap-4">
-            <Link to={`/photos?userId=${profile.userId}`} className="self-start rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-primary">Photos & albums</Link>
+            <Link to={`/photos?userId=${profile.userId}`} className="self-start rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-primary">Ảnh và album</Link>
             <h2 className="font-heading font-bold text-xl text-text">{t('posts')}</h2>
             {posts.length === 0 && <p className="text-sm text-text-muted">{t('noVisiblePosts')}</p>}
             {posts.map((post) => (
