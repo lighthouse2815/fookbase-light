@@ -306,6 +306,8 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var share = await ReadAsync<PostShareResponse>(shareResponse);
         Assert.Equal(post.Id, share.OriginalPost.Id);
         Assert.Equal("profile", share.DestinationType);
+        var refreshedPost = await ReadAsync<PostResponse>(await author.GetAsync($"/api/posts/{post.Id}"));
+        Assert.Equal(1, refreshedPost.ShareCount);
         Assert.Equal(HttpStatusCode.Forbidden, (await sharer.PostAsJsonAsync($"/api/posts/{post.Id}/shares", new
         {
             destinationType = "profile",

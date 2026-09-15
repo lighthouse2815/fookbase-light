@@ -1216,6 +1216,11 @@ public sealed class PostsService(
             .GroupBy(comment => comment.PostId)
             .Select(group => new { PostId = group.Key, Count = group.Count() })
             .ToDictionaryAsync(item => item.PostId, item => item.Count, cancellationToken);
+        var shareCounts = await dbContext.PostShares.AsNoTracking()
+            .Where(share => postIds.Contains(share.OriginalPostId))
+            .GroupBy(share => share.OriginalPostId)
+            .Select(group => new { PostId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.PostId, item => item.Count, cancellationToken);
         var reactionCounts = await dbContext.PostReactions.AsNoTracking()
             .Where(reaction => postIds.Contains(reaction.PostId))
             .GroupBy(reaction => new { reaction.PostId, reaction.Type })
@@ -1282,7 +1287,8 @@ public sealed class PostsService(
                     mention.StartIndex,
                     mention.Length))
                 .ToList(),
-            post.PostType == PostType.Reel ? "reel" : "standardPost");
+            post.PostType == PostType.Reel ? "reel" : "standardPost",
+            shareCounts.GetValueOrDefault(post.Id));
         }).ToList();
     }
 

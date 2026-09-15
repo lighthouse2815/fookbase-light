@@ -14,7 +14,8 @@ public sealed record PostResponse(
     PostDisplayIdentityResponse? DisplayAuthor = null,
     string? ContainerType = null,
     IReadOnlyList<ContentMentionResponse>? Mentions = null,
-    string ContentType = "standardPost");
+    string ContentType = "standardPost",
+    int ShareCount = 0);
 
 public sealed record PostDisplayIdentityResponse(
     string Type,

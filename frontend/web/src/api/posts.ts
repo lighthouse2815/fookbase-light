@@ -25,6 +25,7 @@ export interface Post {
   updatedAtUtc: string | null
   mediaIds: string[]
   commentCount: number
+  shareCount: number
   reactionCounts: Record<string, number>
   viewerReaction: string | null
   displayAuthor?: PostDisplayIdentity | null

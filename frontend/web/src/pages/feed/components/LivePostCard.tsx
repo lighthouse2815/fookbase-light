@@ -590,7 +590,7 @@ export default function LivePostCard({
 
       <div className="mx-4 flex min-h-11 items-center justify-between gap-3 border-b border-border text-[13px] text-text-muted">
         <ReactionSummary reactionCounts={post.reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
-        <button type="button" onClick={openCommentsDialog} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{post.commentCount > 0 ? `${post.commentCount} ${t('comments')}` : ''}</button>
+        <span className="flex gap-2"><button type="button" onClick={openCommentsDialog} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{post.commentCount > 0 ? `${post.commentCount} ${t('comments')}` : ''}</button>{post.shareCount > 0 && <span>{post.shareCount} lượt chia sẻ</span>}</span>
       </div>
       <div className="mx-2 grid grid-cols-3 gap-1 py-1">
         <ReactionPicker viewerReaction={post.viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
@@ -601,7 +601,7 @@ export default function LivePostCard({
           <ShareIcon />{t('share')}
         </button>
       </div>
-      {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} />}
+      {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} onShared={() => onPostUpdated({ ...post, shareCount: post.shareCount + 1 })} />}
     </article>
     {isReactionDialogOpen && <ReactionDialog key={post.id} postId={post.id} reactionCounts={post.reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
     {isCommentsDialogOpen && createPortal(
