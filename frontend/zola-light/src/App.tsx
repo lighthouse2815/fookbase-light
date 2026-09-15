@@ -52,18 +52,56 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 }
 
 function Login({ onSession }: { onSession: (session: AuthSession) => void }) {
-  const [email, setEmail] = useState('')
+  const googleQuery = new URLSearchParams(window.location.search)
+  const googleCompletionCode = googleQuery.get('provider') === 'google' ? googleQuery.get('code') : null
+  const googleLinkMode = googleQuery.get('mode') === 'link'
+  const [email, setEmail] = useState(() => googleLinkMode ? googleQuery.get('email') ?? '' : '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [challenge, setChallenge] = useState<string | null>(null)
   const [code, setCode] = useState('')
+  const [googleEnabled, setGoogleEnabled] = useState(false)
+  const [googleLink] = useState(() =>
+    googleLinkMode && googleCompletionCode ? { code: googleCompletionCode, email: googleQuery.get('email') ?? '' } : null)
+  const completedGoogleCodes = useRef(new Set<string>())
+  const isEmbeddedBrowser = /\b(Zalo|FBAN|FBAV|Messenger)\b/i.test(navigator.userAgent)
+
+  useEffect(() => {
+    let active = true
+    void authApi.providers().then((providers) => {
+      if (active) setGoogleEnabled(providers.google)
+    }).catch(() => {
+      if (active) setGoogleEnabled(false)
+    })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (!googleCompletionCode || completedGoogleCodes.current.has(googleCompletionCode)) return
+    completedGoogleCodes.current.add(googleCompletionCode)
+    window.history.replaceState({}, document.title, window.location.pathname)
+    if (googleLinkMode) return
+
+    let active = true
+    void authApi.completeGoogle(googleCompletionCode).then((result) => {
+      if (!active) return
+      if ('twoFactorRequired' in result) setChallenge(result.challenge)
+      else { saveSession(result); onSession(result) }
+    }).catch((reason) => {
+      if (active) setError(reason instanceof ApiError ? reason.message : 'Không thể hoàn tất đăng nhập Google.')
+    })
+    return () => { active = false }
+  }, [googleCompletionCode, googleLinkMode, onSession])
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      const session = await authApi.login(email, password)
+      const session = googleLink
+        ? await authApi.linkGoogle(googleLink.code, password)
+        : await authApi.login(email, password)
       if ('twoFactorRequired' in session) setChallenge(session.challenge)
       else { saveSession(session); onSession(session) }
     } catch (reason) {
@@ -73,9 +111,20 @@ function Login({ onSession }: { onSession: (session: AuthSession) => void }) {
     }
   }
   return <main className="login-shell"><form className="login-card" onSubmit={submit}>
-    <div className="brand-mark">z</div><h1>Zola Light</h1><p>Đăng nhập bằng tài khoản Fookbase của bạn.</p>
+    <div className="brand-mark">z</div><h1>Zola Light</h1><p>{googleLink ? `Xác nhận mật khẩu Fookbase cho ${googleLink.email}.` : 'Đăng nhập bằng tài khoản Fookbase của bạn.'}</p>
     {error && <p className="alert">{error}</p>}
-    {challenge ? <><label>Mã xác thực<input autoFocus autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} required /></label><button type="button" className="primary" disabled={busy || !code} onClick={() => { setBusy(true); void authApi.verifyTwoFactor(challenge, code).then((next) => { saveSession(next); onSession(next) }).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Mã không hợp lệ.')).finally(() => setBusy(false)) }}>Xác minh</button></> : <><label>Email<input autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Mật khẩu<input autoComplete="current-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="primary" disabled={busy}>{busy ? 'Đang đăng nhập…' : 'Đăng nhập'}</button></>}
+    {challenge ? <>
+      <label>Mã xác thực<input autoFocus autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} required /></label>
+      <button type="button" className="primary" disabled={busy || !code} onClick={() => { setBusy(true); void authApi.verifyTwoFactor(challenge, code).then((next) => { saveSession(next); onSession(next) }).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Mã không hợp lệ.')).finally(() => setBusy(false)) }}>Xác minh</button>
+    </> : <>
+      <label>Email<input autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} readOnly={Boolean(googleLink)} required /></label>
+      <label>Mật khẩu<input autoComplete="current-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+      <button className="primary" disabled={busy}>{busy ? 'Đang đăng nhập…' : googleLink ? 'Tiếp tục với Google' : 'Đăng nhập'}</button>
+      {!googleLink && googleEnabled && <>
+        <div className="login-separator"><span />HOẶC<span /></div>
+        {isEmbeddedBrowser ? <p className="google-webview-notice">Hãy mở trang này bằng Chrome hoặc Safari để đăng nhập Google.</p> : <button type="button" className="google-login" onClick={() => window.location.assign(`${apiBaseUrl}/api/auth/google/start?client=zola-light`)}><span>G</span>Tiếp tục với Google</button>}
+      </>}
+    </>}
     <a href={import.meta.env.VITE_WEB_URL ?? 'http://localhost:5173'}>Quay lại Fookbase</a>
   </form></main>
 }

@@ -18,6 +18,8 @@ export interface AuthSession {
   refreshTokenExpiresAt: string
 }
 export interface TwoFactorChallenge { twoFactorRequired: true; challenge: string; expiresAtUtc: string }
+export interface ExternalProviders { google: boolean }
+export type GoogleLoginResponse = AuthSession | TwoFactorChallenge
 
 export class ApiError extends Error {
   readonly status: number
@@ -92,8 +94,15 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 }
 
 export const authApi = {
+  providers: () => request<ExternalProviders>('/api/auth/providers'),
   login: (email: string, password: string) => request<AuthSession | TwoFactorChallenge>('/api/auth/login', {
     method: 'POST', body: JSON.stringify({ email, password }),
+  }),
+  completeGoogle: (code: string) => request<GoogleLoginResponse>('/api/auth/google/exchange', {
+    method: 'POST', body: JSON.stringify({ code, client: 'zola-light' }),
+  }),
+  linkGoogle: (code: string, password: string) => request<GoogleLoginResponse>('/api/auth/google/link', {
+    method: 'POST', body: JSON.stringify({ code, password, client: 'zola-light' }),
   }),
   verifyTwoFactor: (challenge: string, code: string) => request<AuthSession>('/api/auth/2fa/verify', {
     method: 'POST', body: JSON.stringify({ challenge, code }),
