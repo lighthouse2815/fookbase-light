@@ -34,8 +34,12 @@ source "$env_file"
 set +a
 
 database_connection="Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-sudo docker run --rm --network fookbase-light_default \
-  -e "ConnectionStrings__FookbaseDatabase=$database_connection" \
+migration_env_file="$(mktemp)"
+trap 'shred -u -- "$migration_env_file"' EXIT
+umask 077
+printf '%s\n' "ConnectionStrings__FookbaseDatabase=$database_connection" > "$migration_env_file"
+
+sudo docker run --rm --network fookbase-light_default --env-file "$migration_env_file" \
   -v "$app_dir:/workspace" -w /workspace mcr.microsoft.com/dotnet/sdk:10.0 \
   sh -lc 'dotnet tool restore && dotnet restore backend/Fookbase.Src/Main/Fookbase.Api.csproj && dotnet tool run dotnet-ef database update --project backend/Fookbase.Src/Main --startup-project backend/Fookbase.Src/Main'
 
