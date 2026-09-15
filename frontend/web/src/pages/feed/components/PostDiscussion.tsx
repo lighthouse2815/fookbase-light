@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import type { Comment } from '../../../api/posts'
+import type { Comment, CommentAuthor } from '../../../api/posts'
 import { resolveProfileImageUrl } from '../../../api/users'
-import type { UserProfile } from '../../../api/users'
 import TextWithReferences from '../../../shared/components/TextWithReferences'
 import { formatPostTimestamp } from '../../../shared/formatPostTimestamp'
 import PaginationControls from '../../../shared/components/PaginationControls'
@@ -12,7 +11,7 @@ import type { ReactionType } from './reactionChoices'
 interface DiscussionListProps {
   initialCommentId?: string
   comments: readonly Comment[]
-  commentAuthors: Readonly<Record<string, UserProfile>>
+  commentAuthors: Readonly<Record<string, CommentAuthor>>
   currentUserId: string
   isLoading: boolean
   isLoadingMore: boolean
@@ -129,7 +128,7 @@ export function DiscussionList({
 }
 
 interface CommentComposerProps {
-  currentUserProfile?: UserProfile
+  currentUserProfile?: Pick<CommentAuthor, 'avatarUrl'>
   currentUserName: string
   value: string
   placeholder: string

@@ -1311,6 +1311,8 @@ public sealed class PostsService(
 
     private sealed record UserReactionProfile(Guid UserId, string Username, string DisplayName, string? AvatarUrl);
 
+    private sealed record CommentAuthorProfile(Guid UserId, string Username, string DisplayName, string? AvatarUrl);
+
     private sealed record MentionRow(Guid SourceId, Guid UserId, int StartIndex, int Length);
 
     private async Task<IReadOnlyList<CommentResponse>> LoadCommentResponsesAsync(
@@ -1324,6 +1326,17 @@ public sealed class PostsService(
         }
 
         var commentIds = comments.Select(comment => comment.Id).ToArray();
+        var authorIds = comments.Select(comment => comment.AuthorUserId).Distinct().ToArray();
+        var authors = authorIds.Length == 0
+            ? new Dictionary<Guid, CommentAuthorProfile>()
+            : await dbContext.UserProfiles.AsNoTracking()
+                .Where(profile => authorIds.Contains(profile.UserId))
+                .Select(profile => new CommentAuthorProfile(
+                    profile.UserId,
+                    profile.Username,
+                    profile.DisplayName,
+                    profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar"))
+                .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
         var mentionRows = await dbContext.ContentMentions.AsNoTracking()
             .Where(mention => mention.SourceType == MentionSourceType.Comment && commentIds.Contains(mention.SourceId))
             .Select(mention => new MentionRow(
@@ -1373,7 +1386,10 @@ public sealed class PostsService(
                     profiles[mention.UserId],
                     mention.StartIndex,
                     mention.Length))
-                .ToList())).ToList();
+                .ToList(),
+            authors.TryGetValue(comment.AuthorUserId, out var author)
+                ? new CommentAuthorResponse(author.UserId, author.Username, author.DisplayName, author.AvatarUrl)
+                : null)).ToList();
     }
 
     private static string PrivacyName(PostPrivacy privacy) => privacy switch

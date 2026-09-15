@@ -443,6 +443,10 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
 
         Assert.Equal(HttpStatusCode.Created, commentResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Created, replyResponse.StatusCode);
+        Assert.NotNull(comment.Author);
+        Assert.Equal(users[1], comment.Author!.UserId);
+        Assert.NotNull(reply.Author);
+        Assert.Equal(users[0], reply.Author!.UserId);
         Assert.Equal(HttpStatusCode.BadRequest, nestedReply.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, forbiddenEdit.StatusCode);
         Assert.Equal("love", liked.ViewerReaction);

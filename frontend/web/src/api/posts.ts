@@ -45,6 +45,14 @@ export interface Comment {
   reactionCounts: Record<string, number>
   viewerReaction: string | null
   mentions?: ContentMention[]
+  author?: CommentAuthor | null
+}
+
+export interface CommentAuthor {
+  userId: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
 }
 
 export interface PostReaction {

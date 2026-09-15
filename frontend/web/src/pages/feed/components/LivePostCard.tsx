@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
 import { friendsApi } from '../../../api/friends'
 import { postsApi } from '../../../api/posts'
-import type { Comment, MediaAccess, Post, PostReaction } from '../../../api/posts'
-import { resolveProfileImageUrl, usersApi } from '../../../api/users'
+import type { Comment, CommentAuthor, MediaAccess, Post, PostReaction } from '../../../api/posts'
+import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
 import { formatPostTimestamp } from '../../../shared/formatPostTimestamp'
@@ -289,7 +289,7 @@ export default function LivePostCard({
   const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false)
   const [commentsPageError, setCommentsPageError] = useState<string | null>(null)
   const [reactingCommentId, setReactingCommentId] = useState<string | null>(null)
-  const [commentAuthors, setCommentAuthors] = useState<Record<string, UserProfile>>({})
+  const [commentAuthors, setCommentAuthors] = useState<Record<string, CommentAuthor>>({})
   const [commentText, setCommentText] = useState('')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -373,17 +373,10 @@ export default function LivePostCard({
     return () => document.removeEventListener('pointerdown', closeOnOutsidePointerDown)
   }, [isPostMenuOpen])
 
-  const loadCommentAuthors = async (items: readonly Comment[]) => {
-    const authorIds = [...new Set(items.map((comment) => comment.authorUserId))]
-      .filter((userId) => !commentAuthors[userId])
-    if (authorIds.length === 0) return
-
-    const results = await Promise.allSettled(authorIds.map((userId) => usersApi.getById(userId)))
+  const cacheCommentAuthors = (items: readonly Comment[]) => {
     setCommentAuthors((current) => {
       const next = { ...current }
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') next[authorIds[index]] = result.value
-      })
+      items.forEach((comment) => { if (comment.author) next[comment.author.userId] = comment.author })
       return next
     })
   }
@@ -396,7 +389,7 @@ export default function LivePostCard({
       setComments(page.items)
       setCommentsTotal(page.total)
       setCommentsOffset(page.offset + page.items.length)
-      await loadCommentAuthors(page.items)
+      cacheCommentAuthors(page.items)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
     } finally {
@@ -418,7 +411,7 @@ export default function LivePostCard({
       setComments((current) => [...current, ...page.items.filter((comment) => !current.some((item) => item.id === comment.id))])
       setCommentsTotal(page.total)
       setCommentsOffset(page.offset + page.items.length)
-      await loadCommentAuthors(page.items)
+      cacheCommentAuthors(page.items)
     } catch (requestError) {
       setCommentsPageError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
     } finally {
@@ -476,7 +469,7 @@ export default function LivePostCard({
       setCommentsOffset((currentOffset) => currentOffset + 1)
       setCommentText('')
       setReplyTarget(null)
-      await loadCommentAuthors([comment])
+      cacheCommentAuthors([comment])
       onPostUpdated({ ...post, commentCount: post.commentCount + 1 })
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableCreateComment'))
