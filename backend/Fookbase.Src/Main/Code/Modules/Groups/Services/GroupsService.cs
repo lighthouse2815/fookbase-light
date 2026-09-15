@@ -479,9 +479,20 @@ public sealed class GroupsService(
             .Take(limit + 1)
             .ToListAsync(cancellationToken);
         var page = candidates.Take(limit).ToList();
+        var memberUserIds = page.Select(member => member.UserId).ToArray();
+        var profiles = memberUserIds.Length == 0
+            ? new Dictionary<Guid, GroupMemberProfile>()
+            : await dbContext.UserProfiles.AsNoTracking()
+                .Where(profile => memberUserIds.Contains(profile.UserId))
+                .Select(profile => new GroupMemberProfile(
+                    profile.UserId,
+                    profile.Username,
+                    profile.DisplayName,
+                    profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar"))
+                .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
         return ApplicationResult<GroupCursorPageResponse<GroupMemberResponse>>.Success(
             new GroupCursorPageResponse<GroupMemberResponse>(
-                page.Select(ToResponse).ToList(),
+                page.Select(member => ToResponse(member, profiles.GetValueOrDefault(member.UserId))).ToList(),
                 candidates.Count > limit ? EncodeCursor(page[^1].JoinedAtUtc, page[^1].UserId) : null));
     }
 
@@ -1205,8 +1216,11 @@ public sealed class GroupsService(
             group.CreatedAtUtc,
             group.UpdatedAtUtc);
 
-    private static GroupMemberResponse ToResponse(GroupMember member) =>
-        new(member.UserId, member.Role.ToString().ToLowerInvariant(), member.JoinedAtUtc);
+    private sealed record GroupMemberProfile(Guid UserId, string Username, string DisplayName, string? AvatarUrl);
+
+    private static GroupMemberResponse ToResponse(GroupMember member, GroupMemberProfile? profile = null) =>
+        new(member.UserId, member.Role.ToString().ToLowerInvariant(), member.JoinedAtUtc,
+            profile?.Username, profile?.DisplayName, profile?.AvatarUrl);
 
     private static GroupJoinRequestResponse ToResponse(GroupJoinRequest request) =>
         new(

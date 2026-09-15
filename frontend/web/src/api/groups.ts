@@ -23,6 +23,9 @@ export interface GroupMember {
   userId: string
   role: 'owner' | 'admin' | 'moderator' | 'member'
   joinedAtUtc: string
+  username: string | null
+  displayName: string | null
+  avatarUrl: string | null
 }
 
 export interface GroupJoinRequest {

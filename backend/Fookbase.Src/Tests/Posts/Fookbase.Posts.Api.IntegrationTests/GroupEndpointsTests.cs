@@ -65,11 +65,15 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
 
         var joined = await member.PostAsync($"/api/groups/{group.Id}/join", null);
         var duplicate = await member.PostAsync($"/api/groups/{group.Id}/join", null);
+        var members = await ReadAsync<GroupCursorPageResponse<GroupMemberResponse>>(
+            await owner.GetAsync($"/api/groups/{group.Id}/members"));
         var left = await member.PostAsync($"/api/groups/{group.Id}/leave", null);
         var ownerLeave = await owner.PostAsync($"/api/groups/{group.Id}/leave", null);
 
         Assert.Equal(HttpStatusCode.OK, joined.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+        Assert.All(members.Items, item => Assert.False(string.IsNullOrWhiteSpace(item.DisplayName)));
+        Assert.Contains(members.Items, item => item.UserId == users[1] && item.Username is not null);
         Assert.Equal(HttpStatusCode.NoContent, left.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, ownerLeave.StatusCode);
     }
