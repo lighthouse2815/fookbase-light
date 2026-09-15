@@ -219,6 +219,8 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddHealthChecks()
     .AddCheck<FookbaseDatabaseHealthCheck>("postgresql", tags: ["ready"])
     .AddCheck<CloudinaryHealthCheck>("cloudinary", tags: ["ready"]);
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -266,6 +268,8 @@ app.UseRateLimiter();
 app.UseMiddleware<AccountModerationMiddleware>();
 app.UseAuthorization();
 
+app.UseSwagger();
+app.UseSwaggerUI();
 app.MapHealthChecks("/health").DisableRateLimiting();
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
