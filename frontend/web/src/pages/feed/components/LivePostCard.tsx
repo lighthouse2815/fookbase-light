@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
@@ -282,7 +282,7 @@ export default function LivePostCard({
   const [comments, setComments] = useState<Comment[]>([])
   const [commentsTotal, setCommentsTotal] = useState(0)
   const [commentsOffset, setCommentsOffset] = useState(0)
-  const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(false)
+  const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(() => Boolean(initialCommentId))
   const [isReactionDialogOpen, setIsReactionDialogOpen] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<MediaAccess | null>(null)
   const [isLoadingComments, setIsLoadingComments] = useState(false)
@@ -373,15 +373,15 @@ export default function LivePostCard({
     return () => document.removeEventListener('pointerdown', closeOnOutsidePointerDown)
   }, [isPostMenuOpen])
 
-  const cacheCommentAuthors = (items: readonly Comment[]) => {
+  const cacheCommentAuthors = useCallback((items: readonly Comment[]) => {
     setCommentAuthors((current) => {
       const next = { ...current }
       items.forEach((comment) => { if (comment.author) next[comment.author.userId] = comment.author })
       return next
     })
-  }
+  }, [])
 
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     setIsLoadingComments(true)
     setCommentsPageError(null)
     try {
@@ -395,13 +395,13 @@ export default function LivePostCard({
     } finally {
       setIsLoadingComments(false)
     }
-  }
+  }, [cacheCommentAuthors, post.id, t])
 
   useEffect(() => {
-    if (!initialCommentId) return
-    setIsCommentsDialogOpen(true)
-    if (comments.length === 0) void loadComments()
-  }, [initialCommentId])
+    if (!initialCommentId || comments.length !== 0) return
+    const timer = window.setTimeout(() => { void loadComments() }, 0)
+    return () => window.clearTimeout(timer)
+  }, [comments.length, initialCommentId, loadComments])
 
   const loadMoreComments = async () => {
     setIsLoadingMoreComments(true)
