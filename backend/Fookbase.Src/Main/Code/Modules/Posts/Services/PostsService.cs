@@ -1359,6 +1359,15 @@ public sealed class PostsService(
                     profile.DisplayName,
                     profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar"))
                 .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
+        var missingAuthorIds = authorIds.Where(authorId => !authors.ContainsKey(authorId)).ToArray();
+        var fallbackAuthorUsernames = missingAuthorIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await dbContext.Users.AsNoTracking()
+                .Where(user => missingAuthorIds.Contains(user.Id))
+                .ToDictionaryAsync(
+                    user => user.Id,
+                    user => user.UserName ?? "Người dùng",
+                    cancellationToken);
         var mentionRows = await dbContext.ContentMentions.AsNoTracking()
             .Where(mention => mention.SourceType == MentionSourceType.Comment && commentIds.Contains(mention.SourceId))
             .Select(mention => new MentionRow(
@@ -1411,7 +1420,9 @@ public sealed class PostsService(
                 .ToList(),
             authors.TryGetValue(comment.AuthorUserId, out var author)
                 ? new CommentAuthorResponse(author.UserId, author.Username, author.DisplayName, author.AvatarUrl)
-                : null)).ToList();
+                : fallbackAuthorUsernames.TryGetValue(comment.AuthorUserId, out var username)
+                    ? new CommentAuthorResponse(comment.AuthorUserId, username, username, null)
+                    : null)).ToList();
     }
 
     private static string PrivacyName(PostPrivacy privacy) => privacy switch
