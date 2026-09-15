@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
         services.AddScoped<GoogleAuthenticationService>();
+        services.AddScoped<IGoogleExternalIdentityReader, GoogleExternalIdentityReader>();
         services.AddScoped<AccountModerationService>();
         services.AddScoped<RegistrationUseCase>();
         services.AddScoped<AdministrationService>();

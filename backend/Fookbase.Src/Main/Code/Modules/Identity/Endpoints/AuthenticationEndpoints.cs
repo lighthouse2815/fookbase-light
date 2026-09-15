@@ -1,10 +1,13 @@
 using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.WebUtilities;
+using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
 
 namespace Fookbase.Api.Modules.Identity.Endpoints;
 
@@ -15,6 +18,11 @@ public static class AuthenticationEndpoints
     {
         var group = endpoints.MapGroup("/api/auth");
 
+        group.MapGet("/providers", GetExternalProvidersAsync).AllowAnonymous();
+        group.MapGet("/google/start", StartGoogleAsync).AllowAnonymous().RequireRateLimiting("auth-login");
+        group.MapGet("/google/callback", CompleteGoogleCallbackAsync).AllowAnonymous();
+        group.MapPost("/google/exchange", ExchangeGoogleCompletionAsync).AllowAnonymous().RequireRateLimiting("auth-login");
+        group.MapPost("/google/link", LinkGoogleAsync).AllowAnonymous().RequireRateLimiting("auth-login");
         group.MapPost("/register", RegisterAsync).AllowAnonymous();
         group.MapPost("/login", LoginAsync).AllowAnonymous().RequireRateLimiting("auth-login");
         group.MapPost("/2fa/verify", VerifyTwoFactorAsync).AllowAnonymous().RequireRateLimiting("auth-login");
@@ -43,6 +51,138 @@ public static class AuthenticationEndpoints
 
         return endpoints;
     }
+
+    private static IResult GetExternalProvidersAsync(GoogleAuthenticationOptions googleOptions) =>
+        Results.Ok(new ExternalAuthenticationProvidersResponse(googleOptions.Enabled));
+
+    private static IResult StartGoogleAsync(string? client, GoogleAuthenticationOptions googleOptions)
+    {
+        if (!googleOptions.Enabled)
+        {
+            return GoogleUnavailable();
+        }
+
+        if (!IsSupportedGoogleClient(client))
+        {
+            return InvalidGoogleClient();
+        }
+
+        return Results.Challenge(
+            new AuthenticationProperties
+            {
+                RedirectUri = $"/api/auth/google/callback?client={Uri.EscapeDataString(client!)}"
+            },
+            ["Google"]);
+    }
+
+    private static async Task<IResult> CompleteGoogleCallbackAsync(
+        string? client,
+        IGoogleExternalIdentityReader identityReader,
+        GoogleAuthenticationService googleAuthentication,
+        GoogleAuthenticationOptions googleOptions,
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        if (!googleOptions.Enabled)
+        {
+            return GoogleUnavailable();
+        }
+
+        if (!IsSupportedGoogleClient(client))
+        {
+            return InvalidGoogleClient();
+        }
+
+        var identity = await identityReader.ReadAsync(context, cancellationToken);
+        if (!identity.Succeeded)
+        {
+            return identity.Error!.ToHttpResult();
+        }
+
+        var completion = await googleAuthentication.CreateCompletionAsync(
+            client!,
+            identity.Value!.ProviderKey,
+            identity.Value.Email,
+            identity.Value.EmailVerified,
+            cancellationToken);
+        if (!completion.Succeeded)
+        {
+            return completion.Error!.ToHttpResult();
+        }
+
+        var target = googleOptions.GetClientLoginUri(client!);
+        var query = new Dictionary<string, string?>
+        {
+            ["provider"] = "google",
+            ["code"] = completion.Value!.Code,
+            ["mode"] = completion.Value.RequiresPassword ? "link" : null,
+            ["email"] = completion.Value.RequiresPassword ? completion.Value.Email : null
+        };
+        return Results.Redirect(QueryHelpers.AddQueryString(target, query));
+    }
+
+    private static async Task<IResult> ExchangeGoogleCompletionAsync(
+        GoogleCompletionRequest request,
+        GoogleAuthenticationService googleAuthentication,
+        GoogleAuthenticationOptions googleOptions,
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        if (!googleOptions.Enabled)
+        {
+            return GoogleUnavailable();
+        }
+
+        if (!IsSupportedGoogleClient(request.Client))
+        {
+            return InvalidGoogleClient();
+        }
+
+        var result = await googleAuthentication.ExchangeAsync(
+            request.Code ?? string.Empty,
+            request.Client!,
+            context.Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> LinkGoogleAsync(
+        GoogleLinkRequest request,
+        GoogleAuthenticationService googleAuthentication,
+        GoogleAuthenticationOptions googleOptions,
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        if (!googleOptions.Enabled)
+        {
+            return GoogleUnavailable();
+        }
+
+        if (!IsSupportedGoogleClient(request.Client))
+        {
+            return InvalidGoogleClient();
+        }
+
+        var result = await googleAuthentication.LinkExistingAsync(
+            request.Code ?? string.Empty,
+            request.Client!,
+            request.Password ?? string.Empty,
+            context.Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static bool IsSupportedGoogleClient(string? client) => client is "web" or "zola-light";
+
+    private static IResult InvalidGoogleClient() => new ApplicationError(
+        "invalid_google_client",
+        "The Google authentication client is unsupported.",
+        ApplicationErrorType.Validation).ToHttpResult();
+
+    private static IResult GoogleUnavailable() => new ApplicationError(
+        "google_unavailable",
+        "Google authentication is unavailable.",
+        ApplicationErrorType.NotFound).ToHttpResult();
 
     private static async Task<IResult> RegisterAsync(
         RegisterRequest request,

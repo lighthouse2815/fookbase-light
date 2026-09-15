@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Data;
@@ -18,6 +19,96 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     : IClassFixture<IdentityApiFactory>
 {
+    [Fact]
+    public async Task Google_providers_reports_enabled_state()
+    {
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/auth/providers");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(document.RootElement.GetProperty("google").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Google_start_rejects_unknown_client()
+    {
+        using var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        var response = await client.GetAsync("/api/auth/google/start?client=unknown");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Google_callback_redirects_only_to_fixed_client_login_route()
+    {
+        using var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        client.DefaultRequestHeaders.Add("X-Test-Google-Sub", $"google-sub-{Guid.NewGuid():N}");
+        client.DefaultRequestHeaders.Add("X-Test-Google-Email", $"google-callback-{Guid.NewGuid():N}@example.test");
+        client.DefaultRequestHeaders.Add("X-Test-Google-Email-Verified", "true");
+
+        var response = await client.GetAsync("/api/auth/google/callback?client=web");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var location = response.Headers.Location?.ToString();
+        Assert.NotNull(location);
+        Assert.StartsWith("http://web.example.test/login?", location, StringComparison.Ordinal);
+        Assert.Contains("provider=google", location, StringComparison.Ordinal);
+        Assert.Contains("code=", location, StringComparison.Ordinal);
+        Assert.DoesNotContain("accessToken", location, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("refreshToken", location, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Google_exchange_rejects_replayed_completion_code()
+    {
+        using var scope = factory.Services.CreateScope();
+        var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
+        var completion = await googleAuthentication.CreateCompletionAsync(
+            "web",
+            $"google-sub-{Guid.NewGuid():N}",
+            $"google-replay-{Guid.NewGuid():N}@example.test",
+            emailVerified: true);
+        Assert.True(completion.Succeeded);
+
+        using var client = factory.CreateClient();
+        var first = await client.PostAsJsonAsync("/api/auth/google/exchange", new { code = completion.Value!.Code, client = "web" });
+        var second = await client.PostAsJsonAsync("/api/auth/google/exchange", new { code = completion.Value.Code, client = "web" });
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task Google_link_rejects_wrong_password()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        await RegisterAsync(client, account);
+        using var scope = factory.Services.CreateScope();
+        var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
+        var completion = await googleAuthentication.CreateCompletionAsync(
+            "web",
+            $"google-sub-{Guid.NewGuid():N}",
+            account.Email,
+            emailVerified: true);
+        Assert.True(completion.Succeeded);
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/google/link",
+            new { code = completion.Value!.Code, password = "wrong-password", client = "web" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     [Fact]
     public async Task External_login_completion_stores_hash_and_can_only_be_consumed_once()
     {

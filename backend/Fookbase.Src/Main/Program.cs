@@ -36,6 +36,7 @@ using Fookbase.Api.Modules.Events.Endpoints;
 using Fookbase.Api.Modules.Memories.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -183,6 +184,9 @@ if (googleAuthenticationOptions.Enabled)
             options.ClientId = googleAuthenticationOptions.ClientId;
             options.ClientSecret = googleAuthenticationOptions.ClientSecret;
             options.CallbackPath = "/signin-google";
+            options.ClaimActions.MapJsonKey("sub", "sub");
+            options.ClaimActions.MapJsonKey("email", "email");
+            options.ClaimActions.MapJsonKey("email_verified", "email_verified");
         });
 }
 builder.Services.AddAuthorization(options => options.AddPolicy(AdminPolicy.Name, policy =>

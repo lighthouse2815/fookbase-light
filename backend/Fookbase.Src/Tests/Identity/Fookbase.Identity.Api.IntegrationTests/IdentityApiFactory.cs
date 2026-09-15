@@ -40,12 +40,19 @@ public class IdentityApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Cloudinary:ApiSecret", "test-api-secret");
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.UseSetting("Jwt:SigningKey", "identity-integration-tests-signing-key-with-32-characters");
+        builder.UseSetting("GoogleAuthentication:Enabled", "true");
+        builder.UseSetting("GoogleAuthentication:ClientId", "test-google-client-id");
+        builder.UseSetting("GoogleAuthentication:ClientSecret", "test-google-client-secret");
+        builder.UseSetting("GoogleAuthentication:WebBaseUrl", "http://web.example.test");
+        builder.UseSetting("GoogleAuthentication:ZolaLightBaseUrl", "http://zola.example.test");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<TestEmailSender>();
             services.AddSingleton<IEmailSender>(provider =>
                 provider.GetRequiredService<TestEmailSender>());
+            services.RemoveAll<IGoogleExternalIdentityReader>();
+            services.AddScoped<IGoogleExternalIdentityReader, TestGoogleExternalIdentityReader>();
         });
     }
 
