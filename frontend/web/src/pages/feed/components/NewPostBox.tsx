@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { resolveProfileImageUrl, usersApi } from '../../../api/users'
 import { useAuth } from '../../../auth/useAuth'
 import { usePreferences } from '../../../preferences'
+import AppDialog from '../../../shared/components/AppDialog'
 
 interface NewPostBoxProps {
   onPost: (
@@ -60,6 +61,7 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   const [error, setError] = useState<string | null>(null)
   const [isFeelingPickerOpen, setIsFeelingPickerOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] = useState(false)
   const previewUrlsRef = useRef(new Set<string>())
   const remaining = MAX_CHARS - content.length
   const isOverLimit = remaining < 0
@@ -160,7 +162,7 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between pb-1 border-b border-border">
             <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{initials}</div><div><div className="text-[14px] font-semibold text-text">{username}</div><div className="text-[12px] text-text-muted">{postingLabel ?? t('public')}</div></div></div>
-            <button type="button" onClick={() => { if (!content.trim() && attachments.length === 0) setIsExpanded(false); else if (window.confirm(t('discardPost'))) { resetComposer(); setIsExpanded(false) } }} className="w-8 h-8 rounded-full bg-surface-2 hover:bg-surface-3 flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none transition-colors" title={t('close')}>✕</button>
+            <button type="button" onClick={() => { if (!content.trim() && attachments.length === 0) setIsExpanded(false); else setIsDiscardConfirmationOpen(true) }} className="w-8 h-8 rounded-full bg-surface-2 hover:bg-surface-3 flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none transition-colors" title={t('close')} aria-label={t('close')}>✕</button>
           </div>
 
           <textarea autoFocus value={content} onChange={(event) => setContent(event.target.value)} placeholder={`${t('whatsOnMind')}, ${username}?`} rows={4} className="w-full bg-transparent border-none outline-none resize-none text-[15px] text-text leading-relaxed placeholder:text-text-light" onKeyDown={(event) => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) void handleSubmit() }} />
@@ -194,6 +196,7 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
           <button type="button" onClick={() => void handleSubmit()} disabled={(!content.trim() && attachments.length === 0) || isOverLimit || isSubmitting} className="w-full py-2 rounded-lg text-[14px] font-semibold text-white bg-primary hover:brightness-110 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-none">{isSubmitting ? t('posting') : t('post')}</button>
         </div>
       )}
+      {isDiscardConfirmationOpen && <AppDialog title="Bỏ bài viết?" onClose={() => setIsDiscardConfirmationOpen(false)}><p className="mt-3 text-sm text-text-muted">Nội dung và tệp đính kèm chưa đăng sẽ bị xóa.</p><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setIsDiscardConfirmationOpen(false)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" onClick={() => { resetComposer(); setIsExpanded(false); setIsDiscardConfirmationOpen(false) }} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Bỏ bài viết</button></div></AppDialog>}
     </div>
   )
 }
