@@ -48,6 +48,116 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     }
 
     [Fact]
+    public async Task Google_verified_new_email_creates_confirmed_user_profile_privacy_and_login()
+    {
+        using var scope = factory.Services.CreateScope();
+        var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var email = $"google-{Guid.NewGuid():N}@example.test";
+
+        var completion = await googleAuthentication.CreateCompletionAsync(
+            "web",
+            $"google-sub-{Guid.NewGuid():N}",
+            email,
+            emailVerified: true);
+
+        Assert.True(completion.Succeeded);
+        Assert.False(completion.Value!.RequiresPassword);
+
+        var exchange = await googleAuthentication.ExchangeAsync(completion.Value.Code, "web", null);
+        var session = Assert.IsType<AuthenticationResponse>(exchange.Value);
+        var user = await userManager.FindByIdAsync(session.User.Id.ToString());
+
+        Assert.NotNull(user);
+        Assert.True(user!.EmailConfirmed);
+        Assert.NotNull(await dbContext.UserProfiles.SingleOrDefaultAsync(item => item.UserId == user.Id));
+        Assert.NotNull(await dbContext.UserPrivacySettings.SingleOrDefaultAsync(item => item.UserId == user.Id));
+        Assert.Contains(await userManager.GetLoginsAsync(user), login =>
+            login.LoginProvider == "Google" && login.ProviderKey.StartsWith("google-sub-"));
+    }
+
+    [Fact]
+    public async Task Google_unverified_email_does_not_create_or_link_an_account()
+    {
+        using var scope = factory.Services.CreateScope();
+        var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
+        var email = $"google-unverified-{Guid.NewGuid():N}@example.test";
+
+        var completion = await googleAuthentication.CreateCompletionAsync(
+            "web",
+            $"google-sub-{Guid.NewGuid():N}",
+            email,
+            emailVerified: false);
+
+        Assert.False(completion.Succeeded);
+        Assert.Null(await userManager.FindByEmailAsync(email));
+    }
+
+    [Fact]
+    public async Task Google_existing_email_rejects_wrong_password_before_linking()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        await RegisterAsync(client, account);
+
+        using var scope = factory.Services.CreateScope();
+        var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
+        var user = await userManager.FindByEmailAsync(account.Email);
+
+        var completion = await googleAuthentication.CreateCompletionAsync(
+            "web",
+            $"google-sub-{Guid.NewGuid():N}",
+            account.Email,
+            emailVerified: true);
+        var linked = await googleAuthentication.LinkExistingAsync(
+            completion.Value!.Code,
+            "web",
+            "wrong-password",
+            null);
+
+        Assert.True(completion.Succeeded);
+        Assert.True(completion.Value!.RequiresPassword);
+        Assert.False(linked.Succeeded);
+        Assert.DoesNotContain(await userManager.GetLoginsAsync(user!), login => login.LoginProvider == "Google");
+    }
+
+    [Fact]
+    public async Task Google_existing_email_links_after_correct_password_and_issues_session()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        await RegisterAsync(client, account);
+
+        using var scope = factory.Services.CreateScope();
+        var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
+        var user = await userManager.FindByEmailAsync(account.Email);
+        var providerKey = $"google-sub-{Guid.NewGuid():N}";
+
+        var completion = await googleAuthentication.CreateCompletionAsync(
+            "web",
+            providerKey,
+            account.Email,
+            emailVerified: true);
+        Assert.True(completion.Succeeded);
+        Assert.True(completion.Value!.RequiresPassword);
+
+        var linked = await googleAuthentication.LinkExistingAsync(
+            completion.Value.Code,
+            "web",
+            account.Password,
+            null);
+
+        Assert.True(linked.Succeeded);
+        Assert.IsType<AuthenticationResponse>(linked.Value);
+        Assert.Contains(await userManager.GetLoginsAsync(user!), login =>
+            login.LoginProvider == "Google" && login.ProviderKey == providerKey);
+    }
+
+    [Fact]
     public async Task Register_with_malformed_json_returns_bad_request()
     {
         using var client = factory.CreateClient();

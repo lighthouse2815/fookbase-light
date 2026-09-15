@@ -143,6 +143,41 @@ public sealed class AuthenticationService(
             : ApplicationResult<object>.Failure(issued.Error!);
     }
 
+    public async Task<ApplicationResult<object>> CompleteExternalLoginAsync(
+        User user,
+        string? userAgent,
+        string? pendingExternalProvider = null,
+        string? pendingExternalProviderKey = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!user.IsActive || await userManager.IsLockedOutAsync(user) ||
+            await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
+        {
+            return UnauthorizedFailure<object>(
+                "invalid_external_login",
+                "The external login is unavailable.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        if (user.TwoFactorEnabled)
+        {
+            var challenge = TwoFactorLoginChallenge.Create(
+                user.Id,
+                now,
+                pendingExternalProvider,
+                pendingExternalProviderKey);
+            dbContext.TwoFactorLoginChallenges.Add(challenge);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ApplicationResult<object>.Success(
+                new TwoFactorChallengeResponse(true, challenge.Id.ToString("N"), challenge.ExpiresAtUtc));
+        }
+
+        var issued = await IssueNewTokenPairAsync(user, now, userAgent, cancellationToken);
+        return issued.Succeeded
+            ? ApplicationResult<object>.Success(issued.Value!)
+            : ApplicationResult<object>.Failure(issued.Error!);
+    }
+
     public async Task<ApplicationResult<AuthenticationResponse>> VerifyTwoFactorAsync(TwoFactorVerifyRequest request,
         string? userAgent, CancellationToken cancellationToken = default)
     {
@@ -161,6 +196,23 @@ public sealed class AuthenticationService(
         var valid = await VerifyAuthenticatorCodeAsync(user, recoveryCode) ||
             (await userManager.RedeemTwoFactorRecoveryCodeAsync(user, recoveryCode)).Succeeded;
         if (!valid) return UnauthorizedFailure<AuthenticationResponse>("invalid_two_factor_code", "The two-factor code is invalid.");
+
+        if (challenge.PendingExternalProvider is not null && challenge.PendingExternalProviderKey is not null)
+        {
+            var addLogin = await userManager.AddLoginAsync(
+                user,
+                new UserLoginInfo(
+                    challenge.PendingExternalProvider,
+                    challenge.PendingExternalProviderKey,
+                    challenge.PendingExternalProvider));
+            if (!addLogin.Succeeded)
+            {
+                return UnauthorizedFailure<AuthenticationResponse>(
+                    "invalid_two_factor_challenge",
+                    "The two-factor challenge is invalid or expired.");
+            }
+        }
+
         challenge.Consume(now);
         await dbContext.SaveChangesAsync(cancellationToken);
         return await IssueNewTokenPairAsync(user, now, userAgent, cancellationToken);

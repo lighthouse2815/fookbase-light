@@ -7,6 +7,7 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -105,6 +106,42 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
         Assert.True(firstVerification.StatusCode == HttpStatusCode.OK, await firstVerification.Content.ReadAsStringAsync());
         var secondChallenge = await GetChallengeAsync(client, account.User.Email);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/2fa/verify", new TwoFactorVerifyRequest(secondChallenge, recoveryCode))).StatusCode);
+    }
+
+    [Fact]
+    public async Task Google_link_waits_for_two_factor_verification_before_adding_login()
+    {
+        using var client = factory.CreateClient();
+        var account = await RegisterAsync(client);
+        var code = await EnableTwoFactorForTestAsync(account.User.Id);
+        var providerKey = $"google-sub-{Guid.NewGuid():N}";
+
+        using var scope = factory.Services.CreateScope();
+        var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
+        var manager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var user = await manager.FindByIdAsync(account.User.Id.ToString())
+            ?? throw new InvalidOperationException();
+        var completion = await googleAuthentication.CreateCompletionAsync(
+            "web",
+            providerKey,
+            account.User.Email,
+            emailVerified: true);
+        Assert.True(completion.Succeeded);
+
+        var linked = await googleAuthentication.LinkExistingAsync(
+            completion.Value!.Code,
+            "web",
+            TestPassword,
+            null);
+        var challenge = Assert.IsType<TwoFactorChallengeResponse>(linked.Value);
+        Assert.DoesNotContain(await manager.GetLoginsAsync(user), login => login.LoginProvider == "Google");
+
+        var verified = await client.PostAsJsonAsync(
+            "/api/auth/2fa/verify",
+            new TwoFactorVerifyRequest(challenge.Challenge, code));
+        Assert.Equal(HttpStatusCode.OK, verified.StatusCode);
+        Assert.Contains(await manager.GetLoginsAsync(user), login =>
+            login.LoginProvider == "Google" && login.ProviderKey == providerKey);
     }
 
     private async Task<string> EnableTwoFactorForTestAsync(Guid userId, bool recovery = false)
