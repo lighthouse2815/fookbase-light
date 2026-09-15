@@ -36,7 +36,9 @@ internal sealed class CloudinaryObjectStorage(
 
     public string CreateSignedGetUrl(string objectKey, MediaType mediaType) =>
         (mediaType == MediaType.Video ? cloudinary.Api.UrlVideoUp : cloudinary.Api.UrlImgUp)
-            .Secure(true).Type("authenticated").Signed(true).BuildUrl(objectKey);
+            .Secure(true).Type("authenticated").Signed(true)
+            .Format(Path.GetExtension(objectKey).TrimStart('.'))
+            .BuildUrl(objectKey);
 
     public Task<string> CreateSignedGetUrlAsync(string objectKey, MediaType mediaType,
         CancellationToken cancellationToken = default) => Task.FromResult(CreateSignedGetUrl(objectKey, mediaType));

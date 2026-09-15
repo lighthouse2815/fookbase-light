@@ -52,6 +52,26 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
     }
 
     [Fact]
+    public void Signed_download_url_preserves_extension_in_cloudinary_public_id()
+    {
+        var options = new CloudinaryOptions
+        {
+            CloudName = "test-cloud",
+            ApiKey = "test-api-key",
+            ApiSecret = "test-api-secret"
+        };
+        using var services = new ServiceCollection().AddHttpClient().BuildServiceProvider();
+        var storage = new CloudinaryObjectStorage(
+            new Cloudinary(new Account(options.CloudName, options.ApiKey, options.ApiSecret)),
+            options,
+            services.GetRequiredService<IHttpClientFactory>());
+
+        var url = storage.CreateSignedGetUrl("user/avatar.png", MediaType.Image);
+
+        Assert.EndsWith("/user/avatar.png.png", url);
+    }
+
+    [Fact]
     public async Task Upload_intent_requires_jwt_and_validates_type_and_size()
     {
         using var anonymous = factory.CreateClient();
