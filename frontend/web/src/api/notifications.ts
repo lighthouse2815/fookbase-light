@@ -30,7 +30,6 @@ export type AppNotificationEntityType =
   | 'Story'
   | 'Page'
   | 'PageRoleInvitation'
-  | 'UserFollow'
   | 'Event'
 
 export interface AppNotification {

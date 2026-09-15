@@ -5,7 +5,8 @@ import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
 import { searchApi, type SearchSuggestions } from '../api/search'
 import { resolveProfileImageUrl, usersApi } from '../api/users'
-import { getNotificationBadge, getNotificationDestination, getNotificationMessage } from '../shared/notificationPresentation'
+import { getNotificationPresentation } from '../shared/notificationPresentation'
+import { formatPostTimestamp } from '../shared/formatPostTimestamp'
 
 interface NavItem {
   path: string
@@ -188,10 +189,6 @@ export default function TopNavbar() {
   const hasSuggestions = Boolean(suggestions &&
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
 
-  const notificationTime = (createdAtUtc: string) => {
-    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(createdAtUtc))
-  }
-
   const visibleNotifications = notificationFilter === 'unread'
     ? notifications.filter((notification) => !notification.isRead && !dismissedNotificationIds.has(notification.id))
     : notifications.filter((notification) => !dismissedNotificationIds.has(notification.id))
@@ -317,12 +314,11 @@ export default function TopNavbar() {
                 {visibleNotifications.length === 0 ? <p className="px-4 py-6 text-center text-sm text-text-muted">{notificationFilter === 'unread' ? 'Bạn không có thông báo chưa đọc.' : t('allCaughtUp')}</p> : (
                   <>
                     {visibleNotifications.map((notification, index) => {
-                      const actor = notification.actorDisplayName ?? notification.actorUsername ?? t('user')
-                      const badge = getNotificationBadge(notification)
+                      const presentation = getNotificationPresentation(notification)
                       const avatarTone = ['bg-[#87433b]', 'bg-[#5f7997]', 'bg-[#8e5b88]', 'bg-[#607b57]', 'bg-[#9b6c45]'][index % 5]
-                      return <Link key={notification.id} to={getNotificationDestination(notification)} onClick={() => { markNotificationRead(notification.id); setActiveHeaderPopup(null) }} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
-                        <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${avatarTone}`}>{actor.slice(0, 2).toUpperCase()}<span className={`absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-surface text-[11px] font-bold text-white ${badge.className}`}>{badge.icon}</span></span>
-                        <span className="min-w-0 flex-1 pr-4"><span className="block text-sm leading-5 text-text"><strong>{actor}</strong> {getNotificationMessage(notification)}</span><span className={`mt-0.5 block text-xs font-semibold ${notification.isRead ? 'text-text-light' : 'text-primary'}`}>{notificationTime(notification.createdAtUtc)}</span></span>
+                      return <Link key={notification.id} to={presentation.destination} onClick={() => { markNotificationRead(notification.id); setActiveHeaderPopup(null) }} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
+                        <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${presentation.actor ? avatarTone : 'bg-surface-2 text-text-muted'}`}>{presentation.actor ? presentation.actor.slice(0, 2).toUpperCase() : '!'}<span className={`absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-surface text-[11px] font-bold text-white ${presentation.badge.className}`}>{presentation.badge.icon}</span></span>
+                        <span className="min-w-0 flex-1 pr-4"><span className="block text-sm leading-5 text-text">{presentation.actor ? <><strong>{presentation.actor}</strong> {presentation.message}</> : presentation.text}</span><span className={`mt-0.5 block text-xs font-semibold ${notification.isRead ? 'text-text-light' : 'text-primary'}`}>{formatPostTimestamp(notification.createdAtUtc).compact}</span></span>
                         {!notification.isRead && <span className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary" />}
                       </Link>
                     })}
