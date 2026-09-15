@@ -13,11 +13,13 @@ public static class DependencyInjection
         this IServiceCollection services,
         JwtOptions jwtOptions,
         EmailOptions emailOptions,
-        AdminOptions adminOptions)
+        AdminOptions adminOptions,
+        GoogleAuthenticationOptions googleAuthenticationOptions)
     {
         jwtOptions.Validate();
         emailOptions.Validate();
         adminOptions.Validate();
+        googleAuthenticationOptions.Validate(production: false);
 
         services
             .AddIdentityCore<User>(options =>
@@ -40,6 +42,7 @@ public static class DependencyInjection
         services.AddSingleton(jwtOptions);
         services.AddSingleton(emailOptions);
         services.AddSingleton(adminOptions);
+        services.AddSingleton(googleAuthenticationOptions);
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<JwtTokenService>();

@@ -31,6 +31,22 @@ public sealed class ProductionRuntimeTests
     }
 
     [Fact]
+    public void Production_configuration_rejects_enabled_google_without_client_secret()
+    {
+        var values = ProductionValues();
+        values["GoogleAuthentication:Enabled"] = "true";
+        values["GoogleAuthentication:ClientId"] = "client-id";
+        values["GoogleAuthentication:WebBaseUrl"] = "https://app.example.test";
+        values["GoogleAuthentication:ZolaLightBaseUrl"] = "https://zola.example.test";
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            ProductionConfigurationValidator.Validate(configuration, production: true));
+
+        Assert.Contains("GoogleAuthentication:ClientSecret", exception.Message);
+    }
+
+    [Fact]
     public async Task Unexpected_error_response_is_safe_and_has_request_id()
     {
         var context = new DefaultHttpContext();

@@ -35,6 +35,7 @@ using Fookbase.Api.Modules.Search.Endpoints;
 using Fookbase.Api.Modules.Events.Endpoints;
 using Fookbase.Api.Modules.Memories.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -58,6 +59,9 @@ ProductionConfigurationValidator.Validate(builder.Configuration, builder.Environ
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is required.");
+var googleAuthenticationOptions = builder.Configuration
+    .GetSection(GoogleAuthenticationOptions.SectionName)
+    .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
 var dataProtectionOptions = builder.Configuration.GetSection(AppDataProtectionOptions.SectionName)
     .Get<AppDataProtectionOptions>() ?? new AppDataProtectionOptions();
 dataProtectionOptions.Validate(builder.Environment.IsProduction());
@@ -116,7 +120,8 @@ builder.Services.AddEventsModule();
 builder.Services.AddMemoriesModule();
 
 jwtOptions.Validate();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+googleAuthenticationOptions.Validate(builder.Environment.IsProduction());
+var authenticationBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;
@@ -162,6 +167,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
+if (googleAuthenticationOptions.Enabled)
+{
+    authenticationBuilder
+        .AddCookie("GoogleExternal", options =>
+        {
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        })
+        .AddGoogle("Google", options =>
+        {
+            options.SignInScheme = "GoogleExternal";
+            options.ClientId = googleAuthenticationOptions.ClientId;
+            options.ClientSecret = googleAuthenticationOptions.ClientSecret;
+            options.CallbackPath = "/signin-google";
+        });
+}
 builder.Services.AddAuthorization(options => options.AddPolicy(AdminPolicy.Name, policy =>
     policy.RequireRole(AdminRole.Name)));
 builder.Services.AddSignalR(options => options.AddFilter<AccountModerationHubFilter>());

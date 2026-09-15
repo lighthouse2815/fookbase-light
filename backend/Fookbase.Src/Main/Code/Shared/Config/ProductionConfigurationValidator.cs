@@ -22,6 +22,11 @@ public static class ProductionConfigurationValidator
             ?? throw new InvalidOperationException("JWT configuration is required in Production.");
         jwt.Validate();
 
+        var googleAuthentication = configuration
+            .GetSection(GoogleAuthenticationOptions.SectionName)
+            .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
+        googleAuthentication.Validate(production: true);
+
         var cloudinary = configuration.GetSection(CloudinaryOptions.SectionName).Get<CloudinaryOptions>()
             ?? throw new InvalidOperationException("Cloudinary configuration is required in Production.");
         cloudinary.Validate();

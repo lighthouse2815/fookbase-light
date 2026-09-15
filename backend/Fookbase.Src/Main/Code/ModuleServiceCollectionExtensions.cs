@@ -62,11 +62,15 @@ internal static class ModuleServiceCollectionExtensions
             ?? new EmailOptions();
         var adminOptions = configuration.GetSection(AdminOptions.SectionName).Get<AdminOptions>()
             ?? new AdminOptions();
+        var googleAuthenticationOptions = configuration
+            .GetSection(GoogleAuthenticationOptions.SectionName)
+            .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
 
         return services.AddIdentityInfrastructure(
             jwtOptions,
             emailOptions,
-            adminOptions);
+            adminOptions,
+            googleAuthenticationOptions);
     }
 
     public static IServiceCollection AddUsersModule(
