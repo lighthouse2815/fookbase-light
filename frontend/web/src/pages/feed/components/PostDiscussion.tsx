@@ -101,7 +101,7 @@ export function DiscussionList({
     return (
       <div key={comment.id} id={`comment-${comment.id}`} ref={(element) => { if (element && comment.id === initialCommentId) element.scrollIntoView({ block: 'center' }) }} className={`flex items-start gap-2.5 ${isReply ? 'ml-8 sm:ml-12' : ''}`}>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">
-          {commentAuthor?.avatarUrl ? <img src={resolveProfileImageUrl(commentAuthor.avatarUrl)} alt="" className="h-full w-full object-cover" /> : commentAuthorName.slice(0, 2).toUpperCase()}
+          {commentAuthor?.avatarUrl ? <img src={resolveProfileImageUrl(commentAuthor.avatarUrl)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : commentAuthorName.slice(0, 2).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
           <div className="inline-block max-w-full rounded-2xl bg-surface-2 px-3 py-2">

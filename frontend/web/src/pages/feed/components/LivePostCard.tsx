@@ -297,7 +297,9 @@ export default function LivePostCard({
   const [isSaved, setIsSaved] = useState(false)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false)
+  const [isMediaVisible, setIsMediaVisible] = useState(false)
   const postMenuRef = useRef<HTMLDivElement>(null)
+  const postCardRef = useRef<HTMLElement>(null)
   const isAuthor = post.authorUserId === currentUserId
   const displayAuthor = post.displayAuthor
   const authorName = displayAuthor?.name ?? author?.displayName ?? t('user')
@@ -315,6 +317,23 @@ export default function LivePostCard({
     : null
 
   useEffect(() => {
+    if (post.mediaIds.length === 0 || isMediaVisible) return
+    const target = postCardRef.current
+    if (!target || !('IntersectionObserver' in window)) {
+      setIsMediaVisible(true)
+      return
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      setIsMediaVisible(true)
+      observer.disconnect()
+    }, { rootMargin: '400px 0px' })
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [isMediaVisible, post.mediaIds.length])
+
+  useEffect(() => {
+    if (!isMediaVisible) return
     let isActive = true
 
     void Promise.all(post.mediaIds.map((mediaId) => postsApi.getMediaAccess(post.id, mediaId)))
@@ -328,7 +347,7 @@ export default function LivePostCard({
     return () => {
       isActive = false
     }
-  }, [post.id, post.mediaIds])
+  }, [isMediaVisible, post.id, post.mediaIds])
 
   useEffect(() => {
     if (!isCommentsDialogOpen && !isReactionDialogOpen && !selectedPhoto) return
@@ -547,7 +566,7 @@ export default function LivePostCard({
 
   return (
     <>
-    <article className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+    <article ref={postCardRef} className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
       <header className="relative flex items-center gap-3 px-4 pb-2 pt-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">
           {authorAvatarUrl ? <img src={resolveProfileImageUrl(authorAvatarUrl)} alt="" className="w-full h-full object-cover" /> : authorName.slice(0, 2).toUpperCase()}
@@ -586,7 +605,7 @@ export default function LivePostCard({
             </video>
           ) : (
             <button key={item.mediaId} type="button" onClick={() => openPhotoViewer(item)} aria-label="Xem ảnh" className="border-0 bg-black p-0 text-left">
-              <img src={item.url} alt={t('postAttachment')} className={`w-full bg-black ${media.length > 1 ? 'h-52 object-cover sm:h-72' : 'max-h-[760px] object-contain'}`} />
+              <img src={item.url} alt={t('postAttachment')} loading="lazy" decoding="async" className={`w-full bg-black ${media.length > 1 ? 'h-52 object-cover sm:h-72' : 'max-h-[760px] object-contain'}`} />
             </button>
           ))}
         </div>
