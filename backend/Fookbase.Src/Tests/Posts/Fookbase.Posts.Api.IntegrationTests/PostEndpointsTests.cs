@@ -480,6 +480,13 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(1, loves.Total);
         Assert.Equal(users[1], Assert.Single(loves.Items).UserId);
         Assert.Equal("love", Assert.Single(loves.Items).Type);
+        Assert.Equal("none", Assert.Single(loves.Items).RelationshipStatus);
+
+        await BlockAsync(users[0], users[2]);
+        var afterBlock = await ReadAsync<PagedResponse<PostReactionResponse>>(
+            await author.GetAsync($"/api/posts/{post.Id}/reactions"));
+        Assert.Equal(1, afterBlock.Total);
+        Assert.DoesNotContain(afterBlock.Items, item => item.UserId == users[2]);
     }
 
     [Fact]

@@ -10,6 +10,7 @@ using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
+using Fookbase.Api.Modules.Friends.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Services;
@@ -902,7 +903,10 @@ public sealed class PostsService(
             return PostsServiceResult<PagedResponse<PostReactionResponse>>.Failure(PostsServiceError.PostNotFound);
         }
 
-        var query = dbContext.PostReactions.AsNoTracking().Where(reaction => reaction.PostId == postId);
+        var query = dbContext.PostReactions.AsNoTracking().Where(reaction => reaction.PostId == postId)
+            .Where(reaction => !dbContext.BlockedUsers.AsNoTracking().Any(block =>
+                (block.BlockerUserId == viewer.UserId && block.BlockedUserId == reaction.UserId) ||
+                (block.BlockedUserId == viewer.UserId && block.BlockerUserId == reaction.UserId)));
         if (reactionType is not null)
         {
             query = query.Where(reaction => reaction.Type == reactionType.Value);
@@ -932,16 +936,34 @@ public sealed class PostsService(
             : await dbContext.Users.AsNoTracking()
                 .Where(user => userIds.Contains(user.Id))
                 .ToDictionaryAsync(user => user.Id, user => user.UserName ?? user.Id.ToString(), cancellationToken);
+        var pendingRequestRows = await dbContext.FriendRequests.AsNoTracking()
+            .Where(request => request.Status == FriendRequestStatus.Pending &&
+                ((request.SenderUserId == viewer.UserId && userIds.Contains(request.ReceiverUserId)) ||
+                 (request.ReceiverUserId == viewer.UserId && userIds.Contains(request.SenderUserId))))
+            .Select(request => new { request.Id, request.SenderUserId, request.ReceiverUserId })
+            .ToListAsync(cancellationToken);
+        var pendingRequests = pendingRequestRows.ToDictionary(
+            request => request.SenderUserId == viewer.UserId ? request.ReceiverUserId : request.SenderUserId,
+            request => (Status: request.SenderUserId == viewer.UserId ? "request_sent" : "request_received", RequestId: request.Id));
         var items = reactions.Select(reaction =>
         {
             var profile = profiles.GetValueOrDefault(reaction.UserId);
             var username = profile?.Username ?? usernames.GetValueOrDefault(reaction.UserId, reaction.UserId.ToString());
+            var relationship = reaction.UserId == viewer.UserId
+                ? ("self", (Guid?)null)
+                : viewer.FriendUserIds.Contains(reaction.UserId)
+                    ? ("friends", (Guid?)null)
+                    : pendingRequests.TryGetValue(reaction.UserId, out var pending)
+                        ? (pending.Status, (Guid?)pending.RequestId)
+                        : ("none", (Guid?)null);
             return new PostReactionResponse(
                 reaction.UserId,
                 username,
                 profile?.DisplayName ?? username,
                 profile?.AvatarUrl,
-                reaction.Type.ToString().ToLowerInvariant());
+                reaction.Type.ToString().ToLowerInvariant(),
+                relationship.Item1,
+                relationship.Item2);
         }).ToList();
 
         return PostsServiceResult<PagedResponse<PostReactionResponse>>.Success(
