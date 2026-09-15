@@ -296,6 +296,8 @@ export default function LivePostCard({
   const [error, setError] = useState<string | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
   const [isSaved, setIsSaved] = useState(false)
+  const [isSavingPost, setIsSavingPost] = useState(false)
+  const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false)
   const [isMediaVisible, setIsMediaVisible] = useState(false)
@@ -554,14 +556,28 @@ export default function LivePostCard({
   }
 
   const savePost = async () => {
+    if (isSavingPost) return
+
+    const wasSaved = isSaved
+    setIsSavingPost(true)
     try {
-      if (isSaved) await postsApi.removeSaved(post.id)
+      if (wasSaved) await postsApi.removeSaved(post.id)
       else await postsApi.save(post.id)
-      setIsSaved((current) => !current)
+      setIsSaved(!wasSaved)
+      setSaveNotice(wasSaved ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết.')
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật bài viết đã lưu.')
+    } finally {
+      setIsSavingPost(false)
     }
   }
+
+  useEffect(() => {
+    if (!saveNotice) return
+
+    const timeoutId = window.setTimeout(() => setSaveNotice(null), 3_000)
+    return () => window.clearTimeout(timeoutId)
+  }, [saveNotice])
 
   return (
     <>
@@ -585,7 +601,7 @@ export default function LivePostCard({
         <div ref={postMenuRef} className="shrink-0">
           <button type="button" onClick={() => setIsPostMenuOpen((current) => !current)} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-text-muted transition-colors hover:bg-surface-2 hover:text-text" aria-label={t('moreOptions')} aria-expanded={isPostMenuOpen}><MoreIcon /></button>
           {isPostMenuOpen && <div className="absolute right-3 top-12 z-20 min-w-44 rounded-xl border border-border bg-surface p-1.5 shadow-2xl">
-            <button type="button" onClick={() => { void savePost(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
+            <button type="button" disabled={isSavingPost} onClick={() => { void savePost(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
             {isAuthor ? <>
               <button type="button" onClick={() => { setEditingPostContent(post.content); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2">{t('edit')}</button>
               <button type="button" onClick={() => { setIsPostPendingDeletion(true); setIsPostMenuOpen(false) }} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2">{t('delete')}</button>
@@ -626,6 +642,7 @@ export default function LivePostCard({
       </div>
       {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} onShared={() => onPostUpdated({ ...post, shareCount: post.shareCount + 1 })} />}
     </article>
+    {saveNotice && createPortal(<p role="status" className="fixed bottom-5 right-5 z-50 rounded-xl bg-[#1c1e21] px-4 py-3 text-sm font-semibold text-white shadow-2xl">{saveNotice}</p>, document.body)}
     {isReactionDialogOpen && <ReactionDialog key={post.id} postId={post.id} reactionCounts={post.reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
     {isCommentsDialogOpen && createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
