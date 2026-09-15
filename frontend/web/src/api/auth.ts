@@ -18,6 +18,9 @@ export interface AuthenticationResponse {
 
 export interface TwoFactorChallengeResponse { twoFactorRequired: true; challenge: string; expiresAtUtc: string }
 export type LoginResponse = AuthenticationResponse | TwoFactorChallengeResponse
+export interface ExternalProviders { google: boolean }
+export interface GoogleCompletionRequest { code: string; client: 'web' }
+export interface GoogleLinkRequest extends GoogleCompletionRequest { password: string }
 export interface AuthSessionInfo { sessionId: string; device: string | null; createdAtUtc: string; lastSeenAtUtc: string; expiresAtUtc: string; isCurrent: boolean }
 export interface SecurityState { twoFactorEnabled: boolean; recoveryCodesRemaining: number; activeSessionCount: number }
 export interface TwoFactorSetup { sharedKey: string; otpauthUri: string }
@@ -48,6 +51,17 @@ export interface ResetPasswordDetails {
 const jsonBody = (value: unknown) => ({ body: JSON.stringify(value) })
 
 export const authApi = {
+  providers: () => apiRequest<ExternalProviders>('/api/auth/providers'),
+  completeGoogle: (code: string) =>
+    apiRequest<LoginResponse>('/api/auth/google/exchange', {
+      method: 'POST',
+      ...jsonBody({ code, client: 'web' } satisfies GoogleCompletionRequest),
+    }),
+  linkGoogle: (code: string, password: string) =>
+    apiRequest<LoginResponse>('/api/auth/google/link', {
+      method: 'POST',
+      ...jsonBody({ code, password, client: 'web' } satisfies GoogleLinkRequest),
+    }),
   register: (details: RegistrationDetails) =>
     apiRequest<AuthenticationResponse>('/api/auth/register', {
       method: 'POST',

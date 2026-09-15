@@ -1,7 +1,7 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { authApi } from '../../api/auth'
-import { ApiError } from '../../api/client'
+import { ApiError, apiBaseUrl } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
 import { PreferenceControls, usePreferences } from '../../preferences'
 
@@ -30,9 +30,11 @@ function LoginArtwork() {
 }
 
 export default function LoginPage() {
-  const { session, signIn, completeTwoFactor, signUp } = useAuth()
+  const { session, signIn, completeGoogleSignIn, linkGoogleSignIn, completeTwoFactor, signUp } = useAuth()
   const { t } = usePreferences()
   const [searchParams, setSearchParams] = useSearchParams()
+  const googleCompletionCode = searchParams.get('provider') === 'google' ? searchParams.get('code') : null
+  const callbackRequiresGoogleLink = searchParams.get('mode') === 'link'
   const [isRegistering, setIsRegistering] = useState(false)
   const [email, setEmail] = useState(() => searchParams.get('email') ?? '')
   const [username, setUsername] = useState('')
@@ -45,6 +47,14 @@ export default function LoginPage() {
   const [twoFactorChallenge, setTwoFactorChallenge] = useState<string | null>(null)
   const [twoFactorCode, setTwoFactorCode] = useState('')
   const [verificationState, setVerificationState] = useState<'loading' | 'success' | 'error'>('loading')
+  const [googleEnabled, setGoogleEnabled] = useState(false)
+  const [isCompletingGoogle, setIsCompletingGoogle] = useState(
+    () => Boolean(googleCompletionCode && !callbackRequiresGoogleLink))
+  const [googleLinkCompletion, setGoogleLinkCompletion] = useState(() =>
+    callbackRequiresGoogleLink && googleCompletionCode
+      ? { code: googleCompletionCode, email: searchParams.get('email') ?? '' }
+      : null)
+  const completedGoogleCodes = useRef(new Set<string>())
 
   const accountMode = searchParams.get('mode')
   const linkedEmail = searchParams.get('email') ?? ''
@@ -53,6 +63,49 @@ export default function LoginPage() {
   const isResetting = accountMode === 'reset'
   const isVerifying = accountMode === 'verify'
   const isAccountFlow = isRequestingReset || isResetting || isVerifying
+  const isGoogleLinking = googleLinkCompletion !== null
+  const isEmbeddedBrowser = /\b(Zalo|FBAN|FBAV|Messenger)\b/i.test(navigator.userAgent)
+
+  useEffect(() => {
+    if (isAccountFlow || isRegistering || isGoogleLinking) return
+
+    let isActive = true
+    void authApi.providers()
+      .then((providers) => {
+        if (isActive) setGoogleEnabled(providers.google)
+      })
+      .catch(() => {
+        if (isActive) setGoogleEnabled(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [isAccountFlow, isGoogleLinking, isRegistering])
+
+  useEffect(() => {
+    if (!googleCompletionCode || completedGoogleCodes.current.has(googleCompletionCode)) return
+
+    completedGoogleCodes.current.add(googleCompletionCode)
+    window.history.replaceState({}, document.title, window.location.pathname)
+    if (callbackRequiresGoogleLink) return
+
+    let isActive = true
+    void completeGoogleSignIn(googleCompletionCode)
+      .then((response) => {
+        if (isActive && 'twoFactorRequired' in response) setTwoFactorChallenge(response.challenge)
+      })
+      .catch((requestError: unknown) => {
+        if (isActive) setError(requestError instanceof ApiError ? requestError.message : t('googleCompletionFailed'))
+      })
+      .finally(() => {
+        if (isActive) setIsCompletingGoogle(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [callbackRequiresGoogleLink, completeGoogleSignIn, googleCompletionCode, t])
 
   useEffect(() => {
     if (!isVerifying) return
@@ -87,7 +140,10 @@ export default function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      if (isRequestingReset) {
+      if (isGoogleLinking) {
+        const response = await linkGoogleSignIn(googleLinkCompletion.code, password)
+        if ('twoFactorRequired' in response) setTwoFactorChallenge(response.challenge)
+      } else if (isRequestingReset) {
         await authApi.requestPasswordReset(email)
         setNotice(t('resetLinkSent'))
       } else if (isResetting) {
@@ -117,6 +173,7 @@ export default function LoginPage() {
 
   const returnToSignIn = () => {
     setSearchParams({})
+    setGoogleLinkCompletion(null)
     setError(null)
     setNotice(null)
     setPassword('')
@@ -145,9 +202,9 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-7">
-              <p className="text-sm font-semibold text-primary-light">{isVerifying ? t('emailVerification') : isResetting ? t('resetPassword') : isRequestingReset ? t('accountRecovery') : isRegistering ? t('joinFookbase') : t('welcomeBack')}</p>
-              <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-text sm:text-4xl">{isVerifying ? t('verifyEmailTitle') : isResetting ? t('newPasswordTitle') : isRequestingReset ? t('resetPasswordTitle') : isRegistering ? t('createSpaceTitle') : t('signInSpaceTitle')}</h1>
-              <p className="mt-3 text-sm leading-6 text-text-muted">{isVerifying ? t('verifyEmailDescription') : isResetting ? t('newPasswordDescription') : isRequestingReset ? t('resetPasswordDescription') : isRegistering ? t('createSpaceDescription') : t('signInSpaceDescription')}</p>
+              <p className="text-sm font-semibold text-primary-light">{isGoogleLinking ? t('continueWithGoogle') : isVerifying ? t('emailVerification') : isResetting ? t('resetPassword') : isRequestingReset ? t('accountRecovery') : isRegistering ? t('joinFookbase') : t('welcomeBack')}</p>
+              <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-text sm:text-4xl">{isGoogleLinking ? t('signInSpaceTitle') : isVerifying ? t('verifyEmailTitle') : isResetting ? t('newPasswordTitle') : isRequestingReset ? t('resetPasswordTitle') : isRegistering ? t('createSpaceTitle') : t('signInSpaceTitle')}</h1>
+              <p className="mt-3 text-sm leading-6 text-text-muted">{isGoogleLinking ? t('confirmGooglePassword').replace('{email}', googleLinkCompletion.email) : isVerifying ? t('verifyEmailDescription') : isResetting ? t('newPasswordDescription') : isRequestingReset ? t('resetPasswordDescription') : isRegistering ? t('createSpaceDescription') : t('signInSpaceDescription')}</p>
             </div>
 
             {error && <p role="alert" className="mb-5 rounded-xl border border-[#e15f5f]/45 bg-[#e15f5f]/10 px-4 py-3 text-sm leading-5 text-[#ff9b9b]">{error}</p>}
@@ -169,7 +226,7 @@ export default function LoginPage() {
                     {t('emailAddress')}
                     <span className="relative block">
                       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">@</span>
-                      <input required readOnly={isResetting && Boolean(linkedEmail)} autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className={fieldClassName} />
+                      <input required readOnly={(isResetting && Boolean(linkedEmail)) || isGoogleLinking} autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className={fieldClassName} />
                     </span>
                   </label>
 
@@ -204,9 +261,9 @@ export default function LoginPage() {
 
                 {isRegistering && <p className="mt-4 text-xs leading-5 text-text-light">{t('respectfulUse')}</p>}
 
-                <button disabled={isSubmitting} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-dark hover:shadow-primary/35 disabled:cursor-not-allowed disabled:opacity-60">
-                  {isSubmitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
-                  {isSubmitting ? t('pleaseWait') : isRequestingReset ? t('sendResetLink') : isResetting ? t('resetPasswordAction') : isRegistering ? t('createAccount') : t('signIn')}
+                <button disabled={isSubmitting || isCompletingGoogle} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-dark hover:shadow-primary/35 disabled:cursor-not-allowed disabled:opacity-60">
+                  {(isSubmitting || isCompletingGoogle) && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
+                  {isSubmitting || isCompletingGoogle ? t('pleaseWait') : isGoogleLinking ? t('continueWithGoogle') : isRequestingReset ? t('sendResetLink') : isResetting ? t('resetPasswordAction') : isRegistering ? t('createAccount') : t('signIn')}
                 </button>
               </>
             )}
@@ -215,11 +272,15 @@ export default function LoginPage() {
               <button type="button" onClick={returnToSignIn} className="mt-6 w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2">{t('backToSignIn')}</button>
             ) : (
               <>
-                {!isRegistering && <button type="button" onClick={() => setSearchParams({ mode: 'forgot' })} className="mt-4 text-sm font-semibold text-primary-light hover:text-text">{t('forgotPassword')}</button>}
-                <div className="my-6 flex items-center gap-3 text-xs font-medium text-text-light"><span className="h-px flex-1 bg-border" />{t('or')}<span className="h-px flex-1 bg-border" /></div>
-                <button type="button" onClick={switchMode} className="w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2">
-                  {isRegistering ? t('alreadyHaveAccount') : t('createNewAccount')}
-                </button>
+                {!isRegistering && !isGoogleLinking && <button type="button" onClick={() => setSearchParams({ mode: 'forgot' })} className="mt-4 text-sm font-semibold text-primary-light hover:text-text">{t('forgotPassword')}</button>}
+                {!isRegistering && !isGoogleLinking && googleEnabled && <>
+                  <div className="my-6 flex items-center gap-3 text-xs font-medium text-text-light"><span className="h-px flex-1 bg-border" />{t('or')}<span className="h-px flex-1 bg-border" /></div>
+                  {isEmbeddedBrowser ? <p className="rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-sm leading-5 text-text-muted">{t('openExternalBrowserGoogle')}</p> : <button type="button" onClick={() => window.location.assign(`${apiBaseUrl}/api/auth/google/start?client=web`)} className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2"><span className="mr-2 text-base text-[#4285f4]">G</span>{t('continueWithGoogle')}</button>}
+                </>}
+                {!isGoogleLinking && <><div className="my-6 flex items-center gap-3 text-xs font-medium text-text-light"><span className="h-px flex-1 bg-border" />{t('or')}<span className="h-px flex-1 bg-border" /></div>
+                  <button type="button" onClick={switchMode} className="w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2">
+                    {isRegistering ? t('alreadyHaveAccount') : t('createNewAccount')}
+                  </button></>}
               </>
             )}
           </form>

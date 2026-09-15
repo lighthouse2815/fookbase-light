@@ -19,6 +19,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return response
   }
 
+  const completeGoogleSignIn = async (code: string) => {
+    const response = await authApi.completeGoogle(code)
+    if (!('twoFactorRequired' in response)) applySession(response)
+    return response
+  }
+
+  const linkGoogleSignIn = async (code: string, password: string) => {
+    const response = await authApi.linkGoogle(code, password)
+    if (!('twoFactorRequired' in response)) applySession(response)
+    return response
+  }
+
   const completeTwoFactor = async (challenge: string, code: string) => applySession(await authApi.verifyTwoFactor(challenge, code))
 
   const signUp = async (details: RegistrationDetails) => {
@@ -64,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session])
 
   return (
-    <AuthContext.Provider value={{ session, signIn, completeTwoFactor, signUp, changePassword, signOut }}>
+    <AuthContext.Provider value={{ session, signIn, completeGoogleSignIn, linkGoogleSignIn, completeTwoFactor, signUp, changePassword, signOut }}>
       {children}
     </AuthContext.Provider>
   )
