@@ -3,17 +3,20 @@ using System;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Fookbase.Api.Persistence.Migrations
+namespace Fookbase.Api.Code.Persistence.Migrations
 {
     [DbContext(typeof(FookbaseDbContext))]
-    partial class FookbaseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260916031831_AddRegistrationChallengeGender")]
+    partial class AddRegistrationChallengeGender
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

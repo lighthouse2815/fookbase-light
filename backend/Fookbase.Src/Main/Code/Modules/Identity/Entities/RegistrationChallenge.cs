@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Users.Entities;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
@@ -17,6 +18,7 @@ public sealed class RegistrationChallenge
         string firstName,
         string lastName,
         DateOnly dateOfBirth,
+        Gender gender,
         DateTimeOffset now)
     {
         Id = Guid.NewGuid();
@@ -27,6 +29,7 @@ public sealed class RegistrationChallenge
         FirstName = firstName;
         LastName = lastName;
         DateOfBirth = dateOfBirth;
+        Gender = gender;
         CreatedAtUtc = now;
         ExpiresAtUtc = now.AddMinutes(10);
         ResendAvailableAtUtc = now.AddMinutes(1);
@@ -42,6 +45,7 @@ public sealed class RegistrationChallenge
     public string FirstName { get; private set; } = string.Empty;
     public string LastName { get; private set; } = string.Empty;
     public DateOnly DateOfBirth { get; private set; }
+    public Gender Gender { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset ExpiresAtUtc { get; private set; }
     public DateTimeOffset ResendAvailableAtUtc { get; private set; }
@@ -57,6 +61,7 @@ public sealed class RegistrationChallenge
         string firstName,
         string lastName,
         DateOnly dateOfBirth,
+        Gender gender,
         DateTimeOffset now)
     {
         if (codeHash.Length != 64 || !codeHash.All(Uri.IsHexDigit))
@@ -67,7 +72,7 @@ public sealed class RegistrationChallenge
             string.IsNullOrWhiteSpace(lastName) || lastName.Trim().Length > 50)
             throw new ArgumentException("Names must contain between 1 and 50 characters.");
 
-        return new RegistrationChallenge(contact, codeHash, passwordHash, firstName.Trim(), lastName.Trim(), dateOfBirth, now);
+        return new RegistrationChallenge(contact, codeHash, passwordHash, firstName.Trim(), lastName.Trim(), dateOfBirth, gender, now);
     }
 
     public bool IsUsableAt(DateTimeOffset now) =>

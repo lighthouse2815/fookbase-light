@@ -48,6 +48,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             "Nguyễn",
             "An",
             new DateOnly(2000, 1, 2),
+            Gender.PreferNotToSay,
             now);
 
         for (var attempt = 0; attempt < 5; attempt++)
