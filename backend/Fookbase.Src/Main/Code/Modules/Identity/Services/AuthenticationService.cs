@@ -111,19 +111,19 @@ public sealed class AuthenticationService(
             return ValidationFailure<object>(validationErrors);
         }
 
-        var user = await userManager.FindByEmailAsync(request.Email!.Trim());
+        var user = await FindByIdentifierAsync(request.EffectiveIdentifier, cancellationToken);
         if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
             return UnauthorizedFailure<object>(
                 "invalid_credentials",
-                "The email or password is invalid.");
+                "The email, phone number, or password is invalid.");
         }
 
         if (!await userManager.CheckPasswordAsync(user, request.Password!))
         {
             await userManager.AccessFailedAsync(user);
-            return UnauthorizedFailure<object>("invalid_credentials", "The email or password is invalid.");
+            return UnauthorizedFailure<object>("invalid_credentials", "The email, phone number, or password is invalid.");
         }
 
         await userManager.ResetAccessFailedCountAsync(user);
@@ -176,6 +176,16 @@ public sealed class AuthenticationService(
         return issued.Succeeded
             ? ApplicationResult<object>.Success(issued.Value!)
             : ApplicationResult<object>.Failure(issued.Error!);
+    }
+
+    public async Task<User?> FindByIdentifierAsync(
+        string? identifier,
+        CancellationToken cancellationToken = default)
+    {
+        if (!ContactIdentifier.TryParse(identifier, out var contact)) return null;
+        return contact.Kind == ContactKind.Email
+            ? await userManager.FindByEmailAsync(contact.Value)
+            : await dbContext.Users.SingleOrDefaultAsync(user => user.PhoneNumber == contact.Value, cancellationToken);
     }
 
     public Task<ApplicationResult<AuthenticationResponse>> IssueSessionAsync(

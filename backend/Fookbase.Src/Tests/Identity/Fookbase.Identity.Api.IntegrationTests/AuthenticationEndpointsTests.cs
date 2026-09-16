@@ -91,6 +91,45 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     }
 
     [Fact]
+    public async Task Phone_only_user_can_login_with_a_spaced_local_number()
+    {
+        var phone = $"09{RandomNumberGenerator.GetInt32(10_000_000, 99_999_999)}";
+        using var client = factory.CreateClient();
+        var start = await client.PostAsJsonAsync(
+            "/api/auth/registration/start",
+            new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "male", phone, "Password123!"));
+        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(challenge);
+        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor($"+84{phone[1..]}");
+        var verify = await client.PostAsJsonAsync(
+            "/api/auth/registration/verify",
+            new RegistrationVerifyRequest(challenge!.ChallengeId, code));
+        Assert.Equal(HttpStatusCode.Created, verify.StatusCode);
+
+        var login = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { identifier = $"{phone[..4]} {phone[4..7]} {phone[7..]}", password = "Password123!" });
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var authentication = await ReadAuthenticationResponseAsync(login);
+        Assert.Equal($"+84{phone[1..]}", authentication.User.PhoneNumber);
+    }
+
+    [Fact]
+    public async Task Legacy_login_email_json_still_works()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        await RegisterAsync(client, account);
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = account.Email, password = account.Password });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Registration_verification_locks_after_five_incorrect_codes_and_cannot_be_replayed()
     {
         var email = $"otp-lock-{Guid.NewGuid():N}@example.test";
