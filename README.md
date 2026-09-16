@@ -57,7 +57,8 @@ docker compose ps
 
 Compose chỉ lấy secrets từ `.env`; Docker image không chứa `.env` hoặc credential. Điền
 `Cloudinary__CloudName`, `Cloudinary__ApiKey` và `Cloudinary__ApiSecret` trong `.env` trước
-khi chạy. Local compose tự apply migration hợp nhất khi API start và API chạy tại
+khi chạy. Để gửi OTP email, đặt đầy đủ `Email__*` và `Email__Enabled=true`; Compose truyền
+các biến này vào API. Local compose tự apply migration hợp nhất khi API start và API chạy tại
 <http://localhost:5000>. Cloudinary phải cho phép origin của các frontend dùng upload trực tiếp.
 
 Kiểm tra health:

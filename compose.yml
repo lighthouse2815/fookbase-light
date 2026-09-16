@@ -30,6 +30,15 @@ services:
       GoogleAuthentication__ClientSecret: ${GoogleAuthentication__ClientSecret:-}
       GoogleAuthentication__WebBaseUrl: ${GoogleAuthentication__WebBaseUrl:-}
       GoogleAuthentication__ZolaLightBaseUrl: ${GoogleAuthentication__ZolaLightBaseUrl:-}
+      Email__Enabled: ${Email__Enabled:-false}
+      Email__Host: ${Email__Host:-}
+      Email__Port: ${Email__Port:-587}
+      Email__UseSsl: ${Email__UseSsl:-true}
+      Email__Username: ${Email__Username:-}
+      Email__Password: ${Email__Password:-}
+      Email__FromAddress: ${Email__FromAddress:-}
+      Email__FromName: ${Email__FromName:-Fookbase}
+      Email__FrontendBaseUrl: ${Email__FrontendBaseUrl:-http://localhost:5173}
       DataProtection__ApplicationName: ${DataProtection__ApplicationName:-Fookbase}
       DataProtection__KeyRingPath: /var/fookbase/data-protection-keys
     ports:
