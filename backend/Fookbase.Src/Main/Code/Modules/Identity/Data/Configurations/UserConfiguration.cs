@@ -14,5 +14,9 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(user => user.NormalizedEmail)
             .HasDatabaseName("EmailIndex")
             .IsUnique();
+
+        builder.HasIndex(user => user.PhoneNumber)
+            .HasDatabaseName("PhoneNumberIndex")
+            .IsUnique();
     }
 }
