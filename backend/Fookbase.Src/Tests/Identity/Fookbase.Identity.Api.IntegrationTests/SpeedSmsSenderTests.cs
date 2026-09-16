@@ -23,7 +23,7 @@ public sealed class SpeedSmsSenderTests
         Assert.Contains("\"to\":[\"0912345678\"]", handler.Body, StringComparison.Ordinal);
         Assert.Contains("123456", handler.Body, StringComparison.Ordinal);
         Assert.Contains("\"sms_type\":4", handler.Body, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"sender\"", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"sender\":\"Verify\"", handler.Body, StringComparison.Ordinal);
     }
 
     [Fact]
