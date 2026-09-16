@@ -27,6 +27,7 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<TwoFactorLoginChallenge> TwoFactorLoginChallenges => Set<TwoFactorLoginChallenge>();
     public DbSet<ExternalLoginCompletion> ExternalLoginCompletions => Set<ExternalLoginCompletion>();
     public DbSet<RegistrationChallenge> RegistrationChallenges => Set<RegistrationChallenge>();
+    public DbSet<PasswordResetChallenge> PasswordResetChallenges => Set<PasswordResetChallenge>();
     public DbSet<ModerationAction> ModerationActions => Set<ModerationAction>();
     public DbSet<UserModerationState> UserModerationStates => Set<UserModerationState>();
 

@@ -130,6 +130,44 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     }
 
     [Fact]
+    public async Task Phone_password_reset_uses_otp_and_revokes_existing_sessions()
+    {
+        var phone = $"09{RandomNumberGenerator.GetInt32(10_000_000, 99_999_999)}";
+        const string oldPassword = "Password123!";
+        const string newPassword = "NewPassword123!";
+        using var client = factory.CreateClient();
+        var start = await client.PostAsJsonAsync(
+            "/api/auth/registration/start",
+            new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "male", phone, oldPassword));
+        var registration = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(registration);
+        var normalizedPhone = $"+84{phone[1..]}";
+        var registrationCode = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
+        var verify = await client.PostAsJsonAsync(
+            "/api/auth/registration/verify",
+            new RegistrationVerifyRequest(registration!.ChallengeId, registrationCode));
+        var initialSession = await ReadAuthenticationResponseAsync(verify);
+
+        var forgot = await client.PostAsJsonAsync(
+            "/api/auth/password/forgot",
+            new { identifier = phone });
+        Assert.Equal(HttpStatusCode.NoContent, forgot.StatusCode);
+        var resetCode = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
+
+        var reset = await client.PostAsJsonAsync(
+            "/api/auth/password/reset",
+            new { identifier = phone, code = resetCode, password = newPassword, confirmPassword = newPassword });
+
+        Assert.Equal(HttpStatusCode.NoContent, reset.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync(
+            "/api/auth/login", new { identifier = phone, password = oldPassword })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync(
+            "/api/auth/login", new { identifier = phone, password = newPassword })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync(
+            "/api/auth/refresh", new RefreshRequest(initialSession.RefreshToken))).StatusCode);
+    }
+
+    [Fact]
     public async Task Registration_verification_locks_after_five_incorrect_codes_and_cannot_be_replayed()
     {
         var email = $"otp-lock-{Guid.NewGuid():N}@example.test";
