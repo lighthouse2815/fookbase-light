@@ -14,12 +14,14 @@ public static class DependencyInjection
         JwtOptions jwtOptions,
         EmailOptions emailOptions,
         AdminOptions adminOptions,
-        GoogleAuthenticationOptions googleAuthenticationOptions)
+        GoogleAuthenticationOptions googleAuthenticationOptions,
+        SmsOptions smsOptions)
     {
         jwtOptions.Validate();
         emailOptions.Validate();
         adminOptions.Validate();
         googleAuthenticationOptions.Validate(production: false);
+        smsOptions.Validate(production: false);
 
         services
             .AddIdentityCore<User>(options =>
@@ -43,7 +45,14 @@ public static class DependencyInjection
         services.AddSingleton(emailOptions);
         services.AddSingleton(adminOptions);
         services.AddSingleton(googleAuthenticationOptions);
+        services.AddSingleton(smsOptions);
         services.AddSingleton(TimeProvider.System);
+        services.AddHttpClient<SpeedSmsSender>((provider, client) =>
+        {
+            var options = provider.GetRequiredService<SmsOptions>();
+            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
