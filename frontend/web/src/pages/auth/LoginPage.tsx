@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 import { authApi, type RegistrationChallenge } from '../../api/auth'
 import { ApiError, apiBaseUrl } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
+import { clearPhoneVerification, confirmPhoneVerification, sendPhoneVerification, type PhoneConfirmation } from '../../firebase/phoneAuth'
 import { PreferenceControls, usePreferences } from '../../preferences'
 
 function LoginArtwork() {
@@ -47,6 +48,7 @@ export default function LoginPage() {
   const [registrationCode, setRegistrationCode] = useState('')
   const [isResettingPhone, setIsResettingPhone] = useState(false)
   const [passwordResetCode, setPasswordResetCode] = useState('')
+  const [firebaseConfirmation, setFirebaseConfirmation] = useState<PhoneConfirmation | null>(null)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -64,6 +66,7 @@ export default function LoginPage() {
       ? { code: googleCompletionCode, email: searchParams.get('email') ?? '' }
       : null)
   const completedGoogleCodes = useRef(new Set<string>())
+  const recaptchaHost = useRef<HTMLDivElement>(null)
 
   const accountMode = searchParams.get('mode')
   const linkedEmail = searchParams.get('email') ?? ''
@@ -155,7 +158,7 @@ export default function LoginPage() {
         if ('twoFactorRequired' in response) setTwoFactorChallenge(response.challenge)
       } else if (isRequestingReset) {
         if (isPhoneResetting) {
-          await authApi.resetPassword({ identifier: email, code: passwordResetCode, password, confirmPassword })
+          await authApi.resetPassword({ identifier: email, firebaseIdToken: await confirmPhoneVerification(firebaseConfirmation, passwordResetCode), password, confirmPassword })
           setNotice(t('passwordReset'))
           setPassword('')
           setConfirmPassword('')
@@ -165,6 +168,7 @@ export default function LoginPage() {
           if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
             setNotice(t('resetLinkSent'))
           } else {
+            setFirebaseConfirmation(await sendPhoneVerification(email, recaptchaHost.current!))
             setIsResettingPhone(true)
             setNotice(t('resetCodeSent'))
           }
@@ -176,10 +180,15 @@ export default function LoginPage() {
         setConfirmPassword('')
       } else if (isRegistering) {
         if (registrationChallenge) {
-          await completeRegistration(registrationChallenge.challengeId, registrationCode)
+          const proof = registrationChallenge.verificationMethod === 'firebasePhone'
+            ? { firebaseIdToken: await confirmPhoneVerification(firebaseConfirmation, registrationCode) }
+            : { code: registrationCode }
+          await completeRegistration(registrationChallenge.challengeId, proof)
         } else {
           const dateOfBirth = `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
-          setRegistrationChallenge(await signUp({ firstName, lastName, dateOfBirth, gender, contact: email, password }))
+          const challenge = await signUp({ firstName, lastName, dateOfBirth, gender, contact: email, password })
+          if (challenge.verificationMethod === 'firebasePhone') setFirebaseConfirmation(await sendPhoneVerification(email, recaptchaHost.current!))
+          setRegistrationChallenge(challenge)
           setRegistrationCode('')
         }
       } else {
@@ -202,6 +211,8 @@ export default function LoginPage() {
     setRegistrationCode('')
     setIsResettingPhone(false)
     setPasswordResetCode('')
+    clearPhoneVerification()
+    setFirebaseConfirmation(null)
   }
 
   const returnToSignIn = () => {
@@ -215,6 +226,8 @@ export default function LoginPage() {
     setRegistrationCode('')
     setIsResettingPhone(false)
     setPasswordResetCode('')
+    clearPhoneVerification()
+    setFirebaseConfirmation(null)
   }
 
   const fieldClassName = 'w-full rounded-lg border border-border bg-surface px-11 py-3 text-[15px] text-text outline-none transition placeholder:text-text-light focus:border-primary focus:bg-surface focus:ring-4 focus:ring-primary/15'
@@ -265,7 +278,7 @@ export default function LoginPage() {
                 <button disabled={isSubmitting || registrationCode.length !== 6} className="rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 disabled:cursor-not-allowed disabled:opacity-60">
                   {isSubmitting ? t('pleaseWait') : t('verifyAndCreateAccount')}
                 </button>
-                <button type="button" disabled={isSubmitting} onClick={() => { setIsSubmitting(true); void resendRegistration(registrationChallenge.challengeId).then(setRegistrationChallenge).catch((reason) => setError(reason instanceof ApiError ? reason.message : t('unableAuthenticate'))).finally(() => setIsSubmitting(false)) }} className="rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text disabled:opacity-60">
+                <button type="button" disabled={isSubmitting} onClick={() => { setIsSubmitting(true); const resend = registrationChallenge.verificationMethod === 'firebasePhone' ? sendPhoneVerification(email, recaptchaHost.current!).then((confirmation) => setFirebaseConfirmation(confirmation)) : resendRegistration(registrationChallenge.challengeId).then(setRegistrationChallenge); void resend.catch((reason) => setError(reason instanceof ApiError ? reason.message : t('unableAuthenticate'))).finally(() => setIsSubmitting(false)) }} className="rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text disabled:opacity-60">
                   {t('resendCode')}
                 </button>
                 <button type="button" disabled={isSubmitting} onClick={() => { setRegistrationChallenge(null); setRegistrationCode(''); setError(null) }} className="text-sm font-semibold text-primary-light hover:text-text">
@@ -345,6 +358,7 @@ export default function LoginPage() {
           </form>
         </section>
       </div>
+      <div ref={recaptchaHost} aria-hidden="true" />
       <footer className="hidden border-t border-[#e4e6eb] bg-white px-8 py-5 text-center text-xs leading-6 text-[#8a8d91] xl:block">Tiếng Việt · English (UK) · Français (France) · 日本語 · Đăng ký · Đăng nhập · Zola Light · Fookbase · Điều khoản · Quyền riêng tư · Cookie</footer>
     </main>
   )

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { authApi } from '../api/auth'
-import type { ChangePasswordDetails, Credentials, RegistrationChallenge, RegistrationDetails } from '../api/auth'
+import type { ChangePasswordDetails, Credentials, RegistrationChallenge, RegistrationDetails, RegistrationProof } from '../api/auth'
 import { authSessionChangedEvent, clearAuthSession, getAuthSession, saveAuthSession } from './session'
 import type { AuthSession } from './session'
 import { AuthContext } from './context'
@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = (details: RegistrationDetails): Promise<RegistrationChallenge> => authApi.startRegistration(details)
 
-  const completeRegistration = async (challengeId: string, code: string) => {
-    applySession(await authApi.verifyRegistration(challengeId, code))
+  const completeRegistration = async (challengeId: string, proof: RegistrationProof) => {
+    applySession(await authApi.verifyRegistration(challengeId, proof))
   }
 
   const resendRegistration = (challengeId: string): Promise<RegistrationChallenge> =>

@@ -48,7 +48,10 @@ export interface RegistrationChallenge {
   challengeId: string
   expiresAtUtc: string
   resendAvailableAtUtc: string
+  verificationMethod: 'emailOtp' | 'firebasePhone'
 }
+
+export type RegistrationProof = { code: string } | { firebaseIdToken: string }
 
 export interface ChangePasswordDetails {
   currentPassword: string
@@ -65,7 +68,7 @@ export interface EmailResetPasswordDetails {
 
 export interface PhoneResetPasswordDetails {
   identifier: string
-  code: string
+  firebaseIdToken: string
   password: string
   confirmPassword: string
 }
@@ -96,10 +99,10 @@ export const authApi = {
       method: 'POST',
       ...jsonBody({ challengeId }),
     }),
-  verifyRegistration: (challengeId: string, code: string) =>
+  verifyRegistration: (challengeId: string, proof: RegistrationProof) =>
     apiRequest<AuthenticationResponse>('/api/auth/registration/verify', {
       method: 'POST',
-      ...jsonBody({ challengeId, code }),
+      ...jsonBody({ challengeId, ...proof }),
     }),
   login: (credentials: Credentials) =>
     apiRequest<LoginResponse>('/api/auth/login', {
