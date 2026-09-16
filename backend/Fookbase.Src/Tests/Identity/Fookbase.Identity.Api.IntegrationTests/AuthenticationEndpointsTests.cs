@@ -39,6 +39,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
         using var scope = factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Null(await userManager.FindByEmailAsync(email));
 
         var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
@@ -52,6 +53,8 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var user = await userManager.FindByEmailAsync(email);
         Assert.NotNull(user);
         Assert.True(user!.EmailConfirmed);
+        Assert.NotNull(await dbContext.UserProfiles.SingleOrDefaultAsync(profile => profile.UserId == user.Id));
+        Assert.NotNull(await dbContext.UserPrivacySettings.SingleOrDefaultAsync(settings => settings.UserId == user.Id));
     }
 
     [Fact]
@@ -86,6 +89,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.True(user.PhoneNumberConfirmed);
         Assert.Null(user.Email);
         Assert.Equal("Nguyễn An", profile.DisplayName);
+        Assert.Equal("nguyen.an", profile.Username);
         Assert.Equal(new DateOnly(2000, 1, 2), profile.DateOfBirth);
         Assert.Equal(Gender.Female, profile.Gender);
     }
