@@ -42,7 +42,7 @@ jobs:
           release_dir=$(mktemp -d)
           trap 'rm -rf "$release_dir"' EXIT
           git archive --format=tar "$GITHUB_SHA" | tar -x -C "$release_dir"
-          rsync -a --delete \
+          sudo rsync -a --delete \
             --exclude '.env.production*' \
             --exclude 'private/' \
             "$release_dir/" /srv/fookbase-light/
