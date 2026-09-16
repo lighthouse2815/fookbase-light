@@ -18,10 +18,12 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v7
+        # v4 uses the Node 20 action runtime supported by the installed EC2 runner.
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        # Keep this compatible with the runner while still installing Node 22 for the build.
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
