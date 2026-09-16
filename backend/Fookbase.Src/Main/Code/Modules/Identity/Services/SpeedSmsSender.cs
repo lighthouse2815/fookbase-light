@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using Fookbase.Api.Modules.Identity.Config;
 using Microsoft.Extensions.Logging;
 
@@ -20,11 +21,14 @@ public sealed class SpeedSmsSender(HttpClient client, SmsOptions options, ILogge
         var result = response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<Response>(cancellationToken: cancellationToken) : null;
         if (result?.Status is not "success" || result.Code is not "00")
         {
-            logger.LogWarning("SpeedSMS rejected OTP dispatch with HTTP status {StatusCode} and provider code {ProviderCode}.",
-                (int)response.StatusCode, result?.Code ?? "unknown");
+            logger.LogWarning("SpeedSMS rejected OTP dispatch with HTTP status {StatusCode}, provider code {ProviderCode}, and message {ProviderMessage}.",
+                (int)response.StatusCode, result?.Code ?? "unknown", RedactDigits(result?.Message));
             throw new InvalidOperationException("The SMS provider could not deliver the verification code.");
         }
     }
 
-    private sealed record Response(string? Status, string? Code);
+    private static string RedactDigits(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "unknown" : Regex.Replace(value, @"\d{3,}", "[redacted]");
+
+    private sealed record Response(string? Status, string? Code, string? Message);
 }
