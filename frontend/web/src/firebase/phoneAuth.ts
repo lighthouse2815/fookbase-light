@@ -5,6 +5,13 @@ export type PhoneConfirmation = ConfirmationResult
 
 let verifier: RecaptchaVerifier | null = null
 
+function normalizeVietnamesePhoneNumber(phoneNumber: string): string {
+  const compact = phoneNumber.trim().replace(/[.\s()-]/g, '')
+  if (/^0\d{9}$/.test(compact)) return `+84${compact.slice(1)}`
+  if (/^84\d{9}$/.test(compact)) return `+${compact}`
+  return compact
+}
+
 function getFirebaseAuth() {
   const apiKey = import.meta.env.VITE_FIREBASE_API_KEY
   const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
@@ -23,7 +30,7 @@ function getFirebaseAuth() {
 export async function sendPhoneVerification(phoneNumber: string, container: HTMLElement): Promise<PhoneConfirmation> {
   verifier?.clear()
   verifier = new RecaptchaVerifier(getFirebaseAuth(), container, { size: 'invisible' })
-  return signInWithPhoneNumber(getFirebaseAuth(), phoneNumber, verifier)
+  return signInWithPhoneNumber(getFirebaseAuth(), normalizeVietnamesePhoneNumber(phoneNumber), verifier)
 }
 
 export async function confirmPhoneVerification(confirmation: PhoneConfirmation | null, code: string): Promise<string> {
