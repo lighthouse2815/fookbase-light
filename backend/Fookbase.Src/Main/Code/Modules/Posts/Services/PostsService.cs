@@ -533,6 +533,10 @@ public sealed class PostsService(
             "media_not_attached", "The media is not attached to this post.", ApplicationErrorType.NotFound),
         PostsServiceError.InvalidPostType => new(
             "invalid_post_type", "Reels must be edited through the Reels experience.", ApplicationErrorType.Conflict),
+        PostsServiceError.ProfileMediaPostNotEditable => new(
+            "profile_media_post_not_editable",
+            "Avatar and cover update posts cannot be edited.",
+            ApplicationErrorType.Conflict),
         _ => throw new ArgumentOutOfRangeException(nameof(error), error, null)
     };
 
@@ -642,6 +646,11 @@ public sealed class PostsService(
         if (post.PostType != PostType.Standard)
         {
             return PostsServiceResult<PostResponse>.Failure(PostsServiceError.InvalidPostType);
+        }
+
+        if (Post.IsProfileMediaUpdateContent(post.Content))
+        {
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.ProfileMediaPostNotEditable);
         }
 
         if (post.ContainerType == PostContainerType.Group &&

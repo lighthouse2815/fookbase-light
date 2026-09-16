@@ -414,6 +414,34 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             });
     }
 
+    [Fact]
+    public async Task Avatar_and_cover_update_posts_cannot_be_edited()
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        var avatar = await CreateReadyImageAsync(user.Id);
+        var cover = await CreateReadyImageAsync(user.Id);
+        using var client = CreateAuthenticatedClient(user.Id);
+
+        Assert.Equal(HttpStatusCode.OK, (await client.PatchAsJsonAsync(
+            "/api/users/me",
+            new UpdateUserProfileRequest(null, null, null, null, avatar, cover))).StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var posts = await db.Posts.AsNoTracking()
+            .Where(post => post.AuthorUserId == user.Id)
+            .OrderBy(post => post.Content)
+            .ToListAsync();
+
+        foreach (var post in posts)
+        {
+            var response = await client.PutAsJsonAsync(
+                $"/api/posts/{post.Id}", new { content = "Không được sửa", privacy = "public" });
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        }
+    }
+
     private async Task<bool> EnsureProfileAsync(UserSeed user)
     {
         using var scope = factory.Services.CreateScope();

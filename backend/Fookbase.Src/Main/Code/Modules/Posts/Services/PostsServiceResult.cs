@@ -10,7 +10,8 @@ public enum PostsServiceError
     RelationshipBlocked,
     InvalidParentComment,
     MediaNotAttached,
-    InvalidPostType
+    InvalidPostType,
+    ProfileMediaPostNotEditable
 }
 
 public sealed record PostsServiceResult<T>(T? Value, PostsServiceError Error)

@@ -7,6 +7,7 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Photos.Services;
+using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,8 +23,6 @@ public sealed class UserProfileService(
     TimeProvider timeProvider)
 {
     private const int MaximumSearchLimit = 50;
-    private const string AvatarUpdatedPostContent = "đã cập nhật ảnh đại diện.";
-    private const string CoverUpdatedPostContent = "đã cập nhật ảnh bìa.";
 
     public async Task EnsureCreatedAsync(
         Guid userId,
@@ -175,12 +174,12 @@ public sealed class UserProfileService(
             if (avatarChanged)
             {
                 await CreateProfileMediaPostAsync(
-                    userId, AvatarUpdatedPostContent, request.AvatarMediaId!.Value, cancellationToken);
+                    userId, Post.AvatarUpdatedPostContent, request.AvatarMediaId!.Value, cancellationToken);
             }
             if (coverChanged)
             {
                 await CreateProfileMediaPostAsync(
-                    userId, CoverUpdatedPostContent, request.CoverMediaId!.Value, cancellationToken);
+                    userId, Post.CoverUpdatedPostContent, request.CoverMediaId!.Value, cancellationToken);
             }
             await transaction.CommitAsync(cancellationToken);
         }

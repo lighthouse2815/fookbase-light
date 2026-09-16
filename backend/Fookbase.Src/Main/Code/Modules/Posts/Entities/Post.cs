@@ -24,6 +24,8 @@ public enum PostType
 public sealed class Post
 {
     public const int MaximumContentLength = 10_000;
+    public const string AvatarUpdatedPostContent = "đã cập nhật ảnh đại diện.";
+    public const string CoverUpdatedPostContent = "đã cập nhật ảnh bìa.";
 
     private Post()
     {
@@ -113,6 +115,9 @@ public sealed class Post
         EnsureActive();
         DeletedAtUtc = deletedAtUtc;
     }
+
+    public static bool IsProfileMediaUpdateContent(string content) =>
+        content is AvatarUpdatedPostContent or CoverUpdatedPostContent;
 
     public void SetPinned(bool isPinned)
     {
