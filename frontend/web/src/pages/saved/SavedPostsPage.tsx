@@ -87,7 +87,9 @@ export default function SavedPostsPage() {
   }, [loadAuthors])
 
   const updatePost = (updated: Post) => {
-    setPosts((current) => current.map((post) => post.id === updated.id ? updated : post))
+    setPosts((current) => updated.viewerHasSaved
+      ? current.map((post) => post.id === updated.id ? updated : post)
+      : current.filter((post) => post.id !== updated.id))
   }
 
   return (
@@ -98,7 +100,7 @@ export default function SavedPostsPage() {
         {error && <div role="alert" className="rounded-lg border border-[#e41e3f]/40 bg-[#e41e3f]/10 p-3 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void load()} className="mt-2 rounded-md border border-[#ff8a9b]/50 bg-transparent px-3 py-1 text-xs font-semibold text-[#ff8a9b] cursor-pointer">Thử lại</button></div>}
         {isLoading && <><div className="h-52 animate-pulse rounded-xl bg-surface-2" /><div className="h-52 animate-pulse rounded-xl bg-surface-2" /></>}
         {!isLoading && !error && posts.length === 0 && <p className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">Chưa có bài viết đã lưu.</p>}
-        {posts.map((post) => <LivePostCard key={post.id} post={post} author={post.authorUserId ? authors[post.authorUserId] : undefined} currentUserId={session!.user.id} onPostUpdated={updatePost} onPostDeleted={(postId) => setPosts((current) => current.filter((post) => post.id !== postId))} />)}
+        {posts.map((post) => <LivePostCard key={post.id} post={{ ...post, viewerHasSaved: true }} author={post.authorUserId ? authors[post.authorUserId] : undefined} currentUserId={session!.user.id} onPostUpdated={updatePost} onPostDeleted={(postId) => setPosts((current) => current.filter((post) => post.id !== postId))} />)}
         {!isLoading && <PaginationControls hasMore={nextCursor !== null} isLoading={isLoadingMore} error={null} label="Tải thêm bài viết đã lưu" onLoadMore={() => void load(nextCursor ?? undefined)} />}
       </div>
     </main>
