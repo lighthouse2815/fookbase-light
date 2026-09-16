@@ -36,6 +36,8 @@ public sealed class UserProfile
 
     public DateOnly? DateOfBirth { get; private set; }
 
+    public Gender Gender { get; private set; } = Gender.PreferNotToSay;
+
     public BirthdayVisibility BirthdayVisibility { get; private set; } = BirthdayVisibility.OnlyMe;
 
     public string? CurrentCity { get; private set; }
