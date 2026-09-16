@@ -55,6 +55,21 @@ Trong Google Cloud Console, cấu hình OAuth consent screen, xác minh domain H
 
 Thêm cả hai SPA vào `Cors__AllowedOrigins`; restart API sau khi inject secret. Với Zalo, Messenger và các embedded WebView tương tự, giao diện chỉ hướng người dùng mở Chrome/Safari cho Google OAuth. Đăng nhập mật khẩu vẫn hoạt động trong các WebView này.
 
+## OTP qua SpeedSMS
+
+Đăng ký mới chấp nhận một email hoặc số di động Việt Nam. Email dùng SMTP; số điện thoại dùng SpeedSMS. Đăng ký và nạp tiền tài khoản SpeedSMS trước, sau đó inject các biến server-side sau qua secret store hoặc file môi trường ngoài Git:
+
+```dotenv
+Sms__Enabled=true
+Sms__AccessToken=<speedsms-access-token>
+Sms__Sender=<sender-approved-by-speedsms>
+Sms__BaseUrl=https://api.speedsms.vn
+```
+
+Không đưa `Sms__AccessToken` vào source, image, log hay biến `VITE_*`. Khi `Sms__Enabled=false` (mặc định), API không gửi SMS và trả `sms_unavailable` cho yêu cầu dùng số điện thoại; đăng ký qua email vẫn dùng được nếu SMTP bật. Sau khi bật, gửi thử tới một số điện thoại thật thuộc nhóm vận hành và kiểm tra số dư/cước trực tiếp trên SpeedSMS.
+
+OTP gồm sáu số, hết hạn sau 10 phút, chỉ dùng một lần, có cooldown gửi lại 60 giây và tối đa năm lần gửi hoặc thử mã trong một giờ/challenge. Theo dõi phản hồi nhà cung cấp nhưng không log số điện thoại đầy đủ, OTP, mật khẩu hoặc token SpeedSMS.
+
 ## Reverse proxy, HTTPS và CORS
 
 Đặt proxy đáng tin cậy trước API, chuyển WebSocket cho `/hubs/messages` và `/hubs/notifications`, và không public PostgreSQL. Nếu proxy terminate TLS, bật forwarded headers và chỉ khai báo IP trực tiếp của proxy:
