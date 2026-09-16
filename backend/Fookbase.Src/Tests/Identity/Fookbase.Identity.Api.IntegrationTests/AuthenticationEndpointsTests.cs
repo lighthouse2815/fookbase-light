@@ -19,6 +19,24 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     : IClassFixture<IdentityApiFactory>
 {
+    [Theory]
+    [InlineData("0912 345 678", "+84912345678")]
+    [InlineData("+84912345678", "+84912345678")]
+    [InlineData("84912345678", "+84912345678")]
+    public void Vietnamese_phone_is_normalized_to_e164(string raw, string expected)
+    {
+        Assert.True(ContactIdentifier.TryParse(raw, out var contact));
+        Assert.Equal(ContactKind.Phone, contact.Kind);
+        Assert.Equal(expected, contact.Value);
+    }
+
+    [Theory]
+    [InlineData("0212345678")]
+    [InlineData("12345")]
+    [InlineData("+12025550123")]
+    public void Unsupported_phone_is_rejected(string raw) =>
+        Assert.False(ContactIdentifier.TryParse(raw, out _));
+
     [Fact]
     public async Task Google_providers_reports_enabled_state()
     {
