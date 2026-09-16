@@ -38,6 +38,27 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.False(ContactIdentifier.TryParse(raw, out _));
 
     [Fact]
+    public void Registration_challenge_locks_after_five_invalid_codes()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var challenge = RegistrationChallenge.Create(
+            new ContactIdentifier(ContactKind.Email, "person@example.test"),
+            new string('A', 64),
+            "identity-password-hash",
+            "Nguyễn",
+            "An",
+            new DateOnly(2000, 1, 2),
+            now);
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            challenge.RegisterFailedAttempt(now.AddSeconds(attempt));
+        }
+
+        Assert.False(challenge.IsUsableAt(now.AddSeconds(5)));
+    }
+
+    [Fact]
     public async Task Google_providers_reports_enabled_state()
     {
         using var client = factory.CreateClient();
