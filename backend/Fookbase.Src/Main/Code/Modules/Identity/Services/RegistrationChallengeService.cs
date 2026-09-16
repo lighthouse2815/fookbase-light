@@ -10,6 +10,7 @@ using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
@@ -20,7 +21,8 @@ public sealed class RegistrationChallengeService(
     UserProfileService userProfileService,
     UserPrivacySettingsService privacySettingsService,
     AuthenticationService authenticationService,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    ILogger<RegistrationChallengeService> logger)
 {
     private const int MinimumAge = 13;
 
@@ -71,8 +73,9 @@ public sealed class RegistrationChallengeService(
         {
             await contactOtpSender.SendAsync(input.Contact, code, cancellationToken);
         }
-        catch
+        catch (Exception exception)
         {
+            logger.LogWarning(exception, "Unable to deliver a registration verification code through {ContactKind}.", input.Contact.Kind);
             dbContext.RegistrationChallenges.Remove(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
             return Unavailable<RegistrationChallengeResponse>(input.Contact.Kind);
@@ -101,8 +104,9 @@ public sealed class RegistrationChallengeService(
         {
             await contactOtpSender.SendAsync(new ContactIdentifier(challenge.ContactKind, challenge.Contact), code, cancellationToken);
         }
-        catch
+        catch (Exception exception)
         {
+            logger.LogWarning(exception, "Unable to resend a registration verification code through {ContactKind}.", challenge.ContactKind);
             dbContext.RegistrationChallenges.Remove(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
             return Unavailable<RegistrationChallengeResponse>(challenge.ContactKind);
