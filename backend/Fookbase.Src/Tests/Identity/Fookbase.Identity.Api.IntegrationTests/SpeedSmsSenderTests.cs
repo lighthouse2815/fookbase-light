@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
 
@@ -12,7 +13,7 @@ public sealed class SpeedSmsSenderTests
     {
         var handler = new RecordingHandler("{\"status\":\"success\",\"code\":\"00\"}");
         using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.speedsms.vn/") };
-        var sender = new SpeedSmsSender(client, EnabledOptions());
+        var sender = new SpeedSmsSender(client, EnabledOptions(), NullLogger<SpeedSmsSender>.Instance);
 
         await sender.SendOtpAsync("+84912345678", "123456");
 
@@ -30,7 +31,7 @@ public sealed class SpeedSmsSenderTests
     {
         var handler = new RecordingHandler("{\"status\":\"error\",\"code\":\"invalid\"}");
         using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.speedsms.vn/") };
-        var sender = new SpeedSmsSender(client, EnabledOptions());
+        var sender = new SpeedSmsSender(client, EnabledOptions(), NullLogger<SpeedSmsSender>.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => sender.SendOtpAsync("+84912345678", "123456"));
     }

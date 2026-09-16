@@ -1,10 +1,11 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Fookbase.Api.Modules.Identity.Config;
+using Microsoft.Extensions.Logging;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
-public sealed class SpeedSmsSender(HttpClient client, SmsOptions options)
+public sealed class SpeedSmsSender(HttpClient client, SmsOptions options, ILogger<SpeedSmsSender> logger)
 {
     public async Task SendOtpAsync(string phoneNumber, string code, CancellationToken cancellationToken = default)
     {
@@ -17,7 +18,12 @@ public sealed class SpeedSmsSender(HttpClient client, SmsOptions options)
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{options.AccessToken}:x")));
         using var response = await client.SendAsync(request, cancellationToken);
         var result = response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<Response>(cancellationToken: cancellationToken) : null;
-        if (result?.Status is not "success" || result.Code is not "00") throw new InvalidOperationException("The SMS provider could not deliver the verification code.");
+        if (result?.Status is not "success" || result.Code is not "00")
+        {
+            logger.LogWarning("SpeedSMS rejected OTP dispatch with HTTP status {StatusCode} and provider code {ProviderCode}.",
+                (int)response.StatusCode, result?.Code ?? "unknown");
+            throw new InvalidOperationException("The SMS provider could not deliver the verification code.");
+        }
     }
 
     private sealed record Response(string? Status, string? Code);
