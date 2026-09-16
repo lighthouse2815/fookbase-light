@@ -358,7 +358,7 @@ export default function LoginPage() {
           </form>
         </section>
       </div>
-      <div ref={recaptchaHost} aria-hidden="true" />
+      <div ref={recaptchaHost} />
       <footer className="hidden border-t border-[#e4e6eb] bg-white px-8 py-5 text-center text-xs leading-6 text-[#8a8d91] xl:block">Tiếng Việt · English (UK) · Français (France) · 日本語 · Đăng ký · Đăng nhập · Zola Light · Fookbase · Điều khoản · Quyền riêng tư · Cookie</footer>
     </main>
   )
