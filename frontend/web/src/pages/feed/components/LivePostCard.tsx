@@ -25,6 +25,7 @@ interface LivePostCardProps {
   onPostUpdated: (post: Post) => void
   onPostDeleted: (postId: string) => void
   initialCommentId?: string
+  allowProfilePin?: boolean
 }
 
 function MoreIcon() {
@@ -290,6 +291,7 @@ export default function LivePostCard({
   onPostUpdated,
   onPostDeleted,
   initialCommentId,
+  allowProfilePin = false,
 }: LivePostCardProps) {
   const { t } = usePreferences()
   const [comments, setComments] = useState<Comment[]>([])
@@ -323,7 +325,7 @@ export default function LivePostCard({
   const postMenuRef = useRef<HTMLDivElement>(null)
   const postCardRef = useRef<HTMLElement>(null)
   const isAuthor = post.authorUserId === currentUserId
-  const canPinPost = isAuthor && post.containerType === 'profile'
+  const canPinPost = allowProfilePin && isAuthor && post.containerType === 'profile'
   const displayAuthor = post.displayAuthor
   const authorName = displayAuthor?.name ?? author?.displayName ?? t('user')
   const authorAvatarUrl = displayAuthor?.avatarUrl ?? author?.avatarUrl

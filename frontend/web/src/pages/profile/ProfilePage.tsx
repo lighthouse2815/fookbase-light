@@ -741,6 +741,7 @@ export default function ProfilePage() {
                     post={post}
                     author={profile}
                     currentUserId={session!.user.id}
+                    allowProfilePin
                     onPostUpdated={(updatedPost) => setProfilePosts((currentPosts) => currentPosts
                       .map((item) => item.id === updatedPost.id
                         ? updatedPost
