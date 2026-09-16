@@ -8,8 +8,6 @@ public sealed class SmsOptions
 
     public string AccessToken { get; init; } = string.Empty;
 
-    public string Sender { get; init; } = string.Empty;
-
     public string BaseUrl { get; init; } = "https://api.speedsms.vn";
 
     public void Validate(bool production)

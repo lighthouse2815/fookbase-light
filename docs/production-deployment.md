@@ -62,7 +62,6 @@ Thêm cả hai SPA vào `Cors__AllowedOrigins`; restart API sau khi inject secre
 ```dotenv
 Sms__Enabled=true
 Sms__AccessToken=<speedsms-access-token>
-Sms__Sender=<sender-approved-by-speedsms>
 Sms__BaseUrl=https://api.speedsms.vn
 ```
 

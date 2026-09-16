@@ -38,8 +38,7 @@ public sealed class SpeedSmsSenderTests
     private static SmsOptions EnabledOptions() => new()
     {
         Enabled = true,
-        AccessToken = "token",
-        Sender = "Fookbase"
+        AccessToken = "token"
     };
 
     private sealed class RecordingHandler(string responseBody) : HttpMessageHandler
