@@ -49,6 +49,19 @@ public sealed class UserProfileService(
         }
     }
 
+    public async Task EnsureCreatedAsync(
+        Guid userId,
+        string username,
+        string displayName,
+        DateOnly dateOfBirth,
+        Gender gender,
+        CancellationToken cancellationToken = default)
+    {
+        if (await dbContext.UserProfiles.AnyAsync(profile => profile.UserId == userId, cancellationToken)) return;
+        dbContext.UserProfiles.Add(UserProfile.Create(userId, username, displayName, dateOfBirth, gender, timeProvider.GetUtcNow()));
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public Task<ApplicationResult<UserProfileResponse>> GetAsync(
         Guid userId,
         CancellationToken cancellationToken = default) =>

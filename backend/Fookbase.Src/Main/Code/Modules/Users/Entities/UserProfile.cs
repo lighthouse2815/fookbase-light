@@ -60,6 +60,21 @@ public sealed class UserProfile
         DateTimeOffset createdAt) =>
         new(userId, username, createdAt);
 
+    public static UserProfile Create(
+        Guid userId,
+        string username,
+        string displayName,
+        DateOnly dateOfBirth,
+        Gender gender,
+        DateTimeOffset createdAt)
+    {
+        var profile = new UserProfile(userId, username, createdAt);
+        profile.DisplayName = displayName.Trim();
+        profile.DateOfBirth = dateOfBirth;
+        profile.Gender = gender;
+        return profile;
+    }
+
     public void Update(
         string? displayName,
         string? bio,
