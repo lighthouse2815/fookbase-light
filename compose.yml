@@ -41,6 +41,7 @@ services:
       Email__FrontendBaseUrl: ${Email__FrontendBaseUrl:-http://localhost:5173}
       Sms__Enabled: ${Sms__Enabled:-false}
       Sms__AccessToken: ${Sms__AccessToken:-}
+      Sms__TwoFactorApplicationId: ${Sms__TwoFactorApplicationId:-}
       Sms__BaseUrl: ${Sms__BaseUrl:-https://api.speedsms.vn}
       DataProtection__ApplicationName: ${DataProtection__ApplicationName:-Fookbase}
       DataProtection__KeyRingPath: /var/fookbase/data-protection-keys

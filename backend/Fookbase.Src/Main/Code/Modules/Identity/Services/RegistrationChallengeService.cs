@@ -71,7 +71,9 @@ public sealed class RegistrationChallengeService(
         await dbContext.SaveChangesAsync(cancellationToken);
         try
         {
-            await contactOtpSender.SendAsync(input.Contact, code, cancellationToken);
+            var deliveredCode = await contactOtpSender.SendAsync(input.Contact, code, cancellationToken);
+            challenge.ReplaceCodeHash(Hash(deliveredCode));
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (Exception exception)
         {
@@ -102,7 +104,8 @@ public sealed class RegistrationChallengeService(
 
         try
         {
-            await contactOtpSender.SendAsync(new ContactIdentifier(challenge.ContactKind, challenge.Contact), code, cancellationToken);
+            var deliveredCode = await contactOtpSender.SendAsync(new ContactIdentifier(challenge.ContactKind, challenge.Contact), code, cancellationToken);
+            challenge.ReplaceCodeHash(Hash(deliveredCode));
         }
         catch (Exception exception)
         {

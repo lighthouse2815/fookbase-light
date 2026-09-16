@@ -61,6 +61,21 @@ public sealed class ProductionRuntimeTests
     }
 
     [Fact]
+    public void Production_configuration_rejects_enabled_sms_without_two_factor_application_id()
+    {
+        var values = ProductionValues();
+        values["Sms:Enabled"] = "true";
+        values["Sms:AccessToken"] = "access-token";
+        values["Sms:BaseUrl"] = "https://api.speedsms.vn";
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            ProductionConfigurationValidator.Validate(configuration, production: true));
+
+        Assert.Contains("Sms:TwoFactorApplicationId", exception.Message);
+    }
+
+    [Fact]
     public async Task Unexpected_error_response_is_safe_and_has_request_id()
     {
         var context = new DefaultHttpContext();

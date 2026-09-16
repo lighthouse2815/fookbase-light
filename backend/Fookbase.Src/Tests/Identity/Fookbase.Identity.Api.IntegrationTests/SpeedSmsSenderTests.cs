@@ -11,19 +11,19 @@ public sealed class SpeedSmsSenderTests
     [Fact]
     public async Task Sends_otp_to_speed_sms_with_local_phone_and_basic_authentication()
     {
-        var handler = new RecordingHandler("{\"status\":\"success\",\"code\":\"00\"}");
+        var handler = new RecordingHandler("{\"status\":\"success\",\"code\":\"00\",\"data\":{\"pin_code\":\"123456\"}}");
         using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.speedsms.vn/") };
         var sender = new SpeedSmsSender(client, EnabledOptions(), NullLogger<SpeedSmsSender>.Instance);
 
-        await sender.SendOtpAsync("+84912345678", "123456");
+        var code = await sender.SendOtpAsync("+84912345678");
 
         Assert.Equal(HttpMethod.Post, handler.Method);
-        Assert.Equal("/index.php/sms/send", handler.Path);
+        Assert.Equal("/index.php/pin/create", handler.Path);
         Assert.Equal("Basic dG9rZW46eA==", handler.Authorization);
-        Assert.Contains("\"to\":[\"0912345678\"]", handler.Body, StringComparison.Ordinal);
-        Assert.Contains("123456", handler.Body, StringComparison.Ordinal);
-        Assert.Contains("\"sms_type\":2", handler.Body, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"sender\"", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"to\":\"0912345678\"", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"content\":\"Ma xac nhan Fookbase cua ban la: {pin_code}\"", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"app_id\":\"app-id\"", handler.Body, StringComparison.Ordinal);
+        Assert.Equal("123456", code);
     }
 
     [Fact]
@@ -33,13 +33,14 @@ public sealed class SpeedSmsSenderTests
         using var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.speedsms.vn/") };
         var sender = new SpeedSmsSender(client, EnabledOptions(), NullLogger<SpeedSmsSender>.Instance);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sender.SendOtpAsync("+84912345678", "123456"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sender.SendOtpAsync("+84912345678"));
     }
 
     private static SmsOptions EnabledOptions() => new()
     {
         Enabled = true,
-        AccessToken = "token"
+        AccessToken = "token",
+        TwoFactorApplicationId = "app-id"
     };
 
     private sealed class RecordingHandler(string responseBody) : HttpMessageHandler

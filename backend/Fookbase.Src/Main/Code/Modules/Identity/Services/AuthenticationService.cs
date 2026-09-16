@@ -563,7 +563,9 @@ public sealed class AuthenticationService(
         await dbContext.SaveChangesAsync(cancellationToken);
         try
         {
-            await contactOtpSender.SendAsync(contact, code, cancellationToken);
+            var deliveredCode = await contactOtpSender.SendAsync(contact, code, cancellationToken);
+            challenge.ReplaceCodeHash(HashOtp(deliveredCode));
+            await dbContext.SaveChangesAsync(cancellationToken);
             return ApplicationResult.Success();
         }
         catch (Exception exception)

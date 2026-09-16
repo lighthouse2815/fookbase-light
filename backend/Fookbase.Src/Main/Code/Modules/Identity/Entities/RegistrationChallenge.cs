@@ -141,6 +141,12 @@ public sealed class RegistrationChallenge
         return true;
     }
 
+    public void ReplaceCodeHash(string codeHash)
+    {
+        if (!IsValidCodeHash(codeHash)) throw new ArgumentException("The OTP hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
+        CodeHash = codeHash;
+    }
+
     private static bool IsValidCodeHash(string value) => value.Length == 64 && value.All(Uri.IsHexDigit);
 
     private void ResetSendWindowIfNeeded(DateTimeOffset now)

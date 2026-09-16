@@ -8,6 +8,8 @@ public sealed class SmsOptions
 
     public string AccessToken { get; init; } = string.Empty;
 
+    public string TwoFactorApplicationId { get; init; } = string.Empty;
+
     public string BaseUrl { get; init; } = "https://api.speedsms.vn";
 
     public void Validate(bool production)
@@ -20,6 +22,11 @@ public sealed class SmsOptions
         if (string.IsNullOrWhiteSpace(AccessToken))
         {
             throw new InvalidOperationException("Sms:AccessToken is required when SMS is enabled.");
+        }
+
+        if (string.IsNullOrWhiteSpace(TwoFactorApplicationId))
+        {
+            throw new InvalidOperationException("Sms:TwoFactorApplicationId is required when SMS is enabled.");
         }
 
         if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) ||
