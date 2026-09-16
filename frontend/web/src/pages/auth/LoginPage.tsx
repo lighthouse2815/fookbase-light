@@ -45,6 +45,8 @@ export default function LoginPage() {
   const [gender, setGender] = useState<'female' | 'male' | 'other' | 'preferNotToSay'>('preferNotToSay')
   const [registrationChallenge, setRegistrationChallenge] = useState<RegistrationChallenge | null>(null)
   const [registrationCode, setRegistrationCode] = useState('')
+  const [isResettingPhone, setIsResettingPhone] = useState(false)
+  const [passwordResetCode, setPasswordResetCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -68,6 +70,7 @@ export default function LoginPage() {
   const linkedToken = searchParams.get('token') ?? ''
   const isRequestingReset = accountMode === 'forgot'
   const isResetting = accountMode === 'reset'
+  const isPhoneResetting = isRequestingReset && isResettingPhone
   const isVerifying = accountMode === 'verify'
   const isAccountFlow = isRequestingReset || isResetting || isVerifying
   const isGoogleLinking = googleLinkCompletion !== null
@@ -151,8 +154,21 @@ export default function LoginPage() {
         const response = await linkGoogleSignIn(googleLinkCompletion.code, password)
         if ('twoFactorRequired' in response) setTwoFactorChallenge(response.challenge)
       } else if (isRequestingReset) {
-        await authApi.requestPasswordReset(email)
-        setNotice(t('resetLinkSent'))
+        if (isPhoneResetting) {
+          await authApi.resetPassword({ identifier: email, code: passwordResetCode, password, confirmPassword })
+          setNotice(t('passwordReset'))
+          setPassword('')
+          setConfirmPassword('')
+          setPasswordResetCode('')
+        } else {
+          await authApi.requestPasswordReset(email)
+          if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+            setNotice(t('resetLinkSent'))
+          } else {
+            setIsResettingPhone(true)
+            setNotice(t('resetCodeSent'))
+          }
+        }
       } else if (isResetting) {
         await authApi.resetPassword({ email, token: linkedToken, password, confirmPassword })
         setNotice(t('passwordReset'))
@@ -184,6 +200,8 @@ export default function LoginPage() {
     setPassword('')
     setRegistrationChallenge(null)
     setRegistrationCode('')
+    setIsResettingPhone(false)
+    setPasswordResetCode('')
   }
 
   const returnToSignIn = () => {
@@ -195,6 +213,8 @@ export default function LoginPage() {
     setConfirmPassword('')
     setRegistrationChallenge(null)
     setRegistrationCode('')
+    setIsResettingPhone(false)
+    setPasswordResetCode('')
   }
 
   const fieldClassName = 'w-full rounded-lg border border-border bg-surface px-11 py-3 text-[15px] text-text outline-none transition placeholder:text-text-light focus:border-primary focus:bg-surface focus:ring-4 focus:ring-primary/15'
@@ -268,11 +288,11 @@ export default function LoginPage() {
                     {isRegistering || !isResetting ? t('mobileOrEmail') : t('emailAddress')}
                     <span className="relative block">
                       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">@</span>
-                      <input required readOnly={(isResetting && Boolean(linkedEmail)) || isGoogleLinking} autoComplete={isRegistering ? 'email' : 'username'} type={isResetting ? 'email' : 'text'} value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t('mobileOrEmailPlaceholder')} className={fieldClassName} />
+                      <input required readOnly={(isResetting && Boolean(linkedEmail)) || isGoogleLinking || isPhoneResetting} autoComplete={isRegistering ? 'email' : 'username'} type={isResetting ? 'email' : 'text'} value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t('mobileOrEmailPlaceholder')} className={fieldClassName} />
                     </span>
                   </label>
 
-                  {!isRequestingReset && (
+                  {(!isRequestingReset || isPhoneResetting) && (
                     <label className="flex flex-col gap-2 text-sm font-semibold text-text">
                       {t('password')}
                       <span className="relative block">
@@ -283,7 +303,14 @@ export default function LoginPage() {
                     </label>
                   )}
 
-                  {isResetting && (
+                  {isPhoneResetting && (
+                    <label className="flex flex-col gap-2 text-sm font-semibold text-text">
+                      {t('verificationCode')}
+                      <input required inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={passwordResetCode} onChange={(event) => setPasswordResetCode(event.target.value.replace(/\D/g, ''))} placeholder="123456" className={fieldClassName} />
+                    </label>
+                  )}
+
+                  {(isResetting || isPhoneResetting) && (
                     <label className="flex flex-col gap-2 text-sm font-semibold text-text">
                       {t('confirmPassword')}
                       <input required minLength={8} autoComplete="new-password" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder={t('repeatPassword')} className={fieldClassName} />
@@ -295,7 +322,7 @@ export default function LoginPage() {
 
                 <button disabled={isSubmitting || isCompletingGoogle} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-dark hover:shadow-primary/35 disabled:cursor-not-allowed disabled:opacity-60">
                   {(isSubmitting || isCompletingGoogle) && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
-                  {isSubmitting || isCompletingGoogle ? t('pleaseWait') : isGoogleLinking ? t('continueWithGoogle') : isRequestingReset ? t('sendResetLink') : isResetting ? t('resetPasswordAction') : isRegistering ? t('createAccount') : t('signIn')}
+                  {isSubmitting || isCompletingGoogle ? t('pleaseWait') : isGoogleLinking ? t('continueWithGoogle') : isPhoneResetting || isResetting ? t('resetPasswordAction') : isRequestingReset ? t('sendResetLink') : isRegistering ? t('createAccount') : t('signIn')}
                 </button>
               </>
             )}

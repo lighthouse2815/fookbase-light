@@ -56,12 +56,21 @@ export interface ChangePasswordDetails {
   confirmPassword: string
 }
 
-export interface ResetPasswordDetails {
+export interface EmailResetPasswordDetails {
   email: string
   token: string
   password: string
   confirmPassword: string
 }
+
+export interface PhoneResetPasswordDetails {
+  identifier: string
+  code: string
+  password: string
+  confirmPassword: string
+}
+
+export type ResetPasswordDetails = EmailResetPasswordDetails | PhoneResetPasswordDetails
 
 const jsonBody = (value: unknown) => ({ body: JSON.stringify(value) })
 
