@@ -341,6 +341,7 @@ export default function LivePostCard({
     ? post.content
     : null
   const canEditPost = isAuthor && !profileMediaUpdateStatus
+  const canEditPostPrivacy = canEditPost || Boolean(isAuthor && profileMediaUpdateStatus)
 
   useEffect(() => {
     if (post.mediaIds.length === 0 || isMediaVisible) return
@@ -655,7 +656,8 @@ export default function LivePostCard({
             {canPinPost && <button type="button" disabled={isUpdatingPostPin} onClick={() => { void togglePostPin(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><PinIcon />{post.isPinned ? 'Bỏ ghim bài viết' : 'Ghim bài viết'}</button>}
             <button type="button" disabled={isSavingPost} onClick={() => { void savePost(); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
             {isAuthor ? <>
-              {canEditPost && <><button type="button" onClick={() => { setEditingPostContent(post.content); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><EditIcon />Chỉnh sửa bài viết</button><button type="button" onClick={() => { setEditingPostPrivacy(post.privacy); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><PrivacyIcon privacy={post.privacy} />Chỉnh sửa đối tượng</button><div className="my-1 border-t border-border" /></>}
+              {canEditPost && <button type="button" onClick={() => { setEditingPostContent(post.content); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><EditIcon />Chỉnh sửa bài viết</button>}
+              {canEditPostPrivacy && <><button type="button" onClick={() => { setEditingPostPrivacy(post.privacy); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><PrivacyIcon privacy={post.privacy} />Chỉnh sửa đối tượng</button><div className="my-1 border-t border-border" /></>}
               <button type="button" onClick={() => { setIsPostPendingDeletion(true); setIsPostMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2"><TrashIcon />{t('delete')}</button>
             </> : <ReportButton targetType="post" targetId={post.id} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-[#ff8a9b]" />}
           </div>}

@@ -415,7 +415,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     }
 
     [Fact]
-    public async Task Avatar_and_cover_update_posts_cannot_be_edited()
+    public async Task Avatar_and_cover_update_posts_can_change_audience_but_not_content_or_media()
     {
         var user = CreateUser();
         await EnsureProfileAsync(user);
@@ -436,9 +436,27 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
 
         foreach (var post in posts)
         {
-            var response = await client.PutAsJsonAsync(
-                $"/api/posts/{post.Id}", new { content = "Không được sửa", privacy = "public" });
-            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            var mediaIds = await db.PostMedia.AsNoTracking()
+                .Where(media => media.PostId == post.Id)
+                .OrderBy(media => media.SortOrder)
+                .Select(media => media.MediaId)
+                .ToArrayAsync();
+
+            var privacyResponse = await client.PutAsJsonAsync(
+                $"/api/posts/{post.Id}", new { content = post.Content, privacy = "friends", mediaIds });
+            Assert.Equal(HttpStatusCode.OK, privacyResponse.StatusCode);
+            Assert.Equal(PostPrivacy.Friends, await db.Posts.AsNoTracking()
+                .Where(item => item.Id == post.Id)
+                .Select(item => item.Privacy)
+                .SingleAsync());
+
+            var contentResponse = await client.PutAsJsonAsync(
+                $"/api/posts/{post.Id}", new { content = "Không được sửa", privacy = "friends", mediaIds });
+            Assert.Equal(HttpStatusCode.Conflict, contentResponse.StatusCode);
+
+            var mediaResponse = await client.PutAsJsonAsync(
+                $"/api/posts/{post.Id}", new { content = post.Content, privacy = "onlyMe", mediaIds = Array.Empty<Guid>() });
+            Assert.Equal(HttpStatusCode.Conflict, mediaResponse.StatusCode);
         }
     }
 

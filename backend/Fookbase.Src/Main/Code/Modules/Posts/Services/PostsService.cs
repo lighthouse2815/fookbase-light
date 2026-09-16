@@ -648,10 +648,7 @@ public sealed class PostsService(
             return PostsServiceResult<PostResponse>.Failure(PostsServiceError.InvalidPostType);
         }
 
-        if (Post.IsProfileMediaUpdateContent(post.Content))
-        {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.ProfileMediaPostNotEditable);
-        }
+        var isProfileMediaUpdate = Post.IsProfileMediaUpdateContent(post.Content);
 
         if (post.ContainerType == PostContainerType.Group &&
             !await groupPostAccessService.CanCreatePostAsync(
@@ -671,6 +668,12 @@ public sealed class PostsService(
         var mediaOrder = mediaIds.Select((id, index) => new { id, index })
             .ToDictionary(x => x.id, x => x.index);
         var existingMedia = await dbContext.PostMedia.Where(x => x.PostId == postId).ToListAsync(cancellationToken);
+        if (isProfileMediaUpdate &&
+            (!string.Equals(content, post.Content, StringComparison.Ordinal) ||
+             !existingMedia.OrderBy(item => item.SortOrder).Select(item => item.MediaId).SequenceEqual(mediaIds)))
+        {
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.ProfileMediaPostNotEditable);
+        }
         var removed = existingMedia.Where(x => !mediaIds.Contains(x.MediaId)).ToList();
         var added = mediaIds.Where(id => existingMedia.All(x => x.MediaId != id)).ToList();
         post.Update(content, privacy, now);
