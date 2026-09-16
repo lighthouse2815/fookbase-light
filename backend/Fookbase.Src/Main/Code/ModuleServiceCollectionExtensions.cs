@@ -67,13 +67,17 @@ internal static class ModuleServiceCollectionExtensions
             .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
         var smsOptions = configuration.GetSection(SmsOptions.SectionName).Get<SmsOptions>()
             ?? new SmsOptions();
+        var firebaseAuthenticationOptions = configuration
+            .GetSection(FirebaseAuthenticationOptions.SectionName)
+            .Get<FirebaseAuthenticationOptions>() ?? new FirebaseAuthenticationOptions();
 
         return services.AddIdentityInfrastructure(
             jwtOptions,
             emailOptions,
             adminOptions,
             googleAuthenticationOptions,
-            smsOptions);
+            smsOptions,
+            firebaseAuthenticationOptions);
     }
 
     public static IServiceCollection AddUsersModule(
