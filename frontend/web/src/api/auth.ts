@@ -2,9 +2,11 @@ import { apiRequest } from './client'
 
 export interface AuthenticatedUser {
   id: string
-  email: string
+  email: string | null
+  phoneNumber: string | null
   username: string
   emailConfirmed: boolean
+  phoneNumberConfirmed: boolean
   roles: string[]
 }
 
@@ -27,12 +29,25 @@ export interface TwoFactorSetup { sharedKey: string; otpauthUri: string }
 export interface RecoveryCodes { recoveryCodes: string[] }
 
 export interface Credentials {
-  email: string
+  identifier: string
   password: string
 }
 
-export interface RegistrationDetails extends Credentials {
-  username: string
+export type RegistrationGender = 'female' | 'male' | 'other' | 'preferNotToSay'
+
+export interface RegistrationDetails {
+  firstName: string
+  lastName: string
+  dateOfBirth: string
+  gender: RegistrationGender
+  contact: string
+  password: string
+}
+
+export interface RegistrationChallenge {
+  challengeId: string
+  expiresAtUtc: string
+  resendAvailableAtUtc: string
 }
 
 export interface ChangePasswordDetails {
@@ -62,10 +77,20 @@ export const authApi = {
       method: 'POST',
       ...jsonBody({ code, password, client: 'web' } satisfies GoogleLinkRequest),
     }),
-  register: (details: RegistrationDetails) =>
-    apiRequest<AuthenticationResponse>('/api/auth/register', {
+  startRegistration: (details: RegistrationDetails) =>
+    apiRequest<RegistrationChallenge>('/api/auth/registration/start', {
       method: 'POST',
       ...jsonBody(details),
+    }),
+  resendRegistration: (challengeId: string) =>
+    apiRequest<RegistrationChallenge>('/api/auth/registration/resend', {
+      method: 'POST',
+      ...jsonBody({ challengeId }),
+    }),
+  verifyRegistration: (challengeId: string, code: string) =>
+    apiRequest<AuthenticationResponse>('/api/auth/registration/verify', {
+      method: 'POST',
+      ...jsonBody({ challengeId, code }),
     }),
   login: (credentials: Credentials) =>
     apiRequest<LoginResponse>('/api/auth/login', {
@@ -84,10 +109,10 @@ export const authApi = {
       ...jsonBody({ refreshToken }),
     }),
   getCurrentUser: () => apiRequest<AuthenticatedUser>('/api/auth/me'),
-  requestPasswordReset: (email: string) =>
+  requestPasswordReset: (identifier: string) =>
     apiRequest<void>('/api/auth/password/forgot', {
       method: 'POST',
-      ...jsonBody({ email }),
+      ...jsonBody({ identifier }),
     }),
   resetPassword: (details: ResetPasswordDetails) =>
     apiRequest<void>('/api/auth/password/reset', {

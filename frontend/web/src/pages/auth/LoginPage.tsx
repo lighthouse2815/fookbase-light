@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
-import { authApi } from '../../api/auth'
+import { authApi, type RegistrationChallenge } from '../../api/auth'
 import { ApiError, apiBaseUrl } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
 import { PreferenceControls, usePreferences } from '../../preferences'
@@ -30,14 +30,21 @@ function LoginArtwork() {
 }
 
 export default function LoginPage() {
-  const { session, signIn, completeGoogleSignIn, linkGoogleSignIn, completeTwoFactor, signUp } = useAuth()
+  const { session, signIn, completeGoogleSignIn, linkGoogleSignIn, completeTwoFactor, signUp, completeRegistration, resendRegistration } = useAuth()
   const { t } = usePreferences()
   const [searchParams, setSearchParams] = useSearchParams()
   const googleCompletionCode = searchParams.get('provider') === 'google' ? searchParams.get('code') : null
   const callbackRequiresGoogleLink = searchParams.get('mode') === 'link'
   const [isRegistering, setIsRegistering] = useState(false)
   const [email, setEmail] = useState(() => searchParams.get('email') ?? '')
-  const [username, setUsername] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [birthDay, setBirthDay] = useState('')
+  const [birthMonth, setBirthMonth] = useState('')
+  const [birthYear, setBirthYear] = useState('')
+  const [gender, setGender] = useState<'female' | 'male' | 'other' | 'preferNotToSay'>('preferNotToSay')
+  const [registrationChallenge, setRegistrationChallenge] = useState<RegistrationChallenge | null>(null)
+  const [registrationCode, setRegistrationCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -152,9 +159,15 @@ export default function LoginPage() {
         setPassword('')
         setConfirmPassword('')
       } else if (isRegistering) {
-        await signUp({ email, username, password })
+        if (registrationChallenge) {
+          await completeRegistration(registrationChallenge.challengeId, registrationCode)
+        } else {
+          const dateOfBirth = `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+          setRegistrationChallenge(await signUp({ firstName, lastName, dateOfBirth, gender, contact: email, password }))
+          setRegistrationCode('')
+        }
       } else {
-        const response = await signIn({ email, password })
+        const response = await signIn({ identifier: email, password })
         if ('twoFactorRequired' in response) setTwoFactorChallenge(response.challenge)
       }
     } catch (requestError) {
@@ -169,6 +182,8 @@ export default function LoginPage() {
     setError(null)
     setNotice(null)
     setPassword('')
+    setRegistrationChallenge(null)
+    setRegistrationCode('')
   }
 
   const returnToSignIn = () => {
@@ -178,6 +193,8 @@ export default function LoginPage() {
     setNotice(null)
     setPassword('')
     setConfirmPassword('')
+    setRegistrationChallenge(null)
+    setRegistrationCode('')
   }
 
   const fieldClassName = 'w-full rounded-lg border border-border bg-surface px-11 py-3 text-[15px] text-text outline-none transition placeholder:text-text-light focus:border-primary focus:bg-surface focus:ring-4 focus:ring-primary/15'
@@ -202,9 +219,9 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-7">
-              <p className="text-sm font-semibold text-primary-light">{isGoogleLinking ? t('continueWithGoogle') : isVerifying ? t('emailVerification') : isResetting ? t('resetPassword') : isRequestingReset ? t('accountRecovery') : isRegistering ? t('joinFookbase') : t('welcomeBack')}</p>
-              <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-text sm:text-4xl">{isGoogleLinking ? t('signInSpaceTitle') : isVerifying ? t('verifyEmailTitle') : isResetting ? t('newPasswordTitle') : isRequestingReset ? t('resetPasswordTitle') : isRegistering ? t('createSpaceTitle') : t('signInSpaceTitle')}</h1>
-              <p className="mt-3 text-sm leading-6 text-text-muted">{isGoogleLinking ? t('confirmGooglePassword').replace('{email}', googleLinkCompletion.email) : isVerifying ? t('verifyEmailDescription') : isResetting ? t('newPasswordDescription') : isRequestingReset ? t('resetPasswordDescription') : isRegistering ? t('createSpaceDescription') : t('signInSpaceDescription')}</p>
+              <p className="text-sm font-semibold text-primary-light">{isGoogleLinking ? t('continueWithGoogle') : isVerifying ? t('emailVerification') : isResetting ? t('resetPassword') : isRequestingReset ? t('accountRecovery') : registrationChallenge ? t('registrationVerification') : isRegistering ? t('joinFookbase') : t('welcomeBack')}</p>
+              <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-text sm:text-4xl">{isGoogleLinking ? t('signInSpaceTitle') : isVerifying ? t('verifyEmailTitle') : isResetting ? t('newPasswordTitle') : isRequestingReset ? t('resetPasswordTitle') : registrationChallenge ? t('registrationVerificationTitle') : isRegistering ? t('createSpaceTitle') : t('signInSpaceTitle')}</h1>
+              <p className="mt-3 text-sm leading-6 text-text-muted">{isGoogleLinking ? t('confirmGooglePassword').replace('{email}', googleLinkCompletion.email) : isVerifying ? t('verifyEmailDescription') : isResetting ? t('newPasswordDescription') : isRequestingReset ? t('resetPasswordDescription') : registrationChallenge ? t('registrationVerificationDescription') : isRegistering ? t('createSpaceDescription') : t('signInSpaceDescription')}</p>
             </div>
 
             {error && <p role="alert" className="mb-5 rounded-xl border border-[#e15f5f]/45 bg-[#e15f5f]/10 px-4 py-3 text-sm leading-5 text-[#ff9b9b]">{error}</p>}
@@ -219,26 +236,41 @@ export default function LoginPage() {
                 {verificationState === 'success' && t('emailVerified')}
                 {verificationState === 'error' && t('unableVerifyEmail')}
               </div>
+            ) : registrationChallenge ? (
+              <div className="flex flex-col gap-5">
+                <label className="flex flex-col gap-2 text-sm font-semibold text-text">
+                  {t('verificationCode')}
+                  <input required autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={registrationCode} onChange={(event) => setRegistrationCode(event.target.value.replace(/\D/g, ''))} placeholder="123456" className={fieldClassName} />
+                </label>
+                <button disabled={isSubmitting || registrationCode.length !== 6} className="rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 disabled:cursor-not-allowed disabled:opacity-60">
+                  {isSubmitting ? t('pleaseWait') : t('verifyAndCreateAccount')}
+                </button>
+                <button type="button" disabled={isSubmitting} onClick={() => { setIsSubmitting(true); void resendRegistration(registrationChallenge.challengeId).then(setRegistrationChallenge).catch((reason) => setError(reason instanceof ApiError ? reason.message : t('unableAuthenticate'))).finally(() => setIsSubmitting(false)) }} className="rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text disabled:opacity-60">
+                  {t('resendCode')}
+                </button>
+                <button type="button" disabled={isSubmitting} onClick={() => { setRegistrationChallenge(null); setRegistrationCode(''); setError(null) }} className="text-sm font-semibold text-primary-light hover:text-text">
+                  {t('editRegistrationDetails')}
+                </button>
+              </div>
             ) : (
               <>
                 <div className="flex flex-col gap-5">
+                  {isRegistering && <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-2 text-sm font-semibold text-text">{t('lastName')}<input required maxLength={50} autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} className={fieldClassName.replace('px-11', 'px-4')} /></label>
+                      <label className="flex flex-col gap-2 text-sm font-semibold text-text">{t('firstName')}<input required maxLength={50} autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} className={fieldClassName.replace('px-11', 'px-4')} /></label>
+                    </div>
+                    <fieldset className="flex flex-col gap-2 text-sm font-semibold text-text"><legend>{t('dateOfBirth')}</legend><div className="grid grid-cols-3 gap-3"><select required value={birthDay} onChange={(event) => setBirthDay(event.target.value)} className={fieldClassName.replace('px-11', 'px-4')}><option value="">{t('day')}</option>{Array.from({ length: 31 }, (_, index) => <option key={index + 1} value={String(index + 1)}>{index + 1}</option>)}</select><select required value={birthMonth} onChange={(event) => setBirthMonth(event.target.value)} className={fieldClassName.replace('px-11', 'px-4')}><option value="">{t('month')}</option>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={String(index + 1)}>{index + 1}</option>)}</select><select required value={birthYear} onChange={(event) => setBirthYear(event.target.value)} className={fieldClassName.replace('px-11', 'px-4')}><option value="">{t('year')}</option>{Array.from({ length: 100 }, (_, index) => new Date().getFullYear() - 13 - index).map((year) => <option key={year} value={String(year)}>{year}</option>)}</select></div></fieldset>
+                    <label className="flex flex-col gap-2 text-sm font-semibold text-text">{t('gender')}<select value={gender} onChange={(event) => setGender(event.target.value as typeof gender)} className={fieldClassName.replace('px-11', 'px-4')}><option value="female">{t('female')}</option><option value="male">{t('male')}</option><option value="other">{t('otherGender')}</option><option value="preferNotToSay">{t('preferNotToSay')}</option></select></label>
+                  </>}
+
                   <label className="flex flex-col gap-2 text-sm font-semibold text-text">
-                    {t('emailAddress')}
+                    {isRegistering || !isResetting ? t('mobileOrEmail') : t('emailAddress')}
                     <span className="relative block">
                       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">@</span>
-                      <input required readOnly={(isResetting && Boolean(linkedEmail)) || isGoogleLinking} autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className={fieldClassName} />
+                      <input required readOnly={(isResetting && Boolean(linkedEmail)) || isGoogleLinking} autoComplete={isRegistering ? 'email' : 'username'} type={isResetting ? 'email' : 'text'} value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t('mobileOrEmailPlaceholder')} className={fieldClassName} />
                     </span>
                   </label>
-
-                  {isRegistering && (
-                    <label className="flex flex-col gap-2 text-sm font-semibold text-text">
-                      {t('username')}
-                      <span className="relative block">
-                        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-light">#</span>
-                        <input required minLength={3} maxLength={32} autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder={t('chooseUsername')} className={fieldClassName} />
-                      </span>
-                    </label>
-                  )}
 
                   {!isRequestingReset && (
                     <label className="flex flex-col gap-2 text-sm font-semibold text-text">

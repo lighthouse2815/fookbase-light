@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { authApi } from '../api/auth'
-import type { ChangePasswordDetails, Credentials, RegistrationDetails } from '../api/auth'
+import type { ChangePasswordDetails, Credentials, RegistrationChallenge, RegistrationDetails } from '../api/auth'
 import { authSessionChangedEvent, clearAuthSession, getAuthSession, saveAuthSession } from './session'
 import type { AuthSession } from './session'
 import { AuthContext } from './context'
@@ -33,9 +33,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const completeTwoFactor = async (challenge: string, code: string) => applySession(await authApi.verifyTwoFactor(challenge, code))
 
-  const signUp = async (details: RegistrationDetails) => {
-    applySession(await authApi.register(details))
+  const signUp = (details: RegistrationDetails): Promise<RegistrationChallenge> => authApi.startRegistration(details)
+
+  const completeRegistration = async (challengeId: string, code: string) => {
+    applySession(await authApi.verifyRegistration(challengeId, code))
   }
+
+  const resendRegistration = (challengeId: string): Promise<RegistrationChallenge> =>
+    authApi.resendRegistration(challengeId)
 
   const changePassword = async (details: ChangePasswordDetails) => {
     applySession(await authApi.changePassword(details))
@@ -76,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session])
 
   return (
-    <AuthContext.Provider value={{ session, signIn, completeGoogleSignIn, linkGoogleSignIn, completeTwoFactor, signUp, changePassword, signOut }}>
+    <AuthContext.Provider value={{ session, signIn, completeGoogleSignIn, linkGoogleSignIn, completeTwoFactor, signUp, completeRegistration, resendRegistration, changePassword, signOut }}>
       {children}
     </AuthContext.Provider>
   )
