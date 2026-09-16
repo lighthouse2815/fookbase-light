@@ -27,6 +27,10 @@ public static class ProductionConfigurationValidator
             .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
         googleAuthentication.Validate(production: true);
 
+        var sms = configuration.GetSection(SmsOptions.SectionName).Get<SmsOptions>()
+            ?? new SmsOptions();
+        sms.Validate(production: true);
+
         var cloudinary = configuration.GetSection(CloudinaryOptions.SectionName).Get<CloudinaryOptions>()
             ?? throw new InvalidOperationException("Cloudinary configuration is required in Production.");
         cloudinary.Validate();
