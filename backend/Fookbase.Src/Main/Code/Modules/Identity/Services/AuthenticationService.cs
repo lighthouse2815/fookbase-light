@@ -178,6 +178,12 @@ public sealed class AuthenticationService(
             : ApplicationResult<object>.Failure(issued.Error!);
     }
 
+    public Task<ApplicationResult<AuthenticationResponse>> IssueSessionAsync(
+        User user,
+        string? userAgent,
+        CancellationToken cancellationToken = default) =>
+        IssueNewTokenPairAsync(user, timeProvider.GetUtcNow(), userAgent, cancellationToken);
+
     public async Task<ApplicationResult<AuthenticationResponse>> VerifyTwoFactorAsync(TwoFactorVerifyRequest request,
         string? userAgent, CancellationToken cancellationToken = default)
     {
@@ -572,11 +578,18 @@ public sealed class AuthenticationService(
             refreshToken.RefreshToken.ExpiresAt);
 
     private static AuthenticatedUserResponse ToResponse(User user, IReadOnlyList<string> roles) =>
-        new(user.Id, user.Email!, user.UserName!, user.EmailConfirmed, roles);
+        new(
+            user.Id,
+            user.Email,
+            user.PhoneNumber,
+            user.UserName!,
+            user.EmailConfirmed,
+            user.PhoneNumberConfirmed,
+            roles);
 
     private async Task<IReadOnlyList<string>> GetRolesAsync(User user)
     {
-        if (adminOptions.IsBootstrapAdmin(user.Email!))
+        if (!string.IsNullOrWhiteSpace(user.Email) && adminOptions.IsBootstrapAdmin(user.Email))
         {
             await EnsureBootstrapAdminRoleAsync(user);
         }

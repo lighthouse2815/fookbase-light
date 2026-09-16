@@ -32,7 +32,7 @@ public static class DependencyInjection
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequiredUniqueChars = 1;
-                options.User.RequireUniqueEmail = true;
+                options.User.RequireUniqueEmail = false;
                 options.Lockout.AllowedForNewUsers = true;
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
@@ -54,12 +54,14 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(10);
         });
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<IContactOtpSender, ContactOtpSender>();
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
         services.AddScoped<GoogleAuthenticationService>();
         services.AddScoped<IGoogleExternalIdentityReader, GoogleExternalIdentityReader>();
         services.AddScoped<AccountModerationService>();
         services.AddScoped<RegistrationUseCase>();
+        services.AddScoped<RegistrationChallengeService>();
         services.AddScoped<AdministrationService>();
 
         return services;

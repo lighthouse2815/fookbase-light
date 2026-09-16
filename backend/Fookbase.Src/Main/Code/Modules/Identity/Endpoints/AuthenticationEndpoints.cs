@@ -23,7 +23,13 @@ public static class AuthenticationEndpoints
         group.MapGet("/google/callback", CompleteGoogleCallbackAsync).AllowAnonymous();
         group.MapPost("/google/exchange", ExchangeGoogleCompletionAsync).AllowAnonymous().RequireRateLimiting("auth-login");
         group.MapPost("/google/link", LinkGoogleAsync).AllowAnonymous().RequireRateLimiting("auth-login");
-        group.MapPost("/register", RegisterAsync).AllowAnonymous();
+        if (endpoints.ServiceProvider.GetRequiredService<IHostEnvironment>().IsEnvironment("Testing"))
+        {
+            group.MapPost("/register", RegisterAsync).AllowAnonymous();
+        }
+        group.MapPost("/registration/start", StartRegistrationAsync).AllowAnonymous().RequireRateLimiting("auth-sensitive");
+        group.MapPost("/registration/resend", ResendRegistrationAsync).AllowAnonymous().RequireRateLimiting("auth-sensitive");
+        group.MapPost("/registration/verify", VerifyRegistrationAsync).AllowAnonymous().RequireRateLimiting("auth-sensitive");
         group.MapPost("/login", LoginAsync).AllowAnonymous().RequireRateLimiting("auth-login");
         group.MapPost("/2fa/verify", VerifyTwoFactorAsync).AllowAnonymous().RequireRateLimiting("auth-login");
         group.MapPost("/refresh", RefreshAsync).AllowAnonymous();
@@ -191,6 +197,41 @@ public static class AuthenticationEndpoints
     {
         var result = await registrationUseCase.ExecuteAsync(request, cancellationToken);
 
+        return result.Succeeded
+            ? Results.Created("/api/auth/me", result.Value)
+            : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> StartRegistrationAsync(
+        RegistrationStartRequest request,
+        RegistrationChallengeService registrationChallengeService,
+        CancellationToken cancellationToken)
+    {
+        var result = await registrationChallengeService.StartAsync(request, cancellationToken);
+        return result.Succeeded
+            ? Results.Accepted($"/api/auth/registration/{result.Value!.ChallengeId}", result.Value)
+            : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> ResendRegistrationAsync(
+        RegistrationResendRequest request,
+        RegistrationChallengeService registrationChallengeService,
+        CancellationToken cancellationToken)
+    {
+        var result = await registrationChallengeService.ResendAsync(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+    }
+
+    private static async Task<IResult> VerifyRegistrationAsync(
+        RegistrationVerifyRequest request,
+        RegistrationChallengeService registrationChallengeService,
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        var result = await registrationChallengeService.VerifyAsync(
+            request,
+            context.Request.Headers.UserAgent.ToString(),
+            cancellationToken);
         return result.Succeeded
             ? Results.Created("/api/auth/me", result.Value)
             : result.Error!.ToHttpResult();

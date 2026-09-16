@@ -52,6 +52,10 @@ public class IdentityApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<TestEmailSender>();
             services.AddSingleton<IEmailSender>(provider =>
                 provider.GetRequiredService<TestEmailSender>());
+            services.RemoveAll<IContactOtpSender>();
+            services.AddSingleton<TestContactOtpSender>();
+            services.AddSingleton<IContactOtpSender>(provider =>
+                provider.GetRequiredService<TestContactOtpSender>());
             services.RemoveAll<IGoogleExternalIdentityReader>();
             services.AddScoped<IGoogleExternalIdentityReader, TestGoogleExternalIdentityReader>();
         });
@@ -89,3 +93,20 @@ public sealed class TestEmailSender : IEmailSender
 }
 
 public sealed record SentEmail(string RecipientEmail, string Subject, string HtmlBody);
+
+public sealed class TestContactOtpSender : IContactOtpSender
+{
+    private readonly ConcurrentDictionary<string, string> codes = new(StringComparer.Ordinal);
+
+    public Task SendAsync(ContactIdentifier contact, string code, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        codes[contact.Value] = code;
+        return Task.CompletedTask;
+    }
+
+    public string LastCodeFor(string contact) =>
+        codes.TryGetValue(contact, out var code)
+            ? code
+            : throw new InvalidOperationException("No OTP was sent to this contact.");
+}

@@ -8,7 +8,7 @@ public sealed class User : IdentityUser<Guid>
     {
     }
 
-    public User(Guid id, string email, string userName, DateTimeOffset createdAt)
+    public User(Guid id, string? email, string userName, DateTimeOffset createdAt)
     {
         Id = id;
         Email = email;

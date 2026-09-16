@@ -51,7 +51,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     {
         using var client = factory.CreateClient();
         var sessionA = await RegisterAsync(client);
-        var sessionB = await LoginAsync(client, sessionA.User.Email, TestPassword);
+        var sessionB = await LoginAsync(client, sessionA.User.Email!, TestPassword);
         using var current = AuthenticatedClient(sessionA);
         var sessions = await current.GetFromJsonAsync<List<AuthSessionResponse>>("/api/auth/sessions");
         Assert.NotNull(sessions);
@@ -66,7 +66,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     {
         using var client = factory.CreateClient();
         var sessionA = await RegisterAsync(client);
-        var sessionB = await LoginAsync(client, sessionA.User.Email, TestPassword);
+        var sessionB = await LoginAsync(client, sessionA.User.Email!, TestPassword);
         const string newPassword = "NewPassword123!";
         using var current = AuthenticatedClient(sessionA);
         var changed = await current.PostAsJsonAsync("/api/auth/password/change",
@@ -101,10 +101,10 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
         using var client = factory.CreateClient();
         var account = await RegisterAsync(client);
         var recoveryCode = await EnableTwoFactorForTestAsync(account.User.Id, recovery: true);
-        var firstChallenge = await GetChallengeAsync(client, account.User.Email);
+        var firstChallenge = await GetChallengeAsync(client, account.User.Email!);
         var firstVerification = await client.PostAsJsonAsync("/api/auth/2fa/verify", new TwoFactorVerifyRequest(firstChallenge, recoveryCode));
         Assert.True(firstVerification.StatusCode == HttpStatusCode.OK, await firstVerification.Content.ReadAsStringAsync());
-        var secondChallenge = await GetChallengeAsync(client, account.User.Email);
+        var secondChallenge = await GetChallengeAsync(client, account.User.Email!);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/2fa/verify", new TwoFactorVerifyRequest(secondChallenge, recoveryCode))).StatusCode);
     }
 
@@ -124,7 +124,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
         var completion = await googleAuthentication.CreateCompletionAsync(
             "web",
             providerKey,
-            account.User.Email,
+            account.User.Email!,
             emailVerified: true);
         Assert.True(completion.Succeeded);
 

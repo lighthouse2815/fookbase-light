@@ -6,6 +6,7 @@ namespace Fookbase.Api.Modules.Identity.Entities;
 public sealed class RegistrationChallenge
 {
     private const int MaximumFailedAttempts = 5;
+    private const int MaximumSendsPerWindow = 5;
 
     private RegistrationChallenge()
     {
@@ -88,5 +89,64 @@ public sealed class RegistrationChallenge
         if (!IsUsableAt(now)) return false;
         ConsumedAtUtc = now;
         return true;
+    }
+
+    public bool TryRestart(
+        string codeHash,
+        string passwordHash,
+        string firstName,
+        string lastName,
+        DateOnly dateOfBirth,
+        Gender gender,
+        DateTimeOffset now)
+    {
+        if (ConsumedAtUtc is not null || !IsValidCodeHash(codeHash) || string.IsNullOrWhiteSpace(passwordHash) ||
+            string.IsNullOrWhiteSpace(firstName) || firstName.Trim().Length > 50 ||
+            string.IsNullOrWhiteSpace(lastName) || lastName.Trim().Length > 50)
+        {
+            return false;
+        }
+
+        ResetSendWindowIfNeeded(now);
+        if (SendCount >= MaximumSendsPerWindow) return false;
+
+        CodeHash = codeHash;
+        PasswordHash = passwordHash;
+        FirstName = firstName.Trim();
+        LastName = lastName.Trim();
+        DateOfBirth = dateOfBirth;
+        Gender = gender;
+        ExpiresAtUtc = now.AddMinutes(10);
+        ResendAvailableAtUtc = now.AddMinutes(1);
+        FailedAttemptCount = 0;
+        SendCount++;
+        return true;
+    }
+
+    public bool TryResend(string codeHash, DateTimeOffset now)
+    {
+        if (ConsumedAtUtc is not null || ExpiresAtUtc <= now || ResendAvailableAtUtc > now || !IsValidCodeHash(codeHash))
+        {
+            return false;
+        }
+
+        ResetSendWindowIfNeeded(now);
+        if (SendCount >= MaximumSendsPerWindow) return false;
+
+        CodeHash = codeHash;
+        ExpiresAtUtc = now.AddMinutes(10);
+        ResendAvailableAtUtc = now.AddMinutes(1);
+        FailedAttemptCount = 0;
+        SendCount++;
+        return true;
+    }
+
+    private static bool IsValidCodeHash(string value) => value.Length == 64 && value.All(Uri.IsHexDigit);
+
+    private void ResetSendWindowIfNeeded(DateTimeOffset now)
+    {
+        if (WindowStartedAtUtc.AddHours(1) > now) return;
+        WindowStartedAtUtc = now;
+        SendCount = 0;
     }
 }

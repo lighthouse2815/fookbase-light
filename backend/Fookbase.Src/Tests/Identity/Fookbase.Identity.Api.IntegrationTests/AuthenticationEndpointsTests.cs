@@ -10,6 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,125 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     : IClassFixture<IdentityApiFactory>
 {
+    [Fact]
+    public async Task Email_registration_creates_no_user_until_correct_otp_is_verified()
+    {
+        var email = $"otp-{Guid.NewGuid():N}@example.test";
+        using var client = factory.CreateClient();
+
+        var start = await client.PostAsJsonAsync(
+            "/api/auth/registration/start",
+            new RegistrationStartRequest(
+                "An",
+                "Nguyễn",
+                new DateOnly(2000, 1, 2),
+                "preferNotToSay",
+                email,
+                "Password123!"));
+
+        Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
+        Assert.Null(await userManager.FindByEmailAsync(email));
+
+        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(challenge);
+        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(email);
+        var verify = await client.PostAsJsonAsync(
+            "/api/auth/registration/verify",
+            new RegistrationVerifyRequest(challenge!.ChallengeId, code));
+
+        Assert.Equal(HttpStatusCode.Created, verify.StatusCode);
+        var user = await userManager.FindByEmailAsync(email);
+        Assert.NotNull(user);
+        Assert.True(user!.EmailConfirmed);
+    }
+
+    [Fact]
+    public async Task Phone_registration_normalizes_confirms_phone_and_initializes_profile()
+    {
+        var phone = $"09{RandomNumberGenerator.GetInt32(10_000_000, 99_999_999)}";
+        using var client = factory.CreateClient();
+        var start = await client.PostAsJsonAsync(
+            "/api/auth/registration/start",
+            new RegistrationStartRequest(
+                "Nguyễn",
+                "An",
+                new DateOnly(2000, 1, 2),
+                "female",
+                phone,
+                "Password123!"));
+
+        Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(challenge);
+        var normalizedPhone = $"+84{phone[1..]}";
+        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
+        var verify = await client.PostAsJsonAsync(
+            "/api/auth/registration/verify",
+            new RegistrationVerifyRequest(challenge!.ChallengeId, code));
+
+        Assert.Equal(HttpStatusCode.Created, verify.StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var user = await dbContext.Users.SingleAsync(item => item.PhoneNumber == normalizedPhone);
+        var profile = await dbContext.UserProfiles.SingleAsync(item => item.UserId == user.Id);
+        Assert.True(user.PhoneNumberConfirmed);
+        Assert.Null(user.Email);
+        Assert.Equal("Nguyễn An", profile.DisplayName);
+        Assert.Equal(new DateOnly(2000, 1, 2), profile.DateOfBirth);
+        Assert.Equal(Gender.Female, profile.Gender);
+    }
+
+    [Fact]
+    public async Task Registration_verification_locks_after_five_incorrect_codes_and_cannot_be_replayed()
+    {
+        var email = $"otp-lock-{Guid.NewGuid():N}@example.test";
+        using var client = factory.CreateClient();
+        var start = await client.PostAsJsonAsync(
+            "/api/auth/registration/start",
+            new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "other", email, "Password123!"));
+        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(challenge);
+
+        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(email);
+        var incorrectCode = code == "000000" ? "000001" : "000000";
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var invalid = await client.PostAsJsonAsync(
+                "/api/auth/registration/verify",
+                new RegistrationVerifyRequest(challenge!.ChallengeId, incorrectCode));
+            Assert.Equal(HttpStatusCode.Unauthorized, invalid.StatusCode);
+        }
+
+        var locked = await client.PostAsJsonAsync(
+            "/api/auth/registration/verify",
+            new RegistrationVerifyRequest(challenge!.ChallengeId, code));
+        Assert.Equal(HttpStatusCode.Unauthorized, locked.StatusCode);
+    }
+
+    [Fact]
+    public void Registration_challenge_allows_at_most_five_sends_per_hour()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var challenge = RegistrationChallenge.Create(
+            new ContactIdentifier(ContactKind.Email, "resend@example.test"),
+            new string('A', 64),
+            "identity-password-hash",
+            "Nguyễn",
+            "An",
+            new DateOnly(2000, 1, 2),
+            Gender.PreferNotToSay,
+            now);
+
+        for (var send = 1; send < 5; send++)
+        {
+            Assert.True(challenge.TryResend(new string((char)('A' + send), 64), now.AddMinutes(send)));
+        }
+
+        Assert.False(challenge.TryResend(new string('F', 64), now.AddMinutes(5)));
+    }
+
     [Theory]
     [InlineData("0912 345 678", "+84912345678")]
     [InlineData("+84912345678", "+84912345678")]

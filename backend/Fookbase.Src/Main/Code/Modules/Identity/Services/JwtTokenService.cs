@@ -20,11 +20,18 @@ public sealed class JwtTokenService(JwtOptions options)
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             ,new Claim("sid", sessionId.ToString())
         };
+        if (!string.IsNullOrWhiteSpace(user.Email))
+        {
+            claims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
+        }
+        else if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
+        {
+            claims.Add(new Claim(ClaimTypes.MobilePhone, user.PhoneNumber));
+        }
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
         var signingKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(options.SigningKey));

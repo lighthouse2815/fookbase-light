@@ -20,7 +20,8 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.BirthdayVisibility)
             .HasDefaultValue(BirthdayVisibility.OnlyMe);
         builder.Property(profile => profile.Gender)
-            .HasDefaultValue(Gender.PreferNotToSay);
+            .HasDefaultValue(Gender.PreferNotToSay)
+            .ValueGeneratedNever();
         builder.Property(profile => profile.CurrentCity).HasMaxLength(100);
         builder.Property(profile => profile.Hometown).HasMaxLength(100);
         builder.Property(profile => profile.Workplace).HasMaxLength(150);
