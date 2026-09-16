@@ -8,7 +8,6 @@ public sealed record ResetPasswordRequest(
 {
     public string? Identifier { get; init; }
     public string? Code { get; init; }
-    public string? FirebaseIdToken { get; init; }
 
     public string? EffectiveIdentifier => Identifier ?? Email;
 }

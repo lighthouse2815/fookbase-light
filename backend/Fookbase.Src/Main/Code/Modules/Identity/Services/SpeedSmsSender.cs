@@ -12,7 +12,7 @@ public sealed class SpeedSmsSender(HttpClient client, SmsOptions options)
         var recipient = phoneNumber.StartsWith("+84", StringComparison.Ordinal) ? $"0{phoneNumber[3..]}" : phoneNumber;
         using var request = new HttpRequestMessage(HttpMethod.Post, "index.php/sms/send")
         {
-            Content = JsonContent.Create(new { to = new[] { recipient }, content = $"Ma xac nhan Fookbase cua ban la: {code}", sms_type = 2, sender = options.Sender })
+            Content = JsonContent.Create(new { to = new[] { recipient }, content = $"Ma xac nhan Fookbase cua ban la: {code}", sms_type = 4 })
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{options.AccessToken}:x")));
         using var response = await client.SendAsync(request, cancellationToken);

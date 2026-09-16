@@ -15,15 +15,13 @@ public static class DependencyInjection
         EmailOptions emailOptions,
         AdminOptions adminOptions,
         GoogleAuthenticationOptions googleAuthenticationOptions,
-        SmsOptions smsOptions,
-        FirebaseAuthenticationOptions firebaseAuthenticationOptions)
+        SmsOptions smsOptions)
     {
         jwtOptions.Validate();
         emailOptions.Validate();
         adminOptions.Validate();
         googleAuthenticationOptions.Validate(production: false);
         smsOptions.Validate(production: false);
-        firebaseAuthenticationOptions.Validate(production: false);
 
         services
             .AddIdentityCore<User>(options =>
@@ -48,7 +46,6 @@ public static class DependencyInjection
         services.AddSingleton(adminOptions);
         services.AddSingleton(googleAuthenticationOptions);
         services.AddSingleton(smsOptions);
-        services.AddSingleton(firebaseAuthenticationOptions);
         services.AddSingleton(TimeProvider.System);
         services.AddHttpClient<SpeedSmsSender>((provider, client) =>
         {
@@ -61,7 +58,6 @@ public static class DependencyInjection
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
         services.AddScoped<GoogleAuthenticationService>();
-        services.AddSingleton<IFirebasePhoneTokenVerifier, FirebasePhoneTokenVerifier>();
         services.AddScoped<IGoogleExternalIdentityReader, GoogleExternalIdentityReader>();
         services.AddScoped<AccountModerationService>();
         services.AddScoped<RegistrationUseCase>();

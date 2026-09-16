@@ -20,7 +20,6 @@ public sealed class RegistrationChallengeService(
     UserProfileService userProfileService,
     UserPrivacySettingsService privacySettingsService,
     AuthenticationService authenticationService,
-    IFirebasePhoneTokenVerifier firebasePhoneTokenVerifier,
     TimeProvider timeProvider)
 {
     private const int MinimumAge = 13;
@@ -68,11 +67,6 @@ public sealed class RegistrationChallengeService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        if (input.Contact.Kind == ContactKind.Phone)
-        {
-            return ApplicationResult<RegistrationChallengeResponse>.Success(ToResponse(challenge));
-        }
-
         try
         {
             await contactOtpSender.SendAsync(input.Contact, code, cancellationToken);
@@ -95,14 +89,6 @@ public sealed class RegistrationChallengeService(
             item => item.Id == request.ChallengeId,
             cancellationToken);
         if (challenge is null) return InvalidCode<RegistrationChallengeResponse>();
-
-        if (challenge.ContactKind == ContactKind.Phone)
-        {
-            return ApplicationResult<RegistrationChallengeResponse>.Failure(new ApplicationError(
-                "firebase_phone_resend_client_side",
-                "Phone verification codes must be resent through Firebase.",
-                ApplicationErrorType.Validation));
-        }
 
         var now = timeProvider.GetUtcNow();
         var code = CreateCode();
@@ -131,7 +117,8 @@ public sealed class RegistrationChallengeService(
         string? userAgent,
         CancellationToken cancellationToken = default)
     {
-        if (request.ChallengeId == Guid.Empty)
+        if (request.ChallengeId == Guid.Empty || string.IsNullOrWhiteSpace(request.Code) || request.Code.Length != 6 ||
+            !request.Code.All(char.IsAsciiDigit))
         {
             return InvalidCode<AuthenticationResponse>();
         }
@@ -142,44 +129,21 @@ public sealed class RegistrationChallengeService(
         var now = timeProvider.GetUtcNow();
         if (challenge is null || !challenge.IsUsableAt(now)) return InvalidCode<AuthenticationResponse>();
 
-        string? suppliedHash = null;
-        if (challenge.ContactKind == ContactKind.Email)
+        var suppliedHash = Hash(request.Code);
+        if (!CryptographicOperations.FixedTimeEquals(
+                Convert.FromHexString(challenge.CodeHash),
+                Convert.FromHexString(suppliedHash)))
         {
-            if (string.IsNullOrWhiteSpace(request.Code) || request.Code.Length != 6 || !request.Code.All(char.IsAsciiDigit))
-            {
-                return InvalidCode<AuthenticationResponse>();
-            }
-
-            suppliedHash = Hash(request.Code);
-            if (!CryptographicOperations.FixedTimeEquals(
-                    Convert.FromHexString(challenge.CodeHash),
-                    Convert.FromHexString(suppliedHash)))
-            {
-                await dbContext.RegistrationChallenges
-                    .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now && item.FailedAttemptCount < 5)
-                    .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.FailedAttemptCount, item => item.FailedAttemptCount + 1), cancellationToken);
-                return InvalidCode<AuthenticationResponse>();
-            }
-        }
-        else
-        {
-            var verification = await firebasePhoneTokenVerifier.VerifyAsync(request.FirebaseIdToken, challenge.Contact, cancellationToken);
-            if (!verification.Succeeded)
-            {
-                return ApplicationResult<AuthenticationResponse>.Failure(verification.Error!);
-            }
+            var attempts = await dbContext.RegistrationChallenges
+                .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now && item.FailedAttemptCount < 5)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.FailedAttemptCount, item => item.FailedAttemptCount + 1), cancellationToken);
+            return InvalidCode<AuthenticationResponse>();
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        var consumeQuery = dbContext.RegistrationChallenges
+        var consumed = await dbContext.RegistrationChallenges
             .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now &&
-                item.FailedAttemptCount < 5);
-        if (suppliedHash is not null)
-        {
-            consumeQuery = consumeQuery.Where(item => item.CodeHash == suppliedHash);
-        }
-
-        var consumed = await consumeQuery
+                item.FailedAttemptCount < 5 && item.CodeHash == suppliedHash)
             .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.ConsumedAtUtc, now), cancellationToken);
         if (consumed != 1)
         {
@@ -323,11 +287,7 @@ public sealed class RegistrationChallengeService(
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
     private static RegistrationChallengeResponse ToResponse(RegistrationChallenge challenge) =>
-        new(
-            challenge.Id,
-            challenge.ExpiresAtUtc,
-            challenge.ResendAvailableAtUtc,
-            challenge.ContactKind == ContactKind.Email ? "emailOtp" : "firebasePhone");
+        new(challenge.Id, challenge.ExpiresAtUtc, challenge.ResendAvailableAtUtc);
 
     private static ApplicationResult<T> Validation<T>(IReadOnlyDictionary<string, string[]> errors) =>
         ApplicationResult<T>.Failure(new ApplicationError("validation_failed", "One or more validation errors occurred.", ApplicationErrorType.Validation, errors));

@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { ChangePasswordDetails, Credentials, LoginResponse, RegistrationChallenge, RegistrationDetails, RegistrationProof } from '../api/auth'
+import type { ChangePasswordDetails, Credentials, LoginResponse, RegistrationChallenge, RegistrationDetails } from '../api/auth'
 import type { AuthSession } from './session'
 
 export interface AuthContextValue {
@@ -9,7 +9,7 @@ export interface AuthContextValue {
   linkGoogleSignIn: (code: string, password: string) => Promise<LoginResponse>
   completeTwoFactor: (challenge: string, code: string) => Promise<void>
   signUp: (details: RegistrationDetails) => Promise<RegistrationChallenge>
-  completeRegistration: (challengeId: string, proof: RegistrationProof) => Promise<void>
+  completeRegistration: (challengeId: string, code: string) => Promise<void>
   resendRegistration: (challengeId: string) => Promise<RegistrationChallenge>
   changePassword: (details: ChangePasswordDetails) => Promise<void>
   signOut: () => Promise<void>

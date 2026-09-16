@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
@@ -18,7 +19,7 @@ public sealed class AuthenticationService(
     JwtTokenService tokenService,
     RoleManager<IdentityRole<Guid>> roleManager,
     IEmailSender emailSender,
-    IFirebasePhoneTokenVerifier firebasePhoneTokenVerifier,
+    IContactOtpSender contactOtpSender,
     EmailOptions emailOptions,
     AdminOptions adminOptions,
     ILogger<AuthenticationService> logger,
@@ -534,12 +535,44 @@ public sealed class AuthenticationService(
         return ApplicationResult.Success();
     }
 
-    private Task<ApplicationResult> RequestPhonePasswordResetAsync(
+    private async Task<ApplicationResult> RequestPhonePasswordResetAsync(
         ContactIdentifier contact,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(ApplicationResult.Success());
+        var user = await FindByIdentifierAsync(contact.Value, cancellationToken);
+        if (user is null || !user.IsActive)
+        {
+            return ApplicationResult.Success();
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var code = CreateOtp();
+        var challenge = await dbContext.PasswordResetChallenges.SingleOrDefaultAsync(
+            item => item.UserId == user.Id,
+            cancellationToken);
+        if (challenge is null)
+        {
+            challenge = PasswordResetChallenge.Create(user.Id, contact.Value, HashOtp(code), now);
+            dbContext.PasswordResetChallenges.Add(challenge);
+        }
+        else if (!challenge.TryResend(HashOtp(code), now))
+        {
+            return ApplicationResult.Success();
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await contactOtpSender.SendAsync(contact, code, cancellationToken);
+            return ApplicationResult.Success();
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Unable to send password reset SMS for user {UserId}.", user.Id);
+            dbContext.PasswordResetChallenges.Remove(challenge);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ApplicationResult.Failure(SmsUnavailable());
+        }
     }
 
     private async Task<ApplicationResult> ResetPhonePasswordAsync(
@@ -547,8 +580,8 @@ public sealed class AuthenticationService(
         ResetPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.FirebaseIdToken) || string.IsNullOrWhiteSpace(request.Password) ||
-            request.Password != request.ConfirmPassword)
+        if (string.IsNullOrWhiteSpace(request.Code) || request.Code.Length != 6 || !request.Code.All(char.IsAsciiDigit) ||
+            string.IsNullOrWhiteSpace(request.Password) || request.Password != request.ConfirmPassword)
         {
             return ApplicationResult.Failure(InvalidResetRequest());
         }
@@ -559,14 +592,34 @@ public sealed class AuthenticationService(
             return ApplicationResult.Failure(InvalidResetRequest());
         }
 
-        var verification = await firebasePhoneTokenVerifier.VerifyAsync(request.FirebaseIdToken, contact.Value, cancellationToken);
-        if (!verification.Succeeded)
+        var challenge = await dbContext.PasswordResetChallenges.AsNoTracking().SingleOrDefaultAsync(
+            item => item.UserId == user.Id && item.Contact == contact.Value,
+            cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        var codeHash = HashOtp(request.Code);
+        if (challenge is null || !challenge.IsUsableAt(now) || !CryptographicOperations.FixedTimeEquals(
+                Convert.FromHexString(challenge.CodeHash), Convert.FromHexString(codeHash)))
         {
-            return ApplicationResult.Failure(verification.Error!);
+            if (challenge is not null && challenge.IsUsableAt(now))
+            {
+                await dbContext.PasswordResetChallenges
+                    .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now && item.FailedAttemptCount < 5)
+                    .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.FailedAttemptCount, item => item.FailedAttemptCount + 1), cancellationToken);
+            }
+            return ApplicationResult.Failure(InvalidResetRequest());
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var consumed = await dbContext.PasswordResetChallenges
+            .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now &&
+                item.FailedAttemptCount < 5 && item.CodeHash == codeHash)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.ConsumedAtUtc, now), cancellationToken);
+        if (consumed != 1)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ApplicationResult.Failure(InvalidResetRequest());
+        }
+
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         var reset = await userManager.ResetPasswordAsync(user, token, request.Password);
         if (!reset.Succeeded)
@@ -852,6 +905,12 @@ public sealed class AuthenticationService(
             "Email delivery is not configured or is temporarily unavailable.",
             ApplicationErrorType.Conflict);
 
+    private static ApplicationError SmsUnavailable() =>
+        new(
+            "sms_unavailable",
+            "SMS delivery is not configured or is temporarily unavailable.",
+            ApplicationErrorType.Conflict);
+
     private static ApplicationError InvalidVerificationLink() =>
         new(
             "invalid_verification_link",
@@ -864,4 +923,8 @@ public sealed class AuthenticationService(
             "The password reset request is invalid or expired.",
             ApplicationErrorType.Validation);
 
+    private static string CreateOtp() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+
+    private static string HashOtp(string value) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 }

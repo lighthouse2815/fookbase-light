@@ -31,11 +31,6 @@ public static class ProductionConfigurationValidator
             ?? new SmsOptions();
         sms.Validate(production: true);
 
-        var firebaseAuthentication = configuration
-            .GetSection(FirebaseAuthenticationOptions.SectionName)
-            .Get<FirebaseAuthenticationOptions>() ?? new FirebaseAuthenticationOptions();
-        firebaseAuthentication.Validate(production: true);
-
         var cloudinary = configuration.GetSection(CloudinaryOptions.SectionName).Get<CloudinaryOptions>()
             ?? throw new InvalidOperationException("Cloudinary configuration is required in Production.");
         cloudinary.Validate();

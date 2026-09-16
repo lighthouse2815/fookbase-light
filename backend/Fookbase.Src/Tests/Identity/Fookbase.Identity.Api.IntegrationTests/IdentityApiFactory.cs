@@ -1,6 +1,5 @@
 using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Users.Data;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Hosting;
@@ -47,8 +46,6 @@ public class IdentityApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("GoogleAuthentication:ClientSecret", "test-google-client-secret");
         builder.UseSetting("GoogleAuthentication:WebBaseUrl", "http://web.example.test");
         builder.UseSetting("GoogleAuthentication:ZolaLightBaseUrl", "http://zola.example.test");
-        builder.UseSetting("FirebaseAuthentication:Enabled", "true");
-        builder.UseSetting("FirebaseAuthentication:ProjectId", "fookbase-test");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IEmailSender>();
@@ -61,8 +58,6 @@ public class IdentityApiFactory : WebApplicationFactory<Program>
                 provider.GetRequiredService<TestContactOtpSender>());
             services.RemoveAll<IGoogleExternalIdentityReader>();
             services.AddScoped<IGoogleExternalIdentityReader, TestGoogleExternalIdentityReader>();
-            services.RemoveAll<IFirebasePhoneTokenVerifier>();
-            services.AddSingleton<IFirebasePhoneTokenVerifier, TestFirebasePhoneTokenVerifier>();
         });
     }
 
@@ -114,6 +109,4 @@ public sealed class TestContactOtpSender : IContactOtpSender
         codes.TryGetValue(contact, out var code)
             ? code
             : throw new InvalidOperationException("No OTP was sent to this contact.");
-
-    public bool HasCodeFor(string contact) => codes.ContainsKey(contact);
 }
