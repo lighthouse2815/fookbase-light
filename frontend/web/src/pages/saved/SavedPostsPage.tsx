@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { postsApi, type Post } from '../../api/posts'
+import { usersApi, type UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import PaginationControls from '../../shared/components/PaginationControls'
 import LivePostCard from '../feed/components/LivePostCard'
@@ -9,10 +10,26 @@ export default function SavedPostsPage() {
   const { session } = useAuth()
   const requestRef = useRef<AbortController | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
+  const [authors, setAuthors] = useState<Record<string, UserProfile>>({})
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const loadAuthors = useCallback(async (items: readonly Post[], controller: AbortController) => {
+    const authorIds = [...new Set(items.flatMap((post) => post.authorUserId ? [post.authorUserId] : []))]
+    if (authorIds.length === 0) return
+
+    const results = await Promise.allSettled(authorIds.map((authorId) => usersApi.getById(authorId)))
+    if (controller.signal.aborted || requestRef.current !== controller) return
+    setAuthors((current) => {
+      const next = { ...current }
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') next[authorIds[index]] = result.value
+      })
+      return next
+    })
+  }, [])
 
   const load = useCallback(async (cursor?: string) => {
     const append = cursor !== undefined
@@ -29,6 +46,7 @@ export default function SavedPostsPage() {
         ? [...current, ...page.items.filter((item) => !current.some((post) => post.id === item.id))]
         : page.items)
       setNextCursor(page.nextCursor)
+      void loadAuthors(page.items, controller)
     } catch (requestError) {
       if (controller.signal.aborted || requestRef.current !== controller) return
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải bài viết đã lưu.')
@@ -38,7 +56,7 @@ export default function SavedPostsPage() {
         else setIsLoading(false)
       }
     }
-  }, [])
+  }, [loadAuthors])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -51,6 +69,7 @@ export default function SavedPostsPage() {
         if (controller.signal.aborted || requestRef.current !== controller) return
         setPosts(page.items)
         setNextCursor(page.nextCursor)
+        void loadAuthors(page.items, controller)
       } catch (requestError) {
         if (controller.signal.aborted || requestRef.current !== controller) return
         setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải bài viết đã lưu.')
@@ -65,7 +84,7 @@ export default function SavedPostsPage() {
       requestRef.current = null
       activeController?.abort()
     }
-  }, [])
+  }, [loadAuthors])
 
   const updatePost = (updated: Post) => {
     setPosts((current) => current.map((post) => post.id === updated.id ? updated : post))
@@ -79,7 +98,7 @@ export default function SavedPostsPage() {
         {error && <div role="alert" className="rounded-lg border border-[#e41e3f]/40 bg-[#e41e3f]/10 p-3 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void load()} className="mt-2 rounded-md border border-[#ff8a9b]/50 bg-transparent px-3 py-1 text-xs font-semibold text-[#ff8a9b] cursor-pointer">Thử lại</button></div>}
         {isLoading && <><div className="h-52 animate-pulse rounded-xl bg-surface-2" /><div className="h-52 animate-pulse rounded-xl bg-surface-2" /></>}
         {!isLoading && !error && posts.length === 0 && <p className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">Chưa có bài viết đã lưu.</p>}
-        {posts.map((post) => <LivePostCard key={post.id} post={post} currentUserId={session!.user.id} onPostUpdated={updatePost} onPostDeleted={(postId) => setPosts((current) => current.filter((post) => post.id !== postId))} />)}
+        {posts.map((post) => <LivePostCard key={post.id} post={post} author={post.authorUserId ? authors[post.authorUserId] : undefined} currentUserId={session!.user.id} onPostUpdated={updatePost} onPostDeleted={(postId) => setPosts((current) => current.filter((post) => post.id !== postId))} />)}
         {!isLoading && <PaginationControls hasMore={nextCursor !== null} isLoading={isLoadingMore} error={null} label="Tải thêm bài viết đã lưu" onLoadMore={() => void load(nextCursor ?? undefined)} />}
       </div>
     </main>
