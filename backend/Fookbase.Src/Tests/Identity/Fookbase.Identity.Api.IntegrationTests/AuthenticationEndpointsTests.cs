@@ -73,13 +73,15 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
                 "Password123!"));
 
         Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
-        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
-        Assert.NotNull(challenge);
+        using var challengeDocument = await start.Content.ReadFromJsonAsync<JsonDocument>();
+        Assert.NotNull(challengeDocument);
+        Assert.Equal("firebasePhone", challengeDocument!.RootElement.GetProperty("verificationMethod").GetString());
+        var challengeId = challengeDocument.RootElement.GetProperty("challengeId").GetGuid();
         var normalizedPhone = $"+84{phone[1..]}";
-        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
+        Assert.False(factory.Services.GetRequiredService<TestContactOtpSender>().HasCodeFor(normalizedPhone));
         var verify = await client.PostAsJsonAsync(
             "/api/auth/registration/verify",
-            new RegistrationVerifyRequest(challenge!.ChallengeId, code));
+            new { challengeId, firebaseIdToken = TestFirebasePhoneTokenVerifier.TokenFor(normalizedPhone) });
 
         Assert.Equal(HttpStatusCode.Created, verify.StatusCode);
         using var scope = factory.Services.CreateScope();
@@ -92,6 +94,33 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal("nguyen.an", profile.Username);
         Assert.Equal(new DateOnly(2000, 1, 2), profile.DateOfBirth);
         Assert.Equal(Gender.Female, profile.Gender);
+    }
+
+    [Fact]
+    public async Task Phone_registration_rejects_a_firebase_token_for_another_phone()
+    {
+        var phone = $"09{RandomNumberGenerator.GetInt32(10_000_000, 99_999_999)}";
+        var anotherPhone = $"09{RandomNumberGenerator.GetInt32(10_000_000, 99_999_999)}";
+        var normalizedPhone = $"+84{phone[1..]}";
+        using var client = factory.CreateClient();
+        var start = await client.PostAsJsonAsync(
+            "/api/auth/registration/start",
+            new RegistrationStartRequest("Nguyễn", "An", new DateOnly(2000, 1, 2), "female", phone, "Password123!"));
+        using var challengeDocument = await start.Content.ReadFromJsonAsync<JsonDocument>();
+        Assert.NotNull(challengeDocument);
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/registration/verify",
+            new
+            {
+                challengeId = challengeDocument!.RootElement.GetProperty("challengeId").GetGuid(),
+                firebaseIdToken = TestFirebasePhoneTokenVerifier.TokenFor($"+84{anotherPhone[1..]}")
+            });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.False(await dbContext.Users.AnyAsync(user => user.PhoneNumber == normalizedPhone));
     }
 
     [Fact]

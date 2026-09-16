@@ -114,4 +114,6 @@ public sealed class TestContactOtpSender : IContactOtpSender
         codes.TryGetValue(contact, out var code)
             ? code
             : throw new InvalidOperationException("No OTP was sent to this contact.");
+
+    public bool HasCodeFor(string contact) => codes.ContainsKey(contact);
 }

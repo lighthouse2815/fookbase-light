@@ -8,6 +8,9 @@ public sealed record RegistrationStartRequest(
     string? Contact,
     string? Password);
 
-public sealed record RegistrationVerifyRequest(Guid ChallengeId, string? Code);
+public sealed record RegistrationVerifyRequest(Guid ChallengeId, string? Code)
+{
+    public string? FirebaseIdToken { get; init; }
+}
 
 public sealed record RegistrationResendRequest(Guid ChallengeId);
