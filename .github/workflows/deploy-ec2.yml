@@ -39,7 +39,13 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          git archive --format=tar "$GITHUB_SHA" | tar -x -C /srv/fookbase-light
+          release_dir=$(mktemp -d)
+          trap 'rm -rf "$release_dir"' EXIT
+          git archive --format=tar "$GITHUB_SHA" | tar -x -C "$release_dir"
+          rsync -a --delete \
+            --exclude '.env.production*' \
+            --exclude 'private/' \
+            "$release_dir/" /srv/fookbase-light/
 
       - name: Deploy API and apply migrations
         shell: bash
