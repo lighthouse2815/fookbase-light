@@ -195,6 +195,19 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     }
 
     [Fact]
+    public async Task Registration_start_obeys_the_same_sixty_second_delivery_cooldown()
+    {
+        var email = $"otp-cooldown-{Guid.NewGuid():N}@example.test";
+        using var client = factory.CreateClient();
+        var request = new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "other", email, "Password123!");
+
+        Assert.Equal(HttpStatusCode.Accepted, (await client.PostAsJsonAsync("/api/auth/registration/start", request)).StatusCode);
+        var repeated = await client.PostAsJsonAsync("/api/auth/registration/start", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, repeated.StatusCode);
+    }
+
+    [Fact]
     public void Registration_challenge_allows_at_most_five_sends_per_hour()
     {
         var now = DateTimeOffset.UtcNow;

@@ -100,7 +100,7 @@ public sealed class RegistrationChallenge
         Gender gender,
         DateTimeOffset now)
     {
-        if (ConsumedAtUtc is not null || !IsValidCodeHash(codeHash) || string.IsNullOrWhiteSpace(passwordHash) ||
+        if (ConsumedAtUtc is not null || ResendAvailableAtUtc > now || !IsValidCodeHash(codeHash) || string.IsNullOrWhiteSpace(passwordHash) ||
             string.IsNullOrWhiteSpace(firstName) || firstName.Trim().Length > 50 ||
             string.IsNullOrWhiteSpace(lastName) || lastName.Trim().Length > 50)
         {
