@@ -133,10 +133,13 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "male", phone, "Password123!"));
         var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
         Assert.NotNull(challenge);
-        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor($"+84{phone[1..]}");
+        var normalizedPhone = $"+84{phone[1..]}";
         var verify = await client.PostAsJsonAsync(
             "/api/auth/registration/verify",
-            new RegistrationVerifyRequest(challenge!.ChallengeId, code));
+            new RegistrationVerifyRequest(challenge!.ChallengeId, null)
+            {
+                FirebaseIdToken = TestFirebasePhoneTokenVerifier.TokenFor(normalizedPhone)
+            });
         Assert.Equal(HttpStatusCode.Created, verify.StatusCode);
 
         var login = await client.PostAsJsonAsync(
@@ -163,7 +166,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     }
 
     [Fact]
-    public async Task Phone_password_reset_uses_otp_and_revokes_existing_sessions()
+    public async Task Phone_password_reset_uses_a_firebase_token_and_revokes_existing_sessions()
     {
         var phone = $"09{RandomNumberGenerator.GetInt32(10_000_000, 99_999_999)}";
         const string oldPassword = "Password123!";
@@ -175,21 +178,29 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var registration = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
         Assert.NotNull(registration);
         var normalizedPhone = $"+84{phone[1..]}";
-        var registrationCode = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
         var verify = await client.PostAsJsonAsync(
             "/api/auth/registration/verify",
-            new RegistrationVerifyRequest(registration!.ChallengeId, registrationCode));
+            new RegistrationVerifyRequest(registration!.ChallengeId, null)
+            {
+                FirebaseIdToken = TestFirebasePhoneTokenVerifier.TokenFor(normalizedPhone)
+            });
         var initialSession = await ReadAuthenticationResponseAsync(verify);
 
         var forgot = await client.PostAsJsonAsync(
             "/api/auth/password/forgot",
             new { identifier = phone });
         Assert.Equal(HttpStatusCode.NoContent, forgot.StatusCode);
-        var resetCode = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
+        Assert.False(factory.Services.GetRequiredService<TestContactOtpSender>().HasCodeFor(normalizedPhone));
 
         var reset = await client.PostAsJsonAsync(
             "/api/auth/password/reset",
-            new { identifier = phone, code = resetCode, password = newPassword, confirmPassword = newPassword });
+            new
+            {
+                identifier = phone,
+                firebaseIdToken = TestFirebasePhoneTokenVerifier.TokenFor(normalizedPhone),
+                password = newPassword,
+                confirmPassword = newPassword
+            });
 
         Assert.Equal(HttpStatusCode.NoContent, reset.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync(
