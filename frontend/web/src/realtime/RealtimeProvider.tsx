@@ -28,6 +28,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const [nextNotificationCursor, setNextNotificationCursor] = useState<string | null>(null)
   const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = useState(false)
   const [typingConversationIds, setTypingConversationIds] = useState<ReadonlySet<string>>(new Set())
+  const [onlineUserIds, setOnlineUserIds] = useState<ReadonlySet<string>>(new Set())
   const [readAtByConversation, setReadAtByConversation] = useState<ReadonlyMap<string, string>>(new Map())
   const messagesConnectionRef = useRef<ReturnType<HubConnectionBuilder['build']> | null>(null)
   const notificationsConnectionRef = useRef<ReturnType<HubConnectionBuilder['build']> | null>(null)
@@ -154,6 +155,17 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       }, 3_000)
       typingTimeouts.set(typing.conversationId, timeoutId)
     })
+    connection.on('PresenceSnapshot', (snapshot: { userIds: string[] }) => {
+      setOnlineUserIds(new Set(snapshot.userIds))
+    })
+    connection.on('PresenceChanged', (presence: { userId: string; isOnline: boolean }) => {
+      setOnlineUserIds((current) => {
+        const next = new Set(current)
+        if (presence.isOnline) next.add(presence.userId)
+        else next.delete(presence.userId)
+        return next
+      })
+    })
     connection.on('MessagesRead', (read: MessagesRead) => {
       if (read.readerUserId === session.user.id) return
 
@@ -186,6 +198,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       active = false
       connection.off('MessageReceived')
       connection.off('TypingStarted')
+      connection.off('PresenceSnapshot')
+      connection.off('PresenceChanged')
       connection.off('MessagesRead')
       if (messagesConnectionRef.current === connection) messagesConnectionRef.current = null
       notificationsConnection.off('NotificationReceived')
@@ -193,6 +207,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       for (const timeoutId of typingTimeouts.values()) window.clearTimeout(timeoutId)
       typingTimeouts.clear()
       setTypingConversationIds(new Set())
+      setOnlineUserIds(new Set())
       setIncomingMessages([])
       setNotifications([])
       setUnreadNotificationCount(0)
@@ -211,13 +226,14 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     hasMoreNotifications: nextNotificationCursor !== null,
     isLoadingMoreNotifications,
     typingConversationIds,
+    onlineUserIds,
     readAtByConversation,
     markConversationRead,
     markNotificationRead,
     markAllNotificationsRead,
     loadMoreNotifications,
     sendTyping,
-  }), [incomingMessages, isLoadingMoreNotifications, loadMoreNotifications, markAllNotificationsRead, markConversationRead, markNotificationRead, nextNotificationCursor, notifications, readAtByConversation, sendTyping, typingConversationIds, unreadNotificationCount])
+  }), [incomingMessages, isLoadingMoreNotifications, loadMoreNotifications, markAllNotificationsRead, markConversationRead, markNotificationRead, nextNotificationCursor, notifications, onlineUserIds, readAtByConversation, sendTyping, typingConversationIds, unreadNotificationCount])
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>
 }

@@ -10,6 +10,7 @@ export interface RealtimeContextValue {
   hasMoreNotifications: boolean
   isLoadingMoreNotifications: boolean
   typingConversationIds: ReadonlySet<string>
+  onlineUserIds: ReadonlySet<string>
   readAtByConversation: ReadonlyMap<string, string>
   markConversationRead: (conversationId: string, lastReadMessageId?: string) => void
   markNotificationRead: (notificationId: string) => void

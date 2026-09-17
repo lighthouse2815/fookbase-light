@@ -18,6 +18,8 @@ public sealed class MessagesHub : Hub
             if (presence is not null)
             {
                 await presence.ConnectedAsync(actorUserId, Context.ConnectionId, Context.ConnectionAborted);
+                var onlineUserIds = await presence.GetVisibleOnlineUserIdsAsync(actorUserId, Context.ConnectionAborted);
+                await Clients.Caller.SendAsync("PresenceSnapshot", new { UserIds = onlineUserIds }, Context.ConnectionAborted);
             }
         }
 

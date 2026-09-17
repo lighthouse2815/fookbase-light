@@ -365,6 +365,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     connection.on('ConversationUpdated', () => { void loadConversations().catch(() => undefined); if (activeId) void messengerApi.conversation(activeId).then((updated) => setConversations((current) => current.map((item) => item.id === updated.id ? updated : item))).catch(() => undefined) })
     connection.on('ParticipantRemoved', (event: { conversationId: string; userId: string }) => { if (event.userId === session.user.id) { setConversations((current) => current.filter((conversation) => conversation.id !== event.conversationId)); setActiveId((current) => current === event.conversationId ? null : current) } else void loadConversations().catch(() => undefined) })
     connection.on('TypingChanged', (event: { conversationId: string; senderUserId: string; isTyping: boolean }) => { if (event.conversationId === activeId && event.senderUserId !== session.user.id) { setTyping(event.isTyping); window.setTimeout(() => setTyping(false), 3000) } })
+    connection.on('PresenceSnapshot', (snapshot: { userIds: string[] }) => setOnlineIds(new Set(snapshot.userIds)))
     connection.on('PresenceChanged', (event: { userId: string; isOnline: boolean }) => setOnlineIds((current) => {
       const next = new Set(current)
       if (event.isOnline) next.add(event.userId)

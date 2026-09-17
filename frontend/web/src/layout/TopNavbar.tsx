@@ -149,11 +149,12 @@ function formatMessageTime(value: string) {
   return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
 }
 
-function FloatingConversation({ conversation, profile, currentUserId, incomingMessages, onClose, onMinimize, onRead, onMessageSent }: {
+function FloatingConversation({ conversation, profile, currentUserId, incomingMessages, isOnline, onClose, onMinimize, onRead, onMessageSent }: {
   conversation: Conversation
   profile?: UserProfile
   currentUserId: string
   incomingMessages: IncomingMessage[]
+  isOnline: boolean
   onClose: () => void
   onMinimize: () => void
   onRead: (conversationId: string, messageId?: string) => void
@@ -211,7 +212,7 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
   return <section className="fixed bottom-0 right-3 z-[60] flex h-[min(34rem,calc(100vh-4rem))] w-[min(23rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-t-xl border border-border bg-surface shadow-2xl sm:right-5" aria-label={`Đoạn chat với ${name}`}>
     <header className="flex shrink-0 items-center gap-2 border-b border-border bg-surface px-3 py-2.5">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
-      <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{name}</strong><small className="block truncate text-xs text-text-muted">Đang hoạt động</small></span>
+      <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{name}</strong><small className="block truncate text-xs text-text-muted">{isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</small></span>
       <button type="button" onClick={onMinimize} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-2" aria-label="Thu nhỏ đoạn chat">−</button>
       <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-2" aria-label="Đóng đoạn chat">×</button>
     </header>
@@ -245,6 +246,7 @@ export default function TopNavbar() {
     unreadMessageCount,
     unreadNotificationCount,
     markConversationRead,
+    onlineUserIds,
   } = useRealtime()
   const { language, setLanguage, setTheme, t, theme } = usePreferences()
   const location = useLocation()
@@ -614,6 +616,7 @@ export default function TopNavbar() {
           profile={openConversation.participantUserId ? messageProfiles.get(openConversation.participantUserId) : undefined}
           currentUserId={session!.user.id}
           incomingMessages={incomingMessages}
+          isOnline={openConversation.participantUserId !== null && onlineUserIds.has(openConversation.participantUserId)}
           onClose={() => setOpenConversation(null)}
           onMinimize={() => setIsConversationMinimized(true)}
           onRead={markFloatingConversationRead}

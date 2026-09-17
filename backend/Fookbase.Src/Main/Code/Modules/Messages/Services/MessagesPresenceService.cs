@@ -42,6 +42,42 @@ public sealed class MessagesPresenceService(
         await BroadcastAsync(userId, false, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Guid>> GetVisibleOnlineUserIdsAsync(Guid viewerUserId, CancellationToken cancellationToken)
+    {
+        var onlineUserIds = connections
+            .Where(entry => !entry.Value.IsEmpty && entry.Key != viewerUserId)
+            .Select(entry => entry.Key)
+            .ToArray();
+        if (onlineUserIds.Length == 0)
+        {
+            return [];
+        }
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var conversationIds = await dbContext.ConversationParticipants.AsNoTracking()
+            .Where(participant => participant.UserId == viewerUserId && participant.LeftAtUtc == null)
+            .Select(participant => participant.ConversationId)
+            .ToArrayAsync(cancellationToken);
+        if (conversationIds.Length == 0)
+        {
+            return [];
+        }
+
+        var blockedUserIds = await dbContext.BlockedUsers.AsNoTracking()
+            .Where(block => block.BlockerUserId == viewerUserId || block.BlockedUserId == viewerUserId)
+            .Select(block => block.BlockerUserId == viewerUserId ? block.BlockedUserId : block.BlockerUserId)
+            .ToArrayAsync(cancellationToken);
+        return await dbContext.ConversationParticipants.AsNoTracking()
+            .Where(participant => conversationIds.Contains(participant.ConversationId) &&
+                                  participant.LeftAtUtc == null &&
+                                  onlineUserIds.Contains(participant.UserId) &&
+                                  !blockedUserIds.Contains(participant.UserId))
+            .Select(participant => participant.UserId)
+            .Distinct()
+            .ToArrayAsync(cancellationToken);
+    }
+
     private async Task BroadcastAsync(Guid subjectUserId, bool isOnline, CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
