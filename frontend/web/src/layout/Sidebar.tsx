@@ -65,8 +65,10 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
   const { t } = usePreferences()
   const [isExpanded, setIsExpanded] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const fallbackDisplayName = session!.user.username.includes('@') ? 'Tài khoản của bạn' : session!.user.username
+  const [displayName, setDisplayName] = useState(fallbackDisplayName)
   const [shortcuts, setShortcuts] = useState<Group[]>([])
-  const initials = session!.user.username.slice(0, 2).toUpperCase()
+  const initials = displayName.slice(0, 2).toUpperCase()
   const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
 
   useEffect(() => {
@@ -75,6 +77,7 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
       .then(([profile, groups]) => {
         if (!isCurrent) return
         setAvatarUrl(profile.avatarUrl)
+        setDisplayName(profile.displayName)
         setShortcuts(groups.items.slice(0, 5))
       })
       .catch(() => undefined)
@@ -92,7 +95,7 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
           <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[11px] font-bold text-white">
             {avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}
           </span>
-          <span className="text-[15px] font-semibold text-text">{session!.user.username}</span>
+          <span className="text-[15px] font-semibold text-text">{displayName}</span>
         </Link>
 
         {primaryItems.map((item) => <SidebarLink key={item.path} item={item} />)}

@@ -50,8 +50,7 @@ function validateFile(file: File, t: (key: string) => string) {
 export default function NewPostBox({ onPost, identityName, postingLabel }: NewPostBoxProps) {
   const { session } = useAuth()
   const { t } = usePreferences()
-  const username = identityName ?? session!.user.username
-  const initials = username.slice(0, 2).toUpperCase()
+  const fallbackDisplayName = session!.user.username.includes('@') ? 'bạn' : session!.user.username
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [content, setContent] = useState('')
@@ -61,7 +60,10 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   const [error, setError] = useState<string | null>(null)
   const [isFeelingPickerOpen, setIsFeelingPickerOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [profileName, setProfileName] = useState<string | null>(null)
   const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] = useState(false)
+  const displayName = identityName ?? profileName ?? fallbackDisplayName
+  const initials = displayName.slice(0, 2).toUpperCase()
   const previewUrlsRef = useRef(new Set<string>())
   const remaining = MAX_CHARS - content.length
   const isOverLimit = remaining < 0
@@ -75,7 +77,11 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
     if (identityName) return
     let isCurrent = true
     void usersApi.getCurrent()
-      .then((profile) => { if (isCurrent) setAvatarUrl(profile.avatarUrl) })
+      .then((profile) => {
+        if (!isCurrent) return
+        setAvatarUrl(profile.avatarUrl)
+        setProfileName(profile.displayName)
+      })
       .catch(() => undefined)
     return () => { isCurrent = false }
   }, [identityName, session?.user.id])
@@ -151,7 +157,7 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
       {!isExpanded ? (
         <div className="flex items-center gap-2">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[12px] font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
-          <button type="button" onClick={openComposer} className="h-10 flex-1 bg-surface-2 hover:bg-surface-3 text-text-muted text-left rounded-full px-4 text-[14px] cursor-pointer transition-colors border-none outline-none">{postingLabel ?? t('whatsOnMind')}, {username}?</button>
+          <button type="button" onClick={openComposer} className="h-10 flex-1 bg-surface-2 hover:bg-surface-3 text-text-muted text-left rounded-full px-4 text-[14px] cursor-pointer transition-colors border-none outline-none">{postingLabel ?? t('whatsOnMind')}, {displayName}?</button>
           <div className="flex shrink-0 items-center gap-1">
             <button type="button" onClick={openComposer} className="grid h-10 w-10 place-items-center rounded-lg border-0 bg-transparent text-[#f02849] cursor-pointer transition-colors hover:bg-surface-2" title={t('video')} aria-label={t('video')}><VideoCameraIcon /></button>
             <button type="button" onClick={openComposer} className="grid h-10 w-10 place-items-center rounded-lg border-0 bg-transparent text-[#45bd62] cursor-pointer transition-colors hover:bg-surface-2" title={t('photoVideo')} aria-label={t('photoVideo')}><PhotoIcon /></button>
@@ -161,11 +167,11 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between pb-1 border-b border-border">
-            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{initials}</div><div><div className="text-[14px] font-semibold text-text">{username}</div><div className="text-[12px] text-text-muted">{postingLabel ?? t('public')}</div></div></div>
+            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{initials}</div><div><div className="text-[14px] font-semibold text-text">{displayName}</div><div className="text-[12px] text-text-muted">{postingLabel ?? t('public')}</div></div></div>
             <button type="button" onClick={() => { if (!content.trim() && attachments.length === 0) setIsExpanded(false); else setIsDiscardConfirmationOpen(true) }} className="w-8 h-8 rounded-full bg-surface-2 hover:bg-surface-3 flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none transition-colors" title={t('close')} aria-label={t('close')}>✕</button>
           </div>
 
-          <textarea autoFocus value={content} onChange={(event) => setContent(event.target.value)} placeholder={`${t('whatsOnMind')}, ${username}?`} rows={4} className="w-full bg-transparent border-none outline-none resize-none text-[15px] text-text leading-relaxed placeholder:text-text-light" onKeyDown={(event) => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) void handleSubmit() }} />
+          <textarea autoFocus value={content} onChange={(event) => setContent(event.target.value)} placeholder={`${t('whatsOnMind')}, ${displayName}?`} rows={4} className="w-full bg-transparent border-none outline-none resize-none text-[15px] text-text leading-relaxed placeholder:text-text-light" onKeyDown={(event) => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) void handleSubmit() }} />
 
           {attachments.length > 0 && (
             <div className={`grid gap-2 ${attachments.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>

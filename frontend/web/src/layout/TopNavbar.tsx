@@ -163,7 +163,8 @@ export default function TopNavbar() {
   const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false)
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [displayName, setDisplayName] = useState(session!.user.username)
+  const fallbackDisplayName = session!.user.username.includes('@') ? 'Tài khoản của bạn' : session!.user.username
+  const [displayName, setDisplayName] = useState(fallbackDisplayName)
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [messageProfiles, setMessageProfiles] = useState<ReadonlyMap<string, UserProfile>>(new Map())
@@ -228,12 +229,12 @@ export default function TopNavbar() {
       .catch(() => {
         if (isCurrent) {
           setAvatarUrl(null)
-          setDisplayName(session!.user.username)
+          setDisplayName(fallbackDisplayName)
         }
       })
 
     return () => { isCurrent = false }
-  }, [session?.user.id, session?.user.username])
+  }, [fallbackDisplayName, session?.user.id, session?.user.username])
 
   useEffect(() => {
     if (!isMessagesOpen) return
@@ -454,7 +455,7 @@ export default function TopNavbar() {
                 <Link to="/profile" onClick={() => setActiveHeaderPopup(null)} className="block rounded-xl p-1.5 no-underline hover:bg-surface-2">
                   <div className="flex items-center gap-3 rounded-xl border-2 border-primary p-2">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
-                    <span className="min-w-0"><span className="block truncate text-base font-bold text-text">{displayName}</span><span className="block truncate text-sm text-text-muted">@{session!.user.username}</span></span>
+                    <span className="min-w-0"><span className="block truncate text-base font-bold text-text">{displayName}</span>{!session!.user.username.includes('@') && <span className="block truncate text-sm text-text-muted">@{session!.user.username}</span>}</span>
                   </div>
                   <span className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-center text-sm font-semibold text-text"><ProfileMenuIcon />Xem trang cá nhân</span>
                 </Link>
