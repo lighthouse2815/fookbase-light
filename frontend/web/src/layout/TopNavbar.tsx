@@ -601,10 +601,12 @@ export default function TopNavbar() {
       </div>
       </header>
       {openConversation && (isConversationMinimized ? (
-        <button type="button" onClick={() => setIsConversationMinimized(false)} className="fixed bottom-3 right-3 z-[60] flex max-w-[min(23rem,calc(100vw-1rem))] items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-left shadow-2xl sm:right-5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">{messageProfiles.get(openConversation.participantUserId ?? '')?.avatarUrl ? <img src={resolveProfileImageUrl(messageProfiles.get(openConversation.participantUserId ?? '')!.avatarUrl!)} alt="" className="h-full w-full object-cover" /> : conversationName(openConversation, messageProfiles).slice(0, 2).toUpperCase()}</span>
-          <span className="truncate text-sm font-semibold text-text">{conversationName(openConversation, messageProfiles)}</span>
-        </button>
+        <div className="fixed bottom-4 right-3 z-[60] flex flex-col items-center gap-3 sm:right-5">
+          <button type="button" onClick={() => setIsConversationMinimized(false)} className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-0 bg-primary text-sm font-bold text-white shadow-2xl ring-2 ring-surface transition-transform hover:scale-105" title={conversationName(openConversation, messageProfiles)} aria-label={`Mở đoạn chat với ${conversationName(openConversation, messageProfiles)}`}>
+            {messageProfiles.get(openConversation.participantUserId ?? '')?.avatarUrl ? <img src={resolveProfileImageUrl(messageProfiles.get(openConversation.participantUserId ?? '')!.avatarUrl!)} alt="" className="h-full w-full object-cover" /> : conversationName(openConversation, messageProfiles).slice(0, 2).toUpperCase()}
+          </button>
+          <button type="button" onClick={() => { setActiveHeaderPopup('messages'); setIsLoadingMessages(true); setMessagesError(null) }} className="grid h-12 w-12 place-items-center rounded-full border-0 bg-surface-2 text-2xl text-text shadow-2xl transition-colors hover:bg-surface-hover" title="Tin nhắn mới" aria-label="Tin nhắn mới">✎</button>
+        </div>
       ) : (
         <FloatingConversation
           key={openConversation.id}
