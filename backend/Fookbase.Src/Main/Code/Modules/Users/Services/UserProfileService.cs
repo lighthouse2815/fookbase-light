@@ -108,13 +108,12 @@ public sealed class UserProfileService(
         if (!string.IsNullOrWhiteSpace(normalizedQuery))
         {
             profiles = profiles.Where(profile =>
-                profile.Username.ToLower().Contains(normalizedQuery) ||
                 profile.DisplayName.ToLower().Contains(normalizedQuery));
         }
 
         var total = await profiles.CountAsync(cancellationToken);
         var items = await profiles
-            .OrderBy(profile => profile.Username)
+            .OrderBy(profile => profile.DisplayName)
             .Skip(offset)
             .Take(limit)
             .Select(profile => ToResponse(profile, viewerUserId))
@@ -477,7 +476,7 @@ public sealed class UserProfileService(
 
         return new UserProfileResponse(
             profile.UserId,
-            profile.Username,
+            PublicProfileHandle.From(profile.Username),
             profile.DisplayName,
             profile.Bio,
             profile.AvatarMediaId is null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar",

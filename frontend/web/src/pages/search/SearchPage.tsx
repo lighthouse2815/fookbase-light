@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import { searchApi, type GlobalSearchResponse, type SearchGroup, type SearchHashtag, type SearchPage as SearchPageResult, type SearchPerson, type SearchPost, type SearchReel, type SearchType } from '../../api/search'
 import { resolveProfileImageUrl } from '../../api/users'
 import { usePreferences } from '../../preferences'
+import { publicProfileHandle } from '../../shared/publicProfileHandle'
 
 const tabs: Array<{ type: SearchType; label: string }> = [
   { type: 'all', label: 'Tất cả' },
@@ -26,6 +27,7 @@ function Avatar({ src, label }: { src: string | null; label: string }) {
 
 function PersonCard({ item }: { item: SearchPerson }) {
   const { t } = usePreferences()
+  const username = publicProfileHandle(item.username)
   const relationshipLabel = item.friendshipState === 'friends'
     ? t('friends')
     : item.friendshipState === 'request_sent'
@@ -34,7 +36,7 @@ function PersonCard({ item }: { item: SearchPerson }) {
         ? t('friendRequestReceived')
         : null
 
-  return <Link to={`/profile/${item.userId}`} className="flex gap-3 rounded-xl border border-border bg-surface p-4 no-underline transition-colors hover:bg-surface-2"><Avatar src={item.avatarUrl} label={item.displayName} /><div className="min-w-0"><h3 className="truncate font-semibold text-text">{item.displayName}</h3><p className="truncate text-sm text-text-muted">@{item.username}</p>{item.bio && <p className="mt-1 line-clamp-2 text-sm text-text-muted">{item.bio}</p>}<p className="mt-2 text-xs text-text-muted">{item.followerCount} {t('followers')} · {item.followingCount} {t('followingCount')}{relationshipLabel ? ` · ${relationshipLabel}` : ''}{item.isFollowing ? ` · ${t('following')}` : ''}{item.isFollowedBy ? ` · ${t('followsYou')}` : ''}</p></div></Link>
+  return <Link to={`/profile/${item.userId}`} className="flex gap-3 rounded-xl border border-border bg-surface p-4 no-underline transition-colors hover:bg-surface-2"><Avatar src={item.avatarUrl} label={item.displayName} /><div className="min-w-0"><h3 className="truncate font-semibold text-text">{item.displayName}</h3>{username && <p className="truncate text-sm text-text-muted">@{username}</p>}{item.bio && <p className="mt-1 line-clamp-2 text-sm text-text-muted">{item.bio}</p>}<p className="mt-2 text-xs text-text-muted">{item.followerCount} {t('followers')} · {item.followingCount} {t('followingCount')}{relationshipLabel ? ` · ${relationshipLabel}` : ''}{item.isFollowing ? ` · ${t('following')}` : ''}{item.isFollowedBy ? ` · ${t('followsYou')}` : ''}</p></div></Link>
 }
 
 function GroupCard({ item }: { item: SearchGroup }) {
@@ -52,7 +54,8 @@ function PostCard({ item }: { item: SearchPost }) {
 }
 
 function ReelCard({ item }: { item: SearchReel }) {
-  return <Link to={`/reels?reel=${item.reelId}`} className="flex gap-3 rounded-xl border border-border bg-surface p-4 no-underline transition-colors hover:bg-surface-2"><div className="grid h-16 w-12 shrink-0 place-items-center rounded-lg bg-black text-xl">🎞️</div><div className="min-w-0"><h3 className="truncate font-semibold text-text">{item.author.displayName} <span className="font-normal text-text-muted">@{item.author.username}</span></h3><p className="mt-1 line-clamp-2 text-sm text-text-muted">{item.snippet || 'Reel'}</p><p className="mt-2 text-xs text-text-muted">{item.viewCount} lượt xem · {item.reactionCount} cảm xúc · {item.commentCount} bình luận</p></div></Link>
+  const username = publicProfileHandle(item.author.username)
+  return <Link to={`/reels?reel=${item.reelId}`} className="flex gap-3 rounded-xl border border-border bg-surface p-4 no-underline transition-colors hover:bg-surface-2"><div className="grid h-16 w-12 shrink-0 place-items-center rounded-lg bg-black text-xl">🎞️</div><div className="min-w-0"><h3 className="truncate font-semibold text-text">{item.author.displayName} {username && <span className="font-normal text-text-muted">@{username}</span>}</h3><p className="mt-1 line-clamp-2 text-sm text-text-muted">{item.snippet || 'Reel'}</p><p className="mt-2 text-xs text-text-muted">{item.viewCount} lượt xem · {item.reactionCount} cảm xúc · {item.commentCount} bình luận</p></div></Link>
 }
 
 function HashtagCard({ item }: { item: SearchHashtag }) {

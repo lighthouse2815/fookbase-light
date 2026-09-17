@@ -12,6 +12,7 @@ using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Search.DTOs.Responses;
+using PublicProfileHandle = Fookbase.Api.Modules.Users.Common.PublicProfileHandle;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -148,8 +149,7 @@ public sealed class SearchService(
         var blockedUserIds = context.Viewer.BlockedUserIds;
         var ranked = dbContext.UserProfiles.AsNoTracking()
             .Where(profile => !blockedUserIds.Contains(profile.UserId))
-            .Where(profile => EF.Functions.ILike(profile.DisplayName, contains) ||
-                              EF.Functions.ILike(profile.Username, contains))
+            .Where(profile => EF.Functions.ILike(profile.DisplayName, contains))
             .Select(profile => new
             {
                 profile.UserId,
@@ -192,9 +192,9 @@ public sealed class SearchService(
                     dbContext.FriendRequests.AsNoTracking().Any(request =>
                         request.SenderUserId == profile.UserId && request.ReceiverUserId == context.Viewer.UserId &&
                         request.Status == FriendRequestStatus.Pending) ? "request_received" : "none",
-                Rank = EF.Functions.ILike(profile.DisplayName, exact) || EF.Functions.ILike(profile.Username, exact)
+                Rank = EF.Functions.ILike(profile.DisplayName, exact)
                     ? 0
-                    : EF.Functions.ILike(profile.DisplayName, prefix) || EF.Functions.ILike(profile.Username, prefix)
+                    : EF.Functions.ILike(profile.DisplayName, prefix)
                         ? 1
                         : 2
             });
@@ -235,7 +235,7 @@ public sealed class SearchService(
         return new(
             visible.Select(item => new SearchPersonResponse(
                 item.UserId,
-                item.Username,
+                PublicProfileHandle.From(item.Username),
                 item.DisplayName,
                 item.AvatarMediaId is null ? item.AvatarUrl : $"/api/users/{item.UserId}/avatar",
                 ShortBio(item.Bio),
@@ -638,13 +638,14 @@ public sealed class SearchService(
         {
             var media = mediaRows[reel.Id];
             var profile = profiles.GetValueOrDefault(reel.AuthorUserId);
-            var username = profile?.Username ?? users.GetValueOrDefault(reel.AuthorUserId) ?? reel.AuthorUserId.ToString("N");
+            var username = PublicProfileHandle.From(profile?.Username ?? users.GetValueOrDefault(reel.AuthorUserId) ?? string.Empty);
+            var displayName = profile?.DisplayName ?? (string.IsNullOrWhiteSpace(username) ? "Người dùng" : username);
             return new SearchReelResponse(
                 reel.Id,
                 new SearchReelAuthorResponse(
                     reel.AuthorUserId,
                     username,
-                    profile?.DisplayName ?? username,
+                    displayName,
                     profile?.AvatarMediaId is null ? profile?.AvatarUrl : $"/api/users/{reel.AuthorUserId}/avatar"),
                 Snippet(reel.Content),
                 new SearchReelMediaResponse(

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { usersApi, resolveProfileImageUrl } from '../../api/users'
 import type { UserProfile } from '../../api/users'
+import { publicProfileHandle } from '../publicProfileHandle'
 
 interface UserSearchPickerProps {
   excludedUserIds?: readonly string[]
@@ -27,7 +28,7 @@ export default function UserSearchPicker({ excludedUserIds = [], onSelect }: Use
     {query.trim() && users.length > 0 && <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
       {users.map((user) => <button key={user.userId} type="button" onClick={() => { onSelect(user); setQuery(''); setUsers([]) }} className="flex w-full items-center gap-2 px-2 py-2 text-left text-sm text-text hover:bg-surface-2">
         <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-[10px] font-bold text-white">{user.avatarUrl ? <img src={resolveProfileImageUrl(user.avatarUrl)} alt="" loading="lazy" className="h-full w-full object-cover" /> : user.displayName.slice(0, 2).toUpperCase()}</span>
-        <span className="min-w-0"><span className="block truncate font-semibold">{user.displayName}</span><span className="block truncate text-xs text-text-muted">@{user.username}</span></span>
+        <span className="min-w-0"><span className="block truncate font-semibold">{user.displayName}</span>{publicProfileHandle(user.username) && <span className="block truncate text-xs text-text-muted">@{publicProfileHandle(user.username)}</span>}</span>
       </button>)}
     </div>}
   </div>

@@ -58,6 +58,46 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task People_search_does_not_search_or_return_email_and_phone_identifiers()
+    {
+        var viewerId = await CreateUserAsync("private-contact-viewer");
+        var emailUserId = Guid.NewGuid();
+        var phoneUserId = Guid.NewGuid();
+        const string email = "private.user@example.com";
+        const string phone = "0912345678";
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var emailProfile = UserProfile.Create(emailUserId, email, now);
+            var phoneProfile = UserProfile.Create(phoneUserId, phone, now);
+            emailProfile.Update("Private email", null, null, null, null, null, now);
+            phoneProfile.Update("Private phone", null, null, null, null, null, now);
+            db.Users.AddRange(
+                new User(emailUserId, email, email, now),
+                new User(phoneUserId, "phone-owner@example.com", phone, now));
+            db.UserProfiles.AddRange(emailProfile, phoneProfile);
+            await db.SaveChangesAsync();
+        }
+
+        using var viewer = CreateAuthenticatedClient(viewerId);
+        var response = await viewer.GetAsync("/api/search?q=private&type=people");
+        var raw = await response.Content.ReadAsStringAsync();
+        var result = await ReadAsync<GlobalSearchResponse>(response);
+        var byEmail = await ReadAsync<GlobalSearchResponse>(
+            await viewer.GetAsync($"/api/search?q={Uri.EscapeDataString(email)}&type=people"));
+        var byPhone = await ReadAsync<GlobalSearchResponse>(
+            await viewer.GetAsync($"/api/search?q={phone}&type=people"));
+
+        Assert.DoesNotContain(email, raw, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(phone, raw, StringComparison.Ordinal);
+        Assert.All(result.People.Where(item => item.UserId == emailUserId || item.UserId == phoneUserId), item =>
+            Assert.Equal(string.Empty, item.Username));
+        Assert.Empty(byEmail.People);
+        Assert.Empty(byPhone.People);
+    }
+
+    [Fact]
     public async Task People_search_projects_follow_and_friendship_state_without_changing_order()
     {
         var viewerId = await CreateUserAsync("people-projection-viewer");
