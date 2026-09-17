@@ -522,7 +522,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 2. Avatar: Large circle overlapping the bottom of cover photo */}
-          <div className="absolute -bottom-[84px] left-1/2 -translate-x-1/2 md:translate-x-0 md:left-8 z-20">
+          <div className="absolute -bottom-[84px] left-1/2 -translate-x-1/2 md:-bottom-[196px] md:translate-x-0 md:left-8 z-20">
             <div className="relative group">
               <div className="w-[168px] h-[168px] rounded-full flex items-center justify-center text-5xl font-bold text-white border-4 border-surface shadow-2xl bg-primary">
                 {profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full rounded-full object-cover" /> : initials}
@@ -558,7 +558,7 @@ export default function ProfilePage() {
 
         {/* 3. Below cover: Profile info section */}
         <div className="mx-auto max-w-[1120px] px-4 sm:px-8">
-          <div className="pt-[96px] md:pt-4 md:pl-[216px] pb-4 flex flex-col xl:flex-row xl:items-end justify-between gap-4">
+          <div className="pt-[96px] md:pt-[68px] md:pl-[216px] pb-4 flex flex-col xl:flex-row xl:items-end justify-between gap-4">
             {/* User Details */}
             <div className="flex flex-col items-center md:items-start text-center md:text-left">
               {/* Name & Badges */}
