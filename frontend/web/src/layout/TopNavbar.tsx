@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
 import { searchApi, type SearchSuggestions } from '../api/search'
 import { resolveProfileImageUrl, usersApi, type UserProfile } from '../api/users'
-import { messagesApi, type Conversation } from '../api/messages'
+import { messagesApi, type Conversation, type IncomingMessage, type Message } from '../api/messages'
 import { getNotificationPresentation } from '../shared/notificationPresentation'
 import { formatPostTimestamp } from '../shared/formatPostTimestamp'
 import { publicProfileHandle } from '../shared/publicProfileHandle'
@@ -103,7 +103,7 @@ function formatConversationTime(value: string) {
   return `${Math.floor(hours / 24)} ngày`
 }
 
-function MessagesPopover({ conversations, profiles, filter, onFilterChange, query, onQueryChange, isLoading, error }: {
+function MessagesPopover({ conversations, profiles, filter, onFilterChange, query, onQueryChange, isLoading, error, onOpenConversation }: {
   conversations: Conversation[]
   profiles: ReadonlyMap<string, UserProfile>
   filter: MessageFilter
@@ -112,6 +112,7 @@ function MessagesPopover({ conversations, profiles, filter, onFilterChange, quer
   onQueryChange: (query: string) => void
   isLoading: boolean
   error: string | null
+  onOpenConversation: (conversation: Conversation) => void
 }) {
   const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
   const normalizedQuery = query.trim().toLocaleLowerCase()
@@ -131,17 +132,104 @@ function MessagesPopover({ conversations, profiles, filter, onFilterChange, quer
         const profile = conversation.participantUserId ? profiles.get(conversation.participantUserId) : null
         const name = conversationName(conversation, profiles)
         const initials = name.slice(0, 2).toUpperCase()
-        return <article key={conversation.id} className={`flex items-center gap-3 rounded-xl px-2 py-2.5 ${conversation.unreadCount > 0 ? 'bg-primary/5' : ''}`}>
+        return <button type="button" key={conversation.id} onClick={() => onOpenConversation(conversation)} className={`flex w-full items-center gap-3 rounded-xl border-0 px-2 py-2.5 text-left transition-colors hover:bg-surface-2 ${conversation.unreadCount > 0 ? 'bg-primary/5' : ''}`}>
           <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
           <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{name}</strong><span className={`mt-0.5 block truncate text-xs ${conversation.unreadCount > 0 ? 'font-semibold text-text' : 'text-text-muted'}`}>{conversationPreview(conversation)} · {formatConversationTime(conversation.lastMessageAtUtc)}</span></span>
           {conversation.unreadCount > 0 && <span className="h-3 w-3 shrink-0 rounded-full bg-primary" aria-label={`${conversation.unreadCount} tin chưa đọc`} />}
-        </article>
+        </button>
       })}
     </div>
     <div className="border-t border-border px-3 py-2">
       <a href={zolaLightUrl} className="block rounded-lg px-3 py-2 text-center text-sm font-semibold text-primary no-underline transition-colors hover:bg-surface-2">Xem tất cả trong Zola</a>
     </div>
   </div>
+}
+
+function formatMessageTime(value: string) {
+  return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+}
+
+function FloatingConversation({ conversation, profile, currentUserId, incomingMessages, onClose, onMinimize, onRead, onMessageSent }: {
+  conversation: Conversation
+  profile?: UserProfile
+  currentUserId: string
+  incomingMessages: IncomingMessage[]
+  onClose: () => void
+  onMinimize: () => void
+  onRead: (conversationId: string, messageId?: string) => void
+  onMessageSent: (message: Message) => void
+}) {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [draft, setDraft] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSending, setIsSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const name = conversationName(conversation, new Map(profile ? [[profile.userId, profile]] : []))
+  const initials = name.slice(0, 2).toUpperCase()
+
+  useEffect(() => {
+    let isCurrent = true
+    void messagesApi.getMessages(conversation.id)
+      .then((page) => {
+        if (!isCurrent) return
+        setMessages(page.items)
+        onRead(conversation.id, page.items.at(-1)?.id)
+      })
+      .catch(() => { if (isCurrent) setError('Không thể tải tin nhắn.') })
+      .finally(() => { if (isCurrent) setIsLoading(false) })
+    return () => { isCurrent = false }
+  }, [conversation.id, onRead])
+
+  useEffect(() => {
+    const received = incomingMessages.filter((item) => item.conversation.id === conversation.id).map((item) => item.message)
+    if (received.length === 0) return
+    void Promise.resolve().then(() => setMessages((current) => [...current, ...received.filter((message) => !current.some((item) => item.id === message.id))]))
+    onRead(conversation.id, received.at(-1)?.id)
+  }, [conversation.id, incomingMessages, onRead])
+
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ block: 'end' }) }, [messages])
+
+  const send = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const content = draft.trim()
+    if (!content || isSending) return
+    setIsSending(true)
+    setError(null)
+    try {
+      const message = await messagesApi.sendMessage(conversation.id, content)
+      setMessages((current) => [...current, message])
+      setDraft('')
+      onMessageSent(message)
+    } catch {
+      setError('Không thể gửi tin nhắn.')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  return <section className="fixed bottom-0 right-3 z-[60] flex h-[min(34rem,calc(100vh-4rem))] w-[min(23rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-t-xl border border-border bg-surface shadow-2xl sm:right-5" aria-label={`Đoạn chat với ${name}`}>
+    <header className="flex shrink-0 items-center gap-2 border-b border-border bg-surface px-3 py-2.5">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
+      <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{name}</strong><small className="block truncate text-xs text-text-muted">Đang hoạt động</small></span>
+      <button type="button" onClick={onMinimize} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-2" aria-label="Thu nhỏ đoạn chat">−</button>
+      <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-2" aria-label="Đóng đoạn chat">×</button>
+    </header>
+    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-bg px-3 py-3">
+      {isLoading && <p className="my-auto text-center text-sm text-text-muted">Đang tải tin nhắn…</p>}
+      {!isLoading && messages.length === 0 && !error && <p className="my-auto text-center text-sm text-text-muted">Chưa có tin nhắn. Hãy gửi lời chào.</p>}
+      {messages.map((message) => {
+        const isMine = message.senderUserId === currentUserId
+        return <div key={message.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm ${isMine ? 'rounded-br-md bg-primary text-white' : 'rounded-bl-md bg-surface-2 text-text'}`}><p className="whitespace-pre-wrap break-words">{message.deletedAtUtc ? 'Tin nhắn đã gỡ' : message.content ?? 'Đã gửi tệp đính kèm'}</p><time className={`mt-1 block text-right text-[10px] ${isMine ? 'text-white/70' : 'text-text-light'}`}>{formatMessageTime(message.createdAtUtc)}</time></div></div>
+      })}
+      <div ref={messagesEndRef} />
+    </div>
+    {error && <p className="border-t border-border bg-[#e41e3f]/10 px-3 py-2 text-xs text-[#ff8a9b]">{error}</p>}
+    <form onSubmit={(event) => void send(event)} className="flex shrink-0 gap-2 border-t border-border bg-surface p-2.5">
+      <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Nhập tin nhắn" disabled={isSending} className="min-w-0 flex-1 rounded-full border-0 bg-surface-2 px-3 py-2 text-sm text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary disabled:opacity-60" />
+      <button type="submit" disabled={!draft.trim() || isSending} className="rounded-full border-0 bg-primary px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Gửi</button>
+    </form>
+  </section>
 }
 
 export default function TopNavbar() {
@@ -156,6 +244,7 @@ export default function TopNavbar() {
     loadMoreNotifications,
     unreadMessageCount,
     unreadNotificationCount,
+    markConversationRead,
   } = useRealtime()
   const { language, setLanguage, setTheme, t, theme } = usePreferences()
   const location = useLocation()
@@ -177,6 +266,8 @@ export default function TopNavbar() {
   const [messageQuery, setMessageQuery] = useState('')
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [messagesError, setMessagesError] = useState<string | null>(null)
+  const [openConversation, setOpenConversation] = useState<Conversation | null>(null)
+  const [isConversationMinimized, setIsConversationMinimized] = useState(false)
   const menuDropdownRef = useRef<HTMLDivElement>(null)
   const messagesDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
@@ -295,8 +386,27 @@ export default function TopNavbar() {
     setIsNotificationMenuOpen(false)
   }
 
+  const openFloatingConversation = useCallback((conversation: Conversation) => {
+    setOpenConversation(conversation)
+    setIsConversationMinimized(false)
+    setActiveHeaderPopup(null)
+    setConversations((current) => current.map((item) => item.id === conversation.id ? { ...item, unreadCount: 0 } : item))
+  }, [])
+
+  const markFloatingConversationRead = useCallback((conversationId: string, messageId?: string) => {
+    markConversationRead(conversationId, messageId)
+    setConversations((current) => current.map((item) => item.id === conversationId ? { ...item, unreadCount: 0 } : item))
+  }, [markConversationRead])
+
+  const updateFloatingConversation = useCallback((message: Message) => {
+    setConversations((current) => current.map((item) => item.id === message.conversationId
+      ? { ...item, lastMessage: message, lastMessageAtUtc: message.createdAtUtc }
+      : item))
+  }, [])
+
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center px-4 z-50">
+    <>
+      <header className="fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center px-4 z-50">
       <div className="flex items-center gap-2 w-[280px] shrink-0 max-lg:hidden">
         <Link
           to="/feed"
@@ -393,7 +503,7 @@ export default function TopNavbar() {
             <ZolaLightIcon />
             {unreadMessageCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
           </button>
-          {isMessagesOpen && <MessagesPopover conversations={conversations} profiles={messageProfiles} filter={messageFilter} onFilterChange={setMessageFilter} query={messageQuery} onQueryChange={setMessageQuery} isLoading={isLoadingMessages} error={messagesError} />}
+          {isMessagesOpen && <MessagesPopover conversations={conversations} profiles={messageProfiles} filter={messageFilter} onFilterChange={setMessageFilter} query={messageQuery} onQueryChange={setMessageQuery} isLoading={isLoadingMessages} error={messagesError} onOpenConversation={openFloatingConversation} />}
         </div>
         <div ref={notificationDropdownRef} className="relative">
           <button
@@ -489,6 +599,25 @@ export default function TopNavbar() {
           </div>}
         </div>
       </div>
-    </header>
+      </header>
+      {openConversation && (isConversationMinimized ? (
+        <button type="button" onClick={() => setIsConversationMinimized(false)} className="fixed bottom-3 right-3 z-[60] flex max-w-[min(23rem,calc(100vw-1rem))] items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-left shadow-2xl sm:right-5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">{messageProfiles.get(openConversation.participantUserId ?? '')?.avatarUrl ? <img src={resolveProfileImageUrl(messageProfiles.get(openConversation.participantUserId ?? '')!.avatarUrl!)} alt="" className="h-full w-full object-cover" /> : conversationName(openConversation, messageProfiles).slice(0, 2).toUpperCase()}</span>
+          <span className="truncate text-sm font-semibold text-text">{conversationName(openConversation, messageProfiles)}</span>
+        </button>
+      ) : (
+        <FloatingConversation
+          key={openConversation.id}
+          conversation={openConversation}
+          profile={openConversation.participantUserId ? messageProfiles.get(openConversation.participantUserId) : undefined}
+          currentUserId={session!.user.id}
+          incomingMessages={incomingMessages}
+          onClose={() => setOpenConversation(null)}
+          onMinimize={() => setIsConversationMinimized(true)}
+          onRead={markFloatingConversationRead}
+          onMessageSent={updateFloatingConversation}
+        />
+      ))}
+    </>
   )
 }
