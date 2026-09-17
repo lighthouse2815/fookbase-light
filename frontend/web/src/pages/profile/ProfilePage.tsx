@@ -513,7 +513,7 @@ export default function ProfilePage() {
       {/* ── Top Section: Cover + Header + Tabs ─────────────────────── */}
       <div className="bg-surface border-b border-border shadow-sm">
         {/* 1. Cover photo area: Full-width dark gradient banner */}
-        <div className="relative mx-auto h-[260px] w-full max-w-[1120px] sm:h-[300px] md:h-[340px]">
+        <div className="relative mx-auto h-[280px] w-full max-w-[1120px] sm:h-[320px] md:h-[380px]">
           <div className="absolute inset-0 overflow-hidden rounded-b-2xl bg-gradient-to-b from-surface-3 via-surface-2 to-surface-3">
             {profile?.coverUrl && <img src={resolveProfileImageUrl(profile.coverUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
             {/* Subtle dark texture overlay */}
