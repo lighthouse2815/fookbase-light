@@ -237,6 +237,28 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     }
 
     [Fact]
+    public async Task Patch_me_allows_an_empty_website_to_clear_the_optional_value()
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var client = CreateAuthenticatedClient(user.Id);
+
+        var setWebsite = await client.PatchAsJsonAsync(
+            "/api/users/me",
+            new UpdateUserProfileRequest(null, null, null, null, Website: "https://example.com"));
+        Assert.Equal(HttpStatusCode.OK, setWebsite.StatusCode);
+
+        var clearWebsite = await client.PatchAsJsonAsync(
+            "/api/users/me",
+            new UpdateUserProfileRequest(null, null, null, null, Website: ""));
+
+        Assert.Equal(HttpStatusCode.OK, clearWebsite.StatusCode);
+        var updated = await clearWebsite.Content.ReadFromJsonAsync<UserProfileResponse>();
+        Assert.NotNull(updated);
+        Assert.Null(updated!.Website);
+    }
+
+    [Fact]
     public async Task Profile_hides_full_birth_date_from_non_owner()
     {
         var owner = CreateUser();

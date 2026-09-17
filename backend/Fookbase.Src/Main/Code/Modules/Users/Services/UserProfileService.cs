@@ -314,7 +314,7 @@ public sealed class UserProfileService(
         }
 
         if (request.Website is { Length: > 2048 } ||
-            request.Website is { } website &&
+            request.Website is { } website && !string.IsNullOrWhiteSpace(website) &&
             (!Uri.TryCreate(website.Trim(), UriKind.Absolute, out var uri) ||
              (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)))
         {
