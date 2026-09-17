@@ -536,7 +536,7 @@ export default function ProfilePage() {
 
         {/* 3. Below cover: Profile info section */}
         <div className="mx-auto max-w-[1120px] px-4 sm:px-8">
-          <div className="flex flex-col items-center gap-4 pb-4 pt-4 md:flex-row md:items-start">
+          <div className="flex flex-col items-center gap-4 pb-4 pt-4 md:flex-row md:items-center">
             <div className="relative shrink-0 group">
               <div className="w-[168px] h-[168px] rounded-full flex items-center justify-center text-5xl font-bold text-white border-4 border-surface shadow-2xl bg-primary">
                 {profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full rounded-full object-cover" /> : initials}
