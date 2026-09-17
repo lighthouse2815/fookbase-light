@@ -103,7 +103,6 @@ export default function ProfilePage() {
   const suggestionRequestGenerationRef = useRef(0)
   const suggestionAbortControllerRef = useRef<AbortController | null>(null)
   const displayName = profile?.displayName ?? session!.user.username
-  const username = profile?.username ?? session!.user.username
   const initials = displayName.slice(0, 2).toUpperCase()
   const bio = profile?.bio ?? ''
   const location = profile?.currentCity ?? t('notSet')
@@ -567,9 +566,6 @@ export default function ProfilePage() {
                   {displayName}
                 </h1>
               </div>
-
-              {/* Handle */}
-              <p className="text-[14px] text-text-muted font-medium mt-0.5">@{username}</p>
 
               {/* Bio text */}
               <p className="text-[14px] text-text mt-2 max-w-xl leading-relaxed whitespace-pre-line">
