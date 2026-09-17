@@ -40,10 +40,10 @@ services:
       Email__FromName: ${Email__FromName:-Fookbase}
       Email__FrontendBaseUrl: ${Email__FrontendBaseUrl:-http://localhost:5173}
       Sms__Enabled: ${Sms__Enabled:-false}
-      Sms__Provider: ${Sms__Provider:-SpeedSms}
+      Sms__Provider: ${Sms__Provider:-Traccar}
       Sms__AccessToken: ${Sms__AccessToken:-}
       Sms__TwoFactorApplicationId: ${Sms__TwoFactorApplicationId:-}
-      Sms__BaseUrl: ${Sms__BaseUrl:-https://api.speedsms.vn}
+      Sms__BaseUrl: ${Sms__BaseUrl:-https://www.traccar.org/sms/}
       DataProtection__ApplicationName: ${DataProtection__ApplicationName:-Fookbase}
       DataProtection__KeyRingPath: /var/fookbase/data-protection-keys
     ports:

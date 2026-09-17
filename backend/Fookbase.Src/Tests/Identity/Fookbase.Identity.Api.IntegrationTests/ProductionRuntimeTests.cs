@@ -76,6 +76,19 @@ public sealed class ProductionRuntimeTests
     }
 
     [Fact]
+    public void Production_configuration_accepts_enabled_traccar_without_speed_sms_application_id()
+    {
+        var values = ProductionValues();
+        values["Sms:Enabled"] = "true";
+        values["Sms:Provider"] = "Traccar";
+        values["Sms:AccessToken"] = "gateway-token";
+        values["Sms:BaseUrl"] = "https://www.traccar.org/sms/";
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+
+        ProductionConfigurationValidator.Validate(configuration, production: true);
+    }
+
+    [Fact]
     public async Task Unexpected_error_response_is_safe_and_has_request_id()
     {
         var context = new DefaultHttpContext();
