@@ -113,6 +113,7 @@ function MessagesPopover({ conversations, profiles, filter, onFilterChange, quer
   isLoading: boolean
   error: string | null
 }) {
+  const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
   const normalizedQuery = query.trim().toLocaleLowerCase()
   const visibleConversations = conversations.filter((conversation) => {
     if (filter === 'unread' && conversation.unreadCount === 0) return false
@@ -136,6 +137,9 @@ function MessagesPopover({ conversations, profiles, filter, onFilterChange, quer
           {conversation.unreadCount > 0 && <span className="h-3 w-3 shrink-0 rounded-full bg-primary" aria-label={`${conversation.unreadCount} tin chưa đọc`} />}
         </article>
       })}
+    </div>
+    <div className="border-t border-border px-3 py-2">
+      <a href={zolaLightUrl} className="block rounded-lg px-3 py-2 text-center text-sm font-semibold text-primary no-underline transition-colors hover:bg-surface-2">Xem tất cả trong Zola</a>
     </div>
   </div>
 }
