@@ -4,7 +4,8 @@ import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
 import { searchApi, type SearchSuggestions } from '../api/search'
-import { resolveProfileImageUrl, usersApi } from '../api/users'
+import { resolveProfileImageUrl, usersApi, type UserProfile } from '../api/users'
+import { messagesApi, type Conversation } from '../api/messages'
 import { getNotificationPresentation } from '../shared/notificationPresentation'
 import { formatPostTimestamp } from '../shared/formatPostTimestamp'
 
@@ -78,10 +79,71 @@ function BackIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-none stroke-current" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m14.5 5-7 7 7 7" /></svg>
 }
 
+type MessageFilter = 'all' | 'unread' | 'group'
+
+function conversationName(conversation: Conversation, profiles: ReadonlyMap<string, UserProfile>) {
+  if (conversation.type === 'group') return conversation.title ?? 'Nhóm không tên'
+  return conversation.participantUserId ? profiles.get(conversation.participantUserId)?.displayName ?? 'Người dùng' : 'Cuộc trò chuyện'
+}
+
+function conversationPreview(conversation: Conversation) {
+  const message = conversation.lastMessage
+  if (!message) return 'Bắt đầu trò chuyện'
+  if (message.deletedAtUtc) return 'Tin nhắn đã gỡ'
+  return message.content ?? (message.attachments?.length ? 'Đã gửi tệp đính kèm' : 'Đã gửi tin nhắn')
+}
+
+function formatConversationTime(value: string) {
+  const minutes = Math.max(0, Math.floor((Date.now() - Date.parse(value)) / 60_000))
+  if (minutes < 1) return 'Vừa xong'
+  if (minutes < 60) return `${minutes} phút`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} giờ`
+  return `${Math.floor(hours / 24)} ngày`
+}
+
+function MessagesPopover({ conversations, profiles, filter, onFilterChange, query, onQueryChange, isLoading, error }: {
+  conversations: Conversation[]
+  profiles: ReadonlyMap<string, UserProfile>
+  filter: MessageFilter
+  onFilterChange: (filter: MessageFilter) => void
+  query: string
+  onQueryChange: (query: string) => void
+  isLoading: boolean
+  error: string | null
+}) {
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const visibleConversations = conversations.filter((conversation) => {
+    if (filter === 'unread' && conversation.unreadCount === 0) return false
+    if (filter === 'group' && conversation.type !== 'group') return false
+    const profile = conversation.participantUserId ? profiles.get(conversation.participantUserId) : null
+    return !normalizedQuery || [conversationName(conversation, profiles), profile?.username].some((value) => value?.toLocaleLowerCase().includes(normalizedQuery))
+  })
+
+  return <div className="absolute right-0 top-12 z-50 w-[min(25rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+    <div className="px-4 pb-2 pt-3"><h2 className="font-heading text-2xl font-bold text-text">Đoạn chat</h2></div>
+    <div className="px-4 pb-2"><label className="relative block"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-light">⌕</span><input type="search" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Tìm kiếm tin nhắn" className="w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-4 text-sm text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary" /></label></div>
+    <div className="flex gap-1 px-4 pb-2">{([['all', 'Tất cả'], ['unread', 'Chưa đọc'], ['group', 'Nhóm']] as const).map(([value, label]) => <button type="button" key={value} onClick={() => onFilterChange(value)} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold transition-colors ${filter === value ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>{label}</button>)}</div>
+    <div className="max-h-[min(34rem,calc(100vh-10rem))] overflow-y-auto px-2 pb-2">
+      {isLoading ? <p className="px-4 py-8 text-center text-sm text-text-muted">Đang tải đoạn chat…</p> : error ? <p className="px-4 py-8 text-center text-sm text-[#ff8a9b]">{error}</p> : visibleConversations.length === 0 ? <p className="px-4 py-8 text-center text-sm text-text-muted">Không có đoạn chat phù hợp.</p> : visibleConversations.map((conversation) => {
+        const profile = conversation.participantUserId ? profiles.get(conversation.participantUserId) : null
+        const name = conversationName(conversation, profiles)
+        const initials = name.slice(0, 2).toUpperCase()
+        return <article key={conversation.id} className={`flex items-center gap-3 rounded-xl px-2 py-2.5 ${conversation.unreadCount > 0 ? 'bg-primary/5' : ''}`}>
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
+          <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{name}</strong><span className={`mt-0.5 block truncate text-xs ${conversation.unreadCount > 0 ? 'font-semibold text-text' : 'text-text-muted'}`}>{conversationPreview(conversation)} · {formatConversationTime(conversation.lastMessageAtUtc)}</span></span>
+          {conversation.unreadCount > 0 && <span className="h-3 w-3 shrink-0 rounded-full bg-primary" aria-label={`${conversation.unreadCount} tin chưa đọc`} />}
+        </article>
+      })}
+    </div>
+  </div>
+}
+
 export default function TopNavbar() {
   const { session, signOut } = useAuth()
   const {
     notifications,
+    incomingMessages,
     markAllNotificationsRead,
     markNotificationRead,
     hasMoreNotifications,
@@ -96,20 +158,27 @@ export default function TopNavbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
-  const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'notifications' | 'profile' | null>(null)
+  const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'messages' | 'notifications' | 'profile' | null>(null)
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all')
   const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false)
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState(session!.user.username)
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false)
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [messageProfiles, setMessageProfiles] = useState<ReadonlyMap<string, UserProfile>>(new Map())
+  const [messageFilter, setMessageFilter] = useState<MessageFilter>('all')
+  const [messageQuery, setMessageQuery] = useState('')
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [messagesError, setMessagesError] = useState<string | null>(null)
   const menuDropdownRef = useRef<HTMLDivElement>(null)
+  const messagesDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
   const initials = session!.user.username.slice(0, 2).toUpperCase()
-  const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
   const isNotificationsPage = location.pathname === '/notifications'
   const isMenuOpen = activeHeaderPopup === 'menu'
+  const isMessagesOpen = activeHeaderPopup === 'messages'
   const isNotificationsOpen = activeHeaderPopup === 'notifications'
   const isProfileOpen = activeHeaderPopup === 'profile'
   const navItems: NavItem[] = [
@@ -167,13 +236,34 @@ export default function TopNavbar() {
   }, [session?.user.id, session?.user.username])
 
   useEffect(() => {
+    if (!isMessagesOpen) return
+    let isCurrent = true
+    void messagesApi.getConversations().then(async (page) => {
+      const userIds = [...new Set(page.items.flatMap((conversation) => conversation.type === 'direct' && conversation.participantUserId ? [conversation.participantUserId] : []))]
+      const profiles = await Promise.all(userIds.map((userId) => usersApi.getById(userId).catch(() => null)))
+      if (!isCurrent) return
+      setConversations(page.items)
+      setMessageProfiles((current) => {
+        const next = new Map(current)
+        profiles.forEach((profile) => { if (profile) next.set(profile.userId, profile) })
+        return next
+      })
+    }).catch(() => {
+      if (isCurrent) setMessagesError(t('unableLoadConversations'))
+    }).finally(() => { if (isCurrent) setIsLoadingMessages(false) })
+    return () => { isCurrent = false }
+  }, [incomingMessages, isMessagesOpen, t])
+
+  useEffect(() => {
     if (!activeHeaderPopup) return
 
     const activePopupRef = activeHeaderPopup === 'menu'
       ? menuDropdownRef
-      : activeHeaderPopup === 'notifications'
-        ? notificationDropdownRef
-        : profileDropdownRef
+      : activeHeaderPopup === 'messages'
+        ? messagesDropdownRef
+        : activeHeaderPopup === 'notifications'
+          ? notificationDropdownRef
+          : profileDropdownRef
     const closePopupWhenClickingOutside = (event: PointerEvent) => {
       if (!activePopupRef.current?.contains(event.target as Node)) {
         setActiveHeaderPopup(null)
@@ -277,15 +367,28 @@ export default function TopNavbar() {
             </button>
           </div>}
         </div>
-        <a
-          href={zolaLightUrl}
-          className="relative flex h-10 w-10 items-center justify-center rounded-full border-0 bg-surface-2 text-text no-underline transition-colors hover:bg-[#4e4f50]"
-          title="Zola Light"
-          aria-label="Zola Light"
-        >
+        <div ref={messagesDropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              if (!isMessagesOpen) {
+                setIsLoadingMessages(true)
+                setMessagesError(null)
+              }
+              setActiveHeaderPopup((current) => current === 'messages' ? null : 'messages')
+              setIsNotificationMenuOpen(false)
+              setIsAppearanceOpen(false)
+            }}
+            className={`relative flex h-10 w-10 items-center justify-center rounded-full border-0 transition-colors ${isMessagesOpen ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50]'}`}
+            title={t('messages')}
+            aria-label={t('messages')}
+            aria-expanded={isMessagesOpen}
+          >
             <ZolaLightIcon />
             {unreadMessageCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>}
-        </a>
+          </button>
+          {isMessagesOpen && <MessagesPopover conversations={conversations} profiles={messageProfiles} filter={messageFilter} onFilterChange={setMessageFilter} query={messageQuery} onQueryChange={setMessageQuery} isLoading={isLoadingMessages} error={messagesError} />}
+        </div>
         <div ref={notificationDropdownRef} className="relative">
           <button
             type="button"

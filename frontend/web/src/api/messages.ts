@@ -4,18 +4,22 @@ export interface Message {
   id: string
   conversationId: string
   senderUserId: string
-  content: string
+  content: string | null
   createdAtUtc: string
   readAtUtc: string | null
+  deletedAtUtc?: string | null
+  attachments?: { mediaId: string; sortOrder: number }[]
 }
 
 export interface Conversation {
   id: string
-  participantUserId: string
+  participantUserId: string | null
   createdAtUtc: string
   lastMessageAtUtc: string
   lastMessage: Message | null
   unreadCount: number
+  type: 'direct' | 'group'
+  title: string | null
 }
 
 export interface PagedResponse<T> {
@@ -39,9 +43,9 @@ export interface IncomingMessage {
 export const messagesApi = {
   getOrCreateConversation: (userId: string) =>
     apiRequest<Conversation>(`/api/messages/conversations/${userId}`, { method: 'POST' }),
-  getConversations: (offset = 0, limit = 20) =>
+  getConversations: (limit = 30, before?: string) =>
     apiRequest<PagedResponse<Conversation>>(
-      `/api/messages/conversations?${new URLSearchParams({ offset: String(offset), limit: String(limit) })}`,
+      `/api/messages/conversations?${new URLSearchParams({ limit: String(limit), ...(before ? { before } : {}) })}`,
     ),
   getUnreadNotifications: (offset = 0, limit = 100) =>
     apiRequest<PagedResponse<IncomingMessage>>(
