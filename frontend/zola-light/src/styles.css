@@ -12,6 +12,9 @@ a { color: #80b6ff; }
 .conversation-pane { display: flex; flex-direction: column; border-right: 1px solid #2b2e35; min-width: 0; }
 .pane-header, .chat-header { display: flex; align-items: center; min-height: 72px; padding: 12px 16px; border-bottom: 1px solid #2b2e35; }
 .pane-header > div, .chat-header > div { min-width: 0; display: grid; }
+.pane-header .current-user { display: flex; align-items: center; gap: 10px; }
+.pane-header .current-user > div { display: grid; min-width: 0; }
+.pane-header .current-user strong, .pane-header .current-user small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pane-header strong { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; }
 .pane-header small, .chat-header small, .conversation-item small, .participant small { color: #98a0ad; font-size: 12px; }
 .icon-button, .message-actions button, .message-actions select, .pane-header button, .mobile-details, .modal header button, .close-details { border: 0; color: #dce3ee; background: #272a31; border-radius: 999px; width: 36px; height: 36px; font-size: 18px; }

@@ -1,5 +1,9 @@
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
 
+export function resolveApiUrl(url: string) {
+  return url.startsWith('/') ? `${apiBaseUrl}${url}` : url
+}
+
 const sessionKey = 'fookbase.zola-light.session'
 
 export interface AuthenticatedUser {
@@ -199,6 +203,7 @@ export const messengerApi = {
   changeRole: (id: string, userId: string, role: string) => request<void>(`/api/messages/conversations/${id}/participants/${userId}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
   leave: (id: string) => request<void>(`/api/messages/conversations/${id}/leave`, { method: 'POST' }),
   transferOwnership: (id: string, userId: string) => request<void>(`/api/messages/conversations/${id}/transfer-ownership`, { method: 'POST', body: JSON.stringify({ userId }) }),
+  currentUser: () => request<UserProfile>('/api/users/me'),
   user: (userId: string) => request<UserProfile>(`/api/users/${userId}`),
   searchUsers: (value: string) => request<{ items: UserProfile[] }>(`/api/users/search?${query({ query: value, offset: '0', limit: '10' })}`),
   upload: async (file: File) => {

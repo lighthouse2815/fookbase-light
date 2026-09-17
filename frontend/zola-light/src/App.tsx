@@ -7,6 +7,7 @@ import {
   clearSession,
   getSession,
   messengerApi,
+  resolveApiUrl,
   saveSession,
   type AuthSession,
   type Conversation,
@@ -273,7 +274,7 @@ function ConfirmDialog({ title, description, confirmLabel, onClose, onConfirm }:
 }
 
 function Avatar({ name, url }: { name: string; url?: string | null }) {
-  return url ? <img className="avatar" src={url} alt="" /> : <span className="avatar">{name.slice(0, 2).toUpperCase()}</span>
+  return url ? <img className="avatar" src={resolveApiUrl(url)} alt="" /> : <span className="avatar">{name.slice(0, 2).toUpperCase()}</span>
 }
 
 function ConversationAvatar({ conversation, profiles }: { conversation: Conversation; profiles?: ReadonlyMap<string, UserProfile> }) {
@@ -287,8 +288,7 @@ function ConversationAvatar({ conversation, profiles }: { conversation: Conversa
     return () => { isCurrent = false }
   }, [conversation.photoMediaId])
   const directProfile = conversation.participantUserId ? profiles?.get(conversation.participantUserId) : null
-  const avatarUrl = directProfile?.avatarUrl?.startsWith('/') ? `${apiBaseUrl}${directProfile.avatarUrl}` : directProfile?.avatarUrl
-  return <Avatar name={displayConversation(conversation, profiles)} url={url ?? avatarUrl} />
+  return <Avatar name={displayConversation(conversation, profiles)} url={url ?? directProfile?.avatarUrl} />
 }
 
 function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () => Promise<void> }) {
@@ -313,6 +313,15 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const typingTimeout = useRef<number | null>(null)
   const groupPhotoInputRef = useRef<HTMLInputElement>(null)
   const active = conversations.find((conversation) => conversation.id === activeId) ?? null
+  const currentUserProfile = profiles.get(session.user.id)
+
+  useEffect(() => {
+    let isCurrent = true
+    void messengerApi.currentUser().then((profile) => {
+      if (isCurrent) setProfiles((current) => new Map(current).set(profile.userId, profile))
+    }).catch(() => undefined)
+    return () => { isCurrent = false }
+  }, [])
 
   const loadConversations = useCallback(async (before?: string) => {
     const page = await messengerApi.conversations(before)
@@ -398,7 +407,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const myParticipant = active?.participants.find((participant) => participant.userId === session.user.id)
 
   return <main className="zola-light-shell">
-    <aside className="conversation-pane"><header className="pane-header"><div><strong>Zola Light</strong><small>@{session.user.username}</small></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
+    <aside className="conversation-pane"><header className="pane-header"><div className="current-user"><Avatar name={currentUserProfile?.displayName ?? session.user.username} url={currentUserProfile?.avatarUrl} /><div><strong>{currentUserProfile?.displayName ?? session.user.username}</strong><small>@{session.user.username}</small></div></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
       <input className="conversation-filter" placeholder="Tìm cuộc trò chuyện" onChange={(event) => { const value = event.target.value.toLowerCase(); document.querySelectorAll<HTMLElement>('[data-conversation]').forEach((node) => { node.hidden = !node.dataset.conversation?.includes(value) }) }} />
       <div className="conversation-list">{conversations.map((conversation) => <button key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} hidden={false} className={`conversation-item ${conversation.id === activeId ? 'selected' : ''}`} onClick={() => setActiveId(conversation.id)}>
         <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
@@ -432,7 +441,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
 
 function ParticipantRow({ participant, profile, currentUserId, isOnline, canManage, onManage }: { participant: Participant; profile?: UserProfile; currentUserId: string; isOnline: boolean; canManage: boolean; onManage: (action: 'remove' | 'admin' | 'member' | 'owner') => void }) {
   const name = participant.userId === currentUserId ? 'Bạn' : participant.nickname ?? profile?.displayName ?? 'Thành viên'
-  const avatarUrl = profile?.avatarUrl?.startsWith('/') ? `${apiBaseUrl}${profile.avatarUrl}` : profile?.avatarUrl
+  const avatarUrl = profile?.avatarUrl
   const role = participant.role === 'owner' ? 'Chủ nhóm' : participant.role === 'admin' ? 'Quản trị viên' : 'Thành viên'
   return <div className="participant"><span className={`presence ${isOnline ? 'online' : ''}`} /><Avatar name={name} url={avatarUrl} /><div><b>{name}</b><small>{role}{participant.lastReadAtUtc ? ` · đã xem ${formatTime(participant.lastReadAtUtc)}` : ''}</small></div>
     {canManage && participant.userId !== currentUserId && participant.role !== 'owner' && <select aria-label={`Quản lý ${name}`} defaultValue="" onChange={(event) => { const action = event.target.value as 'remove' | 'admin' | 'member' | 'owner'; if (action) onManage(action); event.currentTarget.value = '' }}><option value="">⋯</option><option value="admin">Đặt quản trị viên</option><option value="member">Đặt thành viên</option><option value="owner">Chuyển quyền sở hữu</option><option value="remove">Xóa</option></select>}
