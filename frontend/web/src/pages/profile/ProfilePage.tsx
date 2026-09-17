@@ -102,8 +102,8 @@ export default function ProfilePage() {
   const isMountedRef = useRef(false)
   const suggestionRequestGenerationRef = useRef(0)
   const suggestionAbortControllerRef = useRef<AbortController | null>(null)
-  const displayName = profile?.displayName ?? session!.user.username
-  const initials = displayName.slice(0, 2).toUpperCase()
+  const displayName = profile?.displayName ?? ''
+  const initials = displayName.slice(0, 2).toUpperCase() || '?'
   const bio = profile?.bio ?? ''
   const location = profile?.currentCity ?? t('notSet')
   const joinedDate = profile ? new Date(profile.createdAt).toLocaleDateString(locale) : '—'
@@ -386,7 +386,7 @@ export default function ProfilePage() {
   }
 
   const openProfileEditor = () => {
-    setDisplayNameDraft(profile?.displayName ?? session!.user.username)
+    setDisplayNameDraft(profile?.displayName ?? '')
     setBioDraft(profile?.bio ?? '')
     setCityDraft(profile?.currentCity ?? '')
     setHometownDraft(profile?.hometown ?? '')
