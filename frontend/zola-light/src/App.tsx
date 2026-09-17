@@ -224,7 +224,7 @@ function CreateConversation({ onClose, onDirect, onGroup }: { onClose: () => voi
     {mode === 'group' && <label>Tên nhóm<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} /></label>}
     <label>Tìm người dùng<input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tên hoặc username" /></label>
     {selected.length > 0 && <div className="selected-users">{selected.map((user) => <button key={user.userId} onClick={() => setSelected((current) => current.filter((item) => item.userId !== user.userId))}>{user.displayName} ×</button>)}</div>}
-    <div className="search-results">{users.map((user) => <button key={user.userId} disabled={busy} onClick={() => void select(user)}><Avatar name={user.displayName} url={user.avatarUrl} /><span>{user.displayName}<small>@{user.username}</small></span></button>)}</div>
+    <div className="search-results">{users.map((user) => <button key={user.userId} disabled={busy} onClick={() => void select(user)}><Avatar name={user.displayName} url={user.avatarUrl} /><span>{user.displayName}</span></button>)}</div>
     {mode === 'group' && <button className="primary" disabled={busy || !title.trim() || selected.length === 0} onClick={() => void create()}>Tạo nhóm ({selected.length + 1})</button>}
   </Modal>
 }
@@ -248,7 +248,7 @@ function AddParticipantsDialog({ conversation, onClose, onAdd }: { conversation:
   return <Modal title="Thêm thành viên" onClose={onClose}>
     <label>Tìm người dùng<input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tên hoặc username" /></label>
     {selected.length > 0 && <div className="selected-users">{selected.map((user) => <button type="button" key={user.userId} onClick={() => setSelected((current) => current.filter((item) => item.userId !== user.userId))}>{user.displayName} ×</button>)}</div>}
-    <div className="search-results">{users.map((user) => <button type="button" key={user.userId} disabled={busy} onClick={() => { setSelected((current) => current.some((item) => item.userId === user.userId) ? current : [...current, user]); setSearch('') }}><Avatar name={user.displayName} url={user.avatarUrl} /><span>{user.displayName}<small>@{user.username}</small></span></button>)}</div>
+    <div className="search-results">{users.map((user) => <button type="button" key={user.userId} disabled={busy} onClick={() => { setSelected((current) => current.some((item) => item.userId === user.userId) ? current : [...current, user]); setSearch('') }}><Avatar name={user.displayName} url={user.avatarUrl} /><span>{user.displayName}</span></button>)}</div>
     <button type="button" className="primary" disabled={busy || selected.length === 0} onClick={() => void add()}>Thêm {selected.length || ''} thành viên</button>
   </Modal>
 }
@@ -302,7 +302,6 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const [typing, setTyping] = useState(false)
   const [onlineIds, setOnlineIds] = useState<ReadonlySet<string>>(new Set())
   const [profiles, setProfiles] = useState<ReadonlyMap<string, UserProfile>>(new Map())
-  const [profileLookups, setProfileLookups] = useState<ReadonlySet<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [showAddParticipants, setShowAddParticipants] = useState(false)
@@ -339,20 +338,21 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   }, [session.user.id])
   useEffect(() => { void loadConversations().catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tải cuộc trò chuyện.')) }, [loadConversations])
   useEffect(() => {
-    const unknownIds = [...new Set(conversations.flatMap((conversation) => conversation.type === 'direct' && conversation.participantUserId ? [conversation.participantUserId] : conversation.participants.map((participant) => participant.userId)).filter((userId) => !profiles.has(userId) && !profileLookups.has(userId)))]
+    const unknownIds = [...new Set(conversations.flatMap((conversation) => conversation.type === 'direct' && conversation.participantUserId ? [conversation.participantUserId] : conversation.participants.map((participant) => participant.userId)).filter((userId) => !profiles.has(userId)))]
     if (unknownIds.length === 0) return
-    setProfileLookups((current) => new Set([...current, ...unknownIds]))
     let isCurrent = true
     void Promise.all(unknownIds.map((userId) => messengerApi.user(userId).catch(() => null))).then((users) => {
       if (!isCurrent) return
+      const resolvedProfiles = users.filter((user): user is UserProfile => user !== null)
+      if (resolvedProfiles.length === 0) return
       setProfiles((current) => {
         const next = new Map(current)
-        users.forEach((user) => { if (user) next.set(user.userId, user) })
+        resolvedProfiles.forEach((profile) => next.set(profile.userId, profile))
         return next
       })
     })
     return () => { isCurrent = false }
-  }, [conversations, profiles, profileLookups])
+  }, [conversations, profiles])
   useEffect(() => { if (activeId) { setReplyTo(null); void loadMessages(activeId).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tải tin nhắn.')) } }, [activeId, loadMessages])
   useEffect(() => {
     const connection = new HubConnectionBuilder().withUrl(`${apiBaseUrl}/hubs/messages`, { accessTokenFactory: () => getSession()?.accessToken ?? '' }).withAutomaticReconnect().configureLogging(import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error).build()
@@ -407,7 +407,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const myParticipant = active?.participants.find((participant) => participant.userId === session.user.id)
 
   return <main className="zola-light-shell">
-    <aside className="conversation-pane"><header className="pane-header"><div className="current-user"><Avatar name={currentUserProfile?.displayName ?? session.user.username} url={currentUserProfile?.avatarUrl} /><div><strong>{currentUserProfile?.displayName ?? session.user.username}</strong><small>@{session.user.username}</small></div></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
+    <aside className="conversation-pane"><header className="pane-header"><div className="current-user"><Avatar name={currentUserProfile?.displayName ?? 'Tài khoản của bạn'} url={currentUserProfile?.avatarUrl} /><div><strong>{currentUserProfile?.displayName ?? 'Tài khoản của bạn'}</strong></div></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
       <input className="conversation-filter" placeholder="Tìm cuộc trò chuyện" onChange={(event) => { const value = event.target.value.toLowerCase(); document.querySelectorAll<HTMLElement>('[data-conversation]').forEach((node) => { node.hidden = !node.dataset.conversation?.includes(value) }) }} />
       <div className="conversation-list">{conversations.map((conversation) => <button key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} hidden={false} className={`conversation-item ${conversation.id === activeId ? 'selected' : ''}`} onClick={() => setActiveId(conversation.id)}>
         <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
