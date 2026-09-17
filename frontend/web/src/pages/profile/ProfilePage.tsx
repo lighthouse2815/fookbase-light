@@ -520,27 +520,6 @@ export default function ProfilePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-surface/50 via-transparent to-transparent" />
           </div>
 
-          {/* 2. Avatar: Large circle overlapping the bottom of cover photo */}
-          <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-8 z-20">
-            <div className="relative group">
-              <div className="w-[168px] h-[168px] rounded-full flex items-center justify-center text-5xl font-bold text-white border-4 border-surface shadow-2xl bg-primary">
-                {profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full rounded-full object-cover" /> : initials}
-              </div>
-              {/* Camera icon button */}
-              <button
-                type="button"
-                title={t('updateProfilePicture')}
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={profileMediaUpload !== null}
-                className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-surface-2 hover:bg-surface-hover
-                           flex items-center justify-center text-text border border-border cursor-pointer
-                           shadow-md transition-colors text-sm disabled:opacity-60"
-              >
-                {profileMediaUpload?.kind === 'avatar' ? `${profileMediaUpload.progress}%` : '📷'}
-              </button>
-            </div>
-          </div>
-
           {/* Edit cover photo button */}
           <button
             type="button"
@@ -557,9 +536,26 @@ export default function ProfilePage() {
 
         {/* 3. Below cover: Profile info section */}
         <div className="mx-auto max-w-[1120px] px-4 sm:px-8">
-          <div className="pt-[200px] md:pt-[200px] md:pl-[216px] pb-4 flex flex-col xl:flex-row xl:items-end justify-between gap-4">
-            {/* User Details */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="flex flex-col items-center gap-4 pb-4 pt-4 md:flex-row md:items-start">
+            <div className="relative shrink-0 group">
+              <div className="w-[168px] h-[168px] rounded-full flex items-center justify-center text-5xl font-bold text-white border-4 border-surface shadow-2xl bg-primary">
+                {profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full rounded-full object-cover" /> : initials}
+              </div>
+              <button
+                type="button"
+                title={t('updateProfilePicture')}
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={profileMediaUpload !== null}
+                className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-surface-2 hover:bg-surface-hover flex items-center justify-center text-text border border-border cursor-pointer shadow-md transition-colors text-sm disabled:opacity-60"
+              >
+                {profileMediaUpload?.kind === 'avatar' ? `${profileMediaUpload.progress}%` : '📷'}
+              </button>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                {/* User Details */}
+                <div className="flex flex-col items-center md:items-start text-center md:text-left">
               {/* Name & Badges */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
                 <h1 className="font-heading font-bold text-2xl sm:text-3xl text-text leading-tight">
@@ -583,10 +579,10 @@ export default function ProfilePage() {
                 </span>
               </div>
               {(profile?.currentCity || profile?.education || profile?.workplace) && <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-text-muted md:justify-start"><span>{profile.currentCity ? `⌖ ${profile.currentCity}` : null}</span>{profile.education && <span>· {profile.education}</span>}{profile.workplace && <span>· {profile.workplace}</span>}</p>}
-            </div>
+                </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 shrink-0 mt-2 xl:mt-0">
+                {/* Action buttons */}
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 shrink-0 xl:mt-0">
               <button
                 type="button"
                 onClick={() => setTab('posts')}
@@ -615,6 +611,8 @@ export default function ProfilePage() {
               >
                 <span>⌄</span>
               </button>
+                </div>
+              </div>
             </div>
           </div>
 
