@@ -53,6 +53,12 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
             client.Timeout = TimeSpan.FromSeconds(10);
         });
+        services.AddHttpClient<TraccarSmsSender>((provider, client) =>
+        {
+            var options = provider.GetRequiredService<SmsOptions>();
+            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IContactOtpSender, ContactOtpSender>();
         services.AddScoped<JwtTokenService>();

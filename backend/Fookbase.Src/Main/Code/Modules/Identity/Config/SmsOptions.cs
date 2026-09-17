@@ -4,7 +4,12 @@ public sealed class SmsOptions
 {
     public const string SectionName = "Sms";
 
+    public const string SpeedSmsProvider = "SpeedSms";
+    public const string TraccarProvider = "Traccar";
+
     public bool Enabled { get; init; }
+
+    public string Provider { get; init; } = SpeedSmsProvider;
 
     public string AccessToken { get; init; } = string.Empty;
 
@@ -24,9 +29,14 @@ public sealed class SmsOptions
             throw new InvalidOperationException("Sms:AccessToken is required when SMS is enabled.");
         }
 
-        if (string.IsNullOrWhiteSpace(TwoFactorApplicationId))
+        if (Provider is not SpeedSmsProvider and not TraccarProvider)
         {
-            throw new InvalidOperationException("Sms:TwoFactorApplicationId is required when SMS is enabled.");
+            throw new InvalidOperationException("Sms:Provider must be either SpeedSms or Traccar when SMS is enabled.");
+        }
+
+        if (Provider == SpeedSmsProvider && string.IsNullOrWhiteSpace(TwoFactorApplicationId))
+        {
+            throw new InvalidOperationException("Sms:TwoFactorApplicationId is required when Sms:Provider is SpeedSms.");
         }
 
         if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) ||

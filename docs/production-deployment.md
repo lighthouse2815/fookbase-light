@@ -55,17 +55,20 @@ Trong Google Cloud Console, cấu hình OAuth consent screen, xác minh domain H
 
 Thêm cả hai SPA vào `Cors__AllowedOrigins`; restart API sau khi inject secret. Với Zalo, Messenger và các embedded WebView tương tự, giao diện chỉ hướng người dùng mở Chrome/Safari cho Google OAuth. Đăng nhập mật khẩu vẫn hoạt động trong các WebView này.
 
-## OTP qua SpeedSMS
+## OTP qua SMS
 
-Đăng ký mới chấp nhận một email hoặc số di động Việt Nam. Email dùng SMTP; số điện thoại dùng SpeedSMS. Đăng ký và nạp tiền tài khoản SpeedSMS trước, sau đó inject các biến server-side sau qua secret store hoặc file môi trường ngoài Git:
+Đăng ký mới chấp nhận một email hoặc số di động Việt Nam. Email dùng SMTP; số điện thoại dùng provider HTTP được cấu hình. Demo dùng Traccar SMS Gateway cloud service: cài app trên Android, bật Cloud Service và lưu Cloud Token vào secret store hoặc file môi trường ngoài Git. Backend deployed gọi cloud service; điện thoại không cần mở port trực tiếp ra Internet.
 
 ```dotenv
 Sms__Enabled=true
-Sms__AccessToken=<speedsms-access-token>
-Sms__BaseUrl=https://api.speedsms.vn
+Sms__Provider=Traccar
+Sms__AccessToken=<traccar-cloud-token>
+Sms__BaseUrl=https://www.traccar.org/sms/
 ```
 
-Không đưa `Sms__AccessToken` vào source, image, log hay biến `VITE_*`. Khi `Sms__Enabled=false` (mặc định), API không gửi SMS và trả `sms_unavailable` cho yêu cầu dùng số điện thoại; đăng ký qua email vẫn dùng được nếu SMTP bật. Sau khi bật, gửi thử tới một số điện thoại thật thuộc nhóm vận hành và kiểm tra số dư/cước trực tiếp trên SpeedSMS.
+Không đưa `Sms__AccessToken` vào source, image, log hay biến `VITE_*`. Khi `Sms__Enabled=false` (mặc định), API không gửi SMS và trả `sms_unavailable` cho yêu cầu dùng số điện thoại; đăng ký qua email vẫn dùng được nếu SMTP bật. Sau khi bật, gửi thử tới một số điện thoại thật thuộc nhóm vận hành. App điện thoại phải có mạng, SIM gửi được SMS và được tắt battery optimization.
+
+Khi cần SpeedSMS ở production, đổi `Sms__Provider=SpeedSms`, `Sms__BaseUrl=https://api.speedsms.vn` và bổ sung `Sms__TwoFactorApplicationId`; luồng OTP/API không thay đổi. Không dùng Traccar Local Service qua Internet công khai; nếu cần endpoint local, chỉ kết nối qua VPN và HTTPS proxy đáng tin cậy.
 
 OTP gồm sáu số, hết hạn sau 10 phút, chỉ dùng một lần, có cooldown gửi lại 60 giây và tối đa năm lần gửi hoặc thử mã trong một giờ/challenge. Theo dõi phản hồi nhà cung cấp nhưng không log số điện thoại đầy đủ, OTP, mật khẩu hoặc token SpeedSMS.
 
