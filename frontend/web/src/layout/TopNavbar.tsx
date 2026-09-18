@@ -17,6 +17,29 @@ interface NavItem {
   label: string
 }
 
+interface TopNavbarMascotItem {
+  id: string
+  name: string
+  directions: string
+  reactions: string
+}
+
+const leftNavbarMascots: readonly TopNavbarMascotItem[] = [
+  { id: 'frog', name: 'Ếch xanh', directions: '/mascots/frog-directions.webp', reactions: '/mascots/frog-reactions.webp' },
+  { id: 'otter', name: 'Rái cá', directions: '/mascots/otter-directions.webp', reactions: '/mascots/otter-reactions.webp' },
+  { id: 'dino', name: 'Khủng long', directions: '/mascots/dino-directions.webp', reactions: '/mascots/dino-reactions.webp' },
+  { id: 'bear', name: 'Gấu nâu', directions: '/mascots/bear-directions.webp', reactions: '/mascots/bear-reactions.webp' },
+  { id: 'sheep', name: 'Bé cừu', directions: '/mascots/sheep-directions.webp', reactions: '/mascots/sheep-reactions.webp' },
+]
+
+const rightNavbarMascots: readonly TopNavbarMascotItem[] = [
+  { id: 'wizard', name: 'Phù thủy', directions: '/mascots/wizard-directions.webp', reactions: '/mascots/wizard-reactions.webp' },
+  { id: 'skater', name: 'Skater', directions: '/mascots/skater-directions.webp', reactions: '/mascots/skater-reactions.webp' },
+  { id: 'astronaut', name: 'Phi hành gia', directions: '/mascots/astronaut-directions.webp', reactions: '/mascots/astronaut-reactions.webp' },
+  { id: 'hamster', name: 'Hamster', directions: '/mascots/hamster-directions.webp', reactions: '/mascots/hamster-reactions.webp' },
+  { id: 'tiger', name: 'Hổ con', directions: '/mascots/tiger-directions.webp', reactions: '/mascots/tiger-reactions.webp' },
+]
+
 function HomeIcon() {
   return <svg viewBox="0 0 28 28" aria-hidden="true" className="h-7 w-7 fill-current"><path d="M25.825 12.29 14.743 2.47a1.12 1.12 0 0 0-1.486 0L2.175 12.29a1.12 1.12 0 0 0 .743 1.96h2.237v9.29c0 1.082.878 1.96 1.96 1.96h4.06v-6.227h5.65V25.5h4.06c1.082 0 1.96-.878 1.96-1.96v-9.29h2.237a1.12 1.12 0 0 0 .743-1.96Z" /></svg>
 }
@@ -449,6 +472,21 @@ export default function TopNavbar() {
           </form>
         </div>
 
+        {/* Left mascot squad (5 characters) */}
+        <div className="hidden xl:flex items-center gap-1.5 shrink-0 px-2" aria-label="Mascots squad left">
+          {leftNavbarMascots.map((item) => (
+            <div key={item.id} title={item.name} className="flex items-center shrink-0">
+              <Mascot
+                directions={item.directions}
+                reactions={item.reactions}
+                size={34}
+                label={item.name}
+                className="transition-transform hover:scale-125 cursor-pointer drop-shadow-xs"
+              />
+            </div>
+          ))}
+        </div>
+
         <nav aria-label="Điều hướng chính" className="flex flex-1 items-center justify-center gap-1 self-stretch px-2 max-w-[680px] mx-auto max-lg:w-full">
           {navItems.map((item) => (
             <NavLink
@@ -470,6 +508,21 @@ export default function TopNavbar() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Right mascot squad (5 characters) */}
+        <div className="hidden xl:flex items-center gap-1.5 shrink-0 px-2" aria-label="Mascots squad right">
+          {rightNavbarMascots.map((item) => (
+            <div key={item.id} title={item.name} className="flex items-center shrink-0">
+              <Mascot
+                directions={item.directions}
+                reactions={item.reactions}
+                size={34}
+                label={item.name}
+                className="transition-transform hover:scale-125 cursor-pointer drop-shadow-xs"
+              />
+            </div>
+          ))}
+        </div>
 
         <div className="flex items-center gap-2 w-[280px] shrink-0 justify-end max-lg:hidden">
           <div ref={menuDropdownRef} className="relative">
