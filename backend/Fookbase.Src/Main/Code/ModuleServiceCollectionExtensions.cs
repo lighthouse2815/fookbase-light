@@ -25,6 +25,7 @@ using Fookbase.Api.Modules.Events;
 using Fookbase.Api.Modules.Memories;
 using Fookbase.Api.Modules.Ai;
 using Fookbase.Api.Modules.Ai.Config;
+using Fookbase.Api.Modules.Games;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -163,6 +164,9 @@ internal static class ModuleServiceCollectionExtensions
         options.Validate();
         return services.AddAiInfrastructure(options);
     }
+
+    public static IServiceCollection AddGamesModule(this IServiceCollection services) =>
+        services.AddGamesInfrastructure();
 
     private static string RequiredConnectionString(IConfiguration configuration, string name) =>
         configuration.GetConnectionString(name)

@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { HubConnectionBuilder, HubConnectionState, LogLevel, type HubConnection } from '@microsoft/signalr'
+import { apiBaseUrl } from '../../api/client'
+import { useAuth } from '../../auth/useAuth'
+import { getAuthSession } from '../../auth/session'
 import { advanceGame, createGame, flap, WORLD, type FlappyState } from './flappyBirdEngine'
 
 const bestScoreKey = 'fookbase.flappy-bird.best'
@@ -9,11 +13,32 @@ function readBestScore() {
   } catch { return 0 }
 }
 
+interface OnlineRound {
+  id: string
+  seed: number
+  startsAtUtc: string
+}
+
+interface RemotePlayer {
+  birdY: number
+  velocity: number
+  phase: 'playing' | 'over'
+  score: number
+}
+
 export default function FlappyBirdGame() {
+  const { session } = useAuth()
   const [game, setGame] = useState(createGame)
   const [bestScore, setBestScore] = useState(readBestScore)
+  const [onlineRound, setOnlineRound] = useState<OnlineRound | null>(null)
+  const [remotePlayers, setRemotePlayers] = useState<ReadonlyMap<string, RemotePlayer>>(new Map())
+  const [onlineError, setOnlineError] = useState<string | null>(null)
+  const [isOnlineConnected, setIsOnlineConnected] = useState(false)
   const gameRef = useRef(game)
   const bestRef = useRef(bestScore)
+  const onlineRoundRef = useRef<OnlineRound | null>(null)
+  const onlineConnectionRef = useRef<HubConnection | null>(null)
+  const onlineStartTimerRef = useRef<number | null>(null)
   const stageRef = useRef<HTMLButtonElement>(null)
   const endedAtRef = useRef(0)
   const id = useId()
@@ -34,12 +59,29 @@ export default function FlappyBirdGame() {
     setGame(next)
   }, [])
 
+  const scheduleOnlineRound = useCallback((round: OnlineRound) => {
+    if (onlineStartTimerRef.current) window.clearTimeout(onlineStartTimerRef.current)
+    onlineRoundRef.current = round
+    setOnlineRound(round)
+    setRemotePlayers(new Map())
+    setOnlineError(null)
+    commitGame(createGame(round.seed))
+    const delay = Math.max(0, Date.parse(round.startsAtUtc) - Date.now())
+    onlineStartTimerRef.current = window.setTimeout(() => {
+      commitGame(flap(createGame(round.seed)))
+      onlineStartTimerRef.current = null
+    }, delay)
+  }, [commitGame])
+
   const pause = useCallback(() => {
-    if (gameRef.current.phase === 'playing') commitGame({ ...gameRef.current, phase: 'paused' })
+    if (!onlineRoundRef.current && gameRef.current.phase === 'playing') {
+      commitGame({ ...gameRef.current, phase: 'paused' })
+    }
   }, [commitGame])
 
   const play = () => {
     const current = gameRef.current
+    if (onlineRoundRef.current && current.phase !== 'playing') return
     if (current.phase === 'over' && performance.now() - endedAtRef.current < 400) return
     stageRef.current?.focus({ preventScroll: true })
     if (current.phase === 'paused') commitGame({ ...current, phase: 'playing', remainder: 0 })
@@ -70,6 +112,89 @@ export default function FlappyBirdGame() {
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [pause])
+
+  useEffect(() => {
+    if (!session) return
+
+    const connection = new HubConnectionBuilder()
+      .withUrl(`${apiBaseUrl}/hubs/flappy-bird`, {
+        accessTokenFactory: () => getAuthSession()?.accessToken ?? '',
+      })
+      .withAutomaticReconnect()
+      .configureLogging(import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error)
+      .build()
+    onlineConnectionRef.current = connection
+    connection.on('RoundStarted', scheduleOnlineRound)
+    connection.on('PlayerUpdated', (player: RemotePlayer & { connectionId: string }) => {
+      setRemotePlayers((current) => new Map(current).set(player.connectionId, player))
+    })
+    connection.on('PlayerLeft', ({ connectionId }: { connectionId: string }) => {
+      setRemotePlayers((current) => {
+        const next = new Map(current)
+        next.delete(connectionId)
+        return next
+      })
+    })
+    connection.onreconnected(() => {
+      void connection.invoke('Join').catch(() => undefined)
+    })
+    void connection.start()
+      .then(async () => {
+        setIsOnlineConnected(true)
+        const round = await connection.invoke<OnlineRound | null>('Join')
+        if (round && Date.parse(round.startsAtUtc) <= Date.now()) {
+          setOnlineError('Một vòng chung đang diễn ra. Bấm “Chơi cùng online” để mở vòng mới.')
+        }
+      })
+      .catch(() => setOnlineError('Không thể kết nối chế độ chơi cùng.'))
+
+    return () => {
+      if (onlineStartTimerRef.current) window.clearTimeout(onlineStartTimerRef.current)
+      onlineStartTimerRef.current = null
+      onlineRoundRef.current = null
+      if (onlineConnectionRef.current === connection) onlineConnectionRef.current = null
+      setIsOnlineConnected(false)
+      void connection.stop()
+    }
+  }, [scheduleOnlineRound, session])
+
+  useEffect(() => {
+    if (!onlineRound) return
+    const timer = window.setInterval(() => {
+      const connection = onlineConnectionRef.current
+      const current = gameRef.current
+      if (connection?.state !== HubConnectionState.Connected ||
+          current.phase !== 'playing' && current.phase !== 'over') return
+      void connection.invoke('UpdatePlayer', {
+        roundId: onlineRound.id,
+        birdY: current.birdY,
+        velocity: current.velocity,
+        phase: current.phase,
+        score: current.score,
+      }).catch(() => undefined)
+    }, 80)
+    return () => window.clearInterval(timer)
+  }, [onlineRound])
+
+  const startOnlineRound = () => {
+    const connection = onlineConnectionRef.current
+    if (connection?.state !== HubConnectionState.Connected) {
+      setOnlineError('Chưa kết nối được với phòng chơi chung. Hãy thử lại sau ít giây.')
+      return
+    }
+    setOnlineError(null)
+    void connection.invoke('StartRound').catch(() => setOnlineError('Không thể bắt đầu vòng chơi chung.'))
+  }
+
+  const leaveOnlineRound = () => {
+    if (onlineStartTimerRef.current) window.clearTimeout(onlineStartTimerRef.current)
+    onlineStartTimerRef.current = null
+    onlineRoundRef.current = null
+    setOnlineRound(null)
+    setRemotePlayers(new Map())
+    setOnlineError(null)
+    commitGame(createGame())
+  }
 
   const angle = ended ? 65 : Math.max(-25, Math.min(85, game.velocity * 0.15))
   const wingY = playing ? Math.sin(game.distance * 0.22) * 4 : 0
@@ -128,6 +253,16 @@ export default function FlappyBirdGame() {
                   <rect x={-WORLD.pipeLip} y={bottom} width={WORLD.pipeWidth + WORLD.pipeLip * 2} height={WORLD.pipeCapHeight} rx="2" />
                 </g>
               })}
+              {[...remotePlayers.values()].map((player, index) => {
+                const remoteAngle = player.phase === 'over' ? 65 : Math.max(-25, Math.min(85, player.velocity * 0.15))
+                return <g key={index} transform={`translate(${WORLD.birdX} ${player.birdY}) rotate(${remoteAngle})`} opacity="0.35" stroke="#332751" strokeWidth="2" strokeLinejoin="round">
+                  <circle r={WORLD.radius} fill="#cbbdff" />
+                  <path d="M-10 5 Q0 15 9 5" fill="#aa94f0" stroke="none" />
+                  <ellipse cx="-9" cy="3" rx="8" ry="5" fill="#eeeaff" />
+                  <ellipse cx="6" cy="-5" rx="6" ry="7" fill="white" /><path d="M8-6v3" stroke="#292b2f" strokeWidth="3" />
+                  <path d="M9 2H20V6H9Z" fill="#8667dc" />
+                </g>
+              })}
               <g data-bird="" transform={`translate(${WORLD.birdX} ${game.birdY}) rotate(${angle})`} stroke="#65432e" strokeWidth="2" strokeLinejoin="round">
                 <circle r={WORLD.radius} fill="#f9d848" />
                 <path d="M-10 5 Q0 15 9 5" fill="#f8b839" stroke="none" />
@@ -149,23 +284,27 @@ export default function FlappyBirdGame() {
 
             {!playing && <span className="absolute inset-0 flex flex-col items-center justify-center bg-[#17393b]/15 px-5">
               <span className="w-full rounded-xl border-2 border-[#584830] bg-[#f4e9bb] p-5 text-center text-[#584830] shadow-[0_5px_0_#584830]">
-                <span className="block font-mono text-2xl font-black tracking-tight">{ended ? 'HẾT LƯỢT!' : paused ? 'TẠM DỪNG' : 'SẴN SÀNG?'}</span>
-                <span className="mt-2 block text-sm">{ended ? `Bạn đã vượt qua ${game.score} ống` : paused ? 'Chuyến bay đang đợi bạn.' : 'Giữ nhịp bay, vượt qua những chiếc ống.'}</span>
+                <span className="block font-mono text-2xl font-black tracking-tight">{ended ? 'HẾT LƯỢT!' : paused ? 'TẠM DỪNG' : onlineRound ? 'CÙNG BAY!' : 'SẴN SÀNG?'}</span>
+                <span className="mt-2 block text-sm">{ended ? `Bạn đã vượt qua ${game.score} ống` : paused ? 'Chuyến bay đang đợi bạn.' : onlineRound ? 'Vòng chơi chung sẽ tự bắt đầu.' : 'Giữ nhịp bay, vượt qua những chiếc ống.'}</span>
                 {ended && <span className="mt-2 block text-sm font-bold">Kỷ lục: {bestScore}</span>}
-                <span className="mx-auto mt-5 block w-fit rounded-md border-2 border-[#86472f] bg-[#e98442] px-5 py-2 text-sm font-extrabold text-white shadow-[0_3px_0_#86472f]">{ended ? 'CHƠI LẠI' : paused ? 'TIẾP TỤC' : 'CHẠM ĐỂ BAY'}</span>
+                <span className="mx-auto mt-5 block w-fit rounded-md border-2 border-[#86472f] bg-[#e98442] px-5 py-2 text-sm font-extrabold text-white shadow-[0_3px_0_#86472f]">{onlineRound ? 'ĐANG ĐẾM NGƯỢC' : ended ? 'CHƠI LẠI' : paused ? 'TIẾP TỤC' : 'CHẠM ĐỂ BAY'}</span>
               </span>
               <span className="mt-5 text-xs font-semibold text-[#234a43]">CLICK / CHẠM / SPACE</span>
             </span>}
           </button>
           <div className="mt-4 flex justify-center gap-3">
-            <button type="button" disabled={game.phase === 'ready' || ended} onClick={() => { if (paused) play(); else pause() }} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-hover disabled:opacity-40">{paused ? 'Tiếp tục' : 'Tạm dừng'}</button>
-            <button type="button" onClick={() => { commitGame(createGame()); stageRef.current?.focus({ preventScroll: true }) }} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-hover">Chơi lại từ đầu</button>
+            <button type="button" disabled={game.phase === 'ready' || ended || Boolean(onlineRound)} onClick={() => { if (paused) play(); else pause() }} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-hover disabled:opacity-40">{paused ? 'Tiếp tục' : 'Tạm dừng'}</button>
+            <button type="button" onClick={() => { leaveOnlineRound(); stageRef.current?.focus({ preventScroll: true }) }} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-hover">Chơi đơn</button>
           </div>
         </div>
         <div id={`${id}-instructions`} className="space-y-5 text-sm leading-6 text-text-muted">
           <div><h3 className="mb-2 font-heading text-lg font-bold text-text">Giữ nhịp, bay xa</h3><p>Chạm vào khung game để bắt đầu. Mỗi lần chạm hoặc nhấn <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-xs text-text">Space</kbd> / <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-xs text-text">↑</kbd>, chim sẽ vỗ cánh một lần.</p></div>
           <p>Luồn qua khoảng trống giữa hai ống để được 1 điểm. Chạm ống, trần hoặc mặt đất là hết lượt.</p>
           <p>Nhấn <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-xs text-text">P</kbd> / <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-xs text-text">Esc</kbd> để tạm dừng. Game cũng tự dừng khi bạn chuyển tab hoặc rời vùng chơi.</p>
+          <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-heading text-base font-bold text-text">Chơi cùng online</h3><p className="mt-1">{isOnlineConnected ? `${remotePlayers.size} người chơi khác đang hiện trên màn.` : 'Đang kết nối phòng chơi…'} Chim đối thủ có màu tím mờ.</p></div><button type="button" onClick={startOnlineRound} disabled={!isOnlineConnected} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-dark disabled:opacity-50">Chơi cùng online</button></div>
+            {onlineError && <p role="alert" className="mt-3 text-sm text-danger">{onlineError}</p>}
+          </div>
           <p className="rounded-xl border border-border bg-bg p-4">Mẹo nhỏ: bấm nhẹ, đều tay và nhìn chiếc ống tiếp theo. Kỷ lục được lưu trên trình duyệt này.</p>
           <p role="status" className="sr-only">{ended ? `Hết lượt. Điểm ${game.score}. Kỷ lục ${bestScore}.` : paused ? 'Game đang tạm dừng.' : playing ? 'Đang chơi Flappy Bird.' : 'Flappy Bird sẵn sàng.'}</p>
         </div>

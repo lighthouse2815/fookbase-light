@@ -78,6 +78,14 @@ test('each new pipe has consistent spacing and a reachable opening', () => {
   }
 })
 
+test('a shared seed produces the same pipes for every online player', () => {
+  const initial = { ...flap(createGame(8675309)), velocity: 0,
+    pipes: [{ id: 1, x: WORLD.width - WORLD.pipeSpacing, gapCenter: 230, scored: false }] }
+  const firstPlayer = advanceGame(initial, 1 / 120, () => 0)
+  const secondPlayer = advanceGame(initial, 1 / 120, () => 1)
+  assert.deepEqual(firstPlayer.pipes, secondPlayer.pipes)
+})
+
 test('updates are pure so repeated calculations cannot duplicate points or pipes', () => {
   const state = flap(createGame())
   const copy = structuredClone(state)

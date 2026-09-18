@@ -35,6 +35,7 @@ using Fookbase.Api.Modules.Search.Endpoints;
 using Fookbase.Api.Modules.Events.Endpoints;
 using Fookbase.Api.Modules.Memories.Endpoints;
 using Fookbase.Api.Modules.Ai.Endpoints;
+using Fookbase.Api.Modules.Games.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
@@ -125,6 +126,7 @@ builder.Services.AddSearchModule();
 builder.Services.AddEventsModule();
 builder.Services.AddMemoriesModule();
 builder.Services.AddAiModule(builder.Configuration);
+builder.Services.AddGamesModule();
 
 jwtOptions.Validate();
 googleAuthenticationOptions.Validate(builder.Environment.IsProduction());
@@ -343,6 +345,7 @@ app.MapEventEndpoints();
 app.MapPhotoAlbumEndpoints();
 app.MapMemoryEndpoints();
 app.MapAiChatEndpoints();
+app.MapHub<FlappyBirdHub>("/hubs/flappy-bird");
 
 app.Run();
 

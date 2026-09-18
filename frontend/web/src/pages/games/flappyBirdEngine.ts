@@ -19,11 +19,12 @@ export interface FlappyState {
   distance: number
   remainder: number
   nextPipeId: number
+  seed: number | null
 }
 
-export const createGame = (): FlappyState => ({
+export const createGame = (seed: number | null = null): FlappyState => ({
   phase: 'ready', birdY: 230, velocity: 0, pipes: [], score: 0,
-  distance: 0, remainder: 0, nextPipeId: 1,
+  distance: 0, remainder: 0, nextPipeId: 1, seed,
 })
 
 export function flap(state: FlappyState): FlappyState {
@@ -54,7 +55,7 @@ export function advanceGame(state: FlappyState, elapsed: number, random = Math.r
     if (last && last.x <= WORLD.width - WORLD.pipeSpacing) {
       next.pipes.push({
         id: next.nextPipeId++, x: last.x + WORLD.pipeSpacing,
-        gapCenter: Math.max(145, Math.min(319, last.gapCenter + (random() * 2 - 1) * 70)),
+        gapCenter: Math.max(145, Math.min(319, last.gapCenter + (next.seed === null ? random() : seededRandom(next.seed, next.nextPipeId) * 2 - 1) * 70)),
         scored: false,
       })
     }
@@ -89,4 +90,11 @@ export function advanceGame(state: FlappyState, elapsed: number, random = Math.r
     next.pipes = next.pipes.filter(pipe => pipe.x + WORLD.pipeWidth + WORLD.pipeLip > 0)
   }
   return next
+}
+
+function seededRandom(seed: number, value: number) {
+  let hash = (seed ^ Math.imul(value, 0x9e3779b9)) >>> 0
+  hash = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b) >>> 0
+  hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35) >>> 0
+  return ((hash ^ (hash >>> 16)) >>> 0) / 0x1_0000_0000
 }
