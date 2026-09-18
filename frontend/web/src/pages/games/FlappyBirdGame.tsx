@@ -26,10 +26,19 @@ interface RemotePlayer {
   score: number
 }
 
+interface RoomMembership {
+  code: string
+  isHost: boolean
+  playerCount: number
+  round: OnlineRound | null
+}
+
 export default function FlappyBirdGame() {
   const { session } = useAuth()
   const [game, setGame] = useState(createGame)
   const [bestScore, setBestScore] = useState(readBestScore)
+  const [room, setRoom] = useState<RoomMembership | null>(null)
+  const [roomCodeDraft, setRoomCodeDraft] = useState('')
   const [onlineRound, setOnlineRound] = useState<OnlineRound | null>(null)
   const [remotePlayers, setRemotePlayers] = useState<ReadonlyMap<string, RemotePlayer>>(new Map())
   const [onlineError, setOnlineError] = useState<string | null>(null)
@@ -37,6 +46,7 @@ export default function FlappyBirdGame() {
   const gameRef = useRef(game)
   const bestRef = useRef(bestScore)
   const onlineRoundRef = useRef<OnlineRound | null>(null)
+  const roomRef = useRef<RoomMembership | null>(null)
   const onlineConnectionRef = useRef<HubConnection | null>(null)
   const onlineStartTimerRef = useRef<number | null>(null)
   const stageRef = useRef<HTMLButtonElement>(null)
@@ -72,6 +82,26 @@ export default function FlappyBirdGame() {
       onlineStartTimerRef.current = null
     }, delay)
   }, [commitGame])
+
+  const applyRoomMembership = useCallback((membership: RoomMembership) => {
+    roomRef.current = membership
+    setRoom(membership)
+    setRoomCodeDraft(membership.code)
+    if (membership.round && Date.parse(membership.round.startsAtUtc) > Date.now()) {
+      scheduleOnlineRound(membership.round)
+    } else if (membership.round) {
+      setOnlineError('Vòng này đã bắt đầu. Chờ chủ phòng mở vòng tiếp theo.')
+    }
+  }, [scheduleOnlineRound])
+
+  const handleRoundStarted = useCallback((round: OnlineRound) => {
+    if (roomRef.current) {
+      const membership = { ...roomRef.current, round }
+      roomRef.current = membership
+      setRoom(membership)
+    }
+    scheduleOnlineRound(round)
+  }, [scheduleOnlineRound])
 
   const pause = useCallback(() => {
     if (!onlineRoundRef.current && gameRef.current.phase === 'playing') {
@@ -124,7 +154,7 @@ export default function FlappyBirdGame() {
       .configureLogging(import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error)
       .build()
     onlineConnectionRef.current = connection
-    connection.on('RoundStarted', scheduleOnlineRound)
+    connection.on('RoundStarted', handleRoundStarted)
     connection.on('PlayerUpdated', (player: RemotePlayer & { connectionId: string }) => {
       setRemotePlayers((current) => new Map(current).set(player.connectionId, player))
     })
@@ -135,28 +165,33 @@ export default function FlappyBirdGame() {
         return next
       })
     })
+    connection.on('RoomUpdated', ({ playerCount }: { playerCount: number }) => {
+      if (!roomRef.current) return
+      const membership = { ...roomRef.current, playerCount }
+      roomRef.current = membership
+      setRoom(membership)
+    })
     connection.onreconnected(() => {
-      void connection.invoke('Join').catch(() => undefined)
+      const previousRoom = roomRef.current
+      if (!previousRoom) return
+      void connection.invoke<RoomMembership>('JoinRoom', previousRoom.code)
+        .then(applyRoomMembership)
+        .catch(() => setOnlineError('Không thể kết nối lại phòng chơi.'))
     })
     void connection.start()
-      .then(async () => {
-        setIsOnlineConnected(true)
-        const round = await connection.invoke<OnlineRound | null>('Join')
-        if (round && Date.parse(round.startsAtUtc) <= Date.now()) {
-          setOnlineError('Một vòng chung đang diễn ra. Bấm “Chơi cùng online” để mở vòng mới.')
-        }
-      })
+      .then(() => setIsOnlineConnected(true))
       .catch(() => setOnlineError('Không thể kết nối chế độ chơi cùng.'))
 
     return () => {
       if (onlineStartTimerRef.current) window.clearTimeout(onlineStartTimerRef.current)
       onlineStartTimerRef.current = null
       onlineRoundRef.current = null
+      roomRef.current = null
       if (onlineConnectionRef.current === connection) onlineConnectionRef.current = null
       setIsOnlineConnected(false)
       void connection.stop()
     }
-  }, [scheduleOnlineRound, session])
+  }, [applyRoomMembership, handleRoundStarted, session])
 
   useEffect(() => {
     if (!onlineRound) return
@@ -176,20 +211,53 @@ export default function FlappyBirdGame() {
     return () => window.clearInterval(timer)
   }, [onlineRound])
 
-  const startOnlineRound = () => {
+  const createRoom = () => {
     const connection = onlineConnectionRef.current
     if (connection?.state !== HubConnectionState.Connected) {
-      setOnlineError('Chưa kết nối được với phòng chơi chung. Hãy thử lại sau ít giây.')
+      setOnlineError('Chưa kết nối được với máy chủ game. Hãy thử lại sau ít giây.')
       return
     }
     setOnlineError(null)
-    void connection.invoke('StartRound').catch(() => setOnlineError('Không thể bắt đầu vòng chơi chung.'))
+    void connection.invoke<RoomMembership>('CreateRoom')
+      .then(applyRoomMembership)
+      .catch(() => setOnlineError('Không thể tạo phòng.'))
+  }
+
+  const joinRoom = () => {
+    const connection = onlineConnectionRef.current
+    const code = roomCodeDraft.trim().toUpperCase()
+    if (connection?.state !== HubConnectionState.Connected) {
+      setOnlineError('Chưa kết nối được với máy chủ game. Hãy thử lại sau ít giây.')
+      return
+    }
+    if (code.length !== 6) {
+      setOnlineError('Nhập mã phòng gồm 6 ký tự.')
+      return
+    }
+    setOnlineError(null)
+    void connection.invoke<RoomMembership>('JoinRoom', code)
+      .then(applyRoomMembership)
+      .catch((error: Error) => setOnlineError(error.message || 'Không thể vào phòng.'))
+  }
+
+  const startHostedRound = () => {
+    const connection = onlineConnectionRef.current
+    if (!roomRef.current?.isHost || connection?.state !== HubConnectionState.Connected) return
+    setOnlineError(null)
+    void connection.invoke('StartRound').catch((error: Error) => setOnlineError(error.message || 'Không thể bắt đầu vòng chơi.'))
   }
 
   const leaveOnlineRound = () => {
     if (onlineStartTimerRef.current) window.clearTimeout(onlineStartTimerRef.current)
     onlineStartTimerRef.current = null
     onlineRoundRef.current = null
+    roomRef.current = null
+    const connection = onlineConnectionRef.current
+    if (connection?.state === HubConnectionState.Connected) {
+      void connection.invoke('LeaveRoom').catch(() => undefined)
+    }
+    setRoom(null)
+    setRoomCodeDraft('')
     setOnlineRound(null)
     setRemotePlayers(new Map())
     setOnlineError(null)
@@ -302,7 +370,14 @@ export default function FlappyBirdGame() {
           <p>Luồn qua khoảng trống giữa hai ống để được 1 điểm. Chạm ống, trần hoặc mặt đất là hết lượt.</p>
           <p>Nhấn <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-xs text-text">P</kbd> / <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-xs text-text">Esc</kbd> để tạm dừng. Game cũng tự dừng khi bạn chuyển tab hoặc rời vùng chơi.</p>
           <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-heading text-base font-bold text-text">Chơi cùng online</h3><p className="mt-1">{isOnlineConnected ? `${remotePlayers.size} người chơi khác đang hiện trên màn.` : 'Đang kết nối phòng chơi…'} Chim đối thủ có màu tím mờ.</p></div><button type="button" onClick={startOnlineRound} disabled={!isOnlineConnected} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-dark disabled:opacity-50">Chơi cùng online</button></div>
+            <div><h3 className="font-heading text-base font-bold text-text">Chơi cùng online</h3><p className="mt-1">{isOnlineConnected ? 'Tạo phòng rồi gửi mã cho bạn bè để cùng vào một màn.' : 'Đang kết nối máy chủ game…'} Chim đối thủ có màu tím mờ.</p></div>
+            {!room ? <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={createRoom} disabled={!isOnlineConnected} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-dark disabled:opacity-50">Tạo phòng</button>
+              <label className="flex min-w-48 flex-1 items-center rounded-lg border border-border bg-bg px-3 focus-within:border-primary"><span className="sr-only">Mã phòng</span><input value={roomCodeDraft} maxLength={6} onChange={(event) => setRoomCodeDraft(event.target.value.toUpperCase())} placeholder="Nhập mã phòng" className="min-w-0 flex-1 bg-transparent font-mono font-bold tracking-[0.18em] text-text outline-none placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-text-light" /><button type="button" onClick={joinRoom} disabled={!isOnlineConnected || roomCodeDraft.trim().length !== 6} className="text-sm font-bold text-primary disabled:opacity-50">Vào phòng</button></label>
+            </div> : <div className="mt-3 rounded-lg border border-border bg-bg p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs text-text-muted">Mã phòng</p><p className="font-mono text-xl font-black tracking-[0.2em] text-primary-light">{room.code}</p></div><div className="text-right text-sm text-text-muted"><p>{room.isHost ? 'Bạn là chủ phòng' : 'Đã vào phòng'}</p><p>{Math.max(0, room.playerCount - 1)} người chơi khác</p></div></div>
+              <div className="mt-3 flex flex-wrap gap-2">{room.isHost && <button type="button" onClick={startHostedRound} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-dark">Bắt đầu vòng chung</button>}<button type="button" onClick={leaveOnlineRound} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text transition hover:bg-surface-hover">Rời phòng</button></div>
+            </div>}
             {onlineError && <p role="alert" className="mt-3 text-sm text-danger">{onlineError}</p>}
           </div>
           <p className="rounded-xl border border-border bg-bg p-4">Mẹo nhỏ: bấm nhẹ, đều tay và nhìn chiếc ống tiếp theo. Kỷ lục được lưu trên trình duyệt này.</p>

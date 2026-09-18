@@ -1,31 +1,56 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Fookbase.Api.Modules.Games.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Fookbase.Api.Modules.Games.Services;
 
 namespace Fookbase.Api.Modules.Games.Hubs;
 
 [Authorize]
 public sealed class FlappyBirdHub(FlappyBirdRoomService roomService) : Hub
 {
-    private const string RoomName = "flappy-bird";
-
-    public async Task<FlappyBirdRound?> Join()
+    public async Task<FlappyBirdRoomMembership> CreateRoom()
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, RoomName, Context.ConnectionAborted);
-        return roomService.GetActiveRound();
+        var membership = roomService.CreateRoom(GetUserId(), Context.ConnectionId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(membership.Code), Context.ConnectionAborted);
+        return membership;
+    }
+
+    public async Task<FlappyBirdRoomMembership> JoinRoom(string roomCode)
+    {
+        var membership = roomService.JoinRoom(NormalizeRoomCode(roomCode), GetUserId(), Context.ConnectionId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(membership.Code), Context.ConnectionAborted);
+        await Clients.Group(GroupName(membership.Code)).SendAsync(
+            "RoomUpdated",
+            new FlappyBirdRoomUpdate(membership.Code, membership.PlayerCount),
+            Context.ConnectionAborted);
+        return membership;
+    }
+
+    public Task<FlappyBirdRoomMembership?> RejoinRoom() =>
+        Task.FromResult(roomService.GetMembership(Context.ConnectionId, GetUserId()));
+
+    public async Task LeaveRoom()
+    {
+        var update = roomService.LeaveRoom(Context.ConnectionId);
+        if (update is null)
+        {
+            return;
+        }
+
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(update.Code), Context.ConnectionAborted);
+        await NotifyRoomDepartureAsync(update);
     }
 
     public async Task StartRound()
     {
-        var round = roomService.StartRound();
-        await Clients.Group(RoomName).SendAsync("RoundStarted", round, Context.ConnectionAborted);
+        var membership = roomService.StartRound(GetUserId(), Context.ConnectionId);
+        await Clients.Group(GroupName(membership.Code)).SendAsync("RoundStarted", membership.Round!, Context.ConnectionAborted);
     }
 
     public async Task UpdatePlayer(FlappyBirdPlayerUpdate update)
     {
-        var round = roomService.GetActiveRound();
-        if (round is null || round.Id != update.RoundId ||
-            !double.IsFinite(update.BirdY) || update.BirdY is < 13 or > 451 ||
+        if (!double.IsFinite(update.BirdY) || update.BirdY is < 13 or > 451 ||
             !double.IsFinite(update.Velocity) || update.Velocity is < -650 or > 650 ||
             update.Score is < 0 or > 10_000 ||
             update.Phase is not ("playing" or "over"))
@@ -33,7 +58,13 @@ public sealed class FlappyBirdHub(FlappyBirdRoomService roomService) : Hub
             return;
         }
 
-        await Clients.OthersInGroup(RoomName).SendAsync("PlayerUpdated", new
+        var roomCode = roomService.GetRoomCodeForPlayerUpdate(Context.ConnectionId, update.RoundId);
+        if (roomCode is null)
+        {
+            return;
+        }
+
+        await Clients.OthersInGroup(GroupName(roomCode)).SendAsync("PlayerUpdated", new
         {
             ConnectionId = Context.ConnectionId,
             update.BirdY,
@@ -45,9 +76,38 @@ public sealed class FlappyBirdHub(FlappyBirdRoomService roomService) : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        await Clients.Group(RoomName).SendAsync("PlayerLeft", new { ConnectionId = Context.ConnectionId });
+        var update = roomService.LeaveRoom(Context.ConnectionId);
+        if (update is not null)
+        {
+            await NotifyRoomDepartureAsync(update);
+        }
+
         await base.OnDisconnectedAsync(exception);
     }
+
+    private async Task NotifyRoomDepartureAsync(FlappyBirdRoomUpdate update)
+    {
+        await Clients.Group(GroupName(update.Code)).SendAsync("PlayerLeft", new { ConnectionId = Context.ConnectionId });
+        await Clients.Group(GroupName(update.Code)).SendAsync("RoomUpdated", update);
+    }
+
+    private Guid GetUserId() =>
+        Guid.TryParse(Context.User?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId)
+            ? userId
+            : throw new HubException("Unauthenticated user.");
+
+    private static string NormalizeRoomCode(string roomCode)
+    {
+        var normalized = roomCode.Trim().ToUpperInvariant();
+        if (normalized.Length != 6 || normalized.Any(character => !char.IsAsciiLetterOrDigit(character)))
+        {
+            throw new HubException("Mã phòng gồm 6 ký tự chữ hoặc số.");
+        }
+
+        return normalized;
+    }
+
+    private static string GroupName(string roomCode) => $"flappy-bird:{roomCode}";
 }
 
 public sealed record FlappyBirdPlayerUpdate(
