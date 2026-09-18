@@ -34,6 +34,7 @@ using Fookbase.Api.Modules.Users.Endpoints;
 using Fookbase.Api.Modules.Search.Endpoints;
 using Fookbase.Api.Modules.Events.Endpoints;
 using Fookbase.Api.Modules.Memories.Endpoints;
+using Fookbase.Api.Modules.Ai.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
@@ -90,6 +91,8 @@ var authRateLimitWindowSeconds = builder.Configuration.GetValue(
     300);
 var searchPermitLimit = builder.Configuration.GetValue("RateLimiting:Search:PermitLimit", 30);
 var searchRateLimitWindowSeconds = builder.Configuration.GetValue("RateLimiting:Search:WindowSeconds", 60);
+var aiChatPermitLimit = builder.Configuration.GetValue("RateLimiting:AiChat:PermitLimit", 10);
+var aiChatRateLimitWindowSeconds = builder.Configuration.GetValue("RateLimiting:AiChat:WindowSeconds", 60);
 if (rateLimitPermitLimit <= 0 ||
     rateLimitWindowSeconds <= 0 ||
     authLoginPermitLimit <= 0 ||
@@ -97,7 +100,9 @@ if (rateLimitPermitLimit <= 0 ||
     authResendVerificationPermitLimit <= 0 ||
     authRateLimitWindowSeconds <= 0 ||
     searchPermitLimit <= 0 ||
-    searchRateLimitWindowSeconds <= 0)
+    searchRateLimitWindowSeconds <= 0 ||
+    aiChatPermitLimit <= 0 ||
+    aiChatRateLimitWindowSeconds <= 0)
 {
     throw new InvalidOperationException("Rate limiting values must be positive.");
 }
@@ -119,6 +124,7 @@ builder.Services.AddAdminModule();
 builder.Services.AddSearchModule();
 builder.Services.AddEventsModule();
 builder.Services.AddMemoriesModule();
+builder.Services.AddAiModule(builder.Configuration);
 
 jwtOptions.Validate();
 googleAuthenticationOptions.Validate(builder.Environment.IsProduction());
@@ -242,6 +248,15 @@ builder.Services.AddRateLimiter(options =>
         return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ =>
             SensitiveAuthRateLimit(searchPermitLimit, searchRateLimitWindowSeconds));
     });
+    options.AddPolicy("ai-chat", context =>
+    {
+        var userId = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var partitionKey = string.IsNullOrWhiteSpace(userId)
+            ? $"ai-chat-ip:{context.Connection.RemoteIpAddress}"
+            : $"ai-chat-user:{userId}";
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ =>
+            SensitiveAuthRateLimit(aiChatPermitLimit, aiChatRateLimitWindowSeconds));
+    });
 });
 builder.Services.AddHealthChecks()
     .AddCheck<FookbaseDatabaseHealthCheck>("postgresql", tags: ["ready"])
@@ -327,6 +342,7 @@ app.MapSearchEndpoints();
 app.MapEventEndpoints();
 app.MapPhotoAlbumEndpoints();
 app.MapMemoryEndpoints();
+app.MapAiChatEndpoints();
 
 app.Run();
 

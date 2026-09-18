@@ -30,6 +30,15 @@ services:
       GoogleAuthentication__ClientSecret: ${GoogleAuthentication__ClientSecret:-}
       GoogleAuthentication__WebBaseUrl: ${GoogleAuthentication__WebBaseUrl:-}
       GoogleAuthentication__ZolaLightBaseUrl: ${GoogleAuthentication__ZolaLightBaseUrl:-}
+      AiChat__Enabled: ${AiChat__Enabled:-false}
+      AiChat__ApiKey: ${AiChat__ApiKey:-}
+      AiChat__ApiBaseUrl: ${AiChat__ApiBaseUrl:-https://api.openai.com/}
+      AiChat__Model: ${AiChat__Model:-gpt-5-mini}
+      AiChat__RequestTimeoutSeconds: ${AiChat__RequestTimeoutSeconds:-45}
+      AiChat__MaximumInputCharacters: ${AiChat__MaximumInputCharacters:-4000}
+      AiChat__MaximumHistoryMessages: ${AiChat__MaximumHistoryMessages:-10}
+      RateLimiting__AiChat__PermitLimit: ${RateLimiting__AiChat__PermitLimit:-10}
+      RateLimiting__AiChat__WindowSeconds: ${RateLimiting__AiChat__WindowSeconds:-60}
       Email__Enabled: ${Email__Enabled:-false}
       Email__Host: ${Email__Host:-}
       Email__Port: ${Email__Port:-587}

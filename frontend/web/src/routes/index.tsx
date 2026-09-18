@@ -30,6 +30,7 @@ const privacySettingsPage = lazy(() => import('../pages/settings/PrivacySettings
 const securitySettingsPage = lazy(() => import('../pages/settings/SecuritySettingsPage'))
 const notificationsPage = lazy(() => import('../pages/notifications/NotificationsPage'))
 const postDetailPage = lazy(() => import('../pages/posts/PostDetailPage'))
+const aiChatPage = lazy(() => import('../pages/ai/AiChatPage'))
 
 function page(Page: ComponentType) {
   return <Suspense fallback={<main className="min-h-screen grid place-items-center text-text-muted">Đang tải…</main>}><Page /></Suspense>
@@ -76,6 +77,10 @@ export const router = createBrowserRouter([
       {
         path: 'games',
         element: page(gamesPage),
+      },
+      {
+        path: 'ai-chat',
+        element: page(aiChatPage),
       },
       {
         path: 'messages',

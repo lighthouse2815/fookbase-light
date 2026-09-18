@@ -97,6 +97,23 @@ npm run dev
 
 Frontend chạy tại <http://localhost:5173>.
 
+## Trợ lý AI
+
+Fookbase Web có trang **Trợ lý AI** tại `/ai-chat`. Tính năng mặc định tắt. Để bật trên API,
+đặt các biến server-side trong `.env` rồi khởi động lại Compose:
+
+```bash
+AiChat__Enabled=true
+AiChat__ApiKey=<openai-api-key>
+# Tùy chọn; mặc định là gpt-5-mini.
+AiChat__Model=gpt-5-mini
+```
+
+Khóa tuyệt đối không được đặt trong `VITE_*` hay source frontend. API yêu cầu người dùng đăng
+nhập, giới hạn mặc định 10 lượt gửi/phút mỗi tài khoản, giữ tối đa 10 lượt ngữ cảnh trên client
+và gửi `store: false` cho Responses API. Có thể điều chỉnh các giới hạn bằng biến
+`RateLimiting__AiChat__*` và `AiChat__Maximum*` trong `.env`.
+
 Chạy web Admin riêng:
 
 ```bash

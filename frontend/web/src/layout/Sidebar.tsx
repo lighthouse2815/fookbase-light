@@ -21,6 +21,7 @@ const primaryItems: NavItem[] = [
   { path: '/saved', icon: 'saved', label: 'Đã lưu' },
   { path: '/reels', icon: 'reels', label: 'Thước phim' },
   { path: '/games', icon: 'games', label: 'Chơi game' },
+  { path: '/ai-chat', icon: 'messages', label: 'Trợ lý AI' },
 ]
 
 const moreItems: NavItem[] = [

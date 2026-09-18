@@ -23,6 +23,8 @@ using Fookbase.Api.Modules.Pages;
 using Fookbase.Api.Modules.Search;
 using Fookbase.Api.Modules.Events;
 using Fookbase.Api.Modules.Memories;
+using Fookbase.Api.Modules.Ai;
+using Fookbase.Api.Modules.Ai.Config;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -151,6 +153,16 @@ internal static class ModuleServiceCollectionExtensions
 
     public static IServiceCollection AddMemoriesModule(this IServiceCollection services) =>
         services.AddMemoriesInfrastructure();
+
+    public static IServiceCollection AddAiModule(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var options = configuration.GetSection(AiChatOptions.SectionName).Get<AiChatOptions>()
+            ?? new AiChatOptions();
+        options.Validate();
+        return services.AddAiInfrastructure(options);
+    }
 
     private static string RequiredConnectionString(IConfiguration configuration, string name) =>
         configuration.GetConnectionString(name)
