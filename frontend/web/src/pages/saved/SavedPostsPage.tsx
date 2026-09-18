@@ -3,6 +3,7 @@ import { ApiError } from '../../api/client'
 import { postsApi, type Post } from '../../api/posts'
 import { usersApi, type UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
+import Mascot from '../../shared/components/Mascot'
 import PaginationControls from '../../shared/components/PaginationControls'
 import LivePostCard from '../feed/components/LivePostCard'
 
@@ -99,7 +100,14 @@ export default function SavedPostsPage() {
       <div className="mt-5 flex flex-col gap-4" aria-busy={isLoading || isLoadingMore}>
         {error && <div role="alert" className="rounded-lg border border-[#e41e3f]/40 bg-[#e41e3f]/10 p-3 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void load()} className="mt-2 rounded-md border border-[#ff8a9b]/50 bg-transparent px-3 py-1 text-xs font-semibold text-[#ff8a9b] cursor-pointer">Thử lại</button></div>}
         {isLoading && <><div className="h-52 animate-pulse rounded-xl bg-surface-2" /><div className="h-52 animate-pulse rounded-xl bg-surface-2" /></>}
-        {!isLoading && !error && posts.length === 0 && <p className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">Chưa có bài viết đã lưu.</p>}
+        {!isLoading && !error && posts.length === 0 && (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface py-10 px-4 text-center">
+            <Mascot size="lg" animated />
+            <p className="text-base font-semibold text-text">Chưa có bài viết đã lưu</p>
+            <p className="text-sm text-text-muted">Nhấn biểu tượng bookmark trên bất kỳ bài viết nào để lưu lại!</p>
+          </div>
+        )}
+
         {posts.map((post) => <LivePostCard key={post.id} post={{ ...post, viewerHasSaved: true }} author={post.authorUserId ? authors[post.authorUserId] : undefined} currentUserId={session!.user.id} onPostUpdated={updatePost} onPostDeleted={(postId) => setPosts((current) => current.filter((post) => post.id !== postId))} />)}
         {!isLoading && <PaginationControls hasMore={nextCursor !== null} isLoading={isLoadingMore} error={null} label="Tải thêm bài viết đã lưu" onLoadMore={() => void load(nextCursor ?? undefined)} />}
       </div>

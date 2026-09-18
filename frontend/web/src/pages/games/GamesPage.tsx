@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { usePreferences } from '../../preferences'
+import Mascot from '../../shared/components/Mascot'
 import FlappyBirdGame from './FlappyBirdGame'
+
 
 type Mark = 'X' | 'O'
 type Cell = Mark | null
@@ -137,11 +139,15 @@ export default function GamesPage() {
   return (
     <main className="min-h-screen bg-bg p-4 xl:p-6" style={{ animation: 'fade-in 0.25s ease both' }}>
       <div className="mx-auto max-w-5xl">
-        <header className="mb-6">
-          <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">{t('games')}</p>
-          <h1 className="font-heading text-3xl font-bold text-text">{t('quickBreak')}</h1>
-          <p className="mt-2 text-text-muted">{t('gamesDescription')}</p>
+        <header className="mb-6 flex items-center gap-5">
+          <Mascot size="lg" animated className="shrink-0" />
+          <div>
+            <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">{t('games')}</p>
+            <h1 className="font-heading text-3xl font-bold text-text">{t('quickBreak')}</h1>
+            <p className="mt-2 text-text-muted">{t('gamesDescription')}</p>
+          </div>
         </header>
+
 
         <section className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
@@ -151,9 +157,8 @@ export default function GamesPage() {
                 <p className="mt-1 text-sm text-text-muted">{t('youPlayX')}</p>
               </div>
               <span
-                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
-                  gameIsOver ? 'bg-primary/15 text-primary-light' : turn === 'X' ? 'bg-secondary/15 text-secondary' : 'bg-surface-2 text-text-muted'
-                }`}
+                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${gameIsOver ? 'bg-primary/15 text-primary-light' : turn === 'X' ? 'bg-secondary/15 text-secondary' : 'bg-surface-2 text-text-muted'
+                  }`}
               >
                 {status}
               </span>
@@ -167,9 +172,8 @@ export default function GamesPage() {
                   aria-label={`${t('square')} ${index + 1}${cell ? `: ${cell}` : ''}`}
                   disabled={turn !== 'X' || gameIsOver || Boolean(cell)}
                   onClick={() => playMove(index)}
-                  className={`aspect-square rounded-2xl border border-border bg-surface text-4xl font-black shadow-sm transition sm:text-5xl ${
-                    cell === 'X' ? 'text-primary-light' : cell === 'O' ? 'text-secondary' : 'hover:bg-surface-2 focus-visible:bg-surface-2'
-                  } disabled:cursor-default`}
+                  className={`aspect-square rounded-2xl border border-border bg-surface text-4xl font-black shadow-sm transition sm:text-5xl ${cell === 'X' ? 'text-primary-light' : cell === 'O' ? 'text-secondary' : 'hover:bg-surface-2 focus-visible:bg-surface-2'
+                    } disabled:cursor-default`}
                 >
                   {cell}
                 </button>

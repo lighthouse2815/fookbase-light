@@ -9,6 +9,7 @@ import type { Post } from '../../api/posts'
 import { birthdaysApi } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
+import Mascot from '../../shared/components/Mascot'
 import PaginationControls from '../../shared/components/PaginationControls'
 import FeedReelCard from './components/FeedReelCard'
 import FeedShareCard from './components/FeedShareCard'
@@ -163,7 +164,14 @@ export default function FeedPage() {
         <div className="flex flex-col gap-4" aria-busy={isLoading || isLoadingMore}>
           {error && <div role="alert" className="rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void loadFeed()} className="mt-2 rounded-md border border-[#ff8a9b]/50 bg-transparent px-3 py-1 text-xs font-semibold text-[#ff8a9b] cursor-pointer">{t('refresh')}</button></div>}
           {isLoading && <div className="flex flex-col gap-4" aria-label={t('loadingFeed')}><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /></div>}
-          {!isLoading && posts.length === 0 && !error && <p className="text-sm text-text-muted">{t('noPostsYet')}</p>}
+          {!isLoading && posts.length === 0 && !error && (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface py-10 px-4 text-center">
+              <Mascot size="lg" animated />
+              <p className="text-base font-semibold text-text">{t('noPostsYet')}</p>
+              <p className="text-sm text-text-muted">Hãy theo dõi thêm bạn bè để xem bài viết của họ ở đây!</p>
+            </div>
+          )}
+
           {posts.map((post) => post.contentType === 'share' ? (
             <FeedShareCard
               key={post.id}
