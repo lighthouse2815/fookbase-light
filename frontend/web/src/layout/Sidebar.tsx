@@ -12,7 +12,7 @@ interface NavItem {
   label: string
 }
 
-type SidebarIconName = 'friends' | 'groups' | 'memories' | 'saved' | 'reels' | 'games' | 'feed' | 'messages' | 'birthdays' | 'events' | 'pages'
+type SidebarIconName = 'friends' | 'groups' | 'memories' | 'saved' | 'reels' | 'games' | 'feed' | 'messages' | 'ai' | 'birthdays' | 'events' | 'pages'
 
 const primaryItems: NavItem[] = [
   { path: '/explore', icon: 'friends', label: 'Bạn bè' },
@@ -21,7 +21,7 @@ const primaryItems: NavItem[] = [
   { path: '/saved', icon: 'saved', label: 'Đã lưu' },
   { path: '/reels', icon: 'reels', label: 'Thước phim' },
   { path: '/games', icon: 'games', label: 'Chơi game' },
-  { path: '/ai-chat', icon: 'messages', label: 'Trợ lý AI' },
+  { path: '/ai-chat', icon: 'ai', label: 'Trợ lý AI' },
 ]
 
 const moreItems: NavItem[] = [
@@ -41,6 +41,7 @@ function SidebarIcon({ name }: { name: SidebarIconName }) {
     games: <><path d="M5.7 9.2h12.6c2.75 0 4.35 2.08 3.8 4.72l-1.05 4.82c-.42 1.94-2.36 2.9-4.08 2.03l-2.86-1.44a4.55 4.55 0 0 0-4.2 0l-2.86 1.44c-1.72.87-3.66-.1-4.08-2.03L1.9 13.92C1.35 11.28 2.95 9.2 5.7 9.2Z" fill="#1877f2" /><path d="M7 14h4m-2-2v4" stroke="white" strokeWidth="1.8" strokeLinecap="round" /><circle cx="17.2" cy="13.2" r="1.15" fill="#f7d046" /><circle cx="19.25" cy="15.25" r="1.15" fill="#f7d046" /></>,
     feed: <><rect x="2" y="3" width="20" height="18" rx="3" fill="#3d9df5" /><rect x="5" y="6" width="14" height="7" rx="1.5" fill="white" /><circle cx="7.4" cy="9.5" r="1.35" fill="#6db6f5" /><path d="M10 8h6m-6 2.7h4" stroke="#728294" strokeWidth="1.25" strokeLinecap="round" /><circle cx="17.5" cy="17" r="3.5" fill="#e8f3ff" /><path d="M17.5 15.2v1.95l1.2.72" fill="none" stroke="#3d9df5" strokeWidth="1.2" strokeLinecap="round" /></>,
     messages: <><circle cx="12" cy="12" r="11" fill="#1877f2" /><path d="M5.5 13.5 10 8.8l2.7 2.5 4.8-2.5-4.5 4.7-2.75-2.48-4.75 2.48Z" fill="white" /></>,
+    ai: <><circle cx="12" cy="12" r="11" fill="#7654d9" /><path d="m12 4.6.9 3.55 3.55.9-3.55.9L12 13.5l-.9-3.55-3.55-.9 3.55-.9L12 4.6Zm5.2 8.25.53 2.1 2.1.53-2.1.53-.53 2.1-.53-2.1-2.1-.53 2.1-.53.53-2.1ZM7.1 14.9l.42 1.68 1.68.42-1.68.42-.42 1.68-.42-1.68-1.68-.42 1.68-.42.42-1.68Z" fill="white" /></>,
     birthdays: <><rect x="3" y="7" width="18" height="14" rx="2" fill="#2d9bf0" /><path d="M12 7v14M3 11.5h18" stroke="white" strokeWidth="2" /><path d="M12 7c-3.5-1.1-4.5-4.2-2.05-4.2 1.35 0 2.05 1.43 2.05 4.2Zm0 0c3.5-1.1 4.5-4.2 2.05-4.2C12.7 2.8 12 4.23 12 7Z" fill="#e84578" /></>,
     events: <><rect x="3" y="4" width="18" height="17" rx="2" fill="white" /><path d="M3 8h18" stroke="#ef496b" strokeWidth="4" /><path d="M7 2v4m10-4v4" stroke="#ef496b" strokeWidth="2" strokeLinecap="round" /><path d="m12 11 1.15 2.34 2.58.37-1.87 1.82.44 2.57L12 16.88 9.7 18.1l.44-2.57-1.87-1.82 2.58-.37L12 11Z" fill="#4e4f50" /></>,
     pages: <><path d="M4 3h8.5v17H4z" fill="#1877f2" /><path d="M12.5 5H21v14h-8.5z" fill="#ef7b35" /><path d="M5.5 3v19" stroke="white" strokeWidth="1.2" /></>,
