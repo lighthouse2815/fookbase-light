@@ -15,6 +15,7 @@ import { usePreferences } from '../../preferences'
 import PaginationControls from '../../shared/components/PaginationControls'
 import LivePostCard from '../feed/components/LivePostCard'
 import NewPostBox from '../feed/components/NewPostBox'
+import { Mascot } from 'page-mascot'
 
 type ProfileTab = 'posts' | 'about' | 'friends' | 'photos'
 
@@ -556,61 +557,68 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                 {/* User Details */}
                 <div className="flex flex-col items-center md:items-start text-center md:text-left">
-              {/* Name & Badges */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-                <h1 className="font-heading font-bold text-2xl sm:text-3xl text-text leading-tight">
-                  {displayName}
-                </h1>
-              </div>
+                  {/* Name & Badges */}
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+                    <h1 className="font-heading font-bold text-2xl sm:text-3xl text-text leading-tight">
+                      {displayName}
+                    </h1>
+                    <Mascot
+                      directions="/mascots/glasses-directions.webp"
+                      reactions="/mascots/glasses-reactions.webp"
+                      size={52}
+                      label="Profile mascot"
+                      className="shrink-0"
+                    />
+                  </div>
 
-              {/* Bio text */}
-              <p className="text-[14px] text-text mt-2 max-w-xl leading-relaxed whitespace-pre-line">
-                {bio}
-              </p>
+                  {/* Bio text */}
+                  <p className="text-[14px] text-text mt-2 max-w-xl leading-relaxed whitespace-pre-line">
+                    {bio}
+                  </p>
 
-              {/* Stats row: followers, following, posts - inline with dot separators */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-[14px] text-text-muted mt-2.5">
-                <span>
-                  <strong className="font-semibold text-text">{formatNumber(friends.total)}</strong> {t('friendsCount')}
-                </span>
-                <span className="text-text-light font-bold">•</span>
-                <span>
-                  <strong className="font-semibold text-text">{formatNumber(profilePostsTotal)}</strong> {t('posts').toLowerCase()}
-                </span>
-              </div>
-              {(profile?.currentCity || profile?.education || profile?.workplace) && <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-text-muted md:justify-start"><span>{profile.currentCity ? `⌖ ${profile.currentCity}` : null}</span>{profile.education && <span>· {profile.education}</span>}{profile.workplace && <span>· {profile.workplace}</span>}</p>}
+                  {/* Stats row: followers, following, posts - inline with dot separators */}
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-[14px] text-text-muted mt-2.5">
+                    <span>
+                      <strong className="font-semibold text-text">{formatNumber(friends.total)}</strong> {t('friendsCount')}
+                    </span>
+                    <span className="text-text-light font-bold">•</span>
+                    <span>
+                      <strong className="font-semibold text-text">{formatNumber(profilePostsTotal)}</strong> {t('posts').toLowerCase()}
+                    </span>
+                  </div>
+                  {(profile?.currentCity || profile?.education || profile?.workplace) && <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-text-muted md:justify-start"><span>{profile.currentCity ? `⌖ ${profile.currentCity}` : null}</span>{profile.education && <span>· {profile.education}</span>}{profile.workplace && <span>· {profile.workplace}</span>}</p>}
                 </div>
 
                 {/* Action buttons */}
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 shrink-0 xl:mt-0">
-              <button
-                type="button"
-                onClick={() => setTab('posts')}
-                className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
-              >
-                <span>＋</span>
-                <span>Thêm vào tin</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => setTab('posts')}
+                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
+                  >
+                    <span>＋</span>
+                    <span>Thêm vào tin</span>
+                  </button>
 
-              {/* Edit profile button: bg-surface-2 text-text rounded-lg, not a pill button */}
-              <button
-                type="button"
-                onClick={openProfileEditor}
-                className="px-4 py-2 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
-              >
-                <span>✎</span>
-                <span>{t('editProfile')}</span>
-              </button>
+                  {/* Edit profile button: bg-surface-2 text-text rounded-lg, not a pill button */}
+                  <button
+                    type="button"
+                    onClick={openProfileEditor}
+                    className="px-4 py-2 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-border"
+                  >
+                    <span>✎</span>
+                    <span>{t('editProfile')}</span>
+                  </button>
 
-              {/* More options button */}
-              <button
-                type="button"
-                title={t('accountSecurity')}
-                onClick={() => setIsAccountSecurityOpen((current) => !current)}
-                className="h-9 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center justify-center px-3 transition-colors cursor-pointer border border-border"
-              >
-                <span>⌄</span>
-              </button>
+                  {/* More options button */}
+                  <button
+                    type="button"
+                    title={t('accountSecurity')}
+                    onClick={() => setIsAccountSecurityOpen((current) => !current)}
+                    className="h-9 bg-surface-2 hover:bg-surface-hover text-text rounded-lg font-semibold text-sm flex items-center justify-center px-3 transition-colors cursor-pointer border border-border"
+                  >
+                    <span>⌄</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1063,35 +1071,35 @@ export default function ProfilePage() {
                 const isPending = actionId === friend.userId
 
                 return (
-                <div
-                  key={friend.userId}
-                  className="flex items-center justify-between p-3 rounded-lg bg-surface-2/60 border border-border hover:bg-surface-2 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center font-bold text-white text-lg bg-primary">
-                      {profile?.avatarUrl ? (
-                        <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full object-cover" />
-                      ) : getInitials(profile)}
-                    </div>
-                    <div>
-                      <Link to={`/profile/${friend.userId}`} className="block font-semibold text-text text-sm hover:underline no-underline">
-                        {getProfileName(profile, friend.userId)}
-                      </Link>
-                      <p className="text-xs text-text-muted">@{profile?.username ?? friend.userId.slice(0, 8)}</p>
-                      <p className="text-xs text-text-light mt-0.5">
-                        {t('friendsSince')} {new Date(friend.friendsSinceUtc).toLocaleDateString(locale)}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void runRelationshipAction(friend.userId, () => friendsApi.unfriend(friend.userId))}
-                    disabled={isPending}
-                    className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
+                  <div
+                    key={friend.userId}
+                    className="flex items-center justify-between p-3 rounded-lg bg-surface-2/60 border border-border hover:bg-surface-2 transition-colors"
                   >
-                    {isPending ? t('updating') : t('unfriend')}
-                  </button>
-                </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center font-bold text-white text-lg bg-primary">
+                        {profile?.avatarUrl ? (
+                          <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="w-full h-full object-cover" />
+                        ) : getInitials(profile)}
+                      </div>
+                      <div>
+                        <Link to={`/profile/${friend.userId}`} className="block font-semibold text-text text-sm hover:underline no-underline">
+                          {getProfileName(profile, friend.userId)}
+                        </Link>
+                        <p className="text-xs text-text-muted">@{profile?.username ?? friend.userId.slice(0, 8)}</p>
+                        <p className="text-xs text-text-light mt-0.5">
+                          {t('friendsSince')} {new Date(friend.friendsSinceUtc).toLocaleDateString(locale)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void runRelationshipAction(friend.userId, () => friendsApi.unfriend(friend.userId))}
+                      disabled={isPending}
+                      className="px-3 py-1.5 bg-surface-2 hover:bg-surface-hover disabled:opacity-60 text-text rounded-lg text-xs font-semibold border border-border cursor-pointer transition-colors"
+                    >
+                      {isPending ? t('updating') : t('unfriend')}
+                    </button>
+                  </div>
                 )
               })}
             </div>

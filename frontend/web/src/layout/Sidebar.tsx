@@ -4,6 +4,7 @@ import { groupsApi, type Group } from '../api/groups'
 import { resolveProfileImageUrl, usersApi } from '../api/users'
 import { useAuth } from '../auth/useAuth'
 import { usePreferences } from '../preferences'
+import { Mascot } from 'page-mascot'
 
 interface NavItem {
   path: string
@@ -128,6 +129,19 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
           </Link>)}
         </div>
       </section>}
+
+      <div className="mx-1 my-2 flex items-center gap-3 rounded-2xl border border-border bg-surface p-2.5 shadow-sm transition hover:border-primary/40">
+        <Mascot
+          directions="/mascots/fox-directions.webp"
+          reactions="/mascots/fox-reactions.webp"
+          size={52}
+          label="Fooky bạn đồng hành"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold text-text">Fooky bạn đồng hành</p>
+          <p className="truncate text-[11px] text-text-muted">Nhấn để chạm Fooky ✨</p>
+        </div>
+      </div>
 
       <footer className="mt-auto px-2 py-4 text-[11px] leading-relaxed text-text-light">
         {t('appearance')} · {t('language')} · © 2026 Fookbase · Quyền riêng tư · Điều khoản
