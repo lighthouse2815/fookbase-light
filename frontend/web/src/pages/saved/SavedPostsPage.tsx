@@ -3,7 +3,7 @@ import { ApiError } from '../../api/client'
 import { postsApi, type Post } from '../../api/posts'
 import { usersApi, type UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
-import Mascot from '../../shared/components/Mascot'
+import { Mascot } from 'page-mascot'
 import PaginationControls from '../../shared/components/PaginationControls'
 import LivePostCard from '../feed/components/LivePostCard'
 
@@ -102,7 +102,12 @@ export default function SavedPostsPage() {
         {isLoading && <><div className="h-52 animate-pulse rounded-xl bg-surface-2" /><div className="h-52 animate-pulse rounded-xl bg-surface-2" /></>}
         {!isLoading && !error && posts.length === 0 && (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface py-10 px-4 text-center">
-            <Mascot size="lg" animated />
+            <Mascot
+              directions="/mascots/postbot-directions.webp"
+              reactions="/mascots/postbot-reactions.webp"
+              size={96}
+              label="Saved posts bot"
+            />
             <p className="text-base font-semibold text-text">Chưa có bài viết đã lưu</p>
             <p className="text-sm text-text-muted">Nhấn biểu tượng bookmark trên bất kỳ bài viết nào để lưu lại!</p>
           </div>

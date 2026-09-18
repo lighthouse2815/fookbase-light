@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { getNotificationPresentation } from '../../shared/notificationPresentation'
 import { formatPostTimestamp } from '../../shared/formatPostTimestamp'
 import { useRealtime } from '../../realtime/useRealtime'
-import Mascot from '../../shared/components/Mascot'
+import { Mascot } from 'page-mascot'
 
 
 export default function NotificationsPage() {
@@ -20,7 +20,12 @@ export default function NotificationsPage() {
         {visibleNotifications.length === 0
           ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <Mascot size="md" animated />
+              <Mascot
+                directions="/mascots/fox-directions.webp"
+                reactions="/mascots/fox-reactions.webp"
+                size={80}
+                label="Notification mascot"
+              />
               <p className="text-sm font-semibold text-text">Tất cả đã đọc rồi!</p>
               <p className="text-xs text-text-muted">Fooky sẽ thông báo ngay khi có tin tức mới 🔔</p>
             </div>

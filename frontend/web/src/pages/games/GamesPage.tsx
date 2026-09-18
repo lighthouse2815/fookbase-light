@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { usePreferences } from '../../preferences'
-import Mascot from '../../shared/components/Mascot'
+import { Mascot } from 'page-mascot'
 import FlappyBirdGame from './FlappyBirdGame'
 
 
@@ -140,7 +140,13 @@ export default function GamesPage() {
     <main className="min-h-screen bg-bg p-4 xl:p-6" style={{ animation: 'fade-in 0.25s ease both' }}>
       <div className="mx-auto max-w-5xl">
         <header className="mb-6 flex items-center gap-5">
-          <Mascot size="lg" animated className="shrink-0" />
+          <Mascot
+            directions="/mascots/fox-pixel-directions.webp"
+            reactions="/mascots/fox-pixel-reactions.webp"
+            size={96}
+            className="shrink-0"
+            label="Pixel game mascot"
+          />
           <div>
             <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">{t('games')}</p>
             <h1 className="font-heading text-3xl font-bold text-text">{t('quickBreak')}</h1>

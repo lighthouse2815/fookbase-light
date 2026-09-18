@@ -4,6 +4,7 @@ import { authApi, type RegistrationChallenge } from '../../api/auth'
 import { ApiError, apiBaseUrl } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
 import { PreferenceControls, usePreferences } from '../../preferences'
+import { Mascot } from 'page-mascot'
 
 function LoginArtwork() {
   return <div className="relative h-[590px] w-full max-w-[560px]">
@@ -19,7 +20,14 @@ function LoginArtwork() {
     </div>
     <div className="absolute bottom-4 left-[17%] h-[260px] w-[245px] rounded-[1.7rem] bg-white p-4 shadow-2xl">
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-black text-white">★</div>
-      <div className="mt-4 h-36 rounded-xl bg-[linear-gradient(140deg,#8f2735,#df7359_55%,#ead3a8)]" />
+      <div className="mt-4 flex h-36 items-center justify-center overflow-hidden rounded-xl bg-[linear-gradient(140deg,#eff6ff,#dbeafe)]">
+        <Mascot
+          directions="/mascots/fox-directions.webp"
+          reactions="/mascots/fox-reactions.webp"
+          size={116}
+          label="Fookbase Fox Mascot"
+        />
+      </div>
       <div className="mt-4 h-4 w-4/5 rounded-full bg-[#e4e6eb]" />
       <div className="mt-2 h-3 w-3/5 rounded-full bg-[#e4e6eb]" />
     </div>
@@ -239,8 +247,20 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-7">
-              <p className="text-sm font-semibold text-primary-light">{isGoogleLinking ? t('continueWithGoogle') : isVerifying ? t('emailVerification') : isResetting ? t('resetPassword') : isRequestingReset ? t('accountRecovery') : registrationChallenge ? t('registrationVerification') : isRegistering ? t('joinFookbase') : t('welcomeBack')}</p>
-              <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight text-text sm:text-4xl">{isGoogleLinking ? t('signInSpaceTitle') : isVerifying ? t('verifyEmailTitle') : isResetting ? t('newPasswordTitle') : isRequestingReset ? t('resetPasswordTitle') : registrationChallenge ? t('registrationVerificationTitle') : isRegistering ? t('createSpaceTitle') : t('signInSpaceTitle')}</h1>
+              <div className="flex items-center gap-4">
+                <div className="flex shrink-0 items-center justify-center rounded-2xl border border-[#e4e6eb] bg-[#f5f6f7] p-1.5 shadow-sm">
+                  <Mascot
+                    directions="/mascots/fox-directions.webp"
+                    reactions="/mascots/fox-reactions.webp"
+                    size={64}
+                    label="Fookbase Mascot"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-primary-light">{isGoogleLinking ? t('continueWithGoogle') : isVerifying ? t('emailVerification') : isResetting ? t('resetPassword') : isRequestingReset ? t('accountRecovery') : registrationChallenge ? t('registrationVerification') : isRegistering ? t('joinFookbase') : t('welcomeBack')}</p>
+                  <h1 className="mt-1 font-heading text-2xl font-extrabold tracking-tight text-text sm:text-3xl">{isGoogleLinking ? t('signInSpaceTitle') : isVerifying ? t('verifyEmailTitle') : isResetting ? t('newPasswordTitle') : isRequestingReset ? t('resetPasswordTitle') : registrationChallenge ? t('registrationVerificationTitle') : isRegistering ? t('createSpaceTitle') : t('signInSpaceTitle')}</h1>
+                </div>
+              </div>
               <p className="mt-3 text-sm leading-6 text-text-muted">{isGoogleLinking ? t('confirmGooglePassword').replace('{email}', googleLinkCompletion.email) : isVerifying ? t('verifyEmailDescription') : isResetting ? t('newPasswordDescription') : isRequestingReset ? t('resetPasswordDescription') : registrationChallenge ? t('registrationVerificationDescription') : isRegistering ? t('createSpaceDescription') : t('signInSpaceDescription')}</p>
             </div>
 
