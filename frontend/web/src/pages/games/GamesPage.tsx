@@ -141,11 +141,11 @@ export default function GamesPage() {
       <div className="mx-auto max-w-5xl">
         <header className="mb-6 flex items-center gap-5">
           <Mascot
-            directions="/mascots/fox-pixel-directions.webp"
-            reactions="/mascots/fox-pixel-reactions.webp"
+            directions="/mascots/gearbot-directions.webp"
+            reactions="/mascots/gearbot-reactions.webp"
             size={96}
             className="shrink-0"
-            label="Pixel game mascot"
+            label="Game Robot Mascot"
           />
           <div>
             <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">{t('games')}</p>

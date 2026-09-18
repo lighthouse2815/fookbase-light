@@ -6,6 +6,7 @@ import type { Friend, FriendRequest, FriendSuggestion } from '../../api/friends'
 import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import type { UserProfile } from '../../api/users'
 import { usePreferences } from '../../preferences'
+import { Mascot } from 'page-mascot'
 
 type FriendsView = 'home' | 'requests' | 'suggestions' | 'all'
 type CardPerson = Pick<UserProfile, 'userId' | 'username' | 'displayName' | 'avatarUrl'>
@@ -153,7 +154,15 @@ export default function ExplorePage() {
     <div className="flex min-h-[calc(100vh-56px)] bg-bg">
       <aside className="hidden h-[calc(100vh-56px)] w-[308px] shrink-0 border-r border-border bg-surface xl:block">
         <div className="flex items-center justify-between px-6 pb-2 pt-4">
-          <h1 className="text-2xl font-bold text-text">Bạn bè</h1>
+          <div className="flex items-center gap-3">
+            <Mascot
+              directions="/mascots/astronaut-directions.webp"
+              reactions="/mascots/astronaut-reactions.webp"
+              size={52}
+              label="Explore Astronaut"
+            />
+            <h1 className="text-2xl font-bold text-text">Bạn bè</h1>
+          </div>
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-text-muted" aria-label="Cài đặt bạn bè">⚙</span>
         </div>
         <nav className="px-2" aria-label="Danh mục bạn bè">
@@ -172,6 +181,17 @@ export default function ExplorePage() {
 
       <main className="min-w-0 flex-1 px-4 py-6 md:px-7 xl:px-7">
         {error && <div className="mb-4 flex items-center justify-between rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger"><span>{error}</span><button type="button" onClick={() => setError(null)} aria-label="Đóng thông báo">×</button></div>}
+        <div className="mb-4 flex items-center justify-between xl:hidden">
+          <div className="flex items-center gap-3">
+            <Mascot
+              directions="/mascots/astronaut-directions.webp"
+              reactions="/mascots/astronaut-reactions.webp"
+              size={48}
+              label="Explore Astronaut"
+            />
+            <h1 className="text-2xl font-bold text-text">Bạn bè</h1>
+          </div>
+        </div>
         {isLoading ? <p className="py-10 text-center text-text-muted">Đang tải bạn bè...</p> : <>
           {showRequests && <section>
             <div className="mb-3 flex items-center justify-between gap-4">

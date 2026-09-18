@@ -149,6 +149,18 @@ export default function FeedPage() {
   return (
     <div className="flex justify-center min-h-screen px-2 sm:px-4 py-4">
       <div className="w-full max-w-[680px] min-w-0 flex flex-col gap-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-2.5 shadow-sm">
+          <Mascot
+            directions="/mascots/fox-directions.webp"
+            reactions="/mascots/fox-reactions.webp"
+            size={56}
+            label="Feed Fooky Mascot"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-text">Bảng tin Fookbase</p>
+            <p className="text-xs text-text-muted">Fooky chào bạn! Hôm nay bạn có tin gì mới không?</p>
+          </div>
+        </div>
         <NewPostBox onPost={handleNewPost} />
         <StoryTray />
         {todayBirthdayCount > 0 && <Link to="/birthdays" className="rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-text no-underline">🎂 {todayBirthdayCount} bạn có sinh nhật hôm nay</Link>}

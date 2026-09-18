@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { storiesApi, type Story, type StoryTrayAuthor } from '../../api/stories'
 import StoryViewer from '../feed/components/StoryViewer'
+import { Mascot } from 'page-mascot'
 
 export default function StoryArchivePage() {
   const [stories, setStories] = useState<Story[]>([])
@@ -40,10 +41,31 @@ export default function StoryArchivePage() {
   const updateStory = (updated: Story) => setStories((current) => current.map((story) => story.id === updated.id ? updated : story))
 
   return <main className="mx-auto min-h-screen w-full max-w-4xl px-3 py-6 sm:px-6">
-    <div className="mb-5 flex items-center justify-between"><div><h1 className="font-heading text-2xl font-bold text-text">Kho lưu trữ Story</h1><p className="text-sm text-text-muted">Chỉ bạn có thể xem các Story đã hết hạn.</p></div></div>
+    <div className="mb-5 flex items-center gap-4">
+      <Mascot
+        directions="/mascots/clockwork-directions.webp"
+        reactions="/mascots/clockwork-reactions.webp"
+        size={68}
+        label="Story archive clockwork mascot"
+      />
+      <div>
+        <h1 className="font-heading text-2xl font-bold text-text">Kho lưu trữ Story</h1>
+        <p className="text-sm text-text-muted">Chỉ bạn có thể xem các Story đã hết hạn.</p>
+      </div>
+    </div>
     {error && <div className="mb-4 rounded-lg bg-danger/15 p-3 text-sm text-danger">{error} <button type="button" className="underline" onClick={() => void load()}>Thử lại</button></div>}
     {isLoading && <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{Array.from({ length: 6 }, (_, index) => <div key={index} className="aspect-[9/14] animate-pulse rounded-xl bg-surface-2" />)}</div>}
-    {!isLoading && stories.length === 0 && !error && <div className="rounded-xl border border-border bg-surface p-10 text-center text-sm text-text-muted">Chưa có Story đã hết hạn.</div>}
+    {!isLoading && stories.length === 0 && !error && (
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface p-10 text-center text-sm text-text-muted">
+        <Mascot
+          directions="/mascots/clockwork-directions.webp"
+          reactions="/mascots/clockwork-reactions.webp"
+          size={80}
+          label="Empty story archive mascot"
+        />
+        <p>Chưa có Story đã hết hạn.</p>
+      </div>
+    )}
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{stories.map((story, index) => <button key={story.id} type="button" onClick={() => setSelectedIndex(index)} className="group relative aspect-[9/14] overflow-hidden rounded-xl border border-border bg-surface-2 text-left"><ArchivePreview story={story} /><span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 to-transparent px-3 pb-3 pt-12 text-xs text-white"><span className="line-clamp-2">{story.caption ?? 'Story'}</span><span className="mt-1 block text-white/65">{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(story.createdAtUtc))}</span></span></button>)}</div>
     {nextCursor && <div className="mt-5 text-center"><button type="button" disabled={isLoadingMore} onClick={() => void load(nextCursor)} className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-text disabled:opacity-50">{isLoadingMore ? 'Đang tải…' : 'Tải thêm'}</button></div>}
     {selectedIndex !== null && groups[0]?.stories.length > 0 && <StoryViewer groups={groups} initialAuthorIndex={0} initialStoryIndex={groups[0].stories.length - 1 - selectedIndex} onClose={() => setSelectedIndex(null)} onStoriesChanged={updateStory} />}

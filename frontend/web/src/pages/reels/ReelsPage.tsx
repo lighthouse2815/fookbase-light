@@ -7,13 +7,22 @@ import { reelsApi, type Reel, type ReelFeedMode } from '../../api/reels'
 import { usersApi } from '../../api/users'
 import TextWithReferences from '../../shared/components/TextWithReferences'
 import ShareDialog from '../feed/components/ShareDialog'
+import { Mascot } from 'page-mascot'
 
 const supportedVideoTypes = new Set(['video/mp4', 'video/webm'])
 const maximumVideoBytes = 500 * 1024 * 1024
 
 function ReelsSidebar({ activeMode, onCreate, onSelectMode }: { activeMode: ReelFeedMode; onCreate: () => void; onSelectMode: (mode: ReelFeedMode) => void }) {
   return <aside className="absolute inset-y-0 left-0 z-20 hidden w-48 border-r border-white/10 bg-black px-3 py-2 lg:flex lg:flex-col">
-    <h1 className="px-1 text-xl font-bold text-white">Reels</h1>
+    <div className="flex items-center gap-2 px-1 py-1">
+      <Mascot
+        directions="/mascots/tv-directions.webp"
+        reactions="/mascots/tv-reactions.webp"
+        size={44}
+        label="Reels TV Mascot"
+      />
+      <h1 className="text-xl font-bold text-white">Reels</h1>
+    </div>
     <nav className="mt-1 flex flex-col gap-1" aria-label="Điều hướng Reels">
       <button type="button" onClick={() => onSelectMode('forYou')} className={'flex h-9 items-center gap-3 rounded-md border-0 px-2.5 text-sm font-semibold cursor-pointer ' + (activeMode === 'forYou' ? 'bg-[#27292d] text-white' : 'bg-transparent text-white/70 hover:bg-white/10')}><span aria-hidden="true">★</span>Dành cho bạn</button>
       <button type="button" onClick={() => onSelectMode('following')} className={'flex h-9 items-center gap-3 rounded-md border-0 px-2.5 text-sm font-semibold cursor-pointer ' + (activeMode === 'following' ? 'bg-[#27292d] text-white' : 'bg-transparent text-white/70 hover:bg-white/10')}><span aria-hidden="true">▣</span>Đang theo dõi</button>
@@ -85,7 +94,20 @@ export default function ReelsPage() {
       <div ref={listRef} className="h-full snap-y snap-mandatory overflow-y-auto scroll-smooth lg:pl-18">
         {isLoading && <div className="grid h-full place-items-center text-sm text-text-muted">Đang tải Reels…</div>}
         {error && <div className="grid h-full place-items-center p-6"><div className="max-w-md rounded-xl border border-[#e41e3f]/40 bg-[#e41e3f]/10 p-4 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void load()} className="mt-3 rounded-lg bg-primary px-3 py-2 text-white">Thử lại</button></div></div>}
-        {!isLoading && !error && reels.length === 0 && <div className="grid h-full place-items-center text-center"><div><p className="text-lg font-semibold text-text">Chưa có Reel để xem</p><button type="button" onClick={() => setIsCreateOpen(true)} className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Tạo Reel đầu tiên</button></div></div>}
+        {!isLoading && !error && reels.length === 0 && (
+          <div className="grid h-full place-items-center text-center">
+            <div className="flex flex-col items-center gap-3">
+              <Mascot
+                directions="/mascots/tv-directions.webp"
+                reactions="/mascots/tv-reactions.webp"
+                size={88}
+                label="TV Mascot"
+              />
+              <p className="text-lg font-semibold text-text">Chưa có Reel để xem</p>
+              <button type="button" onClick={() => setIsCreateOpen(true)} className="mt-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Tạo Reel đầu tiên</button>
+            </div>
+          </div>
+        )}
         {reels.map((reel, index) => (
           <ReelCard
             key={reel.id}
