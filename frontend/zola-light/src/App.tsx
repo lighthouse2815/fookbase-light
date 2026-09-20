@@ -168,8 +168,8 @@ function Composer({ conversationId, replyTo, onCancelReply, onSend, onTyping }: 
   </div>
 }
 
-function MessageBubble({ message, mine, avatar, onReply, onEdit, onDelete, onReact }: {
-  message: Message; mine: boolean; avatar?: React.ReactNode; onReply: () => void; onEdit: () => void; onDelete: () => void; onReact: (type: string) => void
+function MessageBubble({ message, mine, avatar, deliveryStatus, onReply, onEdit, onDelete, onReact }: {
+  message: Message; mine: boolean; avatar?: React.ReactNode; deliveryStatus?: 'sending' | 'sent' | 'seen'; onReply: () => void; onEdit: () => void; onDelete: () => void; onReact: (type: string) => void
 }) {
   const [showActions, setShowActions] = useState(false)
   return <article className={`message-row ${mine ? 'mine' : ''}`} title={messageFullTime(message.createdAtUtc)} onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
@@ -187,6 +187,7 @@ function MessageBubble({ message, mine, avatar, onReply, onEdit, onDelete, onRea
         </>}
       </div>
       {message.reactions?.length > 0 && <div className="reactions">{message.reactions.map((reaction) => <span key={`${reaction.userId}-${reaction.type}`}>{reaction.type}</span>)}</div>}
+      {deliveryStatus && <small className="delivery-status">{deliveryStatus === 'sending' ? 'Đang gửi' : deliveryStatus === 'seen' ? 'Đã xem' : 'Đã gửi'}</small>}
     </div>
     {showActions && !message.deletedAtUtc && <div className="message-actions">
       <button title="Trả lời" onClick={onReply}>↪</button>
@@ -334,6 +335,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const [messages, setMessages] = useState<Message[]>([])
   const [nextMessageCursor, setNextMessageCursor] = useState<string | null>(null)
   const [hasMoreMessages, setHasMoreMessages] = useState(false)
+  const [sendingMessageIds, setSendingMessageIds] = useState<ReadonlySet<string>>(new Set())
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [typing, setTyping] = useState(false)
   const [onlineIds, setOnlineIds] = useState<ReadonlySet<string>>(new Set())
@@ -405,6 +407,13 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     connection.on('MessageCreated', (message: Message) => { if (message.conversationId === activeId) { setMessages((current) => upsertMessage(current, message)); void messengerApi.read(message.conversationId, message.id).catch(() => undefined) }; void refreshConversationLists().catch(() => undefined) })
     connection.on('MessageEdited', (message: Message) => { if (message.conversationId === activeId) setMessages((current) => upsertMessage(current, message)) })
     connection.on('MessageDeleted', (event: { messageId: string; conversationId: string; deletedAtUtc: string }) => { if (event.conversationId === activeId) setMessages((current) => current.map((message) => message.id === event.messageId ? { ...message, content: null, attachments: [], reactions: [], deletedAtUtc: event.deletedAtUtc } : message)) })
+    connection.on('MessagesRead', (event: { conversationId: string; readerUserId: string; lastReadMessageId: string; readAtUtc: string }) => {
+      if (event.conversationId !== activeId || event.readerUserId === session.user.id) return
+      setMessages((current) => {
+        const lastReadIndex = current.findIndex((message) => message.id === event.lastReadMessageId)
+        return lastReadIndex < 0 ? current : current.map((message, index) => message.senderUserId === session.user.id && index <= lastReadIndex && !message.readAtUtc ? { ...message, readAtUtc: event.readAtUtc } : message)
+      })
+    })
     connection.on('MessageReactionChanged', () => { if (activeId) void loadMessages(activeId).catch(() => undefined) })
     connection.on('ConversationCreated', () => void refreshConversationLists().catch(() => undefined))
     connection.on('ConversationUpdated', () => { void refreshConversationLists().catch(() => undefined) })
@@ -424,9 +433,28 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
 
   const send = async (content: string, files: File[]) => {
     if (!activeId) return
-    const mediaIds = await Promise.all(files.map((file) => messengerApi.upload(file)))
-    const message = await messengerApi.send(activeId, content, mediaIds, replyTo?.id)
-    setMessages((current) => upsertMessage(current, message)); setReplyTo(null); await refreshConversationLists()
+    const conversationId = activeId
+    const pendingId = `pending-${crypto.randomUUID()}`
+    const pendingMessage: Message = {
+      id: pendingId, conversationId, senderUserId: session.user.id, content: content || (files.length ? 'Đang tải tệp đính kèm…' : null), createdAtUtc: new Date().toISOString(), readAtUtc: null,
+      type: files.length ? 'media' : 'text', replyToMessageId: replyTo?.id ?? null, replyTo: replyTo ? { id: replyTo.id, senderUserId: replyTo.senderUserId, content: replyTo.content, type: replyTo.type, isDeleted: replyTo.deletedAtUtc !== null } : null,
+      editedAtUtc: null, deletedAtUtc: null, attachments: [], reactions: [], story: null,
+    }
+    setMessages((current) => upsertMessage(current, pendingMessage))
+    setSendingMessageIds((current) => new Set(current).add(pendingId))
+    try {
+      const mediaIds = await Promise.all(files.map((file) => messengerApi.upload(file)))
+      const message = await messengerApi.send(conversationId, content, mediaIds, replyTo?.id)
+      setMessages((current) => upsertMessage(current.filter((item) => item.id !== pendingId), message))
+      setReplyTo(null)
+      await refreshConversationLists()
+    } catch (reason) {
+      setMessages((current) => current.filter((item) => item.id !== pendingId))
+      setError(reason instanceof ApiError ? reason.message : 'Không thể gửi tin nhắn.')
+      throw reason
+    } finally {
+      setSendingMessageIds((current) => { const next = new Set(current); next.delete(pendingId); return next })
+    }
   }
   const sendTyping = () => { const connection = connectionRef.current; if (connection?.state === HubConnectionState.Connected && activeId) void connection.invoke('Typing', activeId).catch(() => undefined); if (typingTimeout.current) window.clearTimeout(typingTimeout.current); typingTimeout.current = window.setTimeout(() => { typingTimeout.current = null }, 800) }
   const createDirect = async (userId: string) => { const conversation = await messengerApi.direct(userId); await refreshConversationLists(); setActiveId(conversation.id) }
@@ -460,6 +488,8 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   }
   const myParticipant = active?.participants.find((participant) => participant.userId === session.user.id)
   const activeProfileUrl = active?.participantUserId ? `${import.meta.env.VITE_WEB_URL ?? 'http://localhost:5173'}/profile/${active.participantUserId}` : null
+  const latestOwnMessageId = [...messages].reverse().find((message) => message.senderUserId === session.user.id && message.deletedAtUtc === null)?.id
+  const deliveryStatus = (message: Message) => message.id !== latestOwnMessageId ? undefined : sendingMessageIds.has(message.id) ? 'sending' : message.readAtUtc ? 'seen' : 'sent'
 
   return <main className="zola-light-shell">
     <aside className="conversation-pane"><header className="pane-header"><div className="current-user"><Avatar name={currentUserProfile?.displayName ?? 'Tài khoản của bạn'} url={currentUserProfile?.avatarUrl} /><div><strong>{currentUserProfile?.displayName ?? 'Tài khoản của bạn'}</strong></div></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
@@ -479,7 +509,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
       <div className="message-list">{hasMoreMessages && <button className="load-more" onClick={() => activeId && void loadMessages(activeId, nextMessageCursor ?? undefined)}>Tải tin cũ hơn</button>}
         {messages.map((message, index) => <Fragment key={message.id}>
           {(index === 0 || !sameMessageDay(messages[index - 1].createdAtUtc, message.createdAtUtc)) && <div className="message-day"><time dateTime={message.createdAtUtc} title={messageFullTime(message.createdAtUtc)}>{messageDay(message.createdAtUtc)}</time></div>}
-          <MessageBubble message={message} mine={message.senderUserId === session.user.id} avatar={<ConversationAvatar conversation={active} profiles={profiles} />} onReply={() => setReplyTo(message)} onReact={(type) => void messengerApi.react(message.id, type).catch((reason) => setError(reason.message))} onEdit={() => setEditingMessage(message)} onDelete={() => setConfirmation({ title: 'Gỡ tin nhắn?', description: 'Tin nhắn sẽ bị gỡ khỏi cuộc trò chuyện.', confirmLabel: 'Gỡ tin nhắn', onConfirm: () => deleteMessage(message) })} />
+          <MessageBubble message={message} mine={message.senderUserId === session.user.id} avatar={<ConversationAvatar conversation={active} profiles={profiles} />} deliveryStatus={deliveryStatus(message)} onReply={() => setReplyTo(message)} onReact={(type) => void messengerApi.react(message.id, type).catch((reason) => setError(reason.message))} onEdit={() => setEditingMessage(message)} onDelete={() => setConfirmation({ title: 'Gỡ tin nhắn?', description: 'Tin nhắn sẽ bị gỡ khỏi cuộc trò chuyện.', confirmLabel: 'Gỡ tin nhắn', onConfirm: () => deleteMessage(message) })} />
         </Fragment>)}
       </div>
       <Composer conversationId={active.id} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} onSend={send} onTyping={sendTyping} />

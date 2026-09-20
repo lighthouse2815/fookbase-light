@@ -58,6 +58,8 @@ a { color: #80b6ff; }
 .bubble { white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 18px 18px 18px 5px; background: #303136; padding: 9px 12px; line-height: 1.45; }
 .mine .bubble { border-radius: 18px 18px 5px 18px; background: linear-gradient(135deg, #9d00ff, #3264ff); color: white; }
 .bubble.deleted { color: #a9b1bd; font-style: italic; }
+.delivery-status { margin: 4px 5px 6px; color: #a8adb8; font-size: 11px; line-height: 1.4; }
+.mine .delivery-status { align-self: flex-end; }
 .message-stack small { margin: 3px 4px; color: #818997; font-size: 10px; }
 .conversation-time { margin-top: 4px; color: #b3bdcc; font-size: 12px; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .message-day { margin: 18px 0 13px; color: #9297a2; font-size: 11px; text-align: center; }
