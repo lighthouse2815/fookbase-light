@@ -5,13 +5,14 @@ import { AuthScreen } from '../auth/AuthScreen';
 import { clearSession, initializeSession } from '../auth/session';
 import { Button, ErrorNotice, Loading, Screen } from '../components/ui';
 import { getApiBaseUrl } from '../config/env';
+import { RealtimeProvider } from '../realtime/RealtimeProvider';
 function Routes() {
   const { state } = useAuth();
   try { getApiBaseUrl(); } catch (error) { return <Screen><ErrorNotice error={error} /></Screen>; }
   if (state === 'loading') return <Screen><Loading /></Screen>;
   if (state === 'offline' || state === 'storage-error') return <Screen><ErrorNotice error={new Error(state === 'offline' ? 'Không thể kết nối. Phiên vẫn được giữ trên thiết bị.' : 'Không thể truy cập kho lưu phiên an toàn.')} retry={() => { void initializeSession().catch(() => {}); }} /><Button secondary title="Xóa phiên trên thiết bị" onPress={() => { void clearSession().catch(() => {}); }} /></Screen>;
   if (state === 'anonymous') return <AuthScreen />;
-  return <Stack screenOptions={{ headerTitle: 'Fookbase Light' }} />;
+  return <RealtimeProvider><Stack screenOptions={{ headerTitle: 'Fookbase Light' }}><Stack.Screen name="(tabs)" options={{ headerShown: false }} /><Stack.Screen name="index" options={{ headerShown: false }} /></Stack></RealtimeProvider>;
 }
 export default function RootLayout() {
   return <SafeAreaProvider><AuthProvider><Routes /></AuthProvider></SafeAreaProvider>;
