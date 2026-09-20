@@ -61,3 +61,11 @@ Domain callback cần phục vụ `/.well-known/assetlinks.json` qua HTTPS với
 Các test JS kiểm tra session, refresh, upload, Google state, logout, saved state, UI và cleanup realtime. Backend có integration tests Google mobile (verifier sai, replay, chống dùng callback web) chạy bằng `bash scripts/test-backend.sh` với PostgreSQL riêng.
 
 Cần nghiệm thu trên API HTTPS thật với hai tài khoản và Android thật: đăng nhập/refresh/kill/logout, media picker/upload, gửi nhận chat/nhóm/reconnect, bàn phím/chữ lớn, phát video/background, Google cold callback/2FA và upgrade APK. Unit tests và export không thay cho kiểm thử native. Chưa có domain API, callback, package ID chính thức và signing từ chủ dự án thì không coi bản build nội bộ là bản production hoàn thành.
+
+### Bản preview đã xác minh ngày 20/09/2026
+
+- Artifact cục bộ: `frontend/mobile/artifacts/fookbase-light-1.0.0-preview.apk` (không commit vào Git).
+- SHA-256: `1bd90798f487c512a3f707a5328c3124b9203a02a060906439fd4b4274db2b47`.
+- Package/version: `dev.fookbase.light` / `1.0.0`; chữ ký APK v2 bằng khóa Android Debug.
+- ABI: ARM64 và x86_64; bundle Hermes nằm trong APK và chạy không cần Metro.
+- Đã cài và cold-start trên emulator Android 16/API 36. Activity mở thành công, không có fatal exception; app hiển thị đúng lỗi thiếu API vì bản preview này chưa được cung cấp URL production.
