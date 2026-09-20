@@ -7,6 +7,12 @@ import { POST_BACKGROUNDS, getPostBackgroundClass } from './postBackgrounds'
 
 type PostPrivacy = 'public' | 'friends' | 'onlyMe'
 
+const PRIVACY_OPTIONS: { value: PostPrivacy; label: string; description: string; icon: string }[] = [
+  { value: 'public', label: 'Công khai', description: 'Mọi người đều có thể xem', icon: '🌐' },
+  { value: 'friends', label: 'Bạn bè', description: 'Chỉ bạn bè của bạn', icon: '👥' },
+  { value: 'onlyMe', label: 'Chỉ mình tôi', description: 'Chỉ bạn mới xem được', icon: '🔒' },
+]
+
 interface NewPostBoxProps {
   onPost: (
     content: string,
@@ -69,9 +75,11 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] = useState(false)
   const [privacy, setPrivacy] = useState<PostPrivacy>('public')
   const [textBackground, setTextBackground] = useState<string | null>(null)
+  const [isPrivacyMenuOpen, setIsPrivacyMenuOpen] = useState(false)
   const displayName = identityName ?? profileName ?? fallbackDisplayName
   const initials = displayName.slice(0, 2).toUpperCase()
   const previewUrlsRef = useRef(new Set<string>())
+  const privacyMenuRef = useRef<HTMLDivElement>(null)
   const remaining = MAX_CHARS - content.length
   const isOverLimit = remaining < 0
   const isNearLimit = remaining <= 30 && !isOverLimit
@@ -79,6 +87,15 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   useEffect(() => () => {
     previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
   }, [])
+
+  useEffect(() => {
+    if (!isPrivacyMenuOpen) return
+    const closeMenu = (event: MouseEvent) => {
+      if (!privacyMenuRef.current?.contains(event.target as Node)) setIsPrivacyMenuOpen(false)
+    }
+    document.addEventListener('mousedown', closeMenu)
+    return () => document.removeEventListener('mousedown', closeMenu)
+  }, [isPrivacyMenuOpen])
 
   useEffect(() => {
     if (identityName) return
@@ -130,6 +147,7 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
     setIsFeelingPickerOpen(false)
     setPrivacy('public')
     setTextBackground(null)
+    setIsPrivacyMenuOpen(false)
   }
 
   const handleSubmit = async () => {
@@ -178,7 +196,7 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2 pb-1 border-b border-border">
-            <div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[12px] font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</div><div><div className="text-[14px] font-semibold text-text break-words">{displayName}</div>{postingLabel ? <div className="text-[12px] text-text-muted">{postingLabel}</div> : <label className="mt-1 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-[12px] font-semibold text-text shadow-sm transition-colors hover:border-primary/60 hover:bg-surface-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"><span aria-hidden="true" className="text-sm leading-none">{privacy === 'public' ? '🌐' : privacy === 'friends' ? '👥' : '🔒'}</span><span className="sr-only">Chế độ hiển thị</span><select value={privacy} onChange={(event) => setPrivacy(event.target.value as PostPrivacy)} disabled={isSubmitting} style={{ colorScheme: 'dark' }} className="cursor-pointer bg-transparent text-[12px] font-semibold text-text outline-none disabled:cursor-not-allowed disabled:opacity-60"><option value="public" className="bg-[#242526] text-white">Công khai</option><option value="friends" className="bg-[#242526] text-white">Bạn bè</option><option value="onlyMe" className="bg-[#242526] text-white">Chỉ mình tôi</option></select></label>}</div></div>
+            <div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[12px] font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</div><div><div className="text-[14px] font-semibold text-text break-words">{displayName}</div>{postingLabel ? <div className="text-[12px] text-text-muted">{postingLabel}</div> : <div ref={privacyMenuRef} className="relative mt-1"><button type="button" onClick={() => setIsPrivacyMenuOpen((current) => !current)} disabled={isSubmitting} aria-haspopup="menu" aria-expanded={isPrivacyMenuOpen} className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-[12px] font-semibold text-text shadow-sm transition-colors hover:border-primary/60 hover:bg-surface-3 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"><span aria-hidden="true" className="text-sm leading-none">{PRIVACY_OPTIONS.find((option) => option.value === privacy)?.icon}</span>{privacyLabel}<span aria-hidden="true" className={`ml-0.5 transition-transform ${isPrivacyMenuOpen ? 'rotate-180' : ''}`}>▾</span></button>{isPrivacyMenuOpen && <div role="menu" aria-label="Chế độ hiển thị" className="absolute left-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-xl border border-border bg-surface p-1.5 shadow-2xl">{PRIVACY_OPTIONS.map((option) => <button key={option.value} type="button" role="menuitemradio" aria-checked={privacy === option.value} onClick={() => { setPrivacy(option.value); setIsPrivacyMenuOpen(false) }} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${privacy === option.value ? 'bg-primary/15 text-primary-light' : 'text-text hover:bg-surface-2'}`}><span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-lg">{option.icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{option.label}</span><span className="block text-xs font-normal text-text-muted">{option.description}</span></span>{privacy === option.value && <span aria-hidden="true" className="font-bold text-primary">✓</span>}</button>)}</div>}</div>}</div></div>
             <button type="button" onClick={() => { if (!content.trim() && attachments.length === 0) setIsExpanded(false); else setIsDiscardConfirmationOpen(true) }} className="w-8 h-8 shrink-0 rounded-full bg-surface-2 hover:bg-surface-3 flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none transition-colors" title={t('close')} aria-label={t('close')}>✕</button>
           </div>
 
