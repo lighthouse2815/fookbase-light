@@ -170,16 +170,27 @@ function MessagesPopover({ conversations, profiles, filter, onFilterChange, quer
   </div>
 }
 
-function formatMessageTime(value: string) {
-  return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+function sameMessageDay(left: string, right: string) {
+  return new Date(left).toDateString() === new Date(right).toDateString()
 }
 
-function FloatingConversation({ conversation, profile, currentUserId, incomingMessages, isOnline, onClose, onMinimize, onRead, onMessageSent }: {
+function formatMessageDay(value: string) {
+  const date = new Date(value)
+  const today = new Date()
+  if (date.toDateString() === today.toDateString()) return 'Hôm nay'
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (date.toDateString() === yesterday.toDateString()) return 'Hôm qua'
+  return new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date)
+}
+
+function FloatingConversation({ conversation, profile, currentUserId, incomingMessages, isOnline, readAtUpdate, onClose, onMinimize, onRead, onMessageSent }: {
   conversation: Conversation
   profile?: UserProfile
   currentUserId: string
   incomingMessages: IncomingMessage[]
   isOnline: boolean
+  readAtUpdate?: string
   onClose: () => void
   onMinimize: () => void
   onRead: (conversationId: string, messageId?: string) => void
@@ -189,6 +200,7 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
   const [draft, setDraft] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [pendingMessage, setPendingMessage] = useState<Message | null>(null)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const name = conversationName(conversation, new Map(profile ? [[profile.userId, profile]] : []))
@@ -214,7 +226,15 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
     onRead(conversation.id, received.at(-1)?.id)
   }, [conversation.id, incomingMessages, onRead])
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ block: 'end' }) }, [messages])
+  useEffect(() => {
+    if (!readAtUpdate) return
+    void messagesApi.getMessages(conversation.id).then((page) => setMessages(page.items)).catch(() => undefined)
+  }, [conversation.id, readAtUpdate])
+
+  const visibleMessages = pendingMessage ? [...messages, pendingMessage] : messages
+  const latestOwnMessageId = [...visibleMessages].reverse().find((message) => message.senderUserId === currentUserId && !message.deletedAtUtc)?.id
+
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ block: 'end' }) }, [messages, pendingMessage])
 
   const send = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -222,12 +242,18 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
     if (!content || isSending) return
     setIsSending(true)
     setError(null)
+    const temporaryMessage: Message = {
+      id: `pending-${crypto.randomUUID()}`, conversationId: conversation.id, senderUserId: currentUserId, content, createdAtUtc: new Date().toISOString(), readAtUtc: null, attachments: [],
+    }
+    setPendingMessage(temporaryMessage)
     try {
       const message = await messagesApi.sendMessage(conversation.id, content)
       setMessages((current) => [...current, message])
+      setPendingMessage(null)
       setDraft('')
       onMessageSent(message)
     } catch {
+      setPendingMessage(null)
       setError('Không thể gửi tin nhắn.')
     } finally {
       setIsSending(false)
@@ -244,9 +270,10 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-bg px-3 py-3">
       {isLoading && <p className="my-auto text-center text-sm text-text-muted">Đang tải tin nhắn…</p>}
       {!isLoading && messages.length === 0 && !error && <p className="my-auto text-center text-sm text-text-muted">Chưa có tin nhắn. Hãy gửi lời chào.</p>}
-      {messages.map((message) => {
+      {visibleMessages.map((message, index) => {
         const isMine = message.senderUserId === currentUserId
-        return <div key={message.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm ${isMine ? 'rounded-br-md bg-primary text-white' : 'rounded-bl-md bg-surface-2 text-text'}`}><p className="whitespace-pre-wrap break-words">{message.deletedAtUtc ? 'Tin nhắn đã gỡ' : message.content ?? 'Đã gửi tệp đính kèm'}</p><time className={`mt-1 block text-right text-[10px] ${isMine ? 'text-white/70' : 'text-text-light'}`}>{formatMessageTime(message.createdAtUtc)}</time></div></div>
+        const status = message.id !== latestOwnMessageId ? null : message.id === pendingMessage?.id ? 'Đang gửi' : message.readAtUtc ? 'Đã xem' : 'Đã gửi'
+        return <div key={message.id}>{(index === 0 || !sameMessageDay(visibleMessages[index - 1].createdAtUtc, message.createdAtUtc)) && <p className="my-4 text-center text-[11px] text-text-light">{formatMessageDay(message.createdAtUtc)}</p>}<div className={`flex items-end gap-1.5 ${isMine ? 'justify-end' : 'justify-start'}`} title={new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(message.createdAtUtc))}>{!isMine && <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[9px] font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>}<div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm ${isMine ? 'rounded-br-md bg-linear-to-br from-violet-600 to-blue-600 text-white' : 'rounded-bl-md bg-surface-2 text-text'}`}><p className="whitespace-pre-wrap break-words">{message.deletedAtUtc ? 'Tin nhắn đã gỡ' : message.content ?? 'Đã gửi tệp đính kèm'}</p>{status && <span className="mt-1 block text-right text-[10px] text-white/75">{status}</span>}</div></div></div>
       })}
       <div ref={messagesEndRef} />
     </div>
@@ -272,6 +299,7 @@ export default function TopNavbar() {
     unreadNotificationCount,
     markConversationRead,
     onlineUserIds,
+    readAtByConversation,
   } = useRealtime()
   const { language, setLanguage, setTheme, t, theme } = usePreferences()
   const location = useLocation()
@@ -695,6 +723,7 @@ export default function TopNavbar() {
           currentUserId={session!.user.id}
           incomingMessages={incomingMessages}
           isOnline={openConversation.participantUserId !== null && onlineUserIds.has(openConversation.participantUserId)}
+          readAtUpdate={readAtByConversation.get(openConversation.id)}
           onClose={() => setOpenConversation(null)}
           onMinimize={() => setIsConversationMinimized(true)}
           onRead={markFloatingConversationRead}
