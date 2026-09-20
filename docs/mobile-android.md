@@ -41,7 +41,7 @@ npm run android
 # APK có JavaScript đóng gói, chạy không cần Metro:
 npx expo prebuild --platform android --no-install
 cd android
-./gradlew assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=arm64-v8a,x86_64
+CMAKE_BUILD_PARALLEL_LEVEL=1 ./gradlew assembleRelease --no-daemon --max-workers=1 -PreactNativeArchitectures=arm64-v8a,x86_64
 ```
 
 Lệnh preview trên nhắm ARM64 và emulator x86_64; chưa nghiệm thu thiết bị 32-bit. APK ở `android/app/build/outputs/apk/release/app-release.apk`. Gradle template ký bản này bằng khóa development: chỉ phân phối nội bộ, không dùng để phát hành cửa hàng. Build đầu tải NDK/CMake và có thể mất nhiều thời gian.
