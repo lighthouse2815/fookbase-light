@@ -5,6 +5,8 @@ export interface AdminDashboard {
   activeUsers: number
   activePosts: number
   pendingReports: number
+  activity: { date: string; newUsers: number; newPosts: number; newReports: number }[]
+  reportStatuses: { status: ReportStatus; count: number }[]
 }
 
 export interface AdminUser {

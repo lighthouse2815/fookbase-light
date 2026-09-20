@@ -25,8 +25,8 @@ export default function LoginPage({ onSignIn }: { onSignIn: (email: string, pass
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-bg p-5">
       <div className="absolute right-5 top-5 z-10"><PreferenceControls /></div>
-      <div className="grid w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-2xl md:grid-cols-[1fr_0.92fr]">
-        <section className="hidden bg-gradient-to-br from-primary-dark via-primary to-[#5b21b6] p-10 md:flex md:flex-col md:justify-between">
+      <div className="grid w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-surface shadow-2xl md:grid-cols-[1fr_0.92fr]">
+        <section className="hidden bg-gradient-to-br from-[#0b493d] via-[#116c58] to-[#17947a] p-10 md:flex md:flex-col md:justify-between">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-xl font-black text-white">f</div>
           <div><p className="text-sm font-bold tracking-[0.2em] text-white/70">FOOKBASE</p><h1 className="mt-3 font-heading text-4xl font-extrabold leading-tight text-white">{t('adminCenter')}</h1><p className="mt-4 max-w-sm text-sm leading-6 text-white/75">{t('protectedWorkspace')}</p></div>
           <p className="text-xs text-white/60">{t('restricted')}</p>
@@ -39,7 +39,7 @@ export default function LoginPage({ onSignIn }: { onSignIn: (email: string, pass
             <label className="block text-sm font-semibold text-text">{t('email')}<input required autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-text outline-none focus:border-primary" placeholder="admin@example.com" /></label>
             <label className="block text-sm font-semibold text-text">{t('password')}<input required autoComplete="current-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-text outline-none focus:border-primary" placeholder={t('yourPassword')} /></label>
             {error && <p role="alert" className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>}
-            <button disabled={isSubmitting} className="w-full rounded-xl bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-dark disabled:opacity-60">{isSubmitting ? t('signingIn') : t('signIn')}</button>
+            <button disabled={isSubmitting} className="w-full rounded-xl bg-primary-dark px-4 py-3 font-bold text-white transition hover:bg-primary-dark disabled:opacity-60">{isSubmitting ? t('signingIn') : t('signIn')}</button>
           </form>
         </section>
       </div>

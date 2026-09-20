@@ -6,6 +6,19 @@ const storageKey = 'fookbase.admin.preferences'
 
 const messages = {
   en: {
+    workspace: 'WORKSPACE', administration: 'Administration', workspaceDescription: 'Your community, at a glance.',
+    overviewDescription: 'A clear view of your community and what needs your attention.',
+    reportsDescription: 'Review reports and keep your community a safe place.', usersDescription: 'Manage accounts and community access.',
+    administrator: 'Administrator', adminWorkspace: 'Admin workspace', today: 'Today', close: 'Close', mainNavigation: 'Main navigation',
+    registeredAccounts: 'Across your community', enabledAccounts: 'Accounts with access enabled', publishedContent: 'Excluding deleted posts', needsAttention: 'Awaiting moderation',
+    communityActivity: 'Community activity', activityDescription: 'New accounts and visible posts over time', dateRange: 'Date range', days: 'days', recentDays: 'most recent days',
+    newAccounts: 'New accounts', newPosts: 'New posts', reportDistribution: 'Report distribution', allTime: 'All time · by current status', totalReports: 'Total reports',
+    reportActivity: 'Reports over time', accountHealth: 'Account status', accountHealthDescription: 'Access across your community', accountsEnabled: 'of accounts enabled',
+    queueClear: 'You’re all caught up', queueClearDescription: 'No reports are waiting for review.', utcNote: 'Daily totals in UTC · posts exclude deleted content.',
+    viewData: 'View chart data', date: 'Date', noAnalytics: 'Analytics are not available yet.', loadingDashboard: 'Loading your workspace…',
+    warn: 'Warn', suspend: 'Suspend', unsuspend: 'Unsuspend', warnings: 'warnings', moderationDisabled: 'Moderation disabled', suspendedUntil: 'Suspended until',
+    dismissConfirm: 'Dismiss this report?', warnConfirm: 'Send an account warning for this report?', suspensionDuration: 'Suspension duration in hours (1–8760):', suspendConfirm: 'Suspend this account?',
+
     switchToLight: 'Switch to light mode', switchToDark: 'Switch to dark mode', language: 'Language',
     adminCenter: 'Admin Center', greeting: 'Hello', refresh: 'Refresh', signOut: 'Sign out',
     overview: 'Overview', reports: 'Reports', users: 'Accounts', totalAccounts: 'Total accounts',
@@ -26,6 +39,19 @@ const messages = {
     newReports: 'new reports', viewPendingReports: 'View pending reports', retry: 'Retry', loadingReports: 'Loading reports...', loadingAccounts: 'Loading accounts...',
   },
   vi: {
+    workspace: 'KHÔNG GIAN LÀM VIỆC', administration: 'Quản trị', workspaceDescription: 'Toàn cảnh cộng đồng của bạn.',
+    overviewDescription: 'Theo dõi cộng đồng và những hoạt động cần bạn quan tâm.',
+    reportsDescription: 'Xem xét báo cáo và giữ cộng đồng luôn an toàn.', usersDescription: 'Quản lý tài khoản và quyền truy cập cộng đồng.',
+    administrator: 'Quản trị viên', adminWorkspace: 'Không gian quản trị', today: 'Hôm nay', close: 'Đóng', mainNavigation: 'Điều hướng chính',
+    registeredAccounts: 'Trên toàn bộ cộng đồng', enabledAccounts: 'Tài khoản được phép truy cập', publishedContent: 'Không bao gồm bài đã xóa', needsAttention: 'Đang chờ kiểm duyệt',
+    communityActivity: 'Hoạt động cộng đồng', activityDescription: 'Tài khoản mới và bài viết hiển thị theo ngày', dateRange: 'Khoảng thời gian', days: 'ngày', recentDays: 'ngày gần nhất',
+    newAccounts: 'Tài khoản mới', newPosts: 'Bài viết mới', reportDistribution: 'Phân bố báo cáo', allTime: 'Toàn thời gian · theo trạng thái hiện tại', totalReports: 'Tổng báo cáo',
+    reportActivity: 'Báo cáo theo thời gian', accountHealth: 'Trạng thái tài khoản', accountHealthDescription: 'Quyền truy cập trong cộng đồng', accountsEnabled: 'tài khoản được kích hoạt',
+    queueClear: 'Đã xử lý hết báo cáo', queueClearDescription: 'Không có báo cáo nào đang chờ xem xét.', utcNote: 'Thống kê theo ngày UTC · không tính bài viết đã xóa.',
+    viewData: 'Xem dữ liệu biểu đồ', date: 'Ngày', noAnalytics: 'Chưa có dữ liệu thống kê.', loadingDashboard: 'Đang tải không gian quản trị…',
+    warn: 'Cảnh cáo', suspend: 'Tạm khóa', unsuspend: 'Bỏ tạm khóa', warnings: 'cảnh cáo', moderationDisabled: 'Bị vô hiệu hóa do vi phạm', suspendedUntil: 'Tạm khóa đến',
+    dismissConfirm: 'Bỏ qua báo cáo này?', warnConfirm: 'Gửi cảnh cáo tài khoản trong báo cáo này?', suspensionDuration: 'Thời gian tạm khóa theo giờ (1–8760):', suspendConfirm: 'Tạm khóa tài khoản này?',
+
     switchToLight: 'Chuyển sang giao diện sáng', switchToDark: 'Chuyển sang giao diện tối', language: 'Ngôn ngữ',
     adminCenter: 'Trung tâm quản trị', greeting: 'Xin chào', refresh: 'Làm mới', signOut: 'Đăng xuất',
     overview: 'Tổng quan', reports: 'Báo cáo', users: 'Tài khoản', totalAccounts: 'Tổng tài khoản',
@@ -53,13 +79,13 @@ function getInitialPreferences(): { language: AdminLanguage; theme: AdminTheme }
     const language: AdminLanguage = stored.language === 'en' || stored.language === 'vi'
       ? stored.language
       : navigator.language.startsWith('vi') ? 'vi' : 'en'
-    const theme: AdminTheme = stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : 'dark'
+    const theme: AdminTheme = stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : 'light'
     return {
       language,
       theme,
     }
   } catch {
-    return { language: navigator.language.startsWith('vi') ? 'vi' : 'en', theme: 'dark' }
+    return { language: navigator.language.startsWith('vi') ? 'vi' : 'en', theme: 'light' }
   }
 }
 

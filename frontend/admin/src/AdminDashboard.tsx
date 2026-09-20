@@ -1,17 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { Bell, CalendarDays, ChevronRight, Flag, LayoutDashboard, LoaderCircle, LogOut, RefreshCw, ShieldCheck, Users, X } from 'lucide-react'
 import { adminApi } from './api/admin'
 import type { AdminDashboard as DashboardData, AdminUser, ModerationReport, ReportStatus, UserModerationState } from './api/admin'
 import { ApiError } from './api/client'
 import { PreferenceControls, usePreferences } from './preferences'
 
+const DashboardOverview = lazy(() => import('./DashboardOverview'))
+
 type Tab = 'overview' | 'reports' | 'users'
 type ReportFilter = ReportStatus | 'all'
 
 const shortId = (value: string) => `${value.slice(0, 8)}…${value.slice(-4)}`
-
-function Metric({ label, value, tone, locale }: { label: string; value: number; tone: string; locale: string }) {
-  return <div className="rounded-2xl border border-border bg-surface p-5"><p className="text-sm text-text-muted">{label}</p><p className={`mt-2 font-heading text-3xl font-bold ${tone}`}>{value.toLocaleString(locale)}</p></div>
-}
 
 export default function AdminDashboard({ username, onSignOut }: { username: string; onSignOut: () => Promise<void> }) {
   const { language, t } = usePreferences()
@@ -21,6 +20,7 @@ export default function AdminDashboard({ username, onSignOut }: { username: stri
     { value: 'pending', label: t('pending') }, { value: 'all', label: t('all') },
     { value: 'reviewed', label: t('reviewed') }, { value: 'resolved', label: t('resolved') }, { value: 'dismissed', label: t('dismissed') },
   ]
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
   const [tab, setTab] = useState<Tab>('overview')
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [reports, setReports] = useState<ModerationReport[]>([])
@@ -59,6 +59,7 @@ export default function AdminDashboard({ username, onSignOut }: { username: stri
   }
 
   const refresh = async () => {
+    setCurrentTime(Date.now())
     setLoading(true)
     setIsLoadingReports(true)
     setIsLoadingUsers(true)
@@ -118,7 +119,7 @@ export default function AdminDashboard({ username, onSignOut }: { username: stri
           if (count > 0) setNewReportsCount((current) => current + count)
         }
         knownPendingReportIds.current = currentIds
-        setDashboard((current) => current ? { ...current, pendingReports: page.total } : current)
+        setDashboard((current) => current ? { ...current, pendingReports: page.total, reportStatuses: current.reportStatuses?.map(item => item.status === 'pending' ? { ...item, count: page.total } : item) } : current)
       } catch {
         // The regular data request continues to surface connection errors to the administrator.
       }
@@ -179,8 +180,7 @@ export default function AdminDashboard({ username, onSignOut }: { username: stri
     setActionId(`post-${report.id}`)
     try {
       await adminApi.removeReportedContent(report.id)
-      setReports((current) => current.map((item) => item.id === report.id ? { ...item, status: 'reviewed' } : item))
-      await loadDashboard()
+      await Promise.all([loadReports(), loadDashboard()])
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableRemovePost'))
     } finally {
@@ -189,44 +189,41 @@ export default function AdminDashboard({ username, onSignOut }: { username: stri
   }
 
   const dismissReport = async (report: ModerationReport) => {
-    if (!window.confirm(`Dismiss report ${shortId(report.id)}?`)) return
+    if (!window.confirm(t('dismissConfirm'))) return
     setActionId(`dismiss-${report.id}`)
     try {
       await adminApi.dismissReport(report.id)
-      setReports((current) => current.map((item) => item.id === report.id ? { ...item, status: 'dismissed' } : item))
-      await loadDashboard()
+      await Promise.all([loadReports(), loadDashboard()])
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReport'))
     } finally { setActionId(null) }
   }
 
   const warnReportUser = async (report: ModerationReport) => {
-    if (!window.confirm('Send an account warning for this report?')) return
+    if (!window.confirm(t('warnConfirm'))) return
     setActionId(`warn-${report.id}`)
     try {
       await adminApi.warnReportedUser(report.id)
-      setReports((current) => current.map((item) => item.id === report.id ? { ...item, status: 'reviewed' } : item))
-      await loadDashboard()
+      await Promise.all([loadReports(), loadDashboard()])
     } catch (requestError) { setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReport')) } finally { setActionId(null) }
   }
 
   const suspendReportUser = async (report: ModerationReport) => {
-    const value = window.prompt('Suspension duration in hours (1–8760):', '24')
+    const value = window.prompt(t('suspensionDuration'), '24')
     const durationHours = Number(value)
-    if (!Number.isInteger(durationHours) || durationHours < 1 || durationHours > 8760 || !window.confirm('Suspend this account?')) return
+    if (!Number.isInteger(durationHours) || durationHours < 1 || durationHours > 8760 || !window.confirm(t('suspendConfirm'))) return
     setActionId(`suspend-${report.id}`)
     try {
       await adminApi.suspendReportedUser(report.id, durationHours)
-      setReports((current) => current.map((item) => item.id === report.id ? { ...item, status: 'reviewed' } : item))
-      await loadDashboard()
+      await Promise.all([loadReports(), loadDashboard()])
     } catch (requestError) { setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateAccount')) } finally { setActionId(null) }
   }
 
   const moderateUser = async (user: AdminUser, action: 'warn' | 'suspend' | 'unsuspend' | 'disable' | 'enable') => {
-    if ((action === 'suspend' || action === 'disable') && !window.confirm(`${action === 'suspend' ? 'Suspend' : 'Disable'} @${user.username}?`)) return
+    if ((action === 'suspend' || action === 'disable') && !window.confirm(`${action === 'suspend' ? t('suspend') : t('disable')} @${user.username}?`)) return
     let durationHours = 0
     if (action === 'suspend') {
-      durationHours = Number(window.prompt('Suspension duration in hours (1–8760):', '24'))
+      durationHours = Number(window.prompt(t('suspensionDuration'), '24'))
       if (!Number.isInteger(durationHours) || durationHours < 1 || durationHours > 8760) return
     }
     setActionId(`moderation-${action}-${user.id}`)
@@ -238,28 +235,44 @@ export default function AdminDashboard({ username, onSignOut }: { username: stri
       if (action === 'enable') await adminApi.enableUser(user.id)
       const state = await adminApi.getModerationState(user.id)
       setUserStates((current) => ({ ...current, [user.id]: state }))
+      await Promise.all([loadUsers(), loadDashboard()])
     } catch (requestError) { setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateAccount')) } finally { setActionId(null) }
   }
 
-  const tabs: { value: Tab; label: string }[] = [
-    { value: 'overview', label: t('overview') }, { value: 'reports', label: t('reports') }, { value: 'users', label: t('users') },
+  const tabs = [
+    { value: 'overview' as const, label: t('overview'), icon: LayoutDashboard },
+    { value: 'reports' as const, label: t('reports'), icon: Flag },
+    { value: 'users' as const, label: t('users'), icon: Users },
   ]
+  const description = tab === 'overview' ? 'overviewDescription' : tab === 'reports' ? 'reportsDescription' : 'usersDescription'
+  const initial = username.slice(0, 1)
 
   return (
-    <main className="min-h-screen bg-bg p-4 sm:p-6" style={{ animation: 'fade-in .2s ease both' }}>
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div><p className="text-xs font-bold tracking-[0.18em] text-primary">FOOKBASE ADMIN</p><h1 className="mt-1 font-heading text-2xl font-bold text-text">{t('adminCenter')}</h1><p className="mt-1 text-sm text-text-muted">{t('greeting')}, @{username}</p></div>
-          <div className="flex flex-wrap items-center gap-2"><PreferenceControls />{newReportsCount > 0 && <button type="button" onClick={showPendingReports} title={t('viewPendingReports')} className="relative rounded-lg border border-warning/50 bg-warning/10 px-3 py-2 text-sm font-semibold text-warning hover:bg-warning/20">🔔 <span>{newReportsCount}</span></button>}<button type="button" onClick={() => void refresh()} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold text-text hover:bg-surface-hover">↻ {t('refresh')}</button><button type="button" onClick={() => void onSignOut()} className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-muted hover:bg-surface">{t('signOut')}</button></div>
+    <div className="admin-shell">
+      <aside className="admin-sidebar">
+        <div className="brand"><span className="brand-mark">f</span><div><div className="brand-name">fookbase<span>.</span></div><p className="brand-caption">Admin center</p></div></div>
+        <p className="nav-label">{t('workspace')}</p>
+        <nav className="sidebar-nav" aria-label={t('mainNavigation')}>{tabs.map(({ value, label, icon: Icon }) => <button key={value} type="button" onClick={() => setTab(value)} aria-current={tab === value ? 'page' : undefined}><Icon size={18} /><span>{label}</span>{value === 'reports' && !!dashboard?.pendingReports && <span className="nav-count">{dashboard.pendingReports.toLocaleString(locale)}</span>}</button>)}</nav>
+        <div className="sidebar-note"><ShieldCheck size={23} /><strong>{t('adminWorkspace')}</strong><p>{t('protectedWorkspace')}</p></div>
+        <div className="sidebar-profile"><span className="avatar">{initial}</span><div className="profile-text"><strong title={username}>{username}</strong><span>{t('administrator')}</span></div><button type="button" onClick={() => void onSignOut()} className="icon-button" aria-label={t('signOut')} title={t('signOut')}><LogOut size={17} /></button></div>
+      </aside>
+      <div className="admin-main">
+        <header className="admin-topbar">
+          <div className="breadcrumb"><span>{t('administration')}</span><ChevronRight size={13} /><strong>{t(tab)}</strong></div>
+          <div className="brand mobile-brand"><span className="brand-mark">f</span><span className="brand-name">fookbase<span>.</span></span></div>
+          <div className="topbar-actions"><PreferenceControls /><span className="topbar-divider" /><button type="button" onClick={showPendingReports} title={t('viewPendingReports')} aria-label={`${t('viewPendingReports')}${newReportsCount ? ` · ${newReportsCount} ${t('newReports')}` : ''}`} className="icon-button"><Bell size={18} />{newReportsCount > 0 && <span className="notification-dot">{newReportsCount}</span>}</button><span className="avatar" title={username}>{initial}</span><button type="button" onClick={() => void onSignOut()} className="icon-button mobile-signout" aria-label={t('signOut')}><LogOut size={17} /></button></div>
         </header>
-        <nav className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1">{tabs.map(({ value, label }) => <button key={value} type="button" onClick={() => setTab(value)} className={`min-w-max flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === value ? 'bg-primary text-white' : 'text-text-muted hover:bg-surface-2 hover:text-text'}`}>{label}{value === 'reports' && dashboard?.pendingReports ? ` (${dashboard.pendingReports})` : ''}</button>)}</nav>
-        {error && <div className="mb-5 flex justify-between gap-4 rounded-xl border border-danger/40 bg-danger/10 p-4 text-sm text-danger"><span>{error}</span><button type="button" onClick={() => setError(null)}>✕</button></div>}
-        {loading && !dashboard ? <p className="text-center text-sm text-text-muted">{t('adminCenter')}...</p> : <>
-          {tab === 'overview' && <section><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Metric label={t('totalAccounts')} value={dashboard?.totalUsers ?? 0} tone="text-text" locale={locale} /><Metric label={t('activeAccounts')} value={dashboard?.activeUsers ?? 0} tone="text-secondary" locale={locale} /><Metric label={t('visiblePosts')} value={dashboard?.activePosts ?? 0} tone="text-warning" locale={locale} /><Metric label={t('pendingReports')} value={dashboard?.pendingReports ?? 0} tone="text-danger" locale={locale} /></div><div className="mt-6 rounded-2xl border border-border bg-surface p-6"><h2 className="font-heading text-lg font-bold">{t('moderationPriority')}</h2><p className="mt-2 text-sm text-text-muted"><strong className="text-warning">{dashboard?.pendingReports ?? 0}</strong> {t('pendingSummary')}</p><button type="button" onClick={() => setTab('reports')} className="mt-5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-dark">{t('openQueue')}</button></div></section>}
-          {tab === 'reports' && <section className="overflow-hidden rounded-2xl border border-border bg-surface"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div><h2 className="font-heading text-lg font-bold">{t('reportQueue')}</h2><p className="text-sm text-text-muted">{reportTotal.toLocaleString(locale)} {t('results')}</p></div><select value={reportFilter} onChange={(event) => changeReportFilter(event.target.value as ReportFilter)} disabled={isLoadingReports} className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none disabled:opacity-60">{filters.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}</select></div>{reportsPageError && <div className="flex items-center justify-between gap-3 border-b border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"><span>{reportsPageError}</span><button type="button" onClick={() => void loadMoreReports()} className="font-semibold underline">{t('retry')}</button></div>}<div className="divide-y divide-border">{isLoadingReports && reports.length === 0 ? <p className="p-8 text-center text-sm text-text-muted">{t('loadingReports')}</p> : reports.length === 0 ? <p className="p-8 text-center text-sm text-text-muted">{t('noReports')}</p> : reports.map((report) => <article key={report.id} className="flex flex-col justify-between gap-4 p-4 lg:flex-row"><div><div className="flex flex-wrap items-center gap-2"><span className="rounded bg-surface-2 px-2 py-0.5 text-[11px] font-bold uppercase text-text-muted">{report.targetType === 'post' ? t('post') : t('user')}</span><span className="rounded bg-warning/15 px-2 py-0.5 text-[11px] font-bold text-warning">{t(report.status)}</span><span className="text-xs text-text-light">{formatDate(report.createdAtUtc)}</span></div><p className="mt-2 text-sm font-semibold">{t('reason')}: <span className="capitalize">{report.reason}</span></p>{report.details && <p className="mt-1 text-sm text-text-muted">{report.details}</p>}<p className="mt-2 text-xs text-text-light">{t('target')}: <span title={report.targetId}>{shortId(report.targetId)}</span> · {t('reporter')}: <span title={report.reporterUserId}>{shortId(report.reporterUserId)}</span></p></div><div className="flex flex-wrap content-start gap-2">{report.status === 'pending' && <><button type="button" onClick={() => void warnReportUser(report)} disabled={actionId === `warn-${report.id}`} className="rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs font-semibold">Warn</button><button type="button" onClick={() => void suspendReportUser(report)} disabled={actionId === `suspend-${report.id}`} className="rounded-lg bg-warning/15 px-3 py-1.5 text-xs font-semibold text-warning">Suspend</button></>}{report.targetType === 'post' && report.status === 'pending' && <button type="button" onClick={() => void removePost(report)} disabled={actionId === `post-${report.id}`} className="rounded-lg bg-danger/15 px-3 py-1.5 text-xs font-semibold text-danger">{t('removePost')}</button>}{report.status === 'pending' && <button type="button" onClick={() => void dismissReport(report)} disabled={actionId === `dismiss-${report.id}`} className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-text-muted">{t('dismiss')}</button>}</div></article>)}</div>{reportOffset < reportTotal && <div className="border-t border-border p-4"><button type="button" onClick={() => void loadMoreReports()} disabled={isLoadingReports} className="w-full rounded-lg border border-border bg-surface-2 py-2 text-sm font-semibold disabled:opacity-60">{isLoadingReports ? t('loadingReports') : t('loadMore')}</button></div>}</section>}
-          {tab === 'users' && <section className="overflow-hidden rounded-2xl border border-border bg-surface"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div><h2 className="font-heading text-lg font-bold">{t('users')}</h2><p className="text-sm text-text-muted">{userTotal.toLocaleString(locale)} {t('users').toLowerCase()}</p></div><form onSubmit={(event) => { event.preventDefault(); void searchUsers() }} className="flex gap-2"><input value={userQuery} onChange={(event) => setUserQuery(event.target.value)} className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none" placeholder={t('searchAccounts')} /><button disabled={isLoadingUsers} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isLoadingUsers ? t('loadingAccounts') : t('search')}</button></form></div>{usersPageError && <div className="flex items-center justify-between gap-3 border-b border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"><span>{usersPageError}</span><button type="button" onClick={() => void searchUsers()} className="font-semibold underline">{t('retry')}</button></div>}<div className="divide-y divide-border">{isLoadingUsers && users.length === 0 ? <p className="p-8 text-center text-sm text-text-muted">{t('loadingAccounts')}</p> : users.length === 0 ? <p className="p-8 text-center text-sm text-text-muted">{t('noAccounts')}</p> : users.map((user) => { const state = userStates[user.id]; const suspendedUntil = state?.suspendedUntilUtc ?? user.suspendedUntilUtc; const disabledAt = state?.disabledAtUtc ?? user.moderationDisabledAtUtc; const warnings = state?.warningCount ?? user.warningCount; return <article key={user.id} className="flex flex-wrap items-center justify-between gap-4 p-4"><div><p className="text-sm font-bold">@{user.username}</p><p className="text-xs text-text-muted">{user.email}</p><div className="mt-1 flex flex-wrap gap-2 text-[11px]"><span className={user.isActive ? 'text-secondary' : 'text-danger'}>{user.isActive ? t('active') : t('disabled')}</span>{disabledAt && <span className="text-danger">Moderation disabled</span>}{suspendedUntil && <span className="text-warning">Suspended until {formatDate(suspendedUntil)}</span>}<span className="text-warning">{warnings} warnings</span>{user.roles.map((role) => <span key={role} className="text-primary">{role}</span>)}<span className="text-text-light">{t('joined')} {formatDate(user.createdAt)}</span></div></div>{!user.roles.includes('Admin') && <div className="flex flex-wrap gap-2"><button type="button" onClick={() => void moderateUser(user, 'warn')} className="rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs font-semibold">Warn</button>{suspendedUntil ? <button type="button" onClick={() => void moderateUser(user, 'unsuspend')} className="rounded-lg bg-secondary/15 px-3 py-1.5 text-xs font-semibold text-secondary">Unsuspend</button> : <button type="button" onClick={() => void moderateUser(user, 'suspend')} className="rounded-lg bg-warning/15 px-3 py-1.5 text-xs font-semibold text-warning">Suspend</button>}{disabledAt ? <button type="button" onClick={() => void moderateUser(user, 'enable')} className="rounded-lg bg-secondary/15 px-3 py-1.5 text-xs font-semibold text-secondary">Enable</button> : <button type="button" onClick={() => void moderateUser(user, 'disable')} className="rounded-lg bg-danger/15 px-3 py-1.5 text-xs font-semibold text-danger">Disable</button>}</div>}</article>})}</div>{userOffset < userTotal && <div className="border-t border-border p-4"><button type="button" onClick={() => void searchUsers(true)} disabled={isLoadingUsers} className="w-full rounded-lg border border-border bg-surface-2 py-2 text-sm font-semibold disabled:opacity-60">{isLoadingUsers ? t('loadingAccounts') : t('loadMore')}</button></div>}</section>}
+        <main className="admin-content" id="main-content">
+          <div className="page-heading"><div><div className="page-eyebrow">{t('greeting')}, {username}</div><h1>{t(tab)}</h1><p>{t(description)}</p></div><div className="heading-actions"><span className="date-chip"><CalendarDays size={14} />{new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}</span><button type="button" onClick={() => void refresh()} disabled={loading} className="refresh-button"><RefreshCw size={14} className={loading ? 'spin' : ''} />{t('refresh')}</button></div></div>
+          {error && <div role="alert" className="mb-5 flex items-center justify-between gap-4 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger"><span>{error}</span><button type="button" aria-label={t('close')} onClick={() => setError(null)}><X size={16} /></button></div>}
+          {loading && !dashboard ? <div className="workspace-state" role="status"><LoaderCircle size={28} className="spin" />{t('loadingDashboard')}</div> : !dashboard ? <div className="workspace-state"><ShieldCheck size={30} /><p>{t('unableLoad')}</p><button className="refresh-button" type="button" onClick={() => void refresh()}>{t('retry')}</button></div> : <>
+          {tab === 'overview' && <Suspense fallback={<div className="workspace-state" role="status">{t('loadingDashboard')}</div>}><DashboardOverview data={dashboard} onOpenReports={showPendingReports} /></Suspense>}
+          {tab === 'reports' && <section className="management-panel overflow-hidden rounded-xl border border-border bg-surface"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div><h2 className="font-heading text-lg font-bold">{t('reportQueue')}</h2><p className="text-sm text-text-muted">{reportTotal.toLocaleString(locale)} {t('results')}</p></div><select aria-label={t('reportQueue')} value={reportFilter} onChange={(event) => changeReportFilter(event.target.value as ReportFilter)} disabled={isLoadingReports} className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none disabled:opacity-60">{filters.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}</select></div>{reportsPageError && <div className="flex items-center justify-between gap-3 border-b border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"><span>{reportsPageError}</span><button type="button" onClick={() => changeReportFilter(reportFilter)} className="font-semibold underline">{t('retry')}</button></div>}<div className="divide-y divide-border">{isLoadingReports && reports.length === 0 ? <p className="p-8 text-center text-sm text-text-muted">{t('loadingReports')}</p> : reports.length === 0 ? <p className="p-8 text-center text-sm text-text-muted">{t('noReports')}</p> : reports.map((report) => <article key={report.id} className="flex flex-col justify-between gap-4 p-4 lg:flex-row"><div><div className="flex flex-wrap items-center gap-2"><span className="rounded bg-surface-2 px-2 py-0.5 text-[11px] font-bold uppercase text-text-muted">{report.targetType === 'post' ? t('post') : t('user')}</span><span className="rounded bg-warning/15 px-2 py-0.5 text-[11px] font-bold text-warning">{t(report.status)}</span><span className="text-xs text-text-light">{formatDate(report.createdAtUtc)}</span></div><p className="mt-2 text-sm font-semibold">{t('reason')}: <span className="capitalize">{report.reason}</span></p>{report.details && <p className="mt-1 text-sm text-text-muted">{report.details}</p>}<p className="mt-2 text-xs text-text-light">{t('target')}: <span title={report.targetId}>{shortId(report.targetId)}</span> · {t('reporter')}: <span title={report.reporterUserId}>{shortId(report.reporterUserId)}</span></p></div><div className="flex flex-wrap content-start gap-2">{report.status === 'pending' && <><button type="button" onClick={() => void warnReportUser(report)} disabled={actionId !== null} className="rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs font-semibold">{t('warn')}</button><button type="button" onClick={() => void suspendReportUser(report)} disabled={actionId !== null} className="rounded-lg bg-warning/15 px-3 py-1.5 text-xs font-semibold text-warning">{t('suspend')}</button></>}{report.targetType === 'post' && report.status === 'pending' && <button type="button" onClick={() => void removePost(report)} disabled={actionId !== null} className="rounded-lg bg-danger/15 px-3 py-1.5 text-xs font-semibold text-danger">{t('removePost')}</button>}{report.status === 'pending' && <button type="button" onClick={() => void dismissReport(report)} disabled={actionId !== null} className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-text-muted">{t('dismiss')}</button>}</div></article>)}</div>{reportOffset < reportTotal && <div className="border-t border-border p-4"><button type="button" onClick={() => void loadMoreReports()} disabled={isLoadingReports} className="w-full rounded-lg border border-border bg-surface-2 py-2 text-sm font-semibold disabled:opacity-60">{isLoadingReports ? t('loadingReports') : t('loadMore')}</button></div>}</section>}
+          {tab === 'users' && <section className="management-panel overflow-hidden rounded-xl border border-border bg-surface"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div><h2 className="font-heading text-lg font-bold">{t('users')}</h2><p className="text-sm text-text-muted">{userTotal.toLocaleString(locale)} {t('users').toLowerCase()}</p></div><form onSubmit={(event) => { event.preventDefault(); void searchUsers() }} className="flex gap-2"><input aria-label={t('searchAccounts')} value={userQuery} onChange={(event) => setUserQuery(event.target.value)} className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none" placeholder={t('searchAccounts')} /><button disabled={isLoadingUsers} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isLoadingUsers ? t('loadingAccounts') : t('search')}</button></form></div>{usersPageError && <div className="flex items-center justify-between gap-3 border-b border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"><span>{usersPageError}</span><button type="button" onClick={() => void searchUsers()} className="font-semibold underline">{t('retry')}</button></div>}<div className="divide-y divide-border">{isLoadingUsers && users.length === 0 ? <p className="p-8 text-center text-sm text-text-muted">{t('loadingAccounts')}</p> : users.length === 0 ? <p className="p-8 text-center text-sm text-text-muted">{t('noAccounts')}</p> : users.map((user) => { const state = userStates[user.id]; const suspension = state ? state.suspendedUntilUtc : user.suspendedUntilUtc; const suspendedUntil = suspension && new Date(suspension).getTime() > currentTime ? suspension : null; const disabledAt = state ? state.disabledAtUtc : user.moderationDisabledAtUtc; const warnings = state?.warningCount ?? user.warningCount; return <article key={user.id} className="flex flex-wrap items-center justify-between gap-4 p-4"><div><p className="text-sm font-bold">@{user.username}</p><p className="text-xs text-text-muted">{user.email}</p><div className="mt-1 flex flex-wrap gap-2 text-[11px]"><span className={user.isActive ? 'text-secondary' : 'text-danger'}>{user.isActive ? t('active') : t('disabled')}</span>{disabledAt && <span className="text-danger">{t('moderationDisabled')}</span>}{suspendedUntil && <span className="text-warning">{t('suspendedUntil')} {formatDate(suspendedUntil)}</span>}<span className="text-warning">{warnings} {t('warnings')}</span>{user.roles.map((role) => <span key={role} className="text-primary">{role}</span>)}<span className="text-text-light">{t('joined')} {formatDate(user.createdAt)}</span></div></div>{!user.roles.includes('Admin') && <div className="flex flex-wrap gap-2"><button type="button" disabled={actionId !== null} onClick={() => void moderateUser(user, 'warn')} className="rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-xs font-semibold">{t('warn')}</button>{suspendedUntil ? <button type="button" disabled={actionId !== null} onClick={() => void moderateUser(user, 'unsuspend')} className="rounded-lg bg-secondary/15 px-3 py-1.5 text-xs font-semibold text-secondary">{t('unsuspend')}</button> : <button type="button" disabled={actionId !== null} onClick={() => void moderateUser(user, 'suspend')} className="rounded-lg bg-warning/15 px-3 py-1.5 text-xs font-semibold text-warning">{t('suspend')}</button>}{disabledAt ? <button type="button" disabled={actionId !== null} onClick={() => void moderateUser(user, 'enable')} className="rounded-lg bg-secondary/15 px-3 py-1.5 text-xs font-semibold text-secondary">{t('enable')}</button> : <button type="button" disabled={actionId !== null} onClick={() => void moderateUser(user, 'disable')} className="rounded-lg bg-danger/15 px-3 py-1.5 text-xs font-semibold text-danger">{t('disable')}</button>}</div>}</article>})}</div>{userOffset < userTotal && <div className="border-t border-border p-4"><button type="button" onClick={() => void searchUsers(true)} disabled={isLoadingUsers} className="w-full rounded-lg border border-border bg-surface-2 py-2 text-sm font-semibold disabled:opacity-60">{isLoadingUsers ? t('loadingAccounts') : t('loadMore')}</button></div>}</section>}
         </>}
+          <footer className="admin-footer"><span>© {new Date().getFullYear()} Fookbase</span><span>{t('workspaceDescription')}</span></footer>
+        </main>
       </div>
-    </main>
+    </div>
   )
 }
