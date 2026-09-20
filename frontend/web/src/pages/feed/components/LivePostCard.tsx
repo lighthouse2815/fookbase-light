@@ -320,12 +320,14 @@ export default function LivePostCard({
   const [editingPostPrivacy, setEditingPostPrivacy] = useState<string | null>(null)
   const [isUpdatingPostPin, setIsUpdatingPostPin] = useState(false)
   const [isTextBackgroundExpanded, setIsTextBackgroundExpanded] = useState(false)
+  const [hasTextBackgroundOverflow, setHasTextBackgroundOverflow] = useState(false)
   const [editingComment, setEditingComment] = useState<Comment | null>(null)
   const [editingCommentContent, setEditingCommentContent] = useState('')
   const [commentPendingDeletion, setCommentPendingDeletion] = useState<Comment | null>(null)
   const [isPostPendingDeletion, setIsPostPendingDeletion] = useState(false)
   const postMenuRef = useRef<HTMLDivElement>(null)
   const postCardRef = useRef<HTMLElement>(null)
+  const textBackgroundContentRef = useRef<HTMLDivElement>(null)
   const isAuthor = post.authorUserId === currentUserId
   const canPinPost = allowProfilePin && isAuthor && post.containerType === 'profile'
   const displayAuthor = post.displayAuthor
@@ -345,6 +347,17 @@ export default function LivePostCard({
   const canEditPost = isAuthor && !profileMediaUpdateStatus
   const canEditPostPrivacy = canEditPost || Boolean(isAuthor && profileMediaUpdateStatus)
   const textBackgroundClass = getPostBackgroundClass(post.textBackground)
+
+  useEffect(() => {
+    const content = textBackgroundContentRef.current
+    const text = content?.firstElementChild as HTMLElement | null
+    const measure = () => {
+      setIsTextBackgroundExpanded(false)
+      setHasTextBackgroundOverflow(Boolean(textBackgroundClass && text && text.scrollHeight > text.clientHeight + 1))
+    }
+    const frame = window.requestAnimationFrame(measure)
+    return () => window.cancelAnimationFrame(frame)
+  }, [post.content, textBackgroundClass])
 
   useEffect(() => {
     if (post.mediaIds.length === 0 || isMediaVisible) return
@@ -669,8 +682,8 @@ export default function LivePostCard({
 
       {post.content && !profileMediaUpdateStatus && (textBackgroundClass
         ? <div className={`relative mx-3 mb-3 aspect-square overflow-hidden rounded-xl text-center ${textBackgroundClass}`}>
-          <div className={`grid h-full place-items-center overflow-y-auto px-7 py-12 ${post.content.length > 180 ? 'pb-20' : ''}`}><TextWithReferences content={post.content} mentions={post.mentions} className={`whitespace-pre-wrap text-2xl font-bold leading-tight text-white sm:text-3xl ${!isTextBackgroundExpanded && post.content.length > 180 ? 'line-clamp-7' : ''}`} /></div>
-          {post.content.length > 180 && <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/45 to-transparent px-4 pb-4 pt-10"><button type="button" onClick={() => setIsTextBackgroundExpanded((current) => !current)} className="rounded-full border border-white/35 bg-black/45 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-sm hover:bg-black/60">{isTextBackgroundExpanded ? 'Thu gọn' : 'Xem thêm'}</button></div>}
+          <div ref={textBackgroundContentRef} className={`grid h-full place-items-center px-7 py-12 ${isTextBackgroundExpanded ? 'overflow-y-auto pb-20' : 'overflow-hidden'}`}><TextWithReferences content={post.content} mentions={post.mentions} className={`whitespace-pre-wrap text-2xl font-bold leading-tight text-white sm:text-3xl ${!isTextBackgroundExpanded ? 'line-clamp-7' : ''}`} /></div>
+          {hasTextBackgroundOverflow && <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/45 to-transparent px-4 pb-4 pt-10"><button type="button" onClick={() => setIsTextBackgroundExpanded((current) => !current)} className="rounded-full border border-white/35 bg-black/45 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-sm hover:bg-black/60">{isTextBackgroundExpanded ? 'Thu gọn' : 'Xem thêm'}</button></div>}
         </div>
         : <div className="px-4 pb-3 pt-1"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>)}
       {media.length > 0 && (
