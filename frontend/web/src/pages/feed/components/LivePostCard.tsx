@@ -319,6 +319,7 @@ export default function LivePostCard({
   const [editingPostContent, setEditingPostContent] = useState<string | null>(null)
   const [editingPostPrivacy, setEditingPostPrivacy] = useState<string | null>(null)
   const [isUpdatingPostPin, setIsUpdatingPostPin] = useState(false)
+  const [isTextBackgroundExpanded, setIsTextBackgroundExpanded] = useState(false)
   const [editingComment, setEditingComment] = useState<Comment | null>(null)
   const [editingCommentContent, setEditingCommentContent] = useState('')
   const [commentPendingDeletion, setCommentPendingDeletion] = useState<Comment | null>(null)
@@ -667,7 +668,10 @@ export default function LivePostCard({
       </header>
 
       {post.content && !profileMediaUpdateStatus && (textBackgroundClass
-        ? <div className={`mx-3 mb-3 grid min-h-72 place-items-center rounded-xl px-7 py-12 text-center ${textBackgroundClass}`}><TextWithReferences content={post.content} mentions={post.mentions} className="whitespace-pre-wrap text-2xl font-bold leading-tight text-white sm:text-3xl" /></div>
+        ? <div className={`relative mx-3 mb-3 aspect-square overflow-hidden rounded-xl text-center ${textBackgroundClass}`}>
+          <div className={`grid h-full place-items-center overflow-y-auto px-7 py-12 ${post.content.length > 180 ? 'pb-20' : ''}`}><TextWithReferences content={post.content} mentions={post.mentions} className={`whitespace-pre-wrap text-2xl font-bold leading-tight text-white sm:text-3xl ${!isTextBackgroundExpanded && post.content.length > 180 ? 'line-clamp-7' : ''}`} /></div>
+          {post.content.length > 180 && <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/45 to-transparent px-4 pb-4 pt-10"><button type="button" onClick={() => setIsTextBackgroundExpanded((current) => !current)} className="rounded-full border border-white/35 bg-black/45 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-sm hover:bg-black/60">{isTextBackgroundExpanded ? 'Thu gọn' : 'Xem thêm'}</button></div>}
+        </div>
         : <div className="px-4 pb-3 pt-1"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>)}
       {media.length > 0 && (
         <div className={`grid overflow-hidden bg-black ${media.length > 1 ? 'grid-cols-2 gap-0.5' : 'grid-cols-1'}`}>
