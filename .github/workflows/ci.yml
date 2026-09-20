@@ -5,6 +5,25 @@ on:
   pull_request:
 
 jobs:
+  mobile:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend/mobile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/mobile/package-lock.json
+      - run: npm ci
+      - run: npx expo-doctor
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --runInBand
+      - run: npm run export:android
+
   backend:
     runs-on: ubuntu-24.04
     env:

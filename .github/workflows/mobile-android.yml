@@ -1,0 +1,40 @@
+name: Android preview APK
+on:
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_API_BASE_URL: ${{ vars.MOBILE_API_BASE_URL }}
+      EXPO_PUBLIC_MOBILE_CALLBACK_URL: ${{ vars.MOBILE_CALLBACK_URL }}
+      FOOKBASE_ANDROID_PACKAGE: ${{ vars.MOBILE_ANDROID_PACKAGE }}
+    defaults:
+      run:
+        working-directory: frontend/mobile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/mobile/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Require deployment configuration
+        run: |
+          test -n "$EXPO_PUBLIC_API_BASE_URL"
+          test -n "$FOOKBASE_ANDROID_PACKAGE"
+      - run: npm ci
+      - run: npm run typecheck && npm run lint && npm test -- --runInBand
+      - run: npx expo prebuild --platform android --no-install
+      - name: Build standalone preview (development signing only)
+        working-directory: frontend/mobile/android
+        run: ./gradlew assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=arm64-v8a,x86_64
+      - uses: actions/upload-artifact@v6
+        with:
+          name: fookbase-android-preview-${{ github.sha }}
+          path: frontend/mobile/android/app/build/outputs/apk/release/*.apk
+          retention-days: 14

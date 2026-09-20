@@ -1,5 +1,8 @@
 # Fookbase Light — Standalone Mobile App Implementation Plan
 
+> Cập nhật triển khai 20/09/2026: source app native và các module Tasks 1–8 đã được triển khai tại `frontend/mobile`; backend Google có test tích hợp riêng. CI/check/export và workflow APK ở Task 9 đã thêm. Xem [hướng dẫn Android](../../mobile-android.md) để build/cấu hình. Các checklist nghiệm thu thiết bị/API thật bên dưới chưa được đánh dấu hoàn tất: cần domain API, App Links/certificate và kiểm thử hai tài khoản/thiết bị. Không coi source hoặc JS export là bằng chứng hoàn thành production.
+
+
 > **For agentic workers:** Khi được yêu cầu triển khai, dùng `superpowers:executing-plans` và thực hiện từng task. Chỉ giao việc cho subagent nếu người dùng chọn phương thức đó. Checkbox mô tả công việc cần làm, không xác nhận app đã được xây dựng.
 
 **Goal:** Xây dựng ứng dụng Fookbase Light có codebase và giao diện mobile riêng bằng React Native + Expo, ưu tiên Android và dùng chung backend hiện tại.
