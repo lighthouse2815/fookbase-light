@@ -1,5 +1,6 @@
 import { HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { conversationTime, messageClock, messageDay, messageFullTime, sameMessageDay } from './messageTime'
 import {
   ApiError,
   apiBaseUrl,
@@ -23,10 +24,6 @@ function displayConversation(conversation: Conversation, profiles?: ReadonlyMap<
   return conversation.participantUserId
     ? profiles?.get(conversation.participantUserId)?.displayName ?? 'Người dùng'
     : 'Cuộc trò chuyện'
-}
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
 }
 
 function messageSummary(message: Message | null) {
@@ -185,7 +182,7 @@ function MessageBubble({ message, mine, onReply, onEdit, onDelete, onReact }: {
         </>}
       </div>
       {message.reactions?.length > 0 && <div className="reactions">{message.reactions.map((reaction) => <span key={`${reaction.userId}-${reaction.type}`}>{reaction.type}</span>)}</div>}
-      <small>{formatTime(message.createdAtUtc)}{message.editedAtUtc && ' · đã chỉnh sửa'}</small>
+      <small className="message-timestamp"><time dateTime={message.createdAtUtc} title={messageFullTime(message.createdAtUtc)} aria-label={messageFullTime(message.createdAtUtc)}>{messageClock(message.createdAtUtc)}</time>{message.editedAtUtc && <span title={`Chỉnh sửa lúc ${messageFullTime(message.editedAtUtc)}`}> · đã chỉnh sửa</span>}</small>
     </div>
     {showActions && !message.deletedAtUtc && <div className="message-actions">
       <button title="Trả lời" onClick={onReply}>↪</button>
@@ -292,6 +289,12 @@ function ConversationAvatar({ conversation, profiles }: { conversation: Conversa
 }
 
 function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () => Promise<void> }) {
+  // Refresh calendar labels when the tab stays open across midnight.
+  const [, refreshTimeLabels] = useState(0)
+  useEffect(() => {
+    const timer = window.setInterval(() => refreshTimeLabels((value) => value + 1), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([])
   const [nextConversationCursor, setNextConversationCursor] = useState<string | null>(null)
@@ -424,9 +427,9 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     <aside className="conversation-pane"><header className="pane-header"><div className="current-user"><Avatar name={currentUserProfile?.displayName ?? 'Tài khoản của bạn'} url={currentUserProfile?.avatarUrl} /><div><strong>{currentUserProfile?.displayName ?? 'Tài khoản của bạn'}</strong></div></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
       <input className="conversation-filter" placeholder="Tìm cuộc trò chuyện" onChange={(event) => { const value = event.target.value.toLowerCase(); document.querySelectorAll<HTMLElement>('[data-conversation]').forEach((node) => { node.hidden = !node.dataset.conversation?.includes(value) }) }} />
       <div className="conversation-list">{conversations.map((conversation) => <button key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} hidden={false} className={`conversation-item ${conversation.id === activeId ? 'selected' : ''}`} onClick={() => setActiveId(conversation.id)}>
-        <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
+        <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small>{conversation.lastMessage && <time className="conversation-time" dateTime={conversation.lastMessage.createdAtUtc} title={messageFullTime(conversation.lastMessage.createdAtUtc)} aria-label={messageFullTime(conversation.lastMessage.createdAtUtc)}>{conversationTime(conversation.lastMessage.createdAtUtc)}</time>}</span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
         {archivedConversations.length > 0 && <section className="archived-conversations"><h2>Cuộc trò chuyện đã lưu trữ <span>{archivedConversations.length}</span></h2>{archivedConversations.map((conversation) => <div key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} className={`archived-conversation ${conversation.id === activeId ? 'selected' : ''}`}>
-          <button className="conversation-item" onClick={() => setActiveId(conversation.id)}><ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small></span></button>
+          <button className="conversation-item" onClick={() => setActiveId(conversation.id)}><ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small>{conversation.lastMessage && <time className="conversation-time" dateTime={conversation.lastMessage.createdAtUtc} title={messageFullTime(conversation.lastMessage.createdAtUtc)} aria-label={messageFullTime(conversation.lastMessage.createdAtUtc)}>{conversationTime(conversation.lastMessage.createdAtUtc)}</time>}</span></button>
           <button className="unarchive-button" type="button" onClick={() => void setConversationArchived(conversation, false).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể bỏ lưu trữ cuộc trò chuyện.'))}>Bỏ lưu trữ</button>
         </div>)}</section>}
       </div>
@@ -436,7 +439,10 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     <section className="chat-pane">{error && <p className="alert">{error}</p>}{active ? <>
       <header className="chat-header"><button className="mobile-back" aria-label="Quay lại danh sách" onClick={() => setActiveId(null)}>‹</button><ConversationAvatar conversation={active} profiles={profiles} /><div><strong>{displayConversation(active, profiles)}</strong><small>{typing ? 'đang nhập…' : active.type === 'group' ? `${active.participants.length} thành viên` : onlineIds.has(active.participantUserId ?? '') ? 'Đang hoạt động' : 'Ngoại tuyến'}</small></div><button className="mobile-details" onClick={() => document.body.classList.toggle('details-open')}>ⓘ</button></header>
       <div className="message-list">{hasMoreMessages && <button className="load-more" onClick={() => activeId && void loadMessages(activeId, nextMessageCursor ?? undefined)}>Tải tin cũ hơn</button>}
-        {messages.map((message) => <MessageBubble key={message.id} message={message} mine={message.senderUserId === session.user.id} onReply={() => setReplyTo(message)} onReact={(type) => void messengerApi.react(message.id, type).catch((reason) => setError(reason.message))} onEdit={() => setEditingMessage(message)} onDelete={() => setConfirmation({ title: 'Gỡ tin nhắn?', description: 'Tin nhắn sẽ bị gỡ khỏi cuộc trò chuyện.', confirmLabel: 'Gỡ tin nhắn', onConfirm: () => deleteMessage(message) })} />)}
+        {messages.map((message, index) => <Fragment key={message.id}>
+          {(index === 0 || !sameMessageDay(messages[index - 1].createdAtUtc, message.createdAtUtc)) && <div className="message-day"><time dateTime={message.createdAtUtc} title={messageFullTime(message.createdAtUtc)}>{messageDay(message.createdAtUtc)}</time></div>}
+          <MessageBubble message={message} mine={message.senderUserId === session.user.id} onReply={() => setReplyTo(message)} onReact={(type) => void messengerApi.react(message.id, type).catch((reason) => setError(reason.message))} onEdit={() => setEditingMessage(message)} onDelete={() => setConfirmation({ title: 'Gỡ tin nhắn?', description: 'Tin nhắn sẽ bị gỡ khỏi cuộc trò chuyện.', confirmLabel: 'Gỡ tin nhắn', onConfirm: () => deleteMessage(message) })} />
+        </Fragment>)}
       </div>
       <Composer conversationId={active.id} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} onSend={send} onTyping={sendTyping} />
     </> : <div className="empty-chat"><div>💬</div><h1>Chọn một cuộc trò chuyện</h1><p>Hoặc tạo tin nhắn mới để bắt đầu.</p><button className="primary" onClick={() => setShowCreate(true)}>Tin nhắn mới</button></div>}</section>
@@ -461,7 +467,7 @@ function ParticipantRow({ participant, profile, currentUserId, isOnline, canMana
   const name = participant.userId === currentUserId ? 'Bạn' : participant.nickname ?? profile?.displayName ?? 'Thành viên'
   const avatarUrl = profile?.avatarUrl
   const role = participant.role === 'owner' ? 'Chủ nhóm' : participant.role === 'admin' ? 'Quản trị viên' : 'Thành viên'
-  return <div className="participant"><span className={`presence ${isOnline ? 'online' : ''}`} /><Avatar name={name} url={avatarUrl} /><div><b>{name}</b><small>{role}{participant.lastReadAtUtc ? ` · đã xem ${formatTime(participant.lastReadAtUtc)}` : ''}</small></div>
+  return <div className="participant"><span className={`presence ${isOnline ? 'online' : ''}`} /><Avatar name={name} url={avatarUrl} /><div><b>{name}</b><small>{role}</small>{participant.lastReadAtUtc && <small>Đã xem <time dateTime={participant.lastReadAtUtc} title={messageFullTime(participant.lastReadAtUtc)}>{messageDay(participant.lastReadAtUtc)} · {messageClock(participant.lastReadAtUtc)}</time></small>}</div>
     {canManage && participant.userId !== currentUserId && participant.role !== 'owner' && <select aria-label={`Quản lý ${name}`} defaultValue="" onChange={(event) => { const action = event.target.value as 'remove' | 'admin' | 'member' | 'owner'; if (action) onManage(action); event.currentTarget.value = '' }}><option value="">⋯</option><option value="admin">Đặt quản trị viên</option><option value="member">Đặt thành viên</option><option value="owner">Chuyển quyền sở hữu</option><option value="remove">Xóa</option></select>}
   </div>
 }
