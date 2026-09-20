@@ -192,6 +192,10 @@ export default function ExplorePage() {
             <h1 className="text-2xl font-bold text-text">Bạn bè</h1>
           </div>
         </div>
+        <nav aria-label="Bộ lọc bạn bè" className="mb-4 flex flex-wrap gap-2 xl:hidden">
+          {navigation.map((item) => <button key={item.id} type="button" onClick={() => setView(item.id)} aria-pressed={view === item.id} className={`rounded-full px-3 py-2 text-sm font-semibold ${view === item.id ? 'bg-primary text-white' : 'bg-surface text-text hover:bg-surface-2'}`}>{item.label}</button>)}
+          <Link to="/birthdays" className="rounded-full bg-surface px-3 py-2 text-sm font-semibold text-text no-underline hover:bg-surface-2">Sinh nhật</Link>
+        </nav>
         {isLoading ? <p className="py-10 text-center text-text-muted">Đang tải bạn bè...</p> : <>
           {showRequests && <section>
             <div className="mb-3 flex items-center justify-between gap-4">

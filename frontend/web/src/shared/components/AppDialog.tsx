@@ -71,7 +71,7 @@ export default function AppDialog({ title, children, onClose, describedBy }: App
 
   return createPortal(
     <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4 backdrop-blur-[2px]" role="presentation" onMouseDown={() => onCloseRef.current()}>
-      <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={describedBy} onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-2xl">
+      <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={describedBy} onMouseDown={(event) => event.stopPropagation()} className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl">
         <h2 id={titleId} className="font-heading text-xl font-bold text-text">{title}</h2>
         {children}
       </section>

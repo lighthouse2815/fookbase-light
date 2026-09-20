@@ -243,7 +243,7 @@ function ReactionPicker({ viewerReaction, onToggleDefault, onSelect, className =
       {selectedReaction ? <span className="text-[19px] leading-none" aria-hidden="true">{selectedReaction.icon}</span> : <LikeIcon />}
       {selectedReaction?.label ?? 'Thích'}
     </button>
-    <div className={`absolute bottom-[calc(100%+4px)] left-1/2 z-30 -translate-x-1/2 items-center rounded-full border border-border bg-surface px-1.5 py-1 shadow-xl ${isPickerOpen ? 'flex' : 'hidden'} group-hover:flex group-focus-within:flex`} role="group" aria-label="Chọn cảm xúc">
+    <div className={`absolute bottom-[calc(100%+4px)] left-0 z-30 items-center rounded-full border border-border bg-surface px-1.5 py-1 shadow-xl ${isPickerOpen ? 'flex' : 'hidden'} group-hover:flex group-focus-within:flex`} role="group" aria-label="Chọn cảm xúc">
       {reactionChoices.map(({ type, icon, label }) => <button
         key={type}
         type="button"

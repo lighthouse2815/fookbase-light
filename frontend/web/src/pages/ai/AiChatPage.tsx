@@ -108,7 +108,7 @@ export default function AiChatPage() {
               maxLength={4000}
               disabled={isSending}
               placeholder="Nhắn cho Trợ lý AI…"
-              className="max-h-40 min-h-11 flex-1 resize-y border-0 bg-transparent px-3 py-2 text-text outline-none placeholder:text-text-light disabled:opacity-60"
+              className="max-h-40 min-h-11 min-w-0 flex-1 resize-y border-0 bg-transparent px-3 py-2 text-text outline-none placeholder:text-text-light disabled:opacity-60"
             />
             <button type="submit" disabled={!draft.trim() || isSending} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50">
               Gửi

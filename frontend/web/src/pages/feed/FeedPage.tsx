@@ -165,7 +165,7 @@ export default function FeedPage() {
         <StoryTray />
         {todayBirthdayCount > 0 && <Link to="/birthdays" className="rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-text no-underline">🎂 {todayBirthdayCount} bạn có sinh nhật hôm nay</Link>}
         <section className="rounded-xl border border-border bg-surface p-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <nav aria-label={t('feedModes')} className="flex gap-2">
               {(['home', 'following'] as const).map((value) => <button key={value} type="button" aria-pressed={mode === value} onClick={() => chooseMode(value)} className={`rounded-full border-none px-4 py-2 text-sm font-semibold cursor-pointer ${mode === value ? 'bg-primary text-white' : 'bg-surface-2 text-text-muted hover:text-text'}`}>{t(value)}</button>)}
             </nav>

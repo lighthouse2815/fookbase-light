@@ -122,7 +122,7 @@ function CreateStoryDialog({ onClose, onCreated }: { onClose: () => void; onCrea
   }
 
   const status = media?.status === 'Processing' ? 'Đang xử lý video…' : media?.status === 'Failed' ? 'Video xử lý thất bại.' : media?.status === 'Ready' ? 'Media đã sẵn sàng.' : isUploading ? `Đang tải lên ${progress}%…` : 'Chọn ảnh hoặc video (video tối đa 60 giây).'
-  return <div className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-4" role="presentation"><section className="w-full max-w-lg rounded-2xl border border-border bg-surface p-5 shadow-2xl" role="dialog" aria-modal="true" aria-label="Tạo Story">
+  return <div className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-4" role="presentation"><section className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl" role="dialog" aria-modal="true" aria-label="Tạo Story">
     <div className="flex items-center justify-between"><h2 className="font-heading text-lg font-bold text-text">Tạo Story</h2><button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-surface-2 text-text">×</button></div>
     <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; void choose(file) }} />
     <button type="button" disabled={isUploading} onClick={() => inputRef.current?.click()} className="mt-4 flex h-52 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-surface-2 text-sm text-text-muted disabled:opacity-60">

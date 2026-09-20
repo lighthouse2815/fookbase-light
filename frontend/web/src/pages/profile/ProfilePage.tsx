@@ -686,7 +686,7 @@ export default function ProfilePage() {
 
           {/* 4. Tabs below: Posts | About | Friends | Photos */}
           <div className="border-t border-border mt-2" />
-          <div className="flex items-center gap-1 overflow-x-auto scroll-smooth pt-1">
+          <div className="grid grid-cols-2 items-center gap-1 pt-1 sm:flex">
             {tabs.map((item) => {
               const isActive = tab === item.id
               return (

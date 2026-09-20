@@ -75,7 +75,7 @@ export default function ShareDialog({ postId, onClose, onShared }: {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-3" role="dialog" aria-modal="true" aria-labelledby="share-dialog-title">
-      <form onSubmit={(event) => void submit(event)} className="w-full max-w-lg rounded-2xl border border-border bg-surface p-5 shadow-2xl">
+      <form onSubmit={(event) => void submit(event)} className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl">
         <div className="flex items-center justify-between gap-3">
           <h2 id="share-dialog-title" className="text-lg font-bold text-text">Chia sẻ</h2>
           <button type="button" onClick={onClose} disabled={isSharing} className="border-0 bg-transparent text-lg text-text-muted cursor-pointer">✕</button>

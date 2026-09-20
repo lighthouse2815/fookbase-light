@@ -26,7 +26,7 @@ export default function MainLayout() {
         <main
           key={location.pathname}
           className={shouldShowSidebar && !isCenteredFeed ? 'ml-[360px] min-h-full min-w-0 flex-1 max-xl:ml-0' : 'min-h-full min-w-0 flex-1'}
-          style={{ animation: 'fade-in 0.25s ease both' }}
+          style={{ animation: 'fade-in 0.25s ease' }}
         >
           <Outlet />
         </main>
