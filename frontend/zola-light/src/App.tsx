@@ -1,5 +1,5 @@
 import { HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ApiError,
   apiBaseUrl,
@@ -293,6 +293,7 @@ function ConversationAvatar({ conversation, profiles }: { conversation: Conversa
 
 function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () => Promise<void> }) {
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([])
   const [nextConversationCursor, setNextConversationCursor] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -311,7 +312,8 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const connectionRef = useRef<ReturnType<HubConnectionBuilder['build']> | null>(null)
   const typingTimeout = useRef<number | null>(null)
   const groupPhotoInputRef = useRef<HTMLInputElement>(null)
-  const active = conversations.find((conversation) => conversation.id === activeId) ?? null
+  const allConversations = useMemo(() => [...conversations, ...archivedConversations], [archivedConversations, conversations])
+  const active = allConversations.find((conversation) => conversation.id === activeId) ?? null
   const currentUserProfile = profiles.get(session.user.id)
 
   useEffect(() => {
@@ -328,6 +330,10 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     setNextConversationCursor(page.nextCursor)
     if (!before) setActiveId((current) => current ?? page.items[0]?.id ?? null)
   }, [])
+  const loadArchivedConversations = useCallback(async () => {
+    const page = await messengerApi.conversations(undefined, true)
+    setArchivedConversations(page.items.filter((item) => item.isArchived))
+  }, [])
   const loadMessages = useCallback(async (conversationId: string, before?: string) => {
     const page = await messengerApi.messages(conversationId, before)
     setMessages((current) => before ? [...page.items, ...current.filter((item) => !page.items.some((newItem) => newItem.id === item.id))] : page.items)
@@ -336,9 +342,12 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     const lastIncoming = [...page.items].reverse().find((message) => message.senderUserId !== session.user.id)
     if (!before && lastIncoming) void messengerApi.read(conversationId, lastIncoming.id).catch(() => undefined)
   }, [session.user.id])
-  useEffect(() => { void loadConversations().catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tải cuộc trò chuyện.')) }, [loadConversations])
+  const refreshConversationLists = useCallback(async () => {
+    await Promise.all([loadConversations(), loadArchivedConversations()])
+  }, [loadArchivedConversations, loadConversations])
+  useEffect(() => { void refreshConversationLists().catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tải cuộc trò chuyện.')) }, [refreshConversationLists])
   useEffect(() => {
-    const unknownIds = [...new Set(conversations.flatMap((conversation) => conversation.type === 'direct' && conversation.participantUserId ? [conversation.participantUserId] : conversation.participants.map((participant) => participant.userId)).filter((userId) => !profiles.has(userId)))]
+    const unknownIds = [...new Set(allConversations.flatMap((conversation) => conversation.type === 'direct' && conversation.participantUserId ? [conversation.participantUserId] : conversation.participants.map((participant) => participant.userId)).filter((userId) => !profiles.has(userId)))]
     if (unknownIds.length === 0) return
     let isCurrent = true
     void Promise.all(unknownIds.map((userId) => messengerApi.user(userId).catch(() => null))).then((users) => {
@@ -352,17 +361,17 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
       })
     })
     return () => { isCurrent = false }
-  }, [conversations, profiles])
+  }, [allConversations, profiles])
   useEffect(() => { if (activeId) { setReplyTo(null); void loadMessages(activeId).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tải tin nhắn.')) } }, [activeId, loadMessages])
   useEffect(() => {
     const connection = new HubConnectionBuilder().withUrl(`${apiBaseUrl}/hubs/messages`, { accessTokenFactory: () => getSession()?.accessToken ?? '' }).withAutomaticReconnect().configureLogging(import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error).build()
     connectionRef.current = connection
-    connection.on('MessageCreated', (message: Message) => { if (message.conversationId === activeId) { setMessages((current) => upsertMessage(current, message)); void messengerApi.read(message.conversationId, message.id).catch(() => undefined) }; void loadConversations().catch(() => undefined) })
+    connection.on('MessageCreated', (message: Message) => { if (message.conversationId === activeId) { setMessages((current) => upsertMessage(current, message)); void messengerApi.read(message.conversationId, message.id).catch(() => undefined) }; void refreshConversationLists().catch(() => undefined) })
     connection.on('MessageEdited', (message: Message) => { if (message.conversationId === activeId) setMessages((current) => upsertMessage(current, message)) })
     connection.on('MessageDeleted', (event: { messageId: string; conversationId: string; deletedAtUtc: string }) => { if (event.conversationId === activeId) setMessages((current) => current.map((message) => message.id === event.messageId ? { ...message, content: null, attachments: [], reactions: [], deletedAtUtc: event.deletedAtUtc } : message)) })
     connection.on('MessageReactionChanged', () => { if (activeId) void loadMessages(activeId).catch(() => undefined) })
-    connection.on('ConversationCreated', () => void loadConversations().catch(() => undefined))
-    connection.on('ConversationUpdated', () => { void loadConversations().catch(() => undefined); if (activeId) void messengerApi.conversation(activeId).then((updated) => setConversations((current) => current.map((item) => item.id === updated.id ? updated : item))).catch(() => undefined) })
+    connection.on('ConversationCreated', () => void refreshConversationLists().catch(() => undefined))
+    connection.on('ConversationUpdated', () => { void refreshConversationLists().catch(() => undefined) })
     connection.on('ParticipantRemoved', (event: { conversationId: string; userId: string }) => { if (event.userId === session.user.id) { setConversations((current) => current.filter((conversation) => conversation.id !== event.conversationId)); setActiveId((current) => current === event.conversationId ? null : current) } else void loadConversations().catch(() => undefined) })
     connection.on('TypingChanged', (event: { conversationId: string; senderUserId: string; isTyping: boolean }) => { if (event.conversationId === activeId && event.senderUserId !== session.user.id) { setTyping(event.isTyping); window.setTimeout(() => setTyping(false), 3000) } })
     connection.on('PresenceSnapshot', (snapshot: { userIds: string[] }) => setOnlineIds(new Set(snapshot.userIds)))
@@ -372,20 +381,24 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
       else next.delete(event.userId)
       return next
     }))
-    connection.onreconnected(() => { void loadConversations().catch(() => undefined); if (activeId) void loadMessages(activeId).catch(() => undefined) })
+    connection.onreconnected(() => { void refreshConversationLists().catch(() => undefined); if (activeId) void loadMessages(activeId).catch(() => undefined) })
     void connection.start().catch(() => undefined)
     return () => { connection.stop().catch(() => undefined); connectionRef.current = null }
-  }, [activeId, loadConversations, loadMessages, session.user.id])
+  }, [activeId, loadMessages, refreshConversationLists, session.user.id])
 
   const send = async (content: string, files: File[]) => {
     if (!activeId) return
     const mediaIds = await Promise.all(files.map((file) => messengerApi.upload(file)))
     const message = await messengerApi.send(activeId, content, mediaIds, replyTo?.id)
-    setMessages((current) => upsertMessage(current, message)); setReplyTo(null); await loadConversations()
+    setMessages((current) => upsertMessage(current, message)); setReplyTo(null); await refreshConversationLists()
   }
   const sendTyping = () => { const connection = connectionRef.current; if (connection?.state === HubConnectionState.Connected && activeId) void connection.invoke('Typing', activeId).catch(() => undefined); if (typingTimeout.current) window.clearTimeout(typingTimeout.current); typingTimeout.current = window.setTimeout(() => { typingTimeout.current = null }, 800) }
-  const createDirect = async (userId: string) => { const conversation = await messengerApi.direct(userId); await loadConversations(); setActiveId(conversation.id) }
-  const createGroup = async (title: string, userIds: string[]) => { const conversation = await messengerApi.group(title, userIds); await loadConversations(); setActiveId(conversation.id) }
+  const createDirect = async (userId: string) => { const conversation = await messengerApi.direct(userId); await refreshConversationLists(); setActiveId(conversation.id) }
+  const createGroup = async (title: string, userIds: string[]) => { const conversation = await messengerApi.group(title, userIds); await refreshConversationLists(); setActiveId(conversation.id) }
+  const setConversationArchived = async (conversation: Conversation, archived: boolean) => {
+    await messengerApi.updateConversation(conversation.id, { archived })
+    await refreshConversationLists()
+  }
   const updateGroupTitle = async (title: string) => { if (!active || active.type !== 'group') return; const updated = await messengerApi.updateConversation(active.id, { title }); setConversations((current) => current.map((item) => item.id === updated.id ? updated : item)) }
   const updateGroupPhoto = async (file: File) => {
     if (!active || active.type !== 'group') return
@@ -412,6 +425,10 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
       <input className="conversation-filter" placeholder="Tìm cuộc trò chuyện" onChange={(event) => { const value = event.target.value.toLowerCase(); document.querySelectorAll<HTMLElement>('[data-conversation]').forEach((node) => { node.hidden = !node.dataset.conversation?.includes(value) }) }} />
       <div className="conversation-list">{conversations.map((conversation) => <button key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} hidden={false} className={`conversation-item ${conversation.id === activeId ? 'selected' : ''}`} onClick={() => setActiveId(conversation.id)}>
         <ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small></span>{conversation.unreadCount > 0 && <em>{conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}</em>}</button>)}
+        {archivedConversations.length > 0 && <section className="archived-conversations"><h2>Cuộc trò chuyện đã lưu trữ <span>{archivedConversations.length}</span></h2>{archivedConversations.map((conversation) => <div key={conversation.id} data-conversation={displayConversation(conversation, profiles).toLowerCase()} className={`archived-conversation ${conversation.id === activeId ? 'selected' : ''}`}>
+          <button className="conversation-item" onClick={() => setActiveId(conversation.id)}><ConversationAvatar conversation={conversation} profiles={profiles} /><span><b>{displayConversation(conversation, profiles)}</b><small>{messageSummary(conversation.lastMessage)}</small></span></button>
+          <button className="unarchive-button" type="button" onClick={() => void setConversationArchived(conversation, false).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể bỏ lưu trữ cuộc trò chuyện.'))}>Bỏ lưu trữ</button>
+        </div>)}</section>}
       </div>
       {nextConversationCursor && <button className="load-more" onClick={() => void loadConversations(nextConversationCursor)}>Tải thêm</button>}
       <footer><button onClick={() => void onSignOut()}>Đăng xuất</button><a href={import.meta.env.VITE_WEB_URL ?? 'http://localhost:5173'}>Fookbase</a></footer>
@@ -430,7 +447,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
         else void manageParticipant(participant, action).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể cập nhật thành viên.'))
       }} />)}
       {active.type === 'group' && (myParticipant?.role === 'owner' || myParticipant?.role === 'admin') && <button className="secondary" onClick={() => setShowAddParticipants(true)}>Thêm thành viên</button>}</section>
-      <section><h3>Cài đặt</h3><button className="secondary" onClick={() => void messengerApi.updateConversation(active.id, { archived: !active.isArchived }).then(() => loadConversations())}>{active.isArchived ? 'Bỏ lưu trữ' : 'Lưu trữ'}</button><button className="secondary" onClick={() => void messengerApi.updateConversation(active.id, { mutedUntilUtc: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() }).then(() => loadConversations())}>Tắt thông báo 8 giờ</button>{active.type === 'group' && myParticipant?.role !== 'owner' && <button className="danger" onClick={() => setConfirmation({ title: 'Rời nhóm?', description: 'Bạn sẽ không còn nhận được tin nhắn từ nhóm này.', confirmLabel: 'Rời nhóm', onConfirm: leave })}>Rời nhóm</button>}</section>
+      <section><h3>Cài đặt</h3><button className="secondary" onClick={() => void setConversationArchived(active, !active.isArchived).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể cập nhật cuộc trò chuyện.'))}>{active.isArchived ? 'Bỏ lưu trữ' : 'Lưu trữ'}</button><button className="secondary" onClick={() => void messengerApi.updateConversation(active.id, { mutedUntilUtc: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() }).then(() => refreshConversationLists())}>Tắt thông báo 8 giờ</button>{active.type === 'group' && myParticipant?.role !== 'owner' && <button className="danger" onClick={() => setConfirmation({ title: 'Rời nhóm?', description: 'Bạn sẽ không còn nhận được tin nhắn từ nhóm này.', confirmLabel: 'Rời nhóm', onConfirm: leave })}>Rời nhóm</button>}</section>
     </> : <p className="details-placeholder">Thông tin cuộc trò chuyện sẽ hiển thị ở đây.</p>}</aside>
     {showCreate && <CreateConversation onClose={() => setShowCreate(false)} onDirect={createDirect} onGroup={createGroup} />}
     {showAddParticipants && active && <AddParticipantsDialog conversation={active} onClose={() => setShowAddParticipants(false)} onAdd={addParticipants} />}
