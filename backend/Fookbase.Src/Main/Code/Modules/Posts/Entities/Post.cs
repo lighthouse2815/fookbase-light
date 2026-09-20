@@ -24,6 +24,7 @@ public enum PostType
 public sealed class Post
 {
     public const int MaximumContentLength = 10_000;
+    public const int MaximumTextBackgroundLength = 32;
     public const string AvatarUpdatedPostContent = "đã cập nhật ảnh đại diện.";
     public const string CoverUpdatedPostContent = "đã cập nhật ảnh bìa.";
 
@@ -64,6 +65,8 @@ public sealed class Post
     public Guid ContainerId { get; private set; }
 
     public PostType PostType { get; private set; }
+
+    public string? TextBackground { get; private set; }
 
     public bool IsPinned { get; private set; }
 
@@ -108,6 +111,12 @@ public sealed class Post
         Content = NormalizeContent(content);
         Privacy = privacy;
         UpdatedAtUtc = updatedAtUtc;
+    }
+
+    public void SetTextBackground(string? textBackground)
+    {
+        EnsureActive();
+        TextBackground = string.IsNullOrWhiteSpace(textBackground) ? null : textBackground.Trim();
     }
 
     public void Delete(DateTimeOffset deletedAtUtc)

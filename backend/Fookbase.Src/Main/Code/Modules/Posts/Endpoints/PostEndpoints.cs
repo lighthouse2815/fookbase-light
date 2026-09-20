@@ -55,7 +55,7 @@ public static class PostEndpoints
         }
 
         var result = await useCase.CreatePostAsync(
-            actorUserId, request.Content, request.Privacy, request.MediaIds ?? [], cancellationToken);
+            actorUserId, request.Content, request.Privacy, request.MediaIds ?? [], request.TextBackground, cancellationToken);
         return result.Succeeded
             ? Results.Created($"/api/posts/{result.Value!.Id}", result.Value)
             : result.Error!.ToHttpResult();

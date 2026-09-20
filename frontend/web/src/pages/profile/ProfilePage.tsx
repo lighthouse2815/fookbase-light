@@ -425,9 +425,11 @@ export default function ProfilePage() {
     content: string,
     files: readonly File[],
     onUploadProgress: (progress: number) => void,
+    privacy: 'public' | 'friends' | 'onlyMe',
+    textBackground: string | null,
   ) => {
     const mediaIds = await mediaApi.uploadFiles(files, onUploadProgress)
-    const post = await postsApi.create({ content, privacy: 'public', mediaIds })
+    const post = await postsApi.create({ content, privacy, mediaIds, textBackground })
     setProfilePosts((currentPosts) => [post, ...currentPosts])
     setProfilePostsTotal((currentTotal) => currentTotal + 1)
     if (profile) void loadProfilePhotos(profile.userId)

@@ -722,7 +722,8 @@ public sealed class FeedService(
                 summary.CommentCount, summary.ReactionCounts.Values.Sum(), summary.ReactionCounts, summary.ViewerReaction,
                 contentType, containerType,
                 container, displayAuthor, video, candidate.IsSuggested, summary.Mentions ?? [], shareResponse,
-                candidate.IsSuggested ? "Suggested for you" : null));
+                candidate.IsSuggested ? "Suggested for you" : null,
+                contentType == "standardPost" ? summary.TextBackground : null));
         }
 
         return results;

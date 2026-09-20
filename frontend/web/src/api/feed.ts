@@ -45,6 +45,7 @@ export interface FeedItem extends Omit<Post, 'authorUserId' | 'contentType'> {
   reactionCount: number
   isSuggested: boolean
   recommendationReason?: string | null
+  textBackground?: string | null
   share?: FeedShare | null
 }
 

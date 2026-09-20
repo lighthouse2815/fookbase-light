@@ -50,7 +50,8 @@ public sealed record FeedItemResponse(
     bool IsSuggested,
     IReadOnlyList<ContentMentionResponse>? Mentions = null,
     FeedShareResponse? Share = null,
-    string? RecommendationReason = null);
+    string? RecommendationReason = null,
+    string? TextBackground = null);
 
 public sealed record FeedPageResponse(
     IReadOnlyList<FeedItemResponse> Items,

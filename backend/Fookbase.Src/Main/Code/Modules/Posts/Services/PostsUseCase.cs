@@ -97,6 +97,7 @@ public sealed class PostsUseCase(
         string content,
         string? privacy,
         IReadOnlyList<Guid> mediaIds,
+        string? textBackground = null,
         CancellationToken cancellationToken = default)
     {
         var effectivePrivacy = string.IsNullOrWhiteSpace(privacy)
@@ -118,7 +119,7 @@ public sealed class PostsUseCase(
         try
         {
             var result = await postsService.CreatePostAsync(
-                actorUserId, content, effectivePrivacy, mediaIds, cancellationToken);
+                actorUserId, content, effectivePrivacy, mediaIds, textBackground, cancellationToken);
             if (!result.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);

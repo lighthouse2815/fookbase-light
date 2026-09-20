@@ -17,7 +17,8 @@ public sealed record PostResponse(
     string ContentType = "standardPost",
     int ShareCount = 0,
     bool IsPinned = false,
-    bool ViewerHasSaved = false);
+    bool ViewerHasSaved = false,
+    string? TextBackground = null);
 
 public sealed record PostDisplayIdentityResponse(
     string Type,

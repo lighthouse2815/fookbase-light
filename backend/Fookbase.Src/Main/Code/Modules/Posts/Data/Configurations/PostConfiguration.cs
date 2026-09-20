@@ -12,6 +12,7 @@ internal sealed class PostConfiguration : IEntityTypeConfiguration<Post>
         builder.HasKey(post => post.Id);
         builder.Property(post => post.Content).HasMaxLength(Post.MaximumContentLength).IsRequired();
         builder.Property(post => post.Privacy).HasConversion<int>().IsRequired();
+        builder.Property(post => post.TextBackground).HasMaxLength(Post.MaximumTextBackgroundLength);
         builder.Property(post => post.ContainerType).HasConversion<int>().IsRequired();
         builder.Property(post => post.ContainerId).IsRequired();
         builder.Property(post => post.PostType).HasConversion<int>().IsRequired();

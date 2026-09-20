@@ -3,12 +3,17 @@ import { resolveProfileImageUrl, usersApi } from '../../../api/users'
 import { useAuth } from '../../../auth/useAuth'
 import { usePreferences } from '../../../preferences'
 import AppDialog from '../../../shared/components/AppDialog'
+import { POST_BACKGROUNDS, getPostBackgroundClass } from './postBackgrounds'
+
+type PostPrivacy = 'public' | 'friends' | 'onlyMe'
 
 interface NewPostBoxProps {
   onPost: (
     content: string,
     files: readonly File[],
     onUploadProgress: (progress: number) => void,
+    privacy: PostPrivacy,
+    textBackground: string | null,
   ) => Promise<void>
   identityName?: string
   postingLabel?: string
@@ -62,6 +67,8 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [profileName, setProfileName] = useState<string | null>(null)
   const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] = useState(false)
+  const [privacy, setPrivacy] = useState<PostPrivacy>('public')
+  const [textBackground, setTextBackground] = useState<string | null>(null)
   const displayName = identityName ?? profileName ?? fallbackDisplayName
   const initials = displayName.slice(0, 2).toUpperCase()
   const previewUrlsRef = useRef(new Set<string>())
@@ -121,6 +128,8 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
     setUploadProgress(0)
     setError(null)
     setIsFeelingPickerOpen(false)
+    setPrivacy('public')
+    setTextBackground(null)
   }
 
   const handleSubmit = async () => {
@@ -131,7 +140,7 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
     setError(null)
 
     try {
-      await onPost(content.trim(), attachments.map((attachment) => attachment.file), setUploadProgress)
+      await onPost(content.trim(), attachments.map((attachment) => attachment.file), setUploadProgress, privacy, textBackground)
       resetComposer()
       setIsExpanded(false)
     } catch (requestError) {
@@ -151,6 +160,8 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
   const circ = 2 * Math.PI * radius
   const offset = circ - (pct / 100) * circ
   const openComposer = () => setIsExpanded(true)
+  const privacyLabel = privacy === 'public' ? 'Công khai' : privacy === 'friends' ? 'Bạn bè' : 'Chỉ mình tôi'
+  const backgroundClass = getPostBackgroundClass(textBackground)
 
   return (
     <div className="bg-surface rounded-xl border border-border p-3 transition-all shadow-sm">
@@ -167,11 +178,18 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2 pb-1 border-b border-border">
-            <div className="flex min-w-0 items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 bg-primary">{initials}</div><div><div className="text-[14px] font-semibold text-text break-words">{displayName}</div><div className="text-[12px] text-text-muted">{postingLabel ?? t('public')}</div></div></div>
+            <div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[12px] font-bold text-white">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</div><div><div className="text-[14px] font-semibold text-text break-words">{displayName}</div>{postingLabel ? <div className="text-[12px] text-text-muted">{postingLabel}</div> : <label className="mt-1 inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-[12px] font-semibold text-text"><span aria-hidden="true">{privacy === 'public' ? '◉' : privacy === 'friends' ? '👥' : '🔒'}</span><span className="sr-only">Chế độ hiển thị</span><select value={privacy} onChange={(event) => setPrivacy(event.target.value as PostPrivacy)} disabled={isSubmitting} className="cursor-pointer appearance-none bg-transparent pr-3 text-[12px] font-semibold text-text outline-none"><option value="public">Công khai</option><option value="friends">Bạn bè</option><option value="onlyMe">Chỉ mình tôi</option></select><span aria-hidden="true" className="-ml-3">▾</span></label>}</div></div>
             <button type="button" onClick={() => { if (!content.trim() && attachments.length === 0) setIsExpanded(false); else setIsDiscardConfirmationOpen(true) }} className="w-8 h-8 shrink-0 rounded-full bg-surface-2 hover:bg-surface-3 flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none transition-colors" title={t('close')} aria-label={t('close')}>✕</button>
           </div>
 
-          <textarea autoFocus value={content} onChange={(event) => setContent(event.target.value)} placeholder={`${t('whatsOnMind')}, ${displayName}?`} rows={4} className="w-full bg-transparent border-none outline-none resize-none text-[15px] text-text leading-relaxed placeholder:text-text-light" onKeyDown={(event) => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) void handleSubmit() }} />
+          <div className={`relative overflow-hidden rounded-xl transition-all ${backgroundClass ?? ''} ${backgroundClass ? 'min-h-64' : ''}`}>
+            <textarea autoFocus value={content} onChange={(event) => setContent(event.target.value)} placeholder={`${t('whatsOnMind')}, ${displayName}?`} rows={backgroundClass ? 7 : 4} className={`w-full resize-none border-none bg-transparent outline-none ${backgroundClass ? 'min-h-64 px-6 py-16 text-center text-2xl font-bold leading-tight text-white placeholder:text-white/75 sm:text-3xl' : 'text-[15px] leading-relaxed text-text placeholder:text-text-light'}`} onKeyDown={(event) => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) void handleSubmit() }} />
+          </div>
+
+          {attachments.length === 0 && <div className="flex items-center gap-2 overflow-x-auto pb-1" aria-label="Nền bài viết">
+            <button type="button" onClick={() => setTextBackground(null)} aria-label="Không dùng nền" aria-pressed={textBackground === null} className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg border text-lg ${textBackground === null ? 'border-primary ring-2 ring-primary/25' : 'border-border'} bg-surface-2 text-text-muted`}>∅</button>
+            {POST_BACKGROUNDS.map((background) => <button key={background.id} type="button" onClick={() => setTextBackground(background.id)} aria-label={`Nền ${background.label}`} aria-pressed={textBackground === background.id} className={`h-9 w-9 shrink-0 rounded-lg border-2 ${background.swatch} ${textBackground === background.id ? 'border-white ring-2 ring-primary' : 'border-transparent'}`} />)}
+          </div>}
 
           {attachments.length > 0 && (
             <div className={`grid gap-2 ${attachments.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
@@ -192,14 +210,14 @@ export default function NewPostBox({ onPost, identityName, postingLabel }: NewPo
               <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-surface-2 text-text-muted hover:text-text transition-colors cursor-pointer bg-transparent border-none text-[13px] disabled:opacity-60"><span className="text-base">🖼️</span><span>{t('photoVideo')} {attachments.length > 0 ? `(${attachments.length}/${MAX_ATTACHMENTS})` : ''}</span></button>
               <button type="button" onClick={() => setIsFeelingPickerOpen((current) => !current)} disabled={isSubmitting} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-surface-2 text-text-muted hover:text-text transition-colors cursor-pointer bg-transparent border-none text-[13px] disabled:opacity-60"><span className="text-base">😊</span><span>{t('feelingActivity')}</span></button>
               {isFeelingPickerOpen && <div className="absolute left-0 top-full z-10 mt-2 flex gap-1 rounded-xl border border-border bg-surface p-2 shadow-xl">{FEELINGS.map((feeling) => <button key={feeling} type="button" onClick={() => addFeeling(feeling)} className="h-8 w-8 rounded-lg bg-surface-2 text-base hover:bg-surface-3">{feeling}</button>)}</div>}
-              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple className="hidden" onChange={(event) => { selectFiles(event.target.files); event.target.value = '' }} />
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple className="hidden" onChange={(event) => { setTextBackground(null); selectFiles(event.target.files); event.target.value = '' }} />
             </div>
 
             {content.length > 0 && <div className="relative w-6 h-6 shrink-0"><svg className="w-6 h-6 -rotate-90" viewBox="0 0 24 24"><circle cx="12" cy="12" r={radius} fill="none" stroke="#3e4042" strokeWidth="2.5" /><circle cx="12" cy="12" r={radius} fill="none" stroke={isOverLimit ? '#e15f5f' : isNearLimit ? '#e7a33e' : '#2374e1'} strokeWidth="2.5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" /></svg>{isNearLimit && <span className={`absolute inset-0 flex items-center justify-center text-[9px] font-bold ${isOverLimit ? 'text-danger' : 'text-warning'}`}>{remaining}</span>}</div>}
           </div>
 
           {error && <p className="text-xs text-[#ff8a9b]">{error}</p>}
-          <button type="button" onClick={() => void handleSubmit()} disabled={(!content.trim() && attachments.length === 0) || isOverLimit || isSubmitting} className="w-full py-2 rounded-lg text-[14px] font-semibold text-white bg-primary hover:brightness-110 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-none">{isSubmitting ? t('posting') : t('post')}</button>
+          <button type="button" onClick={() => void handleSubmit()} disabled={(!content.trim() && attachments.length === 0) || isOverLimit || isSubmitting} title={`Đăng với chế độ ${privacyLabel}`} className="w-full py-2 rounded-lg text-[14px] font-semibold text-white bg-primary hover:brightness-110 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-none">{isSubmitting ? t('posting') : t('post')}</button>
         </div>
       )}
       {isDiscardConfirmationOpen && <AppDialog title="Bỏ bài viết?" onClose={() => setIsDiscardConfirmationOpen(false)}><p className="mt-3 text-sm text-text-muted">Nội dung và tệp đính kèm chưa đăng sẽ bị xóa.</p><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setIsDiscardConfirmationOpen(false)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" onClick={() => { resetComposer(); setIsExpanded(false); setIsDiscardConfirmationOpen(false) }} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Bỏ bài viết</button></div></AppDialog>}

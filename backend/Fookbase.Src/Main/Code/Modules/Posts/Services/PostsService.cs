@@ -26,12 +26,15 @@ public sealed class PostsService(
     PostsOptions options)
 {
     private const int MaximumLimit = 100;
+    private static readonly HashSet<string> TextBackgrounds =
+        ["purple", "pink", "midnight", "sunset", "ocean", "neon"];
 
     public async Task<ApplicationResult<PostResponse>> CreatePostAsync(
         Guid actorUserId,
         string content,
         string privacy,
         IReadOnlyList<Guid> mediaIds,
+        string? textBackground = null,
         CancellationToken cancellationToken = default)
     {
         var validation = ValidatePostRequest(content, privacy, mediaIds);
@@ -42,12 +45,22 @@ public sealed class PostsService(
 
         TryParsePrivacy(privacy, out var parsedPrivacy);
 
+        if (!string.IsNullOrWhiteSpace(textBackground) &&
+            (!TextBackgrounds.Contains(textBackground) || mediaIds.Count > 0 || string.IsNullOrWhiteSpace(content)))
+        {
+            return ApplicationResult<PostResponse>.Failure(new ApplicationError(
+                "invalid_text_background",
+                "Text backgrounds require a text-only post and a supported background.",
+                ApplicationErrorType.Validation));
+        }
+
         return Map(await CreatePostCoreAsync(
             actorUserId,
             content,
             parsedPrivacy,
             mediaIds,
-            cancellationToken));
+            cancellationToken,
+            textBackground: textBackground));
     }
 
     public async Task<ApplicationResult<PostResponse>> CreatePostInGroupAsync(
@@ -546,7 +559,8 @@ public sealed class PostsService(
         PostPrivacy privacy,
         IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default,
-        bool addToTimelinePhotos = true)
+        bool addToTimelinePhotos = true,
+        string? textBackground = null)
     {
         return await CreatePostInContainerCoreAsync(
             authorUserId,
@@ -556,7 +570,8 @@ public sealed class PostsService(
             authorUserId,
             mediaIds,
             cancellationToken,
-            addToTimelinePhotos);
+            addToTimelinePhotos,
+            textBackground);
     }
 
     public async Task<PostsServiceResult<PostResponse>> CreatePostInContainerCoreAsync(
@@ -567,7 +582,8 @@ public sealed class PostsService(
         Guid containerId,
         IReadOnlyList<Guid> mediaIds,
         CancellationToken cancellationToken = default,
-        bool addToTimelinePhotos = true)
+        bool addToTimelinePhotos = true,
+        string? textBackground = null)
     {
         var now = timeProvider.GetUtcNow();
         var post = Post.CreateInContainer(
@@ -578,6 +594,7 @@ public sealed class PostsService(
             containerType,
             containerId,
             now);
+        post.SetTextBackground(textBackground);
 
         dbContext.Posts.Add(post);
         for (var index = 0; index < mediaIds.Count; index++)
@@ -1367,7 +1384,8 @@ public sealed class PostsService(
             post.PostType == PostType.Reel ? "reel" : "standardPost",
             shareCounts.GetValueOrDefault(post.Id),
             post.IsPinned,
-            savedPostIds.Contains(post.Id));
+            savedPostIds.Contains(post.Id),
+            post.TextBackground);
         }).ToList();
     }
 
@@ -1382,7 +1400,8 @@ public sealed class PostsService(
             mediaIds,
             0,
             new Dictionary<string, int>(),
-            null);
+            null,
+            TextBackground: post.TextBackground);
 
     private sealed record PagePostIdentity(Guid Id, string Username, string Name, Guid? AvatarMediaId);
 

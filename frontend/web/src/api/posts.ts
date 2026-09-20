@@ -34,6 +34,7 @@ export interface Post {
   contentType?: 'standardPost' | 'reel'
   isPinned: boolean
   viewerHasSaved: boolean
+  textBackground?: string | null
 }
 
 export interface Comment {
@@ -96,6 +97,7 @@ export interface CreatePostDetails {
   content: string
   privacy: string
   mediaIds?: string[]
+  textBackground?: string | null
 }
 
 const jsonBody = (value: unknown) => ({ body: JSON.stringify(value) })

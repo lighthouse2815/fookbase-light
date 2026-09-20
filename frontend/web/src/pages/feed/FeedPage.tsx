@@ -118,9 +118,11 @@ export default function FeedPage() {
     content: string,
     files: readonly File[],
     onUploadProgress: (progress: number) => void,
+    privacy: 'public' | 'friends' | 'onlyMe',
+    textBackground: string | null,
   ) => {
     const mediaIds = await mediaApi.uploadFiles(files, onUploadProgress)
-    await postsApi.create({ content, privacy: 'public', mediaIds })
+    await postsApi.create({ content, privacy, mediaIds, textBackground })
     if (mountedRef.current && currentModeRef.current === mode) await loadFeed()
   }
 
@@ -134,6 +136,7 @@ export default function FeedPage() {
       commentCount: updatedPost.commentCount,
       reactionCounts: updatedPost.reactionCounts,
       viewerReaction: updatedPost.viewerReaction,
+      textBackground: updatedPost.textBackground,
       mentions: updatedPost.mentions,
       reactionCount: Object.values(updatedPost.reactionCounts).reduce((total, count) => total + count, 0),
     })

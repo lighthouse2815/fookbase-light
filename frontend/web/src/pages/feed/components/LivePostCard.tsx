@@ -13,6 +13,7 @@ import { formatPostTimestamp } from '../../../shared/formatPostTimestamp'
 import TextWithReferences from '../../../shared/components/TextWithReferences'
 import { usePreferences } from '../../../preferences'
 import ShareDialog from './ShareDialog'
+import { getPostBackgroundClass } from './postBackgrounds'
 import { CommentComposer, DiscussionList } from './PostDiscussion'
 import { reactionChoices } from './reactionChoices'
 import type { ReactionType } from './reactionChoices'
@@ -342,6 +343,7 @@ export default function LivePostCard({
     : null
   const canEditPost = isAuthor && !profileMediaUpdateStatus
   const canEditPostPrivacy = canEditPost || Boolean(isAuthor && profileMediaUpdateStatus)
+  const textBackgroundClass = getPostBackgroundClass(post.textBackground)
 
   useEffect(() => {
     if (post.mediaIds.length === 0 || isMediaVisible) return
@@ -664,7 +666,9 @@ export default function LivePostCard({
         </div>
       </header>
 
-      {post.content && !profileMediaUpdateStatus && <div className="px-4 pb-3 pt-1"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>}
+      {post.content && !profileMediaUpdateStatus && (textBackgroundClass
+        ? <div className={`mx-3 mb-3 grid min-h-72 place-items-center rounded-xl px-7 py-12 text-center ${textBackgroundClass}`}><TextWithReferences content={post.content} mentions={post.mentions} className="whitespace-pre-wrap text-2xl font-bold leading-tight text-white sm:text-3xl" /></div>
+        : <div className="px-4 pb-3 pt-1"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>)}
       {media.length > 0 && (
         <div className={`grid overflow-hidden bg-black ${media.length > 1 ? 'grid-cols-2 gap-0.5' : 'grid-cols-1'}`}>
           {media.map((item) => item.mediaType === 'video' ? (

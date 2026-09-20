@@ -56,6 +56,37 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Text_posts_persist_selected_background_and_privacy()
+    {
+        var authorUserId = (await CreateUserIdsAsync(1))[0];
+        using var author = CreateAuthenticatedClient(authorUserId);
+
+        var response = await author.PostAsJsonAsync("/api/posts", new
+        {
+            content = "Bài viết có nền",
+            privacy = "friends",
+            textBackground = "sunset",
+        });
+        var created = await ReadAsync<PostResponse>(response);
+
+        Assert.Equal("friends", created.Privacy);
+        Assert.Equal("sunset", created.TextBackground);
+        var feed = await ReadAsync<FeedPageResponse>(await author.GetAsync("/api/feed?limit=20"));
+        Assert.Equal("sunset", Assert.Single(feed.Items, item => item.Id == created.Id).TextBackground);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Equal("sunset", (await db.Posts.SingleAsync(post => post.Id == created.Id)).TextBackground);
+
+        var invalid = await author.PostAsJsonAsync("/api/posts", new
+        {
+            content = "Nền không hợp lệ",
+            privacy = "public",
+            textBackground = "custom-css",
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+    }
+
+    [Fact]
     public async Task Users_can_report_posts_and_user_profiles_once()
     {
         var users = await CreateUserIdsAsync(3);
