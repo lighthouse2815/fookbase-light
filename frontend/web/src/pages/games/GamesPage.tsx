@@ -1,233 +1,128 @@
-import { useEffect, useMemo, useState } from 'react'
-import { usePreferences } from '../../preferences'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Mascot } from 'page-mascot'
+import { usePreferences } from '../../preferences'
 import FlappyBirdGame from './FlappyBirdGame'
 
-
+type GameId = 'tic-tac-toe' | 'flappy-bird'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
-const WINNING_LINES = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-  [0, 4, 8],
-  [2, 4, 6],
-] as const
+interface GameDefinition {
+  id: GameId
+  title: string
+  description: string
+  category: string
+  badge: string
+  accent: string
+  icon: ReactNode
+}
 
+const games: GameDefinition[] = [
+  {
+    id: 'tic-tac-toe', title: 'Cờ ca-rô', category: 'Chiến thuật', badge: 'Chơi đơn',
+    description: 'Đấu trí cùng máy, tạo ba dấu liên tiếp để giành chiến thắng.',
+    accent: 'from-[#6558e8] via-[#7c6ff2] to-[#9b8cff]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="5" y="5" width="86" height="86" rx="24" fill="white" fillOpacity=".16" /><path d="M35 20v56M61 20v56M20 35h56M20 61h56" stroke="white" strokeWidth="5" strokeLinecap="round" opacity=".85" /><path d="m24 23 9 9m0-9-9 9m39 33 10 10m0-10L63 75" stroke="white" strokeWidth="5" strokeLinecap="round" /><circle cx="48" cy="48" r="8" fill="none" stroke="#ffdf72" strokeWidth="5" /></svg>,
+  },
+  {
+    id: 'flappy-bird', title: 'Flappy Bird', category: 'Phản xạ', badge: 'Có online',
+    description: 'Giữ nhịp bay qua những chiếc ống hoặc lập phòng chơi cùng bạn bè.',
+    accent: 'from-[#159f91] via-[#38b8a4] to-[#72d2a8]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="5" y="5" width="86" height="86" rx="24" fill="white" fillOpacity=".15" /><path d="M15 73h66" stroke="#dff8bd" strokeWidth="6" strokeLinecap="round" /><path d="M68 16h17v21H68zm-3 21h23v8H65zM68 59h17v14H68zm-3-8h23v8H65z" fill="#b9ef72" stroke="#397956" strokeWidth="2" /><g transform="translate(38 48)"><circle r="17" fill="#ffdc4f" stroke="#73532c" strokeWidth="3" /><ellipse cx="-10" cy="5" rx="10" ry="7" fill="#fff0a0" /><circle cx="7" cy="-6" r="6" fill="white" /><circle cx="9" cy="-6" r="2" fill="#263238" /><path d="M13 1h15l-8 7h-7z" fill="#ef7e42" stroke="#8d492b" strokeWidth="2" /></g></svg>,
+  },
+]
+
+const WINNING_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]] as const
 const createBoard = (): Cell[] => Array<Cell>(9).fill(null)
-
 const getWinner = (board: Cell[]): Mark | null => {
   for (const [first, second, third] of WINNING_LINES) {
     const mark = board[first]
-    if (mark && mark === board[second] && mark === board[third]) {
-      return mark
-    }
+    if (mark && mark === board[second] && mark === board[third]) return mark
   }
-
   return null
 }
-
-const getAvailableMoves = (board: Cell[]) => board.flatMap((cell, index) => (cell ? [] : [index]))
-
-const findMoveFor = (board: Cell[], mark: Mark) => {
-  for (const move of getAvailableMoves(board)) {
-    const trialBoard = [...board]
-    trialBoard[move] = mark
-
-    if (getWinner(trialBoard) === mark) {
-      return move
-    }
-  }
-
-  return null
-}
-
+const availableMoves = (board: Cell[]) => board.flatMap((cell, index) => cell ? [] : [index])
+const findMove = (board: Cell[], mark: Mark) => availableMoves(board).find((move) => {
+  const trial = [...board]
+  trial[move] = mark
+  return getWinner(trial) === mark
+}) ?? null
 const chooseComputerMove = (board: Cell[]) => {
-  const winningMove = findMoveFor(board, 'O')
-  if (winningMove !== null) return winningMove
-
-  const blockingMove = findMoveFor(board, 'X')
-  if (blockingMove !== null) return blockingMove
-
+  const win = findMove(board, 'O')
+  if (win !== null) return win
+  const block = findMove(board, 'X')
+  if (block !== null) return block
   if (!board[4]) return 4
-
-  const availableMoves = getAvailableMoves(board)
-  const corner = [0, 2, 6, 8].find((move) => availableMoves.includes(move))
-  return corner ?? availableMoves[0] ?? null
+  const moves = availableMoves(board)
+  return [0, 2, 6, 8].find((move) => moves.includes(move)) ?? moves[0] ?? null
 }
 
-export default function GamesPage() {
+function GameLibrary({ onSelect }: { onSelect: (gameId: GameId) => void }) {
+  return <section aria-labelledby="game-library-title">
+    <div className="mb-4 flex items-end justify-between gap-4">
+      <div><h2 id="game-library-title" className="font-heading text-xl font-bold text-text">Khám phá trò chơi</h2><p className="mt-1 text-sm text-text-muted">Chọn một biểu tượng để bắt đầu chơi.</p></div>
+      <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-text-muted">{games.length} trò chơi</span>
+    </div>
+    <div className="grid gap-5 sm:grid-cols-2">
+      {games.map((game) => <button key={game.id} type="button" onClick={() => onSelect(game.id)} className="group overflow-hidden rounded-3xl border border-border bg-surface text-left card-shadow transition duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+        <div className={`relative aspect-[16/9] overflow-hidden bg-linear-to-br ${game.accent} p-7`}>
+          <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10" /><div className="absolute -bottom-14 -left-8 h-36 w-36 rounded-full bg-black/10" />
+          <div className="relative h-28 w-28 transition duration-200 group-hover:scale-105">{game.icon}</div>
+          <span className="absolute right-5 top-5 rounded-full border border-white/25 bg-black/15 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">{game.badge}</span>
+        </div>
+        <div className="flex items-center gap-4 p-5"><div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{game.category}</p><h3 className="mt-1 font-heading text-xl font-bold text-text">{game.title}</h3><p className="mt-2 text-sm leading-6 text-text-muted">{game.description}</p></div><span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-xl text-white transition group-hover:translate-x-1" aria-hidden="true">›</span></div>
+      </button>)}
+    </div>
+  </section>
+}
+
+function TicTacToeGame() {
   const { t } = usePreferences()
   const [board, setBoard] = useState<Cell[]>(createBoard)
   const [turn, setTurn] = useState<Mark>('X')
   const [winner, setWinner] = useState<Mark | null>(null)
   const [isDraw, setIsDraw] = useState(false)
   const [score, setScore] = useState({ player: 0, computer: 0, draw: 0 })
-
   const gameIsOver = Boolean(winner) || isDraw
-  const status = useMemo(() => {
-    if (winner === 'X') return t('youWonRound')
-    if (winner === 'O') return t('computerWonRound')
-    if (isDraw) return t('drawRound')
-    return turn === 'X' ? t('yourTurn') : t('computerThinking')
-  }, [isDraw, t, turn, winner])
-
-  const finishMove = (nextBoard: Cell[], mark: Mark) => {
-    const roundWinner = getWinner(nextBoard)
-    if (roundWinner === 'X') {
-      setWinner(roundWinner)
-      setScore((currentScore) => ({ ...currentScore, player: currentScore.player + 1 }))
-      return
-    }
-
-    if (roundWinner === 'O') {
-      setWinner(roundWinner)
-      setScore((currentScore) => ({ ...currentScore, computer: currentScore.computer + 1 }))
-      return
-    }
-
-    if (nextBoard.every(Boolean)) {
-      setIsDraw(true)
-      setScore((currentScore) => ({ ...currentScore, draw: currentScore.draw + 1 }))
-      return
-    }
-
+  const status = useMemo(() => winner === 'X' ? t('youWonRound') : winner === 'O' ? t('computerWonRound') : isDraw ? t('drawRound') : turn === 'X' ? t('yourTurn') : t('computerThinking'), [isDraw, t, turn, winner])
+  const finishMove = (next: Cell[], mark: Mark) => {
+    const won = getWinner(next)
+    if (won) { setWinner(won); const key = won === 'X' ? 'player' : 'computer'; setScore((current) => ({ ...current, [key]: current[key] + 1 })); return }
+    if (next.every(Boolean)) { setIsDraw(true); setScore((current) => ({ ...current, draw: current.draw + 1 })); return }
     setTurn(mark === 'X' ? 'O' : 'X')
   }
-
-  const playMove = (index: number) => {
-    if (turn !== 'X' || board[index] || gameIsOver) return
-
-    const nextBoard = [...board]
-    nextBoard[index] = 'X'
-    setBoard(nextBoard)
-    finishMove(nextBoard, 'X')
-  }
-
-  const resetRound = () => {
-    setBoard(createBoard())
-    setTurn('X')
-    setWinner(null)
-    setIsDraw(false)
-  }
-
-  const resetGame = () => {
-    setScore({ player: 0, computer: 0, draw: 0 })
-    resetRound()
-  }
-
+  const playMove = (index: number) => { if (turn !== 'X' || board[index] || gameIsOver) return; const next = [...board]; next[index] = 'X'; setBoard(next); finishMove(next, 'X') }
+  const resetRound = () => { setBoard(createBoard()); setTurn('X'); setWinner(null); setIsDraw(false) }
+  const resetGame = () => { setScore({ player: 0, computer: 0, draw: 0 }); resetRound() }
   useEffect(() => {
     if (turn !== 'O' || gameIsOver) return
-
-    const timer = window.setTimeout(() => {
-      const move = chooseComputerMove(board)
-      if (move === null) return
-
-      const nextBoard = [...board]
-      nextBoard[move] = 'O'
-      setBoard(nextBoard)
-      finishMove(nextBoard, 'O')
-    }, 450)
-
+    const timer = window.setTimeout(() => { const move = chooseComputerMove(board); if (move === null) return; const next = [...board]; next[move] = 'O'; setBoard(next); finishMove(next, 'O') }, 450)
     return () => window.clearTimeout(timer)
   }, [board, gameIsOver, turn])
 
-  return (
-    <main className="min-h-screen bg-bg p-4 xl:p-6" style={{ animation: 'fade-in 0.25s ease both' }}>
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-6 flex items-center gap-5">
-          <Mascot
-            directions="/mascots/gearbot-directions.webp"
-            reactions="/mascots/gearbot-reactions.webp"
-            size={96}
-            className="shrink-0"
-            label="Game Robot Mascot"
-          />
-          <div>
-            <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">{t('games')}</p>
-            <h1 className="font-heading text-3xl font-bold text-text">{t('quickBreak')}</h1>
-            <p className="mt-2 text-text-muted">{t('gamesDescription')}</p>
-          </div>
-        </header>
+  return <section className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4"><div><h2 className="font-heading text-xl font-bold text-text">{t('ticTacToe')}</h2><p className="mt-1 text-sm text-text-muted">{t('youPlayX')}</p></div><span className={`rounded-full px-3 py-1.5 text-sm font-semibold ${gameIsOver ? 'bg-primary/15 text-primary-light' : turn === 'X' ? 'bg-secondary/15 text-secondary' : 'bg-surface-2 text-text-muted'}`}>{status}</span></div>
+      <div className="mx-auto grid w-full max-w-sm grid-cols-3 gap-2 rounded-3xl bg-bg p-2 sm:gap-3 sm:p-3">{board.map((cell, index) => <button key={index} type="button" aria-label={`${t('square')} ${index + 1}${cell ? `: ${cell}` : ''}`} disabled={turn !== 'X' || gameIsOver || Boolean(cell)} onClick={() => playMove(index)} className={`aspect-square rounded-2xl border border-border bg-surface text-4xl font-black shadow-sm transition sm:text-5xl ${cell === 'X' ? 'text-primary-light' : cell === 'O' ? 'text-secondary' : 'hover:bg-surface-2 focus-visible:bg-surface-2'} disabled:cursor-default`}>{cell}</button>)}</div>
+      <div className="mt-6 flex flex-wrap justify-center gap-3"><button type="button" onClick={resetRound} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark">{t('newRound')}</button><button type="button" onClick={resetGame} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-hover">{t('resetScore')}</button></div>
+    </div>
+    <aside className="space-y-4">
+      <div className="rounded-3xl border border-border bg-surface p-5 card-shadow"><h2 className="font-heading text-lg font-bold text-text">{t('scoreboard')}</h2><dl className="mt-4 space-y-3"><Score label={`${t('you')} (X)`} value={score.player} style="bg-primary/15 text-primary-light" /><Score label={t('draws')} value={score.draw} style="bg-bg text-text" /><Score label={`${t('computer')} (O)`} value={score.computer} style="bg-secondary/15 text-secondary" /></dl></div>
+      <div className="rounded-3xl border border-border bg-surface p-5 card-shadow"><h2 className="font-heading text-lg font-bold text-text">{t('howToPlay')}</h2><ol className="mt-3 space-y-2 text-sm leading-6 text-text-muted"><li>1. {t('gameRuleOne')}</li><li>2. {t('gameRuleTwo')}</li><li>3. {t('gameRuleThree')}</li></ol></div>
+    </aside>
+  </section>
+}
 
+function Score({ label, value, style }: { label: string; value: number; style: string }) {
+  return <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${style}`}><dt className="font-medium">{label}</dt><dd className="text-xl font-bold">{value}</dd></div>
+}
 
-        <section className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 className="font-heading text-xl font-bold text-text">{t('ticTacToe')}</h2>
-                <p className="mt-1 text-sm text-text-muted">{t('youPlayX')}</p>
-              </div>
-              <span
-                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${gameIsOver ? 'bg-primary/15 text-primary-light' : turn === 'X' ? 'bg-secondary/15 text-secondary' : 'bg-surface-2 text-text-muted'
-                  }`}
-              >
-                {status}
-              </span>
-            </div>
-
-            <div className="mx-auto grid w-full max-w-sm grid-cols-3 gap-2 rounded-3xl bg-bg p-2 sm:gap-3 sm:p-3">
-              {board.map((cell, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  aria-label={`${t('square')} ${index + 1}${cell ? `: ${cell}` : ''}`}
-                  disabled={turn !== 'X' || gameIsOver || Boolean(cell)}
-                  onClick={() => playMove(index)}
-                  className={`aspect-square rounded-2xl border border-border bg-surface text-4xl font-black shadow-sm transition sm:text-5xl ${cell === 'X' ? 'text-primary-light' : cell === 'O' ? 'text-secondary' : 'hover:bg-surface-2 focus-visible:bg-surface-2'
-                    } disabled:cursor-default`}
-                >
-                  {cell}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button type="button" onClick={resetRound} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark">
-                {t('newRound')}
-              </button>
-              <button type="button" onClick={resetGame} className="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-semibold text-text transition hover:bg-surface-hover">
-                {t('resetScore')}
-              </button>
-            </div>
-          </div>
-
-          <aside className="space-y-4">
-            <div className="rounded-3xl border border-border bg-surface p-5 card-shadow">
-              <h2 className="font-heading text-lg font-bold text-text">{t('scoreboard')}</h2>
-              <dl className="mt-4 space-y-3">
-                <div className="flex items-center justify-between rounded-2xl bg-primary/15 px-4 py-3">
-                  <dt className="font-medium text-primary-light">{t('you')} (X)</dt>
-                  <dd className="text-xl font-bold text-primary-light">{score.player}</dd>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl bg-bg px-4 py-3">
-                  <dt className="font-medium text-text-muted">{t('draws')}</dt>
-                  <dd className="text-xl font-bold text-text">{score.draw}</dd>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl bg-secondary/15 px-4 py-3">
-                  <dt className="font-medium text-secondary">{t('computer')} (O)</dt>
-                  <dd className="text-xl font-bold text-secondary">{score.computer}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div className="rounded-3xl border border-border bg-surface p-5 card-shadow">
-              <h2 className="font-heading text-lg font-bold text-text">{t('howToPlay')}</h2>
-              <ol className="mt-3 space-y-2 text-sm leading-6 text-text-muted">
-                <li>1. {t('gameRuleOne')}</li>
-                <li>2. {t('gameRuleTwo')}</li>
-                <li>3. {t('gameRuleThree')}</li>
-              </ol>
-            </div>
-          </aside>
-        </section>
-
-        <div className="mt-6"><FlappyBirdGame /></div>
-      </div>
-    </main>
-  )
+export default function GamesPage() {
+  const { t } = usePreferences()
+  const [selectedGame, setSelectedGame] = useState<GameId | null>(null)
+  const game = games.find((item) => item.id === selectedGame)
+  return <main className="min-h-screen bg-bg p-4 xl:p-6" style={{ animation: 'fade-in 0.25s ease both' }}><div className="mx-auto max-w-5xl">
+    <header className="mb-7 overflow-hidden rounded-3xl border border-border bg-surface px-5 py-6 card-shadow sm:px-8"><div className="flex items-center gap-5"><Mascot directions="/mascots/gearbot-directions.webp" reactions="/mascots/gearbot-reactions.webp" size={88} className="shrink-0" label="Game Robot Mascot" /><div><p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">FOOKBASE GAMES</p><h1 className="font-heading text-3xl font-bold text-text">{game?.title ?? t('quickBreak')}</h1><p className="mt-2 text-text-muted">{game?.description ?? 'Chọn game yêu thích, thư giãn và thử thách bạn bè ngay tại Fookbase.'}</p></div></div></header>
+    {selectedGame ? <><button type="button" onClick={() => setSelectedGame(null)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition hover:border-primary/50 hover:bg-surface-2"><span aria-hidden="true">←</span> Tất cả trò chơi</button>{selectedGame === 'tic-tac-toe' ? <TicTacToeGame /> : <FlappyBirdGame />}</> : <GameLibrary onSelect={setSelectedGame} />}
+  </div></main>
 }
