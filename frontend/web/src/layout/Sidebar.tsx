@@ -63,6 +63,22 @@ function SidebarLink({ item }: { item: NavItem }) {
   </NavLink>
 }
 
+export function SidebarLinks({ expanded = false }: { expanded?: boolean }) {
+  const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
+  return <>
+        {primaryItems.map((item) => <SidebarLink key={item.path} item={item} />)}
+
+        {expanded && <>
+          <a href={zolaLightUrl} className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left no-underline transition-colors hover:bg-surface-2">
+            <SidebarIcon name="messages" />
+            <span className="text-[15px] font-semibold text-text">Zola Light</span>
+          </a>
+          {moreItems.map((item) => <SidebarLink key={item.path} item={item} />)}
+        </>}
+
+  </>
+}
+
 export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCenteredFeed?: boolean }) {
   const { session } = useAuth()
   const { t } = usePreferences()
@@ -72,7 +88,6 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
   const [displayName, setDisplayName] = useState(fallbackDisplayName)
   const [shortcuts, setShortcuts] = useState<Group[]>([])
   const initials = displayName.slice(0, 2).toUpperCase()
-  const zolaLightUrl = import.meta.env.VITE_ZOLA_LIGHT_URL ?? 'http://localhost:5175'
 
   useEffect(() => {
     let isCurrent = true
@@ -101,15 +116,7 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
           <span className="text-[15px] font-semibold text-text">{displayName}</span>
         </Link>
 
-        {primaryItems.map((item) => <SidebarLink key={item.path} item={item} />)}
-
-        {isExpanded && <>
-          <a href={zolaLightUrl} className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left no-underline transition-colors hover:bg-surface-2">
-            <SidebarIcon name="messages" />
-            <span className="text-[15px] font-semibold text-text">Zola Light</span>
-          </a>
-          {moreItems.map((item) => <SidebarLink key={item.path} item={item} />)}
-        </>}
+        <SidebarLinks expanded={isExpanded} />
 
         <button
           type="button"

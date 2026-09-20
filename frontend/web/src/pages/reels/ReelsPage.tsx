@@ -89,7 +89,7 @@ export default function ReelsPage() {
   }
 
   return (
-    <div className="relative h-[calc(100vh-56px)] overflow-hidden bg-black">
+    <div className="relative h-[calc(100dvh-var(--app-header-height))] overflow-hidden bg-black">
       <ReelsSidebar activeMode={feedMode} onCreate={() => setIsCreateOpen(true)} onSelectMode={(mode) => { if (mode !== feedMode) { setActiveIndex(0); setFeedMode(mode) } }} />
       <div ref={listRef} className="h-full snap-y snap-mandatory overflow-y-auto scroll-smooth lg:pl-18">
         {isLoading && <div className="grid h-full place-items-center text-sm text-text-muted">Đang tải Reels…</div>}
@@ -270,7 +270,7 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
   const initial = reel.author.displayName.slice(0, 2).toUpperCase()
   return (
     <section ref={cardRef} data-reel-index={index} className="relative flex min-h-full snap-start items-center justify-center bg-black px-2 py-2 sm:px-4" onMouseEnter={onActivate}>
-      <div className="relative aspect-[9/16] h-[calc(100vh-72px)] max-w-[calc(100vw-8rem)] overflow-hidden rounded-lg bg-surface shadow-2xl">
+      <div className="relative aspect-[9/16] h-[calc(100dvh-var(--app-header-height)-1rem)] max-w-[calc(100vw-8rem)] overflow-hidden rounded-lg bg-surface shadow-2xl">
         {videoUrl ? <video ref={videoRef} src={videoUrl} poster={posterUrl ?? undefined} muted={isMuted} playsInline className="h-full w-full object-contain" onPlay={() => { onActivate(); setIsPaused(false) }} onTimeUpdate={() => { const milliseconds = Math.floor((videoRef.current?.currentTime ?? 0) * 1000); setCurrentMs(milliseconds); const threshold = Math.min(3_000, reel.video.durationMs * 0.25); if (milliseconds >= threshold) recordThreshold(false) }} onEnded={() => { setIsPaused(true); recordThreshold(true) }} /> : <div className="grid h-full place-items-center text-sm text-text-muted">Đang chuẩn bị video…</div>}
         <button type="button" onClick={() => { const video = videoRef.current; if (!video) return; if (video.paused) { if (video.ended) video.currentTime = 0; void video.play(); setIsPaused(false) } else { video.pause(); setIsPaused(true) } }} className="absolute inset-0 border-0 bg-transparent" aria-label={isPaused ? 'Phát Reel' : 'Tạm dừng Reel'} />
         <button type="button" onClick={() => setIsMuted((current) => !current)} className="absolute left-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full border-0 bg-black/45 text-lg text-white cursor-pointer" aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}>{isMuted ? '🔇' : '🔊'}</button>

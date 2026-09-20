@@ -10,6 +10,7 @@ import { getNotificationPresentation } from '../shared/notificationPresentation'
 import { formatPostTimestamp } from '../shared/formatPostTimestamp'
 import { publicProfileHandle } from '../shared/publicProfileHandle'
 import { Mascot } from 'page-mascot'
+import { SidebarLinks } from './Sidebar'
 
 interface NavItem {
   path: string
@@ -147,7 +148,7 @@ function MessagesPopover({ conversations, profiles, filter, onFilterChange, quer
     return !normalizedQuery || [conversationName(conversation, profiles), profile?.username].some((value) => value?.toLocaleLowerCase().includes(normalizedQuery))
   })
 
-  return <div className="absolute right-0 top-12 z-50 w-[min(25rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+  return <div className="header-popover w-[min(25rem,calc(100vw-1rem))] rounded-2xl border border-border bg-surface shadow-2xl">
     <div className="px-4 pb-2 pt-3"><h2 className="font-heading text-2xl font-bold text-text">Đoạn chat</h2></div>
     <div className="px-4 pb-2"><label className="relative block"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-light">⌕</span><input type="search" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Tìm kiếm tin nhắn" className="w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-4 text-sm text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary" /></label></div>
     <div className="flex gap-1 px-4 pb-2">{([['all', 'Tất cả'], ['unread', 'Chưa đọc'], ['group', 'Nhóm']] as const).map(([value, label]) => <button type="button" key={value} onClick={() => onFilterChange(value)} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold transition-colors ${filter === value ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>{label}</button>)}</div>
@@ -233,7 +234,7 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
     }
   }
 
-  return <section className="fixed bottom-0 right-3 z-[60] flex h-[min(34rem,calc(100vh-4rem))] w-[min(23rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-t-xl border border-border bg-surface shadow-2xl sm:right-5" aria-label={`Đoạn chat với ${name}`}>
+  return <section className="fixed bottom-0 right-3 z-[60] flex h-[min(34rem,calc(100dvh-var(--app-header-height)-0.5rem))] w-[min(23rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-t-xl border border-border bg-surface shadow-2xl sm:right-5" aria-label={`Đoạn chat với ${name}`}>
     <header className="flex shrink-0 items-center gap-2 border-b border-border bg-surface px-3 py-2.5">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
       <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{name}</strong><small className="block truncate text-xs text-text-muted">{isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</small></span>
@@ -395,8 +396,19 @@ export default function TopNavbar() {
       }
     }
 
+    const closePopupOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setActiveHeaderPopup(null)
+      setIsNotificationMenuOpen(false)
+      setIsAppearanceOpen(false)
+      activePopupRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+    }
+    document.addEventListener('keydown', closePopupOnEscape)
     document.addEventListener('pointerdown', closePopupWhenClickingOutside, true)
-    return () => document.removeEventListener('pointerdown', closePopupWhenClickingOutside, true)
+    return () => {
+      document.removeEventListener('pointerdown', closePopupWhenClickingOutside, true)
+      document.removeEventListener('keydown', closePopupOnEscape)
+    }
   }, [activeHeaderPopup])
 
   const hasSuggestions = Boolean(suggestions &&
@@ -432,8 +444,8 @@ export default function TopNavbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-14 bg-surface border-b border-border flex items-center px-4 z-50">
-        <div className="flex items-center gap-2 w-[280px] shrink-0 max-lg:hidden">
+      <header className="app-header fixed top-0 left-0 right-0 bg-surface border-b border-border flex flex-wrap items-center px-2 sm:px-4 z-50 lg:flex-nowrap">
+        <div className="flex h-14 min-w-0 flex-1 items-center gap-2 lg:w-[280px] lg:flex-none">
           <Link
             to="/feed"
             className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 cursor-pointer border-none hover:brightness-110 transition no-underline"
@@ -441,7 +453,7 @@ export default function TopNavbar() {
           >
             <span className="text-white text-xl font-bold">f</span>
           </Link>
-          <div className="flex items-center shrink-0" title="Fookbase Kitty">
+          <div className="hidden items-center shrink-0 2xl:flex" title="Fookbase Kitty">
             <Mascot
               directions="/mascots/cat-directions.webp"
               reactions="/mascots/cat-reactions.webp"
@@ -449,7 +461,7 @@ export default function TopNavbar() {
               label="Navbar Cat Mascot"
             />
           </div>
-          <form onSubmit={submitSearch} className="relative flex-1 max-sm:hidden">
+          <form onSubmit={submitSearch} className="relative min-w-0 flex-1 max-sm:hidden">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light text-sm">🔍</span>
             <input
               type="search"
@@ -461,6 +473,7 @@ export default function TopNavbar() {
               }}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => window.setTimeout(() => setIsSearchFocused(false), 150)}
+              aria-label={t('searchFookbase')}
               placeholder={t('searchFookbase')}
               className="w-full bg-surface-2 border-none rounded-full text-[13px] text-text pl-9 pr-4 py-2 outline-none focus:input-focus transition-all placeholder:text-text-light"
             />
@@ -470,10 +483,11 @@ export default function TopNavbar() {
               {suggestions.pages.length > 0 && <div className="p-2"><p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-light">Pages</p>{suggestions.pages.map((page) => <Link key={page.pageId} to={`/pages/${page.username}`} onClick={() => setSuggestions(null)} className="block rounded-lg px-2 py-1.5 text-sm text-text no-underline hover:bg-surface-2">{page.name}<span className="ml-1 text-text-muted">@{page.username}</span></Link>)}</div>}
             </div>}
           </form>
+          <Link to="/search" aria-label={t('searchFookbase')} title={t('searchFookbase')} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-text no-underline sm:hidden"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg></Link>
         </div>
 
         {/* Left mascot squad (5 characters) */}
-        <div className="hidden xl:flex items-center gap-1.5 shrink-0 px-2" aria-label="Mascots squad left">
+        <div className="hidden 2xl:flex items-center gap-1.5 shrink-0 px-2" aria-label="Mascots squad left">
           {leftNavbarMascots.map((item) => (
             <div key={item.id} title={item.name} className="flex items-center shrink-0">
               <Mascot
@@ -487,7 +501,7 @@ export default function TopNavbar() {
           ))}
         </div>
 
-        <nav aria-label="Điều hướng chính" className="flex flex-1 items-center justify-center gap-1 self-stretch px-2 max-w-[680px] mx-auto max-lg:w-full">
+        <nav aria-label="Điều hướng chính" className="order-last flex h-12 w-full min-w-0 items-center justify-center gap-1 border-t border-border lg:order-none lg:h-full lg:w-auto lg:flex-1 lg:border-0 lg:px-2 lg:max-w-[680px] lg:mx-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -510,7 +524,7 @@ export default function TopNavbar() {
         </nav>
 
         {/* Right mascot squad (5 characters) */}
-        <div className="hidden xl:flex items-center gap-1.5 shrink-0 px-2" aria-label="Mascots squad right">
+        <div className="hidden 2xl:flex items-center gap-1.5 shrink-0 px-2" aria-label="Mascots squad right">
           {rightNavbarMascots.map((item) => (
             <div key={item.id} title={item.name} className="flex items-center shrink-0">
               <Mascot
@@ -524,7 +538,7 @@ export default function TopNavbar() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 w-[280px] shrink-0 justify-end max-lg:hidden">
+        <div className="flex h-14 shrink-0 items-center justify-end gap-1 sm:gap-2 lg:w-[280px]">
           <div ref={menuDropdownRef} className="relative">
             <button
               type="button"
@@ -539,8 +553,9 @@ export default function TopNavbar() {
             >
               <MenuIcon />
             </button>
-            {isMenuOpen && <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-border bg-surface p-3 shadow-2xl">
-              <p className="px-1 pb-2 text-sm font-semibold text-text">Tùy chỉnh</p>
+            {isMenuOpen && <div className="header-popover w-[min(22rem,calc(100vw-1rem))] rounded-2xl border border-border bg-surface p-3 shadow-2xl">
+              <div className="flex items-center justify-between pb-2"><h2 className="text-lg font-bold text-text">Menu</h2><button type="button" aria-label={t('close')} onClick={() => setActiveHeaderPopup(null)} className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-text">×</button></div>
+              <nav aria-label="Lối tắt" onClick={(event) => { if ((event.target as HTMLElement).closest('a')) setActiveHeaderPopup(null) }} className="mb-3"><SidebarLinks expanded /></nav>
               <div className="border-t border-border pt-3"><PreferenceControls /></div>
               <button type="button" onClick={() => void signOut()} className="mt-3 flex w-full items-center gap-2 rounded-lg border-0 bg-surface-2 px-3 py-2 text-left text-sm font-semibold text-text cursor-pointer transition-colors hover:bg-surface-hover">
                 <span aria-hidden="true">↪</span>{t('signOut')}
@@ -580,13 +595,14 @@ export default function TopNavbar() {
               disabled={isNotificationsPage}
               className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none text-sm relative ${isNotificationsOpen || isNotificationsPage ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50] cursor-pointer'} ${isNotificationsPage ? 'cursor-default' : ''}`}
               title={t('messageNotifications')}
+              aria-label={t('notifications')}
               aria-expanded={isNotificationsOpen}
             >
               <BellIcon />
               {unreadNotificationCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
             </button>
             {isNotificationsOpen && (
-              <div className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+              <div className="header-popover w-[min(24rem,calc(100vw-1rem))] rounded-2xl border border-border bg-surface shadow-2xl">
                 <div className="relative flex items-center justify-between px-4 pt-3"><h2 className="font-heading text-2xl font-bold text-text">{t('notifications')}</h2><button type="button" onClick={() => setIsNotificationMenuOpen((current) => !current)} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-xl text-text-muted cursor-pointer hover:bg-surface-2" title="Tùy chọn thông báo" aria-label="Tùy chọn thông báo" aria-expanded={isNotificationMenuOpen}>•••</button>{isNotificationMenuOpen && <div className="absolute right-4 top-12 z-10 w-56 rounded-xl border border-border bg-surface p-2 shadow-xl"><button type="button" onClick={markAllNotificationsReadAndDismiss} className="w-full rounded-lg border-0 bg-transparent px-3 py-2 text-left text-sm font-semibold text-text cursor-pointer hover:bg-surface-2">Đánh dấu tất cả là đã đọc</button></div>}</div>
                 <div className="flex gap-2 px-4 pb-3 pt-2">
                   <button type="button" onClick={() => setNotificationFilter('all')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'all' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Tất cả</button>
@@ -628,7 +644,7 @@ export default function TopNavbar() {
               <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">{avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
               <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-text"><ChevronDownIcon /></span>
             </button>
-            {isProfileOpen && <div className="absolute right-0 top-12 z-50 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+            {isProfileOpen && <div className="header-popover w-[min(24rem,calc(100vw-1rem))] rounded-2xl border border-border bg-surface shadow-2xl">
               <div className={`flex w-[200%] transition-transform duration-300 ease-out ${isAppearanceOpen ? '-translate-x-1/2' : 'translate-x-0'}`}>
                 <section className="w-1/2 shrink-0 p-3">
                   <Link to="/profile" onClick={() => setActiveHeaderPopup(null)} className="block rounded-xl p-1.5 no-underline hover:bg-surface-2">

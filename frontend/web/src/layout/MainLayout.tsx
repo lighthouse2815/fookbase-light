@@ -19,13 +19,13 @@ export default function MainLayout() {
       <TopNavbar />
 
       {/* Body: Sidebar + Main Content */}
-      <div className="flex mt-14 min-h-[calc(100vh-56px)]">
+      <div className="flex mt-[var(--app-header-height)] min-h-[calc(100dvh-var(--app-header-height))]">
         {shouldShowSidebar && <Sidebar alignWithCenteredFeed={isCenteredFeed} />}
 
         {/* Main content */}
         <main
           key={location.pathname}
-          className={shouldShowSidebar && !isCenteredFeed ? 'ml-[360px] min-h-full flex-1 max-xl:ml-0' : 'min-h-full flex-1'}
+          className={shouldShowSidebar && !isCenteredFeed ? 'ml-[360px] min-h-full min-w-0 flex-1 max-xl:ml-0' : 'min-h-full min-w-0 flex-1'}
           style={{ animation: 'fade-in 0.25s ease both' }}
         >
           <Outlet />
