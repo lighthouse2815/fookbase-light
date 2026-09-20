@@ -11,7 +11,7 @@ App React Native + Expo SDK 57 ở `frontend/mobile`, độc lập với web, d�
 - Thông báo trong app, Reels, stories, AI chat, privacy, phiên đăng nhập và bảo mật.
 - Google mobile có endpoint riêng, state/PKCE, mã dùng một lần và callback HTTPS.
 
-Đây là phạm vi release đầu trong [kế hoạch](superpowers/plans/2026-09-20-fookbase-light-mobile.md), chưa bao gồm push khi app đóng, iOS, game, page/event/album/memories/birthday hoặc admin.
+Đây là phạm vi release đầu, chưa bao gồm push khi app đóng, iOS, game, page/event/album/memories/birthday hoặc admin.
 
 ## Cấu hình bắt buộc để kết nối
 
