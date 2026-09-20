@@ -169,7 +169,7 @@ function MessageBubble({ message, mine, avatar, onReply, onEdit, onDelete, onRea
   message: Message; mine: boolean; avatar?: React.ReactNode; onReply: () => void; onEdit: () => void; onDelete: () => void; onReact: (type: string) => void
 }) {
   const [showActions, setShowActions] = useState(false)
-  return <article className={`message-row ${mine ? 'mine' : ''}`} onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
+  return <article className={`message-row ${mine ? 'mine' : ''}`} title={messageFullTime(message.createdAtUtc)} onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
     {!mine && <span className="message-avatar">{avatar}</span>}
     <div className="message-stack">
       {message.replyTo && <div className="reply-preview">↪ {message.replyTo.isDeleted ? 'Tin nhắn đã gỡ' : message.replyTo.content ?? 'Media'}</div>}
@@ -184,7 +184,6 @@ function MessageBubble({ message, mine, avatar, onReply, onEdit, onDelete, onRea
         </>}
       </div>
       {message.reactions?.length > 0 && <div className="reactions">{message.reactions.map((reaction) => <span key={`${reaction.userId}-${reaction.type}`}>{reaction.type}</span>)}</div>}
-      <small className="message-timestamp"><time dateTime={message.createdAtUtc} title={messageFullTime(message.createdAtUtc)} aria-label={messageFullTime(message.createdAtUtc)}>{messageClock(message.createdAtUtc)}</time>{message.editedAtUtc && <span title={`Chỉnh sửa lúc ${messageFullTime(message.editedAtUtc)}`}> · đã chỉnh sửa</span>}</small>
     </div>
     {showActions && !message.deletedAtUtc && <div className="message-actions">
       <button title="Trả lời" onClick={onReply}>↪</button>

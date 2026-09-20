@@ -59,11 +59,9 @@ a { color: #80b6ff; }
 .mine .bubble { border-radius: 18px 18px 5px 18px; background: linear-gradient(135deg, #9d00ff, #3264ff); color: white; }
 .bubble.deleted { color: #a9b1bd; font-style: italic; }
 .message-stack small { margin: 3px 4px; color: #818997; font-size: 10px; }
-.message-stack .message-timestamp { margin: 4px 5px 5px; color: #a8adb8; font-size: 11px; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .conversation-time { margin-top: 4px; color: #b3bdcc; font-size: 12px; line-height: 1.4; font-variant-numeric: tabular-nums; }
-.message-day { display: flex; align-items: center; gap: 12px; margin: 16px 0 12px; color: #c3cbd8; font-size: 12px; font-weight: 600; text-align: center; }
-.message-day::before, .message-day::after { content: ''; height: 1px; flex: 1; background: #303640; }
-.message-day time { max-width: 80%; border: 1px solid #343c48; border-radius: 999px; padding: 6px 12px; background: #20252d; line-height: 1.5; }
+.message-day { margin: 18px 0 13px; color: #9297a2; font-size: 11px; text-align: center; }
+.message-day time { line-height: 1.5; }
 .reply-preview { max-width: 100%; overflow: hidden; color: #aeb7c4; text-overflow: ellipsis; white-space: nowrap; border-left: 2px solid #6e9ce3; padding-left: 7px; margin: 0 5px 4px; font-size: 12px; }
 .story-preview { display: flex; max-width: 100%; align-items: center; gap: 7px; margin: 0 5px 5px; border: 1px solid #4b78ba; border-radius: 10px; padding: 7px 9px; color: #d8e9ff; background: #25466d; font-size: 12px; }
 .story-preview > span:last-child { display: grid; min-width: 0; }.story-preview b, .story-preview small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.story-preview small { color: #c0d5ee; }.story-preview.unavailable { border-color: #535963; color: #b5bdc9; background: #2b2e34; }.story-preview.unavailable small { color: #9aa3b0; }
