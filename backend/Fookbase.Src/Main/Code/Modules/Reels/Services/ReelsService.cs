@@ -11,6 +11,7 @@ using Fookbase.Api.Modules.Reels.DTOs.Responses;
 using Fookbase.Api.Modules.Reels.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
+using PublicProfileHandle = Fookbase.Api.Modules.Users.Common.PublicProfileHandle;
 
 namespace Fookbase.Api.Modules.Reels.Services;
 
@@ -389,8 +390,8 @@ public sealed class ReelsService(
             var media = mediaRows[reel.Id];
             var profile = profiles.GetValueOrDefault(reel.AuthorUserId);
             var user = users.GetValueOrDefault(reel.AuthorUserId);
-            var username = profile?.Username ?? user?.Username ?? reel.AuthorUserId.ToString("N");
-            var displayName = profile?.DisplayName ?? username;
+            var username = PublicProfileHandle.From(profile?.Username ?? user?.Username ?? string.Empty);
+            var displayName = profile?.DisplayName ?? (string.IsNullOrWhiteSpace(username) ? "Người dùng" : username);
             var reactionCounts = reactions
                 .Where(reaction => reaction.PostId == reel.Id)
                 .ToDictionary(

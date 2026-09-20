@@ -125,6 +125,31 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.DoesNotContain(blockedFeed.Items, item => item.Author.UserId == authorId);
     }
 
+    [Fact]
+    public async Task Reel_author_does_not_expose_email_when_profile_is_missing()
+    {
+        var email = $"reel-private-{Guid.NewGuid():N}@example.com";
+        var authorId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.Users.Add(new User(authorId, email, email, DateTimeOffset.UtcNow));
+            await db.SaveChangesAsync();
+        }
+
+        using var author = CreateAuthenticatedClient(authorId);
+        var videoId = await CreateReadyMediaAsync(authorId, MediaType.Video);
+        var created = await ReadAsync<ReelResponse>(await author.PostAsJsonAsync("/api/reels",
+            new { caption = "private contact", privacy = "public", videoMediaId = videoId }));
+        var loaded = await ReadAsync<ReelResponse>(await author.GetAsync("/api/reels/" + created.Id));
+
+        Assert.Empty(created.Author.Username);
+        Assert.Equal("Người dùng", created.Author.DisplayName);
+        Assert.DoesNotContain(email, await author.GetStringAsync("/api/reels/" + created.Id));
+        Assert.Empty(loaded.Author.Username);
+        Assert.Equal("Người dùng", loaded.Author.DisplayName);
+    }
+
     private async Task<Guid[]> CreateUsersAsync(int count)
     {
         var users = Enumerable.Range(0, count)
