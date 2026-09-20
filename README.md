@@ -156,15 +156,6 @@ for app in web zola-light admin; do
 done
 ```
 
-Chỉ chạy `./scripts/test-legacy-import-e2e.sh` khi thay đổi migration, backend import hoặc legacy data flow.
-
-`test-legacy-import-e2e.sh` tạo một PostgreSQL container tạm, apply active
-`FookbaseDbContext` migration, tạo sáu source database legacy đại diện và chạy chính
-`scripts/import-legacy-databases.sh`. Test xác nhận preservation của ID, timestamp,
-password hash, friendship/block, posts/media/profile reference, conversation/message/read
-cursor qua `FookbaseDbContext`, đồng thời kiểm tra script từ chối target không rỗng. Container
-và database tạm được xóa sau test; database development không bị dùng.
-
 Nếu máy chưa có .NET SDK 10, có thể build bằng container:
 
 ```bash
@@ -397,43 +388,4 @@ dotnet tool run dotnet-ef migrations add MigrationName \
 ```
 
 Runtime migration và snapshot nằm ở `backend/Fookbase.Src/Main/Code/Persistence/Migrations`.
-Historical module migrations vẫn được giữ tại `Code/Modules/<Module>/Data/Migrations` làm
-record cho import dữ liệu cũ, nhưng không còn được compile hoặc apply ở runtime.
-Xem [docs/migration-history.md](docs/migration-history.md) để biết active source và legacy
-history cụ thể.
-
-## Chuyển dữ liệu development cũ
-
-Fresh install tạo `fookbase_db` từ compose init script và migration hợp nhất ở trên. Không xóa
-sáu database cũ khi nâng cấp một development environment đã có dữ liệu.
-
-1. Trước khi thay `.env`, backup sáu source database:
-
-   ```bash
-   BACKUP_DIR=/safe/path BACKUP_DATABASES="identity_db users_db friends_db messages_db posts_db media_db" \
-     ./infrastructure/postgres/backup.sh
-   ```
-
-2. Tạo `fookbase_db` nếu volume PostgreSQL đã tồn tại từ trước, rồi apply `FookbaseDbContext`
-   migration. Compose init script sẽ làm bước tạo database tự động chỉ với volume mới:
-
-   ```bash
-   docker compose exec -T postgres sh -c \
-     'psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '\''fookbase_db'\''" | grep -q 1 || psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE fookbase_db"'
-   ```
-
-3. Giữ tạm sáu `ConnectionStrings__*Database` cũ trong môi trường chỉ cho lần import và đặt
-   `ConnectionStrings__FookbaseDatabase` tới database target. Chạy:
-
-   ```bash
-   ./scripts/import-legacy-databases.sh
-   ```
-
-   Script kiểm tra target rỗng, không drop/reset/ghi lên source database, bỏ qua sáu
-   `__EFMigrationsHistory` cũ, và import toàn bộ dữ liệu trong một transaction target. IDs,
-   timestamp, password hash, refresh token, post/comment/reaction, friendship/block/request,
-   conversation/message/read cursor, MediaAsset và reference đều được copy nguyên trạng.
-
-4. So sánh row count, chạy test/API smoke check, sau đó chỉ giữ
-   `ConnectionStrings__FookbaseDatabase` trong cấu hình runtime. Giữ source backup cho tới khi
-   rollback không còn cần thiết.
+Xem [docs/migration-history.md](docs/migration-history.md) để biết quy ước migration hiện hành.

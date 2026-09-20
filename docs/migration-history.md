@@ -1,35 +1,16 @@
-# EF Core migration history
+# Lịch sử migration EF Core
 
-`scripts/check-migrations.sh` validates generated migration timestamps in the repository convention, `Asia/Ho_Chi_Minh`; set `MIGRATION_TIME_ZONE` only when a controlled migration workflow uses another timezone.
+`scripts/check-migrations.sh` kiểm tra timestamp của migration theo múi giờ quy ước
+`Asia/Ho_Chi_Minh`. Chỉ đặt `MIGRATION_TIME_ZONE` khi quy trình tạo migration có chủ đích dùng
+múi giờ khác.
 
-Only one migration source is active at runtime:
+Hệ thống chỉ có một nguồn migration cho runtime:
 
 ```text
 backend/Fookbase.Src/Main/Code/Persistence/Migrations/
 ```
 
-`FookbaseDbContext` uses the consolidated baseline migration
-`20260910143327_InitialFookbase`, followed by
-`20260910154744_AddNotifications`, `20260910162758_AddFeedPostIndex`,
-`20260910165428_AddGroups`, and `20260912093027_AddSocialInteractionsV1`.
-`AddFeedPostIndex` adds only the partial active-post keyset index
-used by the read-only Feed query module; `AddGroups` adds Groups tables, the post container
-columns/index, and a safe backfill of existing profile posts to their author container. New
-runtime migrations must be created in that directory with
-`FookbaseDbContext`; the baseline ID and its generated snapshot are not regenerated as part of
-ordinary maintenance.
-
-`AddSocialInteractionsV1` creates persistent saves, reference-only shares,
-mention ranges, normalized hashtags and their lookup/keyset indexes. It contains no
-destructive backfill or history rewrite.
-
-The older module-specific migration files remain in:
-
-```text
-backend/Fookbase.Src/Main/Code/Modules/<Module>/Data/Migrations/
-```
-
-They are audit and legacy-import history only. `Fookbase.Api.csproj` excludes those
-source files from compilation, so EF Core cannot discover or apply them at runtime.
-They must not be deleted or have their migration IDs rewritten: the import process
-uses their table history to understand legacy database layouts.
+`FookbaseDbContext` bắt đầu bằng migration nền
+`20260910143327_InitialFookbase`; các thay đổi tiếp theo nằm cùng thư mục và dùng chung snapshot.
+Migration mới phải được tạo bằng `FookbaseDbContext` trong thư mục này. Không tạo migration riêng
+trong từng module và không tạo lại migration nền trong quá trình bảo trì thông thường.

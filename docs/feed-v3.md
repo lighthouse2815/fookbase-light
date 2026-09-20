@@ -117,7 +117,7 @@ feed thay vì chèn vào cursor chain cũ.
 Integration tests bao phủ privacy/container identity, quota xuyên trang, cursor
 tamper/viewer/mode/config, snapshot, ranking/ties, relationship revocation và
 610 organic items (122 mỗi loại) qua nhiều cửa sổ; đếm SQL so sánh limit 5/50.
-Kiểm thử hồi quy toàn bộ backend, legacy import, fresh migration, pending model,
+Kiểm thử hồi quy toàn bộ backend, fresh migration, pending model,
 production Docker/health và build/lint cả ba frontend thuộc checklist bàn giao.
 
 Ẩn nội dung (FeedHiddenContent) được hoãn để M10 không phát sinh persistence mới.

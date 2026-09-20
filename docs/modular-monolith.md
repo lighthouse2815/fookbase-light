@@ -45,21 +45,16 @@ There is no messaging layer, integration-event contract, outbox, inbox, event pu
 `fookbase_db` is the only runtime PostgreSQL database and `FookbaseDbContext` is the only
 runtime EF Core context. It maps Identity (`AspNet*`, `RefreshTokens`), Users
 (`UserProfiles`), Friends, Groups, Messages, Notifications, Posts, and Media tables without cosmetic table renames. Feed has no persistence table.
-There are no active table-name collisions: the only former collisions were each source
-database's `__EFMigrationsHistory` and historical Inbox/Outbox tables, which were removed
-before the consolidated schema.
+There are no active table-name collisions. The consolidated schema has one
+`__EFMigrationsHistory` table and no Inbox/Outbox tables.
 
 `Code/Persistence/Migrations/20260910143327_InitialFookbase.cs` initializes a complete fresh
 database; `20260910154744_AddNotifications.cs` adds `Notifications` and
 `CommentReactions`; `20260910162758_AddFeedPostIndex.cs` adds the partial active-post
 keyset index used by Feed; `20260910165428_AddGroups.cs` adds Groups tables and backfills every
-existing profile post with `ContainerType=Profile` and `ContainerId=AuthorUserId`. Historical
-module migrations remain as uncompiled source for audit and legacy import.
-`scripts/import-legacy-databases.sh` imports all six legacy databases only into an empty
-`fookbase_db`, excludes their migration-history tables, and streams the copy through one target
-transaction. It never drops, resets, or writes to a source database.
-The full active-versus-legacy migration policy is in
-[migration-history.md](migration-history.md).
+existing profile post with `ContainerType=Profile` and `ContainerId=AuthorUserId`. All later
+migrations and the current snapshot remain in the same runtime migration directory. The migration
+policy is documented in [migration-history.md](migration-history.md).
 
 There are no outbox or inbox implementations in the running application. The only retained
 durable workflow is `ObjectDeletions`, a Media table consumed by `ObjectDeletionWorker`; it

@@ -89,7 +89,7 @@ Chạy backup từ máy có Docker Compose và file môi trường production:
 set -a
 . ./.env
 set +a
-BACKUP_DIR=/srv/fookbase-backups sh infrastructure/postgres/backup.sh
+BACKUP_DIR=/srv/fookbase-backups bash scripts/backup-postgres.sh
 ```
 
 Lưu backup ở vị trí tách biệt khỏi host chạy ứng dụng và kiểm tra khôi phục định kỳ. Khôi phục một database vào database trống bằng `pg_restore --clean --if-exists --dbname=<connection-string> <file.dump>`; chỉ chạy lệnh này sau khi xác nhận đúng database đích vì nó ghi đè schema/dữ liệu hiện có.
