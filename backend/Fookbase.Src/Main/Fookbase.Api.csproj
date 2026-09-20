@@ -16,10 +16,6 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="Code/Modules/*/Data/Migrations/**/*.cs" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
