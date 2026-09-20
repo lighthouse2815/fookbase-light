@@ -16,6 +16,7 @@ using Fookbase.Api.Modules.Reels.Services;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using PublicProfileHandle = Fookbase.Api.Modules.Users.Common.PublicProfileHandle;
 
 namespace Fookbase.Api.Modules.Feed.Services;
 
@@ -602,8 +603,10 @@ public sealed class FeedService(
             }
             else
             {
-                var username = profile?.Username ?? post.AuthorUserId.ToString("N");
-                displayAuthor = new("user", post.AuthorUserId, username, profile?.DisplayName ?? username,
+                var username = PublicProfileHandle.From(profile?.Username ?? string.Empty);
+                var displayName = PublicProfileHandle.From(profile?.DisplayName ?? string.Empty);
+                displayAuthor = new("user", post.AuthorUserId, username,
+                    string.IsNullOrWhiteSpace(displayName) ? (string.IsNullOrWhiteSpace(username) ? "Người dùng" : username) : displayName,
                     profile?.AvatarMediaId is null ? profile?.AvatarUrl : $"/api/users/{post.AuthorUserId}/avatar");
                 if (post.ContainerType == PostContainerType.Group)
                 {
@@ -641,11 +644,14 @@ public sealed class FeedService(
             if (candidate.Share is { } share)
             {
                 var actorProfile = profiles.GetValueOrDefault(share.SharingUserId);
-                var actorUsername = actorProfile?.Username ?? share.SharingUserId.ToString("N");
+                var actorUsername = PublicProfileHandle.From(actorProfile?.Username ?? string.Empty);
+                var actorDisplayName = PublicProfileHandle.From(actorProfile?.DisplayName ?? string.Empty);
                 var actor = new FeedAuthorResponse(
                     share.SharingUserId,
                     actorUsername,
-                    actorProfile?.DisplayName ?? actorUsername,
+                    string.IsNullOrWhiteSpace(actorDisplayName)
+                        ? (string.IsNullOrWhiteSpace(actorUsername) ? "Người dùng" : actorUsername)
+                        : actorDisplayName,
                     actorProfile?.AvatarMediaId is null
                         ? actorProfile?.AvatarUrl
                         : $"/api/users/{share.SharingUserId}/avatar");
@@ -689,8 +695,12 @@ public sealed class FeedService(
                         ? pageAuthor
                         : new PostDisplayIdentityResponse(
                             "user", post.AuthorUserId,
-                            profile?.Username ?? post.AuthorUserId.ToString("N"),
-                            profile?.DisplayName ?? profile?.Username ?? post.AuthorUserId.ToString("N"),
+                            PublicProfileHandle.From(profile?.Username ?? string.Empty),
+                            PublicProfileHandle.From(profile?.DisplayName ?? string.Empty) is { Length: > 0 } originalDisplayName
+                                ? originalDisplayName
+                                : PublicProfileHandle.From(profile?.Username ?? string.Empty) is { Length: > 0 } originalUsername
+                                    ? originalUsername
+                                    : "Người dùng",
                             profile?.AvatarMediaId is null
                                 ? profile?.AvatarUrl
                                 : $"/api/users/{post.AuthorUserId}/avatar"),

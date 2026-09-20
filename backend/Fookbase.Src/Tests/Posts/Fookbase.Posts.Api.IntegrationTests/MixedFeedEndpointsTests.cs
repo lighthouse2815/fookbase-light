@@ -34,6 +34,31 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClassFixture<MixedFeedApiFactory>
 {
     [Fact]
+    public async Task Feed_reel_does_not_expose_email_from_legacy_profile_username()
+    {
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var userId = Guid.NewGuid();
+        var email = $"legacy-{Guid.NewGuid():N}"[..20] + "@x.co";
+        await SaveAsync(db =>
+        {
+            db.Users.Add(new User(userId, email, email, now));
+            db.UserProfiles.Add(UserProfile.Create(userId, email, "dang", new DateOnly(2000, 1, 1), Gender.PreferNotToSay, now));
+        });
+        var reel = await CreateReelAsync(userId, now, PostPrivacy.OnlyMe);
+        using var client = CreateClient(userId);
+
+        var response = await client.GetAsync("/api/feed?limit=20");
+        var raw = await response.Content.ReadAsStringAsync();
+        var feed = await ReadAsync(response);
+        var item = Assert.Single(feed.Items, candidate => candidate.Id == reel.Id);
+
+        Assert.Empty(item.Author.Username);
+        Assert.Empty(item.DisplayAuthor.Username);
+        Assert.Equal("dang", item.DisplayAuthor.Name);
+        Assert.DoesNotContain(email, raw, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Mixed_candidates_preserve_container_identity_privacy_and_page_publisher_confidentiality()
     {
         var users = await CreateUsersAsync(5);
