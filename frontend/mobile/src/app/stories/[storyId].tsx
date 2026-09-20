@@ -11,7 +11,7 @@ export default function Story() {
   const query = useQuery({ queryKey: ['story', session?.user.id, storyId], queryFn: () => storiesApi.get(storyId) });
   const action = useMutation({ mutationFn: (fn: () => Promise<unknown>) => fn(), onSuccess: () => cache.invalidateQueries() });
   useEffect(() => { if (query.data && !query.data.isViewed && !query.data.canManage) void storiesApi.markViewed(storyId).catch(() => {}); }, [storyId, query.data?.isViewed, query.data?.canManage]);
-  if (!query.data) return <Screen>{query.error ? <ErrorNotice error={query.error} retry={() => void query.refetch()} /> : <Loading />}</Screen>;
+  if (query.error || !query.data) return <Screen>{query.error ? <ErrorNotice error={query.error} retry={() => void query.refetch()} /> : <Loading />}</Screen>;
   const s = query.data;
   return <Screen><Label title>{s.author.displayName}</Label><MediaView path={s.media.accessPath} /><Label>{s.caption}</Label><Label muted>Hết hạn: {new Date(s.expiresAtUtc).toLocaleString('vi-VN')}</Label>
     <Button title={s.viewerReaction ? 'Bỏ cảm xúc' : 'Yêu thích'} disabled={action.isPending} onPress={() => action.mutate(() => s.viewerReaction ? storiesApi.removeReaction(storyId) : storiesApi.setReaction(storyId, 'love'))} />
