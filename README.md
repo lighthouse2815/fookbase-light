@@ -68,6 +68,8 @@ curl -fsS http://localhost:5000/health/live
 curl -fsS http://localhost:5000/health/ready
 ```
 
+coi log be : docker compose logs -f api
+
 `/health` vẫn là liveness-compatible endpoint. `/health/live` chỉ xác nhận process sống;
 `/health/ready` yêu cầu PostgreSQL và Cloudinary sẵn sàng.
 
