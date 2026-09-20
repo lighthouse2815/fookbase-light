@@ -20,7 +20,7 @@ export interface AuthenticationResponse {
 
 export interface TwoFactorChallengeResponse { twoFactorRequired: true; challenge: string; expiresAtUtc: string }
 export type LoginResponse = AuthenticationResponse | TwoFactorChallengeResponse
-export interface ExternalProviders { google: boolean }
+export interface ExternalProviders { google: boolean; googleMobile?: boolean }
 export interface AuthSessionInfo { sessionId: string; device: string | null; createdAtUtc: string; lastSeenAtUtc: string; expiresAtUtc: string; isCurrent: boolean }
 export interface SecurityState { twoFactorEnabled: boolean; recoveryCodesRemaining: number; activeSessionCount: number }
 export interface TwoFactorSetup { sharedKey: string; otpauthUri: string }
