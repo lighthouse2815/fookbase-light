@@ -21,3 +21,16 @@ test('unmount removes both hubs and every registered handler', async () => {
   expect(mockHubs).toHaveLength(2);
   for (const hub of mockHubs) { expect(hub.stop).toHaveBeenCalled(); expect(hub.off).toHaveBeenCalledTimes(hub.on.mock.calls.length); }
 });
+
+test('membership removal clears cached private messages', async () => {
+  mockHubs.length = 0;
+  const cache = new QueryClient();
+  cache.setQueryData(['messages', 'u1', 'c1'], { secret: true });
+  const view = render(<QueryClientProvider client={cache}><RealtimeProvider><></></RealtimeProvider></QueryClientProvider>);
+  await waitFor(() => expect(mockHubs[0].start).toHaveBeenCalled());
+  const handlers = mockHubs[0].on.mock.calls.filter(([name]) => name === 'ParticipantRemoved');
+  await act(async () => handlers.forEach(([, handler]) => handler({ conversationId: 'c1', userId: 'u1' })));
+  expect(cache.getQueryData(['messages', 'u1', 'c1'])).toBeUndefined();
+  expect(mockHubs[0].on.mock.calls.some(([name]) => name === 'ConversationCreated')).toBe(true);
+  view.unmount(); cache.clear();
+});
