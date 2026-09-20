@@ -17,6 +17,7 @@ public static class AuthenticationEndpoints
         this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/auth");
+        group.MapGoogleMobileEndpoints();
 
         group.MapGet("/providers", GetExternalProvidersAsync).AllowAnonymous();
         group.MapGet("/google/start", StartGoogleAsync).AllowAnonymous().RequireRateLimiting("auth-login");
@@ -59,7 +60,8 @@ public static class AuthenticationEndpoints
     }
 
     private static IResult GetExternalProvidersAsync(GoogleAuthenticationOptions googleOptions) =>
-        Results.Ok(new ExternalAuthenticationProvidersResponse(googleOptions.Enabled));
+        Results.Ok(new ExternalAuthenticationProvidersResponse(googleOptions.Enabled,
+            googleOptions.Enabled && !string.IsNullOrWhiteSpace(googleOptions.MobileCallbackUrl)));
 
     private static IResult StartGoogleAsync(string? client, GoogleAuthenticationOptions googleOptions)
     {
@@ -103,6 +105,11 @@ public static class AuthenticationEndpoints
         if (!identity.Succeeded)
         {
             return identity.Error!.ToHttpResult();
+        }
+        if (identity.Value!.Client is not null)
+        {
+            // Native OAuth state must only be redeemed through its PKCE-bound callback.
+            return InvalidGoogleClient();
         }
 
         var completion = await googleAuthentication.CreateCompletionAsync(

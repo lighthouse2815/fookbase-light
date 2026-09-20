@@ -4,7 +4,8 @@ using Microsoft.AspNetCore.Authentication;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
-public sealed record GoogleExternalIdentity(string ProviderKey, string Email, bool EmailVerified);
+public sealed record GoogleExternalIdentity(string ProviderKey, string Email, bool EmailVerified,
+    string? Client = null, string? CodeChallenge = null, string? State = null);
 
 public interface IGoogleExternalIdentityReader
 {
@@ -40,7 +41,10 @@ public sealed class GoogleExternalIdentityReader(IAuthenticationService authenti
         }
 
         return ApplicationResult<GoogleExternalIdentity>.Success(
-            new GoogleExternalIdentity(providerKey, email, emailVerified));
+            new GoogleExternalIdentity(providerKey, email, emailVerified,
+                authentication.Properties?.GetString("fookbase.client"),
+                authentication.Properties?.GetString("fookbase.code_challenge"),
+                authentication.Properties?.GetString("fookbase.state")));
     }
 
     private static ApplicationResult<GoogleExternalIdentity> InvalidIdentity() =>

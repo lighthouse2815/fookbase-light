@@ -13,6 +13,7 @@ public sealed class GoogleAuthenticationOptions
     public string WebBaseUrl { get; init; } = string.Empty;
 
     public string ZolaLightBaseUrl { get; init; } = string.Empty;
+    public string MobileCallbackUrl { get; init; } = string.Empty;
 
     public void Validate(bool production)
     {
@@ -33,6 +34,13 @@ public sealed class GoogleAuthenticationOptions
 
         ValidateClientUrl(WebBaseUrl, "GoogleAuthentication:WebBaseUrl", production);
         ValidateClientUrl(ZolaLightBaseUrl, "GoogleAuthentication:ZolaLightBaseUrl", production);
+        if (!string.IsNullOrWhiteSpace(MobileCallbackUrl) &&
+            (!Uri.TryCreate(MobileCallbackUrl, UriKind.Absolute, out var callback) ||
+             callback.Scheme != Uri.UriSchemeHttps || string.IsNullOrWhiteSpace(callback.Host) ||
+             !string.IsNullOrEmpty(callback.UserInfo) || !string.IsNullOrEmpty(callback.Query) || !string.IsNullOrEmpty(callback.Fragment)))
+        {
+            throw new InvalidOperationException("GoogleAuthentication:MobileCallbackUrl must be an explicit HTTPS callback without query, fragment or credentials.");
+        }
     }
 
     public string GetClientLoginUri(string client) => client switch

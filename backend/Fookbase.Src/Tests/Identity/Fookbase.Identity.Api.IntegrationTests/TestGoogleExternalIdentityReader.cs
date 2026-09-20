@@ -24,6 +24,9 @@ public sealed class TestGoogleExternalIdentityReader : IGoogleExternalIdentityRe
         }
 
         return Task.FromResult(ApplicationResult<GoogleExternalIdentity>.Success(
-            new GoogleExternalIdentity(providerKey, email, emailVerified)));
+            new GoogleExternalIdentity(providerKey, email, emailVerified,
+                context.Request.Headers["X-Test-Google-Client"].FirstOrDefault(),
+                context.Request.Headers["X-Test-Google-Challenge"].FirstOrDefault(),
+                context.Request.Headers["X-Test-Google-State"].FirstOrDefault())));
     }
 }
