@@ -18,6 +18,7 @@ import {
 } from './api'
 
 const reactions = ['like', 'love', 'haha', 'wow', 'sad', 'angry']
+const composerEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡', '🎉', '🙏', '🔥', '💯', '✨', '👋']
 
 function displayConversation(conversation: Conversation, profiles?: ReadonlyMap<string, UserProfile>) {
   if (conversation.type === 'group') return conversation.title ?? 'Nhóm không tên'
@@ -139,6 +140,7 @@ function Composer({ conversationId, replyTo, onCancelReply, onSend, onTyping }: 
   const [content, setContent] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [busy, setBusy] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const send = async () => {
     if (!content.trim() && files.length === 0) return
@@ -158,9 +160,10 @@ function Composer({ conversationId, replyTo, onCancelReply, onSend, onTyping }: 
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple hidden onChange={(event) => setFiles(Array.from(event.target.files ?? []))} />
       <div className="composer-tools"><button className="composer-tool" type="button" title="Đính kèm ảnh hoặc video" aria-label="Đính kèm ảnh hoặc video" onClick={() => inputRef.current?.click()}>▣</button><button className="composer-tool" type="button" title="Gửi ảnh" aria-label="Gửi ảnh" onClick={() => inputRef.current?.click()}>▧</button><span className="composer-gif" aria-hidden="true">GIF</span></div>
       <textarea value={content} rows={1} disabled={busy} placeholder="Aa" aria-label="Nhập tin nhắn" onChange={(event) => { setContent(event.target.value); onTyping() }} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send() } }} />
-      <button className="composer-tool emoji-tool" type="button" title="Biểu tượng cảm xúc" aria-label="Biểu tượng cảm xúc">☺</button>
+      <button className="composer-tool emoji-tool" type="button" title="Biểu tượng cảm xúc" aria-label="Biểu tượng cảm xúc" aria-expanded={showEmojiPicker} onClick={() => setShowEmojiPicker((current) => !current)}>☺</button>
       <button className="primary send" aria-label="Gửi tin nhắn" disabled={busy || (!content.trim() && files.length === 0)} onClick={() => void send()}>{content.trim() || files.length ? '➤' : '👍'}</button>
     </div>
+    {showEmojiPicker && <div className="emoji-picker" role="dialog" aria-label="Chọn biểu tượng cảm xúc">{composerEmojis.map((emoji) => <button key={emoji} type="button" onClick={() => { setContent((current) => `${current}${emoji}`); setShowEmojiPicker(false) }}>{emoji}</button>)}</div>}
     <span className="sr-only">Conversation {conversationId}</span>
   </div>
 }
@@ -265,6 +268,34 @@ function EditMessageDialog({ message, onClose, onSave }: { message: Message; onC
   return <Modal title="Chỉnh sửa tin nhắn" onClose={onClose}><label>Nội dung<textarea autoFocus value={content} rows={4} onChange={(event) => setContent(event.target.value)} /></label><button type="button" className="primary" disabled={busy || !content.trim()} onClick={() => void save()}>Lưu</button></Modal>
 }
 
+function SearchConversationDialog({ conversationId, onClose, onSelect }: { conversationId: string; onClose: () => void; onSelect: (message: Message) => void }) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<Message[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    const value = query.trim()
+    if (!value) { setResults([]); setError(null); return }
+    let current = true
+    const timer = window.setTimeout(() => {
+      setLoading(true)
+      void messengerApi.searchMessages(conversationId, value).then((items) => {
+        if (current) { setResults(items); setError(null) }
+      }).catch((reason) => {
+        if (current) setError(reason instanceof ApiError ? reason.message : 'Không thể tìm tin nhắn.')
+      }).finally(() => { if (current) setLoading(false) })
+    }, 220)
+    return () => { current = false; window.clearTimeout(timer) }
+  }, [conversationId, query])
+
+  return <Modal title="Tìm trong đoạn chat" onClose={onClose}>
+    <label>Từ khóa<input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nhập nội dung cần tìm" maxLength={200} /></label>
+    {loading && <p className="modal-description">Đang tìm…</p>}
+    {error && <p className="alert">{error}</p>}
+    {query.trim() && !loading && !error && <div className="message-search-results">{results.length ? results.map((message) => <button type="button" key={message.id} onClick={() => { onSelect(message); onClose() }}><span>{message.content}</span><time dateTime={message.createdAtUtc}>{messageFullTime(message.createdAtUtc)}</time></button>) : <p>Không tìm thấy tin nhắn phù hợp.</p>}</div>}
+  </Modal>
+}
+
 function ConfirmDialog({ title, description, confirmLabel, onClose, onConfirm }: { title: string; description: string; confirmLabel: string; onClose: () => void; onConfirm: () => Promise<void> }) {
   const [busy, setBusy] = useState(false)
   const confirm = async () => { setBusy(true); try { await onConfirm(); onClose() } finally { setBusy(false) } }
@@ -311,6 +342,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
   const [showCreate, setShowCreate] = useState(false)
   const [showAddParticipants, setShowAddParticipants] = useState(false)
   const [showRenameGroup, setShowRenameGroup] = useState(false)
+  const [showMessageSearch, setShowMessageSearch] = useState(false)
   const [editingMessage, setEditingMessage] = useState<Message | null>(null)
   const [confirmation, setConfirmation] = useState<{ title: string; description: string; confirmLabel: string; onConfirm: () => Promise<void> } | null>(null)
   const connectionRef = useRef<ReturnType<HubConnectionBuilder['build']> | null>(null)
@@ -403,6 +435,10 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     await messengerApi.updateConversation(conversation.id, { archived })
     await refreshConversationLists()
   }
+  const muteConversation = async (conversation: Conversation) => {
+    await messengerApi.updateConversation(conversation.id, { mutedUntilUtc: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() })
+    await refreshConversationLists()
+  }
   const updateGroupTitle = async (title: string) => { if (!active || active.type !== 'group') return; const updated = await messengerApi.updateConversation(active.id, { title }); setConversations((current) => current.map((item) => item.id === updated.id ? updated : item)) }
   const updateGroupPhoto = async (file: File) => {
     if (!active || active.type !== 'group') return
@@ -423,6 +459,7 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
     setConversations((current) => current.map((item) => item.id === updated.id ? updated : item))
   }
   const myParticipant = active?.participants.find((participant) => participant.userId === session.user.id)
+  const activeProfileUrl = active?.participantUserId ? `${import.meta.env.VITE_WEB_URL ?? 'http://localhost:5173'}/profile/${active.participantUserId}` : null
 
   return <main className="zola-light-shell">
     <aside className="conversation-pane"><header className="pane-header"><div className="current-user"><Avatar name={currentUserProfile?.displayName ?? 'Tài khoản của bạn'} url={currentUserProfile?.avatarUrl} /><div><strong>{currentUserProfile?.displayName ?? 'Tài khoản của bạn'}</strong></div></div><button className="icon-button" title="Tin nhắn mới" onClick={() => setShowCreate(true)}>✎</button></header>
@@ -447,18 +484,19 @@ function AppShell({ session, onSignOut }: { session: AuthSession; onSignOut: () 
       </div>
       <Composer conversationId={active.id} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} onSend={send} onTyping={sendTyping} />
     </> : <div className="empty-chat"><div>💬</div><h1>Chọn một cuộc trò chuyện</h1><p>Hoặc tạo tin nhắn mới để bắt đầu.</p><button className="primary" onClick={() => setShowCreate(true)}>Tin nhắn mới</button></div>}</section>
-    <aside className="details-pane">{active ? <><header><button className="close-details" onClick={() => document.body.classList.remove('details-open')}>×</button><ConversationAvatar conversation={active} profiles={profiles} /><h2>{displayConversation(active, profiles)}</h2><p>{onlineIds.has(active.participantUserId ?? '') ? 'Đang hoạt động' : 'Hoạt động gần đây'}</p><div className="profile-shortcuts"><button type="button" title="Trang cá nhân">◉<span>Trang cá nhân</span></button><button type="button" title="Tắt thông báo">♟<span>Tắt thông báo</span></button><button type="button" title="Tìm kiếm">⌕<span>Tìm kiếm</span></button></div>{active.type === 'group' && <><input ref={groupPhotoInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; if (file) void updateGroupPhoto(file).catch((reason) => setError(reason.message)) }} /><button onClick={() => setShowRenameGroup(true)}>Đổi tên</button><button onClick={() => groupPhotoInputRef.current?.click()}>Đổi ảnh</button></>}</header>
+    <aside className="details-pane">{active ? <><header><button className="close-details" onClick={() => document.body.classList.remove('details-open')}>×</button><ConversationAvatar conversation={active} profiles={profiles} /><h2>{displayConversation(active, profiles)}</h2><p>{onlineIds.has(active.participantUserId ?? '') ? 'Đang hoạt động' : 'Hoạt động gần đây'}</p><div className="profile-shortcuts">{activeProfileUrl ? <a href={activeProfileUrl} target="_blank" rel="noreferrer" title="Trang cá nhân">◉<span>Trang cá nhân</span></a> : <button type="button" disabled title="Nhóm không có trang cá nhân">◉<span>Trang cá nhân</span></button>}<button type="button" title="Tắt thông báo 8 giờ" onClick={() => void muteConversation(active).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tắt thông báo.'))}>♟<span>Tắt thông báo</span></button><button type="button" title="Tìm trong đoạn chat" onClick={() => setShowMessageSearch(true)}>⌕<span>Tìm kiếm</span></button></div>{active.type === 'group' && <><input ref={groupPhotoInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; if (file) void updateGroupPhoto(file).catch((reason) => setError(reason.message)) }} /><button onClick={() => setShowRenameGroup(true)}>Đổi tên</button><button onClick={() => groupPhotoInputRef.current?.click()}>Đổi ảnh</button></>}</header>
       <section><h3>Thành viên ({active.participants.length})</h3>{active.participants.map((participant) => <ParticipantRow key={participant.userId} participant={participant} profile={profiles.get(participant.userId)} currentUserId={session.user.id} isOnline={onlineIds.has(participant.userId)} canManage={myParticipant?.role === 'owner' || myParticipant?.role === 'admin'} onManage={(action) => {
         if (action === 'remove') setConfirmation({ title: 'Xóa thành viên?', description: `Xóa ${profiles.get(participant.userId)?.displayName ?? 'thành viên'} khỏi nhóm này.`, confirmLabel: 'Xóa thành viên', onConfirm: () => manageParticipant(participant, action) })
         else if (action === 'owner') setConfirmation({ title: 'Chuyển quyền sở hữu?', description: `Bạn sẽ chuyển quyền sở hữu nhóm cho ${profiles.get(participant.userId)?.displayName ?? 'thành viên này'}.`, confirmLabel: 'Chuyển quyền', onConfirm: () => manageParticipant(participant, action) })
         else void manageParticipant(participant, action).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể cập nhật thành viên.'))
       }} />)}
       {active.type === 'group' && (myParticipant?.role === 'owner' || myParticipant?.role === 'admin') && <button className="secondary" onClick={() => setShowAddParticipants(true)}>Thêm thành viên</button>}</section>
-      <section className="conversation-settings"><h3>Tùy chỉnh đoạn chat</h3><button className="secondary" onClick={() => void setConversationArchived(active, !active.isArchived).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể cập nhật cuộc trò chuyện.'))}>{active.isArchived ? 'Bỏ lưu trữ' : 'Lưu trữ'}</button><button className="secondary" onClick={() => void messengerApi.updateConversation(active.id, { mutedUntilUtc: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() }).then(() => refreshConversationLists())}>Tắt thông báo 8 giờ</button>{active.type === 'group' && myParticipant?.role !== 'owner' && <button className="danger" onClick={() => setConfirmation({ title: 'Rời nhóm?', description: 'Bạn sẽ không còn nhận được tin nhắn từ nhóm này.', confirmLabel: 'Rời nhóm', onConfirm: leave })}>Rời nhóm</button>}</section>
+      <section className="conversation-settings"><h3>Tùy chỉnh đoạn chat</h3><button className="secondary" onClick={() => void setConversationArchived(active, !active.isArchived).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể cập nhật cuộc trò chuyện.'))}>{active.isArchived ? 'Bỏ lưu trữ' : 'Lưu trữ'}</button><button className="secondary" onClick={() => void muteConversation(active).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Không thể tắt thông báo.'))}>Tắt thông báo 8 giờ</button>{active.type === 'group' && myParticipant?.role !== 'owner' && <button className="danger" onClick={() => setConfirmation({ title: 'Rời nhóm?', description: 'Bạn sẽ không còn nhận được tin nhắn từ nhóm này.', confirmLabel: 'Rời nhóm', onConfirm: leave })}>Rời nhóm</button>}</section>
     </> : <p className="details-placeholder">Thông tin cuộc trò chuyện sẽ hiển thị ở đây.</p>}</aside>
     {showCreate && <CreateConversation onClose={() => setShowCreate(false)} onDirect={createDirect} onGroup={createGroup} />}
     {showAddParticipants && active && <AddParticipantsDialog conversation={active} onClose={() => setShowAddParticipants(false)} onAdd={addParticipants} />}
     {showRenameGroup && active?.type === 'group' && <RenameGroupDialog currentTitle={active.title ?? ''} onClose={() => setShowRenameGroup(false)} onSave={updateGroupTitle} />}
+    {showMessageSearch && active && <SearchConversationDialog conversationId={active.id} onClose={() => setShowMessageSearch(false)} onSelect={(message) => setMessages((current) => upsertMessage(current, message))} />}
     {editingMessage && <EditMessageDialog message={editingMessage} onClose={() => setEditingMessage(null)} onSave={(content) => editMessage(editingMessage, content)} />}
     {confirmation && <ConfirmDialog {...confirmation} onClose={() => setConfirmation(null)} onConfirm={async () => { try { await confirmation.onConfirm() } catch (reason) { setError(reason instanceof ApiError ? reason.message : 'Không thể thực hiện thao tác.'); throw reason } }} />}
   </main>

@@ -188,6 +188,7 @@ export const messengerApi = {
     method: 'PATCH', body: JSON.stringify(value),
   }),
   messages: (id: string, before?: string) => request<MessageHistory>(`/api/messages/conversations/${id}/messages?${query({ before, limit: '50' })}`),
+  searchMessages: (id: string, value: string) => request<Message[]>(`/api/messages/conversations/${id}/search?${query({ q: value })}`),
   send: (id: string, content: string, mediaIds: string[], replyToMessageId?: string) => request<Message>(`/api/messages/conversations/${id}/messages`, {
     method: 'POST', body: JSON.stringify({ content: content || null, mediaIds, replyToMessageId }),
   }),

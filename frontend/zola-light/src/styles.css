@@ -93,9 +93,18 @@ a { color: #80b6ff; }
 .details-pane header .avatar { width: 82px; height: 82px; font-size: 20px; }
 .details-pane header p { margin: -2px 0 6px; color: #aeb2bb; font-size: 12px; }
 .profile-shortcuts { display: flex; justify-content: center; gap: 16px; }
-.profile-shortcuts button { display: grid; justify-items: center; gap: 5px; width: 62px; border: 0; color: #e1e3e8; background: transparent; font-size: 19px; }
-.profile-shortcuts button::first-line { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: #35373c; }
+.profile-shortcuts button, .profile-shortcuts a { display: grid; justify-items: center; gap: 5px; width: 62px; border: 0; color: #e1e3e8; background: transparent; font-size: 19px; text-decoration: none; }
+.profile-shortcuts button:hover, .profile-shortcuts a:hover { color: #c76aff; }
+.profile-shortcuts button:disabled { cursor: not-allowed; opacity: .45; }
 .profile-shortcuts span { color: #c7cad1; font-size: 10px; line-height: 1.2; }
+.emoji-picker { display: flex; width: max-content; max-width: min(360px, 100%); flex-wrap: wrap; gap: 3px; margin: -4px 0 8px auto; border: 1px solid #3b3d43; border-radius: 12px; padding: 6px; background: #2a2c30; box-shadow: 0 10px 24px rgb(0 0 0 / 25%); }
+.emoji-picker button { width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; font-size: 18px; }
+.emoji-picker button:hover { background: #3a3c42; }
+.message-search-results { display: grid; max-height: 320px; gap: 4px; overflow-y: auto; }
+.message-search-results button { display: grid; gap: 3px; border: 0; border-radius: 9px; padding: 9px 10px; color: #e4e6eb; background: transparent; text-align: left; }
+.message-search-results button:hover { background: #303238; }
+.message-search-results span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.message-search-results time, .message-search-results p { color: #a6abb5; font-size: 11px; }
 .details-pane h2 { margin: 0; font: 700 17px 'Plus Jakarta Sans', sans-serif; }
 .details-pane h3 { margin: 0 0 10px; color: #b6c0d0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
 .details-pane section { padding: 16px; border-bottom: 1px solid #2b2e35; }
