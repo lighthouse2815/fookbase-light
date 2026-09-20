@@ -34,7 +34,8 @@ export interface FeedShare {
   originalPost: Post
 }
 
-export interface FeedItem extends Omit<Post, 'authorUserId' | 'contentType'> {
+export interface FeedItem extends Omit<Post, 'authorUserId' | 'contentType' | 'viewerHasSaved'> {
+  viewerHasSaved?: boolean
   contentType: 'standardPost' | 'reel' | 'share'
   containerType: 'profile' | 'group' | 'page'
   container: FeedContainer

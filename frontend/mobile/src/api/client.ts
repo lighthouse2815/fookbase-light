@@ -18,7 +18,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   try {
     const token = getSession()?.accessToken ?? null;
     response = await send(token);
-    if (response.status === 401 && token && !path.startsWith('/api/auth/')) {
+    if (response.status === 401 && token && !/^\/api\/auth\/(login|refresh|logout|registration(?:\/|$)|google(?:\/|$)|2fa\/verify|password\/(forgot|reset))/.test(path)) {
       const next = await refreshSession();
       if (next && generation === getSessionGeneration()) response = await send(next);
     }

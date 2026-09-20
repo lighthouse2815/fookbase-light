@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePreventRemove } from 'expo-router/react-navigation';
 import { Alert } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi, type TwoFactorSetup } from '../../api/auth';
@@ -8,6 +9,7 @@ import { Button, Card, ErrorNotice, Field, Label, Loading, Screen } from '../../
 export default function Security() {
   const { session } = useAuth(); const cache = useQueryClient(); const [current, setCurrent] = useState(''); const [password, setPassword] = useState(''); const [confirm, setConfirm] = useState(''); const [code, setCode] = useState('');
   const [setup,setSetup] = useState<TwoFactorSetup | null>(null); const [recovery,setRecovery] = useState<string[]>([]);
+  usePreventRemove(recovery.length > 0, () => Alert.alert('Lưu mã khôi phục', 'Hãy lưu mã và bấm Tôi đã lưu mã khôi phục trước khi rời màn hình.'));
   const state = useQuery({ queryKey:['security', session?.user.id], queryFn:authApi.security });
   const sessions = useQuery({ queryKey:['sessions',session?.user.id], queryFn:authApi.sessions });
   const action = useMutation({ mutationFn:(fn:()=>Promise<unknown>)=>fn(), onSuccess:()=>cache.invalidateQueries() });

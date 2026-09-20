@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AppState, Image } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -19,8 +19,11 @@ function Video({ url }: { url: string }) {
 }
 export function MediaView({ path }: { path: string }) {
   const { session } = useAuth();
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => setImageFailed(false), [path]);
   const query = useQuery({ queryKey: ['media', session?.user.id, path], queryFn: () => apiRequest<MediaReadUrl>(path), staleTime: 0 });
   if (query.error) return <ErrorNotice error={query.error} retry={() => void query.refetch()} />;
   if (!query.data) return <Loading />;
-  return query.data.mediaType.toLowerCase() === 'video' ? <Video url={query.data.url} /> : <Image accessibilityLabel="Ảnh đính kèm" source={{ uri: query.data.url }} style={{ width: '100%', height: 280, borderRadius: 12 }} resizeMode="contain" onError={() => { if (!query.isFetching) void query.refetch(); }} />;
+  if (imageFailed) return <ErrorNotice error={new Error('Không tải được ảnh.')} retry={() => { setImageFailed(false); void query.refetch(); }} />;
+  return query.data.mediaType.toLowerCase() === 'video' ? <Video url={query.data.url} /> : <Image accessibilityLabel="Ảnh đính kèm" source={{ uri: query.data.url }} style={{ width: '100%', height: 280, borderRadius: 12 }} resizeMode="contain" onError={() => setImageFailed(true)} />;
 }

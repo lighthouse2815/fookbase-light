@@ -23,3 +23,10 @@ test('retries a 401 once using refreshed token', async () => {
   const headers = jest.mocked(fetch).mock.calls[1][1]?.headers as Headers;
   expect(headers.get('Authorization')).toBe('Bearer fresh');
 });
+test('refreshes expired access for protected security endpoints', async () => {
+  jest.mocked(getSession).mockReturnValue({ accessToken: 'expired' } as ReturnType<typeof getSession>);
+  jest.mocked(refreshSession).mockResolvedValue('fresh');
+  jest.mocked(fetch).mockResolvedValueOnce({ status: 401 } as Response).mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) } as Response);
+  await apiRequest('/api/auth/security');
+  expect(refreshSession).toHaveBeenCalledTimes(1); expect(fetch).toHaveBeenCalledTimes(2);
+});

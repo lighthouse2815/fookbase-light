@@ -33,7 +33,7 @@ export interface Post {
   mentions?: ContentMention[]
   contentType?: 'standardPost' | 'reel'
   isPinned: boolean
-  viewerHasSaved: boolean
+  viewerHasSaved?: boolean
 }
 
 export interface Comment {
