@@ -38,13 +38,14 @@ a { color: #80b6ff; }
 .avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: linear-gradient(135deg, #497fca, #7b5cbd); color: white; font-size: 12px; font-weight: 700; }
 .conversation-pane footer { display: flex; gap: 12px; padding: 14px 16px; margin-top: auto; border-top: 1px solid #2b2e35; }
 .conversation-pane footer button { border: 0; padding: 0; background: none; color: #aab3c2; }
-.chat-pane { display: flex; flex-direction: column; min-width: 0; background: #111216; }
+.chat-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: #111216; }
+.chat-pane > .chat-header, .chat-pane > .composer { flex-shrink: 0; }
 .chat-header { gap: 11px; }
 .chat-header strong { display: block; font-size: 15px; }
 .chat-header .avatar { width: 42px; height: 42px; }
 .mobile-details { display: none; margin-left: auto; }
 .mobile-back { display: none; }
-.message-list { display: flex; flex: 1; flex-direction: column; gap: 8px; overflow-y: auto; padding: 18px clamp(16px, 4vw, 56px); }
+.message-list { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 8px; overflow-y: auto; padding: 18px clamp(16px, 4vw, 56px); }
 .message-row { display: flex; max-width: 82%; align-items: center; gap: 8px; }
 .message-row.mine { align-self: flex-end; flex-direction: row-reverse; }
 .message-stack { display: flex; flex-direction: column; min-width: 0; }
