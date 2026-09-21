@@ -98,6 +98,18 @@ này nếu bạn đã đổi cổng.
 bash scripts/run-backend.sh
 ```
 
+Nếu muốn chạy thủ công, vẫn đứng tại thư mục gốc và nạp `.env` trước khi gọi `dotnet run`:
+
+```bash
+set -a
+source .env
+set +a
+Database__ApplyMigrationsOnStartup=true dotnet run --project backend/Fookbase.Src/Main/Fookbase.Api.csproj --launch-profile http
+```
+
+Khi đứng trong `backend/Fookbase.Src/Main`, thay `source .env` bằng
+`source ../../../.env` rồi chạy `Database__ApplyMigrationsOnStartup=true dotnet run`.
+
 API chạy tại <http://localhost:5000>. Dùng các lệnh `curl` ở trên trong terminal khác để kiểm tra.
 Bạn cũng có thể chạy script từ thư mục `backend/Fookbase.Src/Main` bằng
 `bash ../../../scripts/run-backend.sh`.
