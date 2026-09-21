@@ -38,7 +38,7 @@ Ba React app được triển khai độc lập: `frontend/web`, `frontend/zola-
 - Node.js và npm
 - Docker Engine với Docker Compose plugin
 
-Tạo cấu hình development:
+Từ thư mục gốc repository (thư mục chứa `README.md` và `compose.yml`), tạo cấu hình development:
 
 ```bash
 cp .env.example .env
@@ -46,9 +46,11 @@ cp .env.example .env
 
 Các credential mẫu chỉ dành cho local development. Hãy thay password và JWT signing key trước khi dùng ở môi trường khác.
 
-## Khởi động
+## Khởi động backend
 
-Khởi động local stack (PostgreSQL và API):
+### Cách 1: Chạy backend bằng Docker Compose
+
+Mở terminal tại **thư mục gốc repository**. Sau khi điền `.env`, chạy PostgreSQL và API:
 
 ```bash
 docker compose up --build -d
@@ -58,38 +60,56 @@ docker compose ps
 Compose chỉ lấy secrets từ `.env`; Docker image không chứa `.env` hoặc credential. Điền
 `Cloudinary__CloudName`, `Cloudinary__ApiKey` và `Cloudinary__ApiSecret` trong `.env` trước
 khi chạy. Để gửi OTP email, đặt đầy đủ `Email__*` và `Email__Enabled=true`; Compose truyền
-các biến này vào API. Local compose tự apply migration hợp nhất khi API start và API chạy tại
+các biến này vào API. Local compose tự apply migration khi API start. API chạy tại
 <http://localhost:5000>. Cloudinary phải cho phép origin của các frontend dùng upload trực tiếp.
 
-Kiểm tra health:
+Vẫn tại thư mục gốc, xem log backend và kiểm tra health:
+
+```bash
+docker compose logs -f api
+```
+
+Mở terminal khác tại thư mục gốc để chạy:
 
 ```bash
 curl -fsS http://localhost:5000/health/live
 curl -fsS http://localhost:5000/health/ready
 ```
 
-coi log be : docker compose logs -f api
-
 `/health` vẫn là liveness-compatible endpoint. `/health/live` chỉ xác nhận process sống;
 `/health/ready` yêu cầu PostgreSQL và Cloudinary sẵn sàng.
 
-Để chạy API trực tiếp thay vì container, apply migration thủ công rồi chạy backend:
+### Cách 2: Chạy backend trực tiếp bằng .NET SDK
+
+Mở terminal tại **thư mục gốc repository**. Chỉ chạy PostgreSQL bằng Docker Compose; nếu API
+container đang chạy, dừng nó để tránh trùng cổng `5000`:
+
+```bash
+docker compose up -d postgres
+docker compose stop api
+```
+
+Tại cùng thư mục gốc, nạp `.env` rồi chạy API. Connection string trong `.env.example` dùng
+`localhost:5432` cho PostgreSQL trên Docker; kiểm tra lại giá trị này nếu bạn đã đổi cổng.
+Lệnh dưới bật migration khi khởi động cho môi trường local:
 
 ```bash
 set -a
 source .env
 set +a
-dotnet run --project backend/Fookbase.Src/Main
+Database__ApplyMigrationsOnStartup=true dotnet run --project backend/Fookbase.Src/Main/Fookbase.Api.csproj --launch-profile http
 ```
 
-API chạy tại <http://localhost:5000>.
+API chạy tại <http://localhost:5000>. Dùng các lệnh `curl` ở trên trong terminal khác để kiểm tra.
 
 Để mở quyền quản trị cho một tài khoản development, đặt `Admin__BootstrapEmail` thành email
 của tài khoản đó trước khi đăng ký hoặc đăng nhập. Hệ thống sẽ tự gán role `Admin` vào lần
 phát hành token kế tiếp; không đặt biến này ở môi trường production nếu chưa có quy trình
 quản lý role riêng.
 
-Chạy frontend:
+## Chạy frontend
+
+Từ thư mục gốc repository, chạy frontend trong terminal riêng:
 
 ```bash
 cd frontend/web
