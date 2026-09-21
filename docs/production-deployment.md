@@ -39,6 +39,23 @@ Cors__AllowedOrigins__2=https://zola-light.example.com
 
 `DataProtection__KeyRingPath` được Compose đặt là `/var/fookbase/data-protection-keys`; backup volume này cùng application data. `Database__CommandTimeoutSeconds` mặc định 30 giây. Npgsql vẫn nhận `Connection Timeout` và `Maximum Pool Size` từ connection string; với một API instance, chỉ tăng pool sau khi tính rõ giới hạn connection PostgreSQL.
 
+### Kiểm tra Data Protection key ring
+
+Cursor của feed, bài viết đã lưu và hashtag dùng chung key ring. Sau khi triển khai, có thể kiểm tra cursor vẫn đọc được qua lần tái tạo API mà không xóa volume:
+
+```bash
+# Đăng nhập và đặt ACCESS_TOKEN thành JWT hợp lệ trước khi chạy.
+curl -fsS -H "Authorization: Bearer $ACCESS_TOKEN" \
+  'https://api.example.com/api/feed?limit=1' > /tmp/feed-page.json
+CURSOR=$(jq -r '.nextCursor' /tmp/feed-page.json)
+docker compose -f compose.yml -f compose.prod.yml up -d --force-recreate --no-deps api
+curl -fsS -H "Authorization: Bearer $ACCESS_TOKEN" --get \
+  --data-urlencode "cursor=$CURSOR" --data 'limit=1' \
+  'https://api.example.com/api/feed' >/dev/null
+```
+
+Lệnh cuối phải trả HTTP 200. Chỉ dùng cursor khác `null` để kiểm tra; feed cần có đủ bài viết để tạo trang tiếp theo. Không chạy `docker compose down -v` giữa hai request vì lệnh đó xóa key ring.
+
 ## Google OAuth
 
 Google login chỉ bật khi có toàn bộ cấu hình server-side sau; không đưa client secret vào source code, static build hoặc biến `VITE_*`:

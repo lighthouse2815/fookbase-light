@@ -4,7 +4,7 @@ M11 thêm Save, Share, mention và hashtag vào Posts/Reels mà không tạo b�
 
 ## Data Protection và cursor
 
-Saved posts và hashtag timeline dùng keyset cursor ASP.NET Core Data Protection, bind theo người xem và purpose riêng (`saved`, `hashtag:<normalized-tag>`). Feed cũng dùng key ring chung. Production bắt buộc đặt `DataProtection__KeyRingPath`; Compose mount volume `data-protection-keys` tại `/var/fookbase/data-protection-keys`. Hướng dẫn backup và smoke test sau khi tái tạo API có tại [deployment.md](deployment.md#data-protection-key-ring).
+Saved posts và hashtag timeline dùng keyset cursor ASP.NET Core Data Protection, bind theo người xem và purpose riêng (`saved`, `hashtag:<normalized-tag>`). Feed cũng dùng key ring chung. Production bắt buộc đặt `DataProtection__KeyRingPath`; Compose mount volume `data-protection-keys` tại `/var/fookbase/data-protection-keys`. Hướng dẫn backup và smoke test sau khi tái tạo API có tại [hướng dẫn vận hành production](production-deployment.md#kiem-tra-data-protection-key-ring).
 
 ## Save
 
