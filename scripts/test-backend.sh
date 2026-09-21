@@ -7,14 +7,8 @@ database_user="fookbase_test"
 database_password="fookbase_test_password"
 host_user="$(id -u):$(id -g)"
 
-declare -a projects=(
-  "Identity:backend/Fookbase.Src/Tests/Identity/Fookbase.Identity.Api.IntegrationTests/Fookbase.Identity.Api.IntegrationTests.csproj"
-  "Users:backend/Fookbase.Src/Tests/Users/Fookbase.Users.Api.IntegrationTests/Fookbase.Users.Api.IntegrationTests.csproj"
-  "Friends:backend/Fookbase.Src/Tests/Friends/Fookbase.Friends.Api.IntegrationTests/Fookbase.Friends.Api.IntegrationTests.csproj"
-  "Messages:backend/Fookbase.Src/Tests/Messages/Fookbase.Messages.Api.IntegrationTests/Fookbase.Messages.Api.IntegrationTests.csproj"
-  "Media:backend/Fookbase.Src/Tests/Media/Fookbase.Media.Api.IntegrationTests/Fookbase.Media.Api.IntegrationTests.csproj"
-  "Posts:backend/Fookbase.Src/Tests/Posts/Fookbase.Posts.Api.IntegrationTests/Fookbase.Posts.Api.IntegrationTests.csproj"
-)
+test_project="backend/Fookbase.Src/Tests/Fookbase.Api.IntegrationTests/Fookbase.Api.IntegrationTests.csproj"
+areas=(Identity Users Friends Messages Media Posts)
 
 cleanup() {
   docker rm --force "${database_container}" >/dev/null 2>&1 || true
@@ -29,9 +23,8 @@ create_database() {
     --command "CREATE DATABASE \"$1\"" >/dev/null
 }
 
-run_project() {
+run_area() {
   local label="$1"
-  local project="$2"
   local database_name="fookbase_test_${label,,}_$$_${RANDOM}"
   local connection_string="Host=127.0.0.1;Port=5432;Database=${database_name};Username=${database_user};Password=${database_password}"
 
@@ -46,7 +39,9 @@ run_project() {
     --volume "${repository_root}:/workspace" \
     --workdir /workspace \
     mcr.microsoft.com/dotnet/sdk:10.0 \
-    dotnet test "${project}" --logger 'console;verbosity=minimal'; then
+    dotnet test "${test_project}" \
+      --filter "FullyQualifiedName~Fookbase.${label}.Api.IntegrationTests" \
+      --logger 'console;verbosity=minimal'; then
     return 1
   fi
   printf 'PASS %s\n' "${label}"
@@ -72,16 +67,14 @@ for attempt in $(seq 1 30); do
 done
 
 passed=0
-for entry in "${projects[@]}"; do
-  label="${entry%%:*}"
-  project="${entry#*:}"
-  if run_project "${label}" "${project}"; then
+for label in "${areas[@]}"; do
+  if run_area "${label}"; then
     ((passed += 1))
   else
     printf 'FAIL %s\n' "${label}" >&2
-    printf 'Backend integration summary: %s/%s projects passed.\n' "${passed}" "${#projects[@]}" >&2
+    printf 'Backend integration summary: %s/%s areas passed.\n' "${passed}" "${#areas[@]}" >&2
     exit 1
   fi
 done
 
-printf 'Backend integration summary: %s/%s projects passed.\n' "${passed}" "${#projects[@]}"
+printf 'Backend integration summary: %s/%s areas passed.\n' "${passed}" "${#areas[@]}"

@@ -21,7 +21,7 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
     [Fact]
-    public async Task Home_feed_only_includes_the_viewer_and_current_friends_with_allowed_privacy()
+    public async Task Home_feed_respects_privacy_for_organic_and_suggested_posts()
     {
         var users = await CreateUsersAsync(3);
         var viewer = users[0];
@@ -36,6 +36,8 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var friendFriends = await CreatePostAsync(friend, PostPrivacy.Friends, now.AddMinutes(-5));
         var friendOnlyMe = await CreatePostAsync(friend, PostPrivacy.OnlyMe, now.AddMinutes(-6));
         var strangerPublic = await CreatePostAsync(stranger, PostPrivacy.Public, now.AddMinutes(-7));
+        var strangerFriends = await CreatePostAsync(stranger, PostPrivacy.Friends, now.AddMinutes(-7));
+        var strangerOnlyMe = await CreatePostAsync(stranger, PostPrivacy.OnlyMe, now.AddMinutes(-7));
         var deleted = await CreatePostAsync(friend, PostPrivacy.Public, now.AddMinutes(-8));
         await DeletePostAsync(deleted.Id);
         using var client = CreateAuthenticatedClient(viewer);
@@ -49,7 +51,13 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Contains(friendPublic.Id, ids);
         Assert.Contains(friendFriends.Id, ids);
         Assert.DoesNotContain(friendOnlyMe.Id, ids);
-        Assert.DoesNotContain(strangerPublic.Id, ids);
+        Assert.DoesNotContain(strangerFriends.Id, ids);
+        Assert.DoesNotContain(strangerOnlyMe.Id, ids);
+        var suggestion = feed.Items.SingleOrDefault(item => item.Id == strangerPublic.Id);
+        if (suggestion is not null)
+        {
+            Assert.True(suggestion.IsSuggested);
+        }
         Assert.DoesNotContain(deleted.Id, ids);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(
             "/api/posts/" + friendOnlyMe.Id)).StatusCode);

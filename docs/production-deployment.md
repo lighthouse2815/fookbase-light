@@ -157,7 +157,7 @@ Không chạy `dotnet test FookbaseLight.sln` làm integration regression vì pr
 bash scripts/test-backend.sh
 ```
 
-Script tạo một PostgreSQL container tạm, database riêng cho từng project và chạy tuần tự. `scripts/check-migrations.sh` kiểm tra ID migration trùng/future-dated; thêm `CHECK_EF_MODEL=true` với connection string design-time để kiểm tra pending model changes. Luôn backup, migration một lần, start/restart một API, chờ readiness rồi smoke test.
+Script tạo một PostgreSQL container tạm, database riêng cho từng nhóm test và chạy tuần tự. `scripts/check-migrations.sh` kiểm tra ID migration trùng/future-dated; thêm `CHECK_EF_MODEL=true` với connection string design-time để kiểm tra pending model changes. Luôn backup, migration một lần, start/restart một API, chờ readiness rồi smoke test.
 
 ## Đường scale được hoãn
 
