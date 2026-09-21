@@ -89,18 +89,18 @@ docker compose up -d postgres
 docker compose stop api
 ```
 
-Tại cùng thư mục gốc, nạp `.env` rồi chạy API. Connection string trong `.env.example` dùng
-`localhost:5432` cho PostgreSQL trên Docker; kiểm tra lại giá trị này nếu bạn đã đổi cổng.
-Lệnh dưới bật migration khi khởi động cho môi trường local:
+Từ thư mục gốc, chạy script sau. Script tự nạp `.env`, bật migration khi khởi động cho môi
+trường local và chạy API; không cần `source` lại sau khi mở terminal mới. Connection string
+trong `.env.example` dùng `localhost:5432` cho PostgreSQL trên Docker; kiểm tra lại giá trị
+này nếu bạn đã đổi cổng.
 
 ```bash
-set -a
-source .env
-set +a
-Database__ApplyMigrationsOnStartup=true dotnet run --project backend/Fookbase.Src/Main/Fookbase.Api.csproj --launch-profile http
+bash scripts/run-backend.sh
 ```
 
 API chạy tại <http://localhost:5000>. Dùng các lệnh `curl` ở trên trong terminal khác để kiểm tra.
+Bạn cũng có thể chạy script từ thư mục `backend/Fookbase.Src/Main` bằng
+`bash ../../../scripts/run-backend.sh`.
 
 Để mở quyền quản trị cho một tài khoản development, đặt `Admin__BootstrapEmail` thành email
 của tài khoản đó trước khi đăng ký hoặc đăng nhập. Hệ thống sẽ tự gán role `Admin` vào lần
