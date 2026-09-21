@@ -17,7 +17,7 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
     <Using Include="Xunit" />
-    <ProjectReference Include="..\Fookbase.Src\Main\Fookbase.Api.csproj" />
+    <ProjectReference Include="..\Fookbase.Src\Fookbase.Api.csproj" />
   </ItemGroup>
 
 </Project>

@@ -35,8 +35,8 @@ jobs:
           dotnet-version: 10.0.x
       - name: Restore and build API
         run: |
-          dotnet restore backend/Fookbase.Src/Main/Fookbase.Api.csproj
-          dotnet build backend/Fookbase.Src/Main/Fookbase.Api.csproj --no-restore --configuration Release
+          dotnet restore backend/Fookbase.Src/Fookbase.Api.csproj
+          dotnet build backend/Fookbase.Src/Fookbase.Api.csproj --no-restore --configuration Release
       - name: Run isolated backend integration tests
         run: bash scripts/test-backend.sh
       - name: Check EF model has no pending changes
@@ -84,4 +84,4 @@ jobs:
       - name: Validate production Compose configuration
         run: docker compose -f compose.yml -f compose.prod.yml config --quiet
       - name: Build production API image
-        run: docker build --file backend/Fookbase.Src/Main/Dockerfile --tag fookbase-api:ci .
+        run: docker build --file backend/Fookbase.Src/Dockerfile --tag fookbase-api:ci .

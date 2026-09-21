@@ -11,7 +11,7 @@ Không chạy nhiều replica API trong V1. SignalR và Zola Light presence là 
 
 ## Thành phần và persistence
 
-- `backend/Fookbase.Src/Main/Dockerfile` là multi-stage image, có FFmpeg/ffprobe và chạy user non-root UID 10001.
+- `backend/Fookbase.Src/Dockerfile` là multi-stage image, có FFmpeg/ffprobe và chạy user non-root UID 10001.
 - Compose giữ named volume cho PostgreSQL (`identity-postgres-data`) và Data Protection (`data-protection-keys`); hai volume này phải sống qua recreation container.
 - API không ghi media vào filesystem container. Browser upload trực tiếp bằng Cloudinary signed form; asset dùng authenticated delivery.
 - `/health/live` chỉ xác nhận process còn sống. `/health/ready` kiểm tra PostgreSQL và Cloudinary, nên chỉ endpoint này dùng để nhận traffic.
@@ -121,7 +121,7 @@ Image runtime không có EF tool; dùng SDK container hoặc deployment job có 
 docker run --rm --network <compose-network> \
   -e ConnectionStrings__FookbaseDatabase="$ConnectionStrings__FookbaseDatabase" \
   -v "$PWD:/workspace" -w /workspace mcr.microsoft.com/dotnet/sdk:10.0 \
-  sh -lc 'dotnet tool restore && dotnet tool run dotnet-ef database update --project backend/Fookbase.Src/Main --startup-project backend/Fookbase.Src/Main'
+  sh -lc 'dotnet tool restore && dotnet tool run dotnet-ef database update --project backend/Fookbase.Src --startup-project backend/Fookbase.Src'
 ```
 
 Sau migration, start/recreate API rồi kiểm tra:

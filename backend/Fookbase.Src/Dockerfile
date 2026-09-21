@@ -2,11 +2,11 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY backend/Directory.Build.props backend/Directory.Build.props
-COPY backend/Fookbase.Src/Main/Fookbase.Api.csproj backend/Fookbase.Src/Main/
-RUN dotnet restore backend/Fookbase.Src/Main/Fookbase.Api.csproj
+COPY backend/Fookbase.Src/Fookbase.Api.csproj backend/Fookbase.Src/
+RUN dotnet restore backend/Fookbase.Src/Fookbase.Api.csproj
 
-COPY backend/Fookbase.Src/Main/ backend/Fookbase.Src/Main/
-RUN dotnet publish backend/Fookbase.Src/Main/Fookbase.Api.csproj \
+COPY backend/Fookbase.Src/ backend/Fookbase.Src/
+RUN dotnet publish backend/Fookbase.Src/Fookbase.Api.csproj \
     --configuration Release \
     --no-restore \
     --output /app/publish \

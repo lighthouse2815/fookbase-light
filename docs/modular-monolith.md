@@ -4,7 +4,7 @@
 
 Fookbase chạy trong một tiến trình ASP.NET Core tên `Fookbase.Api` trên cổng 5000. Identity, Users, Friends, Feed, Groups, Messages, Notifications, Posts và Media là các mô-đun mã nguồn riêng biệt, nhưng không được triển khai thành các dịch vụ độc lập.
 
-`Fookbase.Api` là điểm khởi tạo và cấu hình duy nhất của backend. Ứng dụng đăng ký `FookbaseDbContext` một lần, sau đó đăng ký từng mô-đun qua `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddFeedModule`, `AddGroupsModule`, `AddMessagesModule`, `AddNotificationsModule`, `AddPostsModule` và `AddMediaModule`. Mã nguồn của các mô-đun nằm trong `backend/Fookbase.Src/Main/Code/Modules/<Module>`; endpoint HTTP và cấu hình entity vẫn nằm trong thư mục của mô-đun tương ứng. Migration đang dùng và bản chụp mô hình dữ liệu nằm trong `Code/Persistence/Migrations`.
+`Fookbase.Api` là điểm khởi tạo và cấu hình duy nhất của backend. Ứng dụng đăng ký `FookbaseDbContext` một lần, sau đó đăng ký từng mô-đun qua `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddFeedModule`, `AddGroupsModule`, `AddMessagesModule`, `AddNotificationsModule`, `AddPostsModule` và `AddMediaModule`. Mã nguồn của các mô-đun nằm trong `backend/Fookbase.Src/Code/Modules/<Module>`; endpoint HTTP và cấu hình entity vẫn nằm trong thư mục của mô-đun tương ứng. Migration đang dùng và bản chụp mô hình dữ liệu nằm trong `Code/Persistence/Migrations`.
 
 Khi chạy, ứng dụng phụ thuộc vào PostgreSQL và Cloudinary. Hệ thống không có API gateway, RabbitMQ, cơ chế tìm dịch vụ, giao dịch phân tán hoặc giao tiếp HTTP giữa các mô-đun.
 

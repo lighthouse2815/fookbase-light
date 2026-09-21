@@ -26,7 +26,7 @@ Fookbase.Api :5000
       `-- Cloudinary
 ```
 
-Backend chỉ có một entry point: `backend/Fookbase.Src/Main`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
+Backend chỉ có một entry point: `backend/Fookbase.Src`. Các route cũ dưới `/api/*` được giữ nguyên nên frontend/client không cần đổi base URL.
 
 Toàn bộ persistence runtime dùng duy nhất `FookbaseDbContext` và PostgreSQL database `fookbase_db`. Module vẫn giữ entity, configuration và service trong folder riêng; chỉ DbContext và migration history được hợp nhất.
 
@@ -104,15 +104,15 @@ Nếu muốn chạy thủ công, vẫn đứng tại thư mục gốc và nạp 
 set -a
 source .env
 set +a
-Database__ApplyMigrationsOnStartup=true dotnet run --project backend/Fookbase.Src/Main/Fookbase.Api.csproj --launch-profile http
+Database__ApplyMigrationsOnStartup=true dotnet run --project backend/Fookbase.Src/Fookbase.Api.csproj --launch-profile http
 ```
 
-Khi đứng trong `backend/Fookbase.Src/Main`, thay `source .env` bằng
-`source ../../../.env` rồi chạy `Database__ApplyMigrationsOnStartup=true dotnet run`.
+Khi đứng trong `backend/Fookbase.Src`, thay `source .env` bằng
+`source ../../.env` rồi chạy `Database__ApplyMigrationsOnStartup=true dotnet run`.
 
 API chạy tại <http://localhost:5000>. Dùng các lệnh `curl` ở trên trong terminal khác để kiểm tra.
-Bạn cũng có thể chạy script từ thư mục `backend/Fookbase.Src/Main` bằng
-`bash ../../../scripts/run-backend.sh`.
+Bạn cũng có thể chạy script từ thư mục `backend/Fookbase.Src` bằng
+`bash ../../scripts/run-backend.sh`.
 
 Để mở quyền quản trị cho một tài khoản development, đặt `Admin__BootstrapEmail` thành email
 của tài khoản đó trước khi đăng ký hoặc đăng nhập. Hệ thống sẽ tự gán role `Admin` vào lần
@@ -413,11 +413,11 @@ endpoint nào truy cập `DbContext` trực tiếp hoặc điều phối nhiều
 
 ```bash
 dotnet tool run dotnet-ef migrations add MigrationName \
-  --project backend/Fookbase.Src/Main \
-  --startup-project backend/Fookbase.Src/Main \
+  --project backend/Fookbase.Src \
+  --startup-project backend/Fookbase.Src \
   --context FookbaseDbContext \
   --output-dir Code/Persistence/Migrations
 ```
 
-Runtime migration và snapshot nằm ở `backend/Fookbase.Src/Main/Code/Persistence/Migrations`.
+Runtime migration và snapshot nằm ở `backend/Fookbase.Src/Code/Persistence/Migrations`.
 Xem [docs/migration-history.md](docs/migration-history.md) để biết quy ước migration hiện hành.

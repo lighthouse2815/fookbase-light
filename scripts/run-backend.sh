@@ -15,4 +15,4 @@ set +a
 
 export Database__ApplyMigrationsOnStartup=true
 cd "${repository_root}"
-exec dotnet run --project backend/Fookbase.Src/Main/Fookbase.Api.csproj --launch-profile http "$@"
+exec dotnet run --project backend/Fookbase.Src/Fookbase.Api.csproj --launch-profile http "$@"

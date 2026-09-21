@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-migrations_directory="${repository_root}/backend/Fookbase.Src/Main/Code/Persistence/Migrations"
+migrations_directory="${repository_root}/backend/Fookbase.Src/Code/Persistence/Migrations"
 migration_time_zone="${MIGRATION_TIME_ZONE:-Asia/Ho_Chi_Minh}"
 now="$(TZ="${migration_time_zone}" date +%Y%m%d%H%M%S)"
 
@@ -32,10 +32,10 @@ if [[ "${CHECK_EF_MODEL:-false}" == "true" ]]; then
   # Integration tests run in a container and can leave project.assets.json
   # pointing at its /workspace NuGet cache. Restore again on this runner so
   # dotnet-ef resolves packages from the current environment.
-  dotnet restore backend/Fookbase.Src/Main/Fookbase.Api.csproj
+  dotnet restore backend/Fookbase.Src/Fookbase.Api.csproj
   dotnet tool run dotnet-ef migrations has-pending-model-changes \
-    --project backend/Fookbase.Src/Main/Fookbase.Api.csproj \
-    --startup-project backend/Fookbase.Src/Main/Fookbase.Api.csproj
+    --project backend/Fookbase.Src/Fookbase.Api.csproj \
+    --startup-project backend/Fookbase.Src/Fookbase.Api.csproj
 fi
 
 printf 'EF migration IDs are unique, chronological, and not future-dated.\n'

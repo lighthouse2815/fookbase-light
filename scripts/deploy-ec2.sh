@@ -26,7 +26,7 @@ if sudo docker image inspect fookbase-light-api:production >/dev/null 2>&1; then
   sudo docker tag fookbase-light-api:production fookbase-light-api:previous
 fi
 
-sudo docker build -t fookbase-light-api:production -f backend/Fookbase.Src/Main/Dockerfile .
+sudo docker build -t fookbase-light-api:production -f backend/Fookbase.Src/Dockerfile .
 
 set -a
 # shellcheck disable=SC1090
@@ -41,7 +41,7 @@ printf '%s\n' "ConnectionStrings__FookbaseDatabase=$database_connection" > "$mig
 
 sudo docker run --rm --network fookbase-light_default --env-file "$migration_env_file" \
   -v "$app_dir:/workspace" -w /workspace mcr.microsoft.com/dotnet/sdk:10.0 \
-  sh -lc 'dotnet tool restore && dotnet restore backend/Fookbase.Src/Main/Fookbase.Api.csproj && dotnet tool run dotnet-ef database update --project backend/Fookbase.Src/Main --startup-project backend/Fookbase.Src/Main'
+  sh -lc 'dotnet tool restore && dotnet restore backend/Fookbase.Src/Fookbase.Api.csproj && dotnet tool run dotnet-ef database update --project backend/Fookbase.Src --startup-project backend/Fookbase.Src'
 
 compose up -d --no-deps --force-recreate api
 

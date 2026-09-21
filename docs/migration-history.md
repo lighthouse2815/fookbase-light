@@ -7,7 +7,7 @@ múi giờ khác.
 Hệ thống chỉ có một nguồn migration cho runtime:
 
 ```text
-backend/Fookbase.Src/Main/Code/Persistence/Migrations/
+backend/Fookbase.Src/Code/Persistence/Migrations/
 ```
 
 `FookbaseDbContext` bắt đầu bằng migration nền
