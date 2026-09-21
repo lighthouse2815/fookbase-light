@@ -12,7 +12,7 @@ services:
         condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__FookbaseDatabase: Host=postgres;Port=5432;Database=fookbase_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__FookbaseDatabase: Host=postgres;Port=5432;Database=${POSTGRES_DB:-fookbase_db};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Database__ApplyMigrationsOnStartup: "true"
       Jwt__Issuer: ${Jwt__Issuer:-Fookbase.Identity}
       Jwt__Audience: ${Jwt__Audience:-Fookbase.Clients}
@@ -78,7 +78,6 @@ services:
       - "5432:5432"
     volumes:
       - identity-postgres-data:/var/lib/postgresql/data
-      - ./infrastructure/postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-create-fookbase-database.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
