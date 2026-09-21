@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Api", "backend\Foo
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Api.IntegrationTests", "backend\Fookbase.Src\Tests\Fookbase.Api.IntegrationTests\Fookbase.Api.IntegrationTests.csproj", "{CC52DE17-3652-4697-A198-8E281F2D26CB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fookbase.Test", "backend\Fookbase.Test\Fookbase.Test.csproj", "{CC52DE17-3652-4697-A198-8E281F2D26CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

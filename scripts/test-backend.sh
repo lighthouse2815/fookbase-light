@@ -7,7 +7,7 @@ database_user="fookbase_test"
 database_password="fookbase_test_password"
 host_user="$(id -u):$(id -g)"
 
-test_project="backend/Fookbase.Src/Tests/Fookbase.Api.IntegrationTests/Fookbase.Api.IntegrationTests.csproj"
+test_project="backend/Fookbase.Test/Fookbase.Test.csproj"
 areas=(Identity Users Friends Messages Media Posts)
 
 cleanup() {
