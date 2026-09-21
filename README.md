@@ -178,7 +178,7 @@ dotnet build FookbaseLight.sln --no-restore
 bash scripts/test-backend.sh
 ```
 
-`scripts/test-backend.sh` là regression backend đầy đủ chuẩn: một project integration test chứa source trong thư mục `Code`; script lọc sáu nhóm theo namespace và chạy tuần tự trên PostgreSQL database riêng. Không dùng `dotnet test FookbaseLight.sln` làm full integration regression vì các nhóm dùng chung database có thể ảnh hưởng nhau khi chạy đồng thời. Direct solution test vẫn phù hợp cho kiểm tra không-integration có phạm vi rõ ràng.
+`scripts/test-backend.sh` là regression backend đầy đủ chuẩn: một project integration test chứa source trong `Code`, chia tiếp thành sáu thư mục `Identity`, `Users`, `Friends`, `Messages`, `Media` và `Posts`. Script lọc các nhóm theo namespace và chạy tuần tự trên PostgreSQL database riêng. Không dùng `dotnet test FookbaseLight.sln` làm full integration regression vì các nhóm dùng chung database có thể ảnh hưởng nhau khi chạy đồng thời. Direct solution test vẫn phù hợp cho kiểm tra không-integration có phạm vi rõ ràng.
 
 Mỗi frontend dùng npm và package-lock riêng. Kiểm tra đầy đủ frontend:
 
