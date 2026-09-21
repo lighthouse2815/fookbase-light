@@ -1,6 +1,6 @@
 # Photos & Albums V1
 
-`MediaAsset` vẫn là nguồn dữ liệu duy nhất của file ảnh trong MinIO. Album chỉ giữ `AlbumMedia` reference; không sao chép object.
+`MediaAsset` vẫn là nguồn metadata duy nhất của ảnh lưu trên Cloudinary. Album chỉ giữ `AlbumMedia` reference; không sao chép file ảnh.
 
 ## Album và riêng tư
 

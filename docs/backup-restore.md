@@ -1,8 +1,8 @@
 # Sao lưu và khôi phục
 
-Backup V1 gồm cả PostgreSQL metadata và object MinIO. Chúng không có distributed snapshot transaction, nên có một consistency window nhỏ. Ghi lại timestamp của hai backup, ưu tiên chạy gần nhau, và luôn diễn tập restore vào môi trường khác trước khi tin backup.
+Sao lưu PostgreSQL để bảo vệ tài khoản, bài viết và metadata media. Ảnh/video nằm trên Cloudinary nên bản dump PostgreSQL không chứa nội dung file. Hai nguồn dữ liệu không có snapshot chung; ghi lại thời điểm sao lưu và diễn tập khôi phục trước khi tin bản backup.
 
-Không đặt dump, object backup, `.env`, Data Protection keys hay credentials trong repository.
+Không đặt dump, bản sao media, `.env`, khóa Data Protection hay thông tin đăng nhập trong repository.
 
 ## PostgreSQL
 
@@ -27,33 +27,14 @@ docker compose exec -T postgres psql -U "$POSTGRES_USER" -d fookbase_restore_smo
 
 `--clean --if-exists` có thể thay schema/data của database đích; script không có default target và từ chối thiếu `--yes-restore`.
 
-## MinIO
+## Media trên Cloudinary
 
-`scripts/backup-minio.sh` dùng official `minio/mc` image để mirror object key nguyên vẹn. Bucket đích/source không bị đổi anonymous policy; bucket private vẫn private. Set endpoint theo network chứa MinIO:
+Sao lưu PostgreSQL không sao lưu ảnh/video trên Cloudinary. Cần có chính sách lưu bản sao media độc lập phù hợp với tài khoản Cloudinary đang dùng và bảo toàn public ID, loại tài nguyên và quyền phân phối `authenticated`. Repository hiện không có script xuất/khôi phục media Cloudinary; không xem bản dump PostgreSQL là bản backup đầy đủ của ứng dụng.
 
-```bash
-export MINIO_ENDPOINT=http://minio:9000
-export MINIO_ACCESS_KEY="$MINIO_ROOT_USER"
-export MINIO_SECRET_KEY="$MINIO_ROOT_PASSWORD"
-export MINIO_BUCKET=fookbase-media
-export MINIO_DOCKER_NETWORK=<compose-network>
-export MINIO_BACKUP_DIR=/srv/fookbase-minio-backups
-bash scripts/backup-minio.sh
-```
-
-Với Docker Linux và MinIO expose trên host có thể dùng `MINIO_DOCKER_NETWORK=host` cùng endpoint host. Khôi phục vào bucket khác trước để verify:
-
-```bash
-bash scripts/restore-minio.sh \
-  --source /srv/fookbase-minio-backups/fookbase-media \
-  --target-bucket fookbase-media-restore-smoke \
-  --yes-restore
-```
-
-Dùng `mc stat` hoặc download một object đại diện để xác nhận object key, size và content. Sau disaster recovery, restore MinIO bucket chính rồi PostgreSQL (hoặc ngược lại trong maintenance window), start API, check `/health/ready`, login một user mẫu, đọc post mẫu và presign/download media mẫu.
+Sau khi khôi phục, kiểm tra `/health/ready`, đăng nhập bằng tài khoản kiểm thử, đọc một bài viết có media và xác nhận URL đọc có chữ ký còn truy cập được.
 
 ## Retention và key ring
 
 Điểm bắt đầu thực tế: backup hàng ngày, giữ 14 daily gần nhất và 8 weekly; copy sang storage/host khác. Chỉ tự động xóa sau khi retention, ownership và restore verification đã được review. Backup `data-protection-keys` cùng các backup ứng dụng: mất key ring làm cursor/token được bảo vệ trước đó không còn đọc được sau recreation.
 
-Mỗi quý nên diễn tập: database user + post representative → `pg_dump` → restore DB khác → query assertion; object representative → mirror → restore bucket khác → compare content. Kết quả diễn tập phải được ghi vào runbook vận hành, không lưu dữ liệu test trong Git.
+Mỗi quý nên diễn tập: chọn tài khoản và bài viết đại diện → `pg_dump` → khôi phục vào database khác → kiểm tra dữ liệu; đồng thời kiểm tra khả năng truy xuất và quy trình khôi phục media Cloudinary theo chính sách sao lưu đã chọn. Ghi kết quả vào runbook vận hành, không lưu dữ liệu test trong Git.

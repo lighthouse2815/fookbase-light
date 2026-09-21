@@ -354,7 +354,7 @@ Album có loại `custom`, `profilePictures`, `coverPhotos`, `timelinePhotos`; a
 | GET | `/api/media/{mediaId}` | Bearer JWT, chủ sở hữu |
 | DELETE | `/api/media/{mediaId}` | Bearer JWT, chủ sở hữu |
 
-Upload dùng presigned PUT trực tiếp tới bucket private. Posts lấy read URL bằng lời gọi C# trực tiếp tới Media module; endpoint HTTP nội bộ và shared service token cũ đã được loại bỏ.
+Upload dùng biểu mẫu POST có chữ ký trực tiếp tới Cloudinary với kiểu phân phối `authenticated`. Posts lấy URL đọc có chữ ký bằng lời gọi C# trực tiếp tới Media module; endpoint HTTP nội bộ và shared service token cũ đã được loại bỏ.
 
 ### Admin
 

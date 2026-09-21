@@ -15,9 +15,8 @@ container and has exactly one `PostMedia` video. Group Reels are not supported.
 - `GET /api/reels?cursor=&limit=` is the authenticated, deterministic
   `CreatedAtUtc DESC, Id DESC` browsing feed. It includes own Reels, visible
   friend Reels, and public discovery Reels; Home Feed V2 remains Standard-only.
-- `GET /api/reels/{id}/video/access` and `/poster/access` issue short-lived,
-  authorized MinIO URLs. S3/MinIO signed GET requests support browser Range
-  requests, so seeking does not require a full download.
+- `GET /api/reels/{id}/video/access` and `/poster/access` check access before
+  issuing signed Cloudinary URLs for playback and poster display.
 - `POST /api/reels/{id}/views` stores one bounded meaningful watch signal. It
   requires an authenticated viewer and rejects zero, negative, or
   longer-than-video durations.
@@ -32,7 +31,7 @@ Images retain `PendingUpload -> Ready`. A validated MP4/WebM video follows:
 
 `PendingUpload -> Processing -> Ready`
 
-After HTTP completion validates the actual MinIO size and initial signature, it
+After HTTP completion validates Cloudinary metadata and the initial file signature, it
 only stores a durable `MediaProcessingJobs` row; it never runs FFmpeg in the
 request. The BackgroundService claims jobs, downloads to a generated temporary
 directory, retries bounded failures and records a generic user-safe failure.
@@ -69,7 +68,7 @@ timeout and is killed as a process tree on timeout.
 
 ## Storage and deletion
 
-All originals, processed MP4s and posters remain in the private bucket. A
+Originals, processed MP4s and posters use authenticated Cloudinary delivery. A
 live Reel creates a normal `MediaReference`, so `DELETE /api/media/{id}` is
 conflict-protected until the Reel is deleted. Deleting an unreferenced processed
 video appends durable `ObjectDeletions` rows for original, normalized video and

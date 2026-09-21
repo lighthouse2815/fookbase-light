@@ -10,16 +10,14 @@ Khi frontend và API dùng domain khác nhau, đặt explicit HTTPS origin cho c
 Cors__AllowedOrigins__0=https://app.example.com
 Cors__AllowedOrigins__1=https://admin.example.com
 Cors__AllowedOrigins__2=https://zola-light.example.com
-MINIO_CORS_ALLOWED_ORIGIN=https://app.example.com
-Minio__Endpoint=storage.example.com
-Minio__PublicEndpoint=storage.example.com
-Minio__Secure=true
-Minio__BucketInitializationEnabled=false
+Cloudinary__CloudName=<cloud-name>
+Cloudinary__ApiKey=<api-key>
+Cloudinary__ApiSecret=<api-secret>
 ```
 
 `VITE_API_BASE_URL` phải là origin HTTPS của API nếu frontend không reverse-proxy `/api` và `/hubs` về cùng domain. Đặt `VITE_ZOLA_LIGHT_URL` khi build main web và `VITE_WEB_URL` khi build Zola Light; các biến này chỉ chứa public URL, không chứa token hoặc credential.
 
-Khi API và MinIO cùng khởi động, bootstrap bucket sẽ retry 5 lần với khoảng cách 2 giây. Điều chỉnh `Minio__BucketInitializationMaxAttempts` và `Minio__BucketInitializationRetrySeconds` nếu storage cần thời gian sẵn sàng lâu hơn.
+Cloudinary phải cho phép các origin frontend thực hiện upload trực tiếp bằng biểu mẫu có chữ ký.
 
 ## Docker image và local stack
 
@@ -42,8 +40,8 @@ curl -fsS http://localhost:5000/health/ready
 Compose local đặt `Database__ApplyMigrationsOnStartup=true` để một fresh
 `fookbase_db` có schema ngay khi start. Với production, giữ giá trị này `false` và chạy
 `dotnet-ef database update` như một deployment step có kiểm soát trước khi đổi traffic. Liveness
-không phụ thuộc dependency; readiness chỉ trả thành công sau khi PostgreSQL và bucket MinIO
-private đã sẵn sàng.
+không phụ thuộc dịch vụ ngoài; readiness chỉ trả thành công sau khi PostgreSQL và Cloudinary
+sẵn sàng.
 
 ## Data Protection key ring
 
@@ -73,7 +71,7 @@ Lệnh cuối phải trả HTTP 200. Không chạy `docker compose down -v` gi�
 
 ## Reverse proxy và TLS
 
-Đặt API, MinIO API và frontend phía sau reverse proxy có chứng chỉ TLS. Proxy cần chuyển tiếp WebSocket cho `/hubs/messages` và `/hubs/notifications`; không mở trực tiếp PostgreSQL, MinIO console hoặc MinIO API ra Internet. Chỉ proxy mới được kết nối tới các service nội bộ.
+Đặt API và frontend phía sau reverse proxy có chứng chỉ TLS. Proxy cần chuyển tiếp WebSocket cho `/hubs/messages` và `/hubs/notifications`; không mở trực tiếp PostgreSQL ra Internet. Frontend upload trực tiếp lên Cloudinary qua HTTPS.
 
 Đặt `AllowedHosts` thành host API thực tế thay vì `*`. Không bật HTTPS redirection trong container API khi proxy chưa gửi/cấu hình forwarded headers chính xác, vì điều đó gây redirect loop.
 
@@ -94,11 +92,11 @@ BACKUP_DIR=/srv/fookbase-backups bash scripts/backup-postgres.sh
 
 Lưu backup ở vị trí tách biệt khỏi host chạy ứng dụng và kiểm tra khôi phục định kỳ. Khôi phục một database vào database trống bằng `pg_restore --clean --if-exists --dbname=<connection-string> <file.dump>`; chỉ chạy lệnh này sau khi xác nhận đúng database đích vì nó ghi đè schema/dữ liệu hiện có.
 
-Database backup không chứa ảnh/video. Bật versioning hoặc replication/backup định kỳ cho bucket private của MinIO/S3 theo chính nhà cung cấp storage, và kiểm tra khôi phục cả database lẫn object storage cùng nhau.
+Database backup không chứa ảnh/video trên Cloudinary. Xem [hướng dẫn sao lưu và khôi phục](backup-restore.md) để quản lý riêng hai nguồn dữ liệu.
 
 ## Trước khi mở cho người dùng
 
 1. Chạy migration trên bản sao staging và kiểm tra `/health`.
 2. Kiểm tra đăng nhập, upload ảnh/video, tin nhắn SignalR và CORS từ domain thật.
 3. Tạo backup ban đầu và thử khôi phục nó vào môi trường tách biệt.
-4. Giới hạn quyền bucket ở private; frontend chỉ dùng presigned URL.
+4. Kiểm tra media dùng phân phối `authenticated`; frontend upload bằng biểu mẫu POST có chữ ký và chỉ nhận URL đọc sau khi API kiểm tra quyền.

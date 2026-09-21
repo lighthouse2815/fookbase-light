@@ -41,7 +41,7 @@ expiration alone never deletes media.
 - `POST /api/stories/{id}/reply` sends a normal Direct Messenger message with
   `Message.StoryId`; existing friend and block rules still apply.
 - `GET /api/stories/{id}/media/access` and `/media/poster/access` issue
-  short-lived private MinIO URLs. Only an author using Archive can access
+  authorized signed Cloudinary URLs. Only an author using Archive can access
   expired media.
 - `DELETE /api/stories/{id}` is author-only and releases the media reference.
 - `GET /api/stories/archive?cursor=&limit=` returns the owner's expired,

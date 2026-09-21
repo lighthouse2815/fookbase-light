@@ -6,7 +6,7 @@ Fookbase runs as one ASP.NET Core process, `Fookbase.Api`, on port 5000. Identit
 
 `Fookbase.Api` is the sole composition root and the only backend project. It registers `FookbaseDbContext` once, then registers each module through `AddIdentityModule`, `AddUsersModule`, `AddFriendsModule`, `AddFeedModule`, `AddGroupsModule`, `AddMessagesModule`, `AddNotificationsModule`, `AddPostsModule`, and `AddMediaModule`. Module code is organized under `backend/Fookbase.Src/Main/Code/Modules/<Module>`; HTTP endpoints and entity configurations remain in those module folders. The runtime migration and snapshot live under `Code/Persistence/Migrations`.
 
-External local dependencies are PostgreSQL and MinIO. There is no API gateway, RabbitMQ, service discovery, distributed transaction, or HTTP communication between application modules.
+Runtime dependencies are PostgreSQL and Cloudinary. There is no API gateway, RabbitMQ, service discovery, distributed transaction, or HTTP communication between application modules.
 
 ## Module boundaries and communication
 
@@ -58,10 +58,10 @@ policy is documented in [migration-history.md](migration-history.md).
 
 There are no outbox or inbox implementations in the running application. The only retained
 durable workflow is `ObjectDeletions`, a Media table consumed by `ObjectDeletionWorker`; it
-records retryable MinIO deletion work and is unrelated to inter-module coordination.
+records retryable Cloudinary deletion work and is unrelated to inter-module coordination.
 
 ## Compatibility
 
 All public routes remain under `/api/auth`, `/api/users`, `/api/friends`, `/api/feed`, `/api/groups`, `/api/messages`, `/api/notifications`, `/api/posts`, and `/api/media`, served by `http://localhost:5000`; SignalR hubs are served at `/hubs/messages` and `/hubs/notifications`. JWT and ASP.NET Core Identity are unchanged; endpoints continue to take the actor identifier from the JWT `sub` claim.
 
-Media remains private in MinIO. Clients upload with presigned PUT URLs; PostsUseCase obtains signed read URLs through the in-process Media service, and ownership/reference/lifecycle/signature validation remain in Media.
+Media uses authenticated delivery in Cloudinary. Clients upload with signed POST forms; PostsUseCase obtains signed read URLs through the in-process Media service, and ownership/reference/lifecycle/signature validation remain in Media.
