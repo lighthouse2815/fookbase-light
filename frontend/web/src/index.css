@@ -375,6 +375,22 @@ button:disabled,
   padding-left: 1.35rem;
 }
 
+.ai-markdown ul {
+  list-style: disc;
+}
+
+.ai-markdown ol {
+  list-style: decimal;
+}
+
+.ai-markdown ul ul {
+  list-style: circle;
+}
+
+.ai-markdown ol ol {
+  list-style: lower-alpha;
+}
+
 .ai-markdown li + li {
   margin-top: 0.25rem;
 }
