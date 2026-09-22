@@ -7,5 +7,7 @@ services:
     mem_limit: 768m
 
   postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
     cpus: 1.00
     mem_limit: 768m

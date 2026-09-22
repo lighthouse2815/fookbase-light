@@ -16,6 +16,7 @@ Không chạy nhiều replica API trong V1. SignalR và Zola Light presence là 
 - API không ghi media vào filesystem container. Browser upload trực tiếp bằng Cloudinary signed form; asset dùng authenticated delivery.
 - `/health/live` chỉ xác nhận process còn sống. `/health/ready` kiểm tra PostgreSQL và Cloudinary, nên chỉ endpoint này dùng để nhận traffic.
 - Swagger UI và OpenAPI chỉ bật ở môi trường Development/Testing; production không công khai `/swagger`. Đây chỉ là tài liệu/test API, không thay thế health check.
+- PostgreSQL chỉ bind vào `127.0.0.1` trên EC2. Khi cần truy cập từ máy cá nhân, dùng SSH tunnel; không mở cổng `5432` ra Internet.
 
 ## Chuẩn bị cấu hình
 
