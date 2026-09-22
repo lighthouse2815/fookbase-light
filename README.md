@@ -138,15 +138,21 @@ Fookbase Web có trang **Trợ lý AI** tại `/ai-chat`. Tính năng mặc đ�
 
 ```bash
 AiChat__Enabled=true
-AiChat__ApiKey=<openai-api-key>
-# Tùy chọn; mặc định là gpt-5-mini.
-AiChat__Model=gpt-5-mini
+AiChat__Groq__ApiKey=<groq-api-key>
+AiChat__Gemini__ApiKey=<gemini-api-key>
+AiChat__OpenRouter__ApiKey=<openrouter-api-key>
 ```
 
+Provider nào không có key sẽ được bỏ qua. Khi một provider đang hết quota (429), gặp lỗi 5xx,
+timeout hoặc không kết nối được, API thử provider tiếp theo theo thứ tự **Groq → Gemini →
+OpenRouter**. Lỗi key hay request không hợp lệ sẽ không chuyển provider để tránh che giấu lỗi
+cấu hình. Model mặc định lần lượt là `openai/gpt-oss-120b`, `gemini-2.5-flash-lite` và
+`openrouter/free`; có thể đổi bằng các biến `AiChat__<Provider>__Model` trong `.env`.
+
 Khóa tuyệt đối không được đặt trong `VITE_*` hay source frontend. API yêu cầu người dùng đăng
-nhập, giới hạn mặc định 10 lượt gửi/phút mỗi tài khoản, giữ tối đa 10 lượt ngữ cảnh trên client
-và gửi `store: false` cho Responses API. Có thể điều chỉnh các giới hạn bằng biến
-`RateLimiting__AiChat__*` và `AiChat__Maximum*` trong `.env`.
+nhập, giới hạn mặc định 10 lượt gửi/phút mỗi tài khoản và giữ tối đa 10 lượt ngữ cảnh trên client.
+Có thể điều chỉnh các giới hạn bằng biến `RateLimiting__AiChat__*` và `AiChat__Maximum*` trong
+`.env`.
 
 Chạy web Admin riêng:
 

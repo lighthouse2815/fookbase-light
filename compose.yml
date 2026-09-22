@@ -31,6 +31,15 @@ services:
       GoogleAuthentication__WebBaseUrl: ${GoogleAuthentication__WebBaseUrl:-}
       GoogleAuthentication__ZolaLightBaseUrl: ${GoogleAuthentication__ZolaLightBaseUrl:-}
       AiChat__Enabled: ${AiChat__Enabled:-false}
+      AiChat__Groq__ApiKey: ${AiChat__Groq__ApiKey:-}
+      AiChat__Groq__ApiBaseUrl: ${AiChat__Groq__ApiBaseUrl:-https://api.groq.com/openai/v1/}
+      AiChat__Groq__Model: ${AiChat__Groq__Model:-openai/gpt-oss-120b}
+      AiChat__Gemini__ApiKey: ${AiChat__Gemini__ApiKey:-}
+      AiChat__Gemini__ApiBaseUrl: ${AiChat__Gemini__ApiBaseUrl:-https://generativelanguage.googleapis.com/}
+      AiChat__Gemini__Model: ${AiChat__Gemini__Model:-gemini-2.5-flash-lite}
+      AiChat__OpenRouter__ApiKey: ${AiChat__OpenRouter__ApiKey:-}
+      AiChat__OpenRouter__ApiBaseUrl: ${AiChat__OpenRouter__ApiBaseUrl:-https://openrouter.ai/api/v1/}
+      AiChat__OpenRouter__Model: ${AiChat__OpenRouter__Model:-openrouter/free}
       AiChat__ApiKey: ${AiChat__ApiKey:-}
       AiChat__ApiBaseUrl: ${AiChat__ApiBaseUrl:-https://api.openai.com/}
       AiChat__Model: ${AiChat__Model:-gpt-5-mini}

@@ -10,17 +10,25 @@ public static class DependencyInjection
     public static IServiceCollection AddAiInfrastructure(this IServiceCollection services, AiChatOptions options)
     {
         services.AddSingleton(options);
-        services.AddHttpClient<AiChatService>((serviceProvider, client) =>
+        services.AddHttpClient();
+        foreach (var provider in options.GetConfiguredProviders())
         {
-            var chatOptions = serviceProvider.GetRequiredService<AiChatOptions>();
-            client.BaseAddress = new Uri(chatOptions.ApiBaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(chatOptions.RequestTimeoutSeconds);
-            if (chatOptions.Enabled)
+            services.AddHttpClient(provider.HttpClientName, client =>
             {
+                client.BaseAddress = new Uri(provider.Options.ApiBaseUrl.TrimEnd('/') + "/");
+                client.Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
+                if (provider.Protocol == AiChatProviderProtocol.Gemini)
+                {
+                    client.DefaultRequestHeaders.Add("x-goog-api-key", provider.Options.ApiKey);
+                    return;
+                }
+
                 client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", chatOptions.ApiKey);
-            }
-        });
+                    new AuthenticationHeaderValue("Bearer", provider.Options.ApiKey);
+            });
+        }
+
+        services.AddScoped<AiChatService>();
         return services;
     }
 }
