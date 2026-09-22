@@ -87,6 +87,7 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
   const fallbackDisplayName = session!.user.username.includes('@') ? 'Tài khoản của bạn' : session!.user.username
   const [displayName, setDisplayName] = useState(fallbackDisplayName)
   const [shortcuts, setShortcuts] = useState<Group[]>([])
+  const [failedShortcutCoverIds, setFailedShortcutCoverIds] = useState<Set<string>>(new Set())
   const initials = displayName.slice(0, 2).toUpperCase()
 
   useEffect(() => {
@@ -97,6 +98,7 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
         setAvatarUrl(profile.avatarUrl)
         setDisplayName(profile.displayName)
         setShortcuts(groups.items.slice(0, 5))
+        setFailedShortcutCoverIds(new Set())
       })
       .catch(() => undefined)
 
@@ -132,10 +134,14 @@ export default function Sidebar({ alignWithCenteredFeed = false }: { alignWithCe
       {shortcuts.length > 0 && <section className="border-t border-border py-3">
         <h2 className="px-2 pb-1 text-[17px] font-bold text-text-muted">Lối tắt của bạn</h2>
         <div className="flex flex-col gap-0.5">
-          {shortcuts.map((group) => <Link key={group.id} to={`/groups/${group.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2 no-underline transition-colors hover:bg-surface-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2 text-base text-text">{group.coverUrl ? <img src={group.coverUrl} alt="" className="h-full w-full object-cover" /> : '👥'}</span>
-            <span className="line-clamp-2 text-[15px] font-semibold leading-5 text-text">{group.name}</span>
-          </Link>)}
+          {shortcuts.map((group) => {
+            const coverUrl = group.coverUrl && !failedShortcutCoverIds.has(group.id) ? resolveProfileImageUrl(group.coverUrl) : null
+
+            return <Link key={group.id} to={`/groups/${group.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2 no-underline transition-colors hover:bg-surface-2">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2 text-base text-text">{coverUrl ? <img src={coverUrl} alt="" className="h-full w-full object-cover" onError={() => setFailedShortcutCoverIds((current) => new Set(current).add(group.id))} /> : '👥'}</span>
+              <span className="line-clamp-2 text-[15px] font-semibold leading-5 text-text">{group.name}</span>
+            </Link>
+          })}
         </div>
       </section>}
 
