@@ -341,6 +341,65 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task Updating_group_cover_creates_an_update_post_with_the_new_image()
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var group = await CreateGroupAsync(owner, "public");
+        var mediaId = await AddReadyMediaAsync(owner);
+        using var client = CreateAuthenticatedClient(owner);
+
+        var updated = await client.PatchAsJsonAsync($"/api/groups/{group.Id}", new
+        {
+            name = group.Name,
+            description = group.Description,
+            privacy = group.Privacy,
+            coverMediaId = mediaId
+        });
+        var posts = await ReadAsync<GroupCursorPageResponse<PostResponse>>(
+            await client.GetAsync($"/api/groups/{group.Id}/posts"));
+
+        Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
+        var coverUpdate = Assert.Single(posts.Items);
+        Assert.Equal(Post.CoverUpdatedPostContent, coverUpdate.Content);
+        Assert.Equal(owner, coverUpdate.AuthorUserId);
+        Assert.Equal("group", coverUpdate.ContainerType);
+        Assert.Equal(new[] { mediaId }, coverUpdate.MediaIds);
+    }
+
+    [Fact]
+    public async Task Removing_group_cover_does_not_create_an_update_post_when_removal_overrides_a_media_id()
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var group = await CreateGroupAsync(owner, "public");
+        var initialMediaId = await AddReadyMediaAsync(owner);
+        var ignoredMediaId = await AddReadyMediaAsync(owner);
+        using var client = CreateAuthenticatedClient(owner);
+
+        var initialCover = await client.PatchAsJsonAsync($"/api/groups/{group.Id}", new
+        {
+            name = group.Name,
+            description = group.Description,
+            privacy = group.Privacy,
+            coverMediaId = initialMediaId
+        });
+        var removed = await client.PatchAsJsonAsync($"/api/groups/{group.Id}", new
+        {
+            name = group.Name,
+            description = group.Description,
+            privacy = group.Privacy,
+            coverMediaId = ignoredMediaId,
+            removeCover = true
+        });
+        var updated = await ReadAsync<GroupResponse>(removed);
+        var posts = await ReadAsync<GroupCursorPageResponse<PostResponse>>(
+            await client.GetAsync($"/api/groups/{group.Id}/posts"));
+
+        Assert.Equal(HttpStatusCode.OK, initialCover.StatusCode);
+        Assert.Null(updated.CoverUrl);
+        Assert.Equal(new[] { initialMediaId }, Assert.Single(posts.Items).MediaIds);
+    }
+
+    [Fact]
     public async Task Group_rules_follow_group_privacy_and_owner_or_admin_management()
     {
         var users = await CreateUsersAsync(3);
