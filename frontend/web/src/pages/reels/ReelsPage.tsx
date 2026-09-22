@@ -4,7 +4,7 @@ import { ApiError } from '../../api/client'
 import { mediaApi, type Media } from '../../api/media'
 import { postsApi, type Comment } from '../../api/posts'
 import { reelsApi, type Reel, type ReelFeedMode } from '../../api/reels'
-import { usersApi } from '../../api/users'
+import { resolveProfileImageUrl, usersApi } from '../../api/users'
 import TextWithReferences from '../../shared/components/TextWithReferences'
 import ShareDialog from '../feed/components/ShareDialog'
 import { Mascot } from 'page-mascot'
@@ -279,7 +279,7 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
         <button type="button" onClick={() => setIsMuted((current) => !current)} className="absolute left-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full border-0 bg-black/45 text-lg text-white cursor-pointer" aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}>{isMuted ? '🔇' : '🔊'}</button>
         <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/95 via-black/55 to-transparent px-4 pb-3 pt-24 text-white pointer-events-none">
           <div className="flex items-end gap-3 pointer-events-auto">
-            <div className="h-10 w-10 shrink-0 rounded-full bg-primary text-center text-xs font-bold leading-10">{initial}</div>
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary text-center text-xs font-bold leading-10">{reel.author.avatarUrl ? <img src={resolveProfileImageUrl(reel.author.avatarUrl)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initial}</div>
             <div className="min-w-0 flex-1"><p className="font-semibold">{reel.author.displayName} <button type="button" onClick={() => void followAuthor()} disabled={isFollowingAuthor} className="ml-1 rounded border border-white/60 bg-transparent px-1.5 py-0.5 text-[11px] font-bold text-white cursor-pointer disabled:opacity-70">{isFollowingAuthor ? 'Đã theo dõi' : 'Theo dõi'}</button></p>{reel.caption && <TextWithReferences content={reel.caption} mentions={reel.mentions} className="mt-1 whitespace-pre-wrap text-sm leading-relaxed" />}<p className="mt-2 text-xs text-white/70">{reel.viewCount.toLocaleString()} lượt xem</p></div>
           </div>
           <input aria-label="Tiến trình Reel" type="range" min="0" max={reel.video.durationMs} value={Math.min(currentMs, reel.video.durationMs)} onChange={(event) => { const next = Number(event.target.value); if (videoRef.current) videoRef.current.currentTime = next / 1000; setCurrentMs(next) }} className="mt-3 w-full accent-primary pointer-events-auto" />
