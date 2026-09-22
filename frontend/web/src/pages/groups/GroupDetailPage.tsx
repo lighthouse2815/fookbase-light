@@ -249,6 +249,9 @@ export default function GroupDetailPage() {
         coverMediaId,
       })
       setGroup(updated)
+      const postPage = await groupsApi.getPosts(group.id)
+      setPosts(postPage.items)
+      setPostsCursor(postPage.nextCursor)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật ảnh bìa nhóm.')
     }
