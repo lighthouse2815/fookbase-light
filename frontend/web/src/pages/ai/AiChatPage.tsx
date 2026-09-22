@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import ReactMarkdown, { type Components } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { aiApi, type AiChatMessage } from '../../api/ai'
 import { ApiError } from '../../api/client'
 
@@ -7,6 +9,17 @@ const suggestions = [
   'Viết một caption ngắn cho bài đăng du lịch.',
   'Giải thích một chủ đề theo cách dễ hiểu.',
 ]
+
+const markdownComponents: Components = {
+  a: ({ children, href, node: _node, ...props }) => (
+    <a href={href} target="_blank" rel="noreferrer" {...props}>{children}</a>
+  ),
+  table: ({ children, node: _node, ...props }) => (
+    <div className="ai-markdown-table" role="region" aria-label="Bảng trong câu trả lời" tabIndex={0}>
+      <table {...props}>{children}</table>
+    </div>
+  ),
+}
 
 export default function AiChatPage() {
   const [messages, setMessages] = useState<AiChatMessage[]>([])
@@ -78,9 +91,19 @@ export default function AiChatPage() {
           </div>}
 
           {messages.map((chatMessage, index) => <article key={`${chatMessage.role}-${index}`} className={`flex ${chatMessage.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 leading-6 ${chatMessage.role === 'user' ? 'rounded-br-md bg-primary text-white' : 'rounded-bl-md bg-surface-2 text-text'}`}>
-              {chatMessage.content}
-            </div>
+            {chatMessage.role === 'user' ? (
+              <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-primary px-4 py-3 leading-6 text-white">
+                {chatMessage.content}
+              </div>
+            ) : (
+              <div className="max-w-[92%] rounded-2xl rounded-bl-md bg-surface-2 px-4 py-3 text-text sm:max-w-[88%]">
+                <div className="ai-markdown">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    {chatMessage.content}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            )}
           </article>)}
 
           {isSending && <div className="flex justify-start"><div className="rounded-2xl rounded-bl-md bg-surface-2 px-4 py-3 text-sm text-text-muted">Trợ lý AI đang trả lời…</div></div>}

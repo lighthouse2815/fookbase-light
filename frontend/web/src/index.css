@@ -318,6 +318,151 @@ button:disabled,
   border-radius: 18px 18px 4px 18px;
 }
 
+/* Rich text returned by the AI. The renderer deliberately excludes raw HTML. */
+.ai-markdown {
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.ai-markdown > :first-child {
+  margin-top: 0;
+}
+
+.ai-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.ai-markdown h1,
+.ai-markdown h2,
+.ai-markdown h3,
+.ai-markdown h4 {
+  margin: 1.5rem 0 0.65rem;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ai-markdown h1 {
+  font-size: 1.45rem;
+}
+
+.ai-markdown h2 {
+  font-size: 1.25rem;
+}
+
+.ai-markdown h3 {
+  font-size: 1.1rem;
+}
+
+.ai-markdown h4 {
+  font-size: 1rem;
+}
+
+.ai-markdown p,
+.ai-markdown ul,
+.ai-markdown ol,
+.ai-markdown blockquote,
+.ai-markdown pre,
+.ai-markdown .ai-markdown-table {
+  margin: 0.85rem 0;
+}
+
+.ai-markdown ul,
+.ai-markdown ol {
+  padding-left: 1.35rem;
+}
+
+.ai-markdown li + li {
+  margin-top: 0.25rem;
+}
+
+.ai-markdown li::marker {
+  color: var(--color-primary-light);
+}
+
+.ai-markdown a {
+  color: var(--color-primary-light);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.ai-markdown a:hover {
+  color: var(--color-primary);
+}
+
+.ai-markdown blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding: 0.25rem 0 0.25rem 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.ai-markdown code {
+  border-radius: 0.35rem;
+  background: var(--color-surface-3);
+  padding: 0.1rem 0.3rem;
+  color: var(--color-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.ai-markdown pre {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-bg);
+  padding: 0.85rem 1rem;
+  scrollbar-width: thin;
+}
+
+.ai-markdown pre code {
+  display: block;
+  min-width: max-content;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+
+.ai-markdown-table {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  scrollbar-width: thin;
+}
+
+.ai-markdown table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.ai-markdown th,
+.ai-markdown td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ai-markdown th {
+  background: var(--color-surface-3);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.ai-markdown tr:last-child td {
+  border-bottom: 0;
+}
+
 /* Chat bubble — theirs (dark surface) */
 .bubble-theirs {
   background: #3a3b3c;
