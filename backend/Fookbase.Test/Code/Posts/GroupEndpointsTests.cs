@@ -341,12 +341,16 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Updating_group_cover_does_not_create_an_update_post()
+    public async Task Administrator_updating_group_cover_creates_an_update_post_with_the_new_image()
     {
-        var owner = (await CreateUsersAsync(1))[0];
-        var group = await CreateGroupAsync(owner, "public");
-        var mediaId = await AddReadyMediaAsync(owner);
-        using var client = CreateAuthenticatedClient(owner);
+        var users = await CreateUsersAsync(2);
+        var group = await CreateGroupAsync(users[0], "public");
+        await JoinAsync(group.Id, users[1]);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        Assert.Equal(HttpStatusCode.OK, (await owner.PatchAsJsonAsync(
+            $"/api/groups/{group.Id}/members/{users[1]}/role", new { role = "admin" })).StatusCode);
+        var mediaId = await AddReadyMediaAsync(users[1]);
+        using var client = CreateAuthenticatedClient(users[1]);
 
         var updated = await client.PatchAsJsonAsync($"/api/groups/{group.Id}", new
         {
@@ -359,11 +363,15 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
             await client.GetAsync($"/api/groups/{group.Id}/posts"));
 
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
-        Assert.Empty(posts.Items);
+        var coverUpdate = Assert.Single(posts.Items);
+        Assert.Equal(Post.CoverUpdatedPostContent, coverUpdate.Content);
+        Assert.Equal(users[1], coverUpdate.AuthorUserId);
+        Assert.Equal("group", coverUpdate.ContainerType);
+        Assert.Equal(new[] { mediaId }, coverUpdate.MediaIds);
     }
 
     [Fact]
-    public async Task Removing_group_cover_does_not_create_an_update_post()
+    public async Task Removing_group_cover_does_not_create_an_update_post_when_removal_overrides_a_media_id()
     {
         var owner = (await CreateUsersAsync(1))[0];
         var group = await CreateGroupAsync(owner, "public");
@@ -392,7 +400,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
 
         Assert.Equal(HttpStatusCode.OK, initialCover.StatusCode);
         Assert.Null(updated.CoverUrl);
-        Assert.Empty(posts.Items);
+        Assert.Equal(new[] { initialMediaId }, Assert.Single(posts.Items).MediaIds);
     }
 
     [Fact]

@@ -25,6 +25,7 @@ public sealed class GroupsService(
     NotificationService notificationService,
     PostsUseCase postsUseCase,
     PostsService postsService,
+    SocialInteractionsService socialInteractionsService,
     TimeProvider timeProvider)
 {
     public const int DefaultPageSize = 20;
@@ -296,6 +297,8 @@ public sealed class GroupsService(
                 ApplicationErrorType.Validation);
         }
 
+        var coverChanged = !request.RemoveCover && request.CoverMediaId is { } requestedCoverMediaId &&
+            requestedCoverMediaId != group.CoverMediaId;
         var desiredCoverMediaId = request.RemoveCover ? null : request.CoverMediaId ?? group.CoverMediaId;
         if (request.CoverMediaId is not null)
         {
@@ -322,6 +325,39 @@ public sealed class GroupsService(
                 desiredCoverMediaId,
                 cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
+            if (coverChanged)
+            {
+                var post = await postsService.CreatePostInContainerCoreAsync(
+                    actorUserId,
+                    Post.CoverUpdatedPostContent,
+                    PostPrivacy.Public,
+                    PostContainerType.Group,
+                    group.Id,
+                    [request.CoverMediaId!.Value],
+                    cancellationToken,
+                    addToTimelinePhotos: false);
+                if (!post.Succeeded)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Failure<GroupResponse>("group_cover_post_failed", "Could not create the group cover update post.", ApplicationErrorType.Conflict);
+                }
+
+                var references = await mediaService.SynchronizePostReferencesAsync(
+                    actorUserId,
+                    post.Value!.Id,
+                    [request.CoverMediaId!.Value],
+                    cancellationToken);
+                if (!references.Succeeded)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Failure<GroupResponse>(references.Error!.Code, references.Error.Message, ToApplicationErrorType(references.Error.Type));
+                }
+
+                await socialInteractionsService.SynchronizePostMetadataAsync(
+                    post.Value.Id,
+                    actorUserId,
+                    cancellationToken);
+            }
             await transaction.CommitAsync(cancellationToken);
         }
         catch (ArgumentException exception)
