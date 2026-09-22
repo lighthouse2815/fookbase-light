@@ -312,8 +312,11 @@ app.UseRateLimiter();
 app.UseMiddleware<AccountModerationMiddleware>();
 app.UseAuthorization();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.MapHealthChecks("/health").DisableRateLimiting();
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {

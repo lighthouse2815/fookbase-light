@@ -15,7 +15,7 @@ Không chạy nhiều replica API trong V1. SignalR và Zola Light presence là 
 - Compose giữ named volume cho PostgreSQL (`identity-postgres-data`) và Data Protection (`data-protection-keys`); hai volume này phải sống qua recreation container.
 - API không ghi media vào filesystem container. Browser upload trực tiếp bằng Cloudinary signed form; asset dùng authenticated delivery.
 - `/health/live` chỉ xác nhận process còn sống. `/health/ready` kiểm tra PostgreSQL và Cloudinary, nên chỉ endpoint này dùng để nhận traffic.
-- Swagger UI công khai tại `/swagger`; OpenAPI document ở `/swagger/v1/swagger.json`. Đây chỉ là tài liệu/test API, không thay thế health check.
+- Swagger UI và OpenAPI chỉ bật ở môi trường Development/Testing; production không công khai `/swagger`. Đây chỉ là tài liệu/test API, không thay thế health check.
 
 ## Chuẩn bị cấu hình
 
