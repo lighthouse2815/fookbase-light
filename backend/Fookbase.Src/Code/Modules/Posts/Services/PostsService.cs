@@ -45,13 +45,10 @@ public sealed class PostsService(
 
         TryParsePrivacy(privacy, out var parsedPrivacy);
 
-        if (!string.IsNullOrWhiteSpace(textBackground) &&
-            (!TextBackgrounds.Contains(textBackground) || mediaIds.Count > 0 || string.IsNullOrWhiteSpace(content)))
+        var textBackgroundError = ValidateTextBackground(textBackground, content, mediaIds);
+        if (textBackgroundError is not null)
         {
-            return ApplicationResult<PostResponse>.Failure(new ApplicationError(
-                "invalid_text_background",
-                "Text backgrounds require a text-only post and a supported background.",
-                ApplicationErrorType.Validation));
+            return ApplicationResult<PostResponse>.Failure(textBackgroundError);
         }
 
         return Map(await CreatePostCoreAsync(
@@ -68,12 +65,19 @@ public sealed class PostsService(
         Guid groupId,
         string content,
         IReadOnlyList<Guid> mediaIds,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? textBackground = null)
     {
         var validation = ValidatePostRequest(content, "public", mediaIds);
         if (!validation.Succeeded)
         {
             return ApplicationResult<PostResponse>.Failure(validation.Error!);
+        }
+
+        var textBackgroundError = ValidateTextBackground(textBackground, content, mediaIds);
+        if (textBackgroundError is not null)
+        {
+            return ApplicationResult<PostResponse>.Failure(textBackgroundError);
         }
 
         return Map(await CreatePostInContainerCoreAsync(
@@ -83,7 +87,8 @@ public sealed class PostsService(
             PostContainerType.Group,
             groupId,
             mediaIds,
-            cancellationToken));
+            cancellationToken,
+            textBackground: textBackground));
     }
 
     public async Task<ApplicationResult<PostResponse>> UpdatePostAsync(
@@ -173,6 +178,18 @@ public sealed class PostsService(
             ? ApplicationResult.Success()
             : ApplicationResult.Failure(InvalidPrivacy());
     }
+
+    private static ApplicationError? ValidateTextBackground(
+        string? textBackground,
+        string content,
+        IReadOnlyList<Guid> mediaIds) =>
+        !string.IsNullOrWhiteSpace(textBackground) &&
+        (!TextBackgrounds.Contains(textBackground) || mediaIds.Count > 0 || string.IsNullOrWhiteSpace(content))
+            ? new ApplicationError(
+                "invalid_text_background",
+                "Text backgrounds require a text-only post and a supported background.",
+                ApplicationErrorType.Validation)
+            : null;
 
     public async Task<ApplicationResult> EnsurePostOwnerAsync(
         Guid actorUserId,

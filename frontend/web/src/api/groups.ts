@@ -138,10 +138,10 @@ export const groupsApi = {
     apiRequest<void>(`/api/groups/${groupId}/rules/${ruleId}`, { method: 'DELETE' }),
   getPosts: (groupId: string, cursor?: string) =>
     apiRequest<CursorPage<Post>>(`/api/groups/${groupId}/posts?${cursorQuery(cursor)}`),
-  createPost: (groupId: string, content: string, mediaIds: string[]) =>
+  createPost: (groupId: string, content: string, mediaIds: string[], textBackground: string | null = null) =>
     apiRequest<Post>(`/api/groups/${groupId}/posts`, {
       method: 'POST',
-      ...jsonBody({ content, privacy: 'public', mediaIds }),
+      ...jsonBody({ content, privacy: 'public', mediaIds, textBackground }),
     }),
   removePost: (groupId: string, postId: string) =>
     apiRequest<void>(`/api/groups/${groupId}/posts/${postId}`, { method: 'DELETE' }),

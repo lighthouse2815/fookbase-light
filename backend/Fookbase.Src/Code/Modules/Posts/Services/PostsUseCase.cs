@@ -25,7 +25,8 @@ public sealed class PostsUseCase(
         Guid groupId,
         string content,
         IReadOnlyList<Guid> mediaIds,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? textBackground = null)
     {
         if (!await groupPostAccessService.CanCreatePostAsync(groupId, actorUserId, cancellationToken))
         {
@@ -55,7 +56,8 @@ public sealed class PostsUseCase(
                 groupId,
                 content,
                 mediaIds,
-                cancellationToken);
+                cancellationToken,
+                textBackground);
             if (!result.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);

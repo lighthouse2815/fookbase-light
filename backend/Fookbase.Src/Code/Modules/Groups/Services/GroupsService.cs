@@ -935,7 +935,8 @@ public sealed class GroupsService(
             groupId,
             request.Content,
             request.MediaIds ?? [],
-            cancellationToken);
+            cancellationToken,
+            request.TextBackground);
     }
 
     public async Task<ApplicationResult<GroupCursorPageResponse<PostResponse>>> GetPostsAsync(

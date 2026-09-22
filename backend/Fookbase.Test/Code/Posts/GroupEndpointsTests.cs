@@ -239,6 +239,30 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task Text_posts_in_groups_persist_selected_background()
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var group = await CreateGroupAsync(owner, "public");
+        using var client = CreateAuthenticatedClient(owner);
+
+        var createdResponse = await client.PostAsJsonAsync($"/api/groups/{group.Id}/posts", new
+        {
+            content = "Bài viết nhóm có nền",
+            mediaIds = Array.Empty<Guid>(),
+            textBackground = "sunset"
+        });
+        var created = await ReadAsync<PostResponse>(createdResponse);
+        var posts = await ReadAsync<GroupCursorPageResponse<PostResponse>>(
+            await client.GetAsync($"/api/groups/{group.Id}/posts"));
+
+        Assert.Equal("sunset", created.TextBackground);
+        Assert.Equal("sunset", Assert.Single(posts.Items, post => post.Id == created.Id).TextBackground);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Equal("sunset", (await db.Posts.SingleAsync(post => post.Id == created.Id)).TextBackground);
+    }
+
+    [Fact]
     public async Task Group_posts_keep_existing_comments_reactions_media_and_keyset_pagination()
     {
         var users = await CreateUsersAsync(2);

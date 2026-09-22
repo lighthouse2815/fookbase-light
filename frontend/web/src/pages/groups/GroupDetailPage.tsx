@@ -126,9 +126,15 @@ export default function GroupDetailPage() {
     }
   }
 
-  const createPost = async (content: string, files: readonly File[], onUploadProgress: (progress: number) => void) => {
+  const createPost = async (
+    content: string,
+    files: readonly File[],
+    onUploadProgress: (progress: number) => void,
+    _privacy: 'public' | 'friends' | 'onlyMe',
+    textBackground: string | null,
+  ) => {
     const mediaIds = await mediaApi.uploadFiles(files, onUploadProgress)
-    const post = await groupsApi.createPost(groupId, content, mediaIds)
+    const post = await groupsApi.createPost(groupId, content, mediaIds, textBackground)
     setPosts((current) => [post, ...current])
   }
 
