@@ -1,4 +1,5 @@
 import { apiRequest } from './client'
+import type { MediaReadUrl } from './media'
 import type { Post } from './posts'
 
 export interface Group {
@@ -86,6 +87,8 @@ export const groupsApi = {
   get: (groupId: string) => apiRequest<Group>(`/api/groups/${groupId}`),
   update: (groupId: string, details: UpdateGroupDetails) =>
     apiRequest<Group>(`/api/groups/${groupId}`, { method: 'PATCH', ...jsonBody(details) }),
+  getCoverAccess: (groupId: string) =>
+    apiRequest<MediaReadUrl>(`/api/groups/${groupId}/cover/access`),
   delete: (groupId: string) => apiRequest<void>(`/api/groups/${groupId}`, { method: 'DELETE' }),
   getMine: (cursor?: string) =>
     apiRequest<CursorPage<Group>>(`/api/groups/mine?${cursorQuery(cursor)}`),

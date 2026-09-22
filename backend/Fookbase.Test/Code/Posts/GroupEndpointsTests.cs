@@ -319,7 +319,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
     public async Task Group_cover_references_prevent_deletion_and_deleted_groups_are_hidden()
     {
         var owner = (await CreateUsersAsync(1))[0];
-        var group = await CreateGroupAsync(owner, "public");
+        var group = await CreateGroupAsync(owner, "private");
         var mediaId = await AddReadyMediaAsync(owner);
         using var client = CreateAuthenticatedClient(owner);
 
@@ -327,14 +327,16 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         {
             name = group.Name,
             description = group.Description,
-            privacy = "public",
+            privacy = "private",
             coverMediaId = mediaId
         });
+        var coverAccess = await client.GetAsync($"/api/groups/{group.Id}/cover/access");
         var deleteMedia = await client.DeleteAsync($"/api/media/{mediaId}");
         var deleted = await client.DeleteAsync($"/api/groups/{group.Id}");
         var missing = await client.GetAsync($"/api/groups/{group.Id}");
 
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, coverAccess.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, deleteMedia.StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);

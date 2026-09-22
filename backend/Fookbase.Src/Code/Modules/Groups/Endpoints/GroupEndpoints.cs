@@ -21,6 +21,7 @@ public static class GroupEndpoints
         group.MapPost("", CreateAsync).RequireAuthorization();
         group.MapGet("/{groupId:guid}", GetAsync).AllowAnonymous();
         group.MapGet("/{groupId:guid}/cover", GetCoverAsync).AllowAnonymous();
+        group.MapGet("/{groupId:guid}/cover/access", GetCoverAccessAsync).RequireAuthorization();
         group.MapPatch("/{groupId:guid}", UpdateAsync).RequireAuthorization();
         group.MapDelete("/{groupId:guid}", DeleteAsync).RequireAuthorization();
 
@@ -160,6 +161,28 @@ public static class GroupEndpoints
 
         var readUrl = await mediaService.CreateReadUrlAsync(mediaId.Value!, cancellationToken);
         return readUrl.Succeeded ? Results.Redirect(readUrl.Value!.Url) : Results.NotFound();
+    }
+
+    private static async Task<IResult> GetCoverAccessAsync(
+        Guid groupId,
+        ClaimsPrincipal principal,
+        GroupsService service,
+        MediaService mediaService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(principal, out var actorUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var mediaId = await service.GetCoverMediaIdAsync(groupId, actorUserId, cancellationToken);
+        if (!mediaId.Succeeded)
+        {
+            return mediaId.Error!.ToHttpResult();
+        }
+
+        var readUrl = await mediaService.CreateReadUrlAsync(mediaId.Value!, cancellationToken);
+        return readUrl.Succeeded ? Results.Ok(readUrl.Value) : Results.NotFound();
     }
 
     private static async Task<IResult> UpdateAsync(

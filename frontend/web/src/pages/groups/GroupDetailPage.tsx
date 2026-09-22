@@ -68,6 +68,7 @@ export default function GroupDetailPage() {
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<'discussion' | 'about' | 'members'>('discussion')
   const [shareStatus, setShareStatus] = useState<string | null>(null)
+  const [coverReadUrl, setCoverReadUrl] = useState<{ version: string; url: string } | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
@@ -104,6 +105,23 @@ export default function GroupDetailPage() {
     const timeoutId = window.setTimeout(() => { void load() }, 0)
     return () => window.clearTimeout(timeoutId)
   }, [load])
+
+  const coverVersion = group?.coverUrl
+    ? `${group.id}:${group.updatedAtUtc ?? group.createdAtUtc}`
+    : null
+  const coverGroupId = group?.id
+
+  useEffect(() => {
+    if (!coverGroupId || !coverVersion) return
+
+    let disposed = false
+    void groupsApi.getCoverAccess(coverGroupId)
+      .then((access) => { if (!disposed) setCoverReadUrl({ version: coverVersion, url: access.url }) })
+      .catch(() => {})
+    return () => { disposed = true }
+  }, [coverGroupId, coverVersion])
+
+  const currentCoverReadUrl = coverReadUrl?.version === coverVersion ? coverReadUrl.url : null
 
   if (!groupId) return null
   const isMember = group?.viewerRole !== null && group?.viewerRole !== undefined
@@ -307,7 +325,7 @@ export default function GroupDetailPage() {
       <section className="mt-3 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
         <div className="relative isolate">
           {group.coverUrl ? (
-            <img src={resolveProfileImageUrl(group.coverUrl)} alt={`Ảnh bìa của ${group.name}`} className="h-56 w-full object-cover sm:h-72 lg:h-80" />
+            currentCoverReadUrl ? <img src={currentCoverReadUrl} alt={`Ảnh bìa của ${group.name}`} className="h-56 w-full object-cover sm:h-72 lg:h-80" /> : <div className="flex h-56 items-center justify-center bg-surface-2 text-sm text-text-muted sm:h-72 lg:h-80">Đang tải ảnh bìa…</div>
           ) : (
             <div className="flex h-56 items-center justify-center bg-linear-to-br from-primary/70 via-[#6655bf] to-[#262b50] text-7xl sm:h-72 lg:h-80" aria-label="Nhóm chưa có ảnh bìa">👥</div>
           )}
