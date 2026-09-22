@@ -341,7 +341,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Updating_group_cover_creates_an_update_post_with_the_new_image()
+    public async Task Updating_group_cover_does_not_create_an_update_post()
     {
         var owner = (await CreateUsersAsync(1))[0];
         var group = await CreateGroupAsync(owner, "public");
@@ -359,15 +359,11 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
             await client.GetAsync($"/api/groups/{group.Id}/posts"));
 
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
-        var coverUpdate = Assert.Single(posts.Items);
-        Assert.Equal(Post.CoverUpdatedPostContent, coverUpdate.Content);
-        Assert.Equal(owner, coverUpdate.AuthorUserId);
-        Assert.Equal("group", coverUpdate.ContainerType);
-        Assert.Equal(new[] { mediaId }, coverUpdate.MediaIds);
+        Assert.Empty(posts.Items);
     }
 
     [Fact]
-    public async Task Removing_group_cover_does_not_create_an_update_post_when_removal_overrides_a_media_id()
+    public async Task Removing_group_cover_does_not_create_an_update_post()
     {
         var owner = (await CreateUsersAsync(1))[0];
         var group = await CreateGroupAsync(owner, "public");
@@ -396,7 +392,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
 
         Assert.Equal(HttpStatusCode.OK, initialCover.StatusCode);
         Assert.Null(updated.CoverUrl);
-        Assert.Equal(new[] { initialMediaId }, Assert.Single(posts.Items).MediaIds);
+        Assert.Empty(posts.Items);
     }
 
     [Fact]
