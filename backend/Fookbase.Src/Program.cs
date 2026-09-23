@@ -117,7 +117,7 @@ builder.Services.AddGroupsModule();
 builder.Services.AddPagesModule();
 builder.Services.AddPhotosModule();
 builder.Services.AddMessagesModule();
-builder.Services.AddNotificationsModule();
+builder.Services.AddNotificationsModule(builder.Configuration);
 builder.Services.AddPostsModule(builder.Configuration);
 builder.Services.AddMediaModule(builder.Configuration);
 builder.Services.AddReelsModule();

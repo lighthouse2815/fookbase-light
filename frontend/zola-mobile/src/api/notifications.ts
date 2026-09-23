@@ -68,4 +68,12 @@ export const notificationsApi = {
     apiRequest<void>('/api/notifications/' + notificationId + '/read', { method: 'POST' }),
   markAllRead: () =>
     apiRequest<void>('/api/notifications/read-all', { method: 'POST' }),
+  registerZolaPushToken: (token: string) =>
+    apiRequest<void>('/api/notifications/push-tokens/zola', {
+      method: 'POST', body: JSON.stringify({ token }),
+    }),
+  unregisterZolaPushToken: (token: string) =>
+    apiRequest<void>('/api/notifications/push-tokens/zola', {
+      method: 'DELETE', body: JSON.stringify({ token }),
+    }),
 }

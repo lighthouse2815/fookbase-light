@@ -29,6 +29,7 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-secure-store',
     'expo-video',
+    'expo-notifications',
     ['expo-image-picker', {
       photosPermission: 'Cho phép Zola chọn ảnh và video để gửi trong cuộc trò chuyện.',
       cameraPermission: false,

@@ -10,6 +10,7 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,35 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         var response = await client.GetAsync("/api/messages/conversations");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Zola_push_token_registration_is_authenticated_and_can_be_removed()
+    {
+        var userId = Guid.NewGuid();
+        const string token = "ExpoPushToken[zola_push_device_123]";
+        using var client = CreateAuthenticatedClient(userId);
+
+        var invalid = await client.PostAsJsonAsync("/api/notifications/push-tokens/zola", new { token = "not-an-expo-token" });
+        var registered = await client.PostAsJsonAsync("/api/notifications/push-tokens/zola", new { token });
+
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, registered.StatusCode);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            Assert.Contains(await dbContext.PushDevices.ToListAsync(), device =>
+                device.UserId == userId && device.ExpoPushToken == token && device.DisabledAtUtc is null);
+        }
+
+        var removed = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/notifications/push-tokens/zola")
+        {
+            Content = JsonContent.Create(new { token })
+        });
+        Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
+        using var verificationScope = factory.Services.CreateScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.NotNull((await verificationDb.PushDevices.SingleAsync(device => device.ExpoPushToken == token)).DisabledAtUtc);
     }
 
     [Fact]

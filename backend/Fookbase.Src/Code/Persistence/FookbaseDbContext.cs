@@ -91,6 +91,8 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<MessageNotification> MessageNotifications => Set<MessageNotification>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PushDevice> PushDevices => Set<PushDevice>();
+    public DbSet<PushDeliveryReceipt> PushDeliveryReceipts => Set<PushDeliveryReceipt>();
 
     public DbSet<Post> Posts => Set<Post>();
 

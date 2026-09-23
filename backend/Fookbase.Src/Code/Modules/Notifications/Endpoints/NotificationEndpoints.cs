@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Notifications.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Fookbase.Api.Modules.Notifications.Endpoints;
 
@@ -13,6 +14,8 @@ public static class NotificationEndpoints
         group.MapGet("/unread-count", GetUnreadCountAsync);
         group.MapPost("/{notificationId:guid}/read", MarkReadAsync);
         group.MapPost("/read-all", MarkAllReadAsync);
+        group.MapPost("/push-tokens/zola", RegisterZolaPushTokenAsync);
+        group.MapDelete("/push-tokens/zola", UnregisterZolaPushTokenAsync);
         return endpoints;
     }
 
@@ -87,6 +90,39 @@ public static class NotificationEndpoints
         return Results.NoContent();
     }
 
+    private static async Task<IResult> RegisterZolaPushTokenAsync(
+        [FromBody] PushTokenRequest request,
+        ClaimsPrincipal principal,
+        PushNotificationService service,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        return await service.RegisterZolaDeviceAsync(userId, request.Token, cancellationToken)
+            ? Results.NoContent()
+            : Results.BadRequest(new { code = "invalid_push_token", message = "The Expo push token is invalid." });
+    }
+
+    private static async Task<IResult> UnregisterZolaPushTokenAsync(
+        [FromBody] PushTokenRequest request,
+        ClaimsPrincipal principal,
+        PushNotificationService service,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        await service.UnregisterZolaDeviceAsync(userId, request.Token, cancellationToken);
+        return Results.NoContent();
+    }
+
     private static bool TryGetUserId(ClaimsPrincipal principal, out Guid userId) =>
         Guid.TryParse(principal.FindFirstValue(JwtRegisteredClaimNames.Sub), out userId);
+
+    private sealed record PushTokenRequest(string? Token);
 }

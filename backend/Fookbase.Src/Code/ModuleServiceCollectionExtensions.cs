@@ -25,6 +25,7 @@ using Fookbase.Api.Modules.Events;
 using Fookbase.Api.Modules.Memories;
 using Fookbase.Api.Modules.Ai;
 using Fookbase.Api.Modules.Ai.Config;
+using Fookbase.Api.Modules.Notifications.Config;
 using Fookbase.Api.Modules.Games;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -110,8 +111,11 @@ internal static class ModuleServiceCollectionExtensions
         services.AddMessagesInfrastructure();
 
     public static IServiceCollection AddNotificationsModule(
-        this IServiceCollection services) =>
-        services.AddNotificationsInfrastructure();
+        this IServiceCollection services,
+        IConfiguration configuration) =>
+        services.AddNotificationsInfrastructure(
+            configuration.GetSection(PushNotificationOptions.SectionName).Get<PushNotificationOptions>()
+                ?? new PushNotificationOptions());
 
     public static IServiceCollection AddPostsModule(
         this IServiceCollection services,

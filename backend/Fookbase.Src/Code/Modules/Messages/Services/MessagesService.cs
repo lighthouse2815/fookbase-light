@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Messages.DTOs.Requests;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
+using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Persistence;
@@ -23,7 +24,8 @@ public sealed class MessagesService(
     TimeProvider timeProvider,
     IHubContext<MessagesHub> hubContext,
     FriendsService friendsService,
-    MediaService mediaService)
+    MediaService mediaService,
+    PushNotificationService pushNotifications)
 {
     private const int MaximumLimit = 100;
     private const int MaximumContentLength = 5_000;
@@ -314,6 +316,7 @@ public sealed class MessagesService(
             await hubContext.Clients.User(recipient.ToString()).SendAsync("MessageReceived", new IncomingMessageResponse(sidebar, recipientResponse), cancellationToken);
             await hubContext.Clients.User(recipient.ToString()).SendAsync("MessageCreated", recipientResponse, cancellationToken);
         }
+        await pushNotifications.SendMessageAsync(recipients, conversationId, cancellationToken);
         return ApplicationResult<MessageResponse>.Success(response);
     }
 

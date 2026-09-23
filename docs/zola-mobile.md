@@ -23,6 +23,7 @@ EXPO_PUBLIC_API_BASE_URL=https://your-api-domain
 ZOLA_ANDROID_PACKAGE=com.example.zola
 ZOLA_IOS_BUNDLE=com.example.zola
 EXPO_PUBLIC_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
+EXPO_PUBLIC_EAS_PROJECT_ID=your-eas-project-id
 ```
 
 `EXPO_PUBLIC_API_BASE_URL` phải là HTTPS origin, không có path. Không đặt secret trong các
@@ -46,15 +47,26 @@ bản Android mới.
 
 ## Google mobile login
 
-Backend cần bật Google và cấu hình `GoogleAuthentication__MobileCallbackUrl` trùng với
+Backend cần bật Google và cấu hình `GoogleAuthentication__ZolaMobileCallbackUrl` trùng với
 `EXPO_PUBLIC_MOBILE_CALLBACK_URL`. Callback phải là HTTPS App Link đã được xác minh. App chỉ
 nhận completion code và state; access token và refresh token không nằm trong URL.
 
-Nếu đồng thời phát hành `frontend/mobile`, hai app cần callback/App Link riêng để tránh tranh
-quyền xử lý cùng một URL. Backend hiện có một mobile callback nên cần tách cấu hình callback
-cho Zola trước khi phát hành cả hai app với Google login.
+`frontend/mobile` dùng `GoogleAuthentication__MobileCallbackUrl`, còn Zola dùng
+`GoogleAuthentication__ZolaMobileCallbackUrl`; hai app không dùng chung callback/App Link.
 
 ## Push notification
 
-MVP hiện nhận cập nhật khi app đang mở qua SignalR và đọc thông báo đã lưu trong API. Push khi
-app bị đóng cần thêm `expo-notifications`, endpoint đăng ký device token và worker gửi FCM/APNs.
+MVP gửi push qua Expo Push Service khi app bị đóng. App đăng ký Expo push token tại
+`POST /api/notifications/push-tokens/zola`; API lưu token, gửi thông báo tin nhắn mới và kiểm
+tra Expo receipt sau ít nhất 15 phút để vô hiệu token `DeviceNotRegistered`.
+
+Để bật trên production, liên kết app với EAS, tạo credentials FCM/APNs trong EAS và đặt:
+
+```dotenv
+EXPO_PUBLIC_EAS_PROJECT_ID=<EAS project UUID>
+PushNotifications__Enabled=true
+PushNotifications__ReceiptCheckIntervalMinutes=15
+```
+
+Remote push không chạy trong Expo Go từ SDK 53; dùng development build hoặc build phát hành.
+Expo Push không đảm bảo exactly-once, vì vậy app luôn tải lại HTTP data sau SignalR/reconnect.
