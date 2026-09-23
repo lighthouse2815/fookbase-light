@@ -12,7 +12,7 @@ const config: ExpoConfig = {
   scheme: 'zola',
   userInterfaceStyle: 'automatic',
   android: {
-    package: process.env.ZOLA_ANDROID_PACKAGE ?? 'dev.fookbase.zola',
+    package: process.env.ZOLA_ANDROID_PACKAGE ?? 'com.fookbase.zola',
     versionCode: 1,
     intentFilters: callback ? [{
       action: 'VIEW',
@@ -22,7 +22,7 @@ const config: ExpoConfig = {
     }] : [],
   },
   ios: {
-    bundleIdentifier: process.env.ZOLA_IOS_BUNDLE ?? 'dev.fookbase.zola',
+    bundleIdentifier: process.env.ZOLA_IOS_BUNDLE ?? 'com.fookbase.zola',
     supportsTablet: true,
   },
   plugins: [

@@ -20,8 +20,8 @@ Tạo file `frontend/zola-mobile/.env.local` từ `.env.example`:
 
 ```dotenv
 EXPO_PUBLIC_API_BASE_URL=https://your-api-domain
-ZOLA_ANDROID_PACKAGE=com.example.zola
-ZOLA_IOS_BUNDLE=com.example.zola
+ZOLA_ANDROID_PACKAGE=com.fookbase.zola
+ZOLA_IOS_BUNDLE=com.fookbase.zola
 EXPO_PUBLIC_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
 EXPO_PUBLIC_EAS_PROJECT_ID=your-eas-project-id
 ```
@@ -78,7 +78,7 @@ Trước khi chạy, tạo GitHub repository variables sau:
 
 ```text
 ZOLA_MOBILE_API_BASE_URL=https://your-api-domain
-ZOLA_MOBILE_ANDROID_PACKAGE=com.example.zola
+ZOLA_MOBILE_ANDROID_PACKAGE=com.fookbase.zola
 ZOLA_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
 ZOLA_MOBILE_EAS_PROJECT_ID=<EAS project UUID>
 ```

@@ -9,8 +9,8 @@ Tạo `frontend/zola-mobile/.env.local` (không commit):
 
 ```dotenv
 EXPO_PUBLIC_API_BASE_URL=https://your-api-domain
-ZOLA_ANDROID_PACKAGE=com.example.zola
-ZOLA_IOS_BUNDLE=com.example.zola
+ZOLA_ANDROID_PACKAGE=com.fookbase.zola
+ZOLA_IOS_BUNDLE=com.fookbase.zola
 # Cần HTTPS App Link khi bật Google mobile login.
 EXPO_PUBLIC_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
 # Required for Expo Push after the app is linked to EAS:
