@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { authApi } from '../../api/auth';
 import { clearSession, getSession } from '../../auth/session';
-import { Avatar, Button, Card, Icon, IconButton, Label, Screen, useTheme } from '../../components/ui';
+import { AppHeader, Avatar, Button, Card, Icon, Label, Screen, useTheme } from '../../components/ui';
 
 const shortcuts = [
   ['/profile', 'Trang cá nhân', 'people', 'Nhìn lại không gian của bạn'],
@@ -22,7 +22,7 @@ const shortcuts = [
 export default function Account() {
   const session = getSession(); const t = useTheme(); const username = session?.user.username ?? 'bạn';
   return <Screen>
-    <View style={menuStyles.heading}><Label title style={{ fontSize: 28 }}>Menu</Label><IconButton label="Tìm kiếm" icon="search" onPress={() => router.push('/search')} /></View>
+    <AppHeader title="Menu" onSearch={() => router.push('/search')} />
     <Pressable accessibilityRole="button" accessibilityLabel="Mở trang cá nhân" onPress={() => router.push(`/profile/${session?.user.id}`)} style={({ pressed }) => [menuStyles.profile, { backgroundColor: t.card, opacity: pressed ? 0.72 : 1 }]}><Avatar label={username} size={58} online /><View style={{ flex: 1, gap: 2 }}><Text style={{ color: t.text, fontSize: 18, fontWeight: '900' }}>{username}</Text><Text style={{ color: t.primary, fontSize: 13, fontWeight: '700' }}>Xem trang cá nhân của bạn</Text></View><Icon name="arrow" color={t.muted} size={20} /></Pressable>
     <View style={menuStyles.sectionHeader}><Label title style={{ fontSize: 20 }}>Lối tắt</Label><Text style={{ color: t.primary, fontSize: 13, fontWeight: '800' }}>Xem tất cả</Text></View>
     <View style={menuStyles.grid}>{shortcuts.map(([path, title, icon]) => <Pressable key={path} accessibilityRole="button" accessibilityLabel={title} onPress={() => router.push(path === '/profile' ? `/profile/${session?.user.id}` : path)} style={({ pressed }) => [menuStyles.tile, { backgroundColor: t.card, opacity: pressed ? 0.72 : 1 }]}><View style={[menuStyles.tileIcon, { backgroundColor: `${t.primary}1c` }]}><Icon name={icon} color={t.primary} size={24} /></View><Text style={{ color: t.text, fontSize: 13, fontWeight: '800' }} numberOfLines={2}>{title}</Text></Pressable>)}</View>

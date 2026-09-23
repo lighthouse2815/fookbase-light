@@ -23,6 +23,13 @@ export function Label({ children, muted = false, title = false, style, numberOfL
   return <Text numberOfLines={numberOfLines} style={[{ color: muted ? t.muted : t.text, fontSize: title ? 22 : 15, fontWeight: title ? '800' : '400', lineHeight: title ? 28 : 21, letterSpacing: title ? -0.25 : 0 }, style]}>{children}</Text>;
 }
 
+export function AppHeader({ title, subtitle, onSearch, action }: { title: string; subtitle?: string; onSearch?: () => void; action?: ReactNode }) {
+  return <View style={styles.appHeader}>
+    <View style={{ flex: 1, gap: 1 }}><Label title>{title}</Label>{subtitle && <Label muted style={{ fontSize: 13 }}>{subtitle}</Label>}</View>
+    <View style={styles.headerActions}>{onSearch && <IconButton label="Tìm kiếm" icon="search" onPress={onSearch} />}{action}</View>
+  </View>;
+}
+
 export function Screen({ children, scroll = true, style }: PropsWithChildren<{ scroll?: boolean; style?: StyleProp<ViewStyle> }>) {
   const t = useTheme();
   const content = scroll ? <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.screen, style]}>{children}</ScrollView> : <View style={[styles.screen, style]}>{children}</View>;
@@ -111,6 +118,8 @@ export function Loading() { const t = useTheme(); return <View style={styles.loa
 
 export const styles = StyleSheet.create({
   screen: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 30, gap: 12, flexGrow: 1 },
+  appHeader: { flexDirection: 'row', alignItems: 'center', minHeight: 42 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   card: { padding: 14, gap: 10, borderRadius: 12 },
   cardRaised: { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 7, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
   button: { minHeight: 46, justifyContent: 'center', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 9, borderWidth: 1 },
