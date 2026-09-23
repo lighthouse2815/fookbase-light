@@ -8,8 +8,9 @@ import SnakeGame from './SnakeGame'
 import MinesweeperGame from './MinesweeperGame'
 import WhackMoleGame from './WhackMoleGame'
 import SlidingPuzzleGame from './SlidingPuzzleGame'
+import MelodyGame from './MelodyGame'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle' | 'melody'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -25,6 +26,12 @@ interface GameDefinition {
 }
 
 const games: GameDefinition[] = [
+  {
+    id: 'melody', title: 'Giai điệu sắc màu', category: 'Trí nhớ & âm nhạc', badge: 'Có âm thanh', component: MelodyGame,
+    description: 'Bốn phím đàn, mười hai vòng nhớ. Lắng nghe và chơi lại giai điệu của bạn.',
+    accent: 'from-[#284b43] via-[#397666] to-[#79b99f]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="4" y="4" width="88" height="88" rx="20" fill="#1c342e" /><rect x="15" y="15" width="66" height="14" rx="4" fill="#b2dfb3" /><rect x="15" y="37" width="29" height="20" rx="5" fill="#ffab8a" /><rect x="52" y="37" width="29" height="20" rx="5" fill="#ffe394" /><rect x="15" y="65" width="29" height="20" rx="5" fill="#a3e2d2" /><rect x="52" y="65" width="29" height="20" rx="5" fill="#a9caff" /><path d="M22 22h17m5 0h7m5 0h18" stroke="#305748" strokeWidth="3" strokeLinecap="round" /></svg>,
+  },
   {
     id: 'tic-tac-toe', title: 'Cờ ca-rô', category: 'Chiến thuật', badge: 'Chơi đơn',
     component: TicTacToeGame,
