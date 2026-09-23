@@ -17,7 +17,7 @@ export function PostCard({ post, detail = false }: { post: Post; detail?: boolea
   const avatarUrl = post.displayAuthor?.avatarUrl ? resolveProfileImageUrl(post.displayAuthor.avatarUrl) : null;
   const reactionTotal = Object.values(post.reactionCounts).reduce((a, b) => a + b, 0);
   const privacyLabel = post.privacy === 'friends' ? 'Bạn bè' : post.privacy === 'onlyMe' ? 'Chỉ mình tôi' : 'Công khai';
-  return <Card tone="raised" style={postStyles.card}>
+  return <Card style={postStyles.card}>
     <View style={postStyles.header}>
       <Avatar label={authorName} uri={avatarUrl} size={46} online />
       <View style={{ flex: 1, gap: 1 }}><Label style={{ fontSize: 15, fontWeight: '800' }}>{authorName}</Label><Text style={{ color: t.muted, fontSize: 12 }}>{handle} · {new Date(post.createdAtUtc).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · {privacyLabel}</Text></View>
@@ -38,7 +38,7 @@ export function PostCard({ post, detail = false }: { post: Post; detail?: boolea
 }
 
 const postStyles = StyleSheet.create({
-  card: { padding: 0, overflow: 'hidden' },
+  card: { padding: 0, overflow: 'hidden', borderRadius: 0 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 15 },
   content: { fontSize: 16, lineHeight: 24, paddingHorizontal: 16, paddingTop: 12 },
   media: { marginTop: 12, overflow: 'hidden' },

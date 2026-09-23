@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const darkTheme = {
   bg: '#18191a', card: '#242526', surface2: '#303132', surface3: '#3a3b3c',
   text: '#e4e6eb', muted: '#b0b3b8', subtle: '#8a8d91', border: '#3e4042',
-  primary: '#2374e1', primarySoft: '#1d3d70', accent: '#f0b84f', success: '#4bbf73', danger: '#ff7c8a', like: '#ff6b7d',
+  primary: '#2d88ff', primarySoft: '#1f4f8f', accent: '#f0b84f', success: '#4bbf73', danger: '#ff7c8a', like: '#ff6b7d',
 };
 const lightTheme = {
   bg: '#f0f2f5', card: '#ffffff', surface2: '#e4e6eb', surface3: '#d8dadf',
@@ -31,7 +31,7 @@ export function Screen({ children, scroll = true, style }: PropsWithChildren<{ s
 
 export function Card({ children, style, tone = 'default' }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; tone?: 'default' | 'raised' | 'soft' }>) {
   const t = useTheme();
-  return <View style={[styles.card, tone === 'raised' && styles.cardRaised, tone === 'soft' && { backgroundColor: t.surface2 }, { backgroundColor: t.card, borderColor: t.border }, style]}>{children}</View>;
+  return <View style={[styles.card, tone === 'raised' && styles.cardRaised, tone === 'soft' && { backgroundColor: t.surface2 }, { backgroundColor: t.card }, style]}>{children}</View>;
 }
 
 type ButtonProps = { title: string; onPress: () => void; disabled?: boolean; secondary?: boolean; compact?: boolean; danger?: boolean; icon?: ReactNode };
@@ -76,7 +76,7 @@ export function Icon({ name, color, size = 20 }: { name: IconName; color?: Color
 
 export function IconButton({ label, icon, onPress, active = false, disabled = false }: { label: string; icon: IconName; onPress: () => void; active?: boolean; disabled?: boolean }) {
   const t = useTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, selected: active }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.iconButton, { backgroundColor: active ? t.primarySoft : t.surface2, borderColor: active ? `${t.primary}66` : t.border, opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}><Icon name={icon} color={active ? t.primary : t.text} size={20} /></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, selected: active }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.iconButton, { backgroundColor: active ? t.primarySoft : t.surface2, opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}><Icon name={icon} color={active ? t.primary : t.text} size={20} /></Pressable>;
 }
 
 export function Avatar({ label, uri, size = 44, online = false }: { label: string; uri?: string | null; size?: number; online?: boolean }) {
@@ -89,12 +89,12 @@ export function Avatar({ label, uri, size = 44, online = false }: { label: strin
 
 export function ActionChip({ title, icon, onPress, active = false }: { title: string; icon: IconName; onPress: () => void; active?: boolean }) {
   const t = useTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={({ pressed }) => [styles.actionChip, { backgroundColor: active ? t.primarySoft : t.surface2, borderColor: active ? `${t.primary}66` : t.border, opacity: pressed ? 0.72 : 1 }]}><Icon name={icon} color={active ? t.primary : t.muted} size={17} /><Text style={{ color: active ? t.primary : t.muted, fontSize: 13, fontWeight: '700' }}>{title}</Text></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={({ pressed }) => [styles.actionChip, { backgroundColor: active ? t.primarySoft : 'transparent', opacity: pressed ? 0.72 : 1 }]}><Icon name={icon} color={active ? t.primary : t.muted} size={17} /><Text style={{ color: active ? t.primary : t.muted, fontSize: 13, fontWeight: '700' }}>{title}</Text></Pressable>;
 }
 
 export function PostAction({ title, icon, onPress, active = false, disabled = false }: { title: string; icon: IconName; onPress: () => void; active?: boolean; disabled?: boolean }) {
   const t = useTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled, selected: active }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.postAction, { backgroundColor: active ? t.primarySoft : 'transparent', opacity: disabled ? 0.45 : pressed ? 0.65 : 1 }]}><Icon name={icon} color={active ? t.primary : t.muted} size={18} /><Text style={{ color: active ? t.primary : t.muted, fontSize: 13, fontWeight: '700' }}>{title}</Text></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled, selected: active }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.postAction, { backgroundColor: pressed ? t.surface2 : 'transparent', opacity: disabled ? 0.45 : 1 }]}><Icon name={icon} color={active ? t.primary : t.muted} size={18} /><Text style={{ color: active ? t.primary : t.muted, fontSize: 13, fontWeight: '700' }}>{title}</Text></Pressable>;
 }
 
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
@@ -111,14 +111,14 @@ export function Loading() { const t = useTheme(); return <View style={styles.loa
 
 export const styles = StyleSheet.create({
   screen: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 34, gap: 14, flexGrow: 1 },
-  card: { padding: 16, gap: 12, borderRadius: 20, borderWidth: 1 },
-  cardRaised: { shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 5 },
+  card: { padding: 16, gap: 12, borderRadius: 16 },
+  cardRaised: { shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   button: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 11, borderRadius: 14, borderWidth: 1 },
   buttonCompact: { minHeight: 38, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 11 },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  iconButton: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  actionChip: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1 },
-  postAction: { minHeight: 38, flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 12, paddingHorizontal: 8 },
+  iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  actionChip: { minHeight: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 8, borderRadius: 10, flex: 1 },
+  postAction: { minHeight: 38, flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, paddingHorizontal: 6 },
   fieldLabel: { fontSize: 13, fontWeight: '700', lineHeight: 18, letterSpacing: 0.1 },
   field: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, minHeight: 50, fontSize: 16 },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },

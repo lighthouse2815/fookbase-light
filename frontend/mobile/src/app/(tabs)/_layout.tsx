@@ -8,7 +8,7 @@ export default function MainTabs() {
   const theme = useTheme(); const { session } = useAuth();
   const { bottom } = useSafeAreaInsets();
   const unread = useQuery({ queryKey: ['notification-count', session?.user.id], queryFn: notificationsApi.getUnreadCount });
-  return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.bg }}><Tabs initialRouteName="feed" screenOptions={{ headerShown: false, tabBarStyle: { height: 72 + bottom, paddingTop: 8, paddingBottom: 10 + bottom, backgroundColor: theme.card, borderTopColor: theme.border }, tabBarItemStyle: { borderRadius: 14, marginHorizontal: 4 }, tabBarLabelStyle: { fontSize: 11, fontWeight: '700' }, tabBarActiveTintColor: theme.primary, tabBarInactiveTintColor: theme.muted }}>
+  return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.bg }}><Tabs initialRouteName="feed" screenOptions={{ headerShown: false, tabBarStyle: { height: 62 + bottom, paddingTop: 6, paddingBottom: 6 + bottom, backgroundColor: theme.card, borderTopColor: theme.border }, tabBarItemStyle: { borderRadius: 12, marginHorizontal: 4 }, tabBarLabelStyle: { fontSize: 10, fontWeight: '700' }, tabBarActiveTintColor: theme.primary, tabBarInactiveTintColor: theme.muted }}>
     <Tabs.Screen name="feed" options={{ title: 'Bảng tin', tabBarIcon: ({ color }) => <Icon name="home" color={color} size={22} /> }} />
     <Tabs.Screen name="messages" options={{ title: 'Tin nhắn', tabBarIcon: ({ color }) => <Icon name="messages" color={color} size={22} /> }} />
     <Tabs.Screen name="notifications" options={{ title: 'Thông báo', tabBarBadge: unread.data?.unreadNotificationCount || undefined, tabBarIcon: ({ color }) => <Icon name="notifications" color={color} size={22} /> }} />
