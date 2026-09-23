@@ -8,6 +8,7 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Persistence;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -297,7 +298,7 @@ public sealed class RegistrationChallengeService(
         new(challenge.Id, challenge.ExpiresAtUtc, challenge.ResendAvailableAtUtc);
 
     private static ApplicationResult<T> Validation<T>(IReadOnlyDictionary<string, string[]> errors) =>
-        ApplicationResult<T>.Failure(new ApplicationError("validation_failed", "One or more validation errors occurred.", ApplicationErrorType.Validation, errors));
+        ApplicationResult<T>.Failure(new ApplicationError(ErrorCode.ValidationFailed, "One or more validation errors occurred.", ApplicationErrorType.Validation, errors));
 
     private static ApplicationResult<T> InvalidCode<T>() =>
         ApplicationResult<T>.Failure(new ApplicationError("invalid_registration_code", "The verification code is invalid or expired.", ApplicationErrorType.Unauthorized));

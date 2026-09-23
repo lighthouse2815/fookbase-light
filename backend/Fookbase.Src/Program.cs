@@ -271,7 +271,7 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
     {
         context.ProblemDetails.Title = "Validation";
         context.ProblemDetails.Detail = "One or more validation errors occurred.";
-        context.ProblemDetails.Extensions["code"] = "validation_failed";
+        context.ProblemDetails.Extensions["code"] = ErrorCode.ValidationFailed;
     }
 });
 builder.Services.AddValidation();

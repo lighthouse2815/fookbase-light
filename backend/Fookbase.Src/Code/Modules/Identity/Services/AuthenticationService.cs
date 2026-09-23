@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Config;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -117,14 +118,14 @@ public sealed class AuthenticationService(
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
             return UnauthorizedFailure<object>(
-                "invalid_credentials",
+                ErrorCode.InvalidCredentials,
                 "The email, phone number, or password is invalid.");
         }
 
         if (!await userManager.CheckPasswordAsync(user, request.Password!))
         {
             await userManager.AccessFailedAsync(user);
-            return UnauthorizedFailure<object>("invalid_credentials", "The email, phone number, or password is invalid.");
+            return UnauthorizedFailure<object>(ErrorCode.InvalidCredentials, "The email, phone number, or password is invalid.");
         }
 
         await userManager.ResetAccessFailedCountAsync(user);
@@ -335,7 +336,7 @@ public sealed class AuthenticationService(
         if (user is null || !user.IsActive)
         {
             return UnauthorizedFailure<AuthenticatedUserResponse>(
-                "invalid_access_token",
+                ErrorCode.InvalidAccessToken,
                 "The access token is invalid.");
         }
 
@@ -347,7 +348,7 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive) return UnauthorizedFailure<SecurityStateResponse>("invalid_access_token", "The access token is invalid.");
+        if (user is null || !user.IsActive) return UnauthorizedFailure<SecurityStateResponse>(ErrorCode.InvalidAccessToken, "The access token is invalid.");
         var now = timeProvider.GetUtcNow();
         return ApplicationResult<SecurityStateResponse>.Success(new SecurityStateResponse(user.TwoFactorEnabled,
             await userManager.CountRecoveryCodesAsync(user),
@@ -358,7 +359,7 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive) return UnauthorizedFailure<TwoFactorSetupResponse>("invalid_access_token", "The access token is invalid.");
+        if (user is null || !user.IsActive) return UnauthorizedFailure<TwoFactorSetupResponse>(ErrorCode.InvalidAccessToken, "The access token is invalid.");
         await userManager.ResetAuthenticatorKeyAsync(user);
         var key = await userManager.GetAuthenticatorKeyAsync(user);
         if (string.IsNullOrWhiteSpace(key)) return ApplicationResult<TwoFactorSetupResponse>.Failure(new ApplicationError("two_factor_setup_failed", "Two-factor setup could not be initialized.", ApplicationErrorType.Validation));
@@ -372,7 +373,7 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive) return UnauthorizedFailure<TwoFactorRecoveryCodesResponse>("invalid_access_token", "The access token is invalid.");
+        if (user is null || !user.IsActive) return UnauthorizedFailure<TwoFactorRecoveryCodesResponse>(ErrorCode.InvalidAccessToken, "The access token is invalid.");
         if (!await VerifyAuthenticatorCodeAsync(user, code)) return ApplicationResult<TwoFactorRecoveryCodesResponse>.Failure(new ApplicationError("invalid_two_factor_code", "The authenticator code is invalid.", ApplicationErrorType.Validation));
         var enable = await userManager.SetTwoFactorEnabledAsync(user, true);
         if (!enable.Succeeded) return ApplicationResult<TwoFactorRecoveryCodesResponse>.Failure(new ApplicationError("two_factor_enable_failed", "Two-factor authentication could not be enabled.", ApplicationErrorType.Validation));
@@ -393,8 +394,8 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive) return ApplicationResult.Failure(new ApplicationError("invalid_access_token", "The access token is invalid.", ApplicationErrorType.Unauthorized));
-        if (string.IsNullOrWhiteSpace(currentPassword) || !await userManager.CheckPasswordAsync(user, currentPassword)) return ApplicationResult.Failure(new ApplicationError("invalid_credentials", "The current password is invalid.", ApplicationErrorType.Validation));
+        if (user is null || !user.IsActive) return ApplicationResult.Failure(new ApplicationError(ErrorCode.InvalidAccessToken, "The access token is invalid.", ApplicationErrorType.Unauthorized));
+        if (string.IsNullOrWhiteSpace(currentPassword) || !await userManager.CheckPasswordAsync(user, currentPassword)) return ApplicationResult.Failure(new ApplicationError(ErrorCode.InvalidCredentials, "The current password is invalid.", ApplicationErrorType.Validation));
         await userManager.SetTwoFactorEnabledAsync(user, false);
         await userManager.ResetAuthenticatorKeyAsync(user);
         await RevokeOtherSessionsAsync(userId, null, timeProvider.GetUtcNow(), cancellationToken);
@@ -413,7 +414,7 @@ public sealed class AuthenticationService(
         if (user is null || !user.IsActive)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "invalid_access_token", "The access token is invalid.", ApplicationErrorType.Unauthorized));
+                ErrorCode.InvalidAccessToken, "The access token is invalid.", ApplicationErrorType.Unauthorized));
         }
 
         if (user.EmailConfirmed)
@@ -527,7 +528,7 @@ public sealed class AuthenticationService(
         if (!result.Succeeded)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "validation_failed", "One or more validation errors occurred.", ApplicationErrorType.Validation,
+                ErrorCode.ValidationFailed, "One or more validation errors occurred.", ApplicationErrorType.Validation,
                 ToErrors(result)));
         }
 
@@ -628,7 +629,7 @@ public sealed class AuthenticationService(
         {
             await transaction.RollbackAsync(cancellationToken);
             return ApplicationResult.Failure(new ApplicationError(
-                "validation_failed", "One or more validation errors occurred.", ApplicationErrorType.Validation, ToErrors(reset)));
+                ErrorCode.ValidationFailed, "One or more validation errors occurred.", ApplicationErrorType.Validation, ToErrors(reset)));
         }
 
         await RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
@@ -654,7 +655,7 @@ public sealed class AuthenticationService(
         if (user is null || !user.IsActive)
         {
             return UnauthorizedFailure<AuthenticationResponse>(
-                "invalid_access_token", "The access token is invalid.");
+                ErrorCode.InvalidAccessToken, "The access token is invalid.");
         }
 
         var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
@@ -882,7 +883,7 @@ public sealed class AuthenticationService(
         IReadOnlyDictionary<string, string[]> details) =>
         ApplicationResult<T>.Failure(
             new ApplicationError(
-                "validation_failed",
+                ErrorCode.ValidationFailed,
                 "One or more validation errors occurred.",
                 ApplicationErrorType.Validation,
                 details));

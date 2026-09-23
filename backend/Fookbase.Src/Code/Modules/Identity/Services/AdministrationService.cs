@@ -2,6 +2,7 @@ using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +29,7 @@ public sealed class AdministrationService(
         if (offset < 0 || limit is < 1 or > MaximumPageSize)
         {
             return ApplicationResult<PagedResponse<AdminUserResponse>>.Failure(new ApplicationError(
-                "invalid_pagination",
+                ErrorCode.InvalidPagination,
                 $"Offset must be non-negative and limit must be between 1 and {MaximumPageSize}.",
                 ApplicationErrorType.Validation));
         }

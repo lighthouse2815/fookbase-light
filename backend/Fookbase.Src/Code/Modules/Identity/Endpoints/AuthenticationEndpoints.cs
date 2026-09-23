@@ -5,6 +5,7 @@ using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
@@ -458,7 +459,7 @@ public static class AuthenticationEndpoints
 
     private static IResult InvalidAccessToken() =>
         new ApplicationError(
-            "invalid_access_token",
+            ErrorCode.InvalidAccessToken,
             "The access token is invalid.",
             ApplicationErrorType.Unauthorized).ToHttpResult();
 }

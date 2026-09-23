@@ -6,6 +6,7 @@ using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Persistence;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Services;
@@ -238,7 +239,7 @@ public sealed class ReportsService(
             report.CreatedAtUtc);
 
     private static ApplicationError Validation(string message) =>
-        new("validation_failed", message, ApplicationErrorType.Validation);
+        new(ErrorCode.ValidationFailed, message, ApplicationErrorType.Validation);
 
     private static ApplicationError NotFound(string message) =>
         new("report_target_not_found", message, ApplicationErrorType.NotFound);

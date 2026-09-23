@@ -6,6 +6,7 @@ using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
@@ -1223,7 +1224,7 @@ public sealed class FriendsService(
         if (offset < 0 || limit < 1 || limit > MaximumLimit)
         {
             return new ApplicationError(
-                "invalid_pagination",
+                ErrorCode.InvalidPagination,
                 $"Offset must be non-negative and limit must be between 1 and {MaximumLimit}.",
                 ApplicationErrorType.Validation);
         }
@@ -1266,7 +1267,7 @@ public sealed class FriendsService(
         FriendsOperationError.FriendshipNotFound => new(
             "friendship_not_found", "The friendship was not found.", ApplicationErrorType.NotFound),
         FriendsOperationError.Forbidden => new(
-            "forbidden", "You are not allowed to perform this operation.", ApplicationErrorType.Forbidden),
+            ErrorCode.Forbidden, "You are not allowed to perform this operation.", ApplicationErrorType.Forbidden),
         FriendsOperationError.AlreadyFriends => new(
             "already_friends", "The users are already friends.", ApplicationErrorType.Conflict),
         FriendsOperationError.PendingRequestExists => new(

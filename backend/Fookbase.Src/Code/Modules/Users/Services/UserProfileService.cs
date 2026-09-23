@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Photos.Services;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Services;
@@ -98,7 +99,7 @@ public sealed class UserProfileService(
         {
             return ApplicationResult<PagedResponse<UserProfileResponse>>.Failure(
                 new ApplicationError(
-                    "invalid_pagination",
+                    ErrorCode.InvalidPagination,
                     $"Offset must be non-negative and limit must be between 1 and {MaximumSearchLimit}.",
                     ApplicationErrorType.Validation));
         }
@@ -134,7 +135,7 @@ public sealed class UserProfileService(
         {
             return ApplicationResult<UserProfileResponse>.Failure(
                 new ApplicationError(
-                    "validation_failed",
+                    ErrorCode.ValidationFailed,
                     "One or more validation errors occurred.",
                     ApplicationErrorType.Validation,
                     errors));

@@ -11,6 +11,7 @@ using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Persistence;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Pages.Services;
@@ -731,7 +732,7 @@ public sealed class PagesService(
     private static bool TryPagination(int limit, out ApplicationError? error)
     {
         error = limit is < 1 or > MaximumPageSize
-            ? new ApplicationError("invalid_pagination", $"Limit must be between 1 and {MaximumPageSize}.", ApplicationErrorType.Validation)
+            ? new ApplicationError(ErrorCode.InvalidPagination, $"Limit must be between 1 and {MaximumPageSize}.", ApplicationErrorType.Validation)
             : null;
         return error is null;
     }
@@ -778,8 +779,8 @@ public sealed class PagesService(
         new("invalid_cursor", "The cursor is invalid.", ApplicationErrorType.Validation);
     private static ApplicationResult NotFound() => ApplicationResult.Failure(new ApplicationError("page_not_found", "The Page was not found.", ApplicationErrorType.NotFound));
     private static ApplicationResult<T> NotFound<T>() => ApplicationResult<T>.Failure(new ApplicationError("page_not_found", "The Page was not found.", ApplicationErrorType.NotFound));
-    private static ApplicationResult Forbidden() => ApplicationResult.Failure(new ApplicationError("forbidden", "You are not allowed to manage this Page.", ApplicationErrorType.Forbidden));
-    private static ApplicationResult<T> Forbidden<T>() => ApplicationResult<T>.Failure(new ApplicationError("forbidden", "You are not allowed to manage this Page.", ApplicationErrorType.Forbidden));
+    private static ApplicationResult Forbidden() => ApplicationResult.Failure(new ApplicationError(ErrorCode.Forbidden, "You are not allowed to manage this Page.", ApplicationErrorType.Forbidden));
+    private static ApplicationResult<T> Forbidden<T>() => ApplicationResult<T>.Failure(new ApplicationError(ErrorCode.Forbidden, "You are not allowed to manage this Page.", ApplicationErrorType.Forbidden));
     private static ApplicationResult<T> Validation<T>(string code, string message) => ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
     private static ApplicationResult Validation(string code, string message) => ApplicationResult.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
     private static ApplicationResult<T> Conflict<T>(string code, string message) => ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Conflict));

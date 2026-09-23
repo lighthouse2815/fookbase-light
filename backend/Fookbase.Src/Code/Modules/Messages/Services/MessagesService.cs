@@ -12,6 +12,7 @@ using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Persistence;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
@@ -513,7 +514,7 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<PagedResponse<IncomingMessageResponse>>> GetUnreadNotificationsAsync(Guid actorUserId, int offset, int limit, CancellationToken cancellationToken = default)
     {
-        if (offset < 0 || limit is < 1 or > MaximumLimit) return Failure<PagedResponse<IncomingMessageResponse>>("invalid_pagination", $"Offset must be non-negative and limit must be between 1 and {MaximumLimit}.");
+        if (offset < 0 || limit is < 1 or > MaximumLimit) return Failure<PagedResponse<IncomingMessageResponse>>(ErrorCode.InvalidPagination, $"Offset must be non-negative and limit must be between 1 and {MaximumLimit}.");
         var accessSnapshot = await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken);
         var blocked = accessSnapshot.BlockedUserIds;
         var permittedDirectUsers = accessSnapshot.FriendUserIds.Except(blocked).ToArray();
@@ -763,14 +764,14 @@ public sealed class MessagesService(
     private static ApplicationError? ValidateConversationPagination(string? before, int limit, out ConversationCursor? cursor)
     {
         cursor = null;
-        if (limit is < 1 or > MaximumLimit) return new ApplicationError("invalid_pagination", $"Limit must be between 1 and {MaximumLimit}.", ApplicationErrorType.Validation);
+        if (limit is < 1 or > MaximumLimit) return new ApplicationError(ErrorCode.InvalidPagination, $"Limit must be between 1 and {MaximumLimit}.", ApplicationErrorType.Validation);
         if (string.IsNullOrWhiteSpace(before)) return null;
         return before.Length > MaximumCursorLength || !TryDecodeCursor(before, out cursor) ? new ApplicationError("invalid_conversation_cursor", "The conversation cursor is invalid.", ApplicationErrorType.Validation) : null;
     }
     private static ApplicationError? ValidateMessagePagination(string? before, int limit, out MessageCursor? cursor)
     {
         cursor = null;
-        if (limit is < 1 or > MaximumLimit) return new ApplicationError("invalid_pagination", $"Limit must be between 1 and {MaximumLimit}.", ApplicationErrorType.Validation);
+        if (limit is < 1 or > MaximumLimit) return new ApplicationError(ErrorCode.InvalidPagination, $"Limit must be between 1 and {MaximumLimit}.", ApplicationErrorType.Validation);
         if (string.IsNullOrWhiteSpace(before)) return null;
         return before.Length > MaximumCursorLength || !TryDecodeCursor(before, out cursor) ? new ApplicationError("invalid_message_cursor", "The message history cursor is invalid.", ApplicationErrorType.Validation) : null;
     }

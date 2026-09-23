@@ -14,6 +14,7 @@ using Fookbase.Api.Modules.Stories.Config;
 using Fookbase.Api.Modules.Stories.DTOs.Responses;
 using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Persistence;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Stories.Services;
@@ -633,7 +634,7 @@ public sealed class StoriesService(
     private static bool TryValidateLimit(int limit, out ApplicationError? error)
     {
         error = limit is < 1 or > MaximumPageSize
-            ? new ApplicationError("invalid_pagination",
+            ? new ApplicationError(ErrorCode.InvalidPagination,
                 $"Limit must be between 1 and {MaximumPageSize}.", ApplicationErrorType.Validation)
             : null;
         return error is null;

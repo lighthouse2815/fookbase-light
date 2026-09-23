@@ -37,8 +37,8 @@ public sealed class GlobalExceptionHandler(
                 : "An unexpected error occurred."
         };
         problem.Extensions["code"] = isBadRequest
-            ? "invalid_request"
-            : "internal_server_error";
+            ? ErrorCode.InvalidRequest
+            : ErrorCode.InternalServerError;
         problem.Extensions["requestId"] = RequestCorrelation.GetId(httpContext);
 
         httpContext.Response.StatusCode = statusCode;

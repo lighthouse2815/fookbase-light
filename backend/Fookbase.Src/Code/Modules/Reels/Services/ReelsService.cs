@@ -10,6 +10,7 @@ using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Reels.DTOs.Responses;
 using Fookbase.Api.Modules.Reels.Entities;
 using Fookbase.Api.Persistence;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 using PublicProfileHandle = Fookbase.Api.Modules.Users.Common.PublicProfileHandle;
 
@@ -110,7 +111,7 @@ public sealed class ReelsService(
     {
         if (limit < 1 || limit > MaximumPageSize)
         {
-            return Validation<ReelPageResponse>("invalid_pagination",
+            return Validation<ReelPageResponse>(ErrorCode.InvalidPagination,
                 $"Limit must be between 1 and {MaximumPageSize}.");
         }
 

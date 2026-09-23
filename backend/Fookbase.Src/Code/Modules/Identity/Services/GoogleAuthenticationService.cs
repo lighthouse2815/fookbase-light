@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Persistence;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -160,7 +161,7 @@ public sealed class GoogleAuthenticationService(
         if (!await userManager.CheckPasswordAsync(user, password))
         {
             await userManager.AccessFailedAsync(user);
-            return Failure<object>("invalid_credentials", "The email or password is invalid.");
+            return Failure<object>(ErrorCode.InvalidCredentials, "The email or password is invalid.");
         }
 
         await userManager.ResetAccessFailedCountAsync(user);

@@ -11,6 +11,7 @@ using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Services;
@@ -527,7 +528,7 @@ public sealed class PostsService(
         if (offset < 0 || limit < 1 || limit > MaximumLimit)
         {
             return new ApplicationError(
-                "invalid_pagination",
+                ErrorCode.InvalidPagination,
                 $"Offset must be non-negative and limit must be between 1 and {MaximumLimit}.",
                 ApplicationErrorType.Validation);
         }
@@ -554,7 +555,7 @@ public sealed class PostsService(
         PostsServiceError.ParentCommentNotFound => new(
             "parent_comment_not_found", "The parent comment was not found.", ApplicationErrorType.NotFound),
         PostsServiceError.Forbidden => new(
-            "forbidden", "You are not allowed to perform this operation.", ApplicationErrorType.Forbidden),
+            ErrorCode.Forbidden, "You are not allowed to perform this operation.", ApplicationErrorType.Forbidden),
         PostsServiceError.RelationshipBlocked => new(
             "relationship_unavailable", "This interaction is unavailable.", ApplicationErrorType.Conflict),
         PostsServiceError.InvalidParentComment => new(
