@@ -61,6 +61,39 @@ public class GoogleMobileEndpointsTests(IdentityApiFactory factory) : IClassFixt
         var replay = await client.PostAsJsonAsync("/api/auth/google/mobile/exchange", new { code, verifier });
         Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
     }
+
+    [Fact]
+    public async Task Zola_mobile_code_uses_its_own_callback_and_client_binding()
+    {
+        using var app = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("GoogleAuthentication:MobileCallbackUrl", "https://mobile.example.test/auth/callback");
+            builder.UseSetting("GoogleAuthentication:ZolaMobileCallbackUrl", "https://zola.example.test/auth/callback");
+        });
+        using var client = app.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var verifier = new string('a', 64);
+        AddIdentity(client, verifier, "zola-mobile");
+
+        var callback = await client.GetAsync("/api/auth/google/mobile/callback");
+
+        Assert.Equal(HttpStatusCode.Redirect, callback.StatusCode);
+        Assert.Equal("zola.example.test", callback.Headers.Location!.Host);
+        var code = QueryHelpers.ParseQuery(callback.Headers.Location.Query)["code"].ToString();
+        var wrongClient = await client.PostAsJsonAsync("/api/auth/google/mobile/exchange", new
+        {
+            code,
+            verifier,
+            client = "mobile"
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, wrongClient.StatusCode);
+        var exchange = await client.PostAsJsonAsync("/api/auth/google/mobile/exchange", new
+        {
+            code,
+            verifier,
+            client = "zola-mobile"
+        });
+        Assert.Equal(HttpStatusCode.OK, exchange.StatusCode);
+    }
     [Fact]
     public async Task Native_identity_cannot_bypass_pkce_using_web_callback()
     {
@@ -70,12 +103,12 @@ public class GoogleMobileEndpointsTests(IdentityApiFactory factory) : IClassFixt
         Assert.False(result.IsSuccessStatusCode);
         Assert.Null(result.Headers.Location);
     }
-    private static void AddIdentity(HttpClient client, string verifier)
+    private static void AddIdentity(HttpClient client, string verifier, string clientName = "mobile")
     {
         client.DefaultRequestHeaders.Add("X-Test-Google-Sub", Guid.NewGuid().ToString());
         client.DefaultRequestHeaders.Add("X-Test-Google-Email", $"mobile-{Guid.NewGuid():N}@example.test");
         client.DefaultRequestHeaders.Add("X-Test-Google-Email-Verified", "true");
-        client.DefaultRequestHeaders.Add("X-Test-Google-Client", "mobile");
+        client.DefaultRequestHeaders.Add("X-Test-Google-Client", clientName);
         client.DefaultRequestHeaders.Add("X-Test-Google-Challenge", WebEncoders.Base64UrlEncode(SHA256.HashData(Encoding.ASCII.GetBytes(verifier))));
         client.DefaultRequestHeaders.Add("X-Test-Google-State", new string('s', 43));
     }

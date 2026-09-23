@@ -24,9 +24,11 @@ public sealed class GoogleMobileController(
     [EnableRateLimiting("auth-login")]
     public IResult Start(
         [FromQuery] string? challenge,
-        [FromQuery] string? state)
+        [FromQuery] string? state,
+        [FromQuery] string? client = null)
     {
-        if (!Enabled(options))
+        var mobileClient = GetClient(client);
+        if (!Enabled(options, mobileClient))
         {
             return Results.NotFound();
         }
@@ -35,7 +37,7 @@ public sealed class GoogleMobileController(
             throw Invalid();
         }
         var properties = new AuthenticationProperties { RedirectUri = "/api/auth/google/mobile/callback" };
-        properties.Items["fookbase.client"] = "mobile";
+        properties.Items["fookbase.client"] = mobileClient;
         properties.Items["fookbase.code_challenge"] = challenge;
         properties.Items["fookbase.state"] = state;
         return Results.Challenge(properties, ["Google"]);
@@ -47,12 +49,12 @@ public sealed class GoogleMobileController(
     public async Task<IResult> CallbackAsync(
         CancellationToken cancellationToken)
     {
-        if (!Enabled(options))
+        var identity = await reader.ReadAsync(HttpContext, cancellationToken, mobile: true);
+        if (identity.Client is null || !Enabled(options, identity.Client))
         {
             return Results.NotFound();
         }
-        var identity = await reader.ReadAsync(HttpContext, cancellationToken, mobile: true);
-        if (identity.Client != "mobile" ||
+        if (!IsSupportedClient(identity.Client) ||
             !GoogleMobileFlow.IsValidChallenge(identity.CodeChallenge) ||
             !GoogleMobileFlow.IsValidState(identity.State))
         {
@@ -60,12 +62,12 @@ public sealed class GoogleMobileController(
         }
 
         var completion = await service.CreateCompletionAsync(
-            "mobile",
+            identity.Client!,
             identity.ProviderKey,
             identity.Email,
             identity.EmailVerified,
             cancellationToken);
-        return Results.Redirect(QueryHelpers.AddQueryString(options.MobileCallbackUrl, new Dictionary<string, string?>
+        return Results.Redirect(QueryHelpers.AddQueryString(options.GetMobileCallbackUrl(identity.Client!), new Dictionary<string, string?>
         {
             ["code"] = flow.Protect(completion.Code, identity.CodeChallenge!),
             ["state"] = identity.State,
@@ -80,7 +82,8 @@ public sealed class GoogleMobileController(
         [FromBody] GoogleMobileCompletionRequest request,
         CancellationToken cancellationToken)
     {
-        if (!Enabled(options))
+        var mobileClient = GetClient(request.Client);
+        if (!Enabled(options, mobileClient))
         {
             return Results.NotFound();
         }
@@ -90,7 +93,7 @@ public sealed class GoogleMobileController(
             throw Invalid();
         }
         var result = await service.ExchangeAsync(
-            code, "mobile", Request.Headers.UserAgent.ToString(), cancellationToken);
+            code, mobileClient, Request.Headers.UserAgent.ToString(), cancellationToken);
         return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
@@ -101,7 +104,8 @@ public sealed class GoogleMobileController(
         [FromBody] GoogleMobileCompletionRequest request,
         CancellationToken cancellationToken)
     {
-        if (!Enabled(options))
+        var mobileClient = GetClient(request.Client);
+        if (!Enabled(options, mobileClient))
         {
             return Results.NotFound();
         }
@@ -112,15 +116,19 @@ public sealed class GoogleMobileController(
         }
         var result = await service.LinkExistingAsync(
             code,
-            "mobile",
+            mobileClient,
             request.Password ?? string.Empty,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
         return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
-    private static bool Enabled(GoogleAuthenticationOptions options) =>
-        options.Enabled && !string.IsNullOrWhiteSpace(options.MobileCallbackUrl);
+    private static bool IsSupportedClient(string? client) => client is "mobile" or "zola-mobile";
+
+    private static string GetClient(string? client) => client ?? "mobile";
+
+    private static bool Enabled(GoogleAuthenticationOptions options, string client) =>
+        IsSupportedClient(client) && options.Enabled && options.IsMobileClientEnabled(client);
 
     private static BusinessException Invalid() => new(new ApplicationError(
         "invalid_mobile_google_login",

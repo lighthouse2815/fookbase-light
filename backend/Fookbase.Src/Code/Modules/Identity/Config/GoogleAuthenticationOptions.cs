@@ -14,6 +14,7 @@ public sealed class GoogleAuthenticationOptions
 
     public string ZolaLightBaseUrl { get; init; } = string.Empty;
     public string MobileCallbackUrl { get; init; } = string.Empty;
+    public string ZolaMobileCallbackUrl { get; init; } = string.Empty;
 
     public void Validate(bool production)
     {
@@ -34,13 +35,8 @@ public sealed class GoogleAuthenticationOptions
 
         ValidateClientUrl(WebBaseUrl, "GoogleAuthentication:WebBaseUrl", production);
         ValidateClientUrl(ZolaLightBaseUrl, "GoogleAuthentication:ZolaLightBaseUrl", production);
-        if (!string.IsNullOrWhiteSpace(MobileCallbackUrl) &&
-            (!Uri.TryCreate(MobileCallbackUrl, UriKind.Absolute, out var callback) ||
-             callback.Scheme != Uri.UriSchemeHttps || string.IsNullOrWhiteSpace(callback.Host) ||
-             !string.IsNullOrEmpty(callback.UserInfo) || !string.IsNullOrEmpty(callback.Query) || !string.IsNullOrEmpty(callback.Fragment)))
-        {
-            throw new InvalidOperationException("GoogleAuthentication:MobileCallbackUrl must be an explicit HTTPS callback without query, fragment or credentials.");
-        }
+        ValidateMobileCallbackUrl(MobileCallbackUrl, "GoogleAuthentication:MobileCallbackUrl");
+        ValidateMobileCallbackUrl(ZolaMobileCallbackUrl, "GoogleAuthentication:ZolaMobileCallbackUrl");
     }
 
     public string GetClientLoginUri(string client) => client switch
@@ -48,6 +44,20 @@ public sealed class GoogleAuthenticationOptions
         "web" => BuildLoginUri(WebBaseUrl, "GoogleAuthentication:WebBaseUrl"),
         "zola-light" => BuildLoginUri(ZolaLightBaseUrl, "GoogleAuthentication:ZolaLightBaseUrl"),
         _ => throw new InvalidOperationException("The Google authentication client is unsupported.")
+    };
+
+    public string GetMobileCallbackUrl(string client) => client switch
+    {
+        "mobile" when !string.IsNullOrWhiteSpace(MobileCallbackUrl) => MobileCallbackUrl,
+        "zola-mobile" when !string.IsNullOrWhiteSpace(ZolaMobileCallbackUrl) => ZolaMobileCallbackUrl,
+        _ => throw new InvalidOperationException("The Google mobile client is unsupported or has no callback URL.")
+    };
+
+    public bool IsMobileClientEnabled(string client) => client switch
+    {
+        "mobile" => !string.IsNullOrWhiteSpace(MobileCallbackUrl),
+        "zola-mobile" => !string.IsNullOrWhiteSpace(ZolaMobileCallbackUrl),
+        _ => false
     };
 
     private static void ValidateClientUrl(string value, string name, bool production)
@@ -60,6 +70,17 @@ public sealed class GoogleAuthenticationOptions
         if (production && uri.Scheme != Uri.UriSchemeHttps)
         {
             throw new InvalidOperationException($"{name} must use HTTPS in Production.");
+        }
+    }
+
+    private static void ValidateMobileCallbackUrl(string value, string name)
+    {
+        if (!string.IsNullOrWhiteSpace(value) &&
+            (!Uri.TryCreate(value, UriKind.Absolute, out var callback) ||
+             callback.Scheme != Uri.UriSchemeHttps || string.IsNullOrWhiteSpace(callback.Host) ||
+             !string.IsNullOrEmpty(callback.UserInfo) || !string.IsNullOrEmpty(callback.Query) || !string.IsNullOrEmpty(callback.Fragment)))
+        {
+            throw new InvalidOperationException($"{name} must be an explicit HTTPS callback without query, fragment or credentials.");
         }
     }
 

@@ -73,7 +73,7 @@ export type ResetPasswordDetails = EmailResetPasswordDetails | PhoneResetPasswor
 const jsonBody = (value: unknown) => ({ body: JSON.stringify(value) })
 
 export const authApi = {
-  providers: () => apiRequest<ExternalProviders>('/api/auth/providers'),
+  providers: (client?: 'mobile' | 'zola-mobile') => apiRequest<ExternalProviders>(`/api/auth/providers${client ? `?client=${client}` : ''}`),
   startRegistration: (details: RegistrationDetails) =>
     apiRequest<RegistrationChallenge>('/api/auth/registration/start', {
       method: 'POST',

@@ -22,9 +22,11 @@ public sealed class GoogleController(
 {
     [HttpGet("providers")]
     [AllowAnonymous]
-    public IResult GetExternalProviders() =>
+    public IResult GetExternalProviders([FromQuery] string? client = null) =>
         Results.Ok(ApiResponse.Success(new ExternalAuthenticationProvidersResponse(googleOptions.Enabled,
-            googleOptions.Enabled && !string.IsNullOrWhiteSpace(googleOptions.MobileCallbackUrl)), HttpContext));
+            googleOptions.Enabled && (client is null
+                ? googleOptions.IsMobileClientEnabled("mobile") || googleOptions.IsMobileClientEnabled("zola-mobile")
+                : googleOptions.IsMobileClientEnabled(client))), HttpContext));
 
     [HttpGet("google/start")]
     [AllowAnonymous]

@@ -23,7 +23,7 @@ export function AuthScreen() {
     else await saveSession(result.response, result.generation);
   }
   useEffect(() => {
-    void authApi.providers().then(p => setGoogleEnabled(!!p.googleMobile && !!process.env.EXPO_PUBLIC_MOBILE_CALLBACK_URL)).catch(() => {});
+    void authApi.providers('zola-mobile').then(p => setGoogleEnabled(!!p.googleMobile && !!process.env.EXPO_PUBLIC_MOBILE_CALLBACK_URL)).catch(() => {});
     const handle = (url: string) => { if (isGoogleCallback(url)) void finishGoogle(url).catch(setError); };
     void Linking.getInitialURL().then(url => { if (url) handle(url); }).catch(setError);
     const listener = Linking.addEventListener('url', ({ url }) => handle(url));
