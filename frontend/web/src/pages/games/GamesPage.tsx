@@ -3,8 +3,9 @@ import { Mascot } from 'page-mascot'
 import { usePreferences } from '../../preferences'
 import FlappyBirdGame from './FlappyBirdGame'
 import MemoryGame from './MemoryGame'
+import Twenty48Game from './Twenty48Game'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -39,6 +40,12 @@ const games: GameDefinition[] = [
     description: 'Khám phá vườn trái cây, lật thẻ và tìm đủ tám cặp giống nhau.',
     accent: 'from-[#db2777] via-[#c044b7] to-[#8b5cf6]',
     icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="10" y="18" width="49" height="65" rx="10" fill="white" fillOpacity=".35" transform="rotate(-12 35 50)" /><rect x="36" y="12" width="49" height="65" rx="10" fill="white" /><path d="m60 25 17 17-17 20-17-20z" fill="#ec4899" /><path d="m24 43 7 8-7 8-7-8z" fill="white" /></svg>,
+  },
+  {
+    id: '2048', title: '2048', category: 'Giải đố', badge: 'Mới', component: Twenty48Game,
+    description: 'Trượt những ô số, ghép đôi và chinh phục cột mốc 2048.',
+    accent: 'from-[#d97706] via-[#e9a125] to-[#f2ca58]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="7" y="7" width="82" height="82" rx="22" fill="white" fillOpacity=".18" /><rect x="17" y="17" width="28" height="28" rx="7" fill="#fff2d4" /><rect x="51" y="17" width="28" height="28" rx="7" fill="#ffe2a0" /><rect x="17" y="51" width="62" height="28" rx="7" fill="white" /><g fill="#996019" fontFamily="sans-serif" fontWeight="900" textAnchor="middle"><text x="31" y="38" fontSize="20">2</text><text x="65" y="38" fontSize="20">4</text><text x="48" y="72" fontSize="22">2048</text></g></svg>,
   },
 ]
 
