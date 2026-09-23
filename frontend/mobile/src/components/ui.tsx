@@ -20,7 +20,7 @@ export function useTheme(): Theme { return useColorScheme() === 'light' ? lightT
 
 export function Label({ children, muted = false, title = false, style, numberOfLines }: PropsWithChildren<{ muted?: boolean; title?: boolean; style?: StyleProp<TextStyle>; numberOfLines?: number }>) {
   const t = useTheme();
-  return <Text numberOfLines={numberOfLines} style={[{ color: muted ? t.muted : t.text, fontSize: title ? 25 : 16, fontWeight: title ? '800' : '400', lineHeight: title ? 31 : 24, letterSpacing: title ? -0.5 : 0 }, style]}>{children}</Text>;
+  return <Text numberOfLines={numberOfLines} style={[{ color: muted ? t.muted : t.text, fontSize: title ? 22 : 15, fontWeight: title ? '800' : '400', lineHeight: title ? 28 : 21, letterSpacing: title ? -0.25 : 0 }, style]}>{children}</Text>;
 }
 
 export function Screen({ children, scroll = true, style }: PropsWithChildren<{ scroll?: boolean; style?: StyleProp<ViewStyle> }>) {
@@ -110,17 +110,17 @@ export function ErrorNotice({ error, retry }: { error: unknown; retry?: () => vo
 export function Loading() { const t = useTheme(); return <View style={styles.loading}><ActivityIndicator accessibilityLabel="Đang tải" color={t.primary} /><Text style={{ color: t.muted, fontSize: 13 }}>Đang tải thêm điều hay…</Text></View>; }
 
 export const styles = StyleSheet.create({
-  screen: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 34, gap: 14, flexGrow: 1 },
-  card: { padding: 16, gap: 12, borderRadius: 16 },
-  cardRaised: { shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
-  button: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 11, borderRadius: 14, borderWidth: 1 },
-  buttonCompact: { minHeight: 38, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 11 },
+  screen: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 30, gap: 12, flexGrow: 1 },
+  card: { padding: 14, gap: 10, borderRadius: 12 },
+  cardRaised: { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 7, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  button: { minHeight: 46, justifyContent: 'center', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 9, borderWidth: 1 },
+  buttonCompact: { minHeight: 36, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 8 },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   actionChip: { minHeight: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 8, borderRadius: 10, flex: 1 },
   postAction: { minHeight: 38, flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, paddingHorizontal: 6 },
   fieldLabel: { fontSize: 13, fontWeight: '700', lineHeight: 18, letterSpacing: 0.1 },
-  field: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, minHeight: 50, fontSize: 16 },
+  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, minHeight: 48, fontSize: 16 },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   error: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 10, flexDirection: 'row', alignItems: 'center' },
   loading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 24 },

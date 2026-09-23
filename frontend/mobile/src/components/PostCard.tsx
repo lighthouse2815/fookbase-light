@@ -18,10 +18,10 @@ export function PostCard({ post, detail = false }: { post: Post; detail?: boolea
   const profileUserId = post.authorUserId ?? (post.displayAuthor?.type === 'user' ? post.displayAuthor.id : null);
   const reactionTotal = Object.values(post.reactionCounts).reduce((a, b) => a + b, 0);
   const privacyLabel = post.privacy === 'friends' ? 'Bạn bè' : post.privacy === 'onlyMe' ? 'Chỉ mình tôi' : 'Công khai';
-  return <Card style={postStyles.card}>
+  return <Card style={[postStyles.card, { borderBottomColor: t.border }]}>
     <View style={postStyles.header}>
       <Pressable accessibilityRole={profileUserId ? 'button' : undefined} accessibilityLabel={profileUserId ? `Xem trang cá nhân ${authorName}` : undefined} disabled={!profileUserId} onPress={() => { if (profileUserId) router.push(`/profile/${profileUserId}`); }} style={({ pressed }) => [postStyles.author, { opacity: pressed && profileUserId ? 0.72 : 1 }]}><Avatar label={authorName} uri={avatarUrl} size={46} online /><View style={{ flex: 1, gap: 1 }}><Label style={{ fontSize: 15, fontWeight: '800' }}>{authorName}</Label><Text style={{ color: t.muted, fontSize: 12 }}>{handle} · {new Date(post.createdAtUtc).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · {privacyLabel}</Text></View></Pressable>
-      <Icon name="more" color={t.muted} size={18} />
+      <Pressable accessibilityRole="button" accessibilityLabel="Tùy chọn bài viết" hitSlop={8} style={postStyles.more}><Icon name="more" color={t.muted} size={19} /></Pressable>
     </View>
     {!!post.content && <Text style={[postStyles.content, { color: t.text }]}>{post.content}</Text>}
     {post.mediaIds.map(id => <View key={id} style={postStyles.media}><MediaView path={`/api/posts/${post.id}/media/${id}/access`} /></View>)}
@@ -38,10 +38,11 @@ export function PostCard({ post, detail = false }: { post: Post; detail?: boolea
 }
 
 const postStyles = StyleSheet.create({
-  card: { padding: 0, overflow: 'hidden', borderRadius: 0 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 15 },
+  card: { padding: 0, overflow: 'hidden', borderRadius: 0, borderBottomWidth: StyleSheet.hairlineWidth },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 14 },
   author: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  content: { fontSize: 16, lineHeight: 24, paddingHorizontal: 16, paddingTop: 12 },
+  more: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  content: { fontSize: 15, lineHeight: 22, paddingHorizontal: 16, paddingTop: 11 },
   media: { marginTop: 12, overflow: 'hidden' },
   meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 11 },
   metaLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
