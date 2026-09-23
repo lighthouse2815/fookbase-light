@@ -10,4 +10,10 @@ public sealed record ChangePasswordRequest(
     string? NewPassword,
     [property: Required(ErrorMessage = "Password confirmation is required.")]
     [property: Compare("NewPassword", ErrorMessage = "Password confirmation does not match the new password.")]
-    string? ConfirmPassword);
+    string? ConfirmPassword)
+{
+    // MVC can bind through this constructor and validate the property attributes, including Compare.
+    public ChangePasswordRequest() : this(null, null, null)
+    {
+    }
+}

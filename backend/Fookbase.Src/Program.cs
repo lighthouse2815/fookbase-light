@@ -15,7 +15,7 @@ using Fookbase.Api.Modules.Groups.Endpoints;
 using Fookbase.Api.Modules.Admin;
 using Fookbase.Api.Modules.Admin.Endpoints;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Modules.Identity.Endpoints;
+using Fookbase.Api.Modules.Identity.Controllers;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Middleware;
 using Fookbase.Api.Modules.Media.Endpoints;
@@ -264,6 +264,34 @@ builder.Services.AddHealthChecks()
     .AddCheck<FookbaseDatabaseHealthCheck>("postgresql", tags: ["ready"])
     .AddCheck<CloudinaryHealthCheck>("cloudinary", tags: ["ready"]);
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllers(options =>
+{
+    if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        options.Conventions.Add(new TestingRegistrationConvention());
+    }
+}).ConfigureApiBehaviorOptions(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var invalidBody = context.ModelState.Any(entry =>
+            entry.Key.Length == 0 || entry.Key.StartsWith('$') ||
+            entry.Value!.Errors.Any(error => error.Exception is not null));
+        var error = invalidBody ? ErrorCode.InvalidRequest : ErrorCode.ValidationFailed;
+        ProblemDetails problem = invalidBody
+            ? new ProblemDetails()
+            : new ValidationProblemDetails(context.ModelState);
+        problem.Status = StatusCodes.Status400BadRequest;
+        problem.Title = invalidBody ? "Bad request" : "Validation";
+        problem.Detail = error.Message;
+        problem.Extensions["code"] = error.Code;
+        problem.Extensions["requestId"] = RequestCorrelation.GetId(context.HttpContext);
+        return new BadRequestObjectResult(problem)
+        {
+            ContentTypes = { "application/problem+json" }
+        };
+    };
+});
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
 {
@@ -335,7 +363,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("ready")
 }).DisableRateLimiting();
-app.MapAuthenticationEndpoints();
+app.MapControllers();
 app.MapUserProfileEndpoints();
 app.MapPrivacySettingsEndpoints();
 app.MapFriendEndpoints();

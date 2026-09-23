@@ -771,8 +771,13 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
     }
 
-    [Fact]
-    public async Task Password_change_returns_standard_validation_problem_when_confirmation_does_not_match()
+    [Theory]
+    [InlineData("New-password-123!", "different-password", "ConfirmPassword")]
+    [InlineData("short", "short", "NewPassword")]
+    [InlineData(null, null, "NewPassword")]
+    [InlineData("New-password-123!", null, "ConfirmPassword")]
+    public async Task Password_change_returns_standard_validation_problem_for_invalid_input(
+        string? newPassword, string? confirmation, string errorField)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
@@ -782,12 +787,12 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
         var response = await client.PostAsJsonAsync(
             "/api/auth/password/change",
-            new ChangePasswordRequest(account.Password, "New-password-123!", "different-password"));
+            new ChangePasswordRequest(account.Password, newPassword, confirmation));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal("validation_failed", document.RootElement.GetProperty("code").GetString());
-        Assert.True(document.RootElement.TryGetProperty("errors", out _));
+        Assert.NotEmpty(document.RootElement.GetProperty("errors").GetProperty(errorField).EnumerateArray());
     }
 
     private static async Task<AuthenticationResponse> RegisterAsync(
