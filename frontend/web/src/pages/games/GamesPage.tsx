@@ -6,8 +6,9 @@ import MemoryGame from './MemoryGame'
 import Twenty48Game from './Twenty48Game'
 import SnakeGame from './SnakeGame'
 import MinesweeperGame from './MinesweeperGame'
+import WhackMoleGame from './WhackMoleGame'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -60,6 +61,12 @@ const games: GameDefinition[] = [
     description: 'Đọc những con số, cắm cờ và mở đường qua bãi mìn bí ẩn.',
     accent: 'from-[#0369a1] via-[#0891b2] to-[#67c9d5]',
     icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="8" y="8" width="80" height="80" rx="20" fill="white" fillOpacity=".2" /><path d="M30 74V21" stroke="white" strokeWidth="6" strokeLinecap="round" /><path d="M33 20h37L55 35l15 15H33z" fill="#fde047" /><path d="M19 76h30" stroke="white" strokeWidth="6" strokeLinecap="round" /><circle cx="69" cy="70" r="10" fill="#164e63" /><path d="M69 55v30M54 70h30" stroke="#164e63" strokeWidth="3" /><circle cx="66" cy="67" r="3" fill="white" /></svg>,
+  },
+  {
+    id: 'whack-mole', title: 'Đập chuột', category: 'Phản xạ', badge: 'Mới', component: WhackMoleGame,
+    description: 'Nhanh tay bắt những chú chuột tinh nghịch trong thử thách 30 giây.',
+    accent: 'from-[#b45309] via-[#da8b30] to-[#edbd71]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="5" y="5" width="86" height="86" rx="24" fill="white" fillOpacity=".15" /><ellipse cx="48" cy="73" rx="33" ry="12" fill="#713f12" /><circle cx="28" cy="34" r="12" fill="#f5d2a0" /><circle cx="68" cy="34" r="12" fill="#f5d2a0" /><ellipse cx="48" cy="51" rx="27" ry="29" fill="#e9b575" /><ellipse cx="48" cy="62" rx="17" ry="13" fill="#fff1d6" /><circle cx="37" cy="46" r="4" fill="#713f12" /><circle cx="59" cy="46" r="4" fill="#713f12" /><ellipse cx="48" cy="58" rx="5" ry="4" fill="#9a583c" /></svg>,
   },
 ]
 
