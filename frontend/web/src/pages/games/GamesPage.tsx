@@ -11,6 +11,7 @@ import SlidingPuzzleGame from './SlidingPuzzleGame'
 import MelodyGame from './MelodyGame'
 import StarCatchGame from './StarCatchGame'
 import LightsGame from './LightsGame'
+import './games.css'
 
 type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle' | 'melody' | 'star-catch' | 'lights'
 type Mark = 'X' | 'O'
@@ -123,20 +124,40 @@ const chooseComputerMove = (board: Cell[]) => {
   return [0, 2, 6, 8].find((move) => moves.includes(move)) ?? moves[0] ?? null
 }
 
-function GameLibrary({ onSelect }: { onSelect: (gameId: GameId) => void }) {
-  return <section aria-labelledby="game-library-title">
-    <div className="mb-4 flex items-end justify-between gap-4">
-      <div><h2 id="game-library-title" className="font-heading text-xl font-bold text-text">Khám phá trò chơi</h2><p className="mt-1 text-sm text-text-muted">Chọn một biểu tượng để bắt đầu chơi.</p></div>
-      <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-text-muted">{games.length} trò chơi</span>
+function GameLibrary({ onSelect, activeCategory, onCategoryChange }: {
+  onSelect: (gameId: GameId) => void
+  activeCategory: string
+  onCategoryChange: (category: string) => void
+}) {
+  const categories = ['Tất cả', ...Array.from(new Set(games.map((game) => game.category)))]
+  const visibleGames = activeCategory === 'Tất cả' ? games : games.filter((game) => game.category === activeCategory)
+
+  return <section className="games-library" aria-labelledby="game-library-title">
+    <div className="games-library__heading">
+      <div>
+        <p className="games-kicker">BỘ SƯU TẬP FOOKBASE</p>
+        <h2 id="game-library-title">Chọn mood của bạn</h2>
+        <p>Những ván chơi ngắn, dễ bắt đầu và vừa vặn cho cả màn hình lớn lẫn điện thoại.</p>
+      </div>
+      <span className="games-count">{visibleGames.length} / {games.length} game</span>
     </div>
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {games.map((game) => <button key={game.id} type="button" onClick={() => onSelect(game.id)} className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-surface text-left card-shadow transition duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-        <div className={`relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-linear-to-br ${game.accent} p-7`}>
-          <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10" /><div className="absolute -bottom-14 -left-8 h-36 w-36 rounded-full bg-black/10" />
-          <div className="relative h-28 w-28 transition duration-200 group-hover:scale-105">{game.icon}</div>
-          <span className="absolute right-5 top-5 rounded-full border border-white/25 bg-black/15 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">{game.badge}</span>
+    <div className="games-filters" role="tablist" aria-label="Lọc game theo thể loại">
+      {categories.map((category) => <button key={category} type="button" role="tab" aria-selected={activeCategory === category} onClick={() => onCategoryChange(category)} className={activeCategory === category ? 'is-active' : ''}>{category}</button>)}
+    </div>
+    <div className="games-library__grid">
+      {visibleGames.map((game) => <button key={game.id} type="button" onClick={() => onSelect(game.id)} className="game-card group">
+        <div className={`game-card__art bg-linear-to-br ${game.accent}`}>
+          <div className="game-card__orb game-card__orb--top" /><div className="game-card__orb game-card__orb--bottom" />
+          <div className="game-card__icon">{game.icon}</div>
+          <span className="game-card__badge">{game.badge}</span>
+          <span className="game-card__open" aria-hidden="true">↗</span>
         </div>
-        <div className="flex w-full flex-1 items-center gap-4 p-5"><div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{game.category}</p><h3 className="mt-1 font-heading text-xl font-bold text-text">{game.title}</h3><p className="mt-2 text-sm leading-6 text-text-muted">{game.description}</p></div><span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-xl text-white transition group-hover:translate-x-1" aria-hidden="true">›</span></div>
+        <div className="game-card__body">
+          <p className="game-card__category">{game.category}</p>
+          <h3>{game.title}</h3>
+          <p>{game.description}</p>
+          <span className="game-card__cta">Chơi ngay <span aria-hidden="true">→</span></span>
+        </div>
       </button>)}
     </div>
   </section>
@@ -188,8 +209,23 @@ export default function GamesPage() {
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null)
   const game = games.find((item) => item.id === selectedGame)
   const ActiveGame = game?.component
-  return <main className="min-h-screen bg-bg p-4 xl:p-6" style={{ animation: 'fade-in 0.25s ease both' }}><div className="mx-auto max-w-5xl">
-    <header className="mb-7 overflow-hidden rounded-3xl border border-border bg-surface px-5 py-6 card-shadow sm:px-8"><div className="flex items-center gap-5"><Mascot directions="/mascots/gearbot-directions.webp" reactions="/mascots/gearbot-reactions.webp" size={88} className="shrink-0" label="Game Robot Mascot" /><div><p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">FOOKBASE GAMES</p><h1 className="font-heading text-3xl font-bold text-text">{game?.title ?? t('quickBreak')}</h1><p className="mt-2 text-text-muted">{game?.description ?? 'Chọn game yêu thích, thư giãn và thử thách bạn bè ngay tại Fookbase.'}</p></div></div></header>
-    {ActiveGame ? <><button type="button" onClick={() => setSelectedGame(null)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition hover:border-primary/50 hover:bg-surface-2"><span aria-hidden="true">←</span> Tất cả trò chơi</button><ActiveGame /></> : <GameLibrary onSelect={(gameId) => { setSelectedGame(gameId); window.scrollTo({ top: 0, behavior: 'instant' }) }} />}
+  const [activeCategory, setActiveCategory] = useState('Tất cả')
+  return <main className="games-page" style={{ animation: 'fade-in 0.25s ease both' }}><div className="games-page__inner">
+    {ActiveGame && game ? <>
+      <section className="games-detail-hero" aria-labelledby="games-detail-title">
+        <div className={`games-detail-hero__art bg-linear-to-br ${game.accent}`}><div className="games-detail-hero__icon">{game.icon}</div></div>
+        <div className="games-detail-hero__copy"><p className="games-kicker">{game.category} · FOOKBASE ARCADE</p><h1 id="games-detail-title">{game.title}</h1><p>{game.description}</p></div>
+        <span className="games-detail-hero__badge">{game.badge}</span>
+      </section>
+      <button type="button" onClick={() => setSelectedGame(null)} className="games-back-button"><span aria-hidden="true">←</span> Tất cả trò chơi</button>
+      <ActiveGame />
+    </> : <>
+      <section className="games-hero" aria-labelledby="games-page-title">
+        <div className="games-hero__glow" />
+        <div className="games-hero__copy"><p className="games-kicker">FOOKBASE PLAYROOM</p><h1 id="games-page-title">{t('quickBreak')}<br /><em>the fun way.</em></h1><p>Chọn một ván ngắn để đổi nhịp, luyện phản xạ hoặc rủ bạn bè cùng bay.</p><div className="games-hero__stats"><span><strong>{games.length}</strong> game</span><span><strong>{new Set(games.map((item) => item.category)).size}</strong> thể loại</span><span><strong>∞</strong> lượt vui</span></div></div>
+        <div className="games-hero__mascot"><Mascot directions="/mascots/gearbot-directions.webp" reactions="/mascots/gearbot-reactions.webp" size={148} className="shrink-0" label="Game Robot Mascot" /><span>Chơi một ván nhé?</span></div>
+      </section>
+      <GameLibrary activeCategory={activeCategory} onCategoryChange={setActiveCategory} onSelect={(gameId) => { setSelectedGame(gameId); window.scrollTo({ top: 0, behavior: 'instant' }) }} />
+    </>}
   </div></main>
 }
