@@ -30,8 +30,17 @@ function FeedHeader({ mode, onModeChange, username, userId }: { mode: 'home' | '
   const initial = username?.slice(0, 1).toUpperCase() ?? 'F';
   const stories = useQuery({ queryKey: ['story-tray', userId], queryFn: storiesApi.tray });
   const tray = stories.data?.items.flatMap(author => author.stories.slice(0, 1)) ?? [];
+  const navItems = [
+    ['Bảng tin', 'home', '/'],
+    ['Reels', 'reels', '/reels'],
+    ['Nhóm', 'people', '/groups'],
+    ['Trang cá nhân', 'people', `/profile/${userId}`],
+    ['Thông báo', 'bell', '/notifications'],
+    ['Menu', 'menu', '/menu'],
+  ] as const;
   return <View style={feedStyles.headerWrap}>
     <View style={feedStyles.topBar}><Text style={[feedStyles.logo, { color: t.primary }]}>fookbase</Text><View style={styles.row}><IconButton label="Tạo bài viết" icon="add" onPress={() => router.push('/posts/create')} /><IconButton label="Tìm kiếm" icon="search" onPress={() => router.push('/search')} /><IconButton label="Tin nhắn" icon="messages" onPress={() => router.push('/messages')} /></View></View>
+    <View style={[feedStyles.primaryNav, { borderBottomColor: t.border }]}>{navItems.map(([label, icon, path], index) => <Pressable key={label} accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: index === 0 }} onPress={() => index === 0 ? undefined : router.push(path)} style={({ pressed }) => [feedStyles.primaryNavItem, index === 0 && { borderBottomColor: t.primary }, { opacity: pressed ? 0.68 : 1 }]}><Icon name={icon} color={index === 0 ? t.primary : t.muted} size={25} /></Pressable>)}</View>
     <Card style={feedStyles.composer}>
       <View style={feedStyles.composerTop}><Avatar label={username || initial} size={43} online /><Pressable accessibilityRole="button" accessibilityLabel="Tạo bài viết" onPress={() => router.push('/posts/create')} style={[feedStyles.composerPrompt, { backgroundColor: t.surface2, borderColor: t.border }]}><Text style={{ color: t.muted, fontSize: 15 }}>Bạn đang nghĩ gì?</Text></Pressable><Icon name="image" color={t.success} size={28} /></View>
       <View style={[feedStyles.divider, { backgroundColor: t.border }]} />
@@ -58,6 +67,8 @@ const feedStyles = StyleSheet.create({
   headerWrap: { paddingTop: 8, paddingBottom: 10, gap: 12 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   logo: { fontSize: 31, fontWeight: '900', letterSpacing: -1.4 },
+  primaryNav: { flexDirection: 'row', borderBottomWidth: 1, paddingHorizontal: 5 },
+  primaryNavItem: { flex: 1, minHeight: 47, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent' },
   composer: { padding: 14, gap: 12, borderRadius: 0 },
   composerTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   composerPrompt: { flex: 1, minHeight: 43, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 22, borderWidth: 1 },
