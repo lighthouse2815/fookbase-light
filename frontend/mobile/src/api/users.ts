@@ -49,6 +49,11 @@ export interface UserFollow {
   followedAtUtc: string
 }
 
+export interface UserFriend {
+  userId: string
+  friendsSinceUtc: string
+}
+
 export const usersApi = {
   getById: (userId: string) => apiRequest<UserProfile>(`/api/users/${userId}`),
   search: (query = '', offset = 0, limit = 20) => {
@@ -77,6 +82,10 @@ export const usersApi = {
     if (cursor) query.set('cursor', cursor)
     return apiRequest<CursorPageResponse<UserFollow>>(`/api/users/${userId}/following?${query.toString()}`)
   },
+  getFriends: (userId: string, offset = 0, limit = 20) =>
+    apiRequest<{ items: UserFriend[]; offset: number; limit: number; total: number }>(
+      `/api/users/${userId}/friends?offset=${offset}&limit=${limit}`,
+    ),
 }
 
 export const birthdaysApi = {
