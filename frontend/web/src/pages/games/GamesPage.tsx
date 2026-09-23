@@ -88,13 +88,13 @@ function GameLibrary({ onSelect }: { onSelect: (gameId: GameId) => void }) {
       <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-text-muted">{games.length} trò chơi</span>
     </div>
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {games.map((game) => <button key={game.id} type="button" onClick={() => onSelect(game.id)} className="group overflow-hidden rounded-3xl border border-border bg-surface text-left card-shadow transition duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-        <div className={`relative aspect-[16/9] overflow-hidden bg-linear-to-br ${game.accent} p-7`}>
+      {games.map((game) => <button key={game.id} type="button" onClick={() => onSelect(game.id)} className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-surface text-left card-shadow transition duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+        <div className={`relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-linear-to-br ${game.accent} p-7`}>
           <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10" /><div className="absolute -bottom-14 -left-8 h-36 w-36 rounded-full bg-black/10" />
           <div className="relative h-28 w-28 transition duration-200 group-hover:scale-105">{game.icon}</div>
           <span className="absolute right-5 top-5 rounded-full border border-white/25 bg-black/15 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">{game.badge}</span>
         </div>
-        <div className="flex items-center gap-4 p-5"><div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{game.category}</p><h3 className="mt-1 font-heading text-xl font-bold text-text">{game.title}</h3><p className="mt-2 text-sm leading-6 text-text-muted">{game.description}</p></div><span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-xl text-white transition group-hover:translate-x-1" aria-hidden="true">›</span></div>
+        <div className="flex w-full flex-1 items-center gap-4 p-5"><div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{game.category}</p><h3 className="mt-1 font-heading text-xl font-bold text-text">{game.title}</h3><p className="mt-2 text-sm leading-6 text-text-muted">{game.description}</p></div><span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-xl text-white transition group-hover:translate-x-1" aria-hidden="true">›</span></div>
       </button>)}
     </div>
   </section>
@@ -148,6 +148,6 @@ export default function GamesPage() {
   const ActiveGame = game?.component
   return <main className="min-h-screen bg-bg p-4 xl:p-6" style={{ animation: 'fade-in 0.25s ease both' }}><div className="mx-auto max-w-5xl">
     <header className="mb-7 overflow-hidden rounded-3xl border border-border bg-surface px-5 py-6 card-shadow sm:px-8"><div className="flex items-center gap-5"><Mascot directions="/mascots/gearbot-directions.webp" reactions="/mascots/gearbot-reactions.webp" size={88} className="shrink-0" label="Game Robot Mascot" /><div><p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">FOOKBASE GAMES</p><h1 className="font-heading text-3xl font-bold text-text">{game?.title ?? t('quickBreak')}</h1><p className="mt-2 text-text-muted">{game?.description ?? 'Chọn game yêu thích, thư giãn và thử thách bạn bè ngay tại Fookbase.'}</p></div></div></header>
-    {ActiveGame ? <><button type="button" onClick={() => setSelectedGame(null)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition hover:border-primary/50 hover:bg-surface-2"><span aria-hidden="true">←</span> Tất cả trò chơi</button><ActiveGame /></> : <GameLibrary onSelect={setSelectedGame} />}
+    {ActiveGame ? <><button type="button" onClick={() => setSelectedGame(null)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition hover:border-primary/50 hover:bg-surface-2"><span aria-hidden="true">←</span> Tất cả trò chơi</button><ActiveGame /></> : <GameLibrary onSelect={(gameId) => { setSelectedGame(gameId); window.scrollTo({ top: 0, behavior: 'instant' }) }} />}
   </div></main>
 }
