@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "793486662543",
+    "project_id": "fookbase-cd714",
+    "storage_bucket": "fookbase-cd714.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:793486662543:android:ea2775c517c34c6ec109fa",
+        "android_client_info": {
+          "package_name": "com.fookbase.zola"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBB6l0sW18bkTpWiy9axvvfib0-Pw6xCSo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

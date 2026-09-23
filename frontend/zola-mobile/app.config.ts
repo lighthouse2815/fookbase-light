@@ -13,7 +13,8 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   android: {
     package: process.env.ZOLA_ANDROID_PACKAGE ?? 'com.fookbase.zola',
-    versionCode: 1,
+    googleServicesFile: './google-services.json',
+    versionCode: 2,
     intentFilters: callback ? [{
       action: 'VIEW',
       autoVerify: true,
