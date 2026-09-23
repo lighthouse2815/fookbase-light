@@ -11,7 +11,7 @@ export default function SlidingPuzzleGame() {
   const neighbors = puzzleNeighbors(empty)
   const correct = game.board.filter((value, index) => value !== 0 && value === index + 1).length
   const move = (index: number) => { setGame((current) => slideTile(current, index)); stageRef.current?.focus({ preventScroll: true }) }
-  return <section aria-label="Xếp hình 15 ô" className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
+  return <section aria-label="Xếp hình 15 ô" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Đưa những con số về nhà</h2><p className="mt-1 text-sm text-text-muted">Một ô trống, hàng trăm cách xoay chuyển.</p></div>
       <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Nước đi</p><p className="text-2xl font-bold text-primary-light">{game.moves}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Đúng vị trí</p><p className="text-2xl font-bold text-text">{correct}/15</p></div></div>

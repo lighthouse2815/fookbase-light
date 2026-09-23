@@ -268,7 +268,7 @@ export default function FlappyBirdGame() {
   const wingY = playing ? Math.sin(game.distance * 0.22) * 4 : 0
 
   return (
-    <section id="flappy-bird" aria-labelledby={`${id}-title`} className="scroll-mt-20 rounded-3xl border border-border bg-surface p-4 card-shadow sm:p-8"
+    <section id="flappy-bird" aria-labelledby={`${id}-title`} className="game-detail-panel scroll-mt-20 rounded-3xl border border-border bg-surface p-4 card-shadow sm:p-8"
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) pause() }}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>

@@ -26,7 +26,7 @@ export default function Twenty48Game() {
     stageRef.current?.focus({ preventScroll: true })
   }
 
-  return <section aria-label="2048" className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
+  return <section aria-label="2048" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Nhỏ cộng nhỏ, thành điều lớn</h2><p className="mt-1 text-sm text-text-muted">Ghép những con số. Chinh phục ô 2048.</p></div>
       <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Điểm</p><p className="text-2xl font-bold text-primary-light">{game.score}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Ô lớn nhất</p><p className="text-2xl font-bold text-text">{largest}</p></div></div>

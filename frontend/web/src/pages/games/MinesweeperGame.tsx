@@ -9,7 +9,7 @@ export default function MinesweeperGame() {
   const ended = game.phase === 'won' || game.phase === 'lost'
   const flags = game.flags.filter(Boolean).length
   const opened = game.revealed.filter(Boolean).length
-  return <section aria-label="Dò mìn" className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
+  return <section aria-label="Dò mìn" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Một chút suy luận, một chút hồi hộp</h2><p className="mt-1 text-sm text-text-muted">Bàn 8 × 8, 10 quả mìn. Lượt mở đầu luôn an toàn.</p></div>
       <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Cờ còn lại</p><p className="text-2xl font-bold text-primary-light">{MINE_COUNT - flags}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Ô an toàn</p><p className="text-2xl font-bold text-text">{opened}/54</p></div></div>

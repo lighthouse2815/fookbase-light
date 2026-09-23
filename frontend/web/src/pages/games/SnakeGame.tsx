@@ -40,7 +40,7 @@ export default function SnakeGame() {
     return () => { window.removeEventListener('blur', pause); document.removeEventListener('visibilitychange', visibilityChange) }
   }, [pause])
 
-  return <section aria-label="Rắn săn mồi" className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8"
+  return <section aria-label="Rắn săn mồi" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8"
     onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) pause() }}
     onKeyDown={(event) => {
       const direction = keyDirections[event.key] ?? keyDirections[event.key.toLowerCase()]

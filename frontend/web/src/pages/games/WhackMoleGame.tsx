@@ -39,7 +39,7 @@ export default function WhackMoleGame() {
     return () => { window.removeEventListener('blur', pause); document.removeEventListener('visibilitychange', visibilityChange) }
   }, [pause])
 
-  return <section aria-label="Đập chuột" className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8"
+  return <section aria-label="Đập chuột" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8"
     onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) pause() }}
     onKeyDown={(event) => {
       if (/^[1-9]$/.test(event.key)) { event.preventDefault(); if (!event.repeat) hit(Number(event.key) - 1) }

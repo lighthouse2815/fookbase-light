@@ -13,7 +13,7 @@ export default function MemoryGame() {
     return () => window.clearTimeout(timer)
   }, [game.opened])
 
-  return <section aria-label="Lật thẻ trí nhớ" className="rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
+  return <section aria-label="Lật thẻ trí nhớ" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Vườn trái cây bí mật</h2><p className="mt-1 text-sm text-text-muted">16 chiếc thẻ, 8 cặp trái cây. Bạn nhớ được bao nhiêu?</p></div>
       <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Lượt lật</p><p className="text-2xl font-bold text-primary-light">{game.moves}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Đã ghép</p><p className="text-2xl font-bold text-text">{game.matched.length / 2}/8</p></div></div>
