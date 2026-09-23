@@ -4,8 +4,9 @@ import { usePreferences } from '../../preferences'
 import FlappyBirdGame from './FlappyBirdGame'
 import MemoryGame from './MemoryGame'
 import Twenty48Game from './Twenty48Game'
+import SnakeGame from './SnakeGame'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -46,6 +47,12 @@ const games: GameDefinition[] = [
     description: 'Trượt những ô số, ghép đôi và chinh phục cột mốc 2048.',
     accent: 'from-[#d97706] via-[#e9a125] to-[#f2ca58]',
     icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="7" y="7" width="82" height="82" rx="22" fill="white" fillOpacity=".18" /><rect x="17" y="17" width="28" height="28" rx="7" fill="#fff2d4" /><rect x="51" y="17" width="28" height="28" rx="7" fill="#ffe2a0" /><rect x="17" y="51" width="62" height="28" rx="7" fill="white" /><g fill="#996019" fontFamily="sans-serif" fontWeight="900" textAnchor="middle"><text x="31" y="38" fontSize="20">2</text><text x="65" y="38" fontSize="20">4</text><text x="48" y="72" fontSize="22">2048</text></g></svg>,
+  },
+  {
+    id: 'snake', title: 'Rắn săn mồi', category: 'Arcade', badge: 'Mới', component: SnakeGame,
+    description: 'Dẫn chú rắn săn táo, lớn dần và thử thách phản xạ của bạn.',
+    accent: 'from-[#166534] via-[#399339] to-[#84b83b]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="5" y="5" width="86" height="86" rx="24" fill="white" fillOpacity=".15" /><path d="M23 69h35q12 0 12-12T58 45H37q-12 0-12-12t12-12h17" fill="none" stroke="#bef264" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round" /><rect x="48" y="11" width="24" height="20" rx="9" fill="#ecfccb" /><circle cx="65" cy="17" r="2" fill="#24462d" /><circle cx="65" cy="25" r="2" fill="#24462d" /><circle cx="26" cy="72" r="8" fill="#fb7185" /><path d="m26 64 4-6" stroke="#ecfccb" strokeWidth="3" strokeLinecap="round" /></svg>,
   },
 ]
 
