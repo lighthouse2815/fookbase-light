@@ -14,6 +14,8 @@ const shortcuts = [
   ['/events', 'Sự kiện', 'sparkle', 'Khám phá điều sắp diễn ra'],
   ['/reels', 'Reels', 'reels', 'Một vòng video ngắn'],
   ['/saved', 'Đã lưu', 'bookmark', 'Góc cảm hứng của bạn'],
+  ['/memories', 'Kỷ niệm', 'sparkle', 'Nhìn lại ngày này năm xưa'],
+  ['/birthdays', 'Sinh nhật', 'people', 'Gửi lời chúc đến bạn bè'],
   ['/ai-chat', 'Trợ lý AI', 'sparkle', 'Một tia ý tưởng bất ngờ'],
 ] as const;
 
