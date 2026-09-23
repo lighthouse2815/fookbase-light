@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { Mascot } from 'page-mascot'
 import { usePreferences } from '../../preferences'
 import FlappyBirdGame from './FlappyBirdGame'
+import MemoryGame from './MemoryGame'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -15,20 +16,29 @@ interface GameDefinition {
   badge: string
   accent: string
   icon: ReactNode
+  component: ComponentType
 }
 
 const games: GameDefinition[] = [
   {
     id: 'tic-tac-toe', title: 'Cờ ca-rô', category: 'Chiến thuật', badge: 'Chơi đơn',
+    component: TicTacToeGame,
     description: 'Đấu trí cùng máy, tạo ba dấu liên tiếp để giành chiến thắng.',
     accent: 'from-[#6558e8] via-[#7c6ff2] to-[#9b8cff]',
     icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="5" y="5" width="86" height="86" rx="24" fill="white" fillOpacity=".16" /><path d="M35 20v56M61 20v56M20 35h56M20 61h56" stroke="white" strokeWidth="5" strokeLinecap="round" opacity=".85" /><path d="m24 23 9 9m0-9-9 9m39 33 10 10m0-10L63 75" stroke="white" strokeWidth="5" strokeLinecap="round" /><circle cx="48" cy="48" r="8" fill="none" stroke="#ffdf72" strokeWidth="5" /></svg>,
   },
   {
     id: 'flappy-bird', title: 'Flappy Bird', category: 'Phản xạ', badge: 'Có online',
+    component: FlappyBirdGame,
     description: 'Giữ nhịp bay qua những chiếc ống hoặc lập phòng chơi cùng bạn bè.',
     accent: 'from-[#159f91] via-[#38b8a4] to-[#72d2a8]',
     icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="5" y="5" width="86" height="86" rx="24" fill="white" fillOpacity=".15" /><path d="M15 73h66" stroke="#dff8bd" strokeWidth="6" strokeLinecap="round" /><path d="M68 16h17v21H68zm-3 21h23v8H65zM68 59h17v14H68zm-3-8h23v8H65z" fill="#b9ef72" stroke="#397956" strokeWidth="2" /><g transform="translate(38 48)"><circle r="17" fill="#ffdc4f" stroke="#73532c" strokeWidth="3" /><ellipse cx="-10" cy="5" rx="10" ry="7" fill="#fff0a0" /><circle cx="7" cy="-6" r="6" fill="white" /><circle cx="9" cy="-6" r="2" fill="#263238" /><path d="M13 1h15l-8 7h-7z" fill="#ef7e42" stroke="#8d492b" strokeWidth="2" /></g></svg>,
+  },
+  {
+    id: 'memory', title: 'Lật thẻ trí nhớ', category: 'Trí nhớ', badge: 'Mới', component: MemoryGame,
+    description: 'Khám phá vườn trái cây, lật thẻ và tìm đủ tám cặp giống nhau.',
+    accent: 'from-[#db2777] via-[#c044b7] to-[#8b5cf6]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="10" y="18" width="49" height="65" rx="10" fill="white" fillOpacity=".35" transform="rotate(-12 35 50)" /><rect x="36" y="12" width="49" height="65" rx="10" fill="white" /><path d="m60 25 17 17-17 20-17-20z" fill="#ec4899" /><path d="m24 43 7 8-7 8-7-8z" fill="white" /></svg>,
   },
 ]
 
@@ -63,7 +73,7 @@ function GameLibrary({ onSelect }: { onSelect: (gameId: GameId) => void }) {
       <div><h2 id="game-library-title" className="font-heading text-xl font-bold text-text">Khám phá trò chơi</h2><p className="mt-1 text-sm text-text-muted">Chọn một biểu tượng để bắt đầu chơi.</p></div>
       <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-text-muted">{games.length} trò chơi</span>
     </div>
-    <div className="grid gap-5 sm:grid-cols-2">
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {games.map((game) => <button key={game.id} type="button" onClick={() => onSelect(game.id)} className="group overflow-hidden rounded-3xl border border-border bg-surface text-left card-shadow transition duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
         <div className={`relative aspect-[16/9] overflow-hidden bg-linear-to-br ${game.accent} p-7`}>
           <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10" /><div className="absolute -bottom-14 -left-8 h-36 w-36 rounded-full bg-black/10" />
@@ -121,8 +131,9 @@ export default function GamesPage() {
   const { t } = usePreferences()
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null)
   const game = games.find((item) => item.id === selectedGame)
+  const ActiveGame = game?.component
   return <main className="min-h-screen bg-bg p-4 xl:p-6" style={{ animation: 'fade-in 0.25s ease both' }}><div className="mx-auto max-w-5xl">
     <header className="mb-7 overflow-hidden rounded-3xl border border-border bg-surface px-5 py-6 card-shadow sm:px-8"><div className="flex items-center gap-5"><Mascot directions="/mascots/gearbot-directions.webp" reactions="/mascots/gearbot-reactions.webp" size={88} className="shrink-0" label="Game Robot Mascot" /><div><p className="mb-1 text-sm font-semibold uppercase tracking-wider text-primary">FOOKBASE GAMES</p><h1 className="font-heading text-3xl font-bold text-text">{game?.title ?? t('quickBreak')}</h1><p className="mt-2 text-text-muted">{game?.description ?? 'Chọn game yêu thích, thư giãn và thử thách bạn bè ngay tại Fookbase.'}</p></div></div></header>
-    {selectedGame ? <><button type="button" onClick={() => setSelectedGame(null)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition hover:border-primary/50 hover:bg-surface-2"><span aria-hidden="true">←</span> Tất cả trò chơi</button>{selectedGame === 'tic-tac-toe' ? <TicTacToeGame /> : <FlappyBirdGame />}</> : <GameLibrary onSelect={setSelectedGame} />}
+    {ActiveGame ? <><button type="button" onClick={() => setSelectedGame(null)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition hover:border-primary/50 hover:bg-surface-2"><span aria-hidden="true">←</span> Tất cả trò chơi</button><ActiveGame /></> : <GameLibrary onSelect={setSelectedGame} />}
   </div></main>
 }
