@@ -7,8 +7,9 @@ import Twenty48Game from './Twenty48Game'
 import SnakeGame from './SnakeGame'
 import MinesweeperGame from './MinesweeperGame'
 import WhackMoleGame from './WhackMoleGame'
+import SlidingPuzzleGame from './SlidingPuzzleGame'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -67,6 +68,12 @@ const games: GameDefinition[] = [
     description: 'Nhanh tay bắt những chú chuột tinh nghịch trong thử thách 30 giây.',
     accent: 'from-[#b45309] via-[#da8b30] to-[#edbd71]',
     icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="5" y="5" width="86" height="86" rx="24" fill="white" fillOpacity=".15" /><ellipse cx="48" cy="73" rx="33" ry="12" fill="#713f12" /><circle cx="28" cy="34" r="12" fill="#f5d2a0" /><circle cx="68" cy="34" r="12" fill="#f5d2a0" /><ellipse cx="48" cy="51" rx="27" ry="29" fill="#e9b575" /><ellipse cx="48" cy="62" rx="17" ry="13" fill="#fff1d6" /><circle cx="37" cy="46" r="4" fill="#713f12" /><circle cx="59" cy="46" r="4" fill="#713f12" /><ellipse cx="48" cy="58" rx="5" ry="4" fill="#9a583c" /></svg>,
+  },
+  {
+    id: 'sliding-puzzle', title: 'Xếp hình 15 ô', category: 'Giải đố', badge: 'Mới', component: SlidingPuzzleGame,
+    description: 'Trượt những ô số về đúng vị trí và giải mã bàn cờ đầy màu sắc.',
+    accent: 'from-[#6d28d9] via-[#8b5cf6] to-[#c084fc]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="7" y="7" width="82" height="82" rx="22" fill="white" fillOpacity=".18" /><g fill="white"><rect x="18" y="18" width="27" height="27" rx="6" /><rect x="51" y="18" width="27" height="27" rx="6" /><rect x="18" y="51" width="27" height="27" rx="6" /></g><rect x="52" y="52" width="25" height="25" rx="6" fill="none" stroke="white" strokeWidth="2" strokeDasharray="4 3" /><g fill="#7c3aed" fontSize="21" fontFamily="sans-serif" fontWeight="900" textAnchor="middle"><text x="31" y="39">1</text><text x="65" y="39">2</text><text x="31" y="72">3</text></g></svg>,
   },
 ]
 
