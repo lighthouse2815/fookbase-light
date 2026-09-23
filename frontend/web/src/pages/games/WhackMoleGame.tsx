@@ -47,9 +47,9 @@ export default function WhackMoleGame() {
     }}>
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Nhanh tay bắt chuột!</h2><p className="mt-1 text-sm text-text-muted">30 giây bảo vệ khu vườn, bạn bắt được bao nhiêu?</p></div>
-      <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Điểm</p><p className="text-2xl font-bold text-primary-light">{game.score}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Còn lại</p><p className="text-2xl font-bold text-text">{Math.ceil(game.remaining / 1000)}s</p></div></div>
+      <div className="game-stat-strip flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Điểm</p><p className="text-2xl font-bold text-primary-light">{game.score}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Còn lại</p><p className="text-2xl font-bold text-text">{Math.ceil(game.remaining / 1000)}s</p></div></div>
     </div>
-    <div className="grid items-center gap-8 md:grid-cols-[minmax(0,420px)_1fr]">
+    <div className="game-play-grid grid items-center gap-8">
       <div>
         <div className="mb-4 flex flex-wrap gap-3"><button type="button" onClick={() => { if (playing) pause(); else start() }} className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark">{playing ? 'Tạm dừng' : game.phase === 'paused' ? 'Tiếp tục' : game.phase === 'over' ? 'Chơi lại' : 'Bắt đầu'}</button><button type="button" onClick={() => commit(createMoleGame())} className="rounded-xl border border-border bg-surface-2 px-5 py-2.5 text-sm font-semibold text-text hover:bg-surface-hover">Ván mới</button></div>
         <div ref={stageRef} tabIndex={0} role="group" aria-label="Vườn chuột, dùng phím 1 đến 9 tương ứng các hang" className="grid grid-cols-3 gap-3 rounded-3xl border-4 border-[#528238] bg-linear-to-br from-[#c5e99b] to-[#78ad55] p-3 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-primary sm:p-5">

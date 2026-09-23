@@ -14,9 +14,9 @@ export default function SlidingPuzzleGame() {
   return <section aria-label="Xếp hình 15 ô" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Đưa những con số về nhà</h2><p className="mt-1 text-sm text-text-muted">Một ô trống, hàng trăm cách xoay chuyển.</p></div>
-      <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Nước đi</p><p className="text-2xl font-bold text-primary-light">{game.moves}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Đúng vị trí</p><p className="text-2xl font-bold text-text">{correct}/15</p></div></div>
+      <div className="game-stat-strip flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Nước đi</p><p className="text-2xl font-bold text-primary-light">{game.moves}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Đúng vị trí</p><p className="text-2xl font-bold text-text">{correct}/15</p></div></div>
     </div>
-    <div className="grid items-center gap-8 md:grid-cols-[minmax(0,420px)_1fr]">
+    <div className="game-play-grid grid items-center gap-8">
       <div ref={stageRef} tabIndex={0} role="group" aria-label="Bàn xếp hình, phím mũi tên di chuyển ô trống" aria-describedby="sliding-puzzle-instructions"
         onKeyDown={(event) => { const offset = offsets[event.key]; if (offset !== undefined) { event.preventDefault(); move(empty + offset) } }}
         className="grid grid-cols-4 gap-2 rounded-3xl border border-border bg-bg p-3 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-primary sm:gap-3">

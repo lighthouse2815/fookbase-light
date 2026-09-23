@@ -50,9 +50,9 @@ export default function SnakeGame() {
     }}>
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Ăn thêm một miếng!</h2><p className="mt-1 text-sm text-text-muted">Chú rắn nhỏ, chiếc bụng không đáy.</p></div>
-      <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Táo đã ăn</p><p className="text-2xl font-bold text-primary-light">{game.score}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Độ dài</p><p className="text-2xl font-bold text-text">{game.body.length}</p></div></div>
+      <div className="game-stat-strip flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Táo đã ăn</p><p className="text-2xl font-bold text-primary-light">{game.score}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Độ dài</p><p className="text-2xl font-bold text-text">{game.body.length}</p></div></div>
     </div>
-    <div className="grid items-center gap-8 md:grid-cols-[minmax(0,420px)_1fr]">
+    <div className="game-play-grid grid items-center gap-8">
       <div>
         <div ref={stageRef} tabIndex={0} role="group" aria-label="Bàn rắn săn mồi, điều khiển bằng phím mũi tên hoặc WASD" aria-describedby={`${id}-instructions`}
           className="relative overflow-hidden rounded-2xl border-4 border-[#284937] bg-[#10271f] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-primary">

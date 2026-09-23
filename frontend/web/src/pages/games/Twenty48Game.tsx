@@ -29,9 +29,9 @@ export default function Twenty48Game() {
   return <section aria-label="2048" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Nhỏ cộng nhỏ, thành điều lớn</h2><p className="mt-1 text-sm text-text-muted">Ghép những con số. Chinh phục ô 2048.</p></div>
-      <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Điểm</p><p className="text-2xl font-bold text-primary-light">{game.score}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Ô lớn nhất</p><p className="text-2xl font-bold text-text">{largest}</p></div></div>
+      <div className="game-stat-strip flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Điểm</p><p className="text-2xl font-bold text-primary-light">{game.score}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Ô lớn nhất</p><p className="text-2xl font-bold text-text">{largest}</p></div></div>
     </div>
-    <div className="grid items-center gap-8 md:grid-cols-[minmax(0,420px)_1fr]">
+    <div className="game-play-grid grid items-center gap-8">
       <div>
         <div ref={stageRef} tabIndex={0} role="group" aria-label="Bàn 2048, dùng phím mũi tên hoặc vuốt để di chuyển" aria-describedby="twenty48-instructions"
           className="grid touch-none grid-cols-4 gap-2 rounded-2xl bg-[#a99c8e] p-2 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-primary sm:gap-3 sm:p-3"

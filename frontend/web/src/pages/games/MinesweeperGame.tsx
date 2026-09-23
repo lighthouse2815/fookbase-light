@@ -12,9 +12,9 @@ export default function MinesweeperGame() {
   return <section aria-label="Dò mìn" className="game-detail-panel rounded-3xl border border-border bg-surface p-5 card-shadow sm:p-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h2 className="font-heading text-2xl font-bold text-text">Một chút suy luận, một chút hồi hộp</h2><p className="mt-1 text-sm text-text-muted">Bàn 8 × 8, 10 quả mìn. Lượt mở đầu luôn an toàn.</p></div>
-      <div className="flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Cờ còn lại</p><p className="text-2xl font-bold text-primary-light">{MINE_COUNT - flags}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Ô an toàn</p><p className="text-2xl font-bold text-text">{opened}/54</p></div></div>
+      <div className="game-stat-strip flex gap-3 text-center"><div className="rounded-xl bg-primary/15 px-4 py-2"><p className="text-xs text-text-muted">Cờ còn lại</p><p className="text-2xl font-bold text-primary-light">{MINE_COUNT - flags}</p></div><div className="rounded-xl bg-surface-2 px-4 py-2"><p className="text-xs text-text-muted">Ô an toàn</p><p className="text-2xl font-bold text-text">{opened}/54</p></div></div>
     </div>
-    <div className="grid items-center gap-8 md:grid-cols-[minmax(0,420px)_1fr]">
+    <div className="game-play-grid grid items-center gap-8">
       <div>
         <div className="mb-4 flex gap-2" role="group" aria-label="Chế độ thao tác">{[false, true].map((flag) => <button key={String(flag)} type="button" aria-pressed={flagMode === flag} onClick={() => setFlagMode(flag)} className={`flex-1 rounded-xl border px-3 py-2.5 text-sm font-semibold ${flagMode === flag ? 'border-primary bg-primary text-white' : 'border-border bg-surface-2 text-text'}`}>{flag ? '🚩 Cắm cờ' : '🔍 Mở ô'}</button>)}</div>
         <div className="grid grid-cols-8 gap-1 rounded-2xl bg-bg p-2" aria-label="Bàn dò mìn">
