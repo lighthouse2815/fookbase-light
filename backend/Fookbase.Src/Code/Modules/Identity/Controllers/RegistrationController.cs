@@ -1,4 +1,5 @@
 using Fookbase.Api.Shared.Common;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -21,7 +22,7 @@ public sealed class RegistrationController(
     {
         var result = await registrationUseCase.ExecuteAsync(request, cancellationToken);
 
-        return Results.Created("/api/auth/me", ApiResponse.Success(result, HttpContext));
+        return Results.Created("/api/auth/me", ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 
     [HttpPost("start")]
@@ -57,6 +58,6 @@ public sealed class RegistrationController(
             request,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return Results.Created("/api/auth/me", ApiResponse.Success(result, HttpContext));
+        return Results.Created("/api/auth/me", ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 }

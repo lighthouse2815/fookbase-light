@@ -47,6 +47,6 @@ public sealed class PasswordController(
 
         var result = await authenticationService.ChangePasswordAsync(userId, request, cancellationToken);
 
-        return Results.Ok(ApiResponse.Success(result, HttpContext));
+        return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 }

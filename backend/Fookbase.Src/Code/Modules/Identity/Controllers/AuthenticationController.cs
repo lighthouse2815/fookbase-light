@@ -22,7 +22,7 @@ public sealed class AuthenticationController(
     {
         var result = await authenticationService.LoginAsync(request, null, cancellationToken);
 
-        return Results.Ok(ApiResponse.Success(result, HttpContext));
+        return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 
     [HttpPost("refresh")]
@@ -31,9 +31,10 @@ public sealed class AuthenticationController(
         [FromBody] RefreshRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await authenticationService.RefreshAsync(request, cancellationToken);
+        var token = AuthenticationCookie.ReadRefreshToken(Request, request.RefreshToken);
+        var result = await authenticationService.RefreshAsync(new RefreshRequest(token), cancellationToken);
 
-        return Results.Ok(ApiResponse.Success(result, HttpContext));
+        return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 
     [HttpPost("logout")]
@@ -44,10 +45,13 @@ public sealed class AuthenticationController(
     {
         var userId = User.GetUserId();
 
+        var token = AuthenticationCookie.ReadRefreshToken(Request, request.RefreshToken);
         await authenticationService.LogoutAsync(
             userId,
-            request,
+            new LogoutRequest(token),
             cancellationToken);
+
+        AuthenticationCookie.Clear(HttpContext);
 
         return Results.Ok(ApiResponse.Success(HttpContext));
     }

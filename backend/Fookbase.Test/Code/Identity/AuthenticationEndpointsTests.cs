@@ -135,6 +135,50 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     }
 
     [Fact]
+    public async Task Browser_authentication_uses_http_only_refresh_cookie()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        var registration = await RegisterAsync(client, account);
+        client.DefaultRequestHeaders.Remove("X-Fookbase-Auth-Transport");
+        client.DefaultRequestHeaders.Add("X-Fookbase-Auth-Transport", "cookie:web");
+
+        var login = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { email = account.Email, password = account.Password });
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var cookie = ReadRefreshCookie(login);
+        var browserLogin = await login.Content.ReadApiDataAsync<BrowserAuthenticationResponse>();
+        Assert.Equal(registration.User.Id, browserLogin.User.Id);
+        Assert.False(await HasDataPropertyAsync(login, "refreshToken"));
+        Assert.Contains("HttpOnly", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Path=/api/auth", cookie, StringComparison.OrdinalIgnoreCase);
+
+        client.DefaultRequestHeaders.Add("Cookie", cookie.Split(';', 2)[0]);
+        client.DefaultRequestHeaders.Remove("X-Fookbase-Auth-Transport");
+        var csrfAttempt = await client.PostAsJsonAsync("/api/auth/refresh", new { });
+        Assert.Equal(HttpStatusCode.Unauthorized, csrfAttempt.StatusCode);
+
+        client.DefaultRequestHeaders.Add("X-Fookbase-Auth-Transport", "cookie:web");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", browserLogin.AccessToken);
+        var refresh = await client.PostAsJsonAsync("/api/auth/refresh", new { });
+
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        var refreshedCookie = ReadRefreshCookie(refresh);
+        var browserRefresh = await refresh.Content.ReadApiDataAsync<BrowserAuthenticationResponse>();
+        Assert.NotEqual(browserLogin.AccessToken, browserRefresh.AccessToken);
+        Assert.False(await HasDataPropertyAsync(refresh, "refreshToken"));
+
+        client.DefaultRequestHeaders.Remove("Cookie");
+        client.DefaultRequestHeaders.Add("Cookie", refreshedCookie.Split(';', 2)[0]);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", browserRefresh.AccessToken);
+        var logout = await client.PostAsJsonAsync("/api/auth/logout", new { });
+        Assert.Equal(HttpStatusCode.OK, logout.StatusCode);
+        Assert.Contains("fookbase.web.refresh=", string.Join(";", logout.Headers.GetValues("Set-Cookie")), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Phone_password_reset_uses_otp_and_revokes_existing_sessions()
     {
         var phone = $"09{RandomNumberGenerator.GetInt32(10_000_000, 99_999_999)}";
@@ -812,6 +856,16 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         HttpResponseMessage response) =>
         await response.Content.ReadApiDataAsync<AuthenticationResponse>()
         ?? throw new InvalidOperationException("Authentication response body was empty.");
+
+    private static string ReadRefreshCookie(HttpResponseMessage response) =>
+        response.Headers.GetValues("Set-Cookie")
+            .Single(value => value.StartsWith("fookbase.web.refresh=", StringComparison.Ordinal));
+
+    private static async Task<bool> HasDataPropertyAsync(HttpResponseMessage response, string propertyName)
+    {
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("data").TryGetProperty(propertyName, out _);
+    }
 
     private static TestAccount CreateUniqueAccount()
     {

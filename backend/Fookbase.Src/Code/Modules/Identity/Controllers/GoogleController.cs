@@ -1,5 +1,6 @@
 using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Shared.Common;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
@@ -112,7 +113,7 @@ public sealed class GoogleController(
             request.Client!,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return Results.Ok(ApiResponse.Success(result, HttpContext));
+        return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 
     [HttpPost("google/link")]
@@ -138,7 +139,7 @@ public sealed class GoogleController(
             request.Password ?? string.Empty,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return Results.Ok(ApiResponse.Success(result, HttpContext));
+        return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 
     private static bool IsSupportedGoogleClient(string? client) => client is "web" or "zola-light";

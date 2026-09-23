@@ -21,7 +21,7 @@ public sealed class TwoFactorController(
         CancellationToken cancellationToken)
     {
         var result = await authenticationService.VerifyTwoFactorAsync(request, null, cancellationToken);
-        return Results.Ok(ApiResponse.Success(result, HttpContext));
+        return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 
     [HttpGet("security")]
