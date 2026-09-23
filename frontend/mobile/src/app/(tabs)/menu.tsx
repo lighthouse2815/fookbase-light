@@ -10,6 +10,7 @@ const shortcuts = [
   ['/messages', 'Tin nhắn', 'messages', 'Những cuộc nói chuyện đang mở'],
   ['/notifications', 'Thông báo', 'notifications', 'Những điều cần bạn chú ý'],
   ['/groups', 'Nhóm', 'people', 'Cộng đồng cùng sở thích'],
+  ['/pages', 'Trang', 'people', 'Theo dõi thương hiệu và cộng đồng'],
   ['/reels', 'Reels', 'reels', 'Một vòng video ngắn'],
   ['/saved', 'Đã lưu', 'bookmark', 'Góc cảm hứng của bạn'],
   ['/ai-chat', 'Trợ lý AI', 'sparkle', 'Một tia ý tưởng bất ngờ'],
