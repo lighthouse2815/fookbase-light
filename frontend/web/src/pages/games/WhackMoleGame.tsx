@@ -19,12 +19,12 @@ export default function WhackMoleGame() {
     const next = updateClock()
     commit(next.phase === 'over' ? next : { ...next, phase: 'paused' })
   }, [commit, updateClock])
-  const start = () => {
+  const start = useCallback(() => {
     previousRef.current = performance.now()
     const next = gameRef.current.phase === 'paused' ? gameRef.current : createMoleGame()
     commit(advanceMole({ ...next, phase: 'playing' }, 0))
     stageRef.current?.focus({ preventScroll: true })
-  }
+  }, [commit])
   const hit = (index: number) => { if (gameRef.current.phase === 'playing') commit(hitMole(updateClock(), index)) }
 
   useEffect(() => {
