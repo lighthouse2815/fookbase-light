@@ -62,9 +62,12 @@ for (const app of ['web', 'admin', 'zola-light']) {
       assert.equal(fetch.mock.callCount(), 3)
       const refreshCall = fetch.mock.calls[1].arguments
       assert.ok(refreshCall[0].endsWith('/api/auth/refresh'))
-      assert.equal(JSON.parse(refreshCall[1].body).refreshToken, 'old-refresh')
+      assert.deepEqual(JSON.parse(refreshCall[1].body), {})
+      const expectedTransport = app === 'web' ? 'cookie:web' : app === 'admin' ? 'cookie:admin' : 'cookie:zola-light'
+      assert.equal(new Headers(refreshCall[1].headers).get('X-Fookbase-Auth-Transport'), expectedTransport)
+      assert.equal(refreshCall[1].credentials, 'include')
       assert.equal(new Headers(fetch.mock.calls[2].arguments[1].headers).get('Authorization'), 'Bearer fresh')
-      assert.deepEqual(get(), session)
+      assert.deepEqual(get(), { accessToken: 'fresh', user: { id: 'user-1' } })
     })
   })
 }

@@ -17,8 +17,9 @@ export function getSession(): AuthenticationResponse | null {
 }
 
 export function saveSession(session: AuthenticationResponse) {
+  const { refreshToken: _refreshToken, ...safeSession } = session
   saveAccessToken(session.accessToken)
-  localStorage.setItem(sessionStorageKey, JSON.stringify(session))
+  localStorage.setItem(sessionStorageKey, JSON.stringify(safeSession))
   window.dispatchEvent(new Event(adminSessionChangedEvent))
 }
 

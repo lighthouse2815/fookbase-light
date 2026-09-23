@@ -18,7 +18,7 @@ export interface AuthSession {
   user: AuthenticatedUser
   accessToken: string
   accessTokenExpiresAt: string
-  refreshToken: string
+  refreshToken?: string
   refreshTokenExpiresAt: string
 }
 export interface TwoFactorChallenge { twoFactorRequired: true; challenge: string; expiresAtUtc: string }
@@ -47,7 +47,8 @@ export function getSession(): AuthSession | null {
 }
 
 export function saveSession(session: AuthSession) {
-  localStorage.setItem(sessionKey, JSON.stringify(session))
+  const { refreshToken: _refreshToken, ...safeSession } = session
+  localStorage.setItem(sessionKey, JSON.stringify(safeSession))
 }
 
 export function clearSession() {
@@ -59,8 +60,13 @@ async function refreshSession() {
   if (!session) return null
   const response = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
     method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken: session.refreshToken }),
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Fookbase-Auth-Transport': 'cookie:zola-light',
+    },
+    body: JSON.stringify(session.refreshToken ? { refreshToken: session.refreshToken } : {}),
   })
   if (!response.ok) {
     clearSession()
@@ -74,10 +80,12 @@ async function refreshSession() {
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const send = async (token: string | null) => fetch(`${apiBaseUrl}${path}`, {
     ...init,
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       ...(init.body && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(path.startsWith('/api/auth/') ? { 'X-Fookbase-Auth-Transport': 'cookie:zola-light' } : {}),
       ...init.headers,
     },
   })
@@ -113,8 +121,8 @@ export const authApi = {
   verifyTwoFactor: (challenge: string, code: string) => request<AuthSession>('/api/auth/2fa/verify', {
     method: 'POST', body: JSON.stringify({ challenge, code }),
   }),
-  logout: (refreshToken: string) => request<void>('/api/auth/logout', {
-    method: 'POST', body: JSON.stringify({ refreshToken }),
+  logout: (refreshToken?: string) => request<void>('/api/auth/logout', {
+    method: 'POST', body: JSON.stringify(refreshToken ? { refreshToken } : {}),
   }),
 }
 

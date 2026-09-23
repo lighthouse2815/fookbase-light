@@ -19,8 +19,9 @@ export function getAuthSession(): AuthSession | null {
 }
 
 export function saveAuthSession(session: AuthSession) {
+  const { refreshToken: _refreshToken, ...safeSession } = session
   localStorage.setItem(accessTokenKey, session.accessToken)
-  localStorage.setItem(sessionKey, JSON.stringify(session))
+  localStorage.setItem(sessionKey, JSON.stringify(safeSession))
   window.dispatchEvent(new Event(authSessionChangedEvent))
 }
 

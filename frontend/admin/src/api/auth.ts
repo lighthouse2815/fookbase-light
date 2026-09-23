@@ -12,7 +12,7 @@ export interface AuthenticationResponse {
   user: AuthenticatedUser
   accessToken: string
   accessTokenExpiresAt: string
-  refreshToken: string
+  refreshToken?: string
   refreshTokenExpiresAt: string
 }
 
@@ -23,13 +23,13 @@ export const authApi = {
     method: 'POST',
     ...jsonBody({ email, password }),
   }),
-  refresh: (refreshToken: string) => apiRequest<AuthenticationResponse>('/api/auth/refresh', {
+  refresh: (refreshToken?: string) => apiRequest<AuthenticationResponse>('/api/auth/refresh', {
     method: 'POST',
-    ...jsonBody({ refreshToken }),
+    ...jsonBody(refreshToken ? { refreshToken } : {}),
   }),
-  logout: (refreshToken: string) => apiRequest<void>('/api/auth/logout', {
+  logout: (refreshToken?: string) => apiRequest<void>('/api/auth/logout', {
     method: 'POST',
-    ...jsonBody({ refreshToken }),
+    ...jsonBody(refreshToken ? { refreshToken } : {}),
   }),
   getCurrentUser: () => apiRequest<AuthenticatedUser>('/api/auth/me'),
 }

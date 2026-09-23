@@ -14,7 +14,7 @@ export interface AuthenticationResponse {
   user: AuthenticatedUser
   accessToken: string
   accessTokenExpiresAt: string
-  refreshToken: string
+  refreshToken?: string
   refreshTokenExpiresAt: string
 }
 
@@ -106,16 +106,16 @@ export const authApi = {
       method: 'POST',
       ...jsonBody(credentials),
     }),
-  refresh: (refreshToken: string) =>
+  refresh: (refreshToken?: string) =>
     apiRequest<AuthenticationResponse>('/api/auth/refresh', {
       method: 'POST',
-      ...jsonBody({ refreshToken }),
+      ...jsonBody(refreshToken ? { refreshToken } : {}),
     }),
   verifyTwoFactor: (challenge: string, code: string) => apiRequest<AuthenticationResponse>('/api/auth/2fa/verify', { method: 'POST', ...jsonBody({ challenge, code }) }),
-  logout: (refreshToken: string) =>
+  logout: (refreshToken?: string) =>
     apiRequest<void>('/api/auth/logout', {
       method: 'POST',
-      ...jsonBody({ refreshToken }),
+      ...jsonBody(refreshToken ? { refreshToken } : {}),
     }),
   getCurrentUser: () => apiRequest<AuthenticatedUser>('/api/auth/me'),
   requestPasswordReset: (identifier: string) =>

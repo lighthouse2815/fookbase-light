@@ -25,7 +25,7 @@ function getAccessToken() {
   return localStorage.getItem(accessTokenStorageKey)
 }
 
-function createHeaders(init: RequestInit, accessToken: string | null) {
+function createHeaders(path: string, init: RequestInit, accessToken: string | null) {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
   if (init.body && !(init.body instanceof FormData)) {
@@ -33,6 +33,9 @@ function createHeaders(init: RequestInit, accessToken: string | null) {
   }
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`)
+  }
+  if (path.startsWith('/api/auth/')) {
+    headers.set('X-Fookbase-Auth-Transport', 'cookie:web')
   }
 
   return headers
@@ -45,8 +48,13 @@ async function refreshAccessToken() {
   try {
     const response = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
       method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken: session.refreshToken }),
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Fookbase-Auth-Transport': 'cookie:web',
+      },
+      body: JSON.stringify(session.refreshToken ? { refreshToken: session.refreshToken } : {}),
     })
     if (!response.ok) throw new Error('Refresh token is invalid.')
 
@@ -84,14 +92,16 @@ export async function apiRequest<T>(
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
-      headers: createHeaders(init, accessToken),
+      credentials: 'include',
+      headers: createHeaders(path, init, accessToken),
     })
     if (response.status === 401 && canRetryWithRefresh(path, accessToken)) {
       const refreshedAccessToken = await getRefreshedAccessToken()
       if (refreshedAccessToken) {
         response = await fetch(`${apiBaseUrl}${path}`, {
           ...init,
-          headers: createHeaders(init, refreshedAccessToken),
+          credentials: 'include',
+          headers: createHeaders(path, init, refreshedAccessToken),
         })
       }
     }
