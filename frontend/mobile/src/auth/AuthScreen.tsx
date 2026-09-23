@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { authApi } from '../api/auth';
 import { saveSession } from './session';
 import { Button, Card, ErrorNotice, Field, Icon, Label, Screen, styles, useTheme } from '../components/ui';
@@ -51,16 +51,15 @@ export function AuthScreen() {
   const title = challenge ? 'Xác minh tài khoản' : { login: 'Chào bạn trở lại', register: 'Tạo tài khoản', forgot: 'Quên mật khẩu', reset: 'Đặt lại mật khẩu' }[mode];
   const subtitle = challenge ? 'Một bước nhỏ để giữ không gian của bạn an toàn.' : mode === 'login' ? 'Những cuộc trò chuyện hay đang chờ bạn.' : 'Tạo một góc nhỏ cho những điều bạn yêu thích.';
   const switchMode = (next: 'login' | 'register' | 'forgot') => { setMode(next); setGoogleUrl(null); setChallenge(null); setError(null); setNotice(''); setCode(''); };
+  const isLogin = mode === 'login' && !challenge && !googleUrl;
   return <Screen>
     <View style={authStyles.hero}>
-      <View style={authStyles.orbitOne} /><View style={authStyles.orbitTwo} />
-      <View style={authStyles.brand}><View style={[authStyles.brandMark, { backgroundColor: t.primary }]}><Text style={authStyles.brandLetter}>f</Text></View><Text style={[authStyles.brandName, { color: t.text }]}>fookbase</Text><Icon name="sparkle" color={t.accent} size={19} /></View>
-      <Text style={[authStyles.heroTitle, { color: t.text }]}>Mỗi ngày một{`\n`}điều đáng nhớ.</Text>
-      <Text style={[authStyles.heroCopy, { color: t.muted }]}>Gần nhau hơn, chia sẻ thật hơn và để những khoảnh khắc nhỏ phát sáng.</Text>
-      <View style={authStyles.signal}><View style={[authStyles.signalDot, { backgroundColor: t.success }]} /><Text style={{ color: t.muted, fontSize: 12, fontWeight: '700' }}>Không gian của bạn đang chờ</Text></View>
+      <View style={[authStyles.brandMark, { backgroundColor: t.primary }]}><Text style={authStyles.brandLetter}>f</Text></View>
+      <Text style={[authStyles.brandName, { color: t.primary }]}>fookbase</Text>
+      <Text style={[authStyles.heroCopy, { color: t.muted }]}>Kết nối, chia sẻ và theo dõi những điều bạn quan tâm.</Text>
     </View>
     <Card tone="raised" style={authStyles.formCard}>
-      <View style={authStyles.formIntro}><View style={[authStyles.formIcon, { backgroundColor: t.primarySoft }]}><Icon name={challenge ? 'lock' : 'sparkle'} color={t.primary} size={23} /></View><View style={{ flex: 1 }}><Label title style={{ fontSize: 22, lineHeight: 27 }}>{title}</Label><Label muted style={{ marginTop: 2 }}>{subtitle}</Label></View></View>
+      <View style={authStyles.formIntro}><Label title style={{ fontSize: 22, lineHeight: 27 }}>{title}</Label><Label muted style={{ marginTop: 2 }}>{subtitle}</Label></View>
       {!!notice && <View style={[authStyles.notice, { backgroundColor: `${t.success}16`, borderColor: `${t.success}44` }]}><Icon name="sparkle" color={t.success} size={17} /><Text style={{ color: t.success, flex: 1, lineHeight: 20 }}>{notice}</Text></View>}
       {!challenge && <Field label="Email, số điện thoại hoặc tên đăng nhập" autoCapitalize="none" value={identifier} onChangeText={setIdentifier} autoComplete="username" />}
       {mode === 'register' && !challenge && <><Field label="Tên" value={firstName} onChangeText={setFirstName} /><Field label="Họ" value={lastName} onChangeText={setLastName} /><Field label="Ngày sinh (YYYY-MM-DD)" value={birthday} onChangeText={setBirthday} /></>}
@@ -68,30 +67,29 @@ export function AuthScreen() {
       {!challenge && mode !== 'forgot' && <><Field label="Mật khẩu" value={password} onChangeText={setPassword} secureTextEntry={!visible} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /><Button title={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} secondary compact onPress={() => setVisible(!visible)} /></>}
       {error ? <ErrorNotice error={error} /> : null}
       <Button title={busy ? 'Đang xử lý…' : challenge ? 'Xác minh' : mode === 'login' ? 'Đăng nhập' : 'Tiếp tục'} icon={<Icon name="arrow" color="#fff" size={19} />} onPress={() => void submit()} disabled={busy || (googleUrl ? !password : challenge ? !code.trim() : !identifier.trim() || (mode !== 'forgot' && !password))} />
+      {isLogin && <Pressable accessibilityRole="button" accessibilityLabel="Quên mật khẩu" onPress={() => switchMode('forgot')} style={({ pressed }) => [authStyles.forgotLink, { opacity: pressed ? 0.65 : 1 }]}><Text style={{ color: t.primary, fontWeight: '700' }}>Quên mật khẩu?</Text></Pressable>}
       {googleEnabled && !challenge && !googleUrl && <Button title="Tiếp tục với Google" icon={<Text style={{ color: t.text, fontWeight: '900', fontSize: 16 }}>G</Text>} secondary disabled={busy} onPress={() => { setBusy(true); setError(null); void beginGoogleLogin().then(url => url ? finishGoogle(url) : undefined).catch(setError).finally(() => setBusy(false)); }} />}
       {challenge?.kind === 'registration' && <Button title="Gửi lại mã" secondary disabled={busy} onPress={() => { setBusy(true); void authApi.resendRegistration(challenge.value).then(v => { setChallenge({ kind: 'registration', value: v.challengeId }); setNotice('Đã gửi lại mã.'); }).catch(setError).finally(() => setBusy(false)); }} />}
+      {isLogin && <><View style={[authStyles.separator, { backgroundColor: t.border }]} /><Pressable accessibilityRole="button" accessibilityLabel="Tạo tài khoản mới" disabled={busy} onPress={() => switchMode('register')} style={({ pressed }) => [authStyles.createAccount, { backgroundColor: t.success, opacity: busy ? 0.45 : pressed ? 0.75 : 1 }]}><Text style={authStyles.createAccountText}>Tạo tài khoản mới</Text></Pressable></>}
     </Card>
-    <View style={[styles.row, authStyles.switchRow]}>{(['login', 'register', 'forgot'] as const).filter(v => v !== mode || challenge).map(v => <Button key={v} title={{ login: 'Đăng nhập', register: 'Tạo tài khoản', forgot: 'Quên mật khẩu' }[v]} secondary compact disabled={busy} onPress={() => switchMode(v)} />)}</View>
-    <Text style={[authStyles.footer, { color: t.subtle }]}>Fookbase Light · nơi những tia sáng tìm thấy nhau</Text>
+    {!isLogin && <View style={[styles.row, authStyles.switchRow]}>{(['login', 'register', 'forgot'] as const).filter(v => v !== mode || challenge).map(v => <Button key={v} title={{ login: 'Đăng nhập', register: 'Tạo tài khoản', forgot: 'Quên mật khẩu' }[v]} secondary compact disabled={busy} onPress={() => switchMode(v)} />)}</View>}
+    <Text style={[authStyles.footer, { color: t.subtle }]}>Fookbase · Kết nối mọi người</Text>
   </Screen>;
 }
 
 const authStyles = StyleSheet.create({
-  hero: { minHeight: 238, paddingTop: 12, paddingBottom: 18, justifyContent: 'flex-end', overflow: 'hidden' },
-  orbitOne: { position: 'absolute', width: 180, height: 180, borderRadius: 100, right: -64, top: -68, backgroundColor: '#2374e122' },
-  orbitTwo: { position: 'absolute', width: 84, height: 84, borderRadius: 50, right: 20, top: 18, backgroundColor: '#f0b84f1c', borderWidth: 1, borderColor: '#f0b84f40' },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 22 },
-  brandMark: { width: 38, height: 38, borderRadius: 13, justifyContent: 'center', alignItems: 'center', transform: [{ rotate: '-7deg' }] },
-  brandLetter: { color: '#fff', fontSize: 29, fontWeight: '900', lineHeight: 32 },
-  brandName: { fontSize: 18, fontWeight: '800', letterSpacing: -0.4 },
-  heroTitle: { fontSize: 39, lineHeight: 42, fontWeight: '900', letterSpacing: -1.1 },
-  heroCopy: { maxWidth: 330, fontSize: 15, lineHeight: 23, marginTop: 10 },
-  signal: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
-  signalDot: { width: 9, height: 9, borderRadius: 9 },
-  formCard: { padding: 18, gap: 14 },
-  formIntro: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 2 },
-  formIcon: { width: 42, height: 42, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  hero: { alignItems: 'center', paddingTop: 52, paddingBottom: 30 },
+  brandMark: { width: 58, height: 58, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  brandLetter: { color: '#fff', fontSize: 45, fontWeight: '900', lineHeight: 51 },
+  brandName: { fontSize: 35, fontWeight: '900', letterSpacing: -1.5, marginTop: 10 },
+  heroCopy: { maxWidth: 320, fontSize: 15, lineHeight: 22, marginTop: 8, textAlign: 'center' },
+  formCard: { padding: 18, gap: 14, borderRadius: 12 },
+  formIntro: { marginBottom: 2, alignItems: 'center' },
   notice: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 13, padding: 11 },
+  forgotLink: { alignSelf: 'center', paddingVertical: 3, paddingHorizontal: 12 },
+  separator: { height: 1, marginVertical: 3 },
+  createAccount: { minHeight: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  createAccountText: { color: '#fff', fontSize: 15, fontWeight: '800' },
   switchRow: { justifyContent: 'center', marginTop: 2 },
-  footer: { textAlign: 'center', fontSize: 12, marginTop: 'auto', paddingTop: 16 },
+  footer: { textAlign: 'center', fontSize: 12, marginTop: 'auto', paddingTop: 18 },
 });
