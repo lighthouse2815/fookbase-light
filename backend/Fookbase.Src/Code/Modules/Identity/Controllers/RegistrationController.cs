@@ -7,10 +7,11 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fookbase.Api.Modules.Identity.Controllers;
 
+[ApiController]
 [Route("api/auth/registration")]
 public sealed class RegistrationController(
     RegistrationChallengeService registrationChallengeService,
-    RegistrationUseCase registrationUseCase) : IdentityControllerBase
+    RegistrationUseCase registrationUseCase) : ControllerBase
 {
     [HttpPost("/api/auth/register")]
     [AllowAnonymous]

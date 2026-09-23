@@ -7,9 +7,10 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fookbase.Api.Modules.Identity.Controllers;
 
+[ApiController]
 [Route("api/auth/email")]
 public sealed class EmailVerificationController(
-    AuthenticationService authenticationService) : IdentityControllerBase
+    AuthenticationService authenticationService) : ControllerBase
 {
     [HttpPost("verify")]
     [AllowAnonymous]
@@ -30,9 +31,9 @@ public sealed class EmailVerificationController(
     public async Task<IResult> SendEmailVerificationAsync(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
 
         var result = await authenticationService.SendEmailVerificationAsync(userId, cancellationToken);

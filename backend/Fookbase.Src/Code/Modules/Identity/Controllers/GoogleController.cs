@@ -11,11 +11,12 @@ using AuthenticationProperties = Microsoft.AspNetCore.Authentication.Authenticat
 
 namespace Fookbase.Api.Modules.Identity.Controllers;
 
+[ApiController]
 [Route("api/auth")]
 public sealed class GoogleController(
     GoogleAuthenticationOptions googleOptions,
     IGoogleExternalIdentityReader identityReader,
-    GoogleAuthenticationService googleAuthentication) : IdentityControllerBase
+    GoogleAuthenticationService googleAuthentication) : ControllerBase
 {
     [HttpGet("providers")]
     [AllowAnonymous]

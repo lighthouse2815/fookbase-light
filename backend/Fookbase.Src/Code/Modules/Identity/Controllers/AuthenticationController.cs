@@ -7,9 +7,10 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fookbase.Api.Modules.Identity.Controllers;
 
+[ApiController]
 [Route("api/auth")]
 public sealed class AuthenticationController(
-    AuthenticationService authenticationService) : IdentityControllerBase
+    AuthenticationService authenticationService) : ControllerBase
 {
     [HttpPost("login")]
     [AllowAnonymous]
@@ -44,9 +45,9 @@ public sealed class AuthenticationController(
         [FromBody] LogoutRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
 
         var result = await authenticationService.LogoutAsync(
@@ -64,9 +65,9 @@ public sealed class AuthenticationController(
     public async Task<IResult> GetCurrentUserAsync(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
 
         var result = await authenticationService.GetCurrentUserAsync(

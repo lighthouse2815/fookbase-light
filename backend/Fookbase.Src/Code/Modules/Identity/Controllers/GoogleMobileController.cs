@@ -10,12 +10,13 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace Fookbase.Api.Modules.Identity.Controllers;
 
+[ApiController]
 [Route("api/auth/google/mobile")]
 public sealed class GoogleMobileController(
     GoogleAuthenticationOptions options,
     IGoogleExternalIdentityReader reader,
     GoogleAuthenticationService service,
-    GoogleMobileFlow flow) : IdentityControllerBase
+    GoogleMobileFlow flow) : ControllerBase
 {
     [HttpGet("start")]
     [AllowAnonymous]

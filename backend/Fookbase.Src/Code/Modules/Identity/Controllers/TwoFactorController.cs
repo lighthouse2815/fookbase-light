@@ -7,9 +7,10 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fookbase.Api.Modules.Identity.Controllers;
 
+[ApiController]
 [Route("api/auth")]
 public sealed class TwoFactorController(
-    AuthenticationService authenticationService) : IdentityControllerBase
+    AuthenticationService authenticationService) : ControllerBase
 {
     [HttpPost("2fa/verify")]
     [AllowAnonymous]
@@ -27,9 +28,9 @@ public sealed class TwoFactorController(
     public async Task<IResult> GetSecurityAsync(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
         var result = await authenticationService.GetSecurityAsync(userId, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
@@ -41,9 +42,9 @@ public sealed class TwoFactorController(
     public async Task<IResult> SetupTwoFactorAsync(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
         var result = await authenticationService.SetupTwoFactorAsync(userId, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
@@ -56,9 +57,9 @@ public sealed class TwoFactorController(
         [FromBody] TwoFactorCodeRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
         var result = await authenticationService.EnableTwoFactorAsync(userId, request.Code, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
@@ -71,9 +72,9 @@ public sealed class TwoFactorController(
         [FromBody] DisableTwoFactorRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
         var result = await authenticationService.DisableTwoFactorAsync(userId, request.CurrentPassword, cancellationToken);
         return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
@@ -85,9 +86,9 @@ public sealed class TwoFactorController(
     public async Task<IResult> RegenerateRecoveryCodesAsync(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
         var result = await authenticationService.RegenerateRecoveryCodesAsync(userId, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();

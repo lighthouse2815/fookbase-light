@@ -6,18 +6,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Fookbase.Api.Modules.Identity.Controllers;
 
+[ApiController]
 [Route("api/auth/sessions")]
 public sealed class SessionsController(
-    AuthenticationService authenticationService) : IdentityControllerBase
+    AuthenticationService authenticationService) : ControllerBase
 {
     [HttpGet]
     [Authorize]
     public async Task<IResult> GetSessionsAsync(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
         Guid.TryParse(User.FindFirstValue("sid"), out var sessionId);
         var result = await authenticationService.GetSessionsAsync(
@@ -31,9 +32,9 @@ public sealed class SessionsController(
         [FromRoute] Guid sessionId,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
         var result = await authenticationService.RevokeSessionAsync(
             userId, sessionId, TimeProvider.System.GetUtcNow(), cancellationToken);
@@ -45,9 +46,9 @@ public sealed class SessionsController(
     public async Task<IResult> RevokeOtherSessionsAsync(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return InvalidAccessToken();
+            return IdentityHttpHelpers.InvalidAccessToken();
         }
         Guid.TryParse(User.FindFirstValue("sid"), out var currentSessionId);
         await authenticationService.RevokeOtherSessionsAsync(
