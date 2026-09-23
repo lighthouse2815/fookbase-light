@@ -82,6 +82,43 @@
 .light-cell { position: relative; aspect-ratio: 1; border: 1px solid #9f88d055; border-radius: 13px; background: #2b1f50; color: transparent; box-shadow: inset 0 1px #ffffff12; transition: background .16s, box-shadow .16s, transform .12s; }
 .light-cell:hover:not(:disabled) { transform: translateY(-2px); border-color: #c9b8ff99; }.light-cell.is-on { background: radial-gradient(circle at 40% 35%, #fff5ca 0 6%, #f2c2ff 28%, #bb8cff 66%, #634397); color: #fff; box-shadow: 0 0 22px #d6b4ff, inset 0 1px #fff; }.light-cell.is-on span { display: block; font-size: clamp(18px, 4vw, 28px); filter: drop-shadow(0 0 8px white); animation: light-pulse 1.8s infinite ease-in-out; }
 .lights-overlay { position: absolute; z-index: 4; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; background: #160d32a8; color: #f9f2ff; text-align: center; transition: opacity .2s; }.lights-overlay.is-hidden { opacity: 0; pointer-events: none; }.lights-overlay span { color: #f7ddff; font-size: 54px; text-shadow: 0 0 24px #e7c6ff; }.lights-overlay strong { font-family: var(--font-heading); font-size: 21px; }.lights-overlay small { max-width: 260px; color: #dbcdf8; font-size: 12px; line-height: 1.6; }
+.neon-drift-game { --arcade-accent: #7de7ff; }
+.neon-stage { min-height: clamp(520px, 46vw, 620px); border: 1px solid #296a89; background: #050d1f; box-shadow: inset 0 1px #ffffff20, 0 14px 32px #0005; perspective: 760px; touch-action: none; }
+.neon-world { position: absolute; inset: 0; overflow: hidden; transform-style: preserve-3d; background: radial-gradient(ellipse at 50% 52%, #173f61 0%, #0a1831 37%, #050b1c 78%); transition: transform .25s ease; }
+.neon-world.is-phased { animation: neon-phase .65s ease-in-out infinite alternate; filter: saturate(1.45) brightness(1.2); }
+.neon-world::before { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 10%, #6de9ff0d 10.2% 10.35%), repeating-linear-gradient(0deg, transparent 0 14%, #6de9ff0b 14.2% 14.35%); content: ''; transform: translateZ(-20px) rotateX(2deg) scale(1.25); }
+.neon-tunnel { position: absolute; top: 50%; left: 50%; width: 72%; aspect-ratio: 1.6; border: 1px solid #65e7ff66; box-shadow: 0 0 22px #31d8ff38, inset 0 0 22px #31d8ff1a; transform: translate(-50%, -50%) translateZ(-80px) rotate(2deg); }
+.neon-tunnel--two { width: 52%; border-color: #c678ff80; transform: translate(-50%, -50%) translateZ(-10px) rotate(-5deg); }
+.neon-tunnel--three { width: 31%; border-color: #ffe9a266; transform: translate(-50%, -50%) translateZ(64px) rotate(4deg); }
+.neon-grid-floor { position: absolute; right: -20%; bottom: -22%; left: -20%; height: 52%; border-top: 1px solid #6ee8ff80; background: repeating-linear-gradient(90deg, #0000 0 8%, #58dcff2b 8.2% 8.4%), repeating-linear-gradient(0deg, #0000 0 13%, #58dcff20 13.2% 13.5%); box-shadow: 0 -8px 35px #39d5ff28; transform: perspective(400px) rotateX(63deg) translateZ(-50px); }
+.neon-obstacle, .neon-ship { position: absolute; z-index: 3; top: 51%; left: 50%; display: block; width: 58px; height: 58px; transform-style: preserve-3d; transition: transform .08s linear; }
+.neon-obstacle--gate { border: 4px solid #ff70e6; border-radius: 12px; background: #7e21a833; box-shadow: 0 0 12px #ff70e6, inset 0 0 15px #ff70e6; }
+.neon-obstacle--orb { width: 42px; height: 42px; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #fff, #ff9dca 12%, #ff3d9b 45%, #7623a8 76%); box-shadow: 0 0 12px #ff4fb9, 0 0 32px #ff3ba766; }
+.neon-ship { z-index: 4; top: 82%; width: 54px; height: 44px; border: 2px solid #8bffff; border-radius: 14px 14px 23px 23px; background: linear-gradient(160deg, #e3ffff, #55d7ff 33%, #276ad2 80%); box-shadow: 0 0 15px #58e9ff, 0 15px 25px #2c83df99; }
+.neon-ship::before { position: absolute; top: 7px; left: 11px; width: 26px; height: 10px; border-radius: 50%; background: #f7ffff; box-shadow: 0 0 8px white; content: ''; }
+.neon-ship i, .neon-ship b { position: absolute; bottom: -15px; width: 10px; height: 20px; border-radius: 50%; background: #ffd56a; box-shadow: 0 0 16px #ffbe55; animation: engine-pulse .22s ease-in-out infinite alternate; }
+.neon-ship i { left: 9px; }.neon-ship b { right: 9px; animation-delay: .08s; }
+.neon-overlay, .gravity-overlay { position: absolute; z-index: 8; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: #040b1ad1; color: #e7fbff; text-align: center; opacity: 1; transition: opacity .2s; }
+.neon-overlay.is-hidden, .gravity-overlay.is-hidden { opacity: 0; pointer-events: none; }
+.neon-overlay span, .gravity-overlay span { color: #83edff; font-size: 52px; text-shadow: 0 0 20px currentColor; }.neon-overlay strong, .gravity-overlay strong { font-family: var(--font-heading); font-size: 21px; }.neon-overlay small, .gravity-overlay small { color: #a9cbe0; font-size: 12px; }
+.neon-hud, .gravity-hud { position: absolute; z-index: 7; top: 14px; right: 16px; left: 16px; display: flex; justify-content: space-between; color: #8fdaea; font: 700 10px ui-monospace, monospace; letter-spacing: .1em; }
+.neon-controls { position: absolute; z-index: 9; right: 0; bottom: 0; left: 0; display: flex; justify-content: center; gap: 12px; padding: 14px; background: #030918d9; }
+.neon-controls button, .gravity-flip-button { min-width: 48px; height: 38px; border: 1px solid #2d7490; border-radius: 10px; color: #d5faff; background: #0b2541; font-weight: 800; letter-spacing: .05em; }.neon-controls button:nth-child(2) { min-width: 84px; color: #ffe69c; border-color: #d5a642; background: #3b2b19; }.neon-controls button:disabled, .gravity-flip-button:disabled { opacity: .4; }
+.gravity-flip-game { --arcade-accent: #ffcc7a; }
+.gravity-stage { min-height: clamp(520px, 46vw, 620px); border: 1px solid #775d3d; background: #170f20; box-shadow: inset 0 1px #ffffff1a, 0 14px 32px #0005; perspective: 820px; overflow: hidden; touch-action: manipulation; }
+.gravity-world { position: absolute; inset: 0; overflow: hidden; transform-style: preserve-3d; background: radial-gradient(ellipse at 50% 50%, #55326a 0%, #291a3c 38%, #0f0c1c 82%); transition: transform .35s ease; }
+.gravity-world--up { transform: rotateX(180deg); }
+.gravity-grid { position: absolute; border: 1px solid #ffcf7a3d; transform-style: preserve-3d; }
+.gravity-grid--back { inset: 12% 10%; border-radius: 24px; box-shadow: 0 0 0 20px #ffb45a09, 0 0 0 42px #ffb45a07, inset 0 0 45px #ffb45a12; transform: translateZ(-180px) rotateY(-10deg); }
+.gravity-grid--floor { right: -20%; bottom: -25%; left: -20%; height: 48%; border-color: #ffcf7a55; background: repeating-linear-gradient(90deg, #0000 0 8%, #ffcf7a1d 8.2% 8.4%), repeating-linear-gradient(0deg, #0000 0 15%, #ffcf7a12 15.2% 15.5%); transform: perspective(450px) rotateX(64deg) translateZ(-65px); }
+.gravity-gate { position: absolute; z-index: 3; top: 0; bottom: 0; width: 28px; transform: translateZ(45px); filter: drop-shadow(0 0 8px #ff9c43); }
+.gravity-gate i, .gravity-gate b { position: absolute; right: 0; left: 0; display: block; border: 1px solid #ffdd91; background: linear-gradient(90deg, #8e3b54, #ffbd64 46%, #752b4b); box-shadow: inset 2px 0 #ffffff42, 0 0 10px #ffb44e; content: ''; }
+.gravity-gate i { top: 0; }.gravity-gate b { bottom: 0; }
+.gravity-pilot { position: absolute; z-index: 5; left: 23%; width: 38px; height: 38px; margin-top: -19px; border: 2px solid #ffffd5; border-radius: 50%; background: radial-gradient(circle at 32% 25%, #fff, #ffd36e 18%, #ff704a 55%, #952e57); box-shadow: 0 0 15px #ffc766, 0 0 38px #ff8a4d88; transform: translateZ(85px); transition: top .06s linear; }
+.gravity-pilot::after { position: absolute; top: 13px; right: -17px; width: 18px; height: 9px; border-radius: 50%; background: #ffe383; box-shadow: 0 0 12px #ffd36e; content: ''; }
+.gravity-pilot i, .gravity-pilot b { position: absolute; top: 11px; width: 5px; height: 5px; border-radius: 50%; background: #251225; }.gravity-pilot i { left: 10px; }.gravity-pilot b { right: 10px; }
+.gravity-flip-button { position: absolute; z-index: 9; right: 17px; bottom: 16px; min-width: 86px; color: #ffe4a0; border-color: #9c7042; background: #3f2631; }.gravity-flip-button span { font-size: 17px; }
+@keyframes neon-phase { from { transform: rotateY(-3deg) scale(1.01); } to { transform: rotateY(3deg) scale(1.04); } }
 @keyframes light-pulse { 0%, 100% { transform: scale(.95); opacity: .85; } 50% { transform: scale(1.1); opacity: 1; } }
 @keyframes star-twinkle { 0%, 100% { opacity: .3; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.4); } }
 @keyframes engine-pulse { from { transform: scaleY(.7); opacity: .65; } to { transform: scaleY(1.15); opacity: 1; } }
@@ -100,6 +137,9 @@
   .star-stage { min-height: max(420px, min(540px, 68svh)); }
   .lights-stage { min-height: max(420px, min(540px, 68svh)); }
   .lights-grid { gap: 8px; width: min(92%, 430px); }
+  .neon-stage, .gravity-stage { min-height: max(420px, min(540px, 68svh)); }
+  .neon-obstacle, .neon-ship { transform-origin: center; }
+  .neon-controls { gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .arcade-shell *, .arcade-shell *::before, .arcade-shell *::after { animation: none !important; transition: none !important; }

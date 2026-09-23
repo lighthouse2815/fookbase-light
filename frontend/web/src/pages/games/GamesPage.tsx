@@ -11,9 +11,10 @@ import SlidingPuzzleGame from './SlidingPuzzleGame'
 import MelodyGame from './MelodyGame'
 import StarCatchGame from './StarCatchGame'
 import LightsGame from './LightsGame'
+import { GravityFlipGame, NeonDriftGame } from './ThreeDGames'
 import './games.css'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle' | 'melody' | 'star-catch' | 'lights'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle' | 'melody' | 'star-catch' | 'lights' | 'neon-drift' | 'gravity-flip'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -29,6 +30,18 @@ interface GameDefinition {
 }
 
 const games: GameDefinition[] = [
+  {
+    id: 'neon-drift', title: 'Neon Drift 3D', category: '3D Arcade', badge: 'Điều khiển lạ', component: NeonDriftGame,
+    description: 'Rê để lái tàu qua đường hầm neon và nhấn đúp để xuyên vật thể bằng Phase Shift.',
+    accent: 'from-[#073f5e] via-[#0a8bad] to-[#8c49cf]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="4" y="4" width="88" height="88" rx="22" fill="#071d35" /><path d="M14 73 48 14l34 59" fill="none" stroke="#64ebff" strokeWidth="3" opacity=".8" /><path d="M23 72h50M31 58h34M39 44h18" stroke="#ff70e6" strokeWidth="3" strokeLinecap="round" /><path d="m48 30 12 27-12-5-12 5z" fill="#bafcff" stroke="#56dfff" strokeWidth="2" /></svg>,
+  },
+  {
+    id: 'gravity-flip', title: 'Gravity Flip', category: '3D Arcade', badge: 'Chạm để lộn', component: GravityFlipGame,
+    description: 'Bay qua ống lập phương và chạm bất kỳ đâu để đảo sàn thành trần.',
+    accent: 'from-[#52253d] via-[#a85b42] to-[#f0b45e]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="4" y="4" width="88" height="88" rx="22" fill="#32182d" /><path d="M19 26h58M19 70h58" stroke="#ffce80" strokeWidth="4" opacity=".65" /><path d="M29 26v44M67 26v44" stroke="#ff8d66" strokeWidth="3" strokeDasharray="5 5" /><circle cx="48" cy="48" r="11" fill="#ffd66e" stroke="#fff4c1" strokeWidth="2" /><path d="M48 15v18m0 30v18M41 23l7-8 7 8m-14 50 7 8 7-8" fill="none" stroke="#fff0ad" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+  },
   {
     id: 'melody', title: 'Giai điệu sắc màu', category: 'Trí nhớ & âm nhạc', badge: 'Có âm thanh', component: MelodyGame,
     description: 'Bốn phím đàn, mười hai vòng nhớ. Lắng nghe và chơi lại giai điệu của bạn.',
