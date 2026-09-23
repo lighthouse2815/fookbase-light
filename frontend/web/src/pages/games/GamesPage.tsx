@@ -5,8 +5,9 @@ import FlappyBirdGame from './FlappyBirdGame'
 import MemoryGame from './MemoryGame'
 import Twenty48Game from './Twenty48Game'
 import SnakeGame from './SnakeGame'
+import MinesweeperGame from './MinesweeperGame'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -53,6 +54,12 @@ const games: GameDefinition[] = [
     description: 'Dẫn chú rắn săn táo, lớn dần và thử thách phản xạ của bạn.',
     accent: 'from-[#166534] via-[#399339] to-[#84b83b]',
     icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="5" y="5" width="86" height="86" rx="24" fill="white" fillOpacity=".15" /><path d="M23 69h35q12 0 12-12T58 45H37q-12 0-12-12t12-12h17" fill="none" stroke="#bef264" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round" /><rect x="48" y="11" width="24" height="20" rx="9" fill="#ecfccb" /><circle cx="65" cy="17" r="2" fill="#24462d" /><circle cx="65" cy="25" r="2" fill="#24462d" /><circle cx="26" cy="72" r="8" fill="#fb7185" /><path d="m26 64 4-6" stroke="#ecfccb" strokeWidth="3" strokeLinecap="round" /></svg>,
+  },
+  {
+    id: 'minesweeper', title: 'Dò mìn', category: 'Suy luận', badge: 'Mới', component: MinesweeperGame,
+    description: 'Đọc những con số, cắm cờ và mở đường qua bãi mìn bí ẩn.',
+    accent: 'from-[#0369a1] via-[#0891b2] to-[#67c9d5]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="8" y="8" width="80" height="80" rx="20" fill="white" fillOpacity=".2" /><path d="M30 74V21" stroke="white" strokeWidth="6" strokeLinecap="round" /><path d="M33 20h37L55 35l15 15H33z" fill="#fde047" /><path d="M19 76h30" stroke="white" strokeWidth="6" strokeLinecap="round" /><circle cx="69" cy="70" r="10" fill="#164e63" /><path d="M69 55v30M54 70h30" stroke="#164e63" strokeWidth="3" /><circle cx="66" cy="67" r="3" fill="white" /></svg>,
   },
 ]
 
