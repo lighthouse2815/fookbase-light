@@ -1,11 +1,14 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { messengerApi, type Conversation } from '../../api/messages';
+import { usersApi } from '../../api/users';
 import { useAuth } from '../../auth/AuthProvider';
 import { Avatar, Button, Card, ErrorNotice, Label, Loading, Screen } from '../../components/ui';
 function ConversationName({ userId, title }: { userId: string | null; title: string | null }) {
-  return <Label title>{title ?? (userId ? 'Cuộc trò chuyện riêng' : 'Cuộc trò chuyện')}</Label>;
+  const { session } = useAuth();
+  const user = useQuery({ queryKey: ['user', session?.user.id, userId], queryFn: () => usersApi.getById(userId!), enabled: !!userId });
+  return <Label title>{title ?? user.data?.displayName ?? (userId ? 'Cuộc trò chuyện riêng' : 'Cuộc trò chuyện')}</Label>;
 }
 export default function Messages() {
   const { session } = useAuth();
