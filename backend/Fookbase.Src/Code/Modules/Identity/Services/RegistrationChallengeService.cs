@@ -27,14 +27,11 @@ public sealed class RegistrationChallengeService(
 {
     private const int MinimumAge = 13;
 
-    public async Task<ApplicationResult<RegistrationChallengeResponse>> StartAsync(
+    public async Task<RegistrationChallengeResponse> StartAsync(
         RegistrationStartRequest request,
         CancellationToken cancellationToken = default)
     {
-        var validation = await ValidateStartAsync(request, cancellationToken);
-        if (!validation.Succeeded) return ApplicationResult<RegistrationChallengeResponse>.Failure(validation.Error!);
-
-        var input = validation.Value!;
+        var input = await ValidateStartAsync(request, cancellationToken);
         var now = timeProvider.GetUtcNow();
         var code = CreateCode();
         var codeHash = Hash(code);
@@ -66,7 +63,7 @@ public sealed class RegistrationChallengeService(
                      input.Gender,
                      now))
         {
-            return Conflict<RegistrationChallengeResponse>("registration_send_limit", "Too many verification codes were requested.");
+            throw Conflict("registration_send_limit", "Too many verification codes were requested.");
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -76,31 +73,31 @@ public sealed class RegistrationChallengeService(
             challenge.ReplaceCodeHash(Hash(deliveredCode));
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
         {
             logger.LogWarning(exception, "Unable to deliver a registration verification code through {ContactKind}.", input.Contact.Kind);
             dbContext.RegistrationChallenges.Remove(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return Unavailable<RegistrationChallengeResponse>(input.Contact.Kind);
+            throw Unavailable(input.Contact.Kind);
         }
 
-        return ApplicationResult<RegistrationChallengeResponse>.Success(ToResponse(challenge));
+        return ToResponse(challenge);
     }
 
-    public async Task<ApplicationResult<RegistrationChallengeResponse>> ResendAsync(
+    public async Task<RegistrationChallengeResponse> ResendAsync(
         RegistrationResendRequest request,
         CancellationToken cancellationToken = default)
     {
         var challenge = await dbContext.RegistrationChallenges.SingleOrDefaultAsync(
             item => item.Id == request.ChallengeId,
             cancellationToken);
-        if (challenge is null) return InvalidCode<RegistrationChallengeResponse>();
+        if (challenge is null) throw InvalidCode();
 
         var now = timeProvider.GetUtcNow();
         var code = CreateCode();
         if (!challenge.TryResend(Hash(code), now))
         {
-            return Conflict<RegistrationChallengeResponse>("registration_resend_unavailable", "A new verification code cannot be sent yet.");
+            throw Conflict("registration_resend_unavailable", "A new verification code cannot be sent yet.");
         }
 
         try
@@ -108,19 +105,19 @@ public sealed class RegistrationChallengeService(
             var deliveredCode = await contactOtpSender.SendAsync(new ContactIdentifier(challenge.ContactKind, challenge.Contact), code, cancellationToken);
             challenge.ReplaceCodeHash(Hash(deliveredCode));
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
         {
             logger.LogWarning(exception, "Unable to resend a registration verification code through {ContactKind}.", challenge.ContactKind);
             dbContext.RegistrationChallenges.Remove(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return Unavailable<RegistrationChallengeResponse>(challenge.ContactKind);
+            throw Unavailable(challenge.ContactKind);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return ApplicationResult<RegistrationChallengeResponse>.Success(ToResponse(challenge));
+        return ToResponse(challenge);
     }
 
-    public async Task<ApplicationResult<AuthenticationResponse>> VerifyAsync(
+    public async Task<AuthenticationResponse> VerifyAsync(
         RegistrationVerifyRequest request,
         string? userAgent,
         CancellationToken cancellationToken = default)
@@ -128,14 +125,14 @@ public sealed class RegistrationChallengeService(
         if (request.ChallengeId == Guid.Empty || string.IsNullOrWhiteSpace(request.Code) || request.Code.Length != 6 ||
             !request.Code.All(char.IsAsciiDigit))
         {
-            return InvalidCode<AuthenticationResponse>();
+            throw InvalidCode();
         }
 
         var challenge = await dbContext.RegistrationChallenges.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == request.ChallengeId,
             cancellationToken);
         var now = timeProvider.GetUtcNow();
-        if (challenge is null || !challenge.IsUsableAt(now)) return InvalidCode<AuthenticationResponse>();
+        if (challenge is null || !challenge.IsUsableAt(now)) throw InvalidCode();
 
         var suppliedHash = Hash(request.Code);
         if (!CryptographicOperations.FixedTimeEquals(
@@ -145,7 +142,7 @@ public sealed class RegistrationChallengeService(
             var attempts = await dbContext.RegistrationChallenges
                 .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now && item.FailedAttemptCount < 5)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.FailedAttemptCount, item => item.FailedAttemptCount + 1), cancellationToken);
-            return InvalidCode<AuthenticationResponse>();
+            throw InvalidCode();
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -156,14 +153,14 @@ public sealed class RegistrationChallengeService(
         if (consumed != 1)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return InvalidCode<AuthenticationResponse>();
+            throw InvalidCode();
         }
 
         var contact = new ContactIdentifier(challenge.ContactKind, challenge.Contact);
         if (await ContactExistsAsync(contact, cancellationToken))
         {
             await transaction.RollbackAsync(cancellationToken);
-            return Conflict<AuthenticationResponse>("duplicate_contact", "An account with this contact already exists.");
+            throw Conflict("duplicate_contact", "An account with this contact already exists.");
         }
 
         var username = await GenerateUsernameAsync(challenge.FirstName, challenge.LastName, cancellationToken);
@@ -182,7 +179,7 @@ public sealed class RegistrationChallengeService(
         if (!create.Succeeded)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return ApplicationResult<AuthenticationResponse>.Failure(new ApplicationError(
+            throw new BusinessException(new ApplicationError(
                 "registration_creation_failed",
                 "The account could not be created.",
                 ApplicationErrorType.Validation,
@@ -198,17 +195,12 @@ public sealed class RegistrationChallengeService(
             cancellationToken);
         await privacySettingsService.EnsureCreatedAsync(user.Id, cancellationToken);
         var issued = await authenticationService.IssueSessionAsync(user, userAgent, cancellationToken);
-        if (!issued.Succeeded)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            return issued;
-        }
 
         await transaction.CommitAsync(cancellationToken);
         return issued;
     }
 
-    private async Task<ApplicationResult<StartInput>> ValidateStartAsync(
+    private async Task<StartInput> ValidateStartAsync(
         RegistrationStartRequest request,
         CancellationToken cancellationToken)
     {
@@ -222,7 +214,7 @@ public sealed class RegistrationChallengeService(
 
         if (errors.Count > 0)
         {
-            return Validation<StartInput>(errors);
+            throw Validation(errors);
         }
 
         var candidate = new User(Guid.NewGuid(), contact!.Kind == ContactKind.Email ? contact.Value : null, "pending", timeProvider.GetUtcNow());
@@ -236,18 +228,18 @@ public sealed class RegistrationChallengeService(
             }
         }
 
-        if (errors.Count > 0) return Validation<StartInput>(errors);
+        if (errors.Count > 0) throw Validation(errors);
         if (await ContactExistsAsync(contact!, cancellationToken))
         {
-            return Conflict<StartInput>("duplicate_contact", "An account with this contact already exists.");
+            throw Conflict("duplicate_contact", "An account with this contact already exists.");
         }
 
-        return ApplicationResult<StartInput>.Success(new StartInput(
+        return new StartInput(
             contact!,
             request.FirstName!.Trim(),
             request.LastName!.Trim(),
             request.DateOfBirth!.Value,
-            gender));
+            gender);
     }
 
     private async Task<bool> ContactExistsAsync(ContactIdentifier contact, CancellationToken cancellationToken) =>
@@ -297,17 +289,17 @@ public sealed class RegistrationChallengeService(
     private static RegistrationChallengeResponse ToResponse(RegistrationChallenge challenge) =>
         new(challenge.Id, challenge.ExpiresAtUtc, challenge.ResendAvailableAtUtc);
 
-    private static ApplicationResult<T> Validation<T>(IReadOnlyDictionary<string, string[]> errors) =>
-        ApplicationResult<T>.Failure(new ApplicationError(ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation, errors));
+    private static BusinessException Validation(IReadOnlyDictionary<string, string[]> errors) =>
+        new BusinessException(new ApplicationError(ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation, errors));
 
-    private static ApplicationResult<T> InvalidCode<T>() =>
-        ApplicationResult<T>.Failure(new ApplicationError("invalid_registration_code", "The verification code is invalid or expired.", ApplicationErrorType.Unauthorized));
+    private static BusinessException InvalidCode() =>
+        new BusinessException(new ApplicationError("invalid_registration_code", "The verification code is invalid or expired.", ApplicationErrorType.Unauthorized));
 
-    private static ApplicationResult<T> Conflict<T>(string code, string message) =>
-        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Conflict));
+    private static BusinessException Conflict(string code, string message) =>
+        new BusinessException(new ApplicationError(code, message, ApplicationErrorType.Conflict));
 
-    private static ApplicationResult<T> Unavailable<T>(ContactKind kind) =>
-        ApplicationResult<T>.Failure(new ApplicationError(
+    private static BusinessException Unavailable(ContactKind kind) =>
+        new BusinessException(new ApplicationError(
             kind == ContactKind.Email ? "email_delivery_unavailable" : "sms_delivery_unavailable",
             "The verification code could not be delivered.",
             ApplicationErrorType.Conflict));

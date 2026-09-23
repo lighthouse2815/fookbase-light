@@ -1,4 +1,3 @@
-using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.Http;
 
@@ -6,9 +5,10 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 
 public sealed class TestGoogleExternalIdentityReader : IGoogleExternalIdentityReader
 {
-    public Task<ApplicationResult<GoogleExternalIdentity>> ReadAsync(
+    public Task<GoogleExternalIdentity> ReadAsync(
         HttpContext context,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool mobile = false)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var providerKey = context.Request.Headers["X-Test-Google-Sub"].ToString();
@@ -17,16 +17,13 @@ public sealed class TestGoogleExternalIdentityReader : IGoogleExternalIdentityRe
         if (string.IsNullOrWhiteSpace(providerKey) || string.IsNullOrWhiteSpace(email) ||
             !bool.TryParse(verified, out var emailVerified))
         {
-            return Task.FromResult(ApplicationResult<GoogleExternalIdentity>.Failure(new ApplicationError(
-                "invalid_google_identity",
-                "The Google identity is invalid.",
-                ApplicationErrorType.Unauthorized)));
+            throw GoogleExternalIdentityReader.InvalidIdentity(mobile);
         }
 
-        return Task.FromResult(ApplicationResult<GoogleExternalIdentity>.Success(
+        return Task.FromResult(
             new GoogleExternalIdentity(providerKey, email, emailVerified,
                 context.Request.Headers["X-Test-Google-Client"].FirstOrDefault(),
                 context.Request.Headers["X-Test-Google-Challenge"].FirstOrDefault(),
-                context.Request.Headers["X-Test-Google-State"].FirstOrDefault())));
+                context.Request.Headers["X-Test-Google-State"].FirstOrDefault()));
     }
 }

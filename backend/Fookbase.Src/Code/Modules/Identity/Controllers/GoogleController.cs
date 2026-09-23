@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
@@ -32,12 +33,12 @@ public sealed class GoogleController(
     {
         if (!googleOptions.Enabled)
         {
-            return GoogleUnavailable();
+            throw GoogleUnavailable();
         }
 
         if (!IsSupportedGoogleClient(client))
         {
-            return InvalidGoogleClient();
+            throw InvalidGoogleClient();
         }
 
         return Results.Challenge(
@@ -56,43 +57,35 @@ public sealed class GoogleController(
     {
         if (!googleOptions.Enabled)
         {
-            return GoogleUnavailable();
+            throw GoogleUnavailable();
         }
 
         if (!IsSupportedGoogleClient(client))
         {
-            return InvalidGoogleClient();
+            throw InvalidGoogleClient();
         }
 
         var identity = await identityReader.ReadAsync(HttpContext, cancellationToken);
-        if (!identity.Succeeded)
-        {
-            return identity.Error!.ToHttpResult();
-        }
-        if (identity.Value!.Client is not null)
+        if (identity.Client is not null)
         {
             // Native OAuth state must only be redeemed through its PKCE-bound callback.
-            return InvalidGoogleClient();
+            throw InvalidGoogleClient();
         }
 
         var completion = await googleAuthentication.CreateCompletionAsync(
             client!,
-            identity.Value!.ProviderKey,
-            identity.Value.Email,
-            identity.Value.EmailVerified,
+            identity.ProviderKey,
+            identity.Email,
+            identity.EmailVerified,
             cancellationToken);
-        if (!completion.Succeeded)
-        {
-            return completion.Error!.ToHttpResult();
-        }
 
         var target = googleOptions.GetClientLoginUri(client!);
         var query = new Dictionary<string, string?>
         {
             ["provider"] = "google",
-            ["code"] = completion.Value!.Code,
-            ["mode"] = completion.Value.RequiresPassword ? "link" : null,
-            ["email"] = completion.Value.RequiresPassword ? completion.Value.Email : null
+            ["code"] = completion.Code,
+            ["mode"] = completion.RequiresPassword ? "link" : null,
+            ["email"] = completion.RequiresPassword ? completion.Email : null
         };
         return Results.Redirect(QueryHelpers.AddQueryString(target, query));
     }
@@ -106,12 +99,12 @@ public sealed class GoogleController(
     {
         if (!googleOptions.Enabled)
         {
-            return GoogleUnavailable();
+            throw GoogleUnavailable();
         }
 
         if (!IsSupportedGoogleClient(request.Client))
         {
-            return InvalidGoogleClient();
+            throw InvalidGoogleClient();
         }
 
         var result = await googleAuthentication.ExchangeAsync(
@@ -119,7 +112,7 @@ public sealed class GoogleController(
             request.Client!,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 
     [HttpPost("google/link")]
@@ -131,12 +124,12 @@ public sealed class GoogleController(
     {
         if (!googleOptions.Enabled)
         {
-            return GoogleUnavailable();
+            throw GoogleUnavailable();
         }
 
         if (!IsSupportedGoogleClient(request.Client))
         {
-            return InvalidGoogleClient();
+            throw InvalidGoogleClient();
         }
 
         var result = await googleAuthentication.LinkExistingAsync(
@@ -145,18 +138,18 @@ public sealed class GoogleController(
             request.Password ?? string.Empty,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 
     private static bool IsSupportedGoogleClient(string? client) => client is "web" or "zola-light";
 
-    private static IResult InvalidGoogleClient() => new ApplicationError(
+    private static BusinessException InvalidGoogleClient() => new(new ApplicationError(
         "invalid_google_client",
         "The Google authentication client is unsupported.",
-        ApplicationErrorType.Validation).ToHttpResult();
+        ApplicationErrorType.Validation));
 
-    private static IResult GoogleUnavailable() => new ApplicationError(
+    private static BusinessException GoogleUnavailable() => new(new ApplicationError(
         "google_unavailable",
         "Google authentication is unavailable.",
-        ApplicationErrorType.NotFound).ToHttpResult();
+        ApplicationErrorType.NotFound));
 }

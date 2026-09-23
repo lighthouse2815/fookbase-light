@@ -4,7 +4,9 @@ namespace Fookbase.Api.Shared.Common;
 
 internal static class ApplicationResultExtensions
 {
-    public static IResult ToHttpResult(this ApplicationError error)
+    public static IResult ToHttpResult(this ApplicationError error) => Results.Problem(error.ToProblemDetails());
+
+    public static ProblemDetails ToProblemDetails(this ApplicationError error)
     {
         var statusCode = error.Type switch
         {
@@ -28,6 +30,6 @@ internal static class ApplicationResultExtensions
             problem.Extensions["errors"] = error.Details;
         }
 
-        return Results.Problem(problem);
+        return problem;
     }
 }

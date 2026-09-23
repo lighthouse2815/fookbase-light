@@ -7,12 +7,11 @@ namespace Fookbase.Api.Modules.Identity.Common;
 
 internal static class IdentityHttpHelpers
 {
-    public static bool TryGetUserId(this ClaimsPrincipal principal, out Guid userId) =>
-        Guid.TryParse(principal.FindFirstValue(JwtRegisteredClaimNames.Sub), out userId);
-
-    public static IResult InvalidAccessToken() =>
-        new ApplicationError(
-            ErrorCode.InvalidAccessToken,
-            ErrorCode.InvalidAccessToken.Message,
-            ApplicationErrorType.Unauthorized).ToHttpResult();
+    public static Guid GetUserId(this ClaimsPrincipal principal) =>
+        Guid.TryParse(principal.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId)
+            ? userId
+            : throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidAccessToken,
+                ErrorCode.InvalidAccessToken.Message,
+                ApplicationErrorType.Unauthorized));
 }

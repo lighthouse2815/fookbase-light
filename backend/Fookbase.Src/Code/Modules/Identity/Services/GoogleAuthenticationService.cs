@@ -23,7 +23,7 @@ public sealed class GoogleAuthenticationService(
 {
     private const string Provider = "Google";
 
-    public async Task<ApplicationResult<GoogleCompletionResult>> CreateCompletionAsync(
+    public async Task<GoogleCompletionResult> CreateCompletionAsync(
         string client,
         string providerKey,
         string email,
@@ -32,7 +32,7 @@ public sealed class GoogleAuthenticationService(
     {
         if (!emailVerified || string.IsNullOrWhiteSpace(providerKey) || string.IsNullOrWhiteSpace(email))
         {
-            return Failure<GoogleCompletionResult>("invalid_google_identity", "The Google identity is invalid.");
+            throw Failure("invalid_google_identity", "The Google identity is invalid.");
         }
 
         var normalizedEmail = email.Trim();
@@ -72,8 +72,7 @@ public sealed class GoogleAuthenticationService(
             var createUser = await userManager.CreateAsync(user);
             if (!createUser.Succeeded)
             {
-                await transaction.RollbackAsync(CancellationToken.None);
-                return Failure<GoogleCompletionResult>("google_account_creation_failed", "The Google account could not be created.");
+                throw Failure("google_account_creation_failed", "The Google account could not be created.");
             }
 
             await userProfileService.EnsureCreatedAsync(user.Id, username, cancellationToken);
@@ -81,8 +80,7 @@ public sealed class GoogleAuthenticationService(
             var addLogin = await userManager.AddLoginAsync(user, new UserLoginInfo(Provider, providerKey, Provider));
             if (!addLogin.Succeeded)
             {
-                await transaction.RollbackAsync(CancellationToken.None);
-                return Failure<GoogleCompletionResult>("google_account_creation_failed", "The Google account could not be created.");
+                throw Failure("google_account_creation_failed", "The Google account could not be created.");
             }
 
             var completion = await CreateCompletionAsync(
@@ -92,11 +90,6 @@ public sealed class GoogleAuthenticationService(
                 normalizedEmail,
                 user.Id,
                 cancellationToken);
-            if (!completion.Succeeded)
-            {
-                await transaction.RollbackAsync(CancellationToken.None);
-                return completion;
-            }
 
             await transaction.CommitAsync(cancellationToken);
             return completion;
@@ -108,7 +101,7 @@ public sealed class GoogleAuthenticationService(
         }
     }
 
-    public async Task<ApplicationResult<object>> ExchangeAsync(
+    public async Task<object> ExchangeAsync(
         string code,
         string client,
         string? userAgent,
@@ -117,24 +110,24 @@ public sealed class GoogleAuthenticationService(
         var completion = await FindUsableCompletionAsync(code, client, ExternalLoginCompletionPurpose.IssueSession, cancellationToken);
         if (completion is null || completion.UserId is not { } userId)
         {
-            return Failure<object>("invalid_google_completion", "The Google sign-in could not be completed.");
+            throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
         }
 
         if (!await TryConsumeCompletionAsync(completion, cancellationToken))
         {
-            return Failure<object>("invalid_google_completion", "The Google sign-in could not be completed.");
+            throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
         }
 
         var user = await userManager.FindByIdAsync(userId.ToString());
         return user is null
-            ? Failure<object>("invalid_google_completion", "The Google sign-in could not be completed.")
+            ? throw Failure("invalid_google_completion", "The Google sign-in could not be completed.")
             : await authenticationService.CompleteExternalLoginAsync(
                 user,
                 userAgent,
                 cancellationToken: cancellationToken);
     }
 
-    public async Task<ApplicationResult<object>> LinkExistingAsync(
+    public async Task<object> LinkExistingAsync(
         string code,
         string client,
         string password,
@@ -148,26 +141,26 @@ public sealed class GoogleAuthenticationService(
             cancellationToken);
         if (completion is null || completion.UserId is not { } userId)
         {
-            return Failure<object>("invalid_google_completion", "The Google sign-in could not be completed.");
+            throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
         }
 
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
-            return Failure<object>("invalid_google_completion", "The Google sign-in could not be completed.");
+            throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
         }
 
         if (!await userManager.CheckPasswordAsync(user, password))
         {
             await userManager.AccessFailedAsync(user);
-            return Failure<object>(ErrorCode.InvalidCredentials, "The email or password is invalid.");
+            throw Failure(ErrorCode.InvalidCredentials, "The email or password is invalid.");
         }
 
         await userManager.ResetAccessFailedCountAsync(user);
         if (!await TryConsumeCompletionAsync(completion, cancellationToken))
         {
-            return Failure<object>("invalid_google_completion", "The Google sign-in could not be completed.");
+            throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
         }
 
         if (user.TwoFactorEnabled)
@@ -183,7 +176,7 @@ public sealed class GoogleAuthenticationService(
         var addLogin = await userManager.AddLoginAsync(user, new UserLoginInfo(Provider, completion.ProviderKey, Provider));
         if (!addLogin.Succeeded)
         {
-            return Failure<object>("google_link_failed", "The Google account could not be linked.");
+            throw Failure("google_link_failed", "The Google account could not be linked.");
         }
 
         return await authenticationService.CompleteExternalLoginAsync(
@@ -192,7 +185,7 @@ public sealed class GoogleAuthenticationService(
             cancellationToken: cancellationToken);
     }
 
-    private async Task<ApplicationResult<GoogleCompletionResult>> CreateCompletionAsync(
+    private async Task<GoogleCompletionResult> CreateCompletionAsync(
         ExternalLoginCompletionPurpose purpose,
         string client,
         string providerKey,
@@ -213,10 +206,10 @@ public sealed class GoogleAuthenticationService(
             timeProvider.GetUtcNow());
         dbContext.ExternalLoginCompletions.Add(completion);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return ApplicationResult<GoogleCompletionResult>.Success(new GoogleCompletionResult(
+        return new GoogleCompletionResult(
             rawCode,
             purpose == ExternalLoginCompletionPurpose.LinkExisting,
-            purpose == ExternalLoginCompletionPurpose.LinkExisting ? email : null));
+            purpose == ExternalLoginCompletionPurpose.LinkExisting ? email : null);
     }
 
     private async Task<ExternalLoginCompletion?> FindUsableCompletionAsync(
@@ -277,6 +270,6 @@ public sealed class GoogleAuthenticationService(
         }
     }
 
-    private static ApplicationResult<T> Failure<T>(string code, string message) =>
-        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Unauthorized));
+    private static BusinessException Failure(string code, string message) =>
+        new BusinessException(new ApplicationError(code, message, ApplicationErrorType.Unauthorized));
 }

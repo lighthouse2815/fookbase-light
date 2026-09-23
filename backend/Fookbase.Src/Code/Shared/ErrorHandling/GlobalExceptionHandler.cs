@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Shared.Observability;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,14 @@ public sealed class GlobalExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
+        if (exception is BusinessException businessException)
+        {
+            var businessProblem = businessException.Error.ToProblemDetails();
+            businessProblem.Extensions["requestId"] = RequestCorrelation.GetId(httpContext);
+            await Results.Problem(businessProblem).ExecuteAsync(httpContext);
+            return true;
+        }
+
         var isBadRequest = exception is BadHttpRequestException or JsonException or InvalidDataException;
         if (isBadRequest)
         {

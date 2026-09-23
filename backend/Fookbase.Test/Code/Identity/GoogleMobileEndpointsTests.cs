@@ -3,14 +3,42 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
+using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
 
 public class GoogleMobileEndpointsTests(IdentityApiFactory factory) : IClassFixture<IdentityApiFactory>
 {
+    [Theory]
+    [InlineData("/api/auth/google/callback?client=web", "invalid_google_identity")]
+    [InlineData("/api/auth/google/mobile/callback", "invalid_mobile_google_login")]
+    public async Task Missing_external_identity_preserves_the_callback_error(string path, string code)
+    {
+        using var app = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("GoogleAuthentication:MobileCallbackUrl", "https://mobile.example.test/auth/callback");
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IGoogleExternalIdentityReader>();
+                services.AddScoped<IGoogleExternalIdentityReader, GoogleExternalIdentityReader>();
+            });
+        });
+        using var client = app.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var response = await client.GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        using var problem = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(code, problem.RootElement.GetProperty("code").GetString());
+        Assert.False(string.IsNullOrEmpty(problem.RootElement.GetProperty("requestId").GetString()));
+        Assert.Null(response.Headers.Location);
+    }
+
     [Fact]
     public async Task Mobile_code_requires_verifier_and_is_single_use()
     {

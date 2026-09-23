@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
@@ -31,7 +32,7 @@ public sealed class GoogleMobileController(
         }
         if (!GoogleMobileFlow.IsValidChallenge(challenge) || !GoogleMobileFlow.IsValidState(state))
         {
-            return Invalid();
+            throw Invalid();
         }
         var properties = new AuthenticationProperties { RedirectUri = "/api/auth/google/mobile/callback" };
         properties.Items["fookbase.client"] = "mobile";
@@ -50,29 +51,25 @@ public sealed class GoogleMobileController(
         {
             return Results.NotFound();
         }
-        var identity = await reader.ReadAsync(HttpContext, cancellationToken);
-        if (!identity.Succeeded || identity.Value!.Client != "mobile" ||
-            !GoogleMobileFlow.IsValidChallenge(identity.Value.CodeChallenge) ||
-            !GoogleMobileFlow.IsValidState(identity.Value.State))
+        var identity = await reader.ReadAsync(HttpContext, cancellationToken, mobile: true);
+        if (identity.Client != "mobile" ||
+            !GoogleMobileFlow.IsValidChallenge(identity.CodeChallenge) ||
+            !GoogleMobileFlow.IsValidState(identity.State))
         {
-            return Invalid();
+            throw Invalid();
         }
 
         var completion = await service.CreateCompletionAsync(
             "mobile",
-            identity.Value.ProviderKey,
-            identity.Value.Email,
-            identity.Value.EmailVerified,
+            identity.ProviderKey,
+            identity.Email,
+            identity.EmailVerified,
             cancellationToken);
-        if (!completion.Succeeded)
-        {
-            return completion.Error!.ToHttpResult();
-        }
         return Results.Redirect(QueryHelpers.AddQueryString(options.MobileCallbackUrl, new Dictionary<string, string?>
         {
-            ["code"] = flow.Protect(completion.Value!.Code, identity.Value.CodeChallenge!),
-            ["state"] = identity.Value.State,
-            ["mode"] = completion.Value.RequiresPassword ? "link" : "login"
+            ["code"] = flow.Protect(completion.Code, identity.CodeChallenge!),
+            ["state"] = identity.State,
+            ["mode"] = completion.RequiresPassword ? "link" : "login"
         }));
     }
 
@@ -90,11 +87,11 @@ public sealed class GoogleMobileController(
         var code = flow.Unprotect(request.Code, request.Verifier);
         if (code is null)
         {
-            return Invalid();
+            throw Invalid();
         }
         var result = await service.ExchangeAsync(
             code, "mobile", Request.Headers.UserAgent.ToString(), cancellationToken);
-        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 
     [HttpPost("link")]
@@ -111,7 +108,7 @@ public sealed class GoogleMobileController(
         var code = flow.Unprotect(request.Code, request.Verifier);
         if (code is null)
         {
-            return Invalid();
+            throw Invalid();
         }
         var result = await service.LinkExistingAsync(
             code,
@@ -119,14 +116,14 @@ public sealed class GoogleMobileController(
             request.Password ?? string.Empty,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 
     private static bool Enabled(GoogleAuthenticationOptions options) =>
         options.Enabled && !string.IsNullOrWhiteSpace(options.MobileCallbackUrl);
 
-    private static IResult Invalid() => new ApplicationError(
+    private static BusinessException Invalid() => new(new ApplicationError(
         "invalid_mobile_google_login",
         "The mobile Google sign-in is invalid or expired.",
-        ApplicationErrorType.Unauthorized).ToHttpResult();
+        ApplicationErrorType.Unauthorized));
 }

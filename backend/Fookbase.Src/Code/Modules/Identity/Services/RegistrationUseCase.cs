@@ -1,4 +1,3 @@
-using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Services;
@@ -13,7 +12,7 @@ public sealed class RegistrationUseCase(
     UserPrivacySettingsService privacySettingsService,
     FookbaseDbContext dbContext)
 {
-    public async Task<ApplicationResult<AuthenticationResponse>> ExecuteAsync(
+    public async Task<AuthenticationResponse> ExecuteAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -21,13 +20,8 @@ public sealed class RegistrationUseCase(
         try
         {
             var result = await authenticationService.RegisterAsync(request, cancellationToken);
-            if (!result.Succeeded)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return result;
-            }
 
-            var user = result.Value!.User;
+            var user = result.User;
             await userProfileService.EnsureCreatedAsync(user.Id, user.Username, cancellationToken);
             await privacySettingsService.EnsureCreatedAsync(user.Id, cancellationToken);
             await transaction.CommitAsync(cancellationToken);

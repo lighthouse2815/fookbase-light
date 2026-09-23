@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Fookbase.Api.Shared.Common;
+using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Authentication;
 
 namespace Fookbase.Api.Modules.Identity.Services;
@@ -9,9 +10,10 @@ public sealed record GoogleExternalIdentity(string ProviderKey, string Email, bo
 
 public interface IGoogleExternalIdentityReader
 {
-    Task<ApplicationResult<GoogleExternalIdentity>> ReadAsync(
+    Task<GoogleExternalIdentity> ReadAsync(
         HttpContext context,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        bool mobile = false);
 }
 
 public sealed class GoogleExternalIdentityReader(IAuthenticationService authenticationService)
@@ -19,16 +21,17 @@ public sealed class GoogleExternalIdentityReader(IAuthenticationService authenti
 {
     private const string ExternalScheme = "GoogleExternal";
 
-    public async Task<ApplicationResult<GoogleExternalIdentity>> ReadAsync(
+    public async Task<GoogleExternalIdentity> ReadAsync(
         HttpContext context,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool mobile = false)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var authentication = await authenticationService.AuthenticateAsync(context, ExternalScheme);
         await authenticationService.SignOutAsync(context, ExternalScheme, null);
         if (!authentication.Succeeded || authentication.Principal is null)
         {
-            return InvalidIdentity();
+            throw InvalidIdentity(mobile);
         }
 
         var providerKey = authentication.Principal.FindFirstValue("sub");
@@ -37,19 +40,18 @@ public sealed class GoogleExternalIdentityReader(IAuthenticationService authenti
         if (string.IsNullOrWhiteSpace(providerKey) || string.IsNullOrWhiteSpace(email) ||
             !bool.TryParse(verifiedValue, out var emailVerified))
         {
-            return InvalidIdentity();
+            throw InvalidIdentity(mobile);
         }
 
-        return ApplicationResult<GoogleExternalIdentity>.Success(
-            new GoogleExternalIdentity(providerKey, email, emailVerified,
-                authentication.Properties?.GetString("fookbase.client"),
-                authentication.Properties?.GetString("fookbase.code_challenge"),
-                authentication.Properties?.GetString("fookbase.state")));
+        return new GoogleExternalIdentity(providerKey, email, emailVerified,
+            authentication.Properties?.GetString("fookbase.client"),
+            authentication.Properties?.GetString("fookbase.code_challenge"),
+            authentication.Properties?.GetString("fookbase.state"));
     }
 
-    private static ApplicationResult<GoogleExternalIdentity> InvalidIdentity() =>
-        ApplicationResult<GoogleExternalIdentity>.Failure(new ApplicationError(
-            "invalid_google_identity",
-            "The Google identity is invalid.",
+    internal static BusinessException InvalidIdentity(bool mobile) =>
+        new(new ApplicationError(
+            mobile ? "invalid_mobile_google_login" : "invalid_google_identity",
+            mobile ? "The mobile Google sign-in is invalid or expired." : "The Google identity is invalid.",
             ApplicationErrorType.Unauthorized));
 }

@@ -106,5 +106,16 @@ cập nhật này. Không tự động retry hoặc đổi thời điểm tiêu 
 
 ## Trạng thái
 
-Thiết kế để người dùng xem trước khi lập kế hoạch triển khai. Chưa sửa code
-ứng dụng hoặc chạy test cho việc chuyển sang exception.
+Đã triển khai cho các service xác thực và tám controller Identity trong phạm
+vi trên. `BusinessException` dùng chung ánh xạ `ApplicationError` với các
+module còn dùng `ApplicationResult`; handler bổ sung `requestId`.
+
+Đã bổ sung test ánh xạ năm loại lỗi nghiệp vụ, rollback đăng ký thường và
+Google khi lỗi nghiệp vụ xảy ra sau khi tạo user, cùng mã lỗi callback Google
+web/mobile khi không có external identity. Các test trực tiếp service đã
+chuyển sang kiểm tra DTO hoặc exception và giữ assertion nghiệp vụ.
+
+Kiểm chứng bằng SDK .NET 10 trong Docker: build API/test thành công, 13 test
+Shared và sáu nhóm backend đều qua. Sau khi bổ sung các trường hợp Google,
+chạy lại toàn bộ nhóm Identity: 87 test qua. Tổng cộng 292 test được kiểm
+chứng; `git diff --check` không phát hiện lỗi whitespace.

@@ -1,4 +1,3 @@
-using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
@@ -20,11 +19,9 @@ public sealed class PasswordController(
         [FromBody] ForgotPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await authenticationService.RequestPasswordResetAsync(request, cancellationToken);
+        await authenticationService.RequestPasswordResetAsync(request, cancellationToken);
 
-        return result.Succeeded
-            ? Results.NoContent()
-            : result.Error!.ToHttpResult();
+        return Results.NoContent();
     }
 
     [HttpPost("reset")]
@@ -34,11 +31,9 @@ public sealed class PasswordController(
         [FromBody] ResetPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await authenticationService.ResetPasswordAsync(request, cancellationToken);
+        await authenticationService.ResetPasswordAsync(request, cancellationToken);
 
-        return result.Succeeded
-            ? Results.NoContent()
-            : result.Error!.ToHttpResult();
+        return Results.NoContent();
     }
 
     [HttpPost("change")]
@@ -47,15 +42,10 @@ public sealed class PasswordController(
         [FromBody] ChangePasswordRequest request,
         CancellationToken cancellationToken)
     {
-        if (!User.TryGetUserId(out var userId))
-        {
-            return IdentityHttpHelpers.InvalidAccessToken();
-        }
+        var userId = User.GetUserId();
 
         var result = await authenticationService.ChangePasswordAsync(userId, request, cancellationToken);
 
-        return result.Succeeded
-            ? Results.Ok(result.Value)
-            : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 }

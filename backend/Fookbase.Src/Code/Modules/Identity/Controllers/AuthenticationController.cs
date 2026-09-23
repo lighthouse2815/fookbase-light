@@ -1,4 +1,3 @@
-using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
@@ -22,9 +21,7 @@ public sealed class AuthenticationController(
     {
         var result = await authenticationService.LoginAsync(request, null, cancellationToken);
 
-        return result.Succeeded
-            ? Results.Ok(result.Value)
-            : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 
     [HttpPost("refresh")]
@@ -35,9 +32,7 @@ public sealed class AuthenticationController(
     {
         var result = await authenticationService.RefreshAsync(request, cancellationToken);
 
-        return result.Succeeded
-            ? Results.Ok(result.Value)
-            : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 
     [HttpPost("logout")]
@@ -46,19 +41,14 @@ public sealed class AuthenticationController(
         [FromBody] LogoutRequest request,
         CancellationToken cancellationToken)
     {
-        if (!User.TryGetUserId(out var userId))
-        {
-            return IdentityHttpHelpers.InvalidAccessToken();
-        }
+        var userId = User.GetUserId();
 
-        var result = await authenticationService.LogoutAsync(
+        await authenticationService.LogoutAsync(
             userId,
             request,
             cancellationToken);
 
-        return result.Succeeded
-            ? Results.NoContent()
-            : result.Error!.ToHttpResult();
+        return Results.NoContent();
     }
 
     [HttpGet("me")]
@@ -66,17 +56,12 @@ public sealed class AuthenticationController(
     public async Task<IResult> GetCurrentUserAsync(
         CancellationToken cancellationToken)
     {
-        if (!User.TryGetUserId(out var userId))
-        {
-            return IdentityHttpHelpers.InvalidAccessToken();
-        }
+        var userId = User.GetUserId();
 
         var result = await authenticationService.GetCurrentUserAsync(
             userId,
             cancellationToken);
 
-        return result.Succeeded
-            ? Results.Ok(result.Value)
-            : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 }

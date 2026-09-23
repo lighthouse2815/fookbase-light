@@ -126,14 +126,14 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
             providerKey,
             account.User.Email!,
             emailVerified: true);
-        Assert.True(completion.Succeeded);
+        Assert.NotNull(completion);
 
         var linked = await googleAuthentication.LinkExistingAsync(
-            completion.Value!.Code,
+            completion.Code,
             "web",
             TestPassword,
             null);
-        var challenge = Assert.IsType<TwoFactorChallengeResponse>(linked.Value);
+        var challenge = Assert.IsType<TwoFactorChallengeResponse>(linked);
         Assert.DoesNotContain(await manager.GetLoginsAsync(user), login => login.LoginProvider == "Google");
 
         var verified = await client.PostAsJsonAsync(

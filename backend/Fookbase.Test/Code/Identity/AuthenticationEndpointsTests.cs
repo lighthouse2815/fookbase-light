@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using System.Net;
@@ -331,11 +332,11 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             $"google-sub-{Guid.NewGuid():N}",
             $"google-replay-{Guid.NewGuid():N}@example.test",
             emailVerified: true);
-        Assert.True(completion.Succeeded);
+        Assert.NotNull(completion);
 
         using var client = factory.CreateClient();
-        var first = await client.PostAsJsonAsync("/api/auth/google/exchange", new { code = completion.Value!.Code, client = "web" });
-        var second = await client.PostAsJsonAsync("/api/auth/google/exchange", new { code = completion.Value.Code, client = "web" });
+        var first = await client.PostAsJsonAsync("/api/auth/google/exchange", new { code = completion.Code, client = "web" });
+        var second = await client.PostAsJsonAsync("/api/auth/google/exchange", new { code = completion.Code, client = "web" });
 
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, second.StatusCode);
@@ -354,11 +355,11 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             $"google-sub-{Guid.NewGuid():N}",
             account.Email,
             emailVerified: true);
-        Assert.True(completion.Succeeded);
+        Assert.NotNull(completion);
 
         var response = await client.PostAsJsonAsync(
             "/api/auth/google/link",
-            new { code = completion.Value!.Code, password = "wrong-password", client = "web" });
+            new { code = completion.Code, password = "wrong-password", client = "web" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -407,11 +408,11 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             email,
             emailVerified: true);
 
-        Assert.True(completion.Succeeded);
-        Assert.False(completion.Value!.RequiresPassword);
+        Assert.NotNull(completion);
+        Assert.False(completion.RequiresPassword);
 
-        var exchange = await googleAuthentication.ExchangeAsync(completion.Value.Code, "web", null);
-        var session = Assert.IsType<AuthenticationResponse>(exchange.Value);
+        var exchange = await googleAuthentication.ExchangeAsync(completion.Code, "web", null);
+        var session = Assert.IsType<AuthenticationResponse>(exchange);
         var user = await userManager.FindByIdAsync(session.User.Id.ToString());
 
         Assert.NotNull(user);
@@ -430,13 +431,13 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
         var email = $"google-unverified-{Guid.NewGuid():N}@example.test";
 
-        var completion = await googleAuthentication.CreateCompletionAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => googleAuthentication.CreateCompletionAsync(
             "web",
             $"google-sub-{Guid.NewGuid():N}",
             email,
-            emailVerified: false);
+            emailVerified: false));
 
-        Assert.False(completion.Succeeded);
+        Assert.Equal("invalid_google_identity", exception.Error.Code);
         Assert.Null(await userManager.FindByEmailAsync(email));
     }
 
@@ -457,15 +458,15 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             $"google-sub-{Guid.NewGuid():N}",
             account.Email,
             emailVerified: true);
-        var linked = await googleAuthentication.LinkExistingAsync(
-            completion.Value!.Code,
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => googleAuthentication.LinkExistingAsync(
+            completion.Code,
             "web",
             "wrong-password",
-            null);
+            null));
 
-        Assert.True(completion.Succeeded);
-        Assert.True(completion.Value!.RequiresPassword);
-        Assert.False(linked.Succeeded);
+        Assert.NotNull(completion);
+        Assert.True(completion.RequiresPassword);
+        Assert.Equal("invalid_credentials", exception.Error.Code);
         Assert.DoesNotContain(await userManager.GetLoginsAsync(user!), login => login.LoginProvider == "Google");
     }
 
@@ -487,17 +488,17 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             providerKey,
             account.Email,
             emailVerified: true);
-        Assert.True(completion.Succeeded);
-        Assert.True(completion.Value!.RequiresPassword);
+        Assert.NotNull(completion);
+        Assert.True(completion.RequiresPassword);
 
         var linked = await googleAuthentication.LinkExistingAsync(
-            completion.Value.Code,
+            completion.Code,
             "web",
             account.Password,
             null);
 
-        Assert.True(linked.Succeeded);
-        Assert.IsType<AuthenticationResponse>(linked.Value);
+        Assert.NotNull(linked);
+        Assert.IsType<AuthenticationResponse>(linked);
         Assert.Contains(await userManager.GetLoginsAsync(user!), login =>
             login.LoginProvider == "Google" && login.ProviderKey == providerKey);
     }

@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -17,14 +16,11 @@ public sealed class SessionsController(
     public async Task<IResult> GetSessionsAsync(
         CancellationToken cancellationToken)
     {
-        if (!User.TryGetUserId(out var userId))
-        {
-            return IdentityHttpHelpers.InvalidAccessToken();
-        }
+        var userId = User.GetUserId();
         Guid.TryParse(User.FindFirstValue("sid"), out var sessionId);
         var result = await authenticationService.GetSessionsAsync(
             userId, sessionId == Guid.Empty ? null : sessionId, cancellationToken);
-        return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
+        return Results.Ok(result);
     }
 
     [HttpDelete("{sessionId:guid}")]
@@ -33,13 +29,10 @@ public sealed class SessionsController(
         [FromRoute] Guid sessionId,
         CancellationToken cancellationToken)
     {
-        if (!User.TryGetUserId(out var userId))
-        {
-            return IdentityHttpHelpers.InvalidAccessToken();
-        }
-        var result = await authenticationService.RevokeSessionAsync(
+        var userId = User.GetUserId();
+        await authenticationService.RevokeSessionAsync(
             userId, sessionId, TimeProvider.System.GetUtcNow(), cancellationToken);
-        return result.Succeeded ? Results.NoContent() : result.Error!.ToHttpResult();
+        return Results.NoContent();
     }
 
     [HttpPost("revoke-others")]
@@ -47,10 +40,7 @@ public sealed class SessionsController(
     public async Task<IResult> RevokeOtherSessionsAsync(
         CancellationToken cancellationToken)
     {
-        if (!User.TryGetUserId(out var userId))
-        {
-            return IdentityHttpHelpers.InvalidAccessToken();
-        }
+        var userId = User.GetUserId();
         Guid.TryParse(User.FindFirstValue("sid"), out var currentSessionId);
         await authenticationService.RevokeOtherSessionsAsync(
             userId,

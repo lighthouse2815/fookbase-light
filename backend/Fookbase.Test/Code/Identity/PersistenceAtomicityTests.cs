@@ -1,7 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
+using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Shared.Common;
+using Fookbase.Api.Shared.ErrorHandling;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
@@ -9,6 +14,60 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 
 public sealed class PersistenceAtomicityTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Business_failure_after_user_creation_rolls_back_registration(bool google)
+    {
+        await using var database = await TemporaryFookbaseDatabase.CreateAsync();
+        using var factory = new IsolatedIdentityApiFactory(database.ConnectionString);
+        using var failingFactory = factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            services.AddDbContext<FookbaseDbContext>(options => options.AddInterceptors(new RejectProfileInsert()))));
+        using var client = failingFactory.CreateClient();
+        var suffix = Guid.NewGuid().ToString("N")[..16];
+
+        HttpResponseMessage response;
+        if (google)
+        {
+            client.DefaultRequestHeaders.Add("X-Test-Google-Sub", suffix);
+            client.DefaultRequestHeaders.Add("X-Test-Google-Email", $"business-{suffix}@example.com");
+            client.DefaultRequestHeaders.Add("X-Test-Google-Email-Verified", "true");
+            response = await client.GetAsync("/api/auth/google/callback?client=web");
+        }
+        else
+        {
+            response = await client.PostAsJsonAsync("/api/auth/register",
+                new RegisterRequest($"business-{suffix}@example.com", $"business_{suffix}", "Password123!"));
+        }
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        using var problem = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("profile_rejected", problem.RootElement.GetProperty("code").GetString());
+        await using var db = CreateDbContext(database.ConnectionString);
+        Assert.False(await db.Users.AnyAsync());
+        Assert.False(await db.AuthSessions.AnyAsync());
+        Assert.False(await db.RefreshTokens.AnyAsync());
+        Assert.False(await db.UserProfiles.AnyAsync());
+        Assert.False(await db.UserPrivacySettings.AnyAsync());
+        Assert.False(await db.UserLogins.AnyAsync());
+        Assert.False(await db.ExternalLoginCompletions.AnyAsync());
+    }
+
+    private sealed class RejectProfileInsert : SaveChangesInterceptor
+    {
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context!.ChangeTracker.Entries<UserProfile>().Any(entry => entry.State == EntityState.Added))
+            {
+                throw new BusinessException(new ApplicationError(
+                    "profile_rejected", "Profile creation was rejected.", ApplicationErrorType.Conflict));
+            }
+
+            return ValueTask.FromResult(result);
+        }
+    }
+
     [Fact]
     public async Task Fresh_database_applies_the_complete_fookbase_migration()
     {
