@@ -25,6 +25,9 @@ public sealed class GlobalExceptionHandler(
                 RequestCorrelation.GetId(httpContext));
         }
 
+        var error = isBadRequest
+            ? ErrorCode.InvalidRequest
+            : ErrorCode.InternalServerError;
         var statusCode = isBadRequest
             ? StatusCodes.Status400BadRequest
             : StatusCodes.Status500InternalServerError;
@@ -32,13 +35,9 @@ public sealed class GlobalExceptionHandler(
         {
             Status = statusCode,
             Title = isBadRequest ? "Bad request" : "Internal server error",
-            Detail = isBadRequest
-                ? "The request body is invalid."
-                : "An unexpected error occurred."
+            Detail = error.Message
         };
-        problem.Extensions["code"] = isBadRequest
-            ? ErrorCode.InvalidRequest
-            : ErrorCode.InternalServerError;
+        problem.Extensions["code"] = error.Code;
         problem.Extensions["requestId"] = RequestCorrelation.GetId(httpContext);
 
         httpContext.Response.StatusCode = statusCode;

@@ -298,7 +298,7 @@ public sealed class RegistrationChallengeService(
         new(challenge.Id, challenge.ExpiresAtUtc, challenge.ResendAvailableAtUtc);
 
     private static ApplicationResult<T> Validation<T>(IReadOnlyDictionary<string, string[]> errors) =>
-        ApplicationResult<T>.Failure(new ApplicationError(ErrorCode.ValidationFailed, "One or more validation errors occurred.", ApplicationErrorType.Validation, errors));
+        ApplicationResult<T>.Failure(new ApplicationError(ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation, errors));
 
     private static ApplicationResult<T> InvalidCode<T>() =>
         ApplicationResult<T>.Failure(new ApplicationError("invalid_registration_code", "The verification code is invalid or expired.", ApplicationErrorType.Unauthorized));

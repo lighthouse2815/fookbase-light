@@ -270,8 +270,8 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
     if (context.ProblemDetails is HttpValidationProblemDetails)
     {
         context.ProblemDetails.Title = "Validation";
-        context.ProblemDetails.Detail = "One or more validation errors occurred.";
-        context.ProblemDetails.Extensions["code"] = ErrorCode.ValidationFailed;
+        context.ProblemDetails.Detail = ErrorCode.ValidationFailed.Message;
+        context.ProblemDetails.Extensions["code"] = ErrorCode.ValidationFailed.Code;
     }
 });
 builder.Services.AddValidation();

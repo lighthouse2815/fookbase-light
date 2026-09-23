@@ -414,7 +414,7 @@ public sealed class AuthenticationService(
         if (user is null || !user.IsActive)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                ErrorCode.InvalidAccessToken, "The access token is invalid.", ApplicationErrorType.Unauthorized));
+                ErrorCode.InvalidAccessToken, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         if (user.EmailConfirmed)
@@ -528,7 +528,7 @@ public sealed class AuthenticationService(
         if (!result.Succeeded)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                ErrorCode.ValidationFailed, "One or more validation errors occurred.", ApplicationErrorType.Validation,
+                ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
                 ToErrors(result)));
         }
 
@@ -629,7 +629,7 @@ public sealed class AuthenticationService(
         {
             await transaction.RollbackAsync(cancellationToken);
             return ApplicationResult.Failure(new ApplicationError(
-                ErrorCode.ValidationFailed, "One or more validation errors occurred.", ApplicationErrorType.Validation, ToErrors(reset)));
+                ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation, ToErrors(reset)));
         }
 
         await RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
@@ -655,7 +655,7 @@ public sealed class AuthenticationService(
         if (user is null || !user.IsActive)
         {
             return UnauthorizedFailure<AuthenticationResponse>(
-                ErrorCode.InvalidAccessToken, "The access token is invalid.");
+                ErrorCode.InvalidAccessToken, ErrorCode.InvalidAccessToken.Message);
         }
 
         var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
@@ -884,7 +884,7 @@ public sealed class AuthenticationService(
         ApplicationResult<T>.Failure(
             new ApplicationError(
                 ErrorCode.ValidationFailed,
-                "One or more validation errors occurred.",
+                ErrorCode.ValidationFailed.Message,
                 ApplicationErrorType.Validation,
                 details));
 
