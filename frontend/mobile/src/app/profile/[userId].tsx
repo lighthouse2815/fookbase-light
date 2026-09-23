@@ -46,12 +46,13 @@ export default function Profile() {
 
   return <Screen style={profileStyles.screen}>
     <View style={[profileStyles.coverWrap, { backgroundColor: `${theme.primary}22` }]}>{coverUrl ? <Image source={{ uri: coverUrl }} contentFit="cover" style={profileStyles.cover} /> : <><View style={[profileStyles.coverGlow, { backgroundColor: `${theme.primary}30` }]} /><Icon name="sparkle" color={`${theme.primary}99`} size={44} /></>}</View>
-    <View style={profileStyles.identity}><Avatar label={profile.displayName} uri={avatarUrl} size={88} /><View style={profileStyles.identityCopy}><Label title style={profileStyles.name} numberOfLines={2}>{profile.displayName}</Label>{profile.username && <Text style={{ color: theme.muted, fontSize: 13 }}>@{profile.username}</Text>}</View></View>
+    <View style={profileStyles.identity}><View style={[profileStyles.avatarFrame, { borderColor: theme.card, backgroundColor: theme.card }]}><Avatar label={profile.displayName} uri={avatarUrl} size={108} /></View><View style={profileStyles.identityCopy}><Label title style={profileStyles.name} numberOfLines={2}>{profile.displayName}</Label>{profile.username && <Text style={{ color: theme.muted, fontSize: 13 }}>@{profile.username}</Text>}</View></View>
     {profile.bio && <Text style={[profileStyles.bio, { color: theme.text }]}>{profile.bio}</Text>}
     <View style={[profileStyles.stats, { borderColor: theme.border, backgroundColor: theme.card }]}><View style={profileStyles.stat}><Text style={{ color: theme.text, fontSize: 16, fontWeight: '900' }}>{profile.followerCount.toLocaleString('vi-VN')}</Text><Text style={{ color: theme.muted, fontSize: 12 }}>người theo dõi</Text></View><View style={[profileStyles.statDivider, { backgroundColor: theme.border }]} /><View style={profileStyles.stat}><Text style={{ color: theme.text, fontSize: 16, fontWeight: '900' }}>{profile.followingCount.toLocaleString('vi-VN')}</Text><Text style={{ color: theme.muted, fontSize: 12 }}>đang theo dõi</Text></View><View style={[profileStyles.statDivider, { backgroundColor: theme.border }]} /><View style={profileStyles.stat}><Text style={{ color: theme.text, fontSize: 16, fontWeight: '900' }}>{postItems.length}</Text><Text style={{ color: theme.muted, fontSize: 12 }}>bài hiển thị</Text></View></View>
     {own ? <><Button title="Chỉnh sửa hồ sơ" secondary onPress={() => { setEditing(!editing); setName(profile.displayName); setBio(profile.bio ?? '') }} />{editing && <Card style={profileStyles.editCard}><Label style={{ fontWeight: '900' }}>Chỉnh sửa thông tin cơ bản</Label><Field label="Tên hiển thị" value={name} onChangeText={setName} /><Field label="Giới thiệu" multiline value={bio} onChangeText={setBio} style={{ minHeight: 94, textAlignVertical: 'top' }} /><Button title={action.isPending ? 'Đang lưu…' : 'Lưu thay đổi'} disabled={action.isPending || !name.trim()} onPress={() => action.mutate(() => usersApi.updateCurrent({ displayName: name.trim(), bio }))} /></Card>}</> : <View style={profileStyles.actions}>{status.data?.status !== 'blocked' && <Button title={profile.isFollowing ? 'Đang theo dõi' : 'Theo dõi'} secondary={profile.isFollowing === true} disabled={action.isPending || status.isPending} onPress={() => action.mutate(() => profile.isFollowing ? usersApi.unfollow(userId) : usersApi.follow(userId))} />}{status.data && <FriendActions userId={userId} relationship={status.data} pending={action.isPending} run={work => action.mutate(work)} />}{status.data?.status !== 'blocked' && <Button secondary danger title="Chặn" disabled={action.isPending} onPress={() => Alert.alert('Chặn tài khoản?', 'Bạn sẽ không còn tương tác với tài khoản này.', [{ text: 'Hủy', style: 'cancel' }, { text: 'Chặn', style: 'destructive', onPress: () => action.mutate(() => friendsApi.block(userId)) }])} />}</View>}
     {status.error && <ErrorNotice error={status.error} retry={() => void status.refetch()} />}{action.error && <ErrorNotice error={action.error} />}
     <ProfileDetails details={profile} />
+    <View style={[profileStyles.profileTabs, { borderBottomColor: theme.border }]}><Text style={[profileStyles.profileTab, { color: theme.primary, borderBottomColor: theme.primary }]}>Bài viết</Text><Text style={[profileStyles.profileTab, { color: theme.muted, borderBottomColor: 'transparent' }]}>Giới thiệu</Text><Text style={[profileStyles.profileTab, { color: theme.muted, borderBottomColor: 'transparent' }]}>Ảnh</Text></View>
     <View style={profileStyles.postHeading}><View><Label style={{ fontWeight: '900', fontSize: 19 }}>Bài viết</Label><Text style={{ color: theme.muted, fontSize: 12 }}>Những điều {own ? 'bạn' : profile.displayName} đã chia sẻ</Text></View>{own && <Button compact title="Viết bài" onPress={() => router.push('/posts/create')} />}</View>
     {posts.isPending && <Loading />}{postItems.map(post => <PostCard key={post.id} post={post} />)}{!posts.isPending && !posts.error && postItems.length === 0 && <Card tone="soft" style={profileStyles.empty}><Icon name="sparkle" color={theme.accent} size={23} /><Label style={{ fontWeight: '800' }}>Chưa có bài viết để hiển thị</Label><Text style={{ color: theme.muted, fontSize: 13, textAlign: 'center' }}>{own ? 'Hãy chia sẻ một điều nhỏ để bắt đầu dòng thời gian của bạn.' : 'Khi có bài viết công khai, chúng sẽ xuất hiện tại đây.'}</Text></Card>}{posts.error && <ErrorNotice error={posts.error} retry={() => void posts.refetch()} />}{posts.hasNextPage && <Button secondary title={posts.isFetchingNextPage ? 'Đang tải…' : 'Xem thêm bài viết'} disabled={posts.isFetchingNextPage} onPress={() => void posts.fetchNextPage()} />}
   </Screen>
@@ -59,20 +60,23 @@ export default function Profile() {
 
 const profileStyles = StyleSheet.create({
   screen: { gap: 14 },
-  coverWrap: { height: 164, marginHorizontal: -16, marginTop: -14, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  coverWrap: { height: 194, marginHorizontal: -16, marginTop: -12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   cover: { width: '100%', height: '100%' },
   coverGlow: { position: 'absolute', width: 230, height: 230, borderRadius: 115, right: -62, top: -93 },
-  identity: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: -49, paddingHorizontal: 4 },
-  identityCopy: { flex: 1, gap: 2, paddingBottom: 2 },
-  name: { fontSize: 23, lineHeight: 28 },
-  bio: { paddingHorizontal: 4, fontSize: 14, lineHeight: 21 },
-  stats: { minHeight: 62, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 16, paddingHorizontal: 7 },
+  identity: { alignItems: 'center', gap: 7, marginTop: -58, paddingHorizontal: 4 },
+  avatarFrame: { padding: 3, borderWidth: 3, borderRadius: 62 },
+  identityCopy: { alignItems: 'center', gap: 2 },
+  name: { fontSize: 25, lineHeight: 30, textAlign: 'center' },
+  bio: { paddingHorizontal: 12, fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  stats: { minHeight: 62, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 7 },
   stat: { flex: 1, alignItems: 'center', gap: 2 },
   statDivider: { height: 30, width: 1 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   editCard: { gap: 12 },
   details: { gap: 10 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  profileTabs: { flexDirection: 'row', borderBottomWidth: 1, marginHorizontal: -4 },
+  profileTab: { flex: 1, minHeight: 42, paddingTop: 12, textAlign: 'center', fontSize: 14, fontWeight: '800', borderBottomWidth: 3 },
   postHeading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4 },
   empty: { alignItems: 'center', gap: 7, paddingVertical: 26, paddingHorizontal: 20 },
 })
