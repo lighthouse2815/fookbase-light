@@ -30,7 +30,7 @@ Backend chỉ có một entry point: `backend/Fookbase.Src`. Các route cũ dư�
 
 Toàn bộ persistence runtime dùng duy nhất `FookbaseDbContext` và PostgreSQL database `fookbase_db`. Module vẫn giữ entity, configuration và service trong folder riêng; chỉ DbContext và migration history được hợp nhất.
 
-Ba React app được triển khai độc lập: `frontend/web`, `frontend/zola-light` và `frontend/admin`. V1 chỉ hỗ trợ **một API instance**; không có SignalR/presence horizontal scaling. Xem chi tiết tại [kiến trúc](docs/modular-monolith.md), [vận hành production](docs/production-deployment.md), [Zola Light](docs/zola-light-v1.md), [Feed Ranking V2](docs/feed-ranking-v2.md), [privacy/security](docs/privacy-security-v1.md) và [moderation](docs/moderation-v1.md).
+Bốn client được triển khai độc lập: `frontend/web`, `frontend/zola-light`, `frontend/admin` và `frontend/zola-mobile`. V1 chỉ hỗ trợ **một API instance**; không có SignalR/presence horizontal scaling. Xem chi tiết tại [kiến trúc](docs/modular-monolith.md), [vận hành production](docs/production-deployment.md), [Zola Light](docs/zola-light-v1.md), [Zola Mobile](docs/zola-mobile.md), [Feed Ranking V2](docs/feed-ranking-v2.md), [privacy/security](docs/privacy-security-v1.md) và [moderation](docs/moderation-v1.md).
 
 ## Yêu cầu
 
@@ -175,6 +175,22 @@ npm run dev
 
 Zola Light chạy tại <http://localhost:5175>. Khi dùng local, thêm origin này vào
 `Cors__AllowedOrigins__2` (đã có sẵn trong `.env.example`).
+
+Chạy Zola Mobile riêng trên Android/iOS:
+
+```bash
+cd frontend/zola-mobile
+cp .env.example .env.local
+# Sửa EXPO_PUBLIC_API_BASE_URL trong .env.local trước khi chạy
+npm ci
+npm run typecheck
+npm run lint
+npm test -- --runInBand
+npm run android
+```
+
+Zola Mobile dùng HTTPS API origin và SecureStore để lưu refresh token. Hướng dẫn cấu hình
+package/bundle ID, Google App Link và build Android nằm trong [docs/zola-mobile.md](docs/zola-mobile.md).
 
 ## Build và test
 
