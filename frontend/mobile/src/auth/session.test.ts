@@ -25,7 +25,7 @@ test('network failure preserves stored refresh token', async () => {
 });
 test('concurrent refresh requests share one HTTP request', async () => {
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue('refresh');
-  jest.mocked(fetch).mockResolvedValue({ ok: true, status: 200, json: async () => value } as Response);
+  jest.mocked(fetch).mockResolvedValue({ ok: true, status: 200, json: async () => ({ success: true, data: value, error: null, requestId: 'request-1' }) } as Response);
   await Promise.all([refreshSession(), refreshSession(), refreshSession()]);
   expect(fetch).toHaveBeenCalledTimes(1); expect(getSession()?.user.id).toBe('u1');
 });
@@ -36,7 +36,7 @@ test('logout invalidates refresh response arriving later', async () => {
   const pending = refreshSession();
   while (!finish) await Promise.resolve();
   await clearSession();
-  finish({ ok: true, status: 200, json: async () => value } as Response);
+  finish({ ok: true, status: 200, json: async () => ({ success: true, data: value, error: null, requestId: 'request-1' }) } as Response);
   await pending; expect(getSession()).toBeNull();
 });
 test('secure storage failure does not authenticate', async () => {

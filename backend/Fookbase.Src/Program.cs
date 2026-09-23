@@ -2,6 +2,7 @@ using Fookbase.Api.Modules.Identity.Config;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Fookbase.Api;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Shared.Observability;
 using Fookbase.Api.Shared.Security;
@@ -162,6 +163,14 @@ var authenticationBuilder = builder.Services.AddAuthentication(JwtBearerDefaults
             OnChallenge = async context =>
             {
                 context.HandleResponse();
+                if (ApiResponse.AppliesTo(context.HttpContext))
+                {
+                    await Results.Json(ApiResponse.Failure(
+                        "invalid_access_token", "A valid access token is required.", context.HttpContext),
+                        statusCode: StatusCodes.Status401Unauthorized).ExecuteAsync(context.HttpContext);
+                    return;
+                }
+
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 context.Response.ContentType = "application/problem+json";
                 var problem = new ProblemDetails
@@ -272,12 +281,21 @@ builder.Services.AddControllers(options =>
     }
 }).ConfigureApiBehaviorOptions(options =>
 {
+    // Controller errors without a body are formatted by status-code pages below.
+    options.SuppressMapClientErrors = true;
     options.InvalidModelStateResponseFactory = context =>
     {
         var invalidBody = context.ModelState.Any(entry =>
             entry.Key.Length == 0 || entry.Key.StartsWith('$') ||
             entry.Value!.Errors.Any(error => error.Exception is not null));
         var error = invalidBody ? ErrorCode.InvalidRequest : ErrorCode.ValidationFailed;
+        if (ApiResponse.AppliesTo(context.HttpContext))
+        {
+            var details = invalidBody ? null : new ValidationProblemDetails(context.ModelState).Errors.ToDictionary();
+            return new BadRequestObjectResult(ApiResponse.Failure(
+                error.Code, error.Message, context.HttpContext, details));
+        }
+
         ProblemDetails problem = invalidBody
             ? new ProblemDetails()
             : new ValidationProblemDetails(context.ModelState);
@@ -317,6 +335,15 @@ if (builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", false))
 }
 
 app.UseExceptionHandler();
+app.UseStatusCodePages(async statusContext =>
+{
+    var context = statusContext.HttpContext;
+    if (ApiResponse.AppliesTo(context))
+    {
+        await Results.Json(ApiResponse.Failure(context.Response.StatusCode, context),
+            statusCode: context.Response.StatusCode).ExecuteAsync(context);
+    }
+});
 if (forwardedHeadersOptions.Enabled)
 {
     var forwardedHeaders = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions

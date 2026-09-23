@@ -29,7 +29,9 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   if (generation !== getSessionGeneration()) throw new ApiError('Phiên đăng nhập đã thay đổi.', 401);
   if (!response.ok) {
     const problem = await response.json().catch(() => null);
-    throw new ApiError(problem?.detail ?? problem?.title ?? 'Yêu cầu không thành công.', response.status);
+    throw new ApiError(problem?.error?.message ?? problem?.detail ?? problem?.title ?? 'Yêu cầu không thành công.', response.status);
   }
-  return response.status === 204 ? undefined as T : response.json();
+  if (response.status === 204) return undefined as T;
+  const body = await response.json();
+  return path.startsWith('/api/auth/') ? body.data as T : body as T;
 }

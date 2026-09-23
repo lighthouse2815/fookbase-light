@@ -15,7 +15,8 @@ export class ApiError extends Error {
   }
 }
 
-interface ProblemDetails {
+interface ApiErrorBody {
+  error?: { message?: string }
   detail?: string
   title?: string
 }
@@ -49,7 +50,7 @@ async function refreshAccessToken() {
     })
     if (!response.ok) throw new Error('Refresh token is invalid.')
 
-    const nextSession = await response.json() as AuthenticationResponse
+    const { data: nextSession } = await response.json() as { data: AuthenticationResponse }
     saveAuthSession(nextSession)
     return nextSession.accessToken
   } catch {
@@ -99,9 +100,9 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    const problem = await response.json().catch(() => null) as ProblemDetails | null
+    const problem = await response.json().catch(() => null) as ApiErrorBody | null
     throw new ApiError(
-      problem?.detail ?? problem?.title ?? 'Yêu cầu không thành công.',
+      problem?.error?.message ?? problem?.detail ?? problem?.title ?? 'Yêu cầu không thành công.',
       response.status,
     )
   }
@@ -110,5 +111,6 @@ export async function apiRequest<T>(
     return undefined as T
   }
 
-  return response.json() as Promise<T>
+  const body = await response.json()
+  return path.startsWith('/api/auth/') ? body.data as T : body as T
 }

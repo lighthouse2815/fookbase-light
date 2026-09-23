@@ -54,7 +54,7 @@ export function refreshSession(): Promise<string | null> {
     if (generation !== expected) return null;
     if (response.status === 401) { await clearSession(); return null; }
     if (!response.ok) { emit('offline'); throw new Error('Máy chủ chưa thể làm mới phiên. Vui lòng thử lại.'); }
-    const value = await response.json() as AuthenticationResponse;
+    const { data: value } = await response.json() as { data: AuthenticationResponse };
     await saveSession(value, expected);
     return expected === generation ? value.accessToken : null;
   })().finally(() => { refresh = null; });

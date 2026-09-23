@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -20,7 +21,7 @@ public sealed class RegistrationController(
     {
         var result = await registrationUseCase.ExecuteAsync(request, cancellationToken);
 
-        return Results.Created("/api/auth/me", result);
+        return Results.Created("/api/auth/me", ApiResponse.Success(result, HttpContext));
     }
 
     [HttpPost("start")]
@@ -31,7 +32,7 @@ public sealed class RegistrationController(
         CancellationToken cancellationToken)
     {
         var result = await registrationChallengeService.StartAsync(request, cancellationToken);
-        return Results.Accepted($"/api/auth/registration/{result.ChallengeId}", result);
+        return Results.Accepted($"/api/auth/registration/{result.ChallengeId}", ApiResponse.Success(result, HttpContext));
     }
 
     [HttpPost("resend")]
@@ -42,7 +43,7 @@ public sealed class RegistrationController(
         CancellationToken cancellationToken)
     {
         var result = await registrationChallengeService.ResendAsync(request, cancellationToken);
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
     [HttpPost("verify")]
@@ -56,6 +57,6 @@ public sealed class RegistrationController(
             request,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return Results.Created("/api/auth/me", result);
+        return Results.Created("/api/auth/me", ApiResponse.Success(result, HttpContext));
     }
 }

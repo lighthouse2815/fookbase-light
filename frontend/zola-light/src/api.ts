@@ -66,7 +66,7 @@ async function refreshSession() {
     clearSession()
     return null
   }
-  const next = await response.json() as AuthSession
+  const { data: next } = await response.json() as { data: AuthSession }
   saveSession(next)
   return next
 }
@@ -91,10 +91,12 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     throw new ApiError('Không thể kết nối tới máy chủ.', 0)
   }
   if (!response.ok) {
-    const body = await response.json().catch(() => null) as { detail?: string; title?: string } | null
-    throw new ApiError(body?.detail ?? body?.title ?? 'Yêu cầu không thành công.', response.status)
+    const body = await response.json().catch(() => null) as { error?: { message?: string }; detail?: string; title?: string } | null
+    throw new ApiError(body?.error?.message ?? body?.detail ?? body?.title ?? 'Yêu cầu không thành công.', response.status)
   }
-  return response.status === 204 ? undefined as T : response.json() as Promise<T>
+  if (response.status === 204) return undefined as T
+  const body = await response.json()
+  return path.startsWith('/api/auth/') ? body.data as T : body as T
 }
 
 export const authApi = {

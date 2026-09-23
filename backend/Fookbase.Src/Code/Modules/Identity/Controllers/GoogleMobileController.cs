@@ -91,7 +91,7 @@ public sealed class GoogleMobileController(
         }
         var result = await service.ExchangeAsync(
             code, "mobile", Request.Headers.UserAgent.ToString(), cancellationToken);
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
     [HttpPost("link")]
@@ -116,7 +116,7 @@ public sealed class GoogleMobileController(
             request.Password ?? string.Empty,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
     private static bool Enabled(GoogleAuthenticationOptions options) =>

@@ -1,5 +1,10 @@
 # Identity: xử lý lỗi nghiệp vụ bằng exception
 
+Ghi chú cập nhật: phần hợp đồng HTTP trong thiết kế này mô tả bước chuyển từ
+`ApplicationResult` sang exception. Theo yêu cầu tiếp theo, Identity đã chuyển
+sang [format API chung](../../api-response.md) cho thành công và thất bại;
+đây là hợp đồng HTTP hiện hành.
+
 ## Mục tiêu đã thống nhất
 
 Service xác thực trả dữ liệu trực tiếp khi thành công và ném exception khi

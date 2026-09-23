@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
@@ -20,7 +21,7 @@ public sealed class EmailVerificationController(
     {
         await authenticationService.VerifyEmailAsync(request, cancellationToken);
 
-        return Results.NoContent();
+        return Results.Ok(ApiResponse.Success(HttpContext));
     }
 
     [HttpPost("verification")]
@@ -33,6 +34,6 @@ public sealed class EmailVerificationController(
 
         await authenticationService.SendEmailVerificationAsync(userId, cancellationToken);
 
-        return Results.NoContent();
+        return Results.Ok(ApiResponse.Success(HttpContext));
     }
 }

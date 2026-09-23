@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
@@ -21,7 +22,7 @@ public sealed class AuthenticationController(
     {
         var result = await authenticationService.LoginAsync(request, null, cancellationToken);
 
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
     [HttpPost("refresh")]
@@ -32,7 +33,7 @@ public sealed class AuthenticationController(
     {
         var result = await authenticationService.RefreshAsync(request, cancellationToken);
 
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
     [HttpPost("logout")]
@@ -48,7 +49,7 @@ public sealed class AuthenticationController(
             request,
             cancellationToken);
 
-        return Results.NoContent();
+        return Results.Ok(ApiResponse.Success(HttpContext));
     }
 
     [HttpGet("me")]
@@ -62,6 +63,6 @@ public sealed class AuthenticationController(
             userId,
             cancellationToken);
 
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 }

@@ -43,7 +43,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Null(await userManager.FindByEmailAsync(email));
 
-        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
         Assert.NotNull(challenge);
         var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(email);
         var verify = await client.PostAsJsonAsync(
@@ -74,7 +74,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
                 "Password123!"));
 
         Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
-        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
         Assert.NotNull(challenge);
         var normalizedPhone = $"+84{phone[1..]}";
         var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
@@ -103,7 +103,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var start = await client.PostAsJsonAsync(
             "/api/auth/registration/start",
             new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "male", phone, "Password123!"));
-        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
         Assert.NotNull(challenge);
         var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor($"+84{phone[1..]}");
         var verify = await client.PostAsJsonAsync(
@@ -144,7 +144,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var start = await client.PostAsJsonAsync(
             "/api/auth/registration/start",
             new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "male", phone, oldPassword));
-        var registration = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        var registration = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
         Assert.NotNull(registration);
         var normalizedPhone = $"+84{phone[1..]}";
         var registrationCode = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
@@ -156,14 +156,14 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var forgot = await client.PostAsJsonAsync(
             "/api/auth/password/forgot",
             new { identifier = phone });
-        Assert.Equal(HttpStatusCode.NoContent, forgot.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, forgot.StatusCode);
         var resetCode = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(normalizedPhone);
 
         var reset = await client.PostAsJsonAsync(
             "/api/auth/password/reset",
             new { identifier = phone, code = resetCode, password = newPassword, confirmPassword = newPassword });
 
-        Assert.Equal(HttpStatusCode.NoContent, reset.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync(
             "/api/auth/login", new { identifier = phone, password = oldPassword })).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync(
@@ -180,7 +180,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var start = await client.PostAsJsonAsync(
             "/api/auth/registration/start",
             new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "other", email, "Password123!"));
-        var challenge = await start.Content.ReadFromJsonAsync<RegistrationChallengeResponse>();
+        var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
         Assert.NotNull(challenge);
 
         var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(email);
@@ -283,7 +283,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.True(document.RootElement.GetProperty("google").GetBoolean());
+        Assert.True(document.RootElement.GetProperty("data").GetProperty("google").GetBoolean());
     }
 
     [Fact]
@@ -636,7 +636,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var response = await client.GetAsync("/api/auth/me");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var user = await response.Content.ReadFromJsonAsync<AuthenticatedUserResponse>();
+        var user = await response.Content.ReadApiDataAsync<AuthenticatedUserResponse>();
         Assert.NotNull(user);
         Assert.Equal(authentication.User.Id, user!.Id);
         Assert.Equal(authentication.User.Email, user.Email);
@@ -680,7 +680,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             "/api/auth/logout",
             new LogoutRequest(authentication.RefreshToken));
 
-        Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, logoutResponse.StatusCode);
 
         client.DefaultRequestHeaders.Authorization = null;
         var refreshResponse = await client.PostAsJsonAsync(
@@ -702,7 +702,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
             "/api/auth/email/verify",
             new VerifyEmailRequest(emailAddress, token));
 
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var loginResponse = await client.PostAsJsonAsync(
             "/api/auth/login",
@@ -721,7 +721,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var requestResponse = await client.PostAsJsonAsync(
             "/api/auth/password/forgot",
             new ForgotPasswordRequest(account.Email));
-        Assert.Equal(HttpStatusCode.NoContent, requestResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, requestResponse.StatusCode);
 
         var email = GetLatestEmail(account.Email, "Reset your Fookbase password");
         var (emailAddress, token) = GetLinkParameters(email.HtmlBody);
@@ -729,7 +729,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var resetResponse = await client.PostAsJsonAsync(
             "/api/auth/password/reset",
             new ResetPasswordRequest(emailAddress, token, newPassword, newPassword));
-        Assert.Equal(HttpStatusCode.NoContent, resetResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
 
         var refreshResponse = await client.PostAsJsonAsync(
             "/api/auth/refresh",
@@ -777,7 +777,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     [InlineData("short", "short", "NewPassword")]
     [InlineData(null, null, "NewPassword")]
     [InlineData("New-password-123!", null, "ConfirmPassword")]
-    public async Task Password_change_returns_standard_validation_problem_for_invalid_input(
+    public async Task Password_change_returns_validation_details_for_invalid_input(
         string? newPassword, string? confirmation, string errorField)
     {
         var account = CreateUniqueAccount();
@@ -792,8 +792,8 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal("validation_failed", document.RootElement.GetProperty("code").GetString());
-        Assert.NotEmpty(document.RootElement.GetProperty("errors").GetProperty(errorField).EnumerateArray());
+        Assert.Equal("validation_failed", document.RootElement.GetProperty("error").GetProperty("code").GetString());
+        Assert.NotEmpty(document.RootElement.GetProperty("error").GetProperty("details").GetProperty(errorField).EnumerateArray());
     }
 
     private static async Task<AuthenticationResponse> RegisterAsync(
@@ -810,7 +810,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
     private static async Task<AuthenticationResponse> ReadAuthenticationResponseAsync(
         HttpResponseMessage response) =>
-        await response.Content.ReadFromJsonAsync<AuthenticationResponse>()
+        await response.Content.ReadApiDataAsync<AuthenticationResponse>()
         ?? throw new InvalidOperationException("Authentication response body was empty.");
 
     private static TestAccount CreateUniqueAccount()

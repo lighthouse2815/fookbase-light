@@ -22,8 +22,8 @@ public sealed class GoogleController(
     [HttpGet("providers")]
     [AllowAnonymous]
     public IResult GetExternalProviders() =>
-        Results.Ok(new ExternalAuthenticationProvidersResponse(googleOptions.Enabled,
-            googleOptions.Enabled && !string.IsNullOrWhiteSpace(googleOptions.MobileCallbackUrl)));
+        Results.Ok(ApiResponse.Success(new ExternalAuthenticationProvidersResponse(googleOptions.Enabled,
+            googleOptions.Enabled && !string.IsNullOrWhiteSpace(googleOptions.MobileCallbackUrl)), HttpContext));
 
     [HttpGet("google/start")]
     [AllowAnonymous]
@@ -112,7 +112,7 @@ public sealed class GoogleController(
             request.Client!,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
     [HttpPost("google/link")]
@@ -138,7 +138,7 @@ public sealed class GoogleController(
             request.Password ?? string.Empty,
             Request.Headers.UserAgent.ToString(),
             cancellationToken);
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
     private static bool IsSupportedGoogleClient(string? client) => client is "web" or "zola-light";

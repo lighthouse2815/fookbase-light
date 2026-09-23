@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
@@ -21,7 +22,7 @@ public sealed class PasswordController(
     {
         await authenticationService.RequestPasswordResetAsync(request, cancellationToken);
 
-        return Results.NoContent();
+        return Results.Ok(ApiResponse.Success(HttpContext));
     }
 
     [HttpPost("reset")]
@@ -33,7 +34,7 @@ public sealed class PasswordController(
     {
         await authenticationService.ResetPasswordAsync(request, cancellationToken);
 
-        return Results.NoContent();
+        return Results.Ok(ApiResponse.Success(HttpContext));
     }
 
     [HttpPost("change")]
@@ -46,6 +47,6 @@ public sealed class PasswordController(
 
         var result = await authenticationService.ChangePasswordAsync(userId, request, cancellationToken);
 
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 }

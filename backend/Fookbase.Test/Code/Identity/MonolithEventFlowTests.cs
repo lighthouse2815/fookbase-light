@@ -29,7 +29,7 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
             new RegisterRequest($"mono-{suffix}@example.com", $"mono-{suffix}", "Password123!"));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var authentication = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
+        var authentication = await response.Content.ReadApiDataAsync<AuthenticationResponse>();
         Assert.NotNull(authentication);
 
         using var scope = factory.Services.CreateScope();

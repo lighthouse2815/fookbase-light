@@ -214,6 +214,10 @@ docker run --rm --user "$(id -u):$(id -g)" \
 
 ### Authentication
 
+Các API JSON Identity dùng format chung `{ success, data, error, requestId }`.
+Xem [hợp đồng response API](docs/api-response.md), gồm thay đổi HTTP 204 thành
+200 cho thao tác thành công không có dữ liệu và cách client đọc response.
+
 | Method | Endpoint | Authentication |
 | --- | --- | --- |
 | POST | `/api/auth/register` | Không |

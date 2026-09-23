@@ -34,7 +34,7 @@ public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixt
         var registration = await client.PostAsJsonAsync("/api/auth/register",
             new RegisterRequest(email, $"dashboard-{suffix}", "Dashboard-test123!"));
         registration.EnsureSuccessStatusCode();
-        var session = await registration.Content.ReadFromJsonAsync<AuthenticationResponse>();
+        var session = await registration.Content.ReadApiDataAsync<AuthenticationResponse>();
         Assert.NotNull(session);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
 

@@ -53,10 +53,10 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
         var sessionA = await RegisterAsync(client);
         var sessionB = await LoginAsync(client, sessionA.User.Email!, TestPassword);
         using var current = AuthenticatedClient(sessionA);
-        var sessions = await current.GetFromJsonAsync<List<AuthSessionResponse>>("/api/auth/sessions");
+        var sessions = await (await current.GetAsync("/api/auth/sessions")).Content.ReadApiDataAsync<List<AuthSessionResponse>>();
         Assert.NotNull(sessions);
         var revoked = Assert.Single(sessions!, item => !item.IsCurrent);
-        Assert.Equal(HttpStatusCode.NoContent, (await current.DeleteAsync($"/api/auth/sessions/{revoked.SessionId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await current.DeleteAsync($"/api/auth/sessions/{revoked.SessionId}")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest(sessionB.RefreshToken))).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest(sessionA.RefreshToken))).StatusCode);
     }
@@ -85,12 +85,12 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
         var code = await EnableTwoFactorForTestAsync(account.User.Id);
         var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(account.User.Email, TestPassword));
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
-        var challenge = await login.Content.ReadFromJsonAsync<TwoFactorChallengeResponse>();
+        var challenge = await login.Content.ReadApiDataAsync<TwoFactorChallengeResponse>();
         Assert.NotNull(challenge);
         Assert.True(challenge!.TwoFactorRequired);
         var verified = await client.PostAsJsonAsync("/api/auth/2fa/verify", new TwoFactorVerifyRequest(challenge.Challenge, code));
         Assert.True(verified.StatusCode == HttpStatusCode.OK, await verified.Content.ReadAsStringAsync());
-        var tokens = await verified.Content.ReadFromJsonAsync<AuthenticationResponse>();
+        var tokens = await verified.Content.ReadApiDataAsync<AuthenticationResponse>();
         Assert.False(string.IsNullOrWhiteSpace(tokens!.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(tokens.RefreshToken));
     }
@@ -162,7 +162,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     private static async Task<string> GetChallengeAsync(HttpClient client, string email)
     {
         var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, TestPassword));
-        var challenge = await response.Content.ReadFromJsonAsync<TwoFactorChallengeResponse>();
+        var challenge = await response.Content.ReadApiDataAsync<TwoFactorChallengeResponse>();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return challenge!.Challenge;
     }
@@ -179,14 +179,14 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
         var suffix = Guid.NewGuid().ToString("N")[..12];
         var response = await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest($"m16-{suffix}@example.test", $"m16{suffix}", TestPassword));
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        return (await response.Content.ReadFromJsonAsync<AuthenticationResponse>())!;
+        return (await response.Content.ReadApiDataAsync<AuthenticationResponse>())!;
     }
 
     private static async Task<AuthenticationResponse> LoginAsync(HttpClient client, string email, string password)
     {
         var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        return (await response.Content.ReadFromJsonAsync<AuthenticationResponse>())!;
+        return (await response.Content.ReadApiDataAsync<AuthenticationResponse>())!;
     }
 
     private const string TestPassword = "Password123!";

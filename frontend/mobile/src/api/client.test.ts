@@ -10,6 +10,25 @@ test('handles empty 204 responses', async () => {
   jest.mocked(fetch).mockResolvedValue({ ok: true, status: 204 } as Response);
   await expect(apiRequest('/api/posts/x', { method: 'DELETE' })).resolves.toBeUndefined();
 });
+test('unwraps successful Identity responses', async () => {
+  const data = { accessToken: 'access', refreshToken: 'refresh' };
+  jest.mocked(fetch).mockResolvedValue({ ok: true, status: 200, json: async () => ({ success: true, data, error: null, requestId: 'r1' }) } as Response);
+  await expect(apiRequest('/api/auth/login', { method: 'POST' })).resolves.toEqual(data);
+});
+test('accepts a successful Identity response with null data', async () => {
+  jest.mocked(fetch).mockResolvedValue({ ok: true, status: 200, json: async () => ({ success: true, data: null, error: null, requestId: 'r1' }) } as Response);
+  await expect(apiRequest('/api/auth/logout', { method: 'POST' })).resolves.toBeNull();
+});
+test('reads the error message from the Identity envelope', async () => {
+  jest.mocked(fetch).mockResolvedValue({ ok: false, status: 400, json: async () => ({ success: false, data: null, error: { code: 'validation_failed', message: 'Invalid input.', details: {} }, requestId: 'r1' }) } as Response);
+  await expect(apiRequest('/api/auth/login', { method: 'POST' })).rejects.toMatchObject({ message: 'Invalid input.', status: 400 });
+});
+test('keeps unwrapped data and legacy errors for other modules', async () => {
+  jest.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ items: [] }) } as Response)
+    .mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({ detail: 'Not allowed.' }) } as Response);
+  await expect(apiRequest('/api/feed')).resolves.toEqual({ items: [] });
+  await expect(apiRequest('/api/posts/x')).rejects.toMatchObject({ message: 'Not allowed.', status: 403 });
+});
 test('does not replay mutations after ambiguous network failure', async () => {
   jest.mocked(fetch).mockRejectedValue(new TypeError('lost connection'));
   await expect(apiRequest('/api/posts', { method: 'POST', body: '{}' })).rejects.toThrow();
@@ -26,7 +45,7 @@ test('retries a 401 once using refreshed token', async () => {
 test('refreshes expired access for protected security endpoints', async () => {
   jest.mocked(getSession).mockReturnValue({ accessToken: 'expired' } as ReturnType<typeof getSession>);
   jest.mocked(refreshSession).mockResolvedValue('fresh');
-  jest.mocked(fetch).mockResolvedValueOnce({ status: 401 } as Response).mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) } as Response);
+  jest.mocked(fetch).mockResolvedValueOnce({ status: 401 } as Response).mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ success: true, data: {}, error: null, requestId: 'request-1' }) } as Response);
   await apiRequest('/api/auth/security');
   expect(refreshSession).toHaveBeenCalledTimes(1); expect(fetch).toHaveBeenCalledTimes(2);
 });

@@ -34,7 +34,7 @@ public class GoogleMobileEndpointsTests(IdentityApiFactory factory) : IClassFixt
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         using var problem = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(code, problem.RootElement.GetProperty("code").GetString());
+        Assert.Equal(code, problem.RootElement.GetProperty("error").GetProperty("code").GetString());
         Assert.False(string.IsNullOrEmpty(problem.RootElement.GetProperty("requestId").GetString()));
         Assert.Null(response.Headers.Location);
     }
@@ -57,7 +57,7 @@ public class GoogleMobileEndpointsTests(IdentityApiFactory factory) : IClassFixt
         Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);
         var result = await client.PostAsJsonAsync("/api/auth/google/mobile/exchange", new { code, verifier });
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
-        Assert.NotNull((await result.Content.ReadFromJsonAsync<AuthenticationResponse>())?.AccessToken);
+        Assert.NotNull((await result.Content.ReadApiDataAsync<AuthenticationResponse>())?.AccessToken);
         var replay = await client.PostAsJsonAsync("/api/auth/google/mobile/exchange", new { code, verifier });
         Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
     }

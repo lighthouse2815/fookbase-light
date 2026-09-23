@@ -42,7 +42,7 @@ public sealed class PersistenceAtomicityTests
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         using var problem = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal("profile_rejected", problem.RootElement.GetProperty("code").GetString());
+        Assert.Equal("profile_rejected", problem.RootElement.GetProperty("error").GetProperty("code").GetString());
         await using var db = CreateDbContext(database.ConnectionString);
         Assert.False(await db.Users.AnyAsync());
         Assert.False(await db.AuthSessions.AnyAsync());

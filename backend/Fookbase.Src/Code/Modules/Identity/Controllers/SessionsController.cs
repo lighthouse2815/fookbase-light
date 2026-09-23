@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.Common;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Services;
@@ -20,7 +21,7 @@ public sealed class SessionsController(
         Guid.TryParse(User.FindFirstValue("sid"), out var sessionId);
         var result = await authenticationService.GetSessionsAsync(
             userId, sessionId == Guid.Empty ? null : sessionId, cancellationToken);
-        return Results.Ok(result);
+        return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
     [HttpDelete("{sessionId:guid}")]
@@ -32,7 +33,7 @@ public sealed class SessionsController(
         var userId = User.GetUserId();
         await authenticationService.RevokeSessionAsync(
             userId, sessionId, TimeProvider.System.GetUtcNow(), cancellationToken);
-        return Results.NoContent();
+        return Results.Ok(ApiResponse.Success(HttpContext));
     }
 
     [HttpPost("revoke-others")]
@@ -47,6 +48,6 @@ public sealed class SessionsController(
             currentSessionId == Guid.Empty ? null : currentSessionId,
             TimeProvider.System.GetUtcNow(),
             cancellationToken);
-        return Results.NoContent();
+        return Results.Ok(ApiResponse.Success(HttpContext));
     }
 }

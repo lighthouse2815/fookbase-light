@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test:auth": "node --test tests/api/authClients.test.mjs",
     "test:flappy": "node --test tests/flappyBird.test.mjs",
     "test:games": "node --test tests/*.test.mjs",
     "test:group-header": "test_dir=$(mktemp -d) && tsc --ignoreConfig --module commonjs --moduleResolution node --ignoreDeprecations 6.0 --target es2023 --types node --esModuleInterop --skipLibCheck --outDir \"$test_dir\" --rootDir . tests/groupHeaderCapabilities.test.ts src/pages/groups/groupHeaderCapabilities.ts && node --test \"$test_dir/tests/groupHeaderCapabilities.test.js\"",

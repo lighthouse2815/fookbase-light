@@ -16,7 +16,8 @@ export class ApiError extends Error {
   }
 }
 
-interface ProblemDetails {
+interface ApiErrorBody {
+  error?: { message?: string }
   detail?: string
   title?: string
 }
@@ -53,7 +54,7 @@ async function refreshAccessToken() {
     })
     if (!response.ok) throw new Error('Refresh token is invalid.')
 
-    const nextSession = await response.json() as AuthenticationResponse
+    const { data: nextSession } = await response.json() as { data: AuthenticationResponse }
     saveSession(nextSession)
     return nextSession.accessToken
   } catch {
@@ -100,9 +101,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
 
   if (!response.ok) {
-    const problem = await response.json().catch(() => null) as ProblemDetails | null
-    throw new ApiError(problem?.detail ?? problem?.title ?? 'Yêu cầu không thành công.', response.status)
+    const problem = await response.json().catch(() => null) as ApiErrorBody | null
+    throw new ApiError(problem?.error?.message ?? problem?.detail ?? problem?.title ?? 'Yêu cầu không thành công.', response.status)
   }
 
-  return response.status === 204 ? undefined as T : response.json() as Promise<T>
+  if (response.status === 204) return undefined as T
+  const body = await response.json()
+  return path.startsWith('/api/auth/') ? body.data as T : body as T
 }

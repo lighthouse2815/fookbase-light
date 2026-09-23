@@ -16,6 +16,15 @@ public sealed class GlobalExceptionHandler(
     {
         if (exception is BusinessException businessException)
         {
+            if (ApiResponse.AppliesTo(httpContext))
+            {
+                var failure = businessException.Error;
+                await Results.Json(
+                    ApiResponse.Failure(failure.Code, failure.Message, httpContext, failure.Details),
+                    statusCode: failure.ToStatusCode()).ExecuteAsync(httpContext);
+                return true;
+            }
+
             var businessProblem = businessException.Error.ToProblemDetails();
             businessProblem.Extensions["requestId"] = RequestCorrelation.GetId(httpContext);
             await Results.Problem(businessProblem).ExecuteAsync(httpContext);
@@ -40,6 +49,13 @@ public sealed class GlobalExceptionHandler(
         var statusCode = isBadRequest
             ? StatusCodes.Status400BadRequest
             : StatusCodes.Status500InternalServerError;
+        if (ApiResponse.AppliesTo(httpContext))
+        {
+            await Results.Json(ApiResponse.Failure(error.Code, error.Message, httpContext), statusCode: statusCode)
+                .ExecuteAsync(httpContext);
+            return true;
+        }
+
         var problem = new ProblemDetails
         {
             Status = statusCode,
