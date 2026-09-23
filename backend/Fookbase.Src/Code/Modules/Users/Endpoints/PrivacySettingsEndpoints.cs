@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Users.DTOs.Requests;
-using Fookbase.Api.Modules.Users.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Users.Services;
 
 namespace Fookbase.Api.Modules.Users.Endpoints;

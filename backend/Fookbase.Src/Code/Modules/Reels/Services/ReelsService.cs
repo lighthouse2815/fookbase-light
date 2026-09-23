@@ -3,7 +3,7 @@ using System.Text;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
@@ -50,7 +50,7 @@ public sealed class ReelsService(
             actorUserId, videoMediaId, cancellationToken);
         if (!mediaValidation.Succeeded)
         {
-            return ApplicationResult<ReelResponse>.Failure(ToPostError(mediaValidation.Error!));
+            return ApplicationResult<ReelResponse>.Failure(mediaValidation.Error!);
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -68,7 +68,7 @@ public sealed class ReelsService(
             if (!references.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<ReelResponse>.Failure(ToPostError(references.Error!));
+                return ApplicationResult<ReelResponse>.Failure(references.Error!);
             }
 
             await transaction.CommitAsync(cancellationToken);
@@ -548,9 +548,6 @@ public sealed class ReelsService(
     private static ApplicationResult NotFound() =>
         ApplicationResult.Failure(new ApplicationError(
             "reel_not_found", "The reel was not found.", ApplicationErrorType.NotFound));
-
-    private static ApplicationError ToPostError(Fookbase.Api.Modules.Media.Common.ApplicationError error) =>
-        new(error.Code, error.Message, (ApplicationErrorType)(int)error.Type);
 
     private sealed record ReelCursor(int Score, DateTimeOffset CreatedAtUtc, Guid Id);
     private sealed record ReelMediaRow(Guid PostId, Guid MediaId, long DurationMs, int Width, int Height);

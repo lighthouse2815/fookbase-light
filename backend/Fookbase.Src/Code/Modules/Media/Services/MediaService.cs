@@ -1,6 +1,6 @@
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Groups.Entities;
-using Fookbase.Api.Modules.Media.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;

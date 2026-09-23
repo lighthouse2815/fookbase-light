@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using Fookbase.Api.Modules.Admin.DTOs.Responses;
 using Fookbase.Api.Modules.Admin.Entities;
-using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;

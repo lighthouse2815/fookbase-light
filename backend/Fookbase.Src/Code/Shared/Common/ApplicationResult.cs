@@ -1,9 +1,12 @@
-namespace Fookbase.Api.Modules.Users.Common;
+namespace Fookbase.Api.Shared.Common;
 
 public enum ApplicationErrorType
 {
     Validation,
-    NotFound
+    Unauthorized,
+    Forbidden,
+    NotFound,
+    Conflict
 }
 
 public sealed record ApplicationError(
@@ -11,6 +14,23 @@ public sealed record ApplicationError(
     string Message,
     ApplicationErrorType Type,
     IReadOnlyDictionary<string, string[]>? Details = null);
+
+public sealed class ApplicationResult
+{
+    private ApplicationResult(bool succeeded, ApplicationError? error)
+    {
+        Succeeded = succeeded;
+        Error = error;
+    }
+
+    public bool Succeeded { get; }
+
+    public ApplicationError? Error { get; }
+
+    public static ApplicationResult Success() => new(true, null);
+
+    public static ApplicationResult Failure(ApplicationError error) => new(false, error);
+}
 
 public sealed class ApplicationResult<T>
 {
@@ -29,6 +49,5 @@ public sealed class ApplicationResult<T>
 
     public static ApplicationResult<T> Success(T value) => new(true, value, null);
 
-    public static ApplicationResult<T> Failure(ApplicationError error) =>
-        new(false, default, error);
+    public static ApplicationResult<T> Failure(ApplicationError error) => new(false, default, error);
 }

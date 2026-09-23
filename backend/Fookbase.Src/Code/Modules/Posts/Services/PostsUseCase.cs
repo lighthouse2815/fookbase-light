@@ -3,9 +3,8 @@ using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
-using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.Services;
-using MediaApplicationError = Fookbase.Api.Modules.Media.Common.ApplicationError;
 using Fookbase.Api.Persistence;
 
 namespace Fookbase.Api.Modules.Posts.Services;
@@ -72,7 +71,7 @@ public sealed class PostsUseCase(
             if (!references.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+                return ApplicationResult<PostResponse>.Failure(references.Error!);
             }
 
             await socialInteractionsService.SynchronizePostMetadataAsync(
@@ -133,7 +132,7 @@ public sealed class PostsUseCase(
             if (!references.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+                return ApplicationResult<PostResponse>.Failure(references.Error!);
             }
 
             await socialInteractionsService.SynchronizePostMetadataAsync(
@@ -196,7 +195,7 @@ public sealed class PostsUseCase(
             if (!references.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+                return ApplicationResult<PostResponse>.Failure(references.Error!);
             }
 
             await socialInteractionsService.SynchronizePostMetadataAsync(
@@ -260,7 +259,7 @@ public sealed class PostsUseCase(
             if (!references.Succeeded)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<PostResponse>.Failure(ToPostError(references.Error!));
+                return ApplicationResult<PostResponse>.Failure(references.Error!);
             }
 
             await socialInteractionsService.SynchronizePostMetadataAsync(postId, actorUserId, cancellationToken);
@@ -664,9 +663,6 @@ public sealed class PostsUseCase(
         CancellationToken cancellationToken)
     {
         var result = await mediaService.ValidatePostMediaAsync(ownerUserId, mediaIds, cancellationToken);
-        return result.Succeeded ? null : ToPostError(result.Error!);
+        return result.Succeeded ? null : result.Error!;
     }
-
-    private static ApplicationError ToPostError(MediaApplicationError error) =>
-        new(error.Code, error.Message, (ApplicationErrorType)(int)error.Type);
 }

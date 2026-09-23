@@ -3,10 +3,9 @@ using System.Security.Claims;
 using Fookbase.Api.Modules.Admin.DTOs.Responses;
 using Fookbase.Api.Modules.Admin.DTOs.Requests;
 using Fookbase.Api.Modules.Admin.Services;
-using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.Services;
 
@@ -159,7 +158,7 @@ public static class AdminEndpoints
     private static async Task<IResult> EnableUserAsync(Guid userId, ModerationReasonRequest request, ClaimsPrincipal principal, ModerationService service, CancellationToken cancellationToken) =>
         await WithModeratorAsync(principal, actor => service.EnableUserAsync(actor, userId, request.Reason, request.InternalNote, cancellationToken));
 
-    private static async Task<IResult> WithModeratorAsync<T>(ClaimsPrincipal principal, Func<Guid, Task<Fookbase.Api.Modules.Identity.Common.ApplicationResult<T>>> action)
+    private static async Task<IResult> WithModeratorAsync<T>(ClaimsPrincipal principal, Func<Guid, Task<ApplicationResult<T>>> action)
     {
         if (!TryGetUserId(principal, out var userId)) return Results.Unauthorized();
         var result = await action(userId);

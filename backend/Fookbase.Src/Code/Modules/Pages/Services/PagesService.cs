@@ -5,7 +5,7 @@ using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Pages.DTOs.Requests;
 using Fookbase.Api.Modules.Pages.DTOs.Responses;
 using Fookbase.Api.Modules.Pages.Entities;
-using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
@@ -142,7 +142,7 @@ public sealed class PagesService(
             var validation = await mediaService.ValidatePageImageAsync(actorUserId, mediaId, cancellationToken);
             if (!validation.Succeeded)
             {
-                return ApplicationResult<PageResponse>.Failure(ToPostError(validation.Error!));
+                return ApplicationResult<PageResponse>.Failure(validation.Error!);
             }
         }
 
@@ -784,13 +784,4 @@ public sealed class PagesService(
     private static ApplicationResult<T> Validation<T>(string code, string message) => ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
     private static ApplicationResult Validation(string code, string message) => ApplicationResult.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
     private static ApplicationResult<T> Conflict<T>(string code, string message) => ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Conflict));
-    private static ApplicationError ToPostError(Fookbase.Api.Modules.Media.Common.ApplicationError error) =>
-        new(error.Code, error.Message, error.Type switch
-        {
-            Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Validation => ApplicationErrorType.Validation,
-            Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Forbidden => ApplicationErrorType.Forbidden,
-            Fookbase.Api.Modules.Media.Common.ApplicationErrorType.NotFound => ApplicationErrorType.NotFound,
-            Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Conflict => ApplicationErrorType.Conflict,
-            _ => ApplicationErrorType.Validation
-        });
 }

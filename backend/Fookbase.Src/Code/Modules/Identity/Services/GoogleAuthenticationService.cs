@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Persistence;

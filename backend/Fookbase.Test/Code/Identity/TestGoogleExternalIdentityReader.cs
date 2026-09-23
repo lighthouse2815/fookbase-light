@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.Http;
 

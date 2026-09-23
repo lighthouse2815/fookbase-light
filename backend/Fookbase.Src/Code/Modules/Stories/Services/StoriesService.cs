@@ -8,7 +8,7 @@ using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Messages.Services;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
-using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Stories.Config;
 using Fookbase.Api.Modules.Stories.DTOs.Responses;
@@ -54,7 +54,7 @@ public sealed class StoriesService(
             actorUserId, mediaId, cancellationToken);
         if (!mediaValidation.Succeeded)
         {
-            return ApplicationResult<StoryResponse>.Failure(ToStoryError(mediaValidation.Error!));
+            return ApplicationResult<StoryResponse>.Failure(mediaValidation.Error!);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -341,15 +341,12 @@ public sealed class StoriesService(
                 "You cannot reply to your own story.");
         }
 
-        var reply = await messagesService.SendStoryReplyAsync(
+        return await messagesService.SendStoryReplyAsync(
             actorUserId,
             story.AuthorUserId,
             story.Id,
             content,
             cancellationToken);
-        return reply.Succeeded
-            ? ApplicationResult<MessageResponse>.Success(reply.Value!)
-            : ApplicationResult<MessageResponse>.Failure(ToStoryError(reply.Error!));
     }
 
     public async Task<ApplicationResult> DeleteAsync(
@@ -665,26 +662,6 @@ public sealed class StoriesService(
         .TrimEnd('=')
         .Replace('+', '-')
         .Replace('/', '_');
-
-    private static ApplicationError ToStoryError(
-        Fookbase.Api.Modules.Media.Common.ApplicationError error) =>
-        new(error.Code, error.Message, error.Type switch
-        {
-            Fookbase.Api.Modules.Media.Common.ApplicationErrorType.NotFound => ApplicationErrorType.NotFound,
-            Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Forbidden => ApplicationErrorType.Forbidden,
-            Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Conflict => ApplicationErrorType.Conflict,
-            _ => ApplicationErrorType.Validation
-        });
-
-    private static ApplicationError ToStoryError(
-        Fookbase.Api.Modules.Messages.Common.ApplicationError error) =>
-        new(error.Code, error.Message, error.Type switch
-        {
-            Fookbase.Api.Modules.Messages.Common.ApplicationErrorType.NotFound => ApplicationErrorType.NotFound,
-            Fookbase.Api.Modules.Messages.Common.ApplicationErrorType.Forbidden => ApplicationErrorType.Forbidden,
-            Fookbase.Api.Modules.Messages.Common.ApplicationErrorType.Conflict => ApplicationErrorType.Conflict,
-            _ => ApplicationErrorType.Validation
-        });
 
     private static ApplicationResult NotFound() => ApplicationResult.Failure(new ApplicationError(
         "story_not_found", "The story was not found.", ApplicationErrorType.NotFound));

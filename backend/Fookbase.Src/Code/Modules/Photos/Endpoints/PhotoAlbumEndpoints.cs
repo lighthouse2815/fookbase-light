@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Fookbase.Api.Modules.Media.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Photos.DTOs.Requests;
 using Fookbase.Api.Modules.Photos.Services;
 

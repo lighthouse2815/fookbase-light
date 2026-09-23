@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.Common;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Shared.ErrorHandling;

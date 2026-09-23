@@ -9,7 +9,7 @@ using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
-using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Persistence;
@@ -308,10 +308,7 @@ public sealed class GroupsService(
                 cancellationToken);
             if (!media.Succeeded)
             {
-                return Failure<GroupResponse>(
-                    media.Error!.Code,
-                    media.Error.Message,
-                    ToApplicationErrorType(media.Error.Type));
+                return ApplicationResult<GroupResponse>.Failure(media.Error!);
             }
         }
 
@@ -350,7 +347,7 @@ public sealed class GroupsService(
                 if (!references.Succeeded)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-                    return Failure<GroupResponse>(references.Error!.Code, references.Error.Message, ToApplicationErrorType(references.Error.Type));
+                    return ApplicationResult<GroupResponse>.Failure(references.Error!);
                 }
 
                 await socialInteractionsService.SynchronizePostMetadataAsync(
@@ -1316,16 +1313,6 @@ public sealed class GroupsService(
         string message,
         ApplicationErrorType type) =>
         ApplicationResult.Failure(new ApplicationError(code, message, type));
-
-    private static ApplicationErrorType ToApplicationErrorType(
-        Fookbase.Api.Modules.Media.Common.ApplicationErrorType type) => type switch
-    {
-        Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Validation => ApplicationErrorType.Validation,
-        Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Forbidden => ApplicationErrorType.Forbidden,
-        Fookbase.Api.Modules.Media.Common.ApplicationErrorType.NotFound => ApplicationErrorType.NotFound,
-        Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Conflict => ApplicationErrorType.Conflict,
-        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
-    };
 
     private sealed record GroupCursor(DateTimeOffset CreatedAtUtc, Guid Id);
 }

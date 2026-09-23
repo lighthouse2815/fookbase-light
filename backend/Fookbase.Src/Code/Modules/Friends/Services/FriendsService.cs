@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
-using Fookbase.Api.Modules.Friends.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;

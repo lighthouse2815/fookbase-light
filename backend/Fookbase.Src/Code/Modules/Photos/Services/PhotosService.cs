@@ -1,5 +1,5 @@
 using System.Text;
-using Fookbase.Api.Modules.Media.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Photos.DTOs.Requests;

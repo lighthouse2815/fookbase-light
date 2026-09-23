@@ -5,7 +5,7 @@ using Fookbase.Api.Modules.Pages.DTOs.Requests;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
-using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Shared.Common;
 
 namespace Fookbase.Api.Modules.Pages.Endpoints;
 

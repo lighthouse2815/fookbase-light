@@ -1,10 +1,9 @@
-using Fookbase.Api.Modules.Users.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Users.DTOs.Requests;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Friends.Common;
 using Fookbase.Api.Modules.Friends.Services;
 
 namespace Fookbase.Api.Modules.Users.Endpoints;

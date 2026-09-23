@@ -4,7 +4,7 @@ using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Messages.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Messages.DTOs.Requests;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Messages.Entities;
@@ -84,7 +84,7 @@ public sealed class MessagesService(
         if (request.PhotoMediaId is not null)
         {
             var media = await mediaService.ValidateGroupCoverImageAsync(actorUserId, request.PhotoMediaId.Value, cancellationToken);
-            if (!media.Succeeded) return ApplicationResult<ConversationResponse>.Failure(ToMessagesError(media.Error!));
+            if (!media.Succeeded) return ApplicationResult<ConversationResponse>.Failure(media.Error!);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -162,7 +162,7 @@ public sealed class MessagesService(
             if (request.PhotoMediaId is not null)
             {
                 var media = await mediaService.ValidateGroupCoverImageAsync(actorUserId, request.PhotoMediaId.Value, cancellationToken);
-                if (!media.Succeeded) return ApplicationResult<ConversationResponse>.Failure(ToMessagesError(media.Error!));
+                if (!media.Succeeded) return ApplicationResult<ConversationResponse>.Failure(media.Error!);
             }
             try { conversation.UpdateGroup(request.Title ?? conversation.Title!, request.RemovePhoto ? null : request.PhotoMediaId ?? conversation.PhotoMediaId); }
             catch (ArgumentException error) { return Failure<ConversationResponse>("invalid_group_title", error.Message); }
@@ -288,7 +288,7 @@ public sealed class MessagesService(
         if (attachmentIds.Length > 0)
         {
             var media = await mediaService.ValidatePostMediaAsync(actorUserId, attachmentIds, cancellationToken);
-            if (!media.Succeeded) return ApplicationResult<MessageResponse>.Failure(ToMessagesError(media.Error!));
+            if (!media.Succeeded) return ApplicationResult<MessageResponse>.Failure(media.Error!);
         }
         var now = timeProvider.GetUtcNow();
         var message = Message.Create(Guid.NewGuid(), conversationId, actorUserId, attachmentIds.Length == 0 ? MessageType.Text : MessageType.Media,
@@ -508,8 +508,7 @@ public sealed class MessagesService(
             }
         }
         if (!authorized) return Failure<MediaReadUrlResponse>("media_access_denied", "You do not have access to this conversation media.", ApplicationErrorType.Forbidden);
-        var result = await mediaService.CreateReadUrlAsync(mediaId, cancellationToken);
-        return result.Succeeded ? ApplicationResult<MediaReadUrlResponse>.Success(result.Value!) : ApplicationResult<MediaReadUrlResponse>.Failure(ToMessagesError(result.Error!));
+        return await mediaService.CreateReadUrlAsync(mediaId, cancellationToken);
     }
 
     public async Task<ApplicationResult<PagedResponse<IncomingMessageResponse>>> GetUnreadNotificationsAsync(Guid actorUserId, int offset, int limit, CancellationToken cancellationToken = default)
@@ -786,13 +785,6 @@ public sealed class MessagesService(
         try { var base64 = value.Replace('-', '+').Replace('_', '/'); base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '='); cursor = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(Convert.FromBase64String(base64))); return cursor is not null; }
         catch (ArgumentException) { return false; } catch (FormatException) { return false; } catch (JsonException) { return false; }
     }
-    private static ApplicationError ToMessagesError(Fookbase.Api.Modules.Media.Common.ApplicationError error) => new(error.Code, error.Message, error.Type switch
-    {
-        Fookbase.Api.Modules.Media.Common.ApplicationErrorType.NotFound => ApplicationErrorType.NotFound,
-        Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Forbidden => ApplicationErrorType.Forbidden,
-        Fookbase.Api.Modules.Media.Common.ApplicationErrorType.Conflict => ApplicationErrorType.Conflict,
-        _ => ApplicationErrorType.Validation
-    });
     private static ApplicationResult<T> Failure<T>(string code, string message, ApplicationErrorType type = ApplicationErrorType.Validation) => ApplicationResult<T>.Failure(new ApplicationError(code, message, type));
     private static ApplicationResult<T> Conflict<T>(string code, string message) => Failure<T>(code, message, ApplicationErrorType.Conflict);
     private static ApplicationResult<T> Forbidden<T>() => Failure<T>("conversation_access_denied", "You do not have access to this conversation.", ApplicationErrorType.Forbidden);

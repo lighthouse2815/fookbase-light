@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Users.Common;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Users.DTOs.Requests;

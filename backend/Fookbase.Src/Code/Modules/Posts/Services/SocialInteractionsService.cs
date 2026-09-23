@@ -6,7 +6,7 @@ using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Pages.Services;
-using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.DataProtection;

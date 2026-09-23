@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Shared.Common;
 using Microsoft.AspNetCore.Authentication;
 
 namespace Fookbase.Api.Modules.Identity.Services;

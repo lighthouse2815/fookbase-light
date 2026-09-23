@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
-using Fookbase.Api.Modules.Friends.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Friends.Config;
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Entities;

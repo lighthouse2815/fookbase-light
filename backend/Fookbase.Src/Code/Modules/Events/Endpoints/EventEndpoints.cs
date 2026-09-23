@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fookbase.Api.Modules.Events.DTOs.Requests;
 using Fookbase.Api.Modules.Events.Services;
-using Fookbase.Api.Modules.Posts.Common;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Media.Services;
 namespace Fookbase.Api.Modules.Events.Endpoints;
 public static class EventEndpoints
