@@ -3,6 +3,25 @@ import { fetch as nativeFetch } from 'expo/fetch';
 import * as ImagePicker from 'expo-image-picker';
 import { apiRequest } from './client';
 export interface MediaReadUrl { mediaId: string; url: string; expiresAtUtc: string; mediaType: string; contentType: string }
+export interface MediaAsset {
+  id: string
+  ownerUserId: string
+  mediaType: string
+  status: string
+  fileName: string
+  contentType: string
+  declaredSizeBytes: number
+  actualSizeBytes: number | null
+  createdAtUtc: string
+  uploadExpiresAtUtc: string | null
+  uploadedAtUtc: string | null
+  deletedAtUtc: string | null
+  durationMs: number | null
+  width: number | null
+  height: number | null
+  hasProcessedVideo: boolean
+  processedAtUtc: string | null
+}
 export interface PickedMedia { uri: string; name: string; mimeType: string; sizeBytes: number }
 export async function pickMedia(): Promise<PickedMedia | null> {
   const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'], quality: 1 });
@@ -25,4 +44,11 @@ export async function uploadMedia(file: PickedMedia): Promise<string> {
   if (!response.ok) throw new Error('Tải media thất bại. Nội dung soạn vẫn được giữ.');
   await apiRequest(`/api/media/${intent.mediaId}/complete`, { method: 'POST' });
   return intent.mediaId;
+}
+
+export const mediaApi = {
+  getMetadata: (mediaId: string) => apiRequest<MediaAsset>(`/api/media/${mediaId}`),
+  getAccess: (mediaId: string) => apiRequest<MediaReadUrl>(`/api/media/${mediaId}/access`),
+  getPosterAccess: (mediaId: string) => apiRequest<MediaReadUrl>(`/api/media/${mediaId}/poster/access`),
+  delete: (mediaId: string) => apiRequest<void>(`/api/media/${mediaId}`, { method: 'DELETE' }),
 }

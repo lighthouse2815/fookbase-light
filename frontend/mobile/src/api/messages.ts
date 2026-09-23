@@ -51,12 +51,17 @@ export interface Conversation {
 export interface CursorPage<T> { items: T[]; limit: number; nextCursor: string | null }
 export interface MessageHistory { items: Message[]; nextCursor: string | null; hasMore: boolean }
 export interface UserProfile { userId: string; username: string; displayName: string; avatarUrl: string | null }
+export interface IncomingMessageNotification { conversation: Conversation; message: Message }
+export interface PagedMessages { items: IncomingMessageNotification[]; offset: number; limit: number; total: number; nextCursor?: string | null }
 
 const query = (parameters: Record<string, string | undefined>) => new URLSearchParams(
   Object.entries(parameters).filter((entry): entry is [string, string] => entry[1] !== undefined),
 ).toString()
 
 export const messengerApi = {
+  directLegacy: (userId: string) => request<Conversation>(`/api/messages/conversations/${userId}`, {
+    method: 'POST',
+  }),
   conversations: (before?: string, includeArchived = false) => request<CursorPage<Conversation>>(
     `/api/messages/conversations?${query({ before, limit: '30', includeArchived: includeArchived ? 'true' : undefined })}`,
   ),
@@ -71,6 +76,9 @@ export const messengerApi = {
     method: 'PATCH', body: JSON.stringify(value),
   }),
   messages: (id: string, before?: string) => request<MessageHistory>(`/api/messages/conversations/${id}/messages?${query({ before, limit: '50' })}`),
+  searchMessages: (id: string, value: string) => request<Message[]>(
+    `/api/messages/conversations/${id}/search?${query({ q: value })}`,
+  ),
   send: (id: string, content: string, mediaIds: string[], replyToMessageId?: string) => request<Message>(`/api/messages/conversations/${id}/messages`, {
     method: 'POST', body: JSON.stringify({ content: content || null, mediaIds, replyToMessageId }),
   }),
@@ -90,4 +98,7 @@ export const messengerApi = {
   user: (userId: string) => request<UserProfile>(`/api/users/${userId}`),
   searchUsers: (value: string) => request<{ items: UserProfile[] }>(`/api/users/search?${query({ query: value, offset: '0', limit: '10' })}`),
   mediaUrl: (mediaId: string) => request<{ url: string }>(`/api/messages/media/${mediaId}/read-url`).then((result) => result.url),
+  notifications: (offset = 0, limit = 100) => request<PagedMessages>(
+    `/api/messages/notifications?${query({ offset: String(offset), limit: String(limit) })}`,
+  ),
 }
