@@ -480,8 +480,10 @@
 }
 
 .game-detail-panel + aside {
-  position: sticky;
-  top: 24px;
+  position: static;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .game-detail-panel + aside > div {
@@ -498,28 +500,27 @@
 }
 
 .game-play-grid {
-  grid-template-columns: minmax(0, 1.2fr) minmax(330px, 0.8fr);
-  gap: clamp(28px, 4vw, 56px);
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 42px);
   align-items: start;
 }
 
 .game-play-grid > :first-child {
-  width: min(100%, 620px);
+  width: min(100%, 760px);
   margin-inline: auto;
 }
 
 .game-play-grid > :last-child {
-  position: sticky;
-  top: 24px;
+  width: min(100%, 1020px);
+  margin-inline: auto;
   min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  background: color-mix(in srgb, var(--color-bg) 68%, transparent);
-  padding: 22px;
+  border-top: 1px solid var(--color-border);
+  padding: 28px 0 0;
 }
 
 .game-stage-column {
-  width: min(100%, 470px) !important;
+  width: min(100%, 520px) !important;
+  max-width: 520px !important;
 }
 
 @media (max-width: 820px) {
@@ -539,14 +540,11 @@
   }
 
   .game-play-grid > :last-child {
-    border-top: 1px solid var(--color-border);
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 0;
-    background: transparent;
-    padding: 22px 0 0;
-    position: static;
+    padding-top: 22px;
+  }
+
+  .game-detail-panel + aside {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

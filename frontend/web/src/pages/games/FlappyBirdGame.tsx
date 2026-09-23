@@ -283,7 +283,7 @@ export default function FlappyBirdGame() {
       </div>
 
       <div className="game-play-grid grid items-center gap-6 md:justify-center">
-        <div className="game-stage-column mx-auto w-full max-w-[430px]">
+        <div className="game-stage-column mx-auto w-full max-w-[520px]">
           <button ref={stageRef} type="button" aria-label={playing ? 'Vỗ cánh' : paused ? 'Tiếp tục Flappy Bird' : ended ? 'Chơi lại Flappy Bird' : 'Bắt đầu Flappy Bird'} aria-describedby={`${id}-instructions`}
             className="relative block aspect-[2/3] w-full touch-none select-none overflow-hidden rounded-2xl border-2 border-[#315343] bg-[#71c5cf] shadow-xl focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-primary"
             onPointerDown={(event) => { if (!event.isPrimary || event.button !== 0) return; event.preventDefault(); play() }}
