@@ -1,6 +1,7 @@
-import type { PropsWithChildren, ReactNode } from 'react';
+import type { ComponentProps, PropsWithChildren, ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View, type ColorValue, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
+import { SymbolView } from 'expo-symbols';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const darkTheme = {
@@ -42,10 +43,35 @@ export function Button({ title, onPress, disabled = false, secondary = false, co
 }
 
 export type IconName = 'home' | 'messages' | 'notifications' | 'menu' | 'search' | 'add' | 'image' | 'reels' | 'sparkle' | 'bell' | 'bookmark' | 'people' | 'arrow' | 'heart' | 'comment' | 'share' | 'more' | 'close' | 'lock' | 'globe';
-const iconGlyphs: Record<IconName, string> = { home: '⌂', messages: '◌', notifications: '◉', menu: '☰', search: '⌕', add: '+', image: '▧', reels: '◇', sparkle: '✦', bell: '♢', bookmark: '▱', people: '♙', arrow: '→', heart: '♡', comment: '◍', share: '↗', more: '•••', close: '×', lock: '⌑', globe: '◎' };
+type NativeSymbol = ComponentProps<typeof SymbolView>['name'];
+
+// Expo Symbols renders SF Symbols on iOS and Material Symbols on Android/web.
+// Keeping the mapping here makes the icon language consistent across the app.
+const iconSymbols: Record<IconName, NativeSymbol> = {
+  home: { ios: 'house', android: 'home', web: 'home' },
+  messages: { ios: 'message', android: 'chat', web: 'chat' },
+  notifications: { ios: 'bell', android: 'notifications', web: 'notifications' },
+  menu: { ios: 'line.3.horizontal', android: 'menu', web: 'menu' },
+  search: { ios: 'magnifyingglass', android: 'search', web: 'search' },
+  add: { ios: 'plus', android: 'add', web: 'add' },
+  image: { ios: 'photo', android: 'image', web: 'image' },
+  reels: { ios: 'play.rectangle', android: 'video_library', web: 'video_library' },
+  sparkle: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
+  bell: { ios: 'bell', android: 'notifications', web: 'notifications' },
+  bookmark: { ios: 'bookmark', android: 'bookmark', web: 'bookmark' },
+  people: { ios: 'person.2', android: 'group', web: 'group' },
+  arrow: { ios: 'arrow.right', android: 'arrow_forward', web: 'arrow_forward' },
+  heart: { ios: 'heart', android: 'favorite', web: 'favorite' },
+  comment: { ios: 'bubble.right', android: 'chat_bubble', web: 'chat_bubble' },
+  share: { ios: 'square.and.arrow.up', android: 'share', web: 'share' },
+  more: { ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' },
+  close: { ios: 'xmark', android: 'close', web: 'close' },
+  lock: { ios: 'lock', android: 'lock', web: 'lock' },
+  globe: { ios: 'globe', android: 'language', web: 'language' },
+};
 export function Icon({ name, color, size = 20 }: { name: IconName; color?: ColorValue; size?: number }) {
   const t = useTheme();
-  return <Text accessibilityElementsHidden style={{ color: color ?? t.text, fontSize: size, fontWeight: '700', lineHeight: size + 3, textAlign: 'center' }}>{iconGlyphs[name]}</Text>;
+  return <SymbolView accessible={false} name={iconSymbols[name]} tintColor={color ?? t.text} size={size} weight="semibold" />;
 }
 
 export function IconButton({ label, icon, onPress, active = false, disabled = false }: { label: string; icon: IconName; onPress: () => void; active?: boolean; disabled?: boolean }) {
