@@ -23,7 +23,8 @@ EXPO_PUBLIC_API_BASE_URL=https://your-api-domain
 ZOLA_ANDROID_PACKAGE=com.fookbase.zola
 ZOLA_IOS_BUNDLE=com.fookbase.zola
 EXPO_PUBLIC_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
-EXPO_PUBLIC_EAS_PROJECT_ID=your-eas-project-id
+# Chỉ cần khi dùng EAS project khác project Zola mặc định.
+# EXPO_PUBLIC_EAS_PROJECT_ID=your-eas-project-id
 ```
 
 `EXPO_PUBLIC_API_BASE_URL` phải là HTTPS origin, không có path. Không đặt secret trong các
@@ -63,7 +64,8 @@ tra Expo receipt sau ít nhất 15 phút để vô hiệu token `DeviceNotRegist
 Để bật trên production, liên kết app với EAS, tạo credentials FCM/APNs trong EAS và đặt:
 
 ```dotenv
-EXPO_PUBLIC_EAS_PROJECT_ID=<EAS project UUID>
+# Chỉ cần khi dùng EAS project khác project Zola mặc định.
+# EXPO_PUBLIC_EAS_PROJECT_ID=<EAS project UUID>
 PushNotifications__Enabled=true
 PushNotifications__ReceiptCheckIntervalMinutes=15
 ```
@@ -83,6 +85,6 @@ ZOLA_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
 ZOLA_MOBILE_EAS_PROJECT_ID=<EAS project UUID>
 ```
 
-Callback và EAS project ID là tùy chọn nếu chưa bật Google/push, nhưng API URL và Android package
+Callback và EAS project ID override là tùy chọn nếu chưa bật Google/push, nhưng API URL và Android package
 là bắt buộc. APK dùng development signing, chỉ phù hợp phân phối nội bộ; phát hành store dùng EAS
 với signing credentials riêng và tăng `android.versionCode`.

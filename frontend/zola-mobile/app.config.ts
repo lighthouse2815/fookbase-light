@@ -36,6 +36,9 @@ const config: ExpoConfig = {
       microphonePermission: false,
     }],
   ],
+  extra: {
+    eas: { projectId: 'b3ae7927-d1b5-4a50-b269-79c0061e71d3' },
+  },
   experiments: { typedRoutes: false },
 };
 

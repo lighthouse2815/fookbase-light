@@ -13,8 +13,8 @@ ZOLA_ANDROID_PACKAGE=com.fookbase.zola
 ZOLA_IOS_BUNDLE=com.fookbase.zola
 # Cần HTTPS App Link khi bật Google mobile login.
 EXPO_PUBLIC_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
-# Required for Expo Push after the app is linked to EAS:
-EXPO_PUBLIC_EAS_PROJECT_ID=your-eas-project-id
+# Optional override when using another EAS project:
+# EXPO_PUBLIC_EAS_PROJECT_ID=your-eas-project-id
 ```
 
 `EXPO_PUBLIC_API_BASE_URL` phải là HTTPS origin, không có path. Các biến
@@ -43,5 +43,5 @@ EAS với package/bundle ID và signing riêng của Zola.
 - Thông báo trong app và quản lý phiên.
 
 Push notification dùng Expo Notifications khi app bị đóng. Cần development/production build
-đã liên kết EAS, cấu hình FCM/APNs trong EAS, `EXPO_PUBLIC_EAS_PROJECT_ID` và bật
+đã liên kết EAS, cấu hình FCM/APNs trong EAS và bật
 `PushNotifications__Enabled=true` ở API.
