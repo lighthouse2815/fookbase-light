@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Linking, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { authApi } from '../api/auth';
 import { saveSession } from './session';
-import { Button, Card, ErrorNotice, Field, Label, Screen, styles } from '../components/ui';
+import { Button, Card, ErrorNotice, Field, Icon, Label, Screen, styles, useTheme } from '../components/ui';
 import { beginGoogleLogin, completeGoogleLogin, isGoogleCallback } from './google';
 
 export function AuthScreen() {
+  const t = useTheme();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'reset'>('login');
   const [identifier, setIdentifier] = useState(''); const [password, setPassword] = useState('');
   const [visible, setVisible] = useState(false); const [firstName, setFirstName] = useState('');
@@ -13,24 +14,25 @@ export function AuthScreen() {
   const [challenge, setChallenge] = useState<{ kind: 'registration' | '2fa'; value: string } | null>(null);
   const [code, setCode] = useState(''); const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false); const [error, setError] = useState<unknown>(null);
-  const [googleUrl,setGoogleUrl]=useState<string|null>(null); const [googleEnabled,setGoogleEnabled]=useState(false);
-  async function finishGoogle(url:string, linkPassword?:string) {
-    const result=await completeGoogleLogin(url,linkPassword);
-    if(result.kind==='link'){setGoogleUrl(result.url);setNotice('Nhập mật khẩu tài khoản hiện có để liên kết Google.');return;}
+  const [googleUrl, setGoogleUrl] = useState<string | null>(null); const [googleEnabled, setGoogleEnabled] = useState(false);
+  async function finishGoogle(url: string, linkPassword?: string) {
+    const result = await completeGoogleLogin(url, linkPassword);
+    if (result.kind === 'link') { setGoogleUrl(result.url); setNotice('Nhập mật khẩu tài khoản hiện có để liên kết Google.'); return; }
     setGoogleUrl(null);
-    if('twoFactorRequired' in result.response)setChallenge({kind:'2fa',value:result.response.challenge});
+    if ('twoFactorRequired' in result.response) setChallenge({ kind: '2fa', value: result.response.challenge });
     else await saveSession(result.response, result.generation);
   }
-  useEffect(()=>{
-    void authApi.providers().then(p=>setGoogleEnabled(!!p.googleMobile && !!process.env.EXPO_PUBLIC_MOBILE_CALLBACK_URL)).catch(()=>{});
-    const handle=(url:string)=>{if(isGoogleCallback(url))void finishGoogle(url).catch(setError);};
-    void Linking.getInitialURL().then(url=>{if(url)handle(url);}).catch(setError);
-    const listener=Linking.addEventListener('url',({url})=>handle(url));return()=>listener.remove();
-  },[]);
+  useEffect(() => {
+    void authApi.providers().then(p => setGoogleEnabled(!!p.googleMobile && !!process.env.EXPO_PUBLIC_MOBILE_CALLBACK_URL)).catch(() => {});
+    const handle = (url: string) => { if (isGoogleCallback(url)) void finishGoogle(url).catch(setError); };
+    void Linking.getInitialURL().then(url => { if (url) handle(url); }).catch(setError);
+    const listener = Linking.addEventListener('url', ({ url }) => handle(url));
+    return () => listener.remove();
+  }, []);
   async function submit() {
     setError(null); setBusy(true);
     try {
-      if(googleUrl) await finishGoogle(googleUrl,password);
+      if (googleUrl) await finishGoogle(googleUrl, password);
       else if (challenge) await saveSession(challenge.kind === '2fa' ? await authApi.verifyTwoFactor(challenge.value, code) : await authApi.verifyRegistration(challenge.value, code));
       else if (mode === 'login') {
         const value = await authApi.login({ identifier, password });
@@ -46,16 +48,50 @@ export function AuthScreen() {
       }
     } catch (e) { setError(e); } finally { setBusy(false); }
   }
-  return <Screen><Label title>Fookbase Light</Label><Label muted>Gần nhau hơn, mỗi ngày.</Label><Card>
-    <Label title>{challenge ? 'Xác minh tài khoản' : { login: 'Chào bạn trở lại', register: 'Tạo tài khoản', forgot: 'Quên mật khẩu', reset: 'Đặt lại mật khẩu' }[mode]}</Label>
-    {!!notice && <Label>{notice}</Label>}
-    {!challenge && <Field label="Email, số điện thoại hoặc tên đăng nhập" autoCapitalize="none" value={identifier} onChangeText={setIdentifier} autoComplete="username" />}
-    {mode === 'register' && !challenge && <><Field label="Tên" value={firstName} onChangeText={setFirstName} /><Field label="Họ" value={lastName} onChangeText={setLastName} /><Field label="Ngày sinh (YYYY-MM-DD)" value={birthday} onChangeText={setBirthday} /></>}
-    {(challenge || mode === 'reset') && <Field label="Mã xác minh hoặc token khôi phục" value={code} onChangeText={setCode} autoCapitalize="none" autoComplete="one-time-code" />}
-    {!challenge && mode !== 'forgot' && <><Field label="Mật khẩu" value={password} onChangeText={setPassword} secureTextEntry={!visible} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /><Button title={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} secondary onPress={() => setVisible(!visible)} /></>}
-    {error ? <ErrorNotice error={error} /> : null}
-    <Button title={busy ? 'Đang xử lý…' : challenge ? 'Xác minh' : mode === 'login' ? 'Đăng nhập' : 'Tiếp tục'} onPress={() => void submit()} disabled={busy || (googleUrl ? !password : challenge ? !code.trim() : !identifier.trim() || (mode !== 'forgot' && !password))} />
-    {googleEnabled && !challenge && !googleUrl && <Button title="Tiếp tục với Google" secondary disabled={busy} onPress={()=>{setBusy(true);setError(null);void beginGoogleLogin().then(url=>url?finishGoogle(url):undefined).catch(setError).finally(()=>setBusy(false));}} />}
-    {challenge?.kind === 'registration' && <Button title="Gửi lại mã" secondary disabled={busy} onPress={() => { setBusy(true); void authApi.resendRegistration(challenge.value).then(v => { setChallenge({ kind: 'registration', value: v.challengeId }); setNotice('Đã gửi lại mã.'); }).catch(setError).finally(() => setBusy(false)); }} />}
-  </Card><View style={styles.row}>{(['login', 'register', 'forgot'] as const).filter(v => v !== mode || challenge).map(v => <Button key={v} title={{ login: 'Đăng nhập', register: 'Tạo tài khoản', forgot: 'Quên mật khẩu' }[v]} secondary disabled={busy} onPress={() => { setMode(v); setGoogleUrl(null); setChallenge(null); setError(null); setNotice(''); setCode(''); }} />)}</View></Screen>;
+  const title = challenge ? 'Xác minh tài khoản' : { login: 'Chào bạn trở lại', register: 'Tạo tài khoản', forgot: 'Quên mật khẩu', reset: 'Đặt lại mật khẩu' }[mode];
+  const subtitle = challenge ? 'Một bước nhỏ để giữ không gian của bạn an toàn.' : mode === 'login' ? 'Những cuộc trò chuyện hay đang chờ bạn.' : 'Tạo một góc nhỏ cho những điều bạn yêu thích.';
+  const switchMode = (next: 'login' | 'register' | 'forgot') => { setMode(next); setGoogleUrl(null); setChallenge(null); setError(null); setNotice(''); setCode(''); };
+  return <Screen>
+    <View style={authStyles.hero}>
+      <View style={authStyles.orbitOne} /><View style={authStyles.orbitTwo} />
+      <View style={authStyles.brand}><View style={[authStyles.brandMark, { backgroundColor: t.primary }]}><Text style={authStyles.brandLetter}>f</Text></View><Text style={[authStyles.brandName, { color: t.text }]}>fookbase</Text><Icon name="sparkle" color={t.accent} size={19} /></View>
+      <Text style={[authStyles.heroTitle, { color: t.text }]}>Mỗi ngày một{`\n`}điều đáng nhớ.</Text>
+      <Text style={[authStyles.heroCopy, { color: t.muted }]}>Gần nhau hơn, chia sẻ thật hơn và để những khoảnh khắc nhỏ phát sáng.</Text>
+      <View style={authStyles.signal}><View style={[authStyles.signalDot, { backgroundColor: t.success }]} /><Text style={{ color: t.muted, fontSize: 12, fontWeight: '700' }}>Không gian của bạn đang chờ</Text></View>
+    </View>
+    <Card tone="raised" style={authStyles.formCard}>
+      <View style={authStyles.formIntro}><View style={[authStyles.formIcon, { backgroundColor: t.primarySoft }]}><Icon name={challenge ? 'lock' : 'sparkle'} color={t.primary} size={23} /></View><View style={{ flex: 1 }}><Label title style={{ fontSize: 22, lineHeight: 27 }}>{title}</Label><Label muted style={{ marginTop: 2 }}>{subtitle}</Label></View></View>
+      {!!notice && <View style={[authStyles.notice, { backgroundColor: `${t.success}16`, borderColor: `${t.success}44` }]}><Icon name="sparkle" color={t.success} size={17} /><Text style={{ color: t.success, flex: 1, lineHeight: 20 }}>{notice}</Text></View>}
+      {!challenge && <Field label="Email, số điện thoại hoặc tên đăng nhập" autoCapitalize="none" value={identifier} onChangeText={setIdentifier} autoComplete="username" />}
+      {mode === 'register' && !challenge && <><Field label="Tên" value={firstName} onChangeText={setFirstName} /><Field label="Họ" value={lastName} onChangeText={setLastName} /><Field label="Ngày sinh (YYYY-MM-DD)" value={birthday} onChangeText={setBirthday} /></>}
+      {(challenge || mode === 'reset') && <Field label="Mã xác minh hoặc token khôi phục" value={code} onChangeText={setCode} autoCapitalize="none" autoComplete="one-time-code" />}
+      {!challenge && mode !== 'forgot' && <><Field label="Mật khẩu" value={password} onChangeText={setPassword} secureTextEntry={!visible} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /><Button title={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} secondary compact onPress={() => setVisible(!visible)} /></>}
+      {error ? <ErrorNotice error={error} /> : null}
+      <Button title={busy ? 'Đang xử lý…' : challenge ? 'Xác minh' : mode === 'login' ? 'Đăng nhập' : 'Tiếp tục'} icon={<Icon name="arrow" color="#fff" size={19} />} onPress={() => void submit()} disabled={busy || (googleUrl ? !password : challenge ? !code.trim() : !identifier.trim() || (mode !== 'forgot' && !password))} />
+      {googleEnabled && !challenge && !googleUrl && <Button title="Tiếp tục với Google" icon={<Text style={{ color: t.text, fontWeight: '900', fontSize: 16 }}>G</Text>} secondary disabled={busy} onPress={() => { setBusy(true); setError(null); void beginGoogleLogin().then(url => url ? finishGoogle(url) : undefined).catch(setError).finally(() => setBusy(false)); }} />}
+      {challenge?.kind === 'registration' && <Button title="Gửi lại mã" secondary disabled={busy} onPress={() => { setBusy(true); void authApi.resendRegistration(challenge.value).then(v => { setChallenge({ kind: 'registration', value: v.challengeId }); setNotice('Đã gửi lại mã.'); }).catch(setError).finally(() => setBusy(false)); }} />}
+    </Card>
+    <View style={[styles.row, authStyles.switchRow]}>{(['login', 'register', 'forgot'] as const).filter(v => v !== mode || challenge).map(v => <Button key={v} title={{ login: 'Đăng nhập', register: 'Tạo tài khoản', forgot: 'Quên mật khẩu' }[v]} secondary compact disabled={busy} onPress={() => switchMode(v)} />)}</View>
+    <Text style={[authStyles.footer, { color: t.subtle }]}>Fookbase Light · nơi những tia sáng tìm thấy nhau</Text>
+  </Screen>;
 }
+
+const authStyles = StyleSheet.create({
+  hero: { minHeight: 238, paddingTop: 12, paddingBottom: 18, justifyContent: 'flex-end', overflow: 'hidden' },
+  orbitOne: { position: 'absolute', width: 180, height: 180, borderRadius: 100, right: -64, top: -68, backgroundColor: '#2374e122' },
+  orbitTwo: { position: 'absolute', width: 84, height: 84, borderRadius: 50, right: 20, top: 18, backgroundColor: '#f0b84f1c', borderWidth: 1, borderColor: '#f0b84f40' },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 22 },
+  brandMark: { width: 38, height: 38, borderRadius: 13, justifyContent: 'center', alignItems: 'center', transform: [{ rotate: '-7deg' }] },
+  brandLetter: { color: '#fff', fontSize: 29, fontWeight: '900', lineHeight: 32 },
+  brandName: { fontSize: 18, fontWeight: '800', letterSpacing: -0.4 },
+  heroTitle: { fontSize: 39, lineHeight: 42, fontWeight: '900', letterSpacing: -1.1 },
+  heroCopy: { maxWidth: 330, fontSize: 15, lineHeight: 23, marginTop: 10 },
+  signal: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
+  signalDot: { width: 9, height: 9, borderRadius: 9 },
+  formCard: { padding: 18, gap: 14 },
+  formIntro: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 2 },
+  formIcon: { width: 42, height: 42, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  notice: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 13, padding: 11 },
+  switchRow: { justifyContent: 'center', marginTop: 2 },
+  footer: { textAlign: 'center', fontSize: 12, marginTop: 'auto', paddingTop: 16 },
+});
