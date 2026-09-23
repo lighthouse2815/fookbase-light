@@ -18,6 +18,12 @@ Revoking session chặn refresh ngay lập tức. Access JWT đã cấp không b
 
 Access-token lifetime và refresh-token lifetime vẫn lấy từ `JwtOptions` (mặc định lần lượt 15 phút và 30 ngày). Refresh token cũ bị revoke khi xoay vòng.
 
+Browser clients không lưu refresh token trong `localStorage`: Web, Admin và Zola
+Light dùng cookie `HttpOnly` riêng, có `SameSite=Lax`, `Path=/api/auth` và cờ
+`Secure` trên HTTPS. API chỉ đọc cookie khi request gửi đúng transport header của
+client, nên cookie không được chấp nhận bởi request cross-site thiếu header này.
+Mobile tiếp tục dùng refresh token JSON và SecureStore theo hợp đồng riêng của app.
+
 ## Password and lockout
 
 Mật khẩu vẫn dùng ASP.NET Core Identity policy hiện có: ít nhất 8 ký tự, không bắt buộc loại ký tự. Sau 5 lần sai, Identity lock tài khoản trong 15 phút. Đổi mật khẩu kiểm tra mật khẩu hiện tại và thu hồi các session refresh khác; mật khẩu không được log.

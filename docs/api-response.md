@@ -53,10 +53,24 @@ Service trả DTO hoặc `Task` khi thành công; lỗi nghiệp vụ ném
 công bằng `ApiResponse.Success`; handler và xử lý lỗi HTTP dùng
 `ApiResponse.Failure`.
 
-Đây là thay đổi hợp đồng JSON của Identity. Các client web, admin, zola-light
-và mobile đã cập nhật để đọc `data`, kể cả refresh token; khi lỗi đọc
-`error.message`. Cần phát hành client và backend tương ứng. Redirect/challenge
-OAuth vẫn dùng giao thức HTTP của OAuth, không bọc vào JSON.
+Đây là thay đổi hợp đồng JSON của Identity. Các client đều đọc dữ liệu trong
+`data` và lỗi trong `error.message`. Redirect/challenge OAuth vẫn dùng giao thức
+HTTP của OAuth, không bọc vào JSON.
+
+### Refresh token trên browser
+
+Web, Admin và Zola Light gửi `X-Fookbase-Auth-Transport` tương ứng với giá trị
+`cookie:web`, `cookie:admin` hoặc `cookie:zola-light`, đồng thời bật
+`credentials: include`. API lưu refresh token trong cookie riêng của từng client
+với `HttpOnly`, `SameSite=Lax`, `Path=/api/auth` và bật `Secure` khi request dùng
+HTTPS. Response browser chỉ trả access token và thời hạn refresh token, không có
+trường `refreshToken`.
+
+Header transport là bắt buộc khi dùng refresh cookie để ngăn request cross-site
+đọc cookie tự động. Client mobile và các API client khác không gửi header này,
+vẫn nhận refresh token trong JSON và gửi token trong body như trước. Client browser
+cũ có thể gửi token body một lần qua transport cookie để được xoay vòng rồi xóa
+refresh token khỏi `localStorage`.
 
 Kiểm tra: `bash scripts/test-backend.sh`, nhóm test Shared, và
 `npm --prefix frontend/web run test:auth` (client web/admin/zola-light).
