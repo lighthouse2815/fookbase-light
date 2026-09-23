@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState, Image } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useVideoPlayer, VideoView, type VideoContentFit } from 'expo-video';
-import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../auth/AuthProvider';
 import { apiRequest } from '../api/client';
 import type { MediaReadUrl } from '../api/media';
@@ -14,7 +13,6 @@ function Video({ url, height, nativeControls, borderRadius, contentFit }: { url:
     const listener = AppState.addEventListener('change', state => { if (state !== 'active') player.pause(); });
     return () => listener.remove();
   }, [player]);
-  useFocusEffect(useCallback(() => () => { player.pause(); }, [player]));
   return <VideoView player={player} style={{ height, width: '100%', borderRadius }} nativeControls={nativeControls} contentFit={contentFit} />;
 }
 export function MediaView({ path, height, nativeControls = true, borderRadius = 12, contentFit = 'contain' }: { path: string; height?: number; nativeControls?: boolean; borderRadius?: number; contentFit?: VideoContentFit }) {
