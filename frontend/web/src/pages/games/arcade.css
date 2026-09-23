@@ -52,11 +52,31 @@
 .melody-sequence { display: flex; min-height: 8px; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 24px; }
 .melody-sequence i { height: 6px; width: 12px; border-radius: 4px; background: #ffffff25; }
 .melody-sequence .is-complete { background: #a3e2d2; }
+.star-catch-game { --arcade-accent: #bde5ff; }
+.star-stage { min-height: 480px; background: #0d1836; border: 1px solid #405b8d; box-shadow: inset 0 1px #ffffff22, 0 14px 32px #0003; }
+.star-sky { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(circle at 50% 100%, #31568c 0%, #162a55 42%, #0d1836 78%); }
+.star-sky > i { position: absolute; left: var(--star-left); top: var(--star-top); width: var(--star-size); height: var(--star-size); border-radius: 50%; background: #e7f5ff; box-shadow: 0 0 8px #fff; animation: star-twinkle 2.5s var(--star-delay) infinite ease-in-out; }
+.falling-star, .falling-meteor { position: absolute; z-index: 2; transform: translate(-50%, -50%); font-size: 34px; line-height: 1; filter: drop-shadow(0 0 9px #ffe394); color: #ffe394; }
+.falling-meteor { font-size: 28px; color: #ff997f; transform: translate(-50%, -50%) rotate(18deg); filter: drop-shadow(0 0 8px #ff997f); }
+.space-horizon { position: absolute; right: -10%; bottom: -20%; left: -10%; height: 38%; border-radius: 50% 50% 0 0; border-top: 1px solid #6d91c2; background: linear-gradient(180deg, #233f6c, #13234a 72%); box-shadow: 0 -10px 32px #76c6ff22; }
+.space-ship { position: absolute; z-index: 3; bottom: 16%; width: 50px; height: 55px; transform: translateX(-50%); transition: left .1s; }
+.space-ship span { position: absolute; left: 50%; top: 0; transform: translateX(-50%); color: #daf8ff; font-size: 46px; line-height: 1; filter: drop-shadow(0 0 9px #bde5ff); }
+.space-ship i, .space-ship b { position: absolute; bottom: 0; width: 10px; height: 18px; border-radius: 50%; background: #ffe394; box-shadow: 0 0 14px #ffe394; animation: engine-pulse .25s infinite alternate; }
+.space-ship i { left: 13px; }.space-ship b { right: 13px; animation-delay: .12s; }
+.space-overlay { position: absolute; z-index: 5; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: #0d1836a8; color: #eff8ff; text-align: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.space-overlay.is-visible { opacity: 1; }
+.space-overlay span { color: #ffe394; font-size: 42px; }.space-overlay strong { font-family: var(--font-heading); font-size: 21px; }.space-overlay small { color: #bfd1ee; font-size: 12px; }
+.star-controls { display: flex; align-items: center; gap: 10px; padding: 14px 15px; background: #0a132c; }
+.star-controls button { width: 44px; height: 38px; border: 1px solid #405b8d; border-radius: 9px; background: #142951; color: #e7f5ff; font-size: 20px; }.star-controls button:disabled { opacity: .4; }
+.star-progress { flex: 1; height: 5px; overflow: hidden; border-radius: 99px; background: #243b66; }.star-progress span { display: block; height: 100%; border-radius: inherit; background: #bde5ff; box-shadow: 0 0 8px #bde5ff; transition: width .1s linear; }
+@keyframes star-twinkle { 0%, 100% { opacity: .3; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.4); } }
+@keyframes engine-pulse { from { transform: scaleY(.7); opacity: .65; } to { transform: scaleY(1.15); opacity: 1; } }
 @media (max-width: 700px) {
   .arcade-layout { grid-template-columns: minmax(0, 1fr); }
   .arcade-stage { width: 100%; max-width: 460px; margin-inline: auto; }
   .arcade-aside { gap: 15px; }
   .melody-pad { aspect-ratio: 1.35; }
+  .star-stage { min-height: 390px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .arcade-shell *, .arcade-shell *::before, .arcade-shell *::after { animation: none !important; transition: none !important; }

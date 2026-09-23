@@ -9,8 +9,9 @@ import MinesweeperGame from './MinesweeperGame'
 import WhackMoleGame from './WhackMoleGame'
 import SlidingPuzzleGame from './SlidingPuzzleGame'
 import MelodyGame from './MelodyGame'
+import StarCatchGame from './StarCatchGame'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle' | 'melody'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle' | 'melody' | 'star-catch'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -31,6 +32,12 @@ const games: GameDefinition[] = [
     description: 'Bốn phím đàn, mười hai vòng nhớ. Lắng nghe và chơi lại giai điệu của bạn.',
     accent: 'from-[#284b43] via-[#397666] to-[#79b99f]',
     icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="4" y="4" width="88" height="88" rx="20" fill="#1c342e" /><rect x="15" y="15" width="66" height="14" rx="4" fill="#b2dfb3" /><rect x="15" y="37" width="29" height="20" rx="5" fill="#ffab8a" /><rect x="52" y="37" width="29" height="20" rx="5" fill="#ffe394" /><rect x="15" y="65" width="29" height="20" rx="5" fill="#a3e2d2" /><rect x="52" y="65" width="29" height="20" rx="5" fill="#a9caff" /><path d="M22 22h17m5 0h7m5 0h18" stroke="#305748" strokeWidth="3" strokeLinecap="round" /></svg>,
+  },
+  {
+    id: 'star-catch', title: 'Hứng sao', category: 'Phản xạ', badge: 'Mới', component: StarCatchGame,
+    description: 'Lái tàu qua cơn mưa vũ trụ, hứng sao để ghi điểm và né thiên thạch.',
+    accent: 'from-[#162b54] via-[#31538e] to-[#5c8bc9]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="4" y="4" width="88" height="88" rx="22" fill="#132644" /><circle cx="18" cy="22" r="2" fill="#fff" /><circle cx="73" cy="18" r="2" fill="#bde5ff" /><circle cx="81" cy="62" r="2" fill="#fff" /><path d="m48 16 4 9 10 1-8 7 2 10-8-5-8 5 2-10-8-7 10-1z" fill="#ffe394" /><path d="m68 34 5 10 10 2-8 7 2 11-9-5-9 5 2-11-8-7 10-2z" fill="#ff997f" opacity=".9" /><path d="m47 76 8-17 8 17 10 4-18 2-18-2z" fill="#a3e2d2" stroke="#e2fff6" strokeWidth="2" /></svg>,
   },
   {
     id: 'tic-tac-toe', title: 'Cờ ca-rô', category: 'Chiến thuật', badge: 'Chơi đơn',
