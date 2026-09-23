@@ -30,6 +30,12 @@ services:
       GoogleAuthentication__ClientSecret: ${GoogleAuthentication__ClientSecret:-}
       GoogleAuthentication__WebBaseUrl: ${GoogleAuthentication__WebBaseUrl:-}
       GoogleAuthentication__ZolaLightBaseUrl: ${GoogleAuthentication__ZolaLightBaseUrl:-}
+      GoogleAuthentication__MobileCallbackUrl: ${GoogleAuthentication__MobileCallbackUrl:-}
+      GoogleAuthentication__ZolaMobileCallbackUrl: ${GoogleAuthentication__ZolaMobileCallbackUrl:-}
+      PushNotifications__Enabled: ${PushNotifications__Enabled:-false}
+      PushNotifications__ExpoPushApiUrl: ${PushNotifications__ExpoPushApiUrl:-https://exp.host/--/api/v2/push/send}
+      PushNotifications__ExpoPushReceiptsUrl: ${PushNotifications__ExpoPushReceiptsUrl:-https://exp.host/--/api/v2/push/getReceipts}
+      PushNotifications__ReceiptCheckIntervalMinutes: ${PushNotifications__ReceiptCheckIntervalMinutes:-15}
       AiChat__Enabled: ${AiChat__Enabled:-false}
       AiChat__Groq__ApiKey: ${AiChat__Groq__ApiKey:-}
       AiChat__Groq__ApiBaseUrl: ${AiChat__Groq__ApiBaseUrl:-https://api.groq.com/openai/v1/}

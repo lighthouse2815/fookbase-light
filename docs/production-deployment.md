@@ -67,11 +67,25 @@ GoogleAuthentication__ClientId=<google-oauth-client-id>
 GoogleAuthentication__ClientSecret=<google-oauth-client-secret>
 GoogleAuthentication__WebBaseUrl=https://app.example.com
 GoogleAuthentication__ZolaLightBaseUrl=https://zola-light.example.com
+# Chỉ bật sau khi callback HTTPS đã là Android App Link/iOS Universal Link được xác minh.
+GoogleAuthentication__MobileCallbackUrl=https://mobile.example.com/auth/callback
+GoogleAuthentication__ZolaMobileCallbackUrl=https://zola.example.com/auth/callback
 ```
 
 Trong Google Cloud Console, cấu hình OAuth consent screen, xác minh domain HTTPS bạn sở hữu và khai báo chính xác Authorized redirect URI: `https://api.example.com/signin-google`. Dùng homepage, privacy policy và terms URL công khai thuộc domain đã xác minh khi Google yêu cầu. Không khai báo callback SPA trực tiếp: API sẽ kiểm tra Google claims (`sub`, `email`, `email_verified`) rồi redirect về một trong hai đích cố định `https://app.example.com/login` hoặc `https://zola-light.example.com/login` với completion code dùng một lần.
 
-Thêm cả hai SPA vào `Cors__AllowedOrigins`; restart API sau khi inject secret. Với Zalo, Messenger và các embedded WebView tương tự, giao diện chỉ hướng người dùng mở Chrome/Safari cho Google OAuth. Đăng nhập mật khẩu vẫn hoạt động trong các WebView này.
+Thêm cả hai SPA vào `Cors__AllowedOrigins`; restart API sau khi inject secret. Mobile nhận completion code qua App Link/Universal Link; callback cho Fookbase Mobile và Zola Mobile phải khác nhau và trùng biến `EXPO_PUBLIC_MOBILE_CALLBACK_URL` trong từng app. Domain callback cần phục vụ `/.well-known/assetlinks.json` với application ID và SHA-256 certificate phát hành đúng. Với Zalo, Messenger và các embedded WebView tương tự, giao diện chỉ hướng người dùng mở Chrome/Safari cho Google OAuth. Đăng nhập mật khẩu vẫn hoạt động trong các WebView này.
+
+## Zola Mobile push notification
+
+Sau khi liên kết `frontend/zola-mobile` với EAS, tạo Android FCM và iOS APNs credentials trong EAS, rồi thêm vào file môi trường của API:
+
+```dotenv
+PushNotifications__Enabled=true
+PushNotifications__ReceiptCheckIntervalMinutes=15
+```
+
+Đặt EAS project UUID ở biến build `EXPO_PUBLIC_EAS_PROJECT_ID`; đây là định danh công khai, không phải secret. API gửi qua Expo Push Service và xử lý receipt để vô hiệu token không còn hợp lệ. Remote push cần development/production build, không dùng Expo Go.
 
 ## OTP qua SMS
 

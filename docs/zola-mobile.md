@@ -70,3 +70,19 @@ PushNotifications__ReceiptCheckIntervalMinutes=15
 
 Remote push không chạy trong Expo Go từ SDK 53; dùng development build hoặc build phát hành.
 Expo Push không đảm bảo exactly-once, vì vậy app luôn tải lại HTTP data sau SignalR/reconnect.
+
+## APK preview trên GitHub Actions
+
+Workflow thủ công **Zola Android preview APK** kiểm tra app và tạo APK nội bộ, giữ artifact 14 ngày.
+Trước khi chạy, tạo GitHub repository variables sau:
+
+```text
+ZOLA_MOBILE_API_BASE_URL=https://your-api-domain
+ZOLA_MOBILE_ANDROID_PACKAGE=com.example.zola
+ZOLA_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
+ZOLA_MOBILE_EAS_PROJECT_ID=<EAS project UUID>
+```
+
+Callback và EAS project ID là tùy chọn nếu chưa bật Google/push, nhưng API URL và Android package
+là bắt buộc. APK dùng development signing, chỉ phù hợp phân phối nội bộ; phát hành store dùng EAS
+với signing credentials riêng và tăng `android.versionCode`.

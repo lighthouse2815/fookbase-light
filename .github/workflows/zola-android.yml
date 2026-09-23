@@ -1,0 +1,44 @@
+name: Zola Android preview APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_API_BASE_URL: ${{ vars.ZOLA_MOBILE_API_BASE_URL }}
+      EXPO_PUBLIC_MOBILE_CALLBACK_URL: ${{ vars.ZOLA_MOBILE_CALLBACK_URL }}
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.ZOLA_MOBILE_EAS_PROJECT_ID }}
+      ZOLA_ANDROID_PACKAGE: ${{ vars.ZOLA_MOBILE_ANDROID_PACKAGE }}
+      CMAKE_BUILD_PARALLEL_LEVEL: 1
+    defaults:
+      run:
+        working-directory: frontend/zola-mobile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/zola-mobile/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Require deployment configuration
+        run: |
+          test -n "$EXPO_PUBLIC_API_BASE_URL"
+          test -n "$ZOLA_ANDROID_PACKAGE"
+      - run: npm ci
+      - run: npm run typecheck && npm run lint && npm test -- --runInBand
+      - run: npx expo prebuild --platform android --no-install
+      - name: Build standalone preview
+        working-directory: frontend/zola-mobile/android
+        run: ./gradlew assembleRelease --no-daemon --max-workers=1 -PreactNativeArchitectures=arm64-v8a,x86_64
+      - uses: actions/upload-artifact@v6
+        with:
+          name: zola-android-preview-${{ github.sha }}
+          path: frontend/zola-mobile/android/app/build/outputs/apk/release/*.apk
+          retention-days: 14
