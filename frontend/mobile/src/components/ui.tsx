@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View, type ColorValue, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -43,7 +43,7 @@ export function Button({ title, onPress, disabled = false, secondary = false, co
 
 export type IconName = 'home' | 'messages' | 'notifications' | 'menu' | 'search' | 'add' | 'image' | 'reels' | 'sparkle' | 'bell' | 'bookmark' | 'people' | 'arrow' | 'heart' | 'comment' | 'share' | 'more' | 'close' | 'lock' | 'globe';
 const iconGlyphs: Record<IconName, string> = { home: '⌂', messages: '◌', notifications: '◉', menu: '☰', search: '⌕', add: '+', image: '▧', reels: '◇', sparkle: '✦', bell: '♢', bookmark: '▱', people: '♙', arrow: '→', heart: '♡', comment: '◍', share: '↗', more: '•••', close: '×', lock: '⌑', globe: '◎' };
-export function Icon({ name, color, size = 20 }: { name: IconName; color?: string; size?: number }) {
+export function Icon({ name, color, size = 20 }: { name: IconName; color?: ColorValue; size?: number }) {
   const t = useTheme();
   return <Text accessibilityElementsHidden style={{ color: color ?? t.text, fontSize: size, fontWeight: '700', lineHeight: size + 3, textAlign: 'center' }}>{iconGlyphs[name]}</Text>;
 }
