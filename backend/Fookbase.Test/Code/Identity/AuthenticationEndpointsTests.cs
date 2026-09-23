@@ -771,6 +771,25 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task Password_change_returns_standard_validation_problem_when_confirmation_does_not_match()
+    {
+        var account = CreateUniqueAccount();
+        using var client = factory.CreateClient();
+        var original = await RegisterAsync(client, account);
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", original.AccessToken);
+
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/password/change",
+            new ChangePasswordRequest(account.Password, "New-password-123!", "different-password"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", document.RootElement.GetProperty("code").GetString());
+        Assert.True(document.RootElement.TryGetProperty("errors", out _));
+    }
+
     private static async Task<AuthenticationResponse> RegisterAsync(
         HttpClient client,
         TestAccount account)

@@ -265,7 +265,16 @@ builder.Services.AddHealthChecks()
     .AddCheck<CloudinaryHealthCheck>("cloudinary", tags: ["ready"]);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
+{
+    if (context.ProblemDetails is HttpValidationProblemDetails)
+    {
+        context.ProblemDetails.Title = "Validation";
+        context.ProblemDetails.Detail = "One or more validation errors occurred.";
+        context.ProblemDetails.Extensions["code"] = "validation_failed";
+    }
+});
+builder.Services.AddValidation();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
