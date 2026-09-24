@@ -8,11 +8,11 @@ public sealed class AuthSession
 {
     private AuthSession() { }
 
-    private AuthSession(Guid id, Guid userId, string? userAgent, DateTimeOffset now, DateTimeOffset expiresAt)
+    public AuthSession(Guid userId, string? userAgent, DateTimeOffset now, DateTimeOffset expiresAt)
     {
-        Id = id;
+        Id = Guid.NewGuid();
         UserId = userId;
-        UserAgent = userAgent;
+        UserAgent = SanitizeUserAgent(userAgent);
         CreatedAtUtc = now;
         LastSeenAtUtc = now;
         ExpiresAtUtc = expiresAt;
@@ -26,9 +26,6 @@ public sealed class AuthSession
     public DateTimeOffset LastSeenAtUtc { get; private set; }
     public DateTimeOffset ExpiresAtUtc { get; private set; }
     public DateTimeOffset? RevokedAtUtc { get; private set; }
-
-    public static AuthSession Create(Guid userId, string? userAgent, DateTimeOffset now, DateTimeOffset expiresAt) =>
-        new(Guid.NewGuid(), userId, SanitizeUserAgent(userAgent), now, expiresAt);
 
     public bool IsActiveAt(DateTimeOffset now) => RevokedAtUtc is null && ExpiresAtUtc > now;
     public void Touch(DateTimeOffset now) => LastSeenAtUtc = now;

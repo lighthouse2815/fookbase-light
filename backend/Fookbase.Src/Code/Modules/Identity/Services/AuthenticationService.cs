@@ -56,7 +56,7 @@ public sealed class AuthenticationService(
 
         var now = timeProvider.GetUtcNow();
         var user = new User(Guid.NewGuid(), email, userName, now);
-        var session = AuthSession.Create(user.Id, null, now, now.AddDays(30));
+        var session = new AuthSession(user.Id, null, now, now.AddDays(30));
         var refreshToken = tokenService.CreateRefreshToken(user.Id, session.Id, now);
         var creationResult = await CreateUserAsync(
             user,
@@ -665,7 +665,7 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken)
     {
         var roles = await GetRolesAsync(user);
-        var session = AuthSession.Create(user.Id, userAgent, now, now.AddDays(30));
+        var session = new AuthSession(user.Id, userAgent, now, now.AddDays(30));
         var accessToken = tokenService.CreateAccessToken(user, roles, now, session.Id);
         var refreshToken = tokenService.CreateRefreshToken(user.Id, session.Id, now);
 

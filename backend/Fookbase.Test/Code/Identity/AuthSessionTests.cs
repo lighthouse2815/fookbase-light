@@ -7,7 +7,7 @@ public class AuthSessionTests
     [Fact]
     public void Create_removes_line_breaks_from_user_agent()
     {
-        var session = AuthSession.Create(
+        var session = new AuthSession(
             Guid.NewGuid(),
             "Fookbase\nMobile",
             DateTimeOffset.UtcNow,
