@@ -4,9 +4,7 @@ namespace Fookbase.Api.Modules.Identity.Entities;
 
 public sealed class User : IdentityUser<Guid>
 {
-    private User()
-    {
-    }
+    private User(){}
 
     public User(Guid id, string? email, string userName, DateTimeOffset createdAt)
     {
