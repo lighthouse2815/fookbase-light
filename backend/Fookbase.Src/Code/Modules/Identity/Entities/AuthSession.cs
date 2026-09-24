@@ -37,6 +37,7 @@ public sealed class AuthSession
     private static string? SanitizeUserAgent(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
-        return value.Trim().Replace("\r", string.Empty).Replace("\n", string.Empty)[..Math.Min(256, value.Trim().Length)];
+        var sanitized = value.Trim().Replace("\r", string.Empty).Replace("\n", string.Empty);
+        return sanitized[..Math.Min(256, sanitized.Length)];
     }
 }
