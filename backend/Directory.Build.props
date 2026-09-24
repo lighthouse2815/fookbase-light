@@ -1,8 +1,4 @@
 <Project>
-  <PropertyGroup>
-    <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
-  </PropertyGroup>
-
   <ItemGroup>
     <Using Include="Fookbase.Api.Persistence" />
   </ItemGroup>
