@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
-[Table("AuthSessions")]
 [Index(nameof(UserId), nameof(ExpiresAtUtc))]
 public sealed class AuthSession
 {
