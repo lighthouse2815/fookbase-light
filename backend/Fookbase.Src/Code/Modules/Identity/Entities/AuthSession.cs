@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Identity.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
@@ -12,7 +13,7 @@ public sealed class AuthSession
     {
         Id = Guid.NewGuid();
         UserId = userId;
-        UserAgent = SanitizeUserAgent(userAgent);
+        UserAgent = IdentityInputSanitizer.SanitizeUserAgent(userAgent);
         CreatedAtUtc = now;
         LastSeenAtUtc = now;
         ExpiresAtUtc = expiresAt;
@@ -30,11 +31,4 @@ public sealed class AuthSession
     public bool IsActiveAt(DateTimeOffset now) => RevokedAtUtc is null && ExpiresAtUtc > now;
     public void Touch(DateTimeOffset now) => LastSeenAtUtc = now;
     public void Revoke(DateTimeOffset now) => RevokedAtUtc ??= now;
-
-    private static string? SanitizeUserAgent(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        var sanitized = value.Trim().Replace("\r", string.Empty).Replace("\n", string.Empty);
-        return sanitized[..Math.Min(256, sanitized.Length)];
-    }
 }
