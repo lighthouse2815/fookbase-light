@@ -5,7 +5,7 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 public class AuthSessionTests
 {
     [Fact]
-    public void Create_removes_line_breaks_from_user_agent()
+    public void Constructor_removes_line_breaks_from_user_agent()
     {
         var session = new AuthSession(
             Guid.NewGuid(),
