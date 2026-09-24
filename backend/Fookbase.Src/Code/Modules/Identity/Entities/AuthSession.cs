@@ -1,5 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Identity.Entities;
 
+[Table("AuthSessions")]
+[Index(nameof(UserId), nameof(ExpiresAtUtc))]
 public sealed class AuthSession
 {
     private AuthSession() { }
@@ -16,6 +22,7 @@ public sealed class AuthSession
 
     public Guid Id { get; private set; }
     public Guid UserId { get; private set; }
+    [MaxLength(256)]
     public string? UserAgent { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset LastSeenAtUtc { get; private set; }
