@@ -54,7 +54,7 @@ public sealed class JwtTokenService(JwtOptions options)
     public RefreshTokenResult CreateRefreshToken(Guid userId, Guid sessionId, DateTimeOffset now)
     {
         var rawToken = Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(64));
-        var refreshToken = RefreshToken.Create(
+        var refreshToken = new RefreshToken(
             Guid.NewGuid(),
             userId,
             HashRefreshToken(rawToken),

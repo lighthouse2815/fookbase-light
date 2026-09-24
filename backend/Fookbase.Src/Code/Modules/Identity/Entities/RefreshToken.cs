@@ -6,7 +6,7 @@ public sealed class RefreshToken
     {
     }
 
-    private RefreshToken(
+    public RefreshToken(
         Guid id,
         Guid userId,
         string tokenHash,
@@ -36,15 +36,6 @@ public sealed class RefreshToken
     public DateTimeOffset? RevokedAt { get; private set; }
 
     public Guid? ReplacedByTokenId { get; private set; }
-
-    public static RefreshToken Create(
-        Guid id,
-        Guid userId,
-        string tokenHash,
-        Guid sessionId,
-        DateTimeOffset createdAt,
-        DateTimeOffset expiresAt) =>
-        new(id, userId, tokenHash, sessionId, createdAt, expiresAt);
 
     public bool IsActiveAt(DateTimeOffset now) =>
         RevokedAt is null && ExpiresAt > now;
