@@ -8,8 +8,6 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.Property(user => user.CreatedAt).IsRequired();
-
         builder.HasIndex(user => user.NormalizedEmail)
             .HasDatabaseName("EmailIndex")
             .IsUnique();
