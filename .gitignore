@@ -31,6 +31,9 @@ pnpm-debug.log*
 .directory
 .Trash-*
 
+# Local study notes
+abc.txt
+
 # Editors and IDEs
 .vscode/
 .idea/
