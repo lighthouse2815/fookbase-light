@@ -9,9 +9,7 @@ namespace Fookbase.Api.Modules.Identity.Entities;
 [Index(nameof(SessionId), nameof(ExpiresAt))]
 public sealed class RefreshToken
 {
-    private RefreshToken()
-    {
-    }
+    private RefreshToken(){}
 
     public RefreshToken(
         Guid id,
@@ -37,6 +35,7 @@ public sealed class RefreshToken
 
     [MaxLength(64)]
     public string TokenHash { get; private set; } = string.Empty;
+
     public Guid SessionId { get; private set; }
 
     public AuthSession Session { get; private set; } = null!;
@@ -51,14 +50,13 @@ public sealed class RefreshToken
 
     public RefreshToken? ReplacedByToken { get; private set; }
 
-    public bool IsActiveAt(DateTimeOffset now) =>
-        RevokedAt is null && ExpiresAt > now;
+    public bool IsActiveAt(DateTimeOffset now) => RevokedAt is null && ExpiresAt > now;
 
     public void Revoke(DateTimeOffset revokedAt, Guid? replacedByTokenId = null)
     {
         if (RevokedAt is not null)
         {
-            throw new InvalidOperationException("The refresh token is already revoked.");
+            throw new InvalidOperationException("refresh token đã được revoked trước đó rồi");
         }
 
         RevokedAt = revokedAt;
