@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../api/client'
 import { mediaApi, type Media } from '../../../api/media'
 import { storiesApi, type Story, type StoryPrivacy, type StoryTrayAuthor } from '../../../api/stories'
+import { resolveProfileImageUrl } from '../../../api/users'
 import StoryViewer from './StoryViewer'
 
 const acceptedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
@@ -49,14 +50,14 @@ export default function StoryTray() {
     {error && <p className="mb-2 rounded-lg bg-danger/15 px-3 py-2 text-xs text-danger">{error} <button type="button" onClick={() => void load()} className="ml-1 underline">Thử lại</button></p>}
     <div ref={trayRef} className="flex gap-2 overflow-x-auto scroll-smooth pb-1 pr-1">
       <button type="button" onClick={() => ownGroup ? setSelection({ authorIndex: groups.indexOf(ownGroup), storyIndex: 0 }) : setIsCreateOpen(true)} className="relative h-40 w-[108px] shrink-0 overflow-hidden rounded-xl border border-border bg-surface-2 text-left shadow-sm">
-        {ownGroup?.author.avatarUrl ? <img src={ownGroup.author.avatarUrl} className="h-full w-full object-cover opacity-75" alt="" /> : <span className="grid h-full place-items-center text-3xl">＋</span>}
+        {ownGroup?.author.avatarUrl ? <img src={resolveProfileImageUrl(ownGroup.author.avatarUrl)} className="h-full w-full object-cover opacity-75" alt="" /> : <span className="grid h-full place-items-center text-3xl">＋</span>}
         <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent px-2 pb-2 pt-8 text-xs font-semibold text-white">{ownGroup ? 'Story của bạn' : 'Tạo Story'}</span>
         <span className="absolute left-1/2 top-2 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full border-2 border-white bg-primary text-sm text-white">＋</span>
       </button>
       {isLoading && Array.from({ length: 5 }, (_, index) => <div key={index} className="h-40 w-[108px] shrink-0 animate-pulse rounded-xl bg-surface-2" />)}
       {groups.map((group, authorIndex) => group !== ownGroup && <button key={group.author.userId} type="button" onClick={() => setSelection({ authorIndex, storyIndex: 0 })} className="relative h-40 w-[108px] shrink-0 overflow-hidden rounded-xl border bg-surface-2 text-left shadow-sm" style={{ borderColor: group.hasUnseenStories ? 'var(--color-primary)' : 'var(--color-border)' }}>
-        {group.author.avatarUrl ? <img src={group.author.avatarUrl} className="h-full w-full object-cover opacity-75" alt="" /> : <span className="grid h-full place-items-center text-2xl text-text-muted">{group.author.displayName.slice(0, 2).toUpperCase()}</span>}
-        <span className="absolute left-1.5 top-1.5 grid h-8 w-8 place-items-center overflow-hidden rounded-full border-2 border-primary bg-surface text-[10px] font-bold text-text">{group.author.avatarUrl ? <img src={group.author.avatarUrl} className="h-full w-full object-cover" alt="" /> : group.author.displayName.slice(0, 2).toUpperCase()}</span>
+        {group.author.avatarUrl ? <img src={resolveProfileImageUrl(group.author.avatarUrl)} className="h-full w-full object-cover opacity-75" alt="" /> : <span className="grid h-full place-items-center text-2xl text-text-muted">{group.author.displayName.slice(0, 2).toUpperCase()}</span>}
+        <span className="absolute left-1.5 top-1.5 grid h-8 w-8 place-items-center overflow-hidden rounded-full border-2 border-primary bg-surface text-[10px] font-bold text-text">{group.author.avatarUrl ? <img src={resolveProfileImageUrl(group.author.avatarUrl)} className="h-full w-full object-cover" alt="" /> : group.author.displayName.slice(0, 2).toUpperCase()}</span>
         <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 to-transparent px-2 pb-2 pt-8 text-xs font-semibold text-white line-clamp-2">{group.author.displayName}</span>
       </button>)}
     </div>

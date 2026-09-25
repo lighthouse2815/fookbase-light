@@ -12,6 +12,7 @@ using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Stories.DTOs.Responses;
 using Fookbase.Api.Modules.Stories.Entities;
+using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -69,6 +70,28 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         using var afterDelete = factory.Services.CreateScope();
         var afterDeleteDb = afterDelete.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.False(await afterDeleteDb.StoryMediaReferences.AnyAsync(reference => reference.StoryId == imageStory.Id));
+    }
+
+    [Fact]
+    public async Task Story_responses_include_the_uploaded_avatar_path()
+    {
+        var ownerId = (await CreateUsersAsync(1))[0];
+        var avatarMediaId = await CreateReadyMediaAsync(ownerId, MediaType.Image);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var profile = UserProfile.Create(ownerId, "story_author", DateTimeOffset.UtcNow);
+            profile.Update("Story Author", null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
+            db.UserProfiles.Add(profile);
+            await db.SaveChangesAsync();
+        }
+
+        using var owner = CreateAuthenticatedClient(ownerId);
+        var story = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.Image), "avatar", "public");
+        var tray = await ReadAsync<StoryTrayResponse>(await owner.GetAsync("/api/stories"));
+
+        Assert.Equal($"/api/users/{ownerId}/avatar", story.Author.AvatarUrl);
+        Assert.Equal($"/api/users/{ownerId}/avatar", tray.Items.Single(item => item.Author.UserId == ownerId).Author.AvatarUrl);
     }
 
     [Fact]

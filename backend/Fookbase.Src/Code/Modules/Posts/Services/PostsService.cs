@@ -11,6 +11,7 @@ using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Users.Common;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
@@ -1370,10 +1371,52 @@ public sealed class PostsService(
             : await dbContext.Pages.AsNoTracking().Where(page => pageIds.Contains(page.Id) && page.DeletedAtUtc == null)
                 .Select(page => new PagePostIdentity(page.Id, page.Username, page.Name, page.AvatarMediaId))
                 .ToDictionaryAsync(page => page.Id, cancellationToken);
+        var authorUserIds = posts.Where(post => post.ContainerType != PostContainerType.Page)
+            .Select(post => post.AuthorUserId)
+            .Distinct()
+            .ToArray();
+        var authors = authorUserIds.Length == 0
+            ? new Dictionary<Guid, UserPostIdentity>()
+            : await dbContext.UserProfiles.AsNoTracking()
+                .Where(profile => authorUserIds.Contains(profile.UserId))
+                .Select(profile => new UserPostIdentity(
+                    profile.UserId,
+                    profile.Username,
+                    profile.DisplayName,
+                    profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar"))
+                .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
+        var missingAuthorUserIds = authorUserIds.Where(authorUserId => !authors.ContainsKey(authorUserId)).ToArray();
+        var fallbackAuthorUsernames = missingAuthorUserIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await dbContext.Users.AsNoTracking()
+                .Where(user => missingAuthorUserIds.Contains(user.Id))
+                .ToDictionaryAsync(
+                    user => user.Id,
+                    user => user.UserName ?? "Người dùng",
+                    cancellationToken);
 
         return posts.Select(post =>
         {
             var page = post.ContainerType == PostContainerType.Page ? pages.GetValueOrDefault(post.ContainerId) : null;
+            var author = authors.GetValueOrDefault(post.AuthorUserId);
+            var fallbackUsername = fallbackAuthorUsernames.GetValueOrDefault(post.AuthorUserId);
+            var username = PublicProfileHandle.From(author?.Username ?? fallbackUsername ?? string.Empty);
+            var displayName = PublicProfileHandle.From(author?.DisplayName ?? fallbackUsername ?? string.Empty);
+            var displayAuthor = page is null
+                ? new PostDisplayIdentityResponse(
+                    "user",
+                    post.AuthorUserId,
+                    username,
+                    string.IsNullOrWhiteSpace(displayName)
+                        ? (string.IsNullOrWhiteSpace(username) ? "Người dùng" : username)
+                        : displayName,
+                    author?.AvatarUrl)
+                : new PostDisplayIdentityResponse(
+                    "page",
+                    page.Id,
+                    page.Username,
+                    page.Name,
+                    page.AvatarMediaId is null ? null : $"/api/pages/{page.Id}/avatar");
             return new PostResponse(
             post.Id,
             page is null ? post.AuthorUserId : null,
@@ -1387,8 +1430,7 @@ public sealed class PostsService(
                 .Where(item => item.PostId == post.Id)
                 .ToDictionary(item => item.Type.ToString().ToLowerInvariant(), item => item.Count),
             viewerReactions.GetValueOrDefault(post.Id),
-            page is null ? null : new PostDisplayIdentityResponse("page", page.Id, page.Username, page.Name,
-                page.AvatarMediaId is null ? null : $"/api/pages/{page.Id}/avatar"),
+            displayAuthor,
             post.ContainerType.ToString().ToLowerInvariant(),
             mentionRows
                 .Where(mention => mention.SourceId == post.Id && mentionedProfiles.ContainsKey(mention.UserId))
@@ -1422,6 +1464,8 @@ public sealed class PostsService(
             TextBackground: post.TextBackground);
 
     private sealed record PagePostIdentity(Guid Id, string Username, string Name, Guid? AvatarMediaId);
+
+    private sealed record UserPostIdentity(Guid UserId, string Username, string DisplayName, string? AvatarUrl);
 
     private sealed record ReactionListRow(Guid UserId, ReactionType Type);
 

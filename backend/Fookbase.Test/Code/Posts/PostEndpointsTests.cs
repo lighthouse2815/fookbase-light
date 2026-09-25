@@ -56,6 +56,58 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task Post_responses_include_the_user_display_identity_and_avatar()
+    {
+        var authorUserId = (await CreateUserIdsAsync(1))[0];
+        const string username = "post_author";
+        await CreateProfileAsync(authorUserId, username);
+        var avatarMediaId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var profile = await db.UserProfiles.SingleAsync(item => item.UserId == authorUserId);
+            profile.Update("Post Author", null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
+            await db.SaveChangesAsync();
+        }
+
+        using var author = CreateAuthenticatedClient(authorUserId);
+        var created = await CreatePostAsync(author, "post author identity", "public");
+        var loaded = await ReadAsync<PostResponse>(await author.GetAsync($"/api/posts/{created.Id}"));
+
+        var displayAuthor = Assert.IsType<PostDisplayIdentityResponse>(loaded.DisplayAuthor);
+        Assert.Equal("user", displayAuthor.Type);
+        Assert.Equal(authorUserId, displayAuthor.Id);
+        Assert.Equal(username, displayAuthor.Username);
+        Assert.Equal("Post Author", displayAuthor.Name);
+        Assert.Equal($"/api/users/{authorUserId}/avatar", displayAuthor.AvatarUrl);
+    }
+
+    [Fact]
+    public async Task Post_responses_fall_back_to_the_account_username_without_a_profile()
+    {
+        var authorUserId = Guid.NewGuid();
+        const string username = "post_without_profile";
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.Users.Add(new User(
+                authorUserId,
+                "post-without-profile@example.com",
+                username,
+                DateTimeOffset.UtcNow));
+            await db.SaveChangesAsync();
+        }
+
+        using var author = CreateAuthenticatedClient(authorUserId);
+        var created = await CreatePostAsync(author, "post without profile", "public");
+
+        var displayAuthor = Assert.IsType<PostDisplayIdentityResponse>(created.DisplayAuthor);
+        Assert.Equal(username, displayAuthor.Username);
+        Assert.Equal(username, displayAuthor.Name);
+        Assert.Null(displayAuthor.AvatarUrl);
+    }
+
+    [Fact]
     public async Task Text_posts_persist_selected_background_and_privacy()
     {
         var authorUserId = (await CreateUserIdsAsync(1))[0];
@@ -393,6 +445,16 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var authorUserId = users[0];
         var sharerUserId = users[1];
         var viewerUserId = users[2];
+        const string authorUsername = "shared_author";
+        await CreateProfileAsync(authorUserId, authorUsername);
+        var avatarMediaId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var profile = await db.UserProfiles.SingleAsync(item => item.UserId == authorUserId);
+            profile.Update("Shared Author", null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
+            await db.SaveChangesAsync();
+        }
         await CreateFriendshipAsync(sharerUserId, viewerUserId);
         using var author = CreateAuthenticatedClient(authorUserId);
         using var sharer = CreateAuthenticatedClient(sharerUserId);
@@ -408,6 +470,9 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.NotNull(feedShare.Share);
         Assert.Equal(original.Id, feedShare.Share!.OriginalPostId);
         Assert.Equal(original.Id, feedShare.Share.OriginalPost.Id);
+        Assert.Equal("Shared Author", feedShare.Share.OriginalAuthor.Name);
+        Assert.Equal(authorUsername, feedShare.Share.OriginalAuthor.Username);
+        Assert.Equal($"/api/users/{authorUserId}/avatar", feedShare.Share.OriginalAuthor.AvatarUrl);
 
         Assert.Equal(HttpStatusCode.OK, (await author.PutAsJsonAsync($"/api/posts/{original.Id}", new
         {

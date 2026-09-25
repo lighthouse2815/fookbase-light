@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../api/client'
 import { storiesApi, type Story, type StoryReactionType, type StoryTrayAuthor, type StoryViewer } from '../../../api/stories'
+import { resolveProfileImageUrl } from '../../../api/users'
 
 const imageDurationMs = 5_000
 const reactionChoices: ReadonlyArray<[StoryReactionType, string]> = [
@@ -181,7 +182,7 @@ export default function StoryViewer({
           </span>)}
         </div>
         <div className="absolute inset-x-4 top-7 z-20 flex items-center gap-3">
-          {active.author.avatarUrl ? <img src={active.author.avatarUrl} className="h-9 w-9 rounded-full object-cover" alt="" /> : <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-xs font-bold">{active.author.displayName.slice(0, 2).toUpperCase()}</span>}
+          {active.author.avatarUrl ? <img src={resolveProfileImageUrl(active.author.avatarUrl)} className="h-9 w-9 rounded-full object-cover" alt="" /> : <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-xs font-bold">{active.author.displayName.slice(0, 2).toUpperCase()}</span>}
           <div className="min-w-0"><p className="truncate text-sm font-semibold">{active.author.displayName} <span className="font-normal text-white/70">@{active.author.username}</span></p><p className="text-xs text-white/70">{new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(active.createdAtUtc))}</p></div>
           <button type="button" className="ml-auto grid h-9 w-9 place-items-center rounded-full border-0 bg-black/35 text-xl text-white" onClick={onClose} aria-label="Đóng Story">×</button>
         </div>

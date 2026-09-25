@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import { eventsApi } from '../../api/events'
 import type { Event, EventParticipant } from '../../api/events'
 import type { Post } from '../../api/posts'
+import { resolveProfileImageUrl } from '../../api/users'
 
 export default function EventDetailPage() {
   const { eventId = '' } = useParams()
@@ -44,7 +45,7 @@ export default function EventDetailPage() {
 
   return <main className="mx-auto min-h-screen max-w-3xl px-3 py-5">
     <Link to="/events" className="text-sm text-primary">← Sự kiện</Link>
-    {event.coverUrl && <img src={event.coverUrl} alt="" className="mt-4 h-64 w-full rounded-xl object-cover" />}
+    {event.coverUrl && <img src={resolveProfileImageUrl(event.coverUrl)} alt="" className="mt-4 h-64 w-full rounded-xl object-cover" />}
     <section className="mt-4 rounded-xl border border-border bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase text-primary">{event.status} · {event.privacy}</p><h1 className="font-heading text-3xl font-bold text-text">{event.name}</h1><p className="mt-2 text-text-muted">Được tổ chức bởi {event.displayHost.name}</p></div>{event.canManage && <div className="flex gap-2">{event.status === 'draft' && <button type="button" onClick={() => void eventsApi.publish(event.id).then(load)} className="rounded bg-primary px-3 py-2 text-sm text-white">Công bố</button>}{event.status === 'published' && <button type="button" onClick={() => void eventsApi.cancel(event.id).then(load)} className="rounded border border-red-500/50 px-3 py-2 text-sm text-red-400">Hủy sự kiện</button>}</div>}</div>
       <p className="mt-4 text-text">{new Date(event.startsAtUtc).toLocaleString()}{event.endsAtUtc && ` – ${new Date(event.endsAtUtc).toLocaleString()}`}</p>

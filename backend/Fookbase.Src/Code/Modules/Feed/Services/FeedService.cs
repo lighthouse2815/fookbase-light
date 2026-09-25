@@ -691,9 +691,7 @@ public sealed class FeedService(
                     share.Caption,
                     share.CreatedAtUtc,
                     actor,
-                    post.ContainerType == PostContainerType.Page && summary.DisplayAuthor is { } pageAuthor
-                        ? pageAuthor
-                        : new PostDisplayIdentityResponse(
+                    summary.DisplayAuthor ?? new PostDisplayIdentityResponse(
                             "user", post.AuthorUserId,
                             PublicProfileHandle.From(profile?.Username ?? string.Empty),
                             PublicProfileHandle.From(profile?.DisplayName ?? string.Empty) is { Length: > 0 } originalDisplayName

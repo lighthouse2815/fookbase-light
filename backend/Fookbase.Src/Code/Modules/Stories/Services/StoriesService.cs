@@ -549,7 +549,7 @@ public sealed class StoriesService(
                 profile.UserId,
                 profile.Username,
                 profile.DisplayName,
-                profile.AvatarUrl))
+                profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar"))
             .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
     }
 

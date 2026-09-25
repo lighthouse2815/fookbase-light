@@ -24,27 +24,6 @@ const roleLabels: Record<GroupMember['role'], string> = {
   member: 'Thành viên',
 }
 
-function toAuthor(post: Post): UserProfile {
-  const authorUserId = post.authorUserId!
-  return {
-    userId: authorUserId,
-    username: 'member',
-    displayName: 'Thành viên nhóm',
-    avatarUrl: null,
-    bio: null,
-    coverUrl: null,
-    dateOfBirth: null,
-    currentCity: null,
-    createdAt: post.createdAtUtc,
-    updatedAt: post.updatedAtUtc ?? post.createdAtUtc,
-    followerCount: 0,
-    followingCount: 0,
-    isFollowing: null,
-    isFollowedBy: null,
-    friendshipState: null,
-  }
-}
-
 export default function GroupDetailPage() {
   const { groupId } = useParams()
   const { session } = useAuth()
@@ -378,7 +357,7 @@ export default function GroupDetailPage() {
         <section id="group-discussion" className="flex min-w-0 scroll-mt-5 flex-col gap-4">
           {isMember && <NewPostBox onPost={createPost} />}
           {!isMember && <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-muted">Tham gia nhóm để đăng bài, bình luận và bày tỏ cảm xúc.</p>}
-          {posts.map((post) => <div key={post.id} className="relative"><LivePostCard post={post} author={toAuthor(post)} currentUserId={session!.user.id} onPostUpdated={(updated) => setPosts((current) => current.map((item) => item.id === updated.id ? updated : item))} onPostDeleted={(postId) => setPosts((current) => current.filter((postItem) => postItem.id !== postId))} />{canModerate && post.authorUserId !== session!.user.id && <button type="button" onClick={() => void removeGroupPost(post.id)} className="absolute right-3 top-3 rounded-md border border-border bg-surface px-2 py-1 text-xs text-text-muted cursor-pointer">Gỡ bài viết</button>}</div>)}
+          {posts.map((post) => <div key={post.id} className="relative"><LivePostCard post={post} currentUserId={session!.user.id} onPostUpdated={(updated) => setPosts((current) => current.map((item) => item.id === updated.id ? updated : item))} onPostDeleted={(postId) => setPosts((current) => current.filter((postItem) => postItem.id !== postId))} />{canModerate && post.authorUserId !== session!.user.id && <button type="button" onClick={() => void removeGroupPost(post.id)} className="absolute right-3 top-3 rounded-md border border-border bg-surface px-2 py-1 text-xs text-text-muted cursor-pointer">Gỡ bài viết</button>}</div>)}
           {posts.length === 0 && <p className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">Chưa có bài viết nào trong nhóm.</p>}
           <PaginationControls hasMore={postsCursor !== null} isLoading={false} error={null} label="Xem thêm bài viết" onLoadMore={() => void loadMorePosts()} />
         </section>

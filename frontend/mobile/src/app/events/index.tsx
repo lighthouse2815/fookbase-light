@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsApi, type Event, type EventInvitation } from '../../api/events'
+import { resolveProfileImageUrl } from '../../api/users'
 import { useAuth } from '../../auth/AuthProvider'
 import { Avatar, Button, Card, ErrorNotice, Field, Icon, Label, Loading, Screen, styles, useTheme } from '../../components/ui'
 
@@ -20,14 +21,16 @@ function eventDate(value: string) {
 
 function EventCard({ event, pending, onRsvp }: { event: Event; pending: boolean; onRsvp: (status: 'going' | 'interested' | null) => void }) {
   const theme = useTheme()
+  const coverUrl = event.coverUrl ? resolveProfileImageUrl(event.coverUrl) : null
+  const hostAvatarUrl = event.displayHost.avatarUrl ? resolveProfileImageUrl(event.displayHost.avatarUrl) : null
   const activity = event.status === 'cancelled' ? 'Đã hủy' : event.viewerRsvpStatus === 'going' ? 'Bạn sẽ tham gia' : event.viewerRsvpStatus === 'interested' ? 'Bạn quan tâm' : null
   return <Card style={eventStyles.eventCard}>
-    {event.coverUrl ? <Image source={{ uri: event.coverUrl }} contentFit="cover" style={eventStyles.cover} /> : <View style={[eventStyles.cover, { backgroundColor: `${theme.accent}20` }]}><Icon name="sparkle" color={theme.accent} size={32} /></View>}
+    {coverUrl ? <Image source={{ uri: coverUrl }} contentFit="cover" style={eventStyles.cover} /> : <View style={[eventStyles.cover, { backgroundColor: `${theme.accent}20` }]}><Icon name="sparkle" color={theme.accent} size={32} /></View>}
     <View style={eventStyles.content}>
       <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '900', letterSpacing: 0.4 }}>{eventDate(event.startsAtUtc).toUpperCase()}</Text>
       <Label style={eventStyles.name} numberOfLines={2}>{event.name}</Label>
       <View style={eventStyles.meta}><Icon name={event.locationType === 'online' ? 'globe' : 'people'} color={theme.muted} size={15} /><Text style={{ color: theme.muted, fontSize: 12 }} numberOfLines={1}>{event.locationType === 'online' ? 'Sự kiện trực tuyến' : event.locationName || event.address || 'Địa điểm sẽ được cập nhật'}</Text></View>
-      <View style={eventStyles.meta}><Avatar label={event.displayHost.name} uri={event.displayHost.avatarUrl} size={20} /><Text style={{ color: theme.muted, fontSize: 12 }} numberOfLines={1}>Bởi {event.displayHost.name} · {event.goingCount.toLocaleString('vi-VN')} sẽ tham gia</Text></View>
+      <View style={eventStyles.meta}><Avatar label={event.displayHost.name} uri={hostAvatarUrl} size={20} /><Text style={{ color: theme.muted, fontSize: 12 }} numberOfLines={1}>Bởi {event.displayHost.name} · {event.goingCount.toLocaleString('vi-VN')} sẽ tham gia</Text></View>
       {activity && <View style={[eventStyles.status, { backgroundColor: `${event.status === 'cancelled' ? theme.danger : theme.success}1c` }]}><Text style={{ color: event.status === 'cancelled' ? theme.danger : theme.success, fontSize: 12, fontWeight: '800' }}>{activity}</Text></View>}
       {event.status !== 'cancelled' && <View style={styles.row}><Button compact title={event.viewerRsvpStatus === 'going' ? 'Không tham gia' : 'Tham gia'} secondary={event.viewerRsvpStatus === 'going'} disabled={pending} onPress={() => onRsvp(event.viewerRsvpStatus === 'going' ? null : 'going')} /><Button compact title={event.viewerRsvpStatus === 'interested' ? 'Bỏ quan tâm' : 'Quan tâm'} secondary={event.viewerRsvpStatus === 'interested'} disabled={pending} onPress={() => onRsvp(event.viewerRsvpStatus === 'interested' ? null : 'interested')} /></View>}
     </View>

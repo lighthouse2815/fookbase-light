@@ -58,6 +58,34 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task User_event_hosts_and_participants_include_the_uploaded_avatar_path()
+    {
+        var users = await CreateUsersAsync(2);
+        var ownerId = users[0];
+        var attendeeId = users[1];
+        var avatarMediaId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var ownerProfile = await db.UserProfiles.SingleAsync(item => item.UserId == ownerId);
+            var attendeeProfile = await db.UserProfiles.SingleAsync(item => item.UserId == attendeeId);
+            ownerProfile.Update(null, null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
+            attendeeProfile.Update(null, null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
+            await db.SaveChangesAsync();
+        }
+
+        using var owner = CreateAuthenticatedClient(ownerId);
+        using var attendee = CreateAuthenticatedClient(attendeeId);
+        var item = await CreateEventAsync(owner, "public");
+        await attendee.PostAsJsonAsync($"/api/events/{item.Id}/rsvp", new { status = "going" });
+        var participants = await ReadAsync<EventCursorPageResponse<EventParticipantResponse>>(
+            await owner.GetAsync($"/api/events/{item.Id}/participants?limit=20"));
+
+        Assert.Equal($"/api/users/{ownerId}/avatar", item.DisplayHost.AvatarUrl);
+        Assert.Equal($"/api/users/{attendeeId}/avatar", Assert.Single(participants.Items).AvatarUrl);
+    }
+
+    [Fact]
     public async Task Accepting_an_event_invitation_creates_a_going_participant()
     {
         var users = await CreateUsersAsync(2);
