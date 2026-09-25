@@ -10,9 +10,12 @@ interface NavItem {
   path: string
   icon: SidebarIconName
   label: string
+  external?: boolean
 }
 
-type SidebarIconName = 'friends' | 'groups' | 'memories' | 'saved' | 'reels' | 'games' | 'feed' | 'messages' | 'ai' | 'birthdays' | 'events' | 'pages'
+type SidebarIconName = 'friends' | 'groups' | 'memories' | 'saved' | 'reels' | 'games' | 'music' | 'feed' | 'messages' | 'ai' | 'birthdays' | 'events' | 'pages'
+
+const musicForYouUrl = 'https://music-for-you.pages.dev/'
 
 const primaryItems: NavItem[] = [
   { path: '/explore', icon: 'friends', label: 'Bạn bè' },
@@ -21,6 +24,7 @@ const primaryItems: NavItem[] = [
   { path: '/saved', icon: 'saved', label: 'Đã lưu' },
   { path: '/reels', icon: 'reels', label: 'Thước phim' },
   { path: '/games', icon: 'games', label: 'Chơi game' },
+  { path: musicForYouUrl, icon: 'music', label: 'Âm nhạc', external: true },
   { path: '/ai-chat', icon: 'ai', label: 'Trợ lý AI' },
 ]
 
@@ -39,6 +43,7 @@ function SidebarIcon({ name }: { name: SidebarIconName }) {
     saved: <><path d="M5 2.5h14v19L12 17l-7 4.5v-19Z" fill="#ca43dd" /><path d="M5 2.5h14v7.7c-4.62.25-9.28-1.26-14-4.55V2.5Z" fill="#f05c9f" opacity=".8" /></>,
     reels: <><rect x="2" y="3" width="20" height="18" rx="4" fill="#f05285" /><path d="m3 8 5-5m2 5 5-5m2 5 4-4" stroke="white" strokeWidth="2" /><path d="m10 10 5 3-5 3v-6Z" fill="white" /></>,
     games: <><path d="M5.7 9.2h12.6c2.75 0 4.35 2.08 3.8 4.72l-1.05 4.82c-.42 1.94-2.36 2.9-4.08 2.03l-2.86-1.44a4.55 4.55 0 0 0-4.2 0l-2.86 1.44c-1.72.87-3.66-.1-4.08-2.03L1.9 13.92C1.35 11.28 2.95 9.2 5.7 9.2Z" fill="#1877f2" /><path d="M7 14h4m-2-2v4" stroke="white" strokeWidth="1.8" strokeLinecap="round" /><circle cx="17.2" cy="13.2" r="1.15" fill="#f7d046" /><circle cx="19.25" cy="15.25" r="1.15" fill="#f7d046" /></>,
+    music: <><circle cx="12" cy="12" r="11" fill="#8b5cf6" /><path d="M15.8 5.5v9.15a3.15 3.15 0 1 1-1.7-2.8V8.25l5-1.2v6.4a3.15 3.15 0 1 1-1.7-2.8v-5.15l-1.6.4Z" fill="white" /></>,
     feed: <><rect x="2" y="3" width="20" height="18" rx="3" fill="#3d9df5" /><rect x="5" y="6" width="14" height="7" rx="1.5" fill="white" /><circle cx="7.4" cy="9.5" r="1.35" fill="#6db6f5" /><path d="M10 8h6m-6 2.7h4" stroke="#728294" strokeWidth="1.25" strokeLinecap="round" /><circle cx="17.5" cy="17" r="3.5" fill="#e8f3ff" /><path d="M17.5 15.2v1.95l1.2.72" fill="none" stroke="#3d9df5" strokeWidth="1.2" strokeLinecap="round" /></>,
     messages: <><circle cx="12" cy="12" r="11" fill="#1877f2" /><path d="M5.5 13.5 10 8.8l2.7 2.5 4.8-2.5-4.5 4.7-2.75-2.48-4.75 2.48Z" fill="white" /></>,
     ai: <><circle cx="12" cy="12" r="11" fill="#7654d9" /><path d="m12 4.6.9 3.55 3.55.9-3.55.9L12 13.5l-.9-3.55-3.55-.9 3.55-.9L12 4.6Zm5.2 8.25.53 2.1 2.1.53-2.1.53-.53 2.1-.53-2.1-2.1-.53 2.1-.53.53-2.1ZM7.1 14.9l.42 1.68 1.68.42-1.68.42-.42 1.68-.42-1.68-1.68-.42 1.68-.42.42-1.68Z" fill="white" /></>,
@@ -51,6 +56,18 @@ function SidebarIcon({ name }: { name: SidebarIconName }) {
 }
 
 function SidebarLink({ item }: { item: NavItem }) {
+  if (item.external) {
+    return <a
+      href={item.path}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left no-underline transition-colors hover:bg-surface-2"
+    >
+      <SidebarIcon name={item.icon} />
+      <span className="text-[15px] font-semibold text-text">{item.label}</span>
+    </a>
+  }
+
   return <NavLink
     to={item.path}
     className={({ isActive }) => [
