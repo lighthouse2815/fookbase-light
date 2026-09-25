@@ -2,6 +2,7 @@ using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Shared.ErrorHandling;
@@ -705,18 +706,18 @@ public sealed class AuthenticationService(
 
     private async Task EnsureBootstrapAdminRoleAsync(User user)
     {
-        if (!await roleManager.RoleExistsAsync(AdminRole.Name))
+        if (!await roleManager.RoleExistsAsync(AppRoles.Admin))
         {
-            var createRole = await roleManager.CreateAsync(new IdentityRole<Guid>(AdminRole.Name));
-            if (!createRole.Succeeded && !await roleManager.RoleExistsAsync(AdminRole.Name))
+            var createRole = await roleManager.CreateAsync(new IdentityRole<Guid>(AppRoles.Admin));
+            if (!createRole.Succeeded && !await roleManager.RoleExistsAsync(AppRoles.Admin))
             {
                 throw new InvalidOperationException("The bootstrap administrator role could not be created.");
             }
         }
 
-        if (!await userManager.IsInRoleAsync(user, AdminRole.Name))
+        if (!await userManager.IsInRoleAsync(user, AppRoles.Admin))
         {
-            var addRole = await userManager.AddToRoleAsync(user, AdminRole.Name);
+            var addRole = await userManager.AddToRoleAsync(user, AppRoles.Admin);
             if (!addRole.Succeeded)
             {
                 throw new InvalidOperationException("The bootstrap administrator role could not be assigned.");

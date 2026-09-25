@@ -1,6 +1,7 @@
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
@@ -97,7 +98,7 @@ public sealed class AdministrationService(
             return ApplicationResult<AdminUserResponse>.Failure(NotFound("The user was not found."));
         }
 
-        if (await userManager.IsInRoleAsync(user, AdminRole.Name))
+        if (await userManager.IsInRoleAsync(user, AppRoles.Admin))
         {
             return ApplicationResult<AdminUserResponse>.Failure(Forbidden(
                 "Administrator accounts cannot be disabled through this endpoint."));

@@ -15,7 +15,7 @@ using Fookbase.Api.Modules.Feed.Endpoints;
 using Fookbase.Api.Modules.Groups.Endpoints;
 using Fookbase.Api.Modules.Admin;
 using Fookbase.Api.Modules.Admin.Endpoints;
-using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Controllers;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Middleware;
@@ -207,7 +207,7 @@ if (googleAuthenticationOptions.Enabled)
         });
 }
 builder.Services.AddAuthorization(options => options.AddPolicy(AdminPolicy.Name, policy =>
-    policy.RequireRole(AdminRole.Name)));
+    policy.RequireRole(AppRoles.Admin)));
 builder.Services.AddSignalR(options => options.AddFilter<AccountModerationHubFilter>());
 if (allowedOrigins.Length > 0)
 {
