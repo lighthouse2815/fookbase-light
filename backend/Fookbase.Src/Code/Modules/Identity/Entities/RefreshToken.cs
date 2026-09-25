@@ -31,14 +31,12 @@ public sealed class RefreshToken
 
     public Guid Id { get; private set; }
 
-    [ForeignKey(nameof(User))]
     public Guid UserId { get; private set; }
 
     public User User { get; private set; } = null!;
 
     [MaxLength(64)]
     public string TokenHash { get; private set; } = string.Empty;
-    [ForeignKey(nameof(Session))]
     public Guid SessionId { get; private set; }
 
     public AuthSession Session { get; private set; } = null!;
