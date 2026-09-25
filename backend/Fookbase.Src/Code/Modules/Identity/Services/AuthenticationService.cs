@@ -260,12 +260,9 @@ public sealed class AuthenticationService(
                 "The refresh token is invalid or expired.");
         }
 
-        if (currentToken.SessionId is not { } sessionId)
-        {
-            throw UnauthorizedFailure("invalid_refresh_token", "The refresh token is invalid or expired.");
-        }
-
-        var session = await dbContext.AuthSessions.SingleOrDefaultAsync(item => item.Id == sessionId, cancellationToken);
+        var session = await dbContext.AuthSessions.SingleOrDefaultAsync(
+            item => item.Id == currentToken.SessionId,
+            cancellationToken);
         if (session is null || session.UserId != user.Id || !session.IsActiveAt(now))
         {
             throw UnauthorizedFailure("invalid_refresh_token", "The refresh token is invalid or expired.");
@@ -306,16 +303,12 @@ public sealed class AuthenticationService(
         var currentToken = await dbContext.RefreshTokens.AsNoTracking().SingleOrDefaultAsync(
             token => token.TokenHash == tokenService.HashRefreshToken(request.RefreshToken) && token.UserId == userId,
             cancellationToken);
-        if (currentToken?.SessionId is { } sessionId)
+        if (currentToken is null)
         {
-            await RevokeSessionAsync(userId, sessionId, now, cancellationToken);
-            return;
+            throw new BusinessException(InvalidRefreshToken());
         }
 
-        var revoked = await RevokeRefreshTokenAsync(tokenService.HashRefreshToken(request.RefreshToken), userId, now,
-            cancellationToken);
-
-        if (!revoked) throw new BusinessException(InvalidRefreshToken());
+        await RevokeSessionAsync(userId, currentToken.SessionId, now, cancellationToken);
     }
 
     public async Task<AuthenticatedUserResponse> GetCurrentUserAsync(
@@ -777,18 +770,6 @@ public sealed class AuthenticationService(
         return true;
     }
 
-    private async Task<bool> RevokeRefreshTokenAsync(
-        string tokenHash,
-        Guid userId,
-        DateTimeOffset revokedAt,
-        CancellationToken cancellationToken) =>
-        await dbContext.RefreshTokens
-            .Where(token => token.TokenHash == tokenHash && token.UserId == userId &&
-                            token.RevokedAt == null && token.ExpiresAt > revokedAt)
-            .ExecuteUpdateAsync(
-                setters => setters.SetProperty(token => token.RevokedAt, revokedAt),
-                cancellationToken) == 1;
-
     private Task RevokeAllRefreshTokensAsync(
         Guid userId,
         DateTimeOffset revokedAt,
@@ -841,7 +822,7 @@ public sealed class AuthenticationService(
         if (sessionIds.Count == 0) return;
         await dbContext.AuthSessions.Where(session => sessionIds.Contains(session.Id))
             .ExecuteUpdateAsync(setters => setters.SetProperty(session => session.RevokedAtUtc, now), cancellationToken);
-        await dbContext.RefreshTokens.Where(token => sessionIds.Contains(token.SessionId!.Value) && token.RevokedAt == null && token.ExpiresAt > now)
+        await dbContext.RefreshTokens.Where(token => sessionIds.Contains(token.SessionId) && token.RevokedAt == null && token.ExpiresAt > now)
             .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, now), cancellationToken);
     }
 

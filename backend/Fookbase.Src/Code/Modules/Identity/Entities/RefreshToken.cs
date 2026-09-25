@@ -27,7 +27,7 @@ public sealed class RefreshToken
     public Guid UserId { get; private set; }
 
     public string TokenHash { get; private set; } = string.Empty;
-    public Guid? SessionId { get; private set; }
+    public Guid SessionId { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 
