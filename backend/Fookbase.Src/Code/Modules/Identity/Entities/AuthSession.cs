@@ -23,6 +23,8 @@ public sealed class AuthSession
 
     public Guid UserId { get; private set; }
 
+    public User User { get; private set; } = null!;
+
     [MaxLength(256)]
     public string? UserAgent { get; private set; }
 
