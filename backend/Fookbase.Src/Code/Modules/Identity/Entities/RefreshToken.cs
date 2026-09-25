@@ -1,5 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Identity.Entities;
 
+[Index(nameof(TokenHash), IsUnique = true)]
+[Index(nameof(UserId), nameof(ExpiresAt))]
+[Index(nameof(SessionId), nameof(ExpiresAt))]
 public sealed class RefreshToken
 {
     private RefreshToken()
@@ -24,10 +31,17 @@ public sealed class RefreshToken
 
     public Guid Id { get; private set; }
 
+    [ForeignKey(nameof(User))]
     public Guid UserId { get; private set; }
 
+    public User User { get; private set; } = null!;
+
+    [MaxLength(64)]
     public string TokenHash { get; private set; } = string.Empty;
+    [ForeignKey(nameof(Session))]
     public Guid SessionId { get; private set; }
+
+    public AuthSession Session { get; private set; } = null!;
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -35,7 +49,10 @@ public sealed class RefreshToken
 
     public DateTimeOffset? RevokedAt { get; private set; }
 
+    [ForeignKey(nameof(ReplacedByToken))]
     public Guid? ReplacedByTokenId { get; private set; }
+
+    public RefreshToken? ReplacedByToken { get; private set; }
 
     public bool IsActiveAt(DateTimeOffset now) =>
         RevokedAt is null && ExpiresAt > now;

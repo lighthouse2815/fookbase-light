@@ -7,7 +7,7 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 public sealed class RefreshTokenModelTests
 {
     [Fact]
-    public void Refresh_token_requires_a_session()
+    public void Refresh_token_uses_navigations_and_default_delete_behavior()
     {
         using var dbContext = new FookbaseDbContext(
             new DbContextOptionsBuilder<FookbaseDbContext>()
@@ -18,6 +18,9 @@ public sealed class RefreshTokenModelTests
         var sessionId = entityType.FindProperty(nameof(RefreshToken.SessionId))!;
 
         Assert.False(sessionId.IsNullable);
+        Assert.NotNull(entityType.FindNavigation(nameof(RefreshToken.User)));
+        Assert.NotNull(entityType.FindNavigation(nameof(RefreshToken.Session)));
+        Assert.NotNull(entityType.FindNavigation(nameof(RefreshToken.ReplacedByToken)));
 
         var foreignKey = Assert.Single(
             entityType.GetForeignKeys(),
@@ -25,6 +28,12 @@ public sealed class RefreshTokenModelTests
                    && key.Properties.Single().Name == nameof(RefreshToken.SessionId));
 
         Assert.True(foreignKey.IsRequired);
-        Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+        Assert.Equal(DeleteBehavior.Cascade, foreignKey.DeleteBehavior);
+
+        var replacementForeignKey = Assert.Single(
+            entityType.GetForeignKeys(),
+            key => key.PrincipalEntityType.ClrType == typeof(RefreshToken));
+
+        Assert.Equal(DeleteBehavior.ClientSetNull, replacementForeignKey.DeleteBehavior);
     }
 }
