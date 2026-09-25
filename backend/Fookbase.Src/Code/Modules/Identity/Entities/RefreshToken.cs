@@ -49,7 +49,6 @@ public sealed class RefreshToken
 
     public DateTimeOffset? RevokedAt { get; private set; }
 
-    [ForeignKey(nameof(ReplacedByToken))]
     public Guid? ReplacedByTokenId { get; private set; }
 
     public RefreshToken? ReplacedByToken { get; private set; }
