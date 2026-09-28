@@ -1,10 +1,6 @@
-namespace Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Identity.Domain.Enums;
 
-public enum ExternalLoginTicketPurpose
-{
-    IssueSession,
-    LinkExisting
-}
+namespace Fookbase.Api.Modules.Identity.Entities;
 
 public sealed class ExternalLoginTicket
 {

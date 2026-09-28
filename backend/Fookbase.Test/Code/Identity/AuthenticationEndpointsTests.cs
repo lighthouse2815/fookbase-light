@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Data;
+using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Persistence;
