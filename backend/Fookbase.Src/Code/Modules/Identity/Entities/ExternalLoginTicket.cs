@@ -1,12 +1,12 @@
 namespace Fookbase.Api.Modules.Identity.Entities;
 
-public enum ExternalLoginCompletionPurpose
+public enum ExternalLoginTicketPurpose
 {
     IssueSession,
     LinkExisting
 }
 
-public sealed class ExternalLoginCompletion
+public sealed class ExternalLoginTicket
 {
     private const int CodeHashLength = 64;
     private const int ProviderLength = 32;
@@ -14,13 +14,13 @@ public sealed class ExternalLoginCompletion
     private const int EmailLength = 256;
     private const int ClientLength = 32;
 
-    private ExternalLoginCompletion()
+    private ExternalLoginTicket()
     {
     }
 
-    private ExternalLoginCompletion(
+    private ExternalLoginTicket(
         string codeHash,
-        ExternalLoginCompletionPurpose purpose,
+        ExternalLoginTicketPurpose purpose,
         string client,
         string provider,
         string providerKey,
@@ -44,7 +44,7 @@ public sealed class ExternalLoginCompletion
 
     public string CodeHash { get; private set; } = string.Empty;
 
-    public ExternalLoginCompletionPurpose Purpose { get; private set; }
+    public ExternalLoginTicketPurpose Purpose { get; private set; }
 
     public string Client { get; private set; } = string.Empty;
 
@@ -62,9 +62,9 @@ public sealed class ExternalLoginCompletion
 
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
 
-    public static ExternalLoginCompletion Create(
+    public static ExternalLoginTicket Create(
         string codeHash,
-        ExternalLoginCompletionPurpose purpose,
+        ExternalLoginTicketPurpose purpose,
         string client,
         string provider,
         string providerKey,
@@ -83,7 +83,7 @@ public sealed class ExternalLoginCompletion
         ValidateText(providerKey, ProviderKeyLength, nameof(providerKey));
         ValidateText(email, EmailLength, nameof(email));
 
-        return new ExternalLoginCompletion(
+        return new ExternalLoginTicket(
             codeHash,
             purpose,
             client,

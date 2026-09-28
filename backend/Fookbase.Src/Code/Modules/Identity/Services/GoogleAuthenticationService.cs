@@ -40,7 +40,7 @@ public sealed class GoogleAuthenticationService(
         if (linkedUser is not null)
         {
             return await CreateCompletionAsync(
-                ExternalLoginCompletionPurpose.IssueSession,
+                ExternalLoginTicketPurpose.IssueSession,
                 client,
                 providerKey,
                 normalizedEmail,
@@ -52,7 +52,7 @@ public sealed class GoogleAuthenticationService(
         if (existingUser is not null)
         {
             return await CreateCompletionAsync(
-                ExternalLoginCompletionPurpose.LinkExisting,
+                ExternalLoginTicketPurpose.LinkExisting,
                 client,
                 providerKey,
                 normalizedEmail,
@@ -84,7 +84,7 @@ public sealed class GoogleAuthenticationService(
             }
 
             var completion = await CreateCompletionAsync(
-                ExternalLoginCompletionPurpose.IssueSession,
+                ExternalLoginTicketPurpose.IssueSession,
                 client,
                 providerKey,
                 normalizedEmail,
@@ -107,7 +107,7 @@ public sealed class GoogleAuthenticationService(
         string? userAgent,
         CancellationToken cancellationToken = default)
     {
-        var completion = await FindUsableCompletionAsync(code, client, ExternalLoginCompletionPurpose.IssueSession, cancellationToken);
+        var completion = await FindUsableCompletionAsync(code, client, ExternalLoginTicketPurpose.IssueSession, cancellationToken);
         if (completion is null || completion.UserId is not { } userId)
         {
             throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
@@ -137,7 +137,7 @@ public sealed class GoogleAuthenticationService(
         var completion = await FindUsableCompletionAsync(
             code,
             client,
-            ExternalLoginCompletionPurpose.LinkExisting,
+            ExternalLoginTicketPurpose.LinkExisting,
             cancellationToken);
         if (completion is null || completion.UserId is not { } userId)
         {
@@ -186,7 +186,7 @@ public sealed class GoogleAuthenticationService(
     }
 
     private async Task<GoogleCompletionResult> CreateCompletionAsync(
-        ExternalLoginCompletionPurpose purpose,
+        ExternalLoginTicketPurpose purpose,
         string client,
         string providerKey,
         string email,
@@ -195,7 +195,7 @@ public sealed class GoogleAuthenticationService(
     {
         var rawCode = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var codeHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawCode)));
-        var completion = ExternalLoginCompletion.Create(
+        var completion = ExternalLoginTicket.Create(
             codeHash,
             purpose,
             client,
@@ -204,18 +204,18 @@ public sealed class GoogleAuthenticationService(
             email,
             userId,
             timeProvider.GetUtcNow());
-        dbContext.ExternalLoginCompletions.Add(completion);
+        dbContext.ExternalLoginTickets.Add(completion);
         await dbContext.SaveChangesAsync(cancellationToken);
         return new GoogleCompletionResult(
             rawCode,
-            purpose == ExternalLoginCompletionPurpose.LinkExisting,
-            purpose == ExternalLoginCompletionPurpose.LinkExisting ? email : null);
+            purpose == ExternalLoginTicketPurpose.LinkExisting,
+            purpose == ExternalLoginTicketPurpose.LinkExisting ? email : null);
     }
 
-    private async Task<ExternalLoginCompletion?> FindUsableCompletionAsync(
+    private async Task<ExternalLoginTicket?> FindUsableCompletionAsync(
         string code,
         string client,
-        ExternalLoginCompletionPurpose purpose,
+        ExternalLoginTicketPurpose purpose,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(client))
@@ -224,7 +224,7 @@ public sealed class GoogleAuthenticationService(
         }
 
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
-        var completion = await dbContext.ExternalLoginCompletions.AsNoTracking().SingleOrDefaultAsync(
+        var completion = await dbContext.ExternalLoginTickets.AsNoTracking().SingleOrDefaultAsync(
             item => item.CodeHash == hash && item.Client == client && item.Purpose == purpose,
             cancellationToken);
         if (completion is null || !completion.IsUsableAt(timeProvider.GetUtcNow()))
@@ -240,11 +240,11 @@ public sealed class GoogleAuthenticationService(
     }
 
     private async Task<bool> TryConsumeCompletionAsync(
-        ExternalLoginCompletion completion,
+        ExternalLoginTicket completion,
         CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
-        return await dbContext.ExternalLoginCompletions
+        return await dbContext.ExternalLoginTickets
             .Where(item => item.Id == completion.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(item => item.ConsumedAtUtc, now),

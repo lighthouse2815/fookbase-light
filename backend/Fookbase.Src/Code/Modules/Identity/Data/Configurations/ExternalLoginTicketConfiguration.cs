@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Fookbase.Api.Modules.Identity.Data.Configurations;
 
-internal sealed class ExternalLoginCompletionConfiguration : IEntityTypeConfiguration<ExternalLoginCompletion>
+internal sealed class ExternalLoginTicketConfiguration : IEntityTypeConfiguration<ExternalLoginTicket>
 {
-    public void Configure(EntityTypeBuilder<ExternalLoginCompletion> builder)
+    public void Configure(EntityTypeBuilder<ExternalLoginTicket> builder)
     {
-        builder.ToTable("ExternalLoginCompletions");
+        builder.ToTable("ExternalLoginTickets");
         builder.HasKey(item => item.Id);
         builder.Property(item => item.CodeHash).HasMaxLength(64).IsRequired();
         builder.Property(item => item.Client).HasMaxLength(32).IsRequired();

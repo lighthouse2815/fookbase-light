@@ -414,9 +414,9 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var now = DateTimeOffset.UtcNow;
         var rawCode = "raw-completion";
         var codeHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawCode)));
-        var completion = ExternalLoginCompletion.Create(
+        var completion = ExternalLoginTicket.Create(
             codeHash,
-            ExternalLoginCompletionPurpose.IssueSession,
+            ExternalLoginTicketPurpose.IssueSession,
             "web",
             "Google",
             "google-subject",
@@ -426,11 +426,11 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        dbContext.ExternalLoginCompletions.Add(completion);
+        dbContext.ExternalLoginTickets.Add(completion);
         await dbContext.SaveChangesAsync();
         dbContext.ChangeTracker.Clear();
 
-        var stored = await dbContext.ExternalLoginCompletions.SingleAsync(item => item.Id == completion.Id);
+        var stored = await dbContext.ExternalLoginTickets.SingleAsync(item => item.Id == completion.Id);
         Assert.Equal(64, stored.CodeHash.Length);
         Assert.NotEqual(rawCode, stored.CodeHash);
         Assert.True(stored.TryConsumeAt(now.AddSeconds(1)));

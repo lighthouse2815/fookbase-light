@@ -50,7 +50,7 @@ public sealed class PersistenceAtomicityTests
         Assert.False(await db.UserProfiles.AnyAsync());
         Assert.False(await db.UserPrivacySettings.AnyAsync());
         Assert.False(await db.UserLogins.AnyAsync());
-        Assert.False(await db.ExternalLoginCompletions.AnyAsync());
+        Assert.False(await db.ExternalLoginTickets.AnyAsync());
     }
 
     private sealed class RejectProfileInsert : SaveChangesInterceptor
