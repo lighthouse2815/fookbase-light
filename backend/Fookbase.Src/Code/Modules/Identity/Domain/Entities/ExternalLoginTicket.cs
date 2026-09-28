@@ -1,7 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
+[Table("ExternalLoginTickets")]
+[Index(nameof(CodeHash), nameof(ExpiresAtUtc), IsUnique = true)]
 public sealed class ExternalLoginTicket
 {
     private const int CodeHashLength = 64;
@@ -38,19 +43,27 @@ public sealed class ExternalLoginTicket
 
     public Guid Id { get; private set; }
 
+    [MaxLength(CodeHashLength)]
     public string CodeHash { get; private set; } = string.Empty;
 
     public ExternalLoginTicketPurpose Purpose { get; private set; }
 
+    [MaxLength(ClientLength)]
     public string Client { get; private set; } = string.Empty;
 
+    [MaxLength(ProviderLength)]
     public string Provider { get; private set; } = string.Empty;
 
+    [MaxLength(ProviderKeyLength)]
     public string ProviderKey { get; private set; } = string.Empty;
 
+    [MaxLength(EmailLength)]
     public string Email { get; private set; } = string.Empty;
 
     public Guid? UserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public User? User { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
