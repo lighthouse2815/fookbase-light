@@ -579,7 +579,7 @@ public sealed class AuthenticationService(
         }
 
         var challenge = await dbContext.PasswordResetOtps.AsNoTracking().SingleOrDefaultAsync(
-            item => item.UserId == user.Id && item.Contact == contact.Value,
+            item => item.UserId == user.Id && item.PhoneNumber == contact.Value,
             cancellationToken);
         var now = timeProvider.GetUtcNow();
         var codeHash = HashOtp(request.Code);
