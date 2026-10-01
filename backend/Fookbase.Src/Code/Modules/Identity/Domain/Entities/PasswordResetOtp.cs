@@ -1,15 +1,19 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Common;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Identity.Entities;
 
-public sealed class PasswordResetChallenge
+[Table("PasswordResetChallenges")]
+[Index(nameof(UserId), IsUnique = true)]
+public sealed class PasswordResetOtp
 {
-    private const int MaximumFailedAttempts = 5;
-    private const int MaximumSendsPerWindow = 5;
-
-    private PasswordResetChallenge()
+    private PasswordResetOtp()
     {
     }
 
-    private PasswordResetChallenge(Guid userId, string contact, string codeHash, DateTimeOffset now)
+    private PasswordResetOtp(Guid userId, string contact, string codeHash, DateTimeOffset now)
     {
         Id = Guid.NewGuid();
         UserId = userId;
@@ -24,8 +28,15 @@ public sealed class PasswordResetChallenge
 
     public Guid Id { get; private set; }
     public Guid UserId { get; private set; }
+    [MaxLength(32)]
     public string Contact { get; private set; } = string.Empty;
+
+    [MaxLength(64)]
     public string CodeHash { get; private set; } = string.Empty;
+
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public User User { get; private set; } = null!;
+
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset ExpiresAtUtc { get; private set; }
     public DateTimeOffset ResendAvailableAtUtc { get; private set; }
@@ -34,16 +45,16 @@ public sealed class PasswordResetChallenge
     public int FailedAttemptCount { get; private set; }
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
 
-    public static PasswordResetChallenge Create(Guid userId, string contact, string codeHash, DateTimeOffset now)
+    public static PasswordResetOtp Create(Guid userId, string contact, string codeHash, DateTimeOffset now)
     {
         if (userId == Guid.Empty) throw new ArgumentException("The user identifier is required.", nameof(userId));
         if (string.IsNullOrWhiteSpace(contact) || contact.Length > 32) throw new ArgumentException("The phone number is invalid.", nameof(contact));
         if (!IsValidCodeHash(codeHash)) throw new ArgumentException("The OTP hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
-        return new PasswordResetChallenge(userId, contact, codeHash, now);
+        return new PasswordResetOtp(userId, contact, codeHash, now);
     }
 
     public bool IsUsableAt(DateTimeOffset now) =>
-        ConsumedAtUtc is null && FailedAttemptCount < MaximumFailedAttempts && ExpiresAtUtc > now;
+        ConsumedAtUtc is null && FailedAttemptCount < IdentityModuleConstants.Challenges.MaximumFailedAttempts && ExpiresAtUtc > now;
 
     public bool TryResend(string codeHash, DateTimeOffset now)
     {
@@ -53,7 +64,7 @@ public sealed class PasswordResetChallenge
             WindowStartedAtUtc = now;
             SendCount = 0;
         }
-        if (SendCount >= MaximumSendsPerWindow) return false;
+        if (SendCount >= IdentityModuleConstants.Challenges.MaximumSendsPerWindow) return false;
 
         CodeHash = codeHash;
         ExpiresAtUtc = now.AddMinutes(10);
