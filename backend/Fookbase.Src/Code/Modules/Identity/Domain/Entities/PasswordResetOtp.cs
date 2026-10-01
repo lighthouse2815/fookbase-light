@@ -26,14 +26,14 @@ public sealed class PasswordResetOtp
 
     public Guid UserId { get; private set; }
 
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public User User { get; private set; } = null!;
+
     [MaxLength(32)]
     public string Contact { get; private set; } = string.Empty;
 
     [MaxLength(64)]
     public string CodeHash { get; private set; } = string.Empty;
-
-    [DeleteBehavior(DeleteBehavior.Cascade)]
-    public User User { get; private set; } = null!;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset ExpiresAtUtc { get; private set; }
