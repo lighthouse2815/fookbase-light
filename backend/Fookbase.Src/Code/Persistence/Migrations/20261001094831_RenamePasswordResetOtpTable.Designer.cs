@@ -3,17 +3,20 @@ using System;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Fookbase.Api.Persistence.Migrations
+namespace Fookbase.Api.Code.Persistence.Migrations
 {
     [DbContext(typeof(FookbaseDbContext))]
-    partial class FookbaseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261001094831_RenamePasswordResetOtpTable")]
+    partial class RenamePasswordResetOtpTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -651,7 +654,7 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<int>("Purpose")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -661,7 +664,7 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasIndex("CodeHash", "ExpiresAtUtc")
                         .IsUnique();
 
-                    b.ToTable("ExternalLoginTickets", (string)null);
+                    b.ToTable("ExternalLoginTickets");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.PasswordResetOtp", b =>
@@ -2448,10 +2451,13 @@ namespace Fookbase.Api.Persistence.Migrations
 
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.ExternalLoginTicket", b =>
                 {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", null)
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.PasswordResetOtp", b =>

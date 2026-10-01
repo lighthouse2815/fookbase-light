@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
-[Table("PasswordResetChallenges")]
+[Table("PasswordResetOtps")]
 [Index(nameof(UserId), IsUnique = true)]
 public sealed class PasswordResetOtp
 {

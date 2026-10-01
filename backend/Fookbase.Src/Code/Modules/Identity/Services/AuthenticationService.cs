@@ -531,13 +531,13 @@ public sealed class AuthenticationService(
 
         var now = timeProvider.GetUtcNow();
         var code = CreateOtp();
-        var challenge = await dbContext.PasswordResetChallenges.SingleOrDefaultAsync(
+        var challenge = await dbContext.PasswordResetOtps.SingleOrDefaultAsync(
             item => item.UserId == user.Id,
             cancellationToken);
         if (challenge is null)
         {
             challenge = PasswordResetOtp.Create(user.Id, contact.Value, HashOtp(code), now);
-            dbContext.PasswordResetChallenges.Add(challenge);
+            dbContext.PasswordResetOtps.Add(challenge);
         }
         else if (!challenge.TryResend(HashOtp(code), now))
         {
@@ -555,7 +555,7 @@ public sealed class AuthenticationService(
         catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
         {
             logger.LogWarning(exception, "Unable to send password reset SMS for user {UserId}.", user.Id);
-            dbContext.PasswordResetChallenges.Remove(challenge);
+            dbContext.PasswordResetOtps.Remove(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
             throw new BusinessException(SmsUnavailable());
         }
@@ -578,7 +578,7 @@ public sealed class AuthenticationService(
             throw new BusinessException(InvalidResetRequest());
         }
 
-        var challenge = await dbContext.PasswordResetChallenges.AsNoTracking().SingleOrDefaultAsync(
+        var challenge = await dbContext.PasswordResetOtps.AsNoTracking().SingleOrDefaultAsync(
             item => item.UserId == user.Id && item.Contact == contact.Value,
             cancellationToken);
         var now = timeProvider.GetUtcNow();
@@ -588,7 +588,7 @@ public sealed class AuthenticationService(
         {
             if (challenge is not null && challenge.IsUsableAt(now))
             {
-                await dbContext.PasswordResetChallenges
+                await dbContext.PasswordResetOtps
                     .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now && item.FailedAttemptCount < 5)
                     .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.FailedAttemptCount, item => item.FailedAttemptCount + 1), cancellationToken);
             }
@@ -596,7 +596,7 @@ public sealed class AuthenticationService(
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        var consumed = await dbContext.PasswordResetChallenges
+        var consumed = await dbContext.PasswordResetOtps
             .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now &&
                 item.FailedAttemptCount < 5 && item.CodeHash == codeHash)
             .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.ConsumedAtUtc, now), cancellationToken);
