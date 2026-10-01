@@ -31,8 +31,8 @@ public sealed class RegistrationChallenge
         Gender = gender;
         CreatedAtUtc = now;
         ExpiresAtUtc = now.AddMinutes(10);
-        ResendAvailableAtUtc = now.AddMinutes(1);
-        WindowStartedAtUtc = now;
+        NextResendAllowedAtUtc = now.AddMinutes(1);
+        SendLimitWindowStartedAtUtc = now;
         SendCount = 1;
     }
 
@@ -47,8 +47,8 @@ public sealed class RegistrationChallenge
     public Gender Gender { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset ExpiresAtUtc { get; private set; }
-    public DateTimeOffset ResendAvailableAtUtc { get; private set; }
-    public DateTimeOffset WindowStartedAtUtc { get; private set; }
+    public DateTimeOffset NextResendAllowedAtUtc { get; private set; }
+    public DateTimeOffset SendLimitWindowStartedAtUtc { get; private set; }
     public int SendCount { get; private set; }
     public int FailedAttemptCount { get; private set; }
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
@@ -98,7 +98,7 @@ public sealed class RegistrationChallenge
         Gender gender,
         DateTimeOffset now)
     {
-        if (ConsumedAtUtc is not null || ResendAvailableAtUtc > now || !IsValidCodeHash(codeHash) || string.IsNullOrWhiteSpace(passwordHash) ||
+        if (ConsumedAtUtc is not null || NextResendAllowedAtUtc > now || !IsValidCodeHash(codeHash) || string.IsNullOrWhiteSpace(passwordHash) ||
             string.IsNullOrWhiteSpace(firstName) || firstName.Trim().Length > 50 ||
             string.IsNullOrWhiteSpace(lastName) || lastName.Trim().Length > 50)
         {
@@ -115,7 +115,7 @@ public sealed class RegistrationChallenge
         DateOfBirth = dateOfBirth;
         Gender = gender;
         ExpiresAtUtc = now.AddMinutes(10);
-        ResendAvailableAtUtc = now.AddMinutes(1);
+        NextResendAllowedAtUtc = now.AddMinutes(1);
         FailedAttemptCount = 0;
         SendCount++;
         return true;
@@ -123,7 +123,7 @@ public sealed class RegistrationChallenge
 
     public bool TryResend(string codeHash, DateTimeOffset now)
     {
-        if (ConsumedAtUtc is not null || ExpiresAtUtc <= now || ResendAvailableAtUtc > now || !IsValidCodeHash(codeHash))
+        if (ConsumedAtUtc is not null || ExpiresAtUtc <= now || NextResendAllowedAtUtc > now || !IsValidCodeHash(codeHash))
         {
             return false;
         }
@@ -133,7 +133,7 @@ public sealed class RegistrationChallenge
 
         CodeHash = codeHash;
         ExpiresAtUtc = now.AddMinutes(10);
-        ResendAvailableAtUtc = now.AddMinutes(1);
+        NextResendAllowedAtUtc = now.AddMinutes(1);
         FailedAttemptCount = 0;
         SendCount++;
         return true;
@@ -149,8 +149,8 @@ public sealed class RegistrationChallenge
 
     private void ResetSendWindowIfNeeded(DateTimeOffset now)
     {
-        if (WindowStartedAtUtc.AddHours(1) > now) return;
-        WindowStartedAtUtc = now;
+        if (SendLimitWindowStartedAtUtc.AddHours(1) > now) return;
+        SendLimitWindowStartedAtUtc = now;
         SendCount = 0;
     }
 }

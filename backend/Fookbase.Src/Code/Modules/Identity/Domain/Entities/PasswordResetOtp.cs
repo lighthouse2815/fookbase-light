@@ -17,8 +17,8 @@ public sealed class PasswordResetOtp
         CodeHash = codeHash;
         CreatedAtUtc = now;
         ExpiresAtUtc = now.AddMinutes(10);
-        ResendAvailableAtUtc = now.AddMinutes(1);
-        WindowStartedAtUtc = now;
+        NextResendAllowedAtUtc = now.AddMinutes(1);
+        SendLimitWindowStartedAtUtc = now;
         SendCount = 1;
     }
 
@@ -37,8 +37,8 @@ public sealed class PasswordResetOtp
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset ExpiresAtUtc { get; private set; }
-    public DateTimeOffset ResendAvailableAtUtc { get; private set; }
-    public DateTimeOffset WindowStartedAtUtc { get; private set; }
+    public DateTimeOffset NextResendAllowedAtUtc { get; private set; }
+    public DateTimeOffset SendLimitWindowStartedAtUtc { get; private set; }
     public int SendCount { get; private set; }
     public int FailedAttemptCount { get; private set; }
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
@@ -56,17 +56,17 @@ public sealed class PasswordResetOtp
 
     public bool TryResend(string codeHash, DateTimeOffset now)
     {
-        if (ConsumedAtUtc is not null || ResendAvailableAtUtc > now || !IsValidCodeHash(codeHash)) return false;
-        if (WindowStartedAtUtc.AddHours(1) <= now)
+        if (ConsumedAtUtc is not null || NextResendAllowedAtUtc > now || !IsValidCodeHash(codeHash)) return false;
+        if (SendLimitWindowStartedAtUtc.AddHours(1) <= now)
         {
-            WindowStartedAtUtc = now;
+            SendLimitWindowStartedAtUtc = now;
             SendCount = 0;
         }
         if (SendCount >= IdentityModuleConstants.Challenges.MaximumSendsPerWindow) return false;
 
         CodeHash = codeHash;
         ExpiresAtUtc = now.AddMinutes(10);
-        ResendAvailableAtUtc = now.AddMinutes(1);
+        NextResendAllowedAtUtc = now.AddMinutes(1);
         FailedAttemptCount = 0;
         SendCount++;
         return true;

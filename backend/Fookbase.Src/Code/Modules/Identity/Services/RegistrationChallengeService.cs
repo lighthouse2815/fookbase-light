@@ -286,7 +286,7 @@ public sealed class RegistrationChallengeService(
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
     private static RegistrationChallengeResponse ToResponse(RegistrationChallenge challenge) =>
-        new(challenge.Id, challenge.ExpiresAtUtc, challenge.ResendAvailableAtUtc);
+        new(challenge.Id, challenge.ExpiresAtUtc, challenge.NextResendAllowedAtUtc);
 
     private static BusinessException Validation(IReadOnlyDictionary<string, string[]> errors) =>
         new BusinessException(new ApplicationError(ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation, errors));
