@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
-[Table("PasswordResetOtps")]
 [Index(nameof(UserId), IsUnique = true)]
 public sealed class PasswordResetOtp
 {
