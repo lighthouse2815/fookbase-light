@@ -7,9 +7,7 @@ namespace Fookbase.Api.Modules.Identity.Entities;
 [Index(nameof(UserId), IsUnique = true)]
 public sealed class PasswordResetOtp
 {
-    private PasswordResetOtp()
-    {
-    }
+    private PasswordResetOtp(){}
 
     private PasswordResetOtp(Guid userId, string contact, string codeHash, DateTimeOffset now)
     {
@@ -25,7 +23,9 @@ public sealed class PasswordResetOtp
     }
 
     public Guid Id { get; private set; }
+
     public Guid UserId { get; private set; }
+
     [MaxLength(32)]
     public string Contact { get; private set; } = string.Empty;
 

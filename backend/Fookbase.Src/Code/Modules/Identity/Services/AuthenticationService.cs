@@ -706,18 +706,18 @@ public sealed class AuthenticationService(
 
     private async Task EnsureBootstrapAdminRoleAsync(User user)
     {
-        if (!await roleManager.RoleExistsAsync(AppRoles.Admin))
+        if (!await roleManager.RoleExistsAsync(IdentityModuleConstants.Roles.Admin))
         {
-            var createRole = await roleManager.CreateAsync(new IdentityRole<Guid>(AppRoles.Admin));
-            if (!createRole.Succeeded && !await roleManager.RoleExistsAsync(AppRoles.Admin))
+            var createRole = await roleManager.CreateAsync(new IdentityRole<Guid>(IdentityModuleConstants.Roles.Admin));
+            if (!createRole.Succeeded && !await roleManager.RoleExistsAsync(IdentityModuleConstants.Roles.Admin))
             {
                 throw new InvalidOperationException("The bootstrap administrator role could not be created.");
             }
         }
 
-        if (!await userManager.IsInRoleAsync(user, AppRoles.Admin))
+        if (!await userManager.IsInRoleAsync(user, IdentityModuleConstants.Roles.Admin))
         {
-            var addRole = await userManager.AddToRoleAsync(user, AppRoles.Admin);
+            var addRole = await userManager.AddToRoleAsync(user, IdentityModuleConstants.Roles.Admin);
             if (!addRole.Succeeded)
             {
                 throw new InvalidOperationException("The bootstrap administrator role could not be assigned.");

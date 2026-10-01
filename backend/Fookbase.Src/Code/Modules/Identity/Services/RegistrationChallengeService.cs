@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
@@ -25,8 +26,6 @@ public sealed class RegistrationChallengeService(
     TimeProvider timeProvider,
     ILogger<RegistrationChallengeService> logger)
 {
-    private const int MinimumAge = 13;
-
     public async Task<RegistrationChallengeResponse> StartAsync(
         RegistrationStartRequest request,
         CancellationToken cancellationToken = default)
@@ -250,7 +249,7 @@ public sealed class RegistrationChallengeService(
     private bool IsOldEnough(DateOnly dateOfBirth)
     {
         var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
-        return dateOfBirth <= today && dateOfBirth <= today.AddYears(-MinimumAge);
+        return dateOfBirth <= today && dateOfBirth <= today.AddYears(-IdentityModuleConstants.Challenges.MinimumRegistrationAge);
     }
 
     private async Task<string> GenerateUsernameAsync(string firstName, string lastName, CancellationToken cancellationToken)

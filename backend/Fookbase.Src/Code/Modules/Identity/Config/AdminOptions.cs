@@ -4,8 +4,6 @@ namespace Fookbase.Api.Modules.Identity.Config;
 
 public sealed class AdminOptions
 {
-    public const string SectionName = "Admin";
-
     public string? BootstrapEmail { get; init; }
 
     public void Validate()

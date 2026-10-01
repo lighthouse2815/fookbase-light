@@ -25,7 +25,8 @@ public sealed class GoogleController(
     public IResult GetExternalProviders([FromQuery] string? client = null) =>
         Results.Ok(ApiResponse.Success(new ExternalAuthenticationProvidersResponse(googleOptions.Enabled,
             googleOptions.Enabled && (client is null
-                ? googleOptions.IsMobileClientEnabled("mobile") || googleOptions.IsMobileClientEnabled("zola-mobile")
+                ? googleOptions.IsMobileClientEnabled(IdentityModuleConstants.ExternalLogin.Clients.Mobile) ||
+                  googleOptions.IsMobileClientEnabled(IdentityModuleConstants.ExternalLogin.Clients.ZolaMobile)
                 : googleOptions.IsMobileClientEnabled(client))), HttpContext));
 
     [HttpGet("google/start")]
@@ -49,7 +50,7 @@ public sealed class GoogleController(
             {
                 RedirectUri = $"/api/auth/google/callback?client={Uri.EscapeDataString(client!)}"
             },
-            ["Google"]);
+            [IdentityModuleConstants.ExternalLogin.GoogleScheme]);
     }
 
     [HttpGet("google/callback")]
@@ -144,7 +145,8 @@ public sealed class GoogleController(
         return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
 
-    private static bool IsSupportedGoogleClient(string? client) => client is "web" or "zola-light";
+    private static bool IsSupportedGoogleClient(string? client) => client is
+        IdentityModuleConstants.ExternalLogin.Clients.Web or IdentityModuleConstants.ExternalLogin.Clients.ZolaLight;
 
     private static BusinessException InvalidGoogleClient() => new(new ApplicationError(
         "invalid_google_client",

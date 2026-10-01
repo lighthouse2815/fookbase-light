@@ -61,10 +61,10 @@ if (builder.Environment.IsProduction())
 
 ProductionConfigurationValidator.Validate(builder.Configuration, builder.Environment.IsProduction());
 
-var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+var jwtOptions = builder.Configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Jwt).Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is required.");
 var googleAuthenticationOptions = builder.Configuration
-    .GetSection(GoogleAuthenticationOptions.SectionName)
+    .GetSection(IdentityModuleConstants.ConfigurationSections.GoogleAuthentication)
     .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
 var dataProtectionOptions = builder.Configuration.GetSection(AppDataProtectionOptions.SectionName)
     .Get<AppDataProtectionOptions>() ?? new AppDataProtectionOptions();
@@ -188,16 +188,16 @@ var authenticationBuilder = builder.Services.AddAuthentication(JwtBearerDefaults
 if (googleAuthenticationOptions.Enabled)
 {
     authenticationBuilder
-        .AddCookie("GoogleExternal", options =>
+        .AddCookie(IdentityModuleConstants.ExternalLogin.ExternalScheme, options =>
         {
             options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
             options.Cookie.HttpOnly = true;
             options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         })
-        .AddGoogle("Google", options =>
+        .AddGoogle(IdentityModuleConstants.ExternalLogin.GoogleScheme, options =>
         {
-            options.SignInScheme = "GoogleExternal";
+            options.SignInScheme = IdentityModuleConstants.ExternalLogin.ExternalScheme;
             options.ClientId = googleAuthenticationOptions.ClientId;
             options.ClientSecret = googleAuthenticationOptions.ClientSecret;
             options.CallbackPath = "/signin-google";
@@ -207,7 +207,7 @@ if (googleAuthenticationOptions.Enabled)
         });
 }
 builder.Services.AddAuthorization(options => options.AddPolicy(AdminPolicy.Name, policy =>
-    policy.RequireRole(AppRoles.Admin)));
+    policy.RequireRole(IdentityModuleConstants.Roles.Admin)));
 builder.Services.AddSignalR(options => options.AddFilter<AccountModerationHubFilter>());
 if (allowedOrigins.Length > 0)
 {

@@ -1,15 +1,12 @@
+using Fookbase.Api.Modules.Identity.Common;
+
 namespace Fookbase.Api.Modules.Identity.Config;
 
 public sealed class SmsOptions
 {
-    public const string SectionName = "Sms";
-
-    public const string SpeedSmsProvider = "SpeedSms";
-    public const string TraccarProvider = "Traccar";
-
     public bool Enabled { get; init; }
 
-    public string Provider { get; init; } = SpeedSmsProvider;
+    public string Provider { get; init; } = IdentityModuleConstants.SmsProviders.SpeedSms;
 
     public string AccessToken { get; init; } = string.Empty;
 
@@ -29,12 +26,12 @@ public sealed class SmsOptions
             throw new InvalidOperationException("Sms:AccessToken is required when SMS is enabled.");
         }
 
-        if (Provider is not SpeedSmsProvider and not TraccarProvider)
+        if (Provider is not IdentityModuleConstants.SmsProviders.SpeedSms and not IdentityModuleConstants.SmsProviders.Traccar)
         {
             throw new InvalidOperationException("Sms:Provider must be either SpeedSms or Traccar when SMS is enabled.");
         }
 
-        if (Provider == SpeedSmsProvider && string.IsNullOrWhiteSpace(TwoFactorApplicationId))
+        if (Provider == IdentityModuleConstants.SmsProviders.SpeedSms && string.IsNullOrWhiteSpace(TwoFactorApplicationId))
         {
             throw new InvalidOperationException("Sms:TwoFactorApplicationId is required when Sms:Provider is SpeedSms.");
         }

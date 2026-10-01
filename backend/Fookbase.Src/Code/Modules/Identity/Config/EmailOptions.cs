@@ -4,8 +4,6 @@ namespace Fookbase.Api.Modules.Identity.Config;
 
 public sealed class EmailOptions
 {
-    public const string SectionName = "Email";
-
     public bool Enabled { get; init; }
 
     public string Host { get; init; } = string.Empty;

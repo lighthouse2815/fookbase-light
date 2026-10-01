@@ -1,5 +1,6 @@
 using Fookbase.Api.Shared.ErrorHandling;
 using Fookbase.Api.Shared.Common;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.Services;
@@ -40,7 +41,7 @@ public sealed class GoogleMobileController(
         properties.Items["fookbase.client"] = mobileClient;
         properties.Items["fookbase.code_challenge"] = challenge;
         properties.Items["fookbase.state"] = state;
-        return Results.Challenge(properties, ["Google"]);
+        return Results.Challenge(properties, [IdentityModuleConstants.ExternalLogin.GoogleScheme]);
     }
 
     [HttpGet("callback")]
@@ -123,9 +124,10 @@ public sealed class GoogleMobileController(
         return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
-    private static bool IsSupportedClient(string? client) => client is "mobile" or "zola-mobile";
+    private static bool IsSupportedClient(string? client) => client is
+        IdentityModuleConstants.ExternalLogin.Clients.Mobile or IdentityModuleConstants.ExternalLogin.Clients.ZolaMobile;
 
-    private static string GetClient(string? client) => client ?? "mobile";
+    private static string GetClient(string? client) => client ?? IdentityModuleConstants.ExternalLogin.Clients.Mobile;
 
     private static bool Enabled(GoogleAuthenticationOptions options, string client) =>
         IsSupportedClient(client) && options.Enabled && options.IsMobileClientEnabled(client);

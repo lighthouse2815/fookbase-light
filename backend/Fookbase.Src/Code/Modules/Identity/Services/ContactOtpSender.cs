@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Identity.Config;
+using Fookbase.Api.Modules.Identity.Common;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
@@ -27,8 +28,8 @@ public sealed class ContactOtpSender(
             case ContactKind.Phone:
                 return smsOptions.Provider switch
                 {
-                    SmsOptions.SpeedSmsProvider => await speedSmsSender.SendOtpAsync(contact.Value, cancellationToken),
-                    SmsOptions.TraccarProvider => await traccarSmsSender.SendOtpAsync(contact.Value, code, cancellationToken),
+                    IdentityModuleConstants.SmsProviders.SpeedSms => await speedSmsSender.SendOtpAsync(contact.Value, cancellationToken),
+                    IdentityModuleConstants.SmsProviders.Traccar => await traccarSmsSender.SendOtpAsync(contact.Value, code, cancellationToken),
                     _ => throw new InvalidOperationException("SMS delivery is not configured.")
                 };
             default:

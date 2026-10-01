@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Authentication;
@@ -19,16 +20,14 @@ public interface IGoogleExternalIdentityReader
 public sealed class GoogleExternalIdentityReader(IAuthenticationService authenticationService)
     : IGoogleExternalIdentityReader
 {
-    private const string ExternalScheme = "GoogleExternal";
-
     public async Task<GoogleExternalIdentity> ReadAsync(
         HttpContext context,
         CancellationToken cancellationToken = default,
         bool mobile = false)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var authentication = await authenticationService.AuthenticateAsync(context, ExternalScheme);
-        await authenticationService.SignOutAsync(context, ExternalScheme, null);
+        var authentication = await authenticationService.AuthenticateAsync(context, IdentityModuleConstants.ExternalLogin.ExternalScheme);
+        await authenticationService.SignOutAsync(context, IdentityModuleConstants.ExternalLogin.ExternalScheme, null);
         if (!authentication.Succeeded || authentication.Principal is null)
         {
             throw InvalidIdentity(mobile);

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -38,7 +39,7 @@ public sealed class TraccarSmsSenderTests
     private static SmsOptions EnabledOptions() => new()
     {
         Enabled = true,
-        Provider = SmsOptions.TraccarProvider,
+        Provider = IdentityModuleConstants.SmsProviders.Traccar,
         AccessToken = "gateway-token",
         BaseUrl = "https://www.traccar.org/sms/"
     };

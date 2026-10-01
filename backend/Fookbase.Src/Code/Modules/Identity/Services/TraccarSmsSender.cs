@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Config;
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +12,7 @@ public sealed class TraccarSmsSender(HttpClient client, SmsOptions options, ILog
         string code,
         CancellationToken cancellationToken = default)
     {
-        if (!options.Enabled || options.Provider != SmsOptions.TraccarProvider)
+        if (!options.Enabled || options.Provider != IdentityModuleConstants.SmsProviders.Traccar)
         {
             throw new InvalidOperationException("SMS delivery is not configured.");
         }

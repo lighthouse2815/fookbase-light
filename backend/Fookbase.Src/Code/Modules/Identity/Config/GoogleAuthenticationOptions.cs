@@ -1,9 +1,9 @@
+using Fookbase.Api.Modules.Identity.Common;
+
 namespace Fookbase.Api.Modules.Identity.Config;
 
 public sealed class GoogleAuthenticationOptions
 {
-    public const string SectionName = "GoogleAuthentication";
-
     public bool Enabled { get; init; }
 
     public string ClientId { get; init; } = string.Empty;
@@ -41,22 +41,22 @@ public sealed class GoogleAuthenticationOptions
 
     public string GetClientLoginUri(string client) => client switch
     {
-        "web" => BuildLoginUri(WebBaseUrl, "GoogleAuthentication:WebBaseUrl"),
-        "zola-light" => BuildLoginUri(ZolaLightBaseUrl, "GoogleAuthentication:ZolaLightBaseUrl"),
+        IdentityModuleConstants.ExternalLogin.Clients.Web => BuildLoginUri(WebBaseUrl, "GoogleAuthentication:WebBaseUrl"),
+        IdentityModuleConstants.ExternalLogin.Clients.ZolaLight => BuildLoginUri(ZolaLightBaseUrl, "GoogleAuthentication:ZolaLightBaseUrl"),
         _ => throw new InvalidOperationException("The Google authentication client is unsupported.")
     };
 
     public string GetMobileCallbackUrl(string client) => client switch
     {
-        "mobile" when !string.IsNullOrWhiteSpace(MobileCallbackUrl) => MobileCallbackUrl,
-        "zola-mobile" when !string.IsNullOrWhiteSpace(ZolaMobileCallbackUrl) => ZolaMobileCallbackUrl,
+        IdentityModuleConstants.ExternalLogin.Clients.Mobile when !string.IsNullOrWhiteSpace(MobileCallbackUrl) => MobileCallbackUrl,
+        IdentityModuleConstants.ExternalLogin.Clients.ZolaMobile when !string.IsNullOrWhiteSpace(ZolaMobileCallbackUrl) => ZolaMobileCallbackUrl,
         _ => throw new InvalidOperationException("The Google mobile client is unsupported or has no callback URL.")
     };
 
     public bool IsMobileClientEnabled(string client) => client switch
     {
-        "mobile" => !string.IsNullOrWhiteSpace(MobileCallbackUrl),
-        "zola-mobile" => !string.IsNullOrWhiteSpace(ZolaMobileCallbackUrl),
+        IdentityModuleConstants.ExternalLogin.Clients.Mobile => !string.IsNullOrWhiteSpace(MobileCallbackUrl),
+        IdentityModuleConstants.ExternalLogin.Clients.ZolaMobile => !string.IsNullOrWhiteSpace(ZolaMobileCallbackUrl),
         _ => false
     };
 

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Fookbase.Api.Shared.Common;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Users.Services;
@@ -22,8 +23,6 @@ public sealed class GoogleAuthenticationService(
     AccountModerationService accountModerationService,
     TimeProvider timeProvider)
 {
-    private const string Provider = "Google";
-
     public async Task<GoogleCompletionResult> CreateCompletionAsync(
         string client,
         string providerKey,
@@ -37,7 +36,7 @@ public sealed class GoogleAuthenticationService(
         }
 
         var normalizedEmail = email.Trim();
-        var linkedUser = await userManager.FindByLoginAsync(Provider, providerKey);
+        var linkedUser = await userManager.FindByLoginAsync(IdentityModuleConstants.ExternalLogin.GoogleScheme, providerKey);
         if (linkedUser is not null)
         {
             return await CreateCompletionAsync(
@@ -78,7 +77,10 @@ public sealed class GoogleAuthenticationService(
 
             await userProfileService.EnsureCreatedAsync(user.Id, username, cancellationToken);
             await privacySettingsService.EnsureCreatedAsync(user.Id, cancellationToken);
-            var addLogin = await userManager.AddLoginAsync(user, new UserLoginInfo(Provider, providerKey, Provider));
+            var addLogin = await userManager.AddLoginAsync(user, new UserLoginInfo(
+                IdentityModuleConstants.ExternalLogin.GoogleScheme,
+                providerKey,
+                IdentityModuleConstants.ExternalLogin.GoogleScheme));
             if (!addLogin.Succeeded)
             {
                 throw Failure("google_account_creation_failed", "The Google account could not be created.");
@@ -109,7 +111,7 @@ public sealed class GoogleAuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var completion = await FindUsableCompletionAsync(code, client, ExternalLoginTicketPurpose.IssueSession, cancellationToken);
-        if (completion is null || completion.UserId is not { } userId)
+        if (completion is null)
         {
             throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
         }
@@ -119,7 +121,7 @@ public sealed class GoogleAuthenticationService(
             throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
         }
 
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        var user = await userManager.FindByIdAsync(completion.UserId.ToString());
         return user is null
             ? throw Failure("invalid_google_completion", "The Google sign-in could not be completed.")
             : await authenticationService.CompleteExternalLoginAsync(
@@ -140,12 +142,12 @@ public sealed class GoogleAuthenticationService(
             client,
             ExternalLoginTicketPurpose.LinkExisting,
             cancellationToken);
-        if (completion is null || completion.UserId is not { } userId)
+        if (completion is null)
         {
             throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
         }
 
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        var user = await userManager.FindByIdAsync(completion.UserId.ToString());
         if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
@@ -169,12 +171,15 @@ public sealed class GoogleAuthenticationService(
             return await authenticationService.CompleteExternalLoginAsync(
                 user,
                 userAgent,
-                Provider,
+                IdentityModuleConstants.ExternalLogin.GoogleScheme,
                 completion.ProviderKey,
                 cancellationToken);
         }
 
-        var addLogin = await userManager.AddLoginAsync(user, new UserLoginInfo(Provider, completion.ProviderKey, Provider));
+        var addLogin = await userManager.AddLoginAsync(user, new UserLoginInfo(
+            IdentityModuleConstants.ExternalLogin.GoogleScheme,
+            completion.ProviderKey,
+            IdentityModuleConstants.ExternalLogin.GoogleScheme));
         if (!addLogin.Succeeded)
         {
             throw Failure("google_link_failed", "The Google account could not be linked.");
@@ -196,11 +201,11 @@ public sealed class GoogleAuthenticationService(
     {
         var rawCode = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var codeHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawCode)));
-        var completion = ExternalLoginTicket.Create(
+        var completion = new ExternalLoginTicket(
             codeHash,
             purpose,
             client,
-            Provider,
+            IdentityModuleConstants.ExternalLogin.GoogleScheme,
             providerKey,
             email,
             userId,

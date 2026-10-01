@@ -1,13 +1,11 @@
 using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Users.Entities;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
 public sealed class RegistrationChallenge
 {
-    private const int MaximumFailedAttempts = 5;
-    private const int MaximumSendsPerWindow = 5;
-
     private RegistrationChallenge()
     {
     }
@@ -77,7 +75,7 @@ public sealed class RegistrationChallenge
     }
 
     public bool IsUsableAt(DateTimeOffset now) =>
-        ConsumedAtUtc is null && FailedAttemptCount < MaximumFailedAttempts && ExpiresAtUtc > now;
+        ConsumedAtUtc is null && FailedAttemptCount < IdentityModuleConstants.Challenges.MaximumFailedAttempts && ExpiresAtUtc > now;
 
     public void RegisterFailedAttempt(DateTimeOffset now)
     {
@@ -108,7 +106,7 @@ public sealed class RegistrationChallenge
         }
 
         ResetSendWindowIfNeeded(now);
-        if (SendCount >= MaximumSendsPerWindow) return false;
+        if (SendCount >= IdentityModuleConstants.Challenges.MaximumSendsPerWindow) return false;
 
         CodeHash = codeHash;
         PasswordHash = passwordHash;
@@ -131,7 +129,7 @@ public sealed class RegistrationChallenge
         }
 
         ResetSendWindowIfNeeded(now);
-        if (SendCount >= MaximumSendsPerWindow) return false;
+        if (SendCount >= IdentityModuleConstants.Challenges.MaximumSendsPerWindow) return false;
 
         CodeHash = codeHash;
         ExpiresAtUtc = now.AddMinutes(10);

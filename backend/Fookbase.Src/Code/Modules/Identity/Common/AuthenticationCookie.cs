@@ -4,15 +4,6 @@ namespace Fookbase.Api.Modules.Identity.Common;
 
 public static class AuthenticationCookie
 {
-    public const string TransportHeader = "X-Fookbase-Auth-Transport";
-    public const string WebTransport = "cookie:web";
-    public const string AdminTransport = "cookie:admin";
-    public const string ZolaLightTransport = "cookie:zola-light";
-
-    private const string WebCookieName = "fookbase.web.refresh";
-    private const string AdminCookieName = "fookbase.admin.refresh";
-    private const string ZolaLightCookieName = "fookbase.zola-light.refresh";
-
     public static bool UsesCookieTransport(HttpRequest request) => GetCookieName(request) is not null;
 
     public static string? ReadRefreshToken(HttpRequest request, string? bodyToken)
@@ -63,11 +54,11 @@ public static class AuthenticationCookie
         result is AuthenticationResponse response ? Present(context, response) : result;
 
     private static string? GetCookieName(HttpRequest request) =>
-        request.Headers[TransportHeader].ToString().ToLowerInvariant() switch
+        request.Headers[IdentityModuleConstants.AuthenticationCookie.TransportHeader].ToString().ToLowerInvariant() switch
         {
-            WebTransport => WebCookieName,
-            AdminTransport => AdminCookieName,
-            ZolaLightTransport => ZolaLightCookieName,
+            IdentityModuleConstants.AuthenticationCookie.WebTransport => IdentityModuleConstants.AuthenticationCookie.WebCookieName,
+            IdentityModuleConstants.AuthenticationCookie.AdminTransport => IdentityModuleConstants.AuthenticationCookie.AdminCookieName,
+            IdentityModuleConstants.AuthenticationCookie.ZolaLightTransport => IdentityModuleConstants.AuthenticationCookie.ZolaLightCookieName,
             _ => null
         };
 }

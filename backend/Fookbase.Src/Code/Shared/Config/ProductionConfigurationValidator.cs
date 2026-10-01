@@ -1,4 +1,5 @@
 using Fookbase.Api.Modules.Identity.Config;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Media.Config;
 using Microsoft.Extensions.Configuration;
 
@@ -18,16 +19,16 @@ public static class ProductionConfigurationValidator
             throw new InvalidOperationException("ConnectionStrings:FookbaseDatabase is required in Production.");
         }
 
-        var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+        var jwt = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Jwt).Get<JwtOptions>()
             ?? throw new InvalidOperationException("JWT configuration is required in Production.");
         jwt.Validate();
 
         var googleAuthentication = configuration
-            .GetSection(GoogleAuthenticationOptions.SectionName)
+            .GetSection(IdentityModuleConstants.ConfigurationSections.GoogleAuthentication)
             .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
         googleAuthentication.Validate(production: true);
 
-        var sms = configuration.GetSection(SmsOptions.SectionName).Get<SmsOptions>()
+        var sms = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Sms).Get<SmsOptions>()
             ?? new SmsOptions();
         sms.Validate(production: true);
 

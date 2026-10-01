@@ -1,6 +1,7 @@
 using Fookbase.Api.Modules.Admin;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Identity.Config;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Media.Services;
@@ -60,16 +61,16 @@ internal static class ModuleServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+        var jwtOptions = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Jwt).Get<JwtOptions>()
             ?? throw new InvalidOperationException("JWT configuration is required.");
-        var emailOptions = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()
+        var emailOptions = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Email).Get<EmailOptions>()
             ?? new EmailOptions();
-        var adminOptions = configuration.GetSection(AdminOptions.SectionName).Get<AdminOptions>()
+        var adminOptions = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Admin).Get<AdminOptions>()
             ?? new AdminOptions();
         var googleAuthenticationOptions = configuration
-            .GetSection(GoogleAuthenticationOptions.SectionName)
+            .GetSection(IdentityModuleConstants.ConfigurationSections.GoogleAuthentication)
             .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
-        var smsOptions = configuration.GetSection(SmsOptions.SectionName).Get<SmsOptions>()
+        var smsOptions = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Sms).Get<SmsOptions>()
             ?? new SmsOptions();
 
         return services.AddIdentityInfrastructure(

@@ -1,34 +1,32 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
-[Table("ExternalLoginTickets")]
 [Index(nameof(CodeHash), nameof(ExpiresAtUtc), IsUnique = true)]
 public sealed class ExternalLoginTicket
 {
-    private const int CodeHashLength = 64;
-    private const int ProviderLength = 32;
-    private const int ProviderKeyLength = 256;
-    private const int EmailLength = 256;
-    private const int ClientLength = 32;
+    private ExternalLoginTicket(){}
 
-    private ExternalLoginTicket()
-    {
-    }
-
-    private ExternalLoginTicket(
+    public ExternalLoginTicket(
         string codeHash,
         ExternalLoginTicketPurpose purpose,
         string client,
         string provider,
         string providerKey,
         string email,
-        Guid? userId,
+        Guid userId,
         DateTimeOffset now)
     {
+        IdentityInputValidator.ValidateSha256Hex(codeHash, "Mã băm của mã hoàn tất", nameof(codeHash));
+        IdentityInputValidator.ValidateText(client, 32, nameof(client));
+        IdentityInputValidator.ValidateText(provider, 32, nameof(provider));
+        IdentityInputValidator.ValidateText(providerKey, 256, nameof(providerKey));
+        IdentityInputValidator.ValidateText(email, 256, nameof(email));
+
         Id = Guid.NewGuid();
         CodeHash = codeHash;
         Purpose = purpose;
@@ -43,65 +41,33 @@ public sealed class ExternalLoginTicket
 
     public Guid Id { get; private set; }
 
-    [MaxLength(CodeHashLength)]
+    [MaxLength(64)]
     public string CodeHash { get; private set; } = string.Empty;
 
     public ExternalLoginTicketPurpose Purpose { get; private set; }
 
-    [MaxLength(ClientLength)]
+    [MaxLength(32)]
     public string Client { get; private set; } = string.Empty;
 
-    [MaxLength(ProviderLength)]
+    [MaxLength(32)]
     public string Provider { get; private set; } = string.Empty;
 
-    [MaxLength(ProviderKeyLength)]
+    [MaxLength(256)]
     public string ProviderKey { get; private set; } = string.Empty;
 
-    [MaxLength(EmailLength)]
+    [MaxLength(256)]
     public string Email { get; private set; } = string.Empty;
 
-    public Guid? UserId { get; private set; }
+    public Guid UserId { get; private set; }
 
     [DeleteBehavior(DeleteBehavior.Cascade)]
-    public User? User { get; private set; }
+    public User User { get; private set; } = null!;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset ExpiresAtUtc { get; private set; }
 
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
-
-    public static ExternalLoginTicket Create(
-        string codeHash,
-        ExternalLoginTicketPurpose purpose,
-        string client,
-        string provider,
-        string providerKey,
-        string email,
-        Guid? userId,
-        DateTimeOffset now)
-    {
-        if (string.IsNullOrWhiteSpace(codeHash) || codeHash.Length != CodeHashLength ||
-            !codeHash.All(Uri.IsHexDigit))
-        {
-            throw new ArgumentException("The completion code hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
-        }
-
-        ValidateText(client, ClientLength, nameof(client));
-        ValidateText(provider, ProviderLength, nameof(provider));
-        ValidateText(providerKey, ProviderKeyLength, nameof(providerKey));
-        ValidateText(email, EmailLength, nameof(email));
-
-        return new ExternalLoginTicket(
-            codeHash,
-            purpose,
-            client,
-            provider,
-            providerKey,
-            email,
-            userId,
-            now);
-    }
 
     public bool IsUsableAt(DateTimeOffset now) => ConsumedAtUtc is null && ExpiresAtUtc > now;
 
@@ -116,11 +82,4 @@ public sealed class ExternalLoginTicket
         return true;
     }
 
-    private static void ValidateText(string value, int maximumLength, string name)
-    {
-        if (string.IsNullOrWhiteSpace(value) || value.Length > maximumLength)
-        {
-            throw new ArgumentException($"{name} must contain at most {maximumLength} characters.", name);
-        }
-    }
 }

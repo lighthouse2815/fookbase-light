@@ -13,8 +13,6 @@ public sealed class AdministrationService(
     FookbaseDbContext dbContext,
     UserManager<User> userManager)
 {
-    private const int MaximumPageSize = 100;
-
     public Task<int> CountUsersAsync(CancellationToken cancellationToken = default) =>
         dbContext.Users.CountAsync(cancellationToken);
 
@@ -27,11 +25,11 @@ public sealed class AdministrationService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (offset < 0 || limit is < 1 or > MaximumPageSize)
+        if (offset < 0 || limit is < 1 or > IdentityModuleConstants.Administration.MaximumPageSize)
         {
             return ApplicationResult<PagedResponse<AdminUserResponse>>.Failure(new ApplicationError(
                 ErrorCode.InvalidPagination,
-                $"Offset must be non-negative and limit must be between 1 and {MaximumPageSize}.",
+                $"Offset must be non-negative and limit must be between 1 and {IdentityModuleConstants.Administration.MaximumPageSize}.",
                 ApplicationErrorType.Validation));
         }
 
@@ -98,7 +96,7 @@ public sealed class AdministrationService(
             return ApplicationResult<AdminUserResponse>.Failure(NotFound("The user was not found."));
         }
 
-        if (await userManager.IsInRoleAsync(user, AppRoles.Admin))
+        if (await userManager.IsInRoleAsync(user, IdentityModuleConstants.Roles.Admin))
         {
             return ApplicationResult<AdminUserResponse>.Failure(Forbidden(
                 "Administrator accounts cannot be disabled through this endpoint."));

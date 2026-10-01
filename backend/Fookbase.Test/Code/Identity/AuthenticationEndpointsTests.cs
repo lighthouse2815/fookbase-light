@@ -415,17 +415,26 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         var now = DateTimeOffset.UtcNow;
         var rawCode = "raw-completion";
         var codeHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawCode)));
-        var completion = ExternalLoginTicket.Create(
+
+        using var scope = factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
+        var email = $"ticket-{Guid.NewGuid():N}@example.test";
+        var user = new User(Guid.NewGuid(), email, $"ticket-{Guid.NewGuid():N}", now)
+        {
+            EmailConfirmed = true
+        };
+        Assert.True((await userManager.CreateAsync(user)).Succeeded);
+
+        var completion = new ExternalLoginTicket(
             codeHash,
             ExternalLoginTicketPurpose.IssueSession,
             "web",
             "Google",
             "google-subject",
             "person@example.test",
-            null,
+            user.Id,
             now);
 
-        using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         dbContext.ExternalLoginTickets.Add(completion);
         await dbContext.SaveChangesAsync();
