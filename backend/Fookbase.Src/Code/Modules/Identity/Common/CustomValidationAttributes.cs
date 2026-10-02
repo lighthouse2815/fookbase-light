@@ -4,9 +4,9 @@ using Fookbase.Api.Modules.Identity.Services;
 namespace Fookbase.Api.Modules.Identity.Common;
 
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class ContactIdentifierAttribute : ValidationAttribute
+public sealed class EmailOrPhoneNumberAttribute : ValidationAttribute
 {
-    public ContactIdentifierAttribute()
+    public EmailOrPhoneNumberAttribute()
         : base("Email hoặc số điện thoại không hợp lệ.")
     {
     }
