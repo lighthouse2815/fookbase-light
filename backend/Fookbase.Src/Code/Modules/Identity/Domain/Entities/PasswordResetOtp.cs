@@ -12,8 +12,8 @@ public sealed class PasswordResetOtp
     public PasswordResetOtp(Guid userId, string phoneNumber, string codeHash, DateTimeOffset now)
     {
         if (userId == Guid.Empty) throw new ArgumentException("The user identifier is required.", nameof(userId));
-        if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length > 32) throw new ArgumentException("The phone number is invalid.", nameof(phoneNumber));
-        if (!IsValidCodeHash(codeHash)) throw new ArgumentException("The OTP hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
+        IdentityInputValidator.ValidateText(phoneNumber, 32, nameof(phoneNumber));
+        IdentityInputValidator.ValidateSha256Hex(codeHash, "Mã băm OTP", nameof(codeHash));
 
         Id = Guid.NewGuid();
         UserId = userId;
@@ -70,7 +70,7 @@ public sealed class PasswordResetOtp
 
     public void ReplaceCodeHash(string codeHash)
     {
-        if (!IsValidCodeHash(codeHash)) throw new ArgumentException("The OTP hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
+        IdentityInputValidator.ValidateSha256Hex(codeHash, "Mã băm OTP", nameof(codeHash));
         CodeHash = codeHash;
     }
 
