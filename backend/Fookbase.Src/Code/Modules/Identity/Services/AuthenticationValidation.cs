@@ -34,23 +34,6 @@ internal static class AuthenticationValidation
         return errors;
     }
 
-    public static IReadOnlyDictionary<string, string[]> Validate(LoginRequest request)
-    {
-        var errors = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
-
-        if (!ContactIdentifier.TryParse(request.Identifier, out _))
-        {
-            errors["identifier"] = ["Email or Vietnamese mobile number is invalid."];
-        }
-
-        if (string.IsNullOrEmpty(request.Password))
-        {
-            errors["password"] = ["Password is required."];
-        }
-
-        return errors;
-    }
-
     private static void ValidateEmail(
         string? email,
         IDictionary<string, string[]> errors)
