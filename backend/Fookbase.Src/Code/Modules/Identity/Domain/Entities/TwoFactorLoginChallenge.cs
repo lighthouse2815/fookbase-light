@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Identity.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
@@ -14,15 +15,7 @@ public sealed class TwoFactorLoginChallenge
         string? pendingExternalProvider = null,
         string? pendingExternalProviderKey = null)
     {
-        if (string.IsNullOrWhiteSpace(pendingExternalProvider) != string.IsNullOrWhiteSpace(pendingExternalProviderKey))
-        {
-            throw new ArgumentException("A pending external provider and provider key must be supplied together.");
-        }
-
-        if (pendingExternalProvider is { Length: > 32 } || pendingExternalProviderKey is { Length: > 256 })
-        {
-            throw new ArgumentException("The pending external login is invalid.");
-        }
+        IdentityInputValidator.ValidateOptionalExternalLogin(pendingExternalProvider, pendingExternalProviderKey);
 
         Id = Guid.NewGuid();
         UserId = userId;
