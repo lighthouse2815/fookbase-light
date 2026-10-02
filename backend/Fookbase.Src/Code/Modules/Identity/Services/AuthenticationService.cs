@@ -536,7 +536,7 @@ public sealed class AuthenticationService(
             cancellationToken);
         if (challenge is null)
         {
-            challenge = PasswordResetOtp.Create(user.Id, contact.Value, HashOtp(code), now);
+            challenge = new PasswordResetOtp(user.Id, contact.Value, HashOtp(code), now);
             dbContext.PasswordResetOtps.Add(challenge);
         }
         else if (!challenge.TryResend(HashOtp(code), now))

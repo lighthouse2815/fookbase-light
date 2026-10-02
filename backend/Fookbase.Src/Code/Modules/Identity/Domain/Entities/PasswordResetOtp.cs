@@ -9,8 +9,12 @@ public sealed class PasswordResetOtp
 {
     private PasswordResetOtp(){}
 
-    private PasswordResetOtp(Guid userId, string phoneNumber, string codeHash, DateTimeOffset now)
+    public PasswordResetOtp(Guid userId, string phoneNumber, string codeHash, DateTimeOffset now)
     {
+        if (userId == Guid.Empty) throw new ArgumentException("The user identifier is required.", nameof(userId));
+        if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length > 32) throw new ArgumentException("The phone number is invalid.", nameof(phoneNumber));
+        if (!IsValidCodeHash(codeHash)) throw new ArgumentException("The OTP hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
+
         Id = Guid.NewGuid();
         UserId = userId;
         PhoneNumber = phoneNumber;
@@ -42,14 +46,6 @@ public sealed class PasswordResetOtp
     public int SendCount { get; private set; }
     public int FailedAttemptCount { get; private set; }
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
-
-    public static PasswordResetOtp Create(Guid userId, string phoneNumber, string codeHash, DateTimeOffset now)
-    {
-        if (userId == Guid.Empty) throw new ArgumentException("The user identifier is required.", nameof(userId));
-        if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length > 32) throw new ArgumentException("The phone number is invalid.", nameof(phoneNumber));
-        if (!IsValidCodeHash(codeHash)) throw new ArgumentException("The OTP hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
-        return new PasswordResetOtp(userId, phoneNumber, codeHash, now);
-    }
 
     public bool IsUsableAt(DateTimeOffset now) =>
         ConsumedAtUtc is null && FailedAttemptCount < IdentityModuleConstants.Challenges.MaximumFailedAttempts && ExpiresAtUtc > now;
