@@ -19,9 +19,9 @@ export interface AuthenticationResponse {
 const jsonBody = (value: unknown) => ({ body: JSON.stringify(value) })
 
 export const authApi = {
-  login: (email: string, password: string) => apiRequest<AuthenticationResponse>('/api/auth/login', {
+  login: (identifier: string, password: string) => apiRequest<AuthenticationResponse>('/api/auth/login', {
     method: 'POST',
-    ...jsonBody({ email, password }),
+    ...jsonBody({ identifier, password }),
   }),
   refresh: (refreshToken?: string) => apiRequest<AuthenticationResponse>('/api/auth/refresh', {
     method: 'POST',

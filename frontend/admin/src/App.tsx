@@ -25,8 +25,8 @@ export default function App() {
     }
   }
 
-  const signIn = async (email: string, password: string) => {
-    const nextSession = await authApi.login(email, password)
+  const signIn = async (identifier: string, password: string) => {
+    const nextSession = await authApi.login(identifier, password)
     if (!nextSession.user.roles.includes('Admin')) {
       throw new ApiError(t('adminRequired'), 403)
     }

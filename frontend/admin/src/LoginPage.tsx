@@ -2,9 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { ApiError } from './api/client'
 import { PreferenceControls, usePreferences } from './preferences'
 
-export default function LoginPage({ onSignIn }: { onSignIn: (email: string, password: string) => Promise<void> }) {
+export default function LoginPage({ onSignIn }: { onSignIn: (identifier: string, password: string) => Promise<void> }) {
   const { t } = usePreferences()
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -14,7 +14,7 @@ export default function LoginPage({ onSignIn }: { onSignIn: (email: string, pass
     setError(null)
     setIsSubmitting(true)
     try {
-      await onSignIn(email, password)
+      await onSignIn(identifier, password)
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableSignIn'))
     } finally {
@@ -36,7 +36,7 @@ export default function LoginPage({ onSignIn }: { onSignIn: (email: string, pass
           <h2 className="mt-2 font-heading text-3xl font-bold text-text">{t('welcomeBack')}</h2>
           <p className="mt-2 text-sm text-text-muted">{t('adminRoleHint')}</p>
           <form className="mt-7 space-y-5" onSubmit={submit}>
-            <label className="block text-sm font-semibold text-text">{t('email')}<input required autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-text outline-none focus:border-primary" placeholder="admin@example.com" /></label>
+            <label className="block text-sm font-semibold text-text">{t('email')}<input required autoComplete="email" type="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} className="mt-2 w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-text outline-none focus:border-primary" placeholder="admin@example.com" /></label>
             <label className="block text-sm font-semibold text-text">{t('password')}<input required autoComplete="current-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-border bg-surface-2 px-4 py-3 text-text outline-none focus:border-primary" placeholder={t('yourPassword')} /></label>
             {error && <p role="alert" className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>}
             <button disabled={isSubmitting} className="w-full rounded-xl bg-primary-dark px-4 py-3 font-bold text-white transition hover:bg-primary-dark disabled:opacity-60">{isSubmitting ? t('signingIn') : t('signIn')}</button>

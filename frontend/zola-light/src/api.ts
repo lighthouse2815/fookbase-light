@@ -109,8 +109,8 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 
 export const authApi = {
   providers: () => request<ExternalProviders>('/api/auth/providers'),
-  login: (email: string, password: string) => request<AuthSession | TwoFactorChallenge>('/api/auth/login', {
-    method: 'POST', body: JSON.stringify({ email, password }),
+  login: (identifier: string, password: string) => request<AuthSession | TwoFactorChallenge>('/api/auth/login', {
+    method: 'POST', body: JSON.stringify({ identifier, password }),
   }),
   completeGoogle: (code: string) => request<GoogleLoginResponse>('/api/auth/google/exchange', {
     method: 'POST', body: JSON.stringify({ code, client: 'zola-light' }),

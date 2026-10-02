@@ -54,7 +54,7 @@ function Login({ onSession }: { onSession: (session: AuthSession) => void }) {
   const googleQuery = new URLSearchParams(window.location.search)
   const googleCompletionCode = googleQuery.get('provider') === 'google' ? googleQuery.get('code') : null
   const googleLinkMode = googleQuery.get('mode') === 'link'
-  const [email, setEmail] = useState(() => googleLinkMode ? googleQuery.get('email') ?? '' : '')
+  const [identifier, setIdentifier] = useState(() => googleLinkMode ? googleQuery.get('email') ?? '' : '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -100,7 +100,7 @@ function Login({ onSession }: { onSession: (session: AuthSession) => void }) {
     try {
       const session = googleLink
         ? await authApi.linkGoogle(googleLink.code, password)
-        : await authApi.login(email, password)
+        : await authApi.login(identifier, password)
       if ('twoFactorRequired' in session) setChallenge(session.challenge)
       else { saveSession(session); onSession(session) }
     } catch (reason) {
@@ -116,7 +116,7 @@ function Login({ onSession }: { onSession: (session: AuthSession) => void }) {
       <label>Mã xác thực<input autoFocus autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} required /></label>
       <button type="button" className="primary" disabled={busy || !code} onClick={() => { setBusy(true); void authApi.verifyTwoFactor(challenge, code).then((next) => { saveSession(next); onSession(next) }).catch((reason) => setError(reason instanceof ApiError ? reason.message : 'Mã không hợp lệ.')).finally(() => setBusy(false)) }}>Xác minh</button>
     </> : <>
-      <label>Email<input autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} readOnly={Boolean(googleLink)} required /></label>
+      <label>Email hoặc số điện thoại<input autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} readOnly={Boolean(googleLink)} required /></label>
       <label>Mật khẩu<input autoComplete="current-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
       <button className="primary" disabled={busy}>{busy ? 'Đang đăng nhập…' : googleLink ? 'Tiếp tục với Google' : 'Đăng nhập'}</button>
       {!googleLink && googleEnabled && <>
