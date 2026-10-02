@@ -3,6 +3,7 @@ using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Shared.ErrorHandling;

@@ -1,5 +1,6 @@
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Modules.Identity.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 

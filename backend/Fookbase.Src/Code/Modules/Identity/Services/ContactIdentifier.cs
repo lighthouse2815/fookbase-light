@@ -1,13 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using Fookbase.Api.Modules.Identity.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Identity.Services;
-
-public enum ContactKind
-{
-    Email,
-    Phone
-}
 
 public sealed record ContactIdentifier(ContactKind Kind, string Value)
 {
