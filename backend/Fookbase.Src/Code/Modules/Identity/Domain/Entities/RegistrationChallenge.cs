@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
@@ -8,13 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
-[Table("RegistrationChallenges")]
 [Index(nameof(Contact), IsUnique = true)]
 public sealed class RegistrationChallenge
 {
-    private RegistrationChallenge()
-    {
-    }
+    private RegistrationChallenge() { }
 
     public RegistrationChallenge(
         ContactIdentifier contact,
@@ -53,6 +49,7 @@ public sealed class RegistrationChallenge
     }
 
     public Guid Id { get; private set; }
+
     public ContactKind ContactKind { get; private set; }
 
     [MaxLength(256)]
@@ -69,14 +66,23 @@ public sealed class RegistrationChallenge
 
     [MaxLength(50)]
     public string LastName { get; private set; } = string.Empty;
+
     public DateOnly DateOfBirth { get; private set; }
+
     public Gender Gender { get; private set; }
-    public DateTimeOffset CreatedAtUtc { get; private set; }
-    public DateTimeOffset ExpiresAtUtc { get; private set; }
-    public DateTimeOffset NextResendAllowedAtUtc { get; private set; }
-    public DateTimeOffset SendLimitWindowStartedAtUtc { get; private set; }
+
     public int SendCount { get; private set; }
+
     public int FailedAttemptCount { get; private set; }
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset ExpiresAtUtc { get; private set; }
+
+    public DateTimeOffset NextResendAllowedAtUtc { get; private set; }
+
+    public DateTimeOffset SendLimitWindowStartedAtUtc { get; private set; }
+
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
 
     public bool IsUsableAt(DateTimeOffset now) =>

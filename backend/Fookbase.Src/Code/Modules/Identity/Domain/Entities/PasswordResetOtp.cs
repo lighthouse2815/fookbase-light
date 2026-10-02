@@ -38,12 +38,18 @@ public sealed class PasswordResetOtp
     [MaxLength(64)]
     public string CodeHash { get; private set; } = string.Empty;
 
-    public DateTimeOffset CreatedAtUtc { get; private set; }
-    public DateTimeOffset ExpiresAtUtc { get; private set; }
-    public DateTimeOffset NextResendAllowedAtUtc { get; private set; }
-    public DateTimeOffset SendLimitWindowStartedAtUtc { get; private set; }
     public int SendCount { get; private set; }
+
     public int FailedAttemptCount { get; private set; }
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset ExpiresAtUtc { get; private set; }
+
+    public DateTimeOffset NextResendAllowedAtUtc { get; private set; }
+
+    public DateTimeOffset SendLimitWindowStartedAtUtc { get; private set; }
+
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
 
     public bool IsUsableAt(DateTimeOffset now) =>
@@ -52,10 +58,12 @@ public sealed class PasswordResetOtp
     public bool TryResend(string codeHash, DateTimeOffset now)
     {
         if (ConsumedAtUtc is not null || NextResendAllowedAtUtc > now || !IdentityInputValidator.IsValidSha256Hex(codeHash)) return false;
+
         (SendLimitWindowStartedAtUtc, SendCount) = IdentityChallengeWindow.ResetIfExpired(
             SendLimitWindowStartedAtUtc,
             SendCount,
             now);
+
         if (SendCount >= IdentityModuleConstants.Challenges.MaximumSendsPerWindow) return false;
 
         CodeHash = codeHash;
