@@ -1,10 +1,23 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
 
 public sealed class LoginRequestValidationTests
 {
+    [Fact]
+    public void Serializes_identifier_without_legacy_email()
+    {
+        var request = new LoginRequest("user@example.com", "Password123!");
+
+        using var document = JsonDocument.Parse(
+            JsonSerializer.Serialize(request, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+
+        Assert.Equal("user@example.com", document.RootElement.GetProperty("identifier").GetString());
+        Assert.False(document.RootElement.TryGetProperty("email", out _));
+    }
+
     [Fact]
     public void Missing_password_fails_validation()
     {

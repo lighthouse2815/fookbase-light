@@ -122,7 +122,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     }
 
     [Fact]
-    public async Task Legacy_login_email_json_still_works()
+    public async Task Login_identifier_json_still_works()
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
@@ -130,7 +130,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
         var response = await client.PostAsJsonAsync(
             "/api/auth/login",
-            new { email = account.Email, password = account.Password });
+            new { identifier = account.Email, password = account.Password });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -146,7 +146,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
         var login = await client.PostAsJsonAsync(
             "/api/auth/login",
-            new { email = account.Email, password = account.Password });
+            new { identifier = account.Email, password = account.Password });
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var cookie = ReadRefreshCookie(login);

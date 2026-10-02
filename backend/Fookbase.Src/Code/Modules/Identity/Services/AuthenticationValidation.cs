@@ -38,7 +38,7 @@ internal static class AuthenticationValidation
     {
         var errors = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
 
-        if (!ContactIdentifier.TryParse(request.EffectiveIdentifier, out _))
+        if (!ContactIdentifier.TryParse(request.Identifier, out _))
         {
             errors["identifier"] = ["Email or Vietnamese mobile number is invalid."];
         }

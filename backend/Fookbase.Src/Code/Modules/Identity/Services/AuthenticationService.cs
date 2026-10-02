@@ -114,7 +114,7 @@ public sealed class AuthenticationService(
             throw ValidationFailure(validationErrors);
         }
 
-        var user = await FindByIdentifierAsync(request.EffectiveIdentifier, cancellationToken);
+        var user = await FindByIdentifierAsync(request.Identifier, cancellationToken);
         if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
