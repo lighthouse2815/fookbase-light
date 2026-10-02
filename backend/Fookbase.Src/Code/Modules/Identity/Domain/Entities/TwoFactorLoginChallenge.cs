@@ -3,28 +3,8 @@ namespace Fookbase.Api.Modules.Identity.Entities;
 public sealed class TwoFactorLoginChallenge
 {
     private TwoFactorLoginChallenge() { }
-    private TwoFactorLoginChallenge(
-        Guid id,
-        Guid userId,
-        DateTimeOffset now,
-        string? pendingExternalProvider,
-        string? pendingExternalProviderKey)
-    {
-        Id = id;
-        UserId = userId;
-        CreatedAtUtc = now;
-        ExpiresAtUtc = now.AddMinutes(5);
-        PendingExternalProvider = pendingExternalProvider;
-        PendingExternalProviderKey = pendingExternalProviderKey;
-    }
-    public Guid Id { get; private set; }
-    public Guid UserId { get; private set; }
-    public DateTimeOffset CreatedAtUtc { get; private set; }
-    public DateTimeOffset ExpiresAtUtc { get; private set; }
-    public DateTimeOffset? ConsumedAtUtc { get; private set; }
-    public string? PendingExternalProvider { get; private set; }
-    public string? PendingExternalProviderKey { get; private set; }
-    public static TwoFactorLoginChallenge Create(
+
+    public TwoFactorLoginChallenge(
         Guid userId,
         DateTimeOffset now,
         string? pendingExternalProvider = null,
@@ -40,13 +20,20 @@ public sealed class TwoFactorLoginChallenge
             throw new ArgumentException("The pending external login is invalid.");
         }
 
-        return new TwoFactorLoginChallenge(
-            Guid.NewGuid(),
-            userId,
-            now,
-            pendingExternalProvider,
-            pendingExternalProviderKey);
+        Id = Guid.NewGuid();
+        UserId = userId;
+        CreatedAtUtc = now;
+        ExpiresAtUtc = now.AddMinutes(5);
+        PendingExternalProvider = pendingExternalProvider;
+        PendingExternalProviderKey = pendingExternalProviderKey;
     }
+    public Guid Id { get; private set; }
+    public Guid UserId { get; private set; }
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+    public DateTimeOffset ExpiresAtUtc { get; private set; }
+    public DateTimeOffset? ConsumedAtUtc { get; private set; }
+    public string? PendingExternalProvider { get; private set; }
+    public string? PendingExternalProviderKey { get; private set; }
     public bool IsUsableAt(DateTimeOffset now) => ConsumedAtUtc is null && ExpiresAtUtc > now;
     public void Consume(DateTimeOffset now) => ConsumedAtUtc = now;
 }

@@ -134,7 +134,7 @@ public sealed class AuthenticationService(
         var now = timeProvider.GetUtcNow();
         if (user.TwoFactorEnabled)
         {
-            var challenge = TwoFactorLoginChallenge.Create(user.Id, now);
+            var challenge = new TwoFactorLoginChallenge(user.Id, now);
             dbContext.TwoFactorLoginChallenges.Add(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
             return new TwoFactorChallengeResponse(true, challenge.Id.ToString("N"), challenge.ExpiresAtUtc);
@@ -161,7 +161,7 @@ public sealed class AuthenticationService(
         var now = timeProvider.GetUtcNow();
         if (user.TwoFactorEnabled)
         {
-            var challenge = TwoFactorLoginChallenge.Create(
+            var challenge = new TwoFactorLoginChallenge(
                 user.Id,
                 now,
                 pendingExternalProvider,
