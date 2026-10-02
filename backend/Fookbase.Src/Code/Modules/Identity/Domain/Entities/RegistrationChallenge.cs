@@ -110,7 +110,10 @@ public sealed class RegistrationChallenge
             return false;
         }
 
-        ResetSendWindowIfNeeded(now);
+        (SendLimitWindowStartedAtUtc, SendCount) = IdentityChallengeWindow.ResetIfExpired(
+            SendLimitWindowStartedAtUtc,
+            SendCount,
+            now);
         if (SendCount >= IdentityModuleConstants.Challenges.MaximumSendsPerWindow) return false;
 
         CodeHash = codeHash;
@@ -133,7 +136,10 @@ public sealed class RegistrationChallenge
             return false;
         }
 
-        ResetSendWindowIfNeeded(now);
+        (SendLimitWindowStartedAtUtc, SendCount) = IdentityChallengeWindow.ResetIfExpired(
+            SendLimitWindowStartedAtUtc,
+            SendCount,
+            now);
         if (SendCount >= IdentityModuleConstants.Challenges.MaximumSendsPerWindow) return false;
 
         CodeHash = codeHash;
@@ -150,10 +156,4 @@ public sealed class RegistrationChallenge
         CodeHash = codeHash;
     }
 
-    private void ResetSendWindowIfNeeded(DateTimeOffset now)
-    {
-        if (SendLimitWindowStartedAtUtc.AddHours(1) > now) return;
-        SendLimitWindowStartedAtUtc = now;
-        SendCount = 0;
-    }
 }

@@ -52,11 +52,10 @@ public sealed class PasswordResetOtp
     public bool TryResend(string codeHash, DateTimeOffset now)
     {
         if (ConsumedAtUtc is not null || NextResendAllowedAtUtc > now || !IdentityInputValidator.IsValidSha256Hex(codeHash)) return false;
-        if (SendLimitWindowStartedAtUtc.AddHours(1) <= now)
-        {
-            SendLimitWindowStartedAtUtc = now;
-            SendCount = 0;
-        }
+        (SendLimitWindowStartedAtUtc, SendCount) = IdentityChallengeWindow.ResetIfExpired(
+            SendLimitWindowStartedAtUtc,
+            SendCount,
+            now);
         if (SendCount >= IdentityModuleConstants.Challenges.MaximumSendsPerWindow) return false;
 
         CodeHash = codeHash;
