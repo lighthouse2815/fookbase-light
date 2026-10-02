@@ -11,7 +11,6 @@ public sealed class PasswordResetOtp
 
     public PasswordResetOtp(Guid userId, string phoneNumber, string codeHash, DateTimeOffset now)
     {
-        if (userId == Guid.Empty) throw new ArgumentException("The user identifier is required.", nameof(userId));
         IdentityInputValidator.ValidateText(phoneNumber, 32, nameof(phoneNumber));
         IdentityInputValidator.ValidateSha256Hex(codeHash, "Mã băm OTP", nameof(codeHash));
 
