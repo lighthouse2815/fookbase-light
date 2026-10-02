@@ -1,10 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Fookbase.Api.Modules.Users.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Entities;
 
+[Table("RegistrationChallenges")]
+[Index(nameof(Contact), IsUnique = true)]
 public sealed class RegistrationChallenge
 {
     private RegistrationChallenge()
@@ -39,10 +44,20 @@ public sealed class RegistrationChallenge
 
     public Guid Id { get; private set; }
     public ContactKind ContactKind { get; private set; }
+
+    [MaxLength(256)]
     public string Contact { get; private set; } = string.Empty;
+
+    [MaxLength(64)]
     public string CodeHash { get; private set; } = string.Empty;
+
+    [MaxLength(512)]
     public string PasswordHash { get; private set; } = string.Empty;
+
+    [MaxLength(50)]
     public string FirstName { get; private set; } = string.Empty;
+
+    [MaxLength(50)]
     public string LastName { get; private set; } = string.Empty;
     public DateOnly DateOfBirth { get; private set; }
     public Gender Gender { get; private set; }
