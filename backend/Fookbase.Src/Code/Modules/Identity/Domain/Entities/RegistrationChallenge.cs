@@ -16,7 +16,7 @@ public sealed class RegistrationChallenge
     {
     }
 
-    private RegistrationChallenge(
+    public RegistrationChallenge(
         ContactIdentifier contact,
         string codeHash,
         string passwordHash,
@@ -26,13 +26,23 @@ public sealed class RegistrationChallenge
         Gender gender,
         DateTimeOffset now)
     {
+        ArgumentNullException.ThrowIfNull(contact);
+        IdentityInputValidator.ValidateText(contact.Value, 256, nameof(contact));
+        IdentityInputValidator.ValidateSha256Hex(codeHash, "Mã băm OTP", nameof(codeHash));
+        IdentityInputValidator.ValidateText(passwordHash, 512, nameof(passwordHash));
+
+        var normalizedFirstName = firstName?.Trim() ?? string.Empty;
+        var normalizedLastName = lastName?.Trim() ?? string.Empty;
+        IdentityInputValidator.ValidateText(normalizedFirstName, 50, nameof(firstName));
+        IdentityInputValidator.ValidateText(normalizedLastName, 50, nameof(lastName));
+
         Id = Guid.NewGuid();
         ContactKind = contact.Kind;
         Contact = contact.Value;
         CodeHash = codeHash;
         PasswordHash = passwordHash;
-        FirstName = firstName;
-        LastName = lastName;
+        FirstName = normalizedFirstName;
+        LastName = normalizedLastName;
         DateOfBirth = dateOfBirth;
         Gender = gender;
         CreatedAtUtc = now;
@@ -68,27 +78,6 @@ public sealed class RegistrationChallenge
     public int SendCount { get; private set; }
     public int FailedAttemptCount { get; private set; }
     public DateTimeOffset? ConsumedAtUtc { get; private set; }
-
-    public static RegistrationChallenge Create(
-        ContactIdentifier contact,
-        string codeHash,
-        string passwordHash,
-        string firstName,
-        string lastName,
-        DateOnly dateOfBirth,
-        Gender gender,
-        DateTimeOffset now)
-    {
-        if (codeHash.Length != 64 || !codeHash.All(Uri.IsHexDigit))
-            throw new ArgumentException("The OTP hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
-        if (string.IsNullOrWhiteSpace(passwordHash))
-            throw new ArgumentException("The password hash is required.", nameof(passwordHash));
-        if (string.IsNullOrWhiteSpace(firstName) || firstName.Trim().Length > 50 ||
-            string.IsNullOrWhiteSpace(lastName) || lastName.Trim().Length > 50)
-            throw new ArgumentException("Names must contain between 1 and 50 characters.");
-
-        return new RegistrationChallenge(contact, codeHash, passwordHash, firstName.Trim(), lastName.Trim(), dateOfBirth, gender, now);
-    }
 
     public bool IsUsableAt(DateTimeOffset now) =>
         ConsumedAtUtc is null && FailedAttemptCount < IdentityModuleConstants.Challenges.MaximumFailedAttempts && ExpiresAtUtc > now;
@@ -157,7 +146,7 @@ public sealed class RegistrationChallenge
 
     public void ReplaceCodeHash(string codeHash)
     {
-        if (!IsValidCodeHash(codeHash)) throw new ArgumentException("The OTP hash must be a SHA-256 hexadecimal digest.", nameof(codeHash));
+        IdentityInputValidator.ValidateSha256Hex(codeHash, "Mã băm OTP", nameof(codeHash));
         CodeHash = codeHash;
     }
 

@@ -261,7 +261,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     public void Registration_challenge_allows_at_most_five_sends_per_hour()
     {
         var now = DateTimeOffset.UtcNow;
-        var challenge = RegistrationChallenge.Create(
+        var challenge = new RegistrationChallenge(
             new ContactIdentifier(ContactKind.Email, "resend@example.test"),
             new string('A', 64),
             "identity-password-hash",
@@ -301,7 +301,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     public void Registration_challenge_locks_after_five_invalid_codes()
     {
         var now = DateTimeOffset.UtcNow;
-        var challenge = RegistrationChallenge.Create(
+        var challenge = new RegistrationChallenge(
             new ContactIdentifier(ContactKind.Email, "person@example.test"),
             new string('A', 64),
             "identity-password-hash",

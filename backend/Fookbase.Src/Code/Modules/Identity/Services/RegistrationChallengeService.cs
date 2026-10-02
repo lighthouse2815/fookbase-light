@@ -43,7 +43,7 @@ public sealed class RegistrationChallengeService(
 
         if (challenge is null)
         {
-            challenge = RegistrationChallenge.Create(
+            challenge = new RegistrationChallenge(
                 input.Contact,
                 codeHash,
                 passwordHash,
