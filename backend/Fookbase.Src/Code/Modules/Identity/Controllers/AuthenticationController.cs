@@ -20,7 +20,10 @@ public sealed class AuthenticationController(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await authenticationService.LoginAsync(request, null, cancellationToken);
+        var result = await authenticationService.LoginAsync(
+            request,
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
 
         return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }
