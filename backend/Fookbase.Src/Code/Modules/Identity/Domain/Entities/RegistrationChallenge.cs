@@ -103,7 +103,7 @@ public sealed class RegistrationChallenge
         Gender gender,
         DateTimeOffset now)
     {
-        if (ConsumedAtUtc is not null || NextResendAllowedAtUtc > now || !IsValidCodeHash(codeHash) || string.IsNullOrWhiteSpace(passwordHash) ||
+        if (ConsumedAtUtc is not null || NextResendAllowedAtUtc > now || !IdentityInputValidator.IsValidSha256Hex(codeHash) || string.IsNullOrWhiteSpace(passwordHash) ||
             string.IsNullOrWhiteSpace(firstName) || firstName.Trim().Length > 50 ||
             string.IsNullOrWhiteSpace(lastName) || lastName.Trim().Length > 50)
         {
@@ -128,7 +128,7 @@ public sealed class RegistrationChallenge
 
     public bool TryResend(string codeHash, DateTimeOffset now)
     {
-        if (ConsumedAtUtc is not null || ExpiresAtUtc <= now || NextResendAllowedAtUtc > now || !IsValidCodeHash(codeHash))
+        if (ConsumedAtUtc is not null || ExpiresAtUtc <= now || NextResendAllowedAtUtc > now || !IdentityInputValidator.IsValidSha256Hex(codeHash))
         {
             return false;
         }
@@ -149,8 +149,6 @@ public sealed class RegistrationChallenge
         IdentityInputValidator.ValidateSha256Hex(codeHash, "Mã băm OTP", nameof(codeHash));
         CodeHash = codeHash;
     }
-
-    private static bool IsValidCodeHash(string value) => value.Length == 64 && value.All(Uri.IsHexDigit);
 
     private void ResetSendWindowIfNeeded(DateTimeOffset now)
     {

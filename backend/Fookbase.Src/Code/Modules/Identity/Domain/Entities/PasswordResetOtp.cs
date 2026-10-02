@@ -51,7 +51,7 @@ public sealed class PasswordResetOtp
 
     public bool TryResend(string codeHash, DateTimeOffset now)
     {
-        if (ConsumedAtUtc is not null || NextResendAllowedAtUtc > now || !IsValidCodeHash(codeHash)) return false;
+        if (ConsumedAtUtc is not null || NextResendAllowedAtUtc > now || !IdentityInputValidator.IsValidSha256Hex(codeHash)) return false;
         if (SendLimitWindowStartedAtUtc.AddHours(1) <= now)
         {
             SendLimitWindowStartedAtUtc = now;
@@ -73,5 +73,4 @@ public sealed class PasswordResetOtp
         CodeHash = codeHash;
     }
 
-    private static bool IsValidCodeHash(string value) => value.Length == 64 && value.All(Uri.IsHexDigit);
 }

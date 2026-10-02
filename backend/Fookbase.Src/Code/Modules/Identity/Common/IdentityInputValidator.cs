@@ -12,11 +12,14 @@ internal static class IdentityInputValidator
 
     public static void ValidateSha256Hex(string value, string valueName, string parameterName)
     {
-        if (string.IsNullOrWhiteSpace(value) || value.Length != 64 || !value.All(Uri.IsHexDigit))
+        if (!IsValidSha256Hex(value))
         {
             throw new ArgumentException(
                 $"{valueName} phải là chuỗi SHA-256 dạng thập lục phân.",
                 parameterName);
         }
     }
+
+    public static bool IsValidSha256Hex(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && value.Length == 64 && value.All(Uri.IsHexDigit);
 }
