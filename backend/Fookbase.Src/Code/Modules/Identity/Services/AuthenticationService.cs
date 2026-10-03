@@ -108,7 +108,7 @@ public sealed class AuthenticationService(
         string? userAgent,
         CancellationToken cancellationToken = default)
     {
-        var user = await FindByIdentifierAsync(request.Identifier, cancellationToken);
+        var user = await FindByIdentifierAsync(request.Identifier!, cancellationToken);
         if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
@@ -169,7 +169,7 @@ public sealed class AuthenticationService(
     }
 
     public async Task<User?> FindByIdentifierAsync(
-        string? identifier,
+        string identifier,
         CancellationToken cancellationToken = default)
     {
         if (!ContactIdentifier.TryParse(identifier, out var contact)) return null;
