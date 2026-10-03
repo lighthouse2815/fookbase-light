@@ -18,11 +18,9 @@ public sealed class AuthenticationService(
     UserManager<User> userManager,
     FookbaseDbContext dbContext,
     JwtTokenService tokenService,
-    RoleManager<IdentityRole<Guid>> roleManager,
     IEmailSender emailSender,
     IContactOtpSender contactOtpSender,
     EmailOptions emailOptions,
-    AdminOptions adminOptions,
     ILogger<AuthenticationService> logger,
     AccountModerationService accountModerationService,
     TimeProvider timeProvider)
@@ -726,35 +724,9 @@ public sealed class AuthenticationService(
 
     private async Task<IReadOnlyList<string>> GetRolesAsync(User user)
     {
-        if (!string.IsNullOrWhiteSpace(user.Email) && adminOptions.IsBootstrapAdmin(user.Email))
-        {
-            await EnsureBootstrapAdminRoleAsync(user);
-        }
-
         return (await userManager.GetRolesAsync(user))
             .Order(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-    }
-
-    private async Task EnsureBootstrapAdminRoleAsync(User user)
-    {
-        if (!await roleManager.RoleExistsAsync(IdentityModuleConstants.Roles.Admin))
-        {
-            var createRole = await roleManager.CreateAsync(new IdentityRole<Guid>(IdentityModuleConstants.Roles.Admin));
-            if (!createRole.Succeeded && !await roleManager.RoleExistsAsync(IdentityModuleConstants.Roles.Admin))
-            {
-                throw new InvalidOperationException("The bootstrap administrator role could not be created.");
-            }
-        }
-
-        if (!await userManager.IsInRoleAsync(user, IdentityModuleConstants.Roles.Admin))
-        {
-            var addRole = await userManager.AddToRoleAsync(user, IdentityModuleConstants.Roles.Admin);
-            if (!addRole.Succeeded)
-            {
-                throw new InvalidOperationException("The bootstrap administrator role could not be assigned.");
-            }
-        }
     }
 
     private async Task<IdentityResult> CreateUserAsync(

@@ -11,13 +11,11 @@ public static class DependencyInjection
         this IServiceCollection services,
         JwtOptions jwtOptions,
         EmailOptions emailOptions,
-        AdminOptions adminOptions,
         GoogleAuthenticationOptions googleAuthenticationOptions,
         SmsOptions smsOptions)
     {
         jwtOptions.Validate();
         emailOptions.Validate();
-        adminOptions.Validate();
         googleAuthenticationOptions.Validate(production: false);
         smsOptions.Validate(production: false);
 
@@ -41,7 +39,6 @@ public static class DependencyInjection
 
         services.AddSingleton(jwtOptions);
         services.AddSingleton(emailOptions);
-        services.AddSingleton(adminOptions);
         services.AddSingleton(googleAuthenticationOptions);
         services.AddSingleton(smsOptions);
         services.AddSingleton(TimeProvider.System);

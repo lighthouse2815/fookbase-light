@@ -7,6 +7,7 @@ using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
@@ -21,19 +22,88 @@ public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixt
     }
 
     [Theory]
+    [InlineData("registration")]
+    [InlineData("login")]
+    [InlineData("current-user")]
+    [InlineData("refresh")]
+    public async Task Configured_bootstrap_email_does_not_grant_administrator_access(string operation)
+    {
+        var suffix = Guid.NewGuid().ToString("N")[..12];
+        var email = $"bootstrap-{suffix}@example.test";
+        const string password = "Dashboard-test123!";
+        await using var ordinaryApp = factory.WithWebHostBuilder(builder =>
+            builder.UseSetting("Admin:BootstrapEmail", ""));
+        await using var configuredApp = factory.WithWebHostBuilder(builder =>
+            builder.UseSetting("Admin:BootstrapEmail", email));
+        using var ordinaryClient = ordinaryApp.CreateClient();
+        using var client = configuredApp.CreateClient();
+        using var registration = await (operation == "registration" ? client : ordinaryClient)
+            .PostAsJsonAsync("/api/auth/register",
+                new RegisterRequest(email, $"bootstrap-{suffix}", password));
+        registration.EnsureSuccessStatusCode();
+        var session = await registration.Content.ReadApiDataAsync<AuthenticationResponse>();
+        Assert.NotNull(session);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        if (operation == "login" || operation == "refresh")
+        {
+            using var response = operation == "login"
+                ? await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password))
+                : await client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest(session.RefreshToken));
+            response.EnsureSuccessStatusCode();
+            session = await response.Content.ReadApiDataAsync<AuthenticationResponse>();
+            Assert.NotNull(session);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+        }
+
+        if (operation == "current-user")
+        {
+            using var response = await client.GetAsync("/api/auth/me");
+            response.EnsureSuccessStatusCode();
+            var currentUser = await response.Content.ReadApiDataAsync<AuthenticatedUserResponse>();
+            Assert.NotNull(currentUser);
+            Assert.DoesNotContain("Admin", currentUser.Roles);
+        }
+
+        Assert.DoesNotContain("Admin", session.User.Roles);
+        using var scope = configuredApp.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var user = await userManager.FindByEmailAsync(email);
+        Assert.NotNull(user);
+        Assert.False(await userManager.IsInRoleAsync(user, "Admin"));
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/admin/dashboard")).StatusCode);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task Dashboard_only_returns_analytics_to_administrators(bool isAdmin)
     {
         var suffix = Guid.NewGuid().ToString("N")[..12];
         var email = $"dashboard-{suffix}@example.test";
-        await using var app = factory.WithWebHostBuilder(builder =>
-            builder.UseSetting("Admin:BootstrapEmail", isAdmin ? email : ""));
-        using var client = app.CreateClient();
+        using var client = factory.CreateClient();
         var registration = await client.PostAsJsonAsync("/api/auth/register",
             new RegisterRequest(email, $"dashboard-{suffix}", "Dashboard-test123!"));
         registration.EnsureSuccessStatusCode();
-        var session = await registration.Content.ReadApiDataAsync<AuthenticationResponse>();
+        if (isAdmin)
+        {
+            using var scope = factory.Services.CreateScope();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+            if (!await roleManager.RoleExistsAsync("Admin"))
+            {
+                var createRole = await roleManager.CreateAsync(new IdentityRole<Guid>("Admin") { Id = Guid.NewGuid() });
+                Assert.True(createRole.Succeeded);
+            }
+
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var user = await userManager.FindByEmailAsync(email);
+            Assert.NotNull(user);
+            Assert.True((await userManager.AddToRoleAsync(user, "Admin")).Succeeded);
+        }
+
+        var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, "Dashboard-test123!"));
+        login.EnsureSuccessStatusCode();
+        var session = await login.Content.ReadApiDataAsync<AuthenticationResponse>();
         Assert.NotNull(session);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
 

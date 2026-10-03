@@ -25,7 +25,6 @@ public static class IdentityModuleConstants
     {
         public const string Jwt = "Jwt";
         public const string GoogleAuthentication = "GoogleAuthentication";
-        public const string Admin = "Admin";
         public const string Email = "Email";
         public const string Sms = "Sms";
     }

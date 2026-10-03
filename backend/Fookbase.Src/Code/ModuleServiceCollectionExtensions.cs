@@ -59,8 +59,6 @@ internal static class ModuleServiceCollectionExtensions
             ?? throw new InvalidOperationException("JWT configuration is required.");
         var emailOptions = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Email).Get<EmailOptions>()
             ?? new EmailOptions();
-        var adminOptions = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Admin).Get<AdminOptions>()
-            ?? new AdminOptions();
         var googleAuthenticationOptions = configuration
             .GetSection(IdentityModuleConstants.ConfigurationSections.GoogleAuthentication)
             .Get<GoogleAuthenticationOptions>() ?? new GoogleAuthenticationOptions();
@@ -70,7 +68,6 @@ internal static class ModuleServiceCollectionExtensions
         return services.AddIdentityInfrastructure(
             jwtOptions,
             emailOptions,
-            adminOptions,
             googleAuthenticationOptions,
             smsOptions);
     }

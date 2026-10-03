@@ -114,10 +114,8 @@ API chạy tại <http://localhost:5000>. Dùng các lệnh `curl` ở trên tro
 Bạn cũng có thể chạy script từ thư mục `backend/Fookbase.Src` bằng
 `bash ../../scripts/run-backend.sh`.
 
-Để mở quyền quản trị cho một tài khoản development, đặt `Admin__BootstrapEmail` thành email
-của tài khoản đó trước khi đăng ký hoặc đăng nhập. Hệ thống sẽ tự gán role `Admin` vào lần
-phát hành token kế tiếp; không đặt biến này ở môi trường production nếu chưa có quy trình
-quản lý role riêng.
+Tài khoản truy cập trang quản trị cần được gán role `Admin` trong database trước khi đăng nhập.
+Hệ thống không tự cấp quyền quản trị theo email khi đăng ký, đăng nhập hoặc làm mới token.
 
 ## Chạy frontend
 
