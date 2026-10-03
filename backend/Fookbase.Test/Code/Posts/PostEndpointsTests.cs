@@ -11,7 +11,6 @@ using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Data;
-using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;

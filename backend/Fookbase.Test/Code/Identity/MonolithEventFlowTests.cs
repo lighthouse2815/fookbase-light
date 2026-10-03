@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Posts.Data;
 using Fookbase.Api.Modules.Users.Data;

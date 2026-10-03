@@ -1,4 +1,3 @@
-using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Users.Data;
 using Fookbase.Api.Persistence;

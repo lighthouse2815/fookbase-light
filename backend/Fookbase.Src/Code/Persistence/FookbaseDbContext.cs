@@ -139,6 +139,18 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        builder.Entity<User>(entity =>
+        {
+            entity.HasIndex(user => user.NormalizedEmail)
+                .HasDatabaseName("EmailIndex")
+                .IsUnique();
+
+            entity.HasIndex(user => user.PhoneNumber)
+                .HasDatabaseName("PhoneNumberIndex")
+                .IsUnique();
+        });
+
         builder.ApplyConfigurationsFromAssembly(
             typeof(FookbaseDbContext).Assembly,
             type => type.Namespace?.StartsWith(

@@ -2,7 +2,6 @@ using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Posts.Data;
-using Fookbase.Api.Modules.Identity.Data;
 using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
