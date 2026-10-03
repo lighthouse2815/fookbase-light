@@ -34,7 +34,9 @@ public sealed class AuthenticationService(
         var validationErrors = AuthenticationValidation.Validate(request);
         if (validationErrors.Count > 0)
         {
-            throw ValidationFailure(validationErrors);
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.ValidationFailed.Code, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
+                validationErrors));
         }
 
         var email = request.Email!.Trim();
@@ -42,16 +44,14 @@ public sealed class AuthenticationService(
 
         if (await userManager.FindByEmailAsync(email) is not null)
         {
-            throw ConflictFailure(
-                "duplicate_email",
-                "An account with this email already exists.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.DuplicateEmail.Code, ErrorCode.DuplicateEmail.Message, ApplicationErrorType.Conflict));
         }
 
         if (await userManager.FindByNameAsync(userName) is not null)
         {
-            throw ConflictFailure(
-                "duplicate_username",
-                "An account with this username already exists.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.DuplicateUsername.Code, ErrorCode.DuplicateUsername.Message, ApplicationErrorType.Conflict));
         }
 
         var now = timeProvider.GetUtcNow();
@@ -70,19 +70,19 @@ public sealed class AuthenticationService(
             var errors = ToErrors(creationResult);
             if (errors.ContainsKey("DuplicateEmail"))
             {
-                throw ConflictFailure(
-                    "duplicate_email",
-                    "An account with this email already exists.");
+                throw new BusinessException(new ApplicationError(
+                    ErrorCode.DuplicateEmail.Code, ErrorCode.DuplicateEmail.Message, ApplicationErrorType.Conflict));
             }
 
             if (errors.ContainsKey("DuplicateUserName"))
             {
-                throw ConflictFailure(
-                    "duplicate_username",
-                    "An account with this username already exists.");
+                throw new BusinessException(new ApplicationError(
+                    ErrorCode.DuplicateUsername.Code, ErrorCode.DuplicateUsername.Message, ApplicationErrorType.Conflict));
             }
 
-            throw ValidationFailure(errors);
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.ValidationFailed.Code, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
+                errors));
         }
 
         if (emailSender.IsEnabled)
@@ -111,15 +111,15 @@ public sealed class AuthenticationService(
         if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
-            throw UnauthorizedFailure(
-                ErrorCode.InvalidCredentials,
-                "The email, phone number, or password is invalid.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidCredentials.Code, ErrorCode.InvalidCredentials.Message, ApplicationErrorType.Unauthorized));
         }
 
         if (!await userManager.CheckPasswordAsync(user, request.Password!))
         {
             await userManager.AccessFailedAsync(user);
-            throw UnauthorizedFailure(ErrorCode.InvalidCredentials, "The email, phone number, or password is invalid.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidCredentials.Code, ErrorCode.InvalidCredentials.Message, ApplicationErrorType.Unauthorized));
         }
 
         await userManager.ResetAccessFailedCountAsync(user);
@@ -146,9 +146,8 @@ public sealed class AuthenticationService(
         if (!user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
-            throw UnauthorizedFailure(
-                "invalid_external_login",
-                "The external login is unavailable.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidExternalLogin.Code, ErrorCode.InvalidExternalLogin.Message, ApplicationErrorType.Unauthorized));
         }
 
         var now = timeProvider.GetUtcNow();
@@ -186,20 +185,27 @@ public sealed class AuthenticationService(
         string? userAgent, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Challenge) || string.IsNullOrWhiteSpace(request.Code))
-            throw UnauthorizedFailure("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidTwoFactorChallenge.Code, ErrorCode.InvalidTwoFactorChallenge.Message, ApplicationErrorType.Unauthorized));
         if (!Guid.TryParseExact(request.Challenge, "N", out var challengeId))
-            throw UnauthorizedFailure("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidTwoFactorChallenge.Code, ErrorCode.InvalidTwoFactorChallenge.Message, ApplicationErrorType.Unauthorized));
         var now = timeProvider.GetUtcNow();
         var challenge = await dbContext.TwoFactorLoginChallenges.SingleOrDefaultAsync(item => item.Id == challengeId, cancellationToken);
-        if (challenge is null || !challenge.IsUsableAt(now)) throw UnauthorizedFailure("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
+        if (challenge is null || !challenge.IsUsableAt(now))
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidTwoFactorChallenge.Code, ErrorCode.InvalidTwoFactorChallenge.Message, ApplicationErrorType.Unauthorized));
         var user = await userManager.FindByIdAsync(challenge.UserId.ToString());
         if (user is null || !user.IsActive || !user.TwoFactorEnabled ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
-            throw UnauthorizedFailure("invalid_two_factor_challenge", "The two-factor challenge is invalid or expired.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidTwoFactorChallenge.Code, ErrorCode.InvalidTwoFactorChallenge.Message, ApplicationErrorType.Unauthorized));
         var recoveryCode = request.Code.Trim();
         var valid = await VerifyAuthenticatorCodeAsync(user, recoveryCode) ||
             (await userManager.RedeemTwoFactorRecoveryCodeAsync(user, recoveryCode)).Succeeded;
-        if (!valid) throw UnauthorizedFailure("invalid_two_factor_code", "The two-factor code is invalid.");
+        if (!valid)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidTwoFactorCode.Code, ErrorCode.InvalidTwoFactorCode.Message, ApplicationErrorType.Unauthorized));
 
         if (challenge.PendingExternalProvider is not null && challenge.PendingExternalProviderKey is not null)
         {
@@ -211,9 +217,8 @@ public sealed class AuthenticationService(
                     challenge.PendingExternalProvider));
             if (!addLogin.Succeeded)
             {
-                throw UnauthorizedFailure(
-                    "invalid_two_factor_challenge",
-                    "The two-factor challenge is invalid or expired.");
+                throw new BusinessException(new ApplicationError(
+                    ErrorCode.InvalidTwoFactorChallenge.Code, ErrorCode.InvalidTwoFactorChallenge.Message, ApplicationErrorType.Unauthorized));
             }
         }
 
@@ -228,9 +233,8 @@ public sealed class AuthenticationService(
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
         {
-            throw UnauthorizedFailure(
-                "invalid_refresh_token",
-                "The refresh token is invalid or expired.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidRefreshToken.Code, ErrorCode.InvalidRefreshToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         var tokenHash = tokenService.HashRefreshToken(request.RefreshToken);
@@ -241,17 +245,15 @@ public sealed class AuthenticationService(
 
         if (currentToken is null || !currentToken.IsActiveAt(now))
         {
-            throw UnauthorizedFailure(
-                "invalid_refresh_token",
-                "The refresh token is invalid or expired.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidRefreshToken.Code, ErrorCode.InvalidRefreshToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         var user = await userManager.FindByIdAsync(currentToken.UserId.ToString());
         if (user is null || !user.IsActive || await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
-            throw UnauthorizedFailure(
-                "invalid_refresh_token",
-                "The refresh token is invalid or expired.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidRefreshToken.Code, ErrorCode.InvalidRefreshToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         var session = await dbContext.AuthSessions.SingleOrDefaultAsync(
@@ -259,7 +261,8 @@ public sealed class AuthenticationService(
             cancellationToken);
         if (session is null || session.UserId != user.Id || !session.IsActiveAt(now))
         {
-            throw UnauthorizedFailure("invalid_refresh_token", "The refresh token is invalid or expired.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidRefreshToken.Code, ErrorCode.InvalidRefreshToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         var replacement = tokenService.CreateRefreshToken(user.Id, session.Id, now);
@@ -271,9 +274,8 @@ public sealed class AuthenticationService(
 
         if (!rotated)
         {
-            throw UnauthorizedFailure(
-                "invalid_refresh_token",
-                "The refresh token is invalid or expired.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidRefreshToken.Code, ErrorCode.InvalidRefreshToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         session.Touch(now);
@@ -290,7 +292,8 @@ public sealed class AuthenticationService(
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
         {
-            throw new BusinessException(InvalidRefreshToken());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidRefreshToken.Code, ErrorCode.InvalidRefreshToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         var now = timeProvider.GetUtcNow();
@@ -299,7 +302,8 @@ public sealed class AuthenticationService(
             cancellationToken);
         if (currentToken is null)
         {
-            throw new BusinessException(InvalidRefreshToken());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidRefreshToken.Code, ErrorCode.InvalidRefreshToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         await RevokeSessionAsync(userId, currentToken.SessionId, now, cancellationToken);
@@ -312,9 +316,8 @@ public sealed class AuthenticationService(
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user is null || !user.IsActive)
         {
-            throw UnauthorizedFailure(
-                ErrorCode.InvalidAccessToken,
-                "The access token is invalid.");
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidAccessToken.Code, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         return ToResponse(user, await GetRolesAsync(user));
@@ -324,7 +327,9 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive) throw UnauthorizedFailure(ErrorCode.InvalidAccessToken, "The access token is invalid.");
+        if (user is null || !user.IsActive)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidAccessToken.Code, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
         var now = timeProvider.GetUtcNow();
         return new SecurityStateResponse(user.TwoFactorEnabled,
             await userManager.CountRecoveryCodesAsync(user),
@@ -335,10 +340,14 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive) throw UnauthorizedFailure(ErrorCode.InvalidAccessToken, "The access token is invalid.");
+        if (user is null || !user.IsActive)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidAccessToken.Code, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
         await userManager.ResetAuthenticatorKeyAsync(user);
         var key = await userManager.GetAuthenticatorKeyAsync(user);
-        if (string.IsNullOrWhiteSpace(key)) throw new BusinessException(new ApplicationError("two_factor_setup_failed", "Two-factor setup could not be initialized.", ApplicationErrorType.Validation));
+        if (string.IsNullOrWhiteSpace(key))
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.TwoFactorSetupFailed.Code, ErrorCode.TwoFactorSetupFailed.Message, ApplicationErrorType.Validation));
         var issuer = Uri.EscapeDataString("Fookbase");
         var label = Uri.EscapeDataString($"Fookbase:{user.Email}");
         return new TwoFactorSetupResponse(key,
@@ -349,10 +358,16 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive) throw UnauthorizedFailure(ErrorCode.InvalidAccessToken, "The access token is invalid.");
-        if (!await VerifyAuthenticatorCodeAsync(user, code)) throw new BusinessException(new ApplicationError("invalid_two_factor_code", "The authenticator code is invalid.", ApplicationErrorType.Validation));
+        if (user is null || !user.IsActive)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidAccessToken.Code, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
+        if (!await VerifyAuthenticatorCodeAsync(user, code))
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidTwoFactorCode.Code, ErrorCode.InvalidTwoFactorCode.Message, ApplicationErrorType.Validation));
         var enable = await userManager.SetTwoFactorEnabledAsync(user, true);
-        if (!enable.Succeeded) throw new BusinessException(new ApplicationError("two_factor_enable_failed", "Two-factor authentication could not be enabled.", ApplicationErrorType.Validation));
+        if (!enable.Succeeded)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.TwoFactorEnableFailed.Code, ErrorCode.TwoFactorEnableFailed.Message, ApplicationErrorType.Validation));
         var codes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
         return new TwoFactorRecoveryCodesResponse(codes?.ToArray() ?? []);
     }
@@ -361,7 +376,9 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive || !user.TwoFactorEnabled) throw new BusinessException(new ApplicationError("two_factor_not_enabled", "Two-factor authentication is not enabled.", ApplicationErrorType.Validation));
+        if (user is null || !user.IsActive || !user.TwoFactorEnabled)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.TwoFactorNotEnabled.Code, ErrorCode.TwoFactorNotEnabled.Message, ApplicationErrorType.Validation));
         var codes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
         return new TwoFactorRecoveryCodesResponse(codes?.ToArray() ?? []);
     }
@@ -370,8 +387,12 @@ public sealed class AuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user is null || !user.IsActive) throw new BusinessException(new ApplicationError(ErrorCode.InvalidAccessToken, "The access token is invalid.", ApplicationErrorType.Unauthorized));
-        if (string.IsNullOrWhiteSpace(currentPassword) || !await userManager.CheckPasswordAsync(user, currentPassword)) throw new BusinessException(new ApplicationError(ErrorCode.InvalidCredentials, "The current password is invalid.", ApplicationErrorType.Validation));
+        if (user is null || !user.IsActive)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidAccessToken.Code, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
+        if (string.IsNullOrWhiteSpace(currentPassword) || !await userManager.CheckPasswordAsync(user, currentPassword))
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidCredentials.Code, ErrorCode.InvalidCredentials.Message, ApplicationErrorType.Validation));
         await userManager.SetTwoFactorEnabledAsync(user, false);
         await userManager.ResetAuthenticatorKeyAsync(user);
         await RevokeOtherSessionsAsync(userId, null, timeProvider.GetUtcNow(), cancellationToken);
@@ -390,7 +411,7 @@ public sealed class AuthenticationService(
         if (user is null || !user.IsActive)
         {
             throw new BusinessException(new ApplicationError(
-                ErrorCode.InvalidAccessToken, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
+                ErrorCode.InvalidAccessToken.Code, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         if (user.EmailConfirmed)
@@ -400,7 +421,8 @@ public sealed class AuthenticationService(
 
         if (!emailSender.IsEnabled)
         {
-            throw new BusinessException(EmailUnavailable());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.EmailUnavailable.Code, ErrorCode.EmailUnavailable.Message, ApplicationErrorType.Conflict));
         }
 
         try
@@ -411,7 +433,8 @@ public sealed class AuthenticationService(
         catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
         {
             logger.LogWarning(exception, "Unable to resend email verification for user {UserId}.", user.Id);
-            throw new BusinessException(EmailUnavailable());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.EmailUnavailable.Code, ErrorCode.EmailUnavailable.Message, ApplicationErrorType.Conflict));
         }
     }
 
@@ -421,17 +444,21 @@ public sealed class AuthenticationService(
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token))
         {
-            throw new BusinessException(InvalidVerificationLink());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidVerificationLink.Code, ErrorCode.InvalidVerificationLink.Message, ApplicationErrorType.Validation));
         }
 
         var user = await userManager.FindByEmailAsync(request.Email.Trim());
         if (user is null || !user.IsActive)
         {
-            throw new BusinessException(InvalidVerificationLink());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidVerificationLink.Code, ErrorCode.InvalidVerificationLink.Message, ApplicationErrorType.Validation));
         }
 
         var result = await userManager.ConfirmEmailAsync(user, request.Token);
-        if (!result.Succeeded) throw new BusinessException(InvalidVerificationLink());
+        if (!result.Succeeded)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidVerificationLink.Code, ErrorCode.InvalidVerificationLink.Message, ApplicationErrorType.Validation));
     }
 
     public async Task RequestPasswordResetAsync(
@@ -448,7 +475,8 @@ public sealed class AuthenticationService(
 
         if (!emailSender.IsEnabled)
         {
-            throw new BusinessException(EmailUnavailable());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.EmailUnavailable.Code, ErrorCode.EmailUnavailable.Message, ApplicationErrorType.Conflict));
         }
 
         var user = await FindByIdentifierAsync(contact, cancellationToken);
@@ -471,7 +499,8 @@ public sealed class AuthenticationService(
         catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
         {
             logger.LogWarning(exception, "Unable to send password reset email for user {UserId}.", user.Id);
-            throw new BusinessException(EmailUnavailable());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.EmailUnavailable.Code, ErrorCode.EmailUnavailable.Message, ApplicationErrorType.Conflict));
         }
     }
 
@@ -489,20 +518,22 @@ public sealed class AuthenticationService(
         if (string.IsNullOrWhiteSpace(request.Identifier) || string.IsNullOrWhiteSpace(request.Token) ||
             string.IsNullOrWhiteSpace(request.Password) || request.Password != request.ConfirmPassword)
         {
-            throw new BusinessException(InvalidResetRequest());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidPasswordReset.Code, ErrorCode.InvalidPasswordReset.Message, ApplicationErrorType.Validation));
         }
 
         var user = await FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive)
         {
-            throw new BusinessException(InvalidResetRequest());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidPasswordReset.Code, ErrorCode.InvalidPasswordReset.Message, ApplicationErrorType.Validation));
         }
 
         var result = await userManager.ResetPasswordAsync(user, request.Token, request.Password);
         if (!result.Succeeded)
         {
             throw new BusinessException(new ApplicationError(
-                ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
+                ErrorCode.ValidationFailed.Code, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
                 ToErrors(result)));
         }
 
@@ -548,7 +579,8 @@ public sealed class AuthenticationService(
             logger.LogWarning(exception, "Unable to send password reset SMS for user {UserId}.", user.Id);
             dbContext.PasswordResetOtps.Remove(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
-            throw new BusinessException(SmsUnavailable());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.SmsUnavailable.Code, ErrorCode.SmsUnavailable.Message, ApplicationErrorType.Conflict));
         }
     }
 
@@ -560,13 +592,15 @@ public sealed class AuthenticationService(
         if (string.IsNullOrWhiteSpace(request.Code) || request.Code.Length != 6 || !request.Code.All(char.IsAsciiDigit) ||
             string.IsNullOrWhiteSpace(request.Password) || request.Password != request.ConfirmPassword)
         {
-            throw new BusinessException(InvalidResetRequest());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidPasswordReset.Code, ErrorCode.InvalidPasswordReset.Message, ApplicationErrorType.Validation));
         }
 
         var user = await FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive)
         {
-            throw new BusinessException(InvalidResetRequest());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidPasswordReset.Code, ErrorCode.InvalidPasswordReset.Message, ApplicationErrorType.Validation));
         }
 
         var challenge = await dbContext.PasswordResetOtps.AsNoTracking().SingleOrDefaultAsync(
@@ -583,7 +617,8 @@ public sealed class AuthenticationService(
                     .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now && item.FailedAttemptCount < 5)
                     .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.FailedAttemptCount, item => item.FailedAttemptCount + 1), cancellationToken);
             }
-            throw new BusinessException(InvalidResetRequest());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidPasswordReset.Code, ErrorCode.InvalidPasswordReset.Message, ApplicationErrorType.Validation));
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -594,7 +629,8 @@ public sealed class AuthenticationService(
         if (consumed != 1)
         {
             await transaction.RollbackAsync(cancellationToken);
-            throw new BusinessException(InvalidResetRequest());
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidPasswordReset.Code, ErrorCode.InvalidPasswordReset.Message, ApplicationErrorType.Validation));
         }
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
@@ -603,7 +639,8 @@ public sealed class AuthenticationService(
         {
             await transaction.RollbackAsync(cancellationToken);
             throw new BusinessException(new ApplicationError(
-                ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation, ToErrors(reset)));
+                ErrorCode.ValidationFailed.Code, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
+                ToErrors(reset)));
         }
 
         await RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
@@ -619,23 +656,27 @@ public sealed class AuthenticationService(
         if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword) ||
             request.NewPassword != request.ConfirmPassword)
         {
-            throw ValidationFailure(new Dictionary<string, string[]>
-            {
-                ["password"] = ["Current password, matching new password, and confirmation are required."]
-            });
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.ValidationFailed.Code, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
+                new Dictionary<string, string[]>
+                {
+                    ["password"] = ["Current password, matching new password, and confirmation are required."]
+                }));
         }
 
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user is null || !user.IsActive)
         {
-            throw UnauthorizedFailure(
-                ErrorCode.InvalidAccessToken, ErrorCode.InvalidAccessToken.Message);
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.InvalidAccessToken.Code, ErrorCode.InvalidAccessToken.Message, ApplicationErrorType.Unauthorized));
         }
 
         var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded)
         {
-            throw ValidationFailure(ToErrors(result));
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.ValidationFailed.Code, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
+                ToErrors(result)));
         }
 
         var now = timeProvider.GetUtcNow();
@@ -790,8 +831,9 @@ public sealed class AuthenticationService(
     {
         var session = await dbContext.AuthSessions.SingleOrDefaultAsync(
             item => item.Id == sessionId && item.UserId == userId, cancellationToken);
-        if (session is null) throw new BusinessException(new ApplicationError(
-            "session_not_found", "The session was not found.", ApplicationErrorType.NotFound));
+        if (session is null)
+            throw new BusinessException(new ApplicationError(
+                ErrorCode.SessionNotFound.Code, ErrorCode.SessionNotFound.Message, ApplicationErrorType.NotFound));
         session.Revoke(now);
         await dbContext.RefreshTokens.Where(token => token.SessionId == sessionId && token.RevokedAt == null && token.ExpiresAt > now)
             .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, now), cancellationToken);
@@ -839,53 +881,6 @@ public sealed class AuthenticationService(
                 group => group.Key,
                 group => group.Select(error => error.Description).ToArray(),
                 StringComparer.Ordinal);
-
-    private static BusinessException ValidationFailure(
-        IReadOnlyDictionary<string, string[]> details) =>
-        new BusinessException(
-            new ApplicationError(
-                ErrorCode.ValidationFailed,
-                ErrorCode.ValidationFailed.Message,
-                ApplicationErrorType.Validation,
-                details));
-
-    private static BusinessException ConflictFailure(string code, string message) =>
-        new BusinessException(
-            new ApplicationError(code, message, ApplicationErrorType.Conflict));
-
-    private static BusinessException UnauthorizedFailure(string code, string message) =>
-        new BusinessException(
-            new ApplicationError(code, message, ApplicationErrorType.Unauthorized));
-
-    private static ApplicationError InvalidRefreshToken() =>
-        new(
-            "invalid_refresh_token",
-            "The refresh token is invalid or expired.",
-            ApplicationErrorType.Unauthorized);
-
-    private static ApplicationError EmailUnavailable() =>
-        new(
-            "email_unavailable",
-            "Email delivery is not configured or is temporarily unavailable.",
-            ApplicationErrorType.Conflict);
-
-    private static ApplicationError SmsUnavailable() =>
-        new(
-            "sms_unavailable",
-            "SMS delivery is not configured or is temporarily unavailable.",
-            ApplicationErrorType.Conflict);
-
-    private static ApplicationError InvalidVerificationLink() =>
-        new(
-            "invalid_verification_link",
-            "The email verification link is invalid or expired.",
-            ApplicationErrorType.Validation);
-
-    private static ApplicationError InvalidResetRequest() =>
-        new(
-            "invalid_password_reset",
-            "The password reset request is invalid or expired.",
-            ApplicationErrorType.Validation);
 
     private static string CreateOtp() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
 
