@@ -43,7 +43,7 @@ export function AuthScreen() {
       } else if (mode === 'forgot') {
         await authApi.requestPasswordReset(identifier); setMode('reset'); setNotice('Kiểm tra email hoặc SMS để lấy mã đặt lại mật khẩu.');
       } else {
-        await authApi.resetPassword(identifier.includes('@') ? { email: identifier, token: code, password, confirmPassword: password } : { identifier, code, password, confirmPassword: password });
+        await authApi.resetPassword(identifier.includes('@') ? { identifier, token: code, password, confirmPassword: password } : { identifier, code, password, confirmPassword: password });
         setMode('login'); setNotice('Đã đổi mật khẩu. Bạn có thể đăng nhập.');
       }
     } catch (e) { setError(e); } finally { setBusy(false); }

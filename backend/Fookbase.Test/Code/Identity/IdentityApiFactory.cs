@@ -41,6 +41,7 @@ public class IdentityApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
         builder.UseSetting("Jwt:SigningKey", "identity-integration-tests-signing-key-with-32-characters");
         builder.UseSetting("RateLimiting:SensitiveAuth:LoginPermitLimit", "1000");
+        builder.UseSetting("RateLimiting:SensitiveAuth:RecoveryPermitLimit", "1000");
         builder.UseSetting("GoogleAuthentication:Enabled", "true");
         builder.UseSetting("GoogleAuthentication:ClientId", "test-google-client-id");
         builder.UseSetting("GoogleAuthentication:ClientSecret", "test-google-client-secret");

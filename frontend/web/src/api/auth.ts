@@ -57,7 +57,7 @@ export interface ChangePasswordDetails {
 }
 
 export interface EmailResetPasswordDetails {
-  email: string
+  identifier: string
   token: string
   password: string
   confirmPassword: string

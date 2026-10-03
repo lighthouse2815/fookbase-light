@@ -131,7 +131,7 @@ public sealed class IdentityControllerContractTests(IdentityApiFactory factory) 
         Assert.Equal(providers.Headers.GetValues("X-Request-Id").Single(), body.GetProperty("requestId").GetString());
 
         using var forgot = await client.PostAsJsonAsync("/api/auth/password/forgot",
-            new { email = $"missing-{Guid.NewGuid():N}@example.test" });
+            new { identifier = $"missing-{Guid.NewGuid():N}@example.test" });
         Assert.Equal(HttpStatusCode.OK, forgot.StatusCode);
         using var empty = JsonDocument.Parse(await forgot.Content.ReadAsStringAsync());
         Assert.True(empty.RootElement.GetProperty("success").GetBoolean());

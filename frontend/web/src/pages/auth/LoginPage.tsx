@@ -178,7 +178,7 @@ export default function LoginPage() {
           }
         }
       } else if (isResetting) {
-        await authApi.resetPassword({ email, token: linkedToken, password, confirmPassword })
+        await authApi.resetPassword({ identifier: email, token: linkedToken, password, confirmPassword })
         setNotice(t('passwordReset'))
         setPassword('')
         setConfirmPassword('')

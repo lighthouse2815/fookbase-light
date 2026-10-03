@@ -440,7 +440,7 @@ public sealed class AuthenticationService(
         ForgotPasswordRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!ContactIdentifier.TryParse(request.EffectiveIdentifier, out var contact))
+        if (!ContactIdentifier.TryParse(request.Identifier, out var contact))
         {
             return;
         }
@@ -484,19 +484,19 @@ public sealed class AuthenticationService(
         ResetPasswordRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (ContactIdentifier.TryParse(request.EffectiveIdentifier, out var contact) && contact.Kind == ContactKind.Phone)
+        if (ContactIdentifier.TryParse(request.Identifier, out var contact) && contact.Kind == ContactKind.Phone)
         {
             await ResetPhonePasswordAsync(contact, request, cancellationToken);
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token) ||
+        if (string.IsNullOrWhiteSpace(request.Identifier) || string.IsNullOrWhiteSpace(request.Token) ||
             string.IsNullOrWhiteSpace(request.Password) || request.Password != request.ConfirmPassword)
         {
             throw new BusinessException(InvalidResetRequest());
         }
 
-        var user = await userManager.FindByEmailAsync(request.Email.Trim());
+        var user = await userManager.FindByEmailAsync(request.Identifier.Trim());
         if (user is null || !user.IsActive)
         {
             throw new BusinessException(InvalidResetRequest());
