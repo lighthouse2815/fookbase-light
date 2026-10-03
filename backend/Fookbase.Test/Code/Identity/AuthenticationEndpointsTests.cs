@@ -281,11 +281,13 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
     [Theory]
     [InlineData("0912 345 678", "+84912345678")]
+    [InlineData(" 0912.345-678 ", "+84912345678")]
+    [InlineData("(0912) 345 678", "+84912345678")]
     [InlineData("+84912345678", "+84912345678")]
     [InlineData("84912345678", "+84912345678")]
     public void Vietnamese_phone_is_normalized_to_e164(string raw, string expected)
     {
-        Assert.True(ContactIdentifier.TryParse(raw, out var contact));
+        var contact = ContactIdentifier.Parse(raw);
         Assert.Equal(ContactKind.Phone, contact.Kind);
         Assert.Equal(expected, contact.Value);
     }
@@ -294,8 +296,28 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     [InlineData("0212345678")]
     [InlineData("12345")]
     [InlineData("+12025550123")]
-    public void Unsupported_phone_is_rejected(string raw) =>
-        Assert.False(ContactIdentifier.TryParse(raw, out _));
+    public async Task Unsupported_phone_is_rejected_by_request_validation(string raw)
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(raw, "Password123!"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var error = document.RootElement.GetProperty("error");
+        Assert.Equal("validation_failed", error.GetProperty("code").GetString());
+        Assert.NotEmpty(error.GetProperty("details").GetProperty("Identifier").EnumerateArray());
+    }
+
+    [Theory]
+    [InlineData(" USER@Example.Test ", "user@example.test")]
+    [InlineData("user@example.test", "user@example.test")]
+    public void Email_is_classified_and_normalized(string raw, string expected)
+    {
+        var contact = ContactIdentifier.Parse(raw);
+
+        Assert.Equal(ContactKind.Email, contact.Kind);
+        Assert.Equal(expected, contact.Value);
+    }
 
     [Fact]
     public void Registration_challenge_locks_after_five_invalid_codes()

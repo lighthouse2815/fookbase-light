@@ -205,7 +205,7 @@ public sealed class RegistrationChallengeService(
         CancellationToken cancellationToken)
     {
         var errors = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
-        if (!ContactIdentifier.TryParse(request.Contact, out var contact)) errors["contact"] = ["Email or Vietnamese mobile number is invalid."];
+        var contact = ContactIdentifier.Parse(request.Contact!);
         if (string.IsNullOrWhiteSpace(request.FirstName) || request.FirstName.Trim().Length > 50) errors["firstName"] = ["First name must contain between 1 and 50 characters."];
         if (string.IsNullOrWhiteSpace(request.LastName) || request.LastName.Trim().Length > 50) errors["lastName"] = ["Last name must contain between 1 and 50 characters."];
         if (request.DateOfBirth is null || !IsOldEnough(request.DateOfBirth.Value)) errors["dateOfBirth"] = ["You must be at least 13 years old."];
@@ -217,7 +217,7 @@ public sealed class RegistrationChallengeService(
             throw Validation(errors);
         }
 
-        var candidate = new User(Guid.NewGuid(), contact!.Kind == ContactKind.Email ? contact.Value : null, "pending", timeProvider.GetUtcNow());
+        var candidate = new User(Guid.NewGuid(), contact.Kind == ContactKind.Email ? contact.Value : null, "pending", timeProvider.GetUtcNow());
         foreach (var validator in userManager.PasswordValidators)
         {
             var result = await validator.ValidateAsync(userManager, candidate, request.Password!);
@@ -229,13 +229,13 @@ public sealed class RegistrationChallengeService(
         }
 
         if (errors.Count > 0) throw Validation(errors);
-        if (await ContactExistsAsync(contact!, cancellationToken))
+        if (await ContactExistsAsync(contact, cancellationToken))
         {
             throw Conflict("duplicate_contact", "An account with this contact already exists.");
         }
 
         return new StartInput(
-            contact!,
+            contact,
             request.FirstName!.Trim(),
             request.LastName!.Trim(),
             request.DateOfBirth!.Value,

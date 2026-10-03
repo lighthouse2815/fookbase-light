@@ -108,7 +108,8 @@ public sealed class AuthenticationService(
         string? userAgent,
         CancellationToken cancellationToken = default)
     {
-        var user = await FindByIdentifierAsync(request.Identifier!, cancellationToken);
+        var contact = ContactIdentifier.Parse(request.Identifier!);
+        var user = await FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
@@ -169,10 +170,9 @@ public sealed class AuthenticationService(
     }
 
     public async Task<User?> FindByIdentifierAsync(
-        string identifier,
+        ContactIdentifier contact,
         CancellationToken cancellationToken = default)
     {
-        if (!ContactIdentifier.TryParse(identifier, out var contact)) return null;
         return contact.Kind == ContactKind.Email
             ? await userManager.FindByEmailAsync(contact.Value)
             : await dbContext.Users.SingleOrDefaultAsync(user => user.PhoneNumber == contact.Value, cancellationToken);
@@ -440,10 +440,7 @@ public sealed class AuthenticationService(
         ForgotPasswordRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!ContactIdentifier.TryParse(request.Identifier, out var contact))
-        {
-            return;
-        }
+        var contact = ContactIdentifier.Parse(request.Identifier!);
 
         if (contact.Kind == ContactKind.Phone)
         {
@@ -456,7 +453,7 @@ public sealed class AuthenticationService(
             throw new BusinessException(EmailUnavailable());
         }
 
-        var user = await FindByIdentifierAsync(contact.Value, cancellationToken);
+        var user = await FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive)
         {
             return;
@@ -484,7 +481,8 @@ public sealed class AuthenticationService(
         ResetPasswordRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (ContactIdentifier.TryParse(request.Identifier, out var contact) && contact.Kind == ContactKind.Phone)
+        var contact = ContactIdentifier.Parse(request.Identifier!);
+        if (contact.Kind == ContactKind.Phone)
         {
             await ResetPhonePasswordAsync(contact, request, cancellationToken);
             return;
@@ -496,7 +494,7 @@ public sealed class AuthenticationService(
             throw new BusinessException(InvalidResetRequest());
         }
 
-        var user = await userManager.FindByEmailAsync(request.Identifier.Trim());
+        var user = await FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive)
         {
             throw new BusinessException(InvalidResetRequest());
@@ -518,7 +516,7 @@ public sealed class AuthenticationService(
         ContactIdentifier contact,
         CancellationToken cancellationToken)
     {
-        var user = await FindByIdentifierAsync(contact.Value, cancellationToken);
+        var user = await FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive)
         {
             return;
@@ -567,7 +565,7 @@ public sealed class AuthenticationService(
             throw new BusinessException(InvalidResetRequest());
         }
 
-        var user = await FindByIdentifierAsync(contact.Value, cancellationToken);
+        var user = await FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive)
         {
             throw new BusinessException(InvalidResetRequest());
