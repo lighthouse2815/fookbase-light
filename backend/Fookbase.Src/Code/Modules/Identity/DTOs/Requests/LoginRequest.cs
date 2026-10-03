@@ -8,4 +8,10 @@ public sealed record LoginRequest(
     [property: EmailOrPhoneNumber]
     string? Identifier,
     [property: Required(ErrorMessage = "Password is required.")]
-    string? Password);
+    string? Password)
+{
+    // MVC can bind through this constructor and validate the property attributes.
+    public LoginRequest() : this(null, null)
+    {
+    }
+}

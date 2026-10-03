@@ -668,6 +668,28 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData(null, "Password123!", "Identifier")]
+    [InlineData("", "Password123!", "Identifier")]
+    [InlineData(" ", "Password123!", "Identifier")]
+    [InlineData("not-an-email-or-phone", "Password123!", "Identifier")]
+    [InlineData("user@example.com", null, "Password")]
+    [InlineData("user@example.com", "", "Password")]
+    [InlineData("user@example.com", " ", "Password")]
+    public async Task Login_returns_validation_details_for_invalid_input(
+        string? identifier, string? password, string errorField)
+    {
+        using var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { identifier, password });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", document.RootElement.GetProperty("error").GetProperty("code").GetString());
+        Assert.NotEmpty(document.RootElement.GetProperty("error").GetProperty("details").GetProperty(errorField).EnumerateArray());
+    }
+
     [Fact]
     public async Task Me_without_access_token_returns_unauthorized()
     {

@@ -63,6 +63,7 @@ public sealed class LoginRequestValidationTests
             validateAllProperties: true);
 
         Assert.False(isValid);
-        Assert.Contains(results, result => result.ErrorMessage == "Password is required.");
+        var error = Assert.Single(results, result => result.MemberNames.Contains(nameof(LoginRequest.Password)));
+        Assert.False(string.IsNullOrWhiteSpace(error.ErrorMessage));
     }
 }
