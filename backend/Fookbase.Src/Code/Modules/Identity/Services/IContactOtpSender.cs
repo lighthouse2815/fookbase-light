@@ -1,3 +1,5 @@
+using Fookbase.Api.Modules.Identity.Common;
+
 namespace Fookbase.Api.Modules.Identity.Services;
 
 public interface IContactOtpSender

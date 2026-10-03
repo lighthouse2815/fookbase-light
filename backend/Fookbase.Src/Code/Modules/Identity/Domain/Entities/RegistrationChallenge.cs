@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Fookbase.Api.Modules.Users.Entities;
