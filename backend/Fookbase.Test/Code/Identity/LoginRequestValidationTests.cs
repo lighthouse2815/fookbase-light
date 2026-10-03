@@ -1,10 +1,12 @@
-using System.ComponentModel.DataAnnotations;
+using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
 
-public sealed class LoginRequestValidationTests
+public sealed class LoginRequestValidationTests(IdentityApiFactory factory)
+    : IClassFixture<IdentityApiFactory>
 {
     [Fact]
     public void Serializes_identifier_without_legacy_email()
@@ -19,51 +21,47 @@ public sealed class LoginRequestValidationTests
     }
 
     [Fact]
-    public void Missing_identifier_fails_validation()
+    public async Task Missing_identifier_fails_validation()
     {
         var request = new LoginRequest(null, "Password123!");
-        var results = new List<ValidationResult>();
+        using var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/auth/login", request);
 
-        var isValid = Validator.TryValidateObject(
-            request,
-            new ValidationContext(request),
-            results,
-            validateAllProperties: true);
-
-        Assert.False(isValid);
-        Assert.Contains(results, result => result.ErrorMessage == "Email hoặc số điện thoại là bắt buộc.");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var error = document.RootElement.GetProperty("error");
+        Assert.Equal("validation_failed", error.GetProperty("code").GetString());
+        Assert.Contains(error.GetProperty("details").GetProperty("Identifier").EnumerateArray(),
+            message => message.GetString() == "Email hoặc số điện thoại là bắt buộc.");
     }
 
     [Fact]
-    public void Invalid_identifier_fails_validation()
+    public async Task Invalid_identifier_fails_validation()
     {
         var request = new LoginRequest("not-an-email-or-phone", "Password123!");
-        var results = new List<ValidationResult>();
+        using var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/auth/login", request);
 
-        var isValid = Validator.TryValidateObject(
-            request,
-            new ValidationContext(request),
-            results,
-            validateAllProperties: true);
-
-        Assert.False(isValid);
-        Assert.Contains(results, result => result.ErrorMessage == "Email hoặc số điện thoại không hợp lệ.");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var error = document.RootElement.GetProperty("error");
+        Assert.Equal("validation_failed", error.GetProperty("code").GetString());
+        Assert.Contains(error.GetProperty("details").GetProperty("Identifier").EnumerateArray(),
+            message => message.GetString() == "Email hoặc số điện thoại không hợp lệ.");
     }
 
     [Fact]
-    public void Missing_password_fails_validation()
+    public async Task Missing_password_fails_validation()
     {
         var request = new LoginRequest("user@example.com", null);
-        var results = new List<ValidationResult>();
+        using var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/auth/login", request);
 
-        var isValid = Validator.TryValidateObject(
-            request,
-            new ValidationContext(request),
-            results,
-            validateAllProperties: true);
-
-        Assert.False(isValid);
-        var error = Assert.Single(results, result => result.MemberNames.Contains(nameof(LoginRequest.Password)));
-        Assert.False(string.IsNullOrWhiteSpace(error.ErrorMessage));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var error = document.RootElement.GetProperty("error");
+        Assert.Equal("validation_failed", error.GetProperty("code").GetString());
+        var message = Assert.Single(error.GetProperty("details").GetProperty("Password").EnumerateArray());
+        Assert.False(string.IsNullOrWhiteSpace(message.GetString()));
     }
 }

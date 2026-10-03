@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Fookbase.Api.Modules.Identity.Common;
 
-[AttributeUsage(AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
 public sealed class EmailOrPhoneNumberAttribute : ValidationAttribute
 {
     private static readonly EmailAddressAttribute EmailValidator = new();

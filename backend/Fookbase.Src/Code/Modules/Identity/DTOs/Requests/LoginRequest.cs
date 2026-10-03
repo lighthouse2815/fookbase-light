@@ -4,14 +4,8 @@ using Fookbase.Api.Modules.Identity.Common;
 namespace Fookbase.Api.Modules.Identity.DTOs.Requests;
 
 public sealed record LoginRequest(
-    [property: Required(ErrorMessage = "Email hoặc số điện thoại là bắt buộc.")]
-    [property: EmailOrPhoneNumber]
+    [Required(ErrorMessage = "Email hoặc số điện thoại là bắt buộc.")]
+    [EmailOrPhoneNumber]
     string? Identifier,
-    [property: Required(ErrorMessage = "Password is required.")]
-    string? Password)
-{
-    // MVC can bind through this constructor and validate the property attributes.
-    public LoginRequest() : this(null, null)
-    {
-    }
-}
+    [Required(ErrorMessage = "Password is required.")]
+    string? Password);
