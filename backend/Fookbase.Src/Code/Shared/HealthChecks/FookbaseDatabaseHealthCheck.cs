@@ -1,4 +1,3 @@
-using Fookbase.Api.Persistence;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Fookbase.Api.Shared.HealthChecks;

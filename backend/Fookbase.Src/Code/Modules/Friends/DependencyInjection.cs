@@ -1,6 +1,5 @@
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Friends.Config;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Friends;
 

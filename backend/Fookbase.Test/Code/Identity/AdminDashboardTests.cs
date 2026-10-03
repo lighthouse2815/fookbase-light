@@ -8,7 +8,6 @@ using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Hosting;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
 

@@ -4,8 +4,6 @@ using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Shared.Common;
-using Fookbase.Api.Modules.Posts.Services;
-using Fookbase.Api.Persistence;
 
 namespace Fookbase.Api.Modules.Posts.Services;
 

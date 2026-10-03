@@ -1,6 +1,5 @@
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
-using Fookbase.Api.Persistence;
 
 namespace Fookbase.Api.Modules.Reels.Services;
 

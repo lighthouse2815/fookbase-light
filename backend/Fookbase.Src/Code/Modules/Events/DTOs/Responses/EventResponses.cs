@@ -1,4 +1,3 @@
-using Fookbase.Api.Modules.Posts.DTOs.Responses;
 namespace Fookbase.Api.Modules.Events.DTOs.Responses;
 public sealed record EventHostResponse(string Type, Guid Id, string Name, string? Username = null, string? AvatarUrl = null);
 public sealed record EventResponse(Guid Id, string Name, string? Description, EventHostResponse DisplayHost, string Privacy,

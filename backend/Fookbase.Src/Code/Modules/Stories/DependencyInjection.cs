@@ -1,6 +1,5 @@
 using Fookbase.Api.Modules.Stories.Config;
 using Fookbase.Api.Modules.Stories.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Stories;
 

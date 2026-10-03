@@ -1,5 +1,3 @@
-using Fookbase.Api.Modules.Friends.Entities;
-
 namespace Fookbase.Api.Modules.Friends.Entities;
 
 public enum FriendRequestStatus

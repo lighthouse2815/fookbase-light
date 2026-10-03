@@ -1,9 +1,7 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Fookbase.Api.Modules.Notifications.Config;
 using Fookbase.Api.Modules.Notifications.Entities;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Notifications.Services;

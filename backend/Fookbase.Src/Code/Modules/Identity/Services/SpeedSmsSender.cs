@@ -1,9 +1,7 @@
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Fookbase.Api.Modules.Identity.Config;
-using Microsoft.Extensions.Logging;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 

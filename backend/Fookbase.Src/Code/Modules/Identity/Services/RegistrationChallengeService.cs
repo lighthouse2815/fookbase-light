@@ -9,11 +9,9 @@ using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Users.Services;
-using Fookbase.Api.Persistence;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 

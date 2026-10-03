@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Fookbase.Api.Modules.Photos.Services;
 
 namespace Fookbase.Api.Modules.Photos;

@@ -4,7 +4,6 @@ using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Shared.ErrorHandling;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;

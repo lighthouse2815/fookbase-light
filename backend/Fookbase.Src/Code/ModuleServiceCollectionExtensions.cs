@@ -1,10 +1,7 @@
 using Fookbase.Api.Modules.Admin;
-using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity;
-using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Posts;
@@ -28,11 +25,8 @@ using Fookbase.Api.Modules.Ai;
 using Fookbase.Api.Modules.Ai.Config;
 using Fookbase.Api.Modules.Notifications.Config;
 using Fookbase.Api.Modules.Games;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api;
 

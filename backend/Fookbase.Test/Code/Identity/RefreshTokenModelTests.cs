@@ -1,5 +1,4 @@
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Identity.Api.IntegrationTests;

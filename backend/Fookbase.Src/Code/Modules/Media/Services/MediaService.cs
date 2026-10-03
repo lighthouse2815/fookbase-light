@@ -4,10 +4,7 @@ using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
-using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
-using Fookbase.Api.Modules.Stories.Entities;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Services;

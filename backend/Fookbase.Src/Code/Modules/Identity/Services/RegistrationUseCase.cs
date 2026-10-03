@@ -1,8 +1,6 @@
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
-using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Users.Services;
-using Fookbase.Api.Persistence;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 

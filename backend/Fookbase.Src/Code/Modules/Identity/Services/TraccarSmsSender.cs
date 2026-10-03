@@ -1,7 +1,5 @@
-using System.Net.Http.Json;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Config;
-using Microsoft.Extensions.Logging;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 

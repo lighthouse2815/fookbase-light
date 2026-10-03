@@ -8,7 +8,6 @@ using System.Text;
 using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Config;
 using Fookbase.Api.Modules.Friends.Entities;
-using Fookbase.Api.Modules.Friends.Data;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;

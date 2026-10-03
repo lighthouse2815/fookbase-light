@@ -11,8 +11,6 @@ using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Posts.Entities;
-using Fookbase.Api.Modules.Stories.Entities;
-using Fookbase.Api.Persistence;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;

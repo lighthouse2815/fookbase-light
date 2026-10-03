@@ -1,7 +1,6 @@
 using Fookbase.Api.Modules.Memories.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Memories.Services;

@@ -1,6 +1,5 @@
 using Fookbase.Api.Modules.Feed.Services;
 using Fookbase.Api.Modules.Feed.Config;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Feed;
 

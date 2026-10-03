@@ -5,7 +5,6 @@ using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Photos.DTOs.Requests;
 using Fookbase.Api.Modules.Photos.DTOs.Responses;
 using Fookbase.Api.Modules.Photos.Entities;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Photos.Services;

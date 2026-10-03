@@ -8,7 +8,6 @@ using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
-using Fookbase.Api.Modules.Media.Data;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Messages.Entities;
 using Microsoft.EntityFrameworkCore;

@@ -2,7 +2,6 @@ using Fookbase.Api.Modules.Media.Background;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Services;
 using CloudinaryDotNet;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Media;
 

@@ -1,5 +1,3 @@
-using Fookbase.Api.Modules.Friends.Data;
-using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;

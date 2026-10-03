@@ -5,7 +5,6 @@ using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Events.Services;
 using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Photos.Services;
-using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;

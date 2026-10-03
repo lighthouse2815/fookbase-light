@@ -3,7 +3,6 @@ using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Users.DTOs.Requests;
 using Fookbase.Api.Modules.Users.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Services;

@@ -1,5 +1,4 @@
 using Fookbase.Api.Modules.Users.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Users;
 

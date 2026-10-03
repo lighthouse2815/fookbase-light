@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Fookbase.Api.Modules.Ai.Config;
 using Fookbase.Api.Modules.Ai.DTOs.Requests;

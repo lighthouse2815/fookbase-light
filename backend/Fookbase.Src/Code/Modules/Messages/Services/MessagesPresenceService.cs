@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
 using Fookbase.Api.Modules.Messages.Hubs;
-using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Messages.Services;
 

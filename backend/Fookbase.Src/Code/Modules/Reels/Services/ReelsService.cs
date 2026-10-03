@@ -9,7 +9,6 @@ using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Reels.DTOs.Responses;
 using Fookbase.Api.Modules.Reels.Entities;
-using Fookbase.Api.Persistence;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 using PublicProfileHandle = Fookbase.Api.Modules.Users.Common.PublicProfileHandle;

@@ -5,7 +5,6 @@ using Fookbase.Api.Modules.Friends.Config;
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
-using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 

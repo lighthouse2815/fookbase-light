@@ -1,7 +1,6 @@
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Media.Config;
-using Microsoft.Extensions.Configuration;
 
 namespace Fookbase.Api.Shared.Config;
 

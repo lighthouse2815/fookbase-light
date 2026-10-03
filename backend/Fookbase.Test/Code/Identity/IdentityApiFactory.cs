@@ -1,7 +1,5 @@
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Services;
-using Fookbase.Api.Modules.Users.Data;
-using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;

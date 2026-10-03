@@ -1,9 +1,7 @@
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Config;
-using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Identity;
 

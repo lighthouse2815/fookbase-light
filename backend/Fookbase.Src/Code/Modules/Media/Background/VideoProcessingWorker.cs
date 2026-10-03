@@ -1,11 +1,7 @@
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Fookbase.Api.Modules.Media.Background;
 

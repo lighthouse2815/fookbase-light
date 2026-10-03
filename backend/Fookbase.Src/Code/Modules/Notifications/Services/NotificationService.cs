@@ -4,8 +4,6 @@ using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Hubs;
 using Fookbase.Api.Modules.Posts.Entities;
-using Fookbase.Api.Modules.Stories.Entities;
-using Fookbase.Api.Persistence;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 

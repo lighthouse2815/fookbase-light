@@ -1,6 +1,5 @@
 using Fookbase.Api.Modules.Notifications.Config;
 using Fookbase.Api.Modules.Notifications.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Notifications;
 

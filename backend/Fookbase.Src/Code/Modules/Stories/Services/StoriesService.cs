@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
@@ -13,7 +12,6 @@ using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Stories.Config;
 using Fookbase.Api.Modules.Stories.DTOs.Responses;
 using Fookbase.Api.Modules.Stories.Entities;
-using Fookbase.Api.Persistence;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 

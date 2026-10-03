@@ -1,5 +1,3 @@
-using Fookbase.Api.Modules.Admin.Entities;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Identity.Services;

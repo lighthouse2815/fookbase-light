@@ -2,7 +2,6 @@ using System.Text;
 using Fookbase.Api.Modules.Events.DTOs.Requests;
 using Fookbase.Api.Modules.Events.DTOs.Responses;
 using Fookbase.Api.Modules.Events.Entities;
-using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
@@ -10,7 +9,6 @@ using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 namespace Fookbase.Api.Modules.Events.Services;
 public sealed class EventsService(FookbaseDbContext db, EventAccessService access, NotificationService notifications,

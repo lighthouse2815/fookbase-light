@@ -8,12 +8,10 @@ using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Shared.Common;
-using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Search.DTOs.Responses;
 using PublicProfileHandle = Fookbase.Api.Modules.Users.Common.PublicProfileHandle;
-using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Search.Services;

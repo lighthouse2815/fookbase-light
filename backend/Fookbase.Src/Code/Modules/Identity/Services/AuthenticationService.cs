@@ -1,5 +1,4 @@
 using Fookbase.Api.Shared.Common;
-using Fookbase.Api.Persistence;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Common;
@@ -8,7 +7,6 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text;

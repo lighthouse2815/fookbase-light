@@ -1,5 +1,4 @@
 using Fookbase.Api.Modules.Pages.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Pages;
 

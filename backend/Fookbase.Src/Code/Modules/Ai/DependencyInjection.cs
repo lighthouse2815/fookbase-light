@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using Fookbase.Api.Modules.Ai.Config;
 using Fookbase.Api.Modules.Ai.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Ai;
 

@@ -1,5 +1,4 @@
 using Fookbase.Api.Modules.Search.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Api.Modules.Search;
 
