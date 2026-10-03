@@ -41,3 +41,20 @@ public sealed class EmailOrPhoneNumberAttribute : ValidationAttribute
         return VietnameseMobile.IsMatch(digits);
     }
 }
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
+public sealed class TrimmedStringLengthAttribute(int maximumLength) : StringLengthAttribute(maximumLength)
+{
+    public override bool IsValid(object? value) =>
+        base.IsValid(value is string text ? text.Trim() : value);
+}
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
+public sealed class NonEmptyGuidAttribute : ValidationAttribute
+{
+    public NonEmptyGuidAttribute() : base("Mã yêu cầu là bắt buộc.")
+    {
+    }
+
+    public override bool IsValid(object? value) => value is Guid id && id != Guid.Empty;
+}
