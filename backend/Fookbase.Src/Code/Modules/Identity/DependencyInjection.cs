@@ -62,7 +62,6 @@ public static class DependencyInjection
         services.AddSingleton<GoogleMobileFlow>();
         services.AddScoped<IGoogleExternalIdentityReader, GoogleExternalIdentityReader>();
         services.AddScoped<AccountModerationService>();
-        services.AddScoped<RegistrationUseCase>();
         services.AddScoped<RegistrationChallengeService>();
         services.AddScoped<AdministrationService>();
 

@@ -234,7 +234,9 @@ Xem [hợp đồng response API](docs/api-response.md), gồm thay đổi HTTP 2
 
 | Method | Endpoint | Authentication |
 | --- | --- | --- |
-| POST | `/api/auth/register` | Không |
+| POST | `/api/auth/registration/start` | Không |
+| POST | `/api/auth/registration/resend` | Không |
+| POST | `/api/auth/registration/verify` | Không |
 | POST | `/api/auth/login` | Không |
 | GET | `/api/auth/providers` | Không |
 | GET | `/api/auth/google/start?client=web\|zola-light` | Không |
@@ -243,6 +245,9 @@ Xem [hợp đồng response API](docs/api-response.md), gồm thay đổi HTTP 2
 | POST | `/api/auth/refresh` | Không |
 | POST | `/api/auth/logout` | Bearer JWT |
 | GET | `/api/auth/me` | Bearer JWT |
+
+Đăng ký bắt đầu bằng `registration/start` để gửi OTP và hoàn tất bằng `registration/verify`.
+Tài khoản và phiên đăng nhập chỉ được tạo sau khi xác minh OTP thành công.
 
 JWT signing key chỉ được đọc từ `Jwt__SigningKey`. Refresh token raw chỉ trả cho client; database lưu SHA-256 hash.
 
@@ -428,7 +433,7 @@ Tất cả endpoint Admin yêu cầu JWT có role `Admin`.
 ## Phối hợp module
 
 Khi một API cần nhiều service, endpoint gọi coordinator trong module sở hữu endpoint:
-`Modules/Identity/Services/RegistrationUseCase`, `Modules/Posts/Services/PostsUseCase`, hoặc
+`Modules/Identity/Services/RegistrationChallengeService`, `Modules/Posts/Services/PostsUseCase`, hoặc
 `Modules/Admin/Services/AdministrationUseCase`. Đăng ký tạo Identity và profile trong một
 transaction; Posts lấy quan hệ hiện tại từ Friends và đồng bộ attachment với Media. Không có
 endpoint nào truy cập `DbContext` trực tiếp hoặc điều phối nhiều service.

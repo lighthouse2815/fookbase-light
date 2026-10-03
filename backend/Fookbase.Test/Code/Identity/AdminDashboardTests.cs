@@ -37,12 +37,26 @@ public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixt
             builder.UseSetting("Admin:BootstrapEmail", email));
         using var ordinaryClient = ordinaryApp.CreateClient();
         using var client = configuredApp.CreateClient();
-        using var registration = await (operation == "registration" ? client : ordinaryClient)
-            .PostAsJsonAsync("/api/auth/register",
-                new RegisterRequest(email, $"bootstrap-{suffix}", password));
-        registration.EnsureSuccessStatusCode();
-        var session = await registration.Content.ReadApiDataAsync<AuthenticationResponse>();
-        Assert.NotNull(session);
+        AuthenticationResponse session;
+        if (operation == "registration")
+        {
+            using var start = await client.PostAsJsonAsync("/api/auth/registration/start",
+                new RegistrationStartRequest("Bootstrap", suffix, new DateOnly(2000, 1, 2), "other", email, password));
+            Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+            var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
+            Assert.NotNull(challenge);
+            var code = configuredApp.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(email);
+            using var registration = await client.PostAsJsonAsync("/api/auth/registration/verify",
+                new RegistrationVerifyRequest(challenge.ChallengeId, code));
+            Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
+            session = await registration.Content.ReadApiDataAsync<AuthenticationResponse>();
+            Assert.NotNull(session);
+        }
+        else
+        {
+            session = await TestAccountSetup.CreateAsync(
+                ordinaryApp, ordinaryClient, email, $"bootstrap-{suffix}", password);
+        }
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
 
         if (operation == "login" || operation == "refresh")
@@ -82,9 +96,8 @@ public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixt
         var suffix = Guid.NewGuid().ToString("N")[..12];
         var email = $"dashboard-{suffix}@example.test";
         using var client = factory.CreateClient();
-        var registration = await client.PostAsJsonAsync("/api/auth/register",
-            new RegisterRequest(email, $"dashboard-{suffix}", "Dashboard-test123!"));
-        registration.EnsureSuccessStatusCode();
+        await TestAccountSetup.CreateAsync(
+            factory, client, email, $"dashboard-{suffix}", "Dashboard-test123!");
         if (isAdmin)
         {
             using var scope = factory.Services.CreateScope();

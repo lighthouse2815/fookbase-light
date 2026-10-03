@@ -125,7 +125,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        await RegisterAsync(client, account);
+        await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
 
         var response = await client.PostAsJsonAsync(
             "/api/auth/login",
@@ -139,7 +139,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        var registration = await RegisterAsync(client, account);
+        var registration = await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
         client.DefaultRequestHeaders.Remove("X-Fookbase-Auth-Transport");
         client.DefaultRequestHeaders.Add("X-Fookbase-Auth-Transport", "cookie:web");
 
@@ -413,7 +413,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        await RegisterAsync(client, account);
+        await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
         using var scope = factory.Services.CreateScope();
         var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
         var completion = await googleAuthentication.CreateCompletionAsync(
@@ -521,7 +521,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        await RegisterAsync(client, account);
+        await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
 
         using var scope = factory.Services.CreateScope();
         var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
@@ -550,7 +550,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        await RegisterAsync(client, account);
+        await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
 
         using var scope = factory.Services.CreateScope();
         var googleAuthentication = scope.ServiceProvider.GetRequiredService<GoogleAuthenticationService>();
@@ -579,83 +579,100 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     }
 
     [Fact]
-    public async Task Register_with_malformed_json_returns_bad_request()
+    public async Task Registration_start_with_malformed_json_returns_bad_request()
     {
         using var client = factory.CreateClient();
         using var content = new StringContent("{", Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync("/api/auth/register", content);
+        var response = await client.PostAsync("/api/auth/registration/start", content);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task Register_succeeds_and_stores_only_hashed_secrets()
+    public async Task Registration_verification_issues_tokens_and_stores_only_hashed_secrets()
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync(
-            "/api/auth/register",
-            new RegisterRequest(account.Email, account.Username, account.Password));
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var authentication = await ReadAuthenticationResponseAsync(response);
+        var firstName = $"An{Guid.NewGuid():N}"[..18];
+        var expectedUsername = $"{firstName.ToLowerInvariant()}.nguyen";
+        var authentication = await RegisterWithOtpAsync(
+            client,
+            new RegistrationStartRequest(firstName, "Nguyễn", new DateOnly(2000, 1, 2), "other", account.Email, account.Password));
         Assert.Equal(account.Email, authentication.User.Email);
-        Assert.Equal(account.Username, authentication.User.Username);
-        Assert.False(authentication.User.EmailConfirmed);
+        Assert.Equal(expectedUsername, authentication.User.Username);
+        Assert.True(authentication.User.EmailConfirmed);
         Assert.False(string.IsNullOrWhiteSpace(authentication.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(authentication.RefreshToken));
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(authentication.AccessToken);
         Assert.Equal(authentication.User.Id.ToString(), jwt.Subject);
         Assert.Equal(account.Email, jwt.Claims.Single(claim => claim.Type == JwtRegisteredClaimNames.Email).Value);
-        Assert.Equal(account.Username, jwt.Claims.Single(claim => claim.Type == JwtRegisteredClaimNames.UniqueName).Value);
+        Assert.Equal(expectedUsername, jwt.Claims.Single(claim => claim.Type == JwtRegisteredClaimNames.UniqueName).Value);
         Assert.False(string.IsNullOrWhiteSpace(jwt.Id));
 
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<User>>();
         var user = await dbContext.Users.SingleAsync(item => item.Id == authentication.User.Id);
         var refreshToken = await dbContext.RefreshTokens
             .SingleAsync(item => item.UserId == authentication.User.Id);
         var profile = await dbContext.UserProfiles
             .SingleAsync(item => item.UserId == authentication.User.Id);
+        Assert.False(string.IsNullOrWhiteSpace(user.PasswordHash));
         Assert.NotEqual(account.Password, user.PasswordHash);
+        Assert.True(await userManager.CheckPasswordAsync(user, account.Password));
         Assert.Equal(account.Email.ToUpperInvariant(), user.NormalizedEmail);
-        Assert.Equal(account.Username.ToUpperInvariant(), user.NormalizedUserName);
+        Assert.Equal(expectedUsername.ToUpperInvariant(), user.NormalizedUserName);
         Assert.NotEqual(authentication.RefreshToken, refreshToken.TokenHash);
         Assert.Equal(Hash(authentication.RefreshToken), refreshToken.TokenHash);
-        Assert.Equal(account.Username, profile.Username);
+        Assert.Equal(expectedUsername, profile.Username);
+        Assert.NotNull(await dbContext.UserPrivacySettings.SingleOrDefaultAsync(item => item.UserId == user.Id));
     }
 
     [Fact]
-    public async Task Register_with_duplicate_email_returns_conflict()
+    public async Task Registration_start_with_duplicate_email_returns_duplicate_contact_conflict()
     {
         var first = CreateUniqueAccount();
-        var second = CreateUniqueAccount() with { Email = first.Email };
         using var client = factory.CreateClient();
 
-        await RegisterAsync(client, first);
+        var request = new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "other", first.Email, first.Password);
+        await RegisterWithOtpAsync(client, request);
         var response = await client.PostAsJsonAsync(
-            "/api/auth/register",
-            new RegisterRequest(second.Email, second.Username, second.Password));
+            "/api/auth/registration/start",
+            request);
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("duplicate_contact", document.RootElement.GetProperty("error").GetProperty("code").GetString());
     }
 
     [Fact]
-    public async Task Register_with_duplicate_username_returns_conflict()
+    public async Task Registration_verification_generates_unique_usernames_for_matching_names()
     {
         var first = CreateUniqueAccount();
-        var second = CreateUniqueAccount() with { Username = first.Username };
+        var second = CreateUniqueAccount();
         using var client = factory.CreateClient();
 
-        await RegisterAsync(client, first);
-        var response = await client.PostAsJsonAsync(
-            "/api/auth/register",
-            new RegisterRequest(second.Email, second.Username, second.Password));
+        var firstName = $"An{Guid.NewGuid():N}"[..18];
+        var firstAuthentication = await RegisterWithOtpAsync(
+            client,
+            new RegistrationStartRequest(firstName, "Nguyễn", new DateOnly(2000, 1, 2), "other", first.Email, first.Password));
+        var secondAuthentication = await RegisterWithOtpAsync(
+            client,
+            new RegistrationStartRequest(firstName, "Nguyễn", new DateOnly(2000, 1, 2), "other", second.Email, second.Password));
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var expectedUsername = $"{firstName.ToLowerInvariant()}.nguyen";
+        Assert.Equal(expectedUsername, firstAuthentication.User.Username);
+        Assert.Equal($"{expectedUsername}.2", secondAuthentication.User.Username);
+        Assert.NotEqual(firstAuthentication.User.Id, secondAuthentication.User.Id);
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Equal(2, await dbContext.Users.CountAsync(user =>
+            user.UserName == expectedUsername || user.UserName == $"{expectedUsername}.2"));
+        Assert.Equal(2, await dbContext.UserProfiles.CountAsync(profile =>
+            profile.Username == expectedUsername || profile.Username == $"{expectedUsername}.2"));
     }
 
     [Fact]
@@ -663,7 +680,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        await RegisterAsync(client, account);
+        await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
 
         var response = await client.PostAsJsonAsync(
             "/api/auth/login",
@@ -680,7 +697,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        await RegisterAsync(client, account);
+        await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
 
         var response = await client.PostAsJsonAsync(
             "/api/auth/login",
@@ -726,7 +743,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        var authentication = await RegisterAsync(client, account);
+        var authentication = await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", authentication.AccessToken);
 
@@ -747,7 +764,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        var original = await RegisterAsync(client, account);
+        var original = await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
 
         var refreshResponse = await client.PostAsJsonAsync(
             "/api/auth/refresh",
@@ -769,7 +786,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        var authentication = await RegisterAsync(client, account);
+        var authentication = await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", authentication.AccessToken);
 
@@ -791,7 +808,13 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        await RegisterAsync(client, account);
+        var original = await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
+        Assert.False(original.User.EmailConfirmed);
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", original.AccessToken);
+        var sendResponse = await client.PostAsJsonAsync("/api/auth/email/verification", new { });
+        Assert.Equal(HttpStatusCode.OK, sendResponse.StatusCode);
+        client.DefaultRequestHeaders.Authorization = null;
 
         var email = GetLatestEmail(account.Email, "Verify your Fookbase email");
         var (emailAddress, token) = GetLinkParameters(email.HtmlBody);
@@ -813,7 +836,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        var original = await RegisterAsync(client, account);
+        var original = await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
 
         var requestResponse = await client.PostAsJsonAsync(
             "/api/auth/password/forgot",
@@ -844,7 +867,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        var original = await RegisterAsync(client, account);
+        var original = await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", original.AccessToken);
 
@@ -879,7 +902,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var account = CreateUniqueAccount();
         using var client = factory.CreateClient();
-        var original = await RegisterAsync(client, account);
+        var original = await TestAccountSetup.CreateAsync(factory, client, account.Email, account.Username, account.Password);
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", original.AccessToken);
 
@@ -893,15 +916,20 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.NotEmpty(document.RootElement.GetProperty("error").GetProperty("details").GetProperty(errorField).EnumerateArray());
     }
 
-    private static async Task<AuthenticationResponse> RegisterAsync(
+    private async Task<AuthenticationResponse> RegisterWithOtpAsync(
         HttpClient client,
-        TestAccount account)
+        RegistrationStartRequest request)
     {
+        var start = await client.PostAsJsonAsync("/api/auth/registration/start", request);
+        Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+        var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(challenge);
+        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(request.Contact!);
         var response = await client.PostAsJsonAsync(
-            "/api/auth/register",
-            new RegisterRequest(account.Email, account.Username, account.Password));
+            "/api/auth/registration/verify",
+            new RegistrationVerifyRequest(challenge!.ChallengeId, code));
 
-        response.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return await ReadAuthenticationResponseAsync(response);
     }
 

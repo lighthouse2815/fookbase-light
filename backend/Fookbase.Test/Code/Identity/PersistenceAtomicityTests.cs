@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
+using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Shared.ErrorHandling;
@@ -24,19 +25,28 @@ public sealed class PersistenceAtomicityTests
             services.AddDbContext<FookbaseDbContext>(options => options.AddInterceptors(new RejectProfileInsert()))));
         using var client = failingFactory.CreateClient();
         var suffix = Guid.NewGuid().ToString("N")[..16];
+        var email = $"business-{suffix}@example.com";
+        Guid? challengeId = null;
 
         HttpResponseMessage response;
         if (google)
         {
             client.DefaultRequestHeaders.Add("X-Test-Google-Sub", suffix);
-            client.DefaultRequestHeaders.Add("X-Test-Google-Email", $"business-{suffix}@example.com");
+            client.DefaultRequestHeaders.Add("X-Test-Google-Email", email);
             client.DefaultRequestHeaders.Add("X-Test-Google-Email-Verified", "true");
             response = await client.GetAsync("/api/auth/google/callback?client=web");
         }
         else
         {
-            response = await client.PostAsJsonAsync("/api/auth/register",
-                new RegisterRequest($"business-{suffix}@example.com", $"business_{suffix}", "Password123!"));
+            using var start = await client.PostAsJsonAsync("/api/auth/registration/start",
+                new RegistrationStartRequest("Business", suffix, new DateOnly(2000, 1, 2), "other", email, "Password123!"));
+            Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+            var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
+            Assert.NotNull(challenge);
+            challengeId = challenge.ChallengeId;
+            var code = failingFactory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(email);
+            response = await client.PostAsJsonAsync("/api/auth/registration/verify",
+                new RegistrationVerifyRequest(challenge.ChallengeId, code));
         }
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
@@ -50,6 +60,13 @@ public sealed class PersistenceAtomicityTests
         Assert.False(await db.UserPrivacySettings.AnyAsync());
         Assert.False(await db.UserLogins.AnyAsync());
         Assert.False(await db.ExternalLoginTickets.AnyAsync());
+        if (challengeId is not null)
+        {
+            var challenge = await db.RegistrationChallenges.SingleAsync(item => item.Id == challengeId);
+            Assert.Equal(email, challenge.Contact);
+            Assert.Null(challenge.ConsumedAtUtc);
+            Assert.Equal(0, challenge.FailedAttemptCount);
+        }
     }
 
     private sealed class RejectProfileInsert : SaveChangesInterceptor
@@ -87,7 +104,7 @@ public sealed class PersistenceAtomicityTests
     }
 
     [Fact]
-    public async Task Failed_profile_creation_rolls_back_the_identity_user_and_refresh_token()
+    public async Task Failed_profile_creation_rolls_back_the_account_session_and_challenge_consumption()
     {
         await using var database = await TemporaryFookbaseDatabase.CreateAsync();
         using var factory = new IsolatedIdentityApiFactory(database.ConnectionString);
@@ -109,15 +126,25 @@ public sealed class PersistenceAtomicityTests
 
         var suffix = Guid.NewGuid().ToString("N")[..16];
         var email = $"atomic-{suffix}@example.com";
-        var response = await client.PostAsJsonAsync(
-            "/api/auth/register",
-            new RegisterRequest(email, $"atomic_{suffix}", "Password123!"));
+        using var start = await client.PostAsJsonAsync("/api/auth/registration/start",
+            new RegistrationStartRequest("Atomic", suffix, new DateOnly(2000, 1, 2), "other", email, "Password123!"));
+        Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+        var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(challenge);
+        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(email);
+        using var response = await client.PostAsJsonAsync("/api/auth/registration/verify",
+            new RegistrationVerifyRequest(challenge.ChallengeId, code));
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         dbContext.ChangeTracker.Clear();
         Assert.False(await dbContext.Users.AnyAsync(user => user.Email == email));
+        Assert.False(await dbContext.AuthSessions.AnyAsync());
         Assert.False(await dbContext.RefreshTokens.AnyAsync());
         Assert.False(await dbContext.UserProfiles.AnyAsync());
+        Assert.False(await dbContext.UserPrivacySettings.AnyAsync());
+        var persistedChallenge = await dbContext.RegistrationChallenges.SingleAsync(item => item.Id == challenge.ChallengeId);
+        Assert.Null(persistedChallenge.ConsumedAtUtc);
+        Assert.Equal(0, persistedChallenge.FailedAttemptCount);
     }
 
     private static FookbaseDbContext CreateDbContext(string connectionString) =>

@@ -25,80 +25,6 @@ public sealed class AuthenticationService(
     AccountModerationService accountModerationService,
     TimeProvider timeProvider)
 {
-    public async Task<AuthenticationResponse> RegisterAsync(
-        RegisterRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var validationErrors = AuthenticationValidation.Validate(request);
-        if (validationErrors.Count > 0)
-        {
-            throw new BusinessException(new ApplicationError(
-                ErrorCode.ValidationFailed.Code, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
-                validationErrors));
-        }
-
-        var email = request.Email!.Trim();
-        var userName = request.Username!.Trim();
-
-        if (await userManager.FindByEmailAsync(email) is not null)
-        {
-            throw new BusinessException(new ApplicationError(
-                ErrorCode.DuplicateEmail.Code, ErrorCode.DuplicateEmail.Message, ApplicationErrorType.Conflict));
-        }
-
-        if (await userManager.FindByNameAsync(userName) is not null)
-        {
-            throw new BusinessException(new ApplicationError(
-                ErrorCode.DuplicateUsername.Code, ErrorCode.DuplicateUsername.Message, ApplicationErrorType.Conflict));
-        }
-
-        var now = timeProvider.GetUtcNow();
-        var user = new User(Guid.NewGuid(), email, userName, now);
-        var session = new AuthSession(user.Id, null, now, now.AddDays(30));
-        var refreshToken = tokenService.CreateRefreshToken(user.Id, session.Id, now);
-        var creationResult = await CreateUserAsync(
-            user,
-            request.Password!,
-            refreshToken.RefreshToken,
-            session,
-            cancellationToken);
-
-        if (!creationResult.Succeeded)
-        {
-            var errors = ToErrors(creationResult);
-            if (errors.ContainsKey("DuplicateEmail"))
-            {
-                throw new BusinessException(new ApplicationError(
-                    ErrorCode.DuplicateEmail.Code, ErrorCode.DuplicateEmail.Message, ApplicationErrorType.Conflict));
-            }
-
-            if (errors.ContainsKey("DuplicateUserName"))
-            {
-                throw new BusinessException(new ApplicationError(
-                    ErrorCode.DuplicateUsername.Code, ErrorCode.DuplicateUsername.Message, ApplicationErrorType.Conflict));
-            }
-
-            throw new BusinessException(new ApplicationError(
-                ErrorCode.ValidationFailed.Code, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation,
-                errors));
-        }
-
-        if (emailSender.IsEnabled)
-        {
-            try
-            {
-                await SendEmailVerificationForUserAsync(user, cancellationToken);
-            }
-            catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
-            {
-                logger.LogWarning(exception, "Unable to send email verification for user {UserId}.", user.Id);
-            }
-        }
-
-        var roles = await GetRolesAsync(user);
-        return BuildResponse(user, roles, tokenService.CreateAccessToken(user, roles, now, session.Id), refreshToken);
-    }
-
     public async Task<object> LoginAsync(
         LoginRequest request,
         string? userAgent,
@@ -727,26 +653,6 @@ public sealed class AuthenticationService(
         return (await userManager.GetRolesAsync(user))
             .Order(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-    }
-
-    private async Task<IdentityResult> CreateUserAsync(
-        User user,
-        string password,
-        RefreshToken refreshToken,
-        AuthSession session,
-        CancellationToken cancellationToken)
-    {
-        var result = await userManager.CreateAsync(user, password);
-        if (!result.Succeeded)
-        {
-            dbContext.ChangeTracker.Clear();
-            return result;
-        }
-
-        dbContext.AuthSessions.Add(session);
-        dbContext.RefreshTokens.Add(refreshToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return result;
     }
 
     private async Task<bool> RotateRefreshTokenAsync(

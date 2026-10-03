@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
-using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Shared.ErrorHandling;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
@@ -20,9 +19,8 @@ public sealed class AuthenticationErrorResponseTests(IdentityApiFactory factory)
         using var client = factory.CreateClient();
         if (accountExists)
         {
-            using var registered = await client.PostAsJsonAsync("/api/auth/register",
-                new RegisterRequest(email, $"error-{Guid.NewGuid():N}"[..32], "Password123!"));
-            registered.EnsureSuccessStatusCode();
+            await TestAccountSetup.CreateAsync(
+                factory, client, email, $"error-{Guid.NewGuid():N}"[..32], "Password123!");
         }
 
         using var response = await client.PostAsJsonAsync("/api/auth/login",
@@ -35,9 +33,8 @@ public sealed class AuthenticationErrorResponseTests(IdentityApiFactory factory)
     public async Task Incorrect_password_for_disabling_two_factor_keeps_validation_status_with_shared_error()
     {
         using var client = factory.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/auth/register",
-            new RegisterRequest($"error-{Guid.NewGuid():N}@example.test", $"error-{Guid.NewGuid():N}"[..32], "Password123!"));
-        var session = await registered.Content.ReadApiDataAsync<AuthenticationResponse>();
+        var session = await TestAccountSetup.CreateAsync(
+            factory, client, $"error-{Guid.NewGuid():N}@example.test", $"error-{Guid.NewGuid():N}"[..32], "Password123!");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
 
         using var response = await client.PostAsJsonAsync("/api/auth/2fa/disable",
@@ -60,9 +57,8 @@ public sealed class AuthenticationErrorResponseTests(IdentityApiFactory factory)
     public async Task Incorrect_current_password_preserves_identity_validation_details()
     {
         using var client = factory.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/auth/register",
-            new RegisterRequest($"error-{Guid.NewGuid():N}@example.test", $"error-{Guid.NewGuid():N}"[..32], "Password123!"));
-        var session = await registered.Content.ReadApiDataAsync<AuthenticationResponse>();
+        var session = await TestAccountSetup.CreateAsync(
+            factory, client, $"error-{Guid.NewGuid():N}@example.test", $"error-{Guid.NewGuid():N}"[..32], "Password123!");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
         using var response = await client.PostAsJsonAsync("/api/auth/password/change",
             new ChangePasswordRequest("wrong-password", "NewPassword123!", "NewPassword123!"));

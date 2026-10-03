@@ -13,17 +13,18 @@ public sealed class IdentityRequestValidationTests(IdentityApiFactory factory)
     : IClassFixture<IdentityApiFactory>
 {
     [Theory]
-    [InlineData("/api/auth/register", "{}", "Email")]
-    [InlineData("/api/auth/register", "{\"email\":\"invalid\",\"username\":\"valid.name\",\"password\":\"Password123!\"}", "Email")]
-    [InlineData("/api/auth/register", "{\"email\":\"valid@example.test\",\"username\":\"ab\",\"password\":\"Password123!\"}", "Username")]
-    [InlineData("/api/auth/register", "{\"email\":\"valid@example.test\",\"username\":\"valid.name\",\"password\":\"short\"}", "Password")]
     [InlineData("/api/auth/registration/start", "{}", "Contact")]
     [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"invalid\",\"password\":\"Password123!\"}", "Contact")]
     [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"0123456789\",\"password\":\"Password123!\"}", "Contact")]
+    [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"   \",\"password\":\"Password123!\"}", "Contact")]
+    [InlineData("/api/auth/registration/start", "{\"firstName\":\"\",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"valid@example.test\",\"password\":\"Password123!\"}", "FirstName")]
     [InlineData("/api/auth/registration/start", "{\"firstName\":\"   \",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"valid@example.test\",\"password\":\"Password123!\"}", "FirstName")]
+    [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"   \",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"valid@example.test\",\"password\":\"Password123!\"}", "LastName")]
     [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"Nguyễn\",\"gender\":\"male\",\"contact\":\"valid@example.test\",\"password\":\"Password123!\"}", "DateOfBirth")]
     [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"contact\":\"valid@example.test\",\"password\":\"Password123!\"}", "Gender")]
     [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"valid@example.test\",\"password\":\"short\"}", "Password")]
+    [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"valid@example.test\",\"password\":\"P4ss!12\"}", "Password")]
+    [InlineData("/api/auth/registration/start", "{\"firstName\":\"An\",\"lastName\":\"Nguyễn\",\"dateOfBirth\":\"2000-01-02\",\"gender\":\"male\",\"contact\":\"valid@example.test\",\"password\":\"        \"}", "Password")]
     [InlineData("/api/auth/registration/verify", "{}", "ChallengeId")]
     [InlineData("/api/auth/registration/verify", "{\"challengeId\":\"00000000-0000-0000-0000-000000000000\",\"code\":\"123456\"}", "ChallengeId")]
     [InlineData("/api/auth/registration/verify", "{\"challengeId\":\"11111111-1111-1111-1111-111111111111\"}", "Code")]
@@ -56,21 +57,14 @@ public sealed class IdentityRequestValidationTests(IdentityApiFactory factory)
     [Theory]
     [InlineData("FirstName", 51)]
     [InlineData("LastName", 51)]
-    [InlineData("Username", 33)]
-    [InlineData("Password", 129)]
     public async Task Registration_rejects_overlong_fields(string field, int length)
     {
         var value = new string('a', length);
-        var legacyRegistration = field is "Username" or "Password";
-        object request = legacyRegistration
-            ? new RegisterRequest("valid@example.test", field == "Username" ? value : "valid.name",
-                field == "Password" ? value : "Password123!")
-            : new RegistrationStartRequest(field == "FirstName" ? value : "An",
-                field == "LastName" ? value : "Nguyễn", new DateOnly(2000, 1, 2),
-                "male", "valid@example.test", "Password123!");
+        var request = new RegistrationStartRequest(field == "FirstName" ? value : "An",
+            field == "LastName" ? value : "Nguyễn", new DateOnly(2000, 1, 2),
+            "male", "valid@example.test", "Password123!");
         using var client = factory.CreateClient();
-        using var response = await client.PostAsJsonAsync(
-            legacyRegistration ? "/api/auth/register" : "/api/auth/registration/start", request);
+        using var response = await client.PostAsJsonAsync("/api/auth/registration/start", request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());

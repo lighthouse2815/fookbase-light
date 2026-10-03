@@ -16,7 +16,6 @@ using Fookbase.Api.Modules.Groups.Endpoints;
 using Fookbase.Api.Modules.Admin;
 using Fookbase.Api.Modules.Admin.Endpoints;
 using Fookbase.Api.Modules.Identity.Common;
-using Fookbase.Api.Modules.Identity.Controllers;
 using Fookbase.Api.Modules.Identity.Middleware;
 using Fookbase.Api.Modules.Media.Endpoints;
 using Fookbase.Api.Modules.Media.HealthChecks;
@@ -270,13 +269,7 @@ builder.Services.AddHealthChecks()
     .AddCheck<FookbaseDatabaseHealthCheck>("postgresql", tags: ["ready"])
     .AddCheck<CloudinaryHealthCheck>("cloudinary", tags: ["ready"]);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddControllers(options =>
-{
-    if (!builder.Environment.IsEnvironment("Testing"))
-    {
-        options.Conventions.Add(new TestingRegistrationConvention());
-    }
-}).ConfigureApiBehaviorOptions(options =>
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
     // Controller errors without a body are formatted by status-code pages below.
     options.SuppressMapClientErrors = true;

@@ -80,7 +80,6 @@ function getRefreshedAccessToken() {
 function canRetryWithRefresh(path: string, accessToken: string | null) {
   return accessToken !== null &&
     path !== '/api/auth/login' &&
-    path !== '/api/auth/register' &&
     path !== '/api/auth/refresh'
 }
 

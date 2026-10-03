@@ -18,9 +18,9 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     public async Task Friends_of_friends_policy_rejects_unrelated_and_allows_mutual_friend()
     {
         using var client = factory.CreateClient();
-        var receiver = await RegisterAsync(client);
-        var sender = await RegisterAsync(client);
-        var mutual = await RegisterAsync(client);
+        var receiver = await CreateAccountAsync(client);
+        var sender = await CreateAccountAsync(client);
+        var mutual = await CreateAccountAsync(client);
         using var receiverClient = AuthenticatedClient(receiver);
         var settings = await receiverClient.PatchAsJsonAsync("/api/privacy", new { friendRequestPolicy = "friendsOfFriends" });
         Assert.Equal(HttpStatusCode.OK, settings.StatusCode);
@@ -47,7 +47,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     public async Task Revoking_other_session_disables_its_refresh_without_affecting_current_session()
     {
         using var client = factory.CreateClient();
-        var sessionA = await RegisterAsync(client);
+        var sessionA = await CreateAccountAsync(client);
         var sessionB = await LoginAsync(client, sessionA.User.Email!, TestPassword);
         using var current = AuthenticatedClient(sessionA);
         var sessions = await (await current.GetAsync("/api/auth/sessions")).Content.ReadApiDataAsync<List<AuthSessionResponse>>();
@@ -62,7 +62,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     public async Task Password_change_rejects_old_password_and_revokes_other_session_refresh()
     {
         using var client = factory.CreateClient();
-        var sessionA = await RegisterAsync(client);
+        var sessionA = await CreateAccountAsync(client);
         var sessionB = await LoginAsync(client, sessionA.User.Email!, TestPassword);
         const string newPassword = "NewPassword123!";
         using var current = AuthenticatedClient(sessionA);
@@ -78,7 +78,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     public async Task Two_factor_login_returns_challenge_before_issuing_tokens_then_verifies_totp()
     {
         using var client = factory.CreateClient();
-        var account = await RegisterAsync(client);
+        var account = await CreateAccountAsync(client);
         var code = await EnableTwoFactorForTestAsync(account.User.Id);
         var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(account.User.Email, TestPassword));
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
@@ -96,7 +96,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     public async Task Recovery_code_completes_two_factor_login_once_only()
     {
         using var client = factory.CreateClient();
-        var account = await RegisterAsync(client);
+        var account = await CreateAccountAsync(client);
         var recoveryCode = await EnableTwoFactorForTestAsync(account.User.Id, recovery: true);
         var firstChallenge = await GetChallengeAsync(client, account.User.Email!);
         var firstVerification = await client.PostAsJsonAsync("/api/auth/2fa/verify", new TwoFactorVerifyRequest(firstChallenge, recoveryCode));
@@ -109,7 +109,7 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
     public async Task Google_link_waits_for_two_factor_verification_before_adding_login()
     {
         using var client = factory.CreateClient();
-        var account = await RegisterAsync(client);
+        var account = await CreateAccountAsync(client);
         var code = await EnableTwoFactorForTestAsync(account.User.Id);
         var providerKey = $"google-sub-{Guid.NewGuid():N}";
 
@@ -171,12 +171,11 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
         return client;
     }
 
-    private async Task<AuthenticationResponse> RegisterAsync(HttpClient client)
+    private async Task<AuthenticationResponse> CreateAccountAsync(HttpClient client)
     {
         var suffix = Guid.NewGuid().ToString("N")[..12];
-        var response = await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest($"m16-{suffix}@example.test", $"m16{suffix}", TestPassword));
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        return (await response.Content.ReadApiDataAsync<AuthenticationResponse>())!;
+        return await TestAccountSetup.CreateAsync(
+            factory, client, $"m16-{suffix}@example.test", $"m16{suffix}", TestPassword);
     }
 
     private static async Task<AuthenticationResponse> LoginAsync(HttpClient client, string email, string password)

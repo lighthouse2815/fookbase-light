@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -22,7 +23,6 @@ public sealed class IdentityControllerContractTests(IdentityApiFactory factory) 
         ("GET", "/api/auth/google/callback", false, null),
         ("POST", "/api/auth/google/exchange", false, "auth-login"),
         ("POST", "/api/auth/google/link", false, "auth-login"),
-        ("POST", "/api/auth/register", false, null),
         ("POST", "/api/auth/registration/start", false, "auth-sensitive"),
         ("POST", "/api/auth/registration/resend", false, "auth-sensitive"),
         ("POST", "/api/auth/registration/verify", false, "auth-sensitive"),
@@ -171,16 +171,30 @@ public sealed class IdentityControllerContractTests(IdentityApiFactory factory) 
         Assert.Equal(response.Headers.GetValues("X-Request-Id").Single(), body.GetProperty("requestId").GetString());
     }
 
-    [Fact]
-    public async Task Legacy_registration_is_not_exposed_outside_testing()
+    [Theory]
+    [InlineData("Testing")]
+    [InlineData("Development")]
+    public async Task Legacy_registration_is_not_exposed_in_any_environment(string environment)
     {
-        using var developmentFactory = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
-        using var client = developmentFactory.CreateClient();
-        using var response = await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest(null, null, null));
+        using var environmentFactory = factory.WithWebHostBuilder(builder => builder.UseEnvironment(environment));
+        using var client = environmentFactory.CreateClient();
+        var request = new
+        {
+            email = $"removed-registration-{Guid.NewGuid():N}@example.test",
+            username = $"removed.{Guid.NewGuid():N}"[..32],
+            password = "Password123!",
+        };
+        using var response = await client.PostAsJsonAsync("/api/auth/register", request);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
-        var endpoints = developmentFactory.Services.GetRequiredService<EndpointDataSource>().Endpoints
+        var endpoints = environmentFactory.Services.GetRequiredService<EndpointDataSource>().Endpoints
             .OfType<RouteEndpoint>();
         Assert.DoesNotContain(endpoints, endpoint => endpoint.RoutePattern.RawText?.TrimStart('/') == "api/auth/register");
+
+        var authentication = await TestAccountSetup.CreateAsync(environmentFactory, client,
+            request.email, request.username, request.password);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authentication.AccessToken);
+        using var authenticatedResponse = await client.PostAsJsonAsync("/api/auth/register", request);
+        Assert.Equal(HttpStatusCode.NotFound, authenticatedResponse.StatusCode);
     }
 }

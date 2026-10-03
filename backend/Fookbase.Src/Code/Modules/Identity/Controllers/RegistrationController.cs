@@ -11,20 +11,8 @@ namespace Fookbase.Api.Modules.Identity.Controllers;
 [ApiController]
 [Route("api/auth/registration")]
 public sealed class RegistrationController(
-    RegistrationChallengeService registrationChallengeService,
-    RegistrationUseCase registrationUseCase) : ControllerBase
+    RegistrationChallengeService registrationChallengeService) : ControllerBase
 {
-    [HttpPost("/api/auth/register")]
-    [AllowAnonymous]
-    public async Task<IResult> RegisterAsync(
-        [FromBody] RegisterRequest request,
-        CancellationToken cancellationToken)
-    {
-        var result = await registrationUseCase.ExecuteAsync(request, cancellationToken);
-
-        return Results.Created("/api/auth/me", ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
-    }
-
     [HttpPost("start")]
     [AllowAnonymous]
     [EnableRateLimiting("auth-sensitive")]

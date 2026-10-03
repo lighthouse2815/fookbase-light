@@ -2,11 +2,8 @@ using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
 
@@ -18,46 +15,28 @@ public sealed class MonolithEventFlowTests(MonolithApiFactory factory)
     {
         using var client = factory.CreateClient();
         var suffix = Guid.NewGuid().ToString("N")[..16];
-        var response = await client.PostAsJsonAsync(
-            "/api/auth/register",
-            new RegisterRequest($"mono-{suffix}@example.com", $"mono-{suffix}", "Password123!"));
+        var email = $"mono-{suffix}@example.com";
+        using var start = await client.PostAsJsonAsync("/api/auth/registration/start",
+            new RegistrationStartRequest("Mono", suffix, new DateOnly(2000, 1, 2), "other", email, "Password123!"));
+        Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+        var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(challenge);
+        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(email);
+        using var response = await client.PostAsJsonAsync("/api/auth/registration/verify",
+            new RegistrationVerifyRequest(challenge.ChallengeId, code));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var authentication = await response.Content.ReadApiDataAsync<AuthenticationResponse>();
         Assert.NotNull(authentication);
 
         using var scope = factory.Services.CreateScope();
-        Assert.True(await scope.ServiceProvider.GetRequiredService<FookbaseDbContext>()
-            .UserProfiles.AnyAsync(item => item.UserId == authentication.User.Id));
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var profile = await dbContext.UserProfiles.SingleAsync(item => item.UserId == authentication.User.Id);
+        Assert.Equal($"Mono {suffix}", profile.DisplayName);
+        Assert.Equal(new DateOnly(2000, 1, 2), profile.DateOfBirth);
+        Assert.True(await dbContext.UserPrivacySettings.AnyAsync(item => item.UserId == authentication.User.Id));
+        Assert.NotNull((await dbContext.RegistrationChallenges.SingleAsync(item => item.Id == challenge.ChallengeId)).ConsumedAtUtc);
     }
 }
 
-public sealed class MonolithApiFactory : WebApplicationFactory<Program>
-{
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__FookbaseDatabase")
-            ?? throw new InvalidOperationException("Fookbase development database connection string is required.");
-        builder.UseEnvironment("Testing");
-        builder.UseSetting("Minio:AccessKey", "integration-tests");
-        builder.UseSetting("Minio:SecretKey", "integration-tests");
-        builder.UseSetting("Minio:BucketInitializationEnabled", "false");
-        builder.UseSetting("Cloudinary:CloudName", "integration-tests");
-        builder.UseSetting("Cloudinary:ApiKey", "test-api-key");
-        builder.UseSetting("Cloudinary:ApiSecret", "test-api-secret");
-        builder.UseSetting("Media:CleanupIntervalSeconds", "3600");
-        builder.UseSetting("Jwt:SigningKey", "identity-integration-tests-signing-key-with-32-characters");
-        builder.UseSetting("ConnectionStrings:FookbaseDatabase", connectionString);
-    }
-
-    protected override IHost CreateHost(IHostBuilder builder)
-    {
-        var host = base.CreateHost(builder);
-
-        using var scope = host.Services.CreateScope();
-        scope.ServiceProvider.GetRequiredService<Fookbase.Api.Persistence.FookbaseDbContext>()
-            .Database.Migrate();
-
-        return host;
-    }
-}
+public sealed class MonolithApiFactory : IdentityApiFactory;
