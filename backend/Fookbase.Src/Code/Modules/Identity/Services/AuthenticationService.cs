@@ -403,7 +403,7 @@ public sealed class AuthenticationService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var code = CreateOtp();
+        var code = OtpCode.Create();
         var challenge = await dbContext.PasswordResetOtps.SingleOrDefaultAsync(
             item => item.UserId == user.Id,
             cancellationToken);
@@ -678,8 +678,6 @@ public sealed class AuthenticationService(
                 group => group.Key,
                 group => group.Select(error => error.Description).ToArray(),
                 StringComparer.Ordinal);
-
-    private static string CreateOtp() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
 
     private static string HashOtp(string value) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));

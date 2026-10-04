@@ -32,7 +32,7 @@ public sealed class RegistrationChallengeService(
     {
         var input = await ValidateStartAsync(request, cancellationToken);
         var now = timeProvider.GetUtcNow();
-        var code = CreateCode();
+        var code = OtpCode.Create();
         var codeHash = Hash(code);
         var candidate = new User(Guid.NewGuid(), input.Contact.Kind == ContactKind.Email ? input.Contact.Value : null, "pending", now);
         var passwordHash = userManager.PasswordHasher.HashPassword(candidate, request.Password!);
@@ -91,7 +91,7 @@ public sealed class RegistrationChallengeService(
         if (challenge is null) throw InvalidCode();
 
         var now = timeProvider.GetUtcNow();
-        var code = CreateCode();
+        var code = OtpCode.Create();
         if (!challenge.TryResend(Hash(code), now))
         {
             throw Conflict("registration_resend_unavailable", "A new verification code cannot be sent yet.");
@@ -277,8 +277,6 @@ public sealed class RegistrationChallengeService(
 
     private static bool TryParseGender(string? value, out Gender gender) =>
         Enum.TryParse(value, true, out gender) && Enum.IsDefined(gender);
-
-    private static string CreateCode() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6", CultureInfo.InvariantCulture);
 
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
