@@ -1,9 +1,16 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
 
+[Table("ProfileMediaReferences")]
+[PrimaryKey(nameof(UserId), nameof(Slot))]
+[Index(nameof(MediaId))]
 public sealed class ProfileMediaReference
 {
+
     private ProfileMediaReference()
     {
     }
@@ -27,5 +34,14 @@ public sealed class ProfileMediaReference
     public Guid MediaId { get; private set; }
 
     public DateTimeOffset AttachedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(UserId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public User User { get; private set; } = null!;
+
+    [ForeignKey(nameof(MediaId))]
+    [InverseProperty(nameof(MediaAsset.ProfileReferences))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset Media { get; private set; } = null!;
 
 }

@@ -1,10 +1,25 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Media.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
 
+[Table("MediaAssets")]
+[Index(nameof(ObjectKey), IsUnique = true)]
+[Index(nameof(OwnerUserId), nameof(CreatedAtUtc))]
+[Index(nameof(Status), nameof(UploadExpiresAtUtc))]
+[Index(nameof(Status), nameof(CreatedAtUtc))]
 public sealed class MediaAsset
 {
-    private MediaAsset() { }
+    public const int MaximumObjectKeyLength = 256;
+    public const int MaximumFileNameLength = 255;
+    public const int MaximumContentTypeLength = 100;
+    public const int MaximumProcessingErrorLength = 1000;
+
+    private MediaAsset()
+    {
+    }
 
     public MediaAsset(
         Guid id,
@@ -29,12 +44,20 @@ public sealed class MediaAsset
         UploadExpiresAtUtc = uploadExpiresAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
+    // Retain the owner ID on assets that survive account deletion.
     public Guid OwnerUserId { get; private set; }
     public MediaType MediaType { get; private set; }
     public MediaStatus Status { get; private set; }
+
+    [MaxLength(MaximumObjectKeyLength)]
     public string ObjectKey { get; private set; } = string.Empty;
+
+    [MaxLength(MaximumFileNameLength)]
     public string OriginalFileName { get; private set; } = string.Empty;
+
+    [MaxLength(MaximumContentTypeLength)]
     public string ContentType { get; private set; } = string.Empty;
     public long DeclaredSizeBytes { get; private set; }
     public long? ActualSizeBytes { get; private set; }
@@ -45,10 +68,28 @@ public sealed class MediaAsset
     public long? DurationMs { get; private set; }
     public int? Width { get; private set; }
     public int? Height { get; private set; }
+
+    [MaxLength(MaximumObjectKeyLength)]
     public string? ProcessedObjectKey { get; private set; }
+
+    [MaxLength(MaximumObjectKeyLength)]
     public string? PosterObjectKey { get; private set; }
+
+    [MaxLength(MaximumProcessingErrorLength)]
     public string? ProcessingError { get; private set; }
     public DateTimeOffset? ProcessedAtUtc { get; private set; }
+
+    [InverseProperty(nameof(MediaReference.Media))]
+    public ICollection<MediaReference> PostReferences { get; private set; } = new List<MediaReference>();
+
+    [InverseProperty(nameof(ProfileMediaReference.Media))]
+    public ICollection<ProfileMediaReference> ProfileReferences { get; private set; } = new List<ProfileMediaReference>();
+
+    [InverseProperty(nameof(ObjectDeletion.Media))]
+    public ICollection<ObjectDeletion> ObjectDeletions { get; private set; } = new List<ObjectDeletion>();
+
+    [InverseProperty(nameof(MediaProcessingJob.Media))]
+    public MediaProcessingJob? ProcessingJob { get; private set; }
 
     public bool MarkReady(long actualSizeBytes, DateTimeOffset uploadedAtUtc)
     {
@@ -122,7 +163,7 @@ public sealed class MediaAsset
             throw new InvalidOperationException("Only a processing video can fail processing.");
         }
 
-        ProcessingError = error.Length <= 1000 ? error : error[..1000];
+        ProcessingError = error.Length <= MaximumProcessingErrorLength ? error : error[..MaximumProcessingErrorLength];
         Status = MediaStatus.FAILED;
     }
 

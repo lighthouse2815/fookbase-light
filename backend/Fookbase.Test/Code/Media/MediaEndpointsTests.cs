@@ -14,6 +14,8 @@ using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
 using Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -253,7 +255,9 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.MediaReferences.Add(new MediaReference(referenced, Guid.NewGuid(), DateTimeOffset.UtcNow));
+            var post = new Post(Guid.NewGuid(), ownerId, "Media reference", PostPrivacy.PUBLIC, DateTimeOffset.UtcNow);
+            db.Posts.Add(post);
+            db.MediaReferences.Add(new MediaReference(referenced, post.Id, DateTimeOffset.UtcNow));
             await db.SaveChangesAsync();
         }
         Assert.Equal(HttpStatusCode.Conflict,

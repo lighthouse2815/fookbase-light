@@ -1,10 +1,20 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Media.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
 
+[Table("MediaProcessingJobs")]
+[Index(nameof(MediaId), IsUnique = true)]
+[Index(nameof(Status), nameof(NextAttemptAtUtc), nameof(CreatedAtUtc))]
 public sealed class MediaProcessingJob
 {
-    private MediaProcessingJob() { }
+    public const int MaximumErrorLength = 2000;
+
+    private MediaProcessingJob()
+    {
+    }
 
     public MediaProcessingJob(Guid id, Guid mediaId, DateTimeOffset createdAtUtc)
     {
@@ -15,6 +25,7 @@ public sealed class MediaProcessingJob
         NextAttemptAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
     public Guid MediaId { get; private set; }
     public MediaProcessingJobStatus Status { get; private set; }
@@ -23,7 +34,14 @@ public sealed class MediaProcessingJob
     public DateTimeOffset NextAttemptAtUtc { get; private set; }
     public DateTimeOffset? StartedAtUtc { get; private set; }
     public DateTimeOffset? CompletedAtUtc { get; private set; }
+
+    [MaxLength(MaximumErrorLength)]
     public string? LastError { get; private set; }
+
+    [ForeignKey(nameof(MediaId))]
+    [InverseProperty(nameof(MediaAsset.ProcessingJob))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public MediaAsset Media { get; private set; } = null!;
 
     public void Claim(DateTimeOffset now)
     {
@@ -60,5 +78,5 @@ public sealed class MediaProcessingJob
     }
 
     private static string NormalizeError(string error) =>
-        error.Length <= 2000 ? error : error[..2000];
+        error.Length <= MaximumErrorLength ? error : error[..MaximumErrorLength];
 }
