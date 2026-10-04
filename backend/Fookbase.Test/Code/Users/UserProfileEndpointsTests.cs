@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Fookbase.Api.Modules.Users.Domain.Enums;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Users.Services;
@@ -313,6 +314,144 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             item => item.UserId == userB.Id);
         Assert.Equal(userB.Username, otherProfile.DisplayName);
         Assert.Null(otherProfile.Bio);
+    }
+
+    [Theory]
+    [InlineData("DisplayName", 100, "Tên hiển thị phải có từ 1 đến 100 ký tự.")]
+    [InlineData("Bio", 500, "Giới thiệu không được vượt quá 500 ký tự.")]
+    [InlineData("CurrentCity", 100, "Thành phố hiện tại không được vượt quá 100 ký tự.")]
+    [InlineData("Hometown", 100, "Quê quán không được vượt quá 100 ký tự.")]
+    [InlineData("Workplace", 150, "Nơi làm việc không được vượt quá 150 ký tự.")]
+    [InlineData("Education", 150, "Học vấn không được vượt quá 150 ký tự.")]
+    [InlineData("Website", 2048, "Website không được vượt quá 2048 ký tự.")]
+    public async Task Patch_me_rejects_overlong_fields_with_vietnamese_validation_errors(
+        string field, int maximumLength, string message)
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var client = CreateAuthenticatedClient(user.Id);
+        var value = field == "Website"
+            ? "https://example.com/" + new string('a', maximumLength)
+            : new string('a', maximumLength + 1);
+
+        using var response = await client.PatchAsJsonAsync("/api/users/me",
+            new Dictionary<string, string> { [field] = value });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", document.RootElement.GetProperty("code").GetString());
+        var error = Assert.Single(document.RootElement.GetProperty("errors").GetProperty(field).EnumerateArray());
+        Assert.Equal(message, error.GetString());
+        var profile = await client.GetFromJsonAsync<UserProfileResponse>("/api/users/me");
+        Assert.Equal(user.Username, profile!.DisplayName);
+        Assert.Null(profile.Website);
+    }
+
+    [Theory]
+    [InlineData("DisplayName", "", "Tên hiển thị phải có từ 1 đến 100 ký tự.")]
+    [InlineData("DisplayName", "   ", "Tên hiển thị phải có từ 1 đến 100 ký tự.")]
+    [InlineData("Website", "ftp://example.com", "Website phải là địa chỉ HTTP hoặc HTTPS hợp lệ.")]
+    [InlineData("Website", "example.com", "Website phải là địa chỉ HTTP hoặc HTTPS hợp lệ.")]
+    [InlineData("Website", "javascript:alert(1)", "Website phải là địa chỉ HTTP hoặc HTTPS hợp lệ.")]
+    public async Task Patch_me_rejects_invalid_optional_text(string field, string value, string message)
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var client = CreateAuthenticatedClient(user.Id);
+
+        using var response = await client.PatchAsJsonAsync("/api/users/me",
+            new Dictionary<string, string> { [field] = value });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var error = Assert.Single(document.RootElement.GetProperty("errors").GetProperty(field).EnumerateArray());
+        Assert.Equal(message, error.GetString());
+    }
+
+    [Fact]
+    public async Task Patch_me_rejects_undefined_birthday_visibility()
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var client = CreateAuthenticatedClient(user.Id);
+
+        using var response = await client.PatchAsJsonAsync("/api/users/me", new { birthdayVisibility = 42 });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var error = Assert.Single(document.RootElement.GetProperty("errors")
+            .GetProperty("BirthdayVisibility").EnumerateArray());
+        Assert.Equal("Quyền hiển thị ngày sinh không hợp lệ.", error.GetString());
+    }
+
+    [Fact]
+    public async Task Patch_me_accepts_null_fields_and_trims_display_name_at_the_length_limit()
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var client = CreateAuthenticatedClient(user.Id);
+        var displayName = new string('a', 100);
+
+        using var update = await client.PatchAsJsonAsync("/api/users/me",
+            new UpdateUserProfileRequest($"  {displayName}  ", null, null, null));
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        using var unchanged = await client.PatchAsJsonAsync("/api/users/me",
+            new UpdateUserProfileRequest(null, null, null, null));
+        Assert.Equal(HttpStatusCode.OK, unchanged.StatusCode);
+        var profile = await unchanged.Content.ReadFromJsonAsync<UserProfileResponse>();
+        Assert.Equal(displayName, profile!.DisplayName);
+    }
+
+    [Theory]
+    [InlineData("DefaultPostPrivacy", "Quyền riêng tư mặc định của bài viết không hợp lệ.")]
+    [InlineData("FriendRequestPolicy", "Chính sách lời mời kết bạn không hợp lệ.")]
+    [InlineData("FriendListVisibility", "Quyền hiển thị danh sách bạn bè không hợp lệ.")]
+    [InlineData("FollowListVisibility", "Quyền hiển thị danh sách theo dõi không hợp lệ.")]
+    public async Task Patch_privacy_rejects_unsupported_values_without_changing_settings(string field, string message)
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var client = CreateAuthenticatedClient(user.Id);
+        using var initialized = await client.GetAsync("/api/privacy");
+        Assert.Equal(HttpStatusCode.OK, initialized.StatusCode);
+        var original = await client.GetFromJsonAsync<UserPrivacySettingsResponse>("/api/privacy");
+
+        foreach (var value in new[] { "unsupported", "42" })
+        {
+            using var response = await client.PatchAsJsonAsync("/api/privacy",
+                new Dictionary<string, string> { [field] = value });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal("validation_failed", document.RootElement.GetProperty("code").GetString());
+            var error = Assert.Single(document.RootElement.GetProperty("errors").GetProperty(field).EnumerateArray());
+            Assert.Equal(message, error.GetString());
+            Assert.Equal(original, await client.GetFromJsonAsync<UserPrivacySettingsResponse>("/api/privacy"));
+        }
+    }
+
+    [Theory]
+    [InlineData("onlyMe", "friendsOfFriends")]
+    [InlineData("ONLY_ME", "FRIENDS_OF_FRIENDS")]
+    [InlineData("2", "1")]
+    public async Task Patch_privacy_preserves_supported_enum_formats_and_optional_fields(
+        string privacy, string friendRequestPolicy)
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var client = CreateAuthenticatedClient(user.Id);
+
+        using var response = await client.PatchAsJsonAsync("/api/privacy",
+            new UpdatePrivacySettingsRequest(privacy, friendRequestPolicy, privacy, privacy));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var partial = await client.PatchAsJsonAsync("/api/privacy",
+            new UpdatePrivacySettingsRequest(null, " ", "", null));
+        Assert.Equal(HttpStatusCode.OK, partial.StatusCode);
+        var settings = await partial.Content.ReadFromJsonAsync<UserPrivacySettingsResponse>();
+        Assert.Equal("onlyMe", settings!.DefaultPostPrivacy);
+        Assert.Equal("friendsOfFriends", settings.FriendRequestPolicy);
+        Assert.Equal("onlyMe", settings.FriendListVisibility);
+        Assert.Equal("onlyMe", settings.FollowListVisibility);
     }
 
     [Fact]

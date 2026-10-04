@@ -283,53 +283,9 @@ public sealed class UserProfileService(
     {
         var errors = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
 
-        if (request.DisplayName is not null &&
-            request.DisplayName.Trim().Length is < 1 or > 100)
-        {
-            errors["displayName"] = ["Display name must contain between 1 and 100 characters."];
-        }
-
-        if (request.Bio?.Length > 500)
-        {
-            errors["bio"] = ["Bio cannot exceed 500 characters."];
-        }
-
-        if (request.CurrentCity?.Length > 100)
-        {
-            errors["currentCity"] = ["Current city cannot exceed 100 characters."];
-        }
-
-        if (request.Hometown?.Length > 100)
-        {
-            errors["hometown"] = ["Hometown cannot exceed 100 characters."];
-        }
-
-        if (request.Workplace?.Length > 150)
-        {
-            errors["workplace"] = ["Workplace cannot exceed 150 characters."];
-        }
-
-        if (request.Education?.Length > 150)
-        {
-            errors["education"] = ["Education cannot exceed 150 characters."];
-        }
-
-        if (request.Website is { Length: > 2048 } ||
-            request.Website is { } website && !string.IsNullOrWhiteSpace(website) &&
-            (!Uri.TryCreate(website.Trim(), UriKind.Absolute, out var uri) ||
-             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)))
-        {
-            errors["website"] = ["Website must be a valid HTTP or HTTPS URL up to 2048 characters."];
-        }
-
-        if (request.BirthdayVisibility is { } visibility && !Enum.IsDefined(visibility))
-        {
-            errors["birthdayVisibility"] = ["Birthday visibility is invalid."];
-        }
-
         if (request.DateOfBirth > today)
         {
-            errors["dateOfBirth"] = ["Date of birth cannot be in the future."];
+            errors["dateOfBirth"] = ["Ngày sinh không được ở tương lai."];
         }
 
         return errors;
