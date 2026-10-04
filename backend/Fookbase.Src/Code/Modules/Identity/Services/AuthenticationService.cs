@@ -25,13 +25,15 @@ public sealed class AuthenticationService(
     AccountModerationService accountModerationService,
     TimeProvider timeProvider)
 {
+
     public async Task<object> LoginAsync(
         LoginRequest request,
         string? userAgent,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default
+    ){
         var contact = ContactIdentifier.Parse(request.Identifier!);
         var user = await FindByIdentifierAsync(contact, cancellationToken);
+
         if (user is null || !user.IsActive || await userManager.IsLockedOutAsync(user) ||
             await accountModerationService.IsUnavailableAsync(user.Id, cancellationToken))
         {
@@ -59,6 +61,7 @@ public sealed class AuthenticationService(
 
         return await IssueNewTokenPairAsync(user, now, userAgent, cancellationToken);
     }
+
 
     public async Task<object> CompleteExternalLoginAsync(
         User user,
@@ -88,15 +91,6 @@ public sealed class AuthenticationService(
         }
 
         return await IssueNewTokenPairAsync(user, now, userAgent, cancellationToken);
-    }
-
-    public async Task<User?> FindByIdentifierAsync(
-        ContactIdentifier contact,
-        CancellationToken cancellationToken = default)
-    {
-        return contact.Kind == ContactKind.Email
-            ? await userManager.FindByEmailAsync(contact.Value)
-            : await dbContext.Users.SingleOrDefaultAsync(user => user.PhoneNumber == contact.Value, cancellationToken);
     }
 
     public Task<AuthenticationResponse> IssueSessionAsync(
@@ -463,6 +457,18 @@ public sealed class AuthenticationService(
 
         await RevokeAllRefreshTokensAsync(user.Id, timeProvider.GetUtcNow(), cancellationToken);
         return;
+    }
+
+    private async Task<User?> FindByIdentifierAsync(
+        ContactIdentifier contact,
+        CancellationToken cancellationToken = default
+    ){
+        return contact.Kind == ContactKind.Email
+            ? await userManager.FindByEmailAsync(contact.Value)
+            : await dbContext.Users.SingleOrDefaultAsync(
+                user => user.PhoneNumber == contact.Value,
+                cancellationToken
+            );
     }
 
     private async Task RequestPhonePasswordResetAsync(

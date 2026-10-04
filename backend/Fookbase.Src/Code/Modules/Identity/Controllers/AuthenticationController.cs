@@ -13,19 +13,26 @@ namespace Fookbase.Api.Modules.Identity.Controllers;
 public sealed class AuthenticationController(
     AuthenticationService authenticationService) : ControllerBase
 {
+
     [HttpPost("login")]
     [AllowAnonymous]
     [EnableRateLimiting("auth-login")]
     public async Task<IResult> LoginAsync(
-        [FromBody] LoginRequest request,
-        CancellationToken cancellationToken)
-    {
+        LoginRequest request,
+        CancellationToken cancellationToken
+    ){
         var result = await authenticationService.LoginAsync(
             request,
             Request.Headers.UserAgent.ToString(),
-            cancellationToken);
+            cancellationToken
+        );
 
-        return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
+        return Results.Ok(
+            ApiResponse.Success(
+                AuthenticationCookie.Present(HttpContext, result),
+                HttpContext
+            )
+        );
     }
 
     [HttpPost("refresh")]

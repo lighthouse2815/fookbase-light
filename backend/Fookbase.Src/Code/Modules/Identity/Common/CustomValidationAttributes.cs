@@ -23,10 +23,7 @@ public sealed class EmailOrPhoneNumberAttribute : ValidationAttribute
     private static bool IsValidIdentifier(string identifier)
     {
         var trimmed = identifier.Trim();
-        if (EmailValidator.IsValid(trimmed))
-        {
-            return true;
-        }
+        if (EmailValidator.IsValid(trimmed)) return true;
 
         var digits = NonPhoneCharacters.Replace(trimmed, string.Empty);
         if (digits.StartsWith("+84", StringComparison.Ordinal))

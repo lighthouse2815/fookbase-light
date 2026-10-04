@@ -3,16 +3,21 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace Fookbase.Api.Shared.Common;
 
-public sealed record ApiResponse<T>(bool Success, T? Data, ApiResponseError? Error, string RequestId);
+public sealed record ApiResponse<T>(
+    bool Success,
+    T? Data,
+    ApiResponseError? Error,
+    string RequestId
+);
 
 public sealed record ApiResponseError(
     string Code,
     string Message,
-    IReadOnlyDictionary<string, string[]>? Details = null);
+    IReadOnlyDictionary<string, string[]>? Details = null
+);
 
 public static class ApiResponse
 {
-    // Identity is the first module migrated to the shared HTTP response contract.
     public static bool AppliesTo(HttpContext context) => context.Request.Path.StartsWithSegments("/api/auth");
 
     public static ApiResponse<T> Success<T>(T data, HttpContext context) =>
