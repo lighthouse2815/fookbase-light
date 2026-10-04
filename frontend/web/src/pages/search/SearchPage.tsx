@@ -157,7 +157,7 @@ export default function SearchPage() {
   const allEmpty = categories.every((category) => category.cards.length === 0) && (result.hashtags?.length ?? 0) === 0
   const emptyLabel: Record<SearchType, string> = { all: 'kết quả', people: 'người dùng', posts: 'bài viết', groups: 'nhóm', pages: 'Trang', reels: 'Reels', events: 'sự kiện' }
 
-  return <main className="mx-auto min-h-screen w-full max-w-5xl px-3 py-5 sm:px-5">
+  return <main className="mx-auto min-h-screen w-full max-w-5xl px-3 py-5 [overflow-wrap:anywhere] sm:px-5">
     <h1 className="font-heading text-3xl font-bold text-text">Tìm kiếm</h1>
     <p className="mt-1 break-words text-sm text-text-muted">{query ? `Kết quả tìm kiếm cho “${query}”` : 'Tìm người, nhóm, Trang, bài viết, Reels, sự kiện và hashtag.'}</p>
     <nav className="mt-5 flex flex-wrap gap-2 border-b border-border pb-3" aria-label="Danh mục tìm kiếm">{tabs.map((tab) => <button key={tab.type} type="button" aria-current={type === tab.type ? 'page' : undefined} onClick={() => chooseTab(tab.type)} className={`min-h-11 rounded-full border-0 px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-safe:transition-colors ${type === tab.type ? 'bg-primary text-white' : 'bg-surface-2 text-text-muted hover:bg-surface-3'}`}>{tab.label}</button>)}</nav>

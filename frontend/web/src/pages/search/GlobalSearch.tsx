@@ -121,8 +121,10 @@ function SearchForm({ onOpen, userId, mobile = false, onNavigate, onClose }: Sea
     <form role="search" onSubmit={(event) => { event.preventDefault(); search() }} className="relative min-w-0 flex-1">
       <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-light">⌕</span>
       <input ref={inputRef} data-dialog-initial-focus={mobile ? true : undefined} type="search" enterKeyHint="search" role="combobox" aria-autocomplete="list" aria-label={t('searchFookbase')} aria-expanded={isOpen && eligible} aria-controls={isOpen && eligible ? listId : undefined} aria-activedescendant={isOpen && activeIndex >= 0 ? optionId(activeIndex) : undefined} autoComplete="off" maxLength={100} value={query} onChange={(event) => {
-        setQuery(event.target.value); setActiveIndex(-1); setResponse({ query: '', status: 'idle', items: [] }); setIsOpen(true)
-      }} onFocus={() => { onOpen(); setRecent(readRecentSearches(userId)); setIsOpen(true) }} onKeyDown={keyDown} placeholder={t('searchFookbase')} className={`${mobile ? 'h-11 text-base' : 'h-10 text-[13px]'} w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-11 text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary [&::-webkit-search-cancel-button]:hidden`} />
+        const value = event.target.value
+        setQuery(value); setActiveIndex(-1); setIsOpen(true)
+        if (value.trim() !== trimmed) setResponse({ query: '', status: 'idle', items: [] })
+      }} onFocus={() => { onOpen(); setRecent(readRecentSearches(userId)); setIsOpen(true) }} onClick={() => setIsOpen(true)} onKeyDown={keyDown} placeholder={t('searchFookbase')} className={`${mobile ? 'h-11 text-base' : 'h-10 text-[13px]'} w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-11 text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary [&::-webkit-search-cancel-button]:hidden`} />
       {query && <button type="button" aria-label="Xóa nội dung tìm kiếm" onClick={() => { setQuery(''); setActiveIndex(-1); setResponse({ query: '', status: 'idle', items: [] }); setIsOpen(true); inputRef.current?.focus() }} className={`absolute right-0 top-0 grid ${mobile ? 'h-11 w-11' : 'h-10 w-10'} place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-3 focus-visible:ring-2 focus-visible:ring-primary`}>×</button>}
     </form>
     </div>

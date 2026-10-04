@@ -19,7 +19,7 @@ export async function searchFixtures(context) {
   await postFixtures(context)
   const state = {
     requests: [], delays: new Map(), failures: new Set(),
-    results: new Map(), suggestions: new Map(),
+    results: new Map(), suggestions: new Map(), detailReads: [],
   }
   const defaultResults = { ...emptySearch(), people: [person], groups: [group], pages: [searchPage], posts: searchPosts, events: [event], hashtags: [{ tag: 'dang', displayName: 'Đăng' }] }
   await context.route('**/api/**', async (route) => {
@@ -39,6 +39,7 @@ export async function searchFixtures(context) {
       return route.fulfill({ json: result })
     }
     const postIndex = searchPostIds.indexOf(path.split('/').at(-1))
+    if (/^\/api\/(users|groups|pages|events)\/[^/]+$/.test(path) && !path.endsWith('/me')) state.detailReads.push(path)
     if (path === `/api/users/${personId}`) return route.fulfill({ json: { ...person, coverUrl: null, dateOfBirth: null, currentCity: null, createdAt: '2026-10-01T08:00:00Z', updatedAt: '2026-10-01T08:00:00Z' } })
     if (path.startsWith('/api/posts/') && postIndex >= 0) {
       const item = searchPosts[postIndex]

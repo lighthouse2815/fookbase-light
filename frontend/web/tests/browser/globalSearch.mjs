@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict'
-import { searchFixtures, searchPostIds, personId, groupId, pageId, person, group, searchPage, eventId, event, emptySearch } from './globalSearchFixture.mjs'
+import { mkdir } from 'node:fs/promises'
+import { searchFixtures, searchPostIds, searchPosts, personId, groupId, pageId, person, group, searchPage, eventId, event, emptySearch } from './globalSearchFixture.mjs'
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright')
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_EXECUTABLE, args: ['--no-sandbox'] })
 const baseUrl = process.env.SEARCH_BASE_URL ?? 'http://127.0.0.1:5186'
-const phase = process.env.SEARCH_CHECK_PHASE ?? 'links'
+const phase = process.env.SEARCH_CHECK_PHASE ?? 'full'
+const variant = process.env.SEARCH_VARIANT ?? 'dev'
+const artifacts = process.env.SEARCH_ARTIFACTS ?? '/tmp/global-search-artifacts'
+await mkdir(artifacts, { recursive: true })
 const errors = []
 const passed = []
 const check = async (name, run) => { await run(); passed.push(name); console.log(`PASS ${name}`) }
@@ -21,6 +25,7 @@ async function create(contextOptions = {}) {
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 }, ...contextOptions })
   const state = await searchFixtures(context)
   const page = await context.newPage()
+  page.setDefaultTimeout(10000)
   page.on('pageerror', (error) => errors.push(error.stack))
   page.on('console', (message) => {
     if (!['error', 'warning'].includes(message.type())) return
@@ -56,8 +61,10 @@ try {
       assert.equal(await input(main.page).getAttribute('aria-expanded'), 'true')
       assert.equal(await main.page.getByRole('listbox').getByText('Trần Đăng Khoa', { exact: true }).count(), 1)
       assert.equal(await main.page.getByRole('listbox').locator('[data-search-highlight]').filter({ hasText: 'Đăng' }).count() > 0, true)
+      await main.page.screenshot({ path: `${artifacts}/${variant}-desktop.png` })
     })
     await check('ArrowDown/Up select suggestions without moving focus or scrolling the page; Escape preserves text and resets selection', async () => {
+      const scrollY = await main.page.evaluate(() => window.scrollY)
       await input(main.page).press('ArrowDown')
       assert.equal(await options(main.page).first().getAttribute('aria-selected'), 'true')
       await input(main.page).press('ArrowDown')
@@ -65,6 +72,7 @@ try {
       await input(main.page).press('ArrowUp')
       assert.equal(await options(main.page).first().getAttribute('aria-selected'), 'true')
       assert.equal(await input(main.page).evaluate((element) => document.activeElement === element), true)
+      assert.equal(await main.page.evaluate(() => window.scrollY), scrollY)
       await input(main.page).press('Escape')
       assert.equal(await input(main.page).inputValue(), 'dang')
       assert.equal(await input(main.page).getAttribute('aria-expanded'), 'false')
@@ -74,6 +82,7 @@ try {
     await check('Enter with an active suggestion opens that entity rather than searching the raw query', async () => {
       await input(main.page).press('Enter')
       await main.page.waitForURL(`${baseUrl}/profile/${personId}`)
+      await main.page.getByRole('heading', { name: person.displayName, exact: true }).waitFor()
       await main.page.goBack()
     })
     await check('changing query resets the active option and a late old response cannot replace new suggestions', async () => {
@@ -92,6 +101,25 @@ try {
       assert.equal(await options(main.page).nth(1).getAttribute('href'), `/groups/${groupId}`)
       assert.equal(await options(main.page).nth(2).getAttribute('href'), `/pages/${searchPage.username}`)
       assert.notEqual(personId, pageId)
+    })
+    await check('editing only leading/trailing whitespace preserves valid suggestions and resets selection without refetching', async () => {
+      await input(main.page).press('ArrowDown')
+      const reads = main.state.requests.filter((request) => request.kind === 'suggestions').length
+      await input(main.page).fill(' dang ')
+      await main.page.getByRole('listbox').getByText(person.displayName, { exact: true }).waitFor()
+      await main.page.waitForTimeout(400)
+      assert.equal(await input(main.page).getAttribute('aria-activedescendant'), null)
+      assert.equal(await main.page.getByRole('status', { name: 'Đang tải gợi ý' }).count(), 0)
+      assert.equal(main.state.requests.filter((request) => request.kind === 'suggestions').length, reads)
+    })
+    await check('clicking the focused input reopens suggestions after Escape without changing the query', async () => {
+      await input(main.page).press('Escape')
+      assert.equal(await input(main.page).evaluate((element) => document.activeElement === element), true)
+      await input(main.page).click()
+      assert.equal(await input(main.page).getAttribute('aria-expanded'), 'true')
+      await main.page.getByRole('listbox').getByText(person.displayName, { exact: true }).waitFor()
+      assert.equal(await input(main.page).inputValue(), ' dang ')
+      assert.equal(await input(main.page).getAttribute('aria-activedescendant'), null)
     })
     await check('Enter without a selected suggestion searches the query, and clearing keeps input focus', async () => {
       await input(main.page).press('Enter')
@@ -112,11 +140,34 @@ try {
       await main.page.getByRole('button', { name: 'Thử lại gợi ý', exact: true }).click()
       await main.page.getByRole('listbox').getByText('Trần Đăng Khoa', { exact: true }).waitFor()
     })
+    await check('pointer hover selects an option, outside click closes it and clicking the row opens its entity', async () => {
+      await options(main.page).nth(1).hover()
+      assert.equal(await options(main.page).nth(1).getAttribute('aria-selected'), 'true')
+      await main.page.locator('main h1').click()
+      assert.equal(await input(main.page).getAttribute('aria-expanded'), 'false')
+      await input(main.page).focus()
+      const choice = options(main.page).filter({ hasText: person.displayName })
+      await choice.waitFor()
+      await choice.click()
+      await main.page.waitForURL(`${baseUrl}/profile/${personId}`)
+      await main.page.getByRole('heading', { name: person.displayName, exact: true }).waitFor()
+      await main.page.goBack()
+    })
+    await check('highlight renders HTML-like result names as literal safe text', async () => {
+      const label = '<img src=x onerror=window.__unsafeSearch=true>'
+      main.state.suggestions.set('img', { people: [{ ...person, displayName: label }], groups: [], pages: [] })
+      await input(main.page).fill('img')
+      await main.page.getByRole('listbox').getByText(label, { exact: true }).waitFor()
+      assert.equal(await main.page.getByRole('listbox').locator('img[src="x"]').count(), 0)
+      assert.equal(await main.page.evaluate(() => window.__unsafeSearch), undefined)
+      await input(main.page).press('Escape')
+    })
   }
   if (['results', 'full'].includes(phase)) {
     await main.page.goto(`${baseUrl}/search?q=dang`)
     await check('Events tab uses the existing backend type and deep-links to the exact event without detail requests', async () => {
       await main.page.getByRole('heading', { name: 'Tìm kiếm', exact: true }).waitFor()
+      const detailsBefore = main.state.detailReads.length
       assert.equal(await main.page.getByRole('button', { name: 'Sự kiện', exact: true }).count(), 1)
       await main.page.getByRole('button', { name: 'Sự kiện', exact: true }).click()
       await main.page.waitForURL(`${baseUrl}/search?q=dang&type=events`)
@@ -127,6 +178,8 @@ try {
       assert.equal(await card.locator('[data-search-highlight]').filter({ hasText: 'Đăng' }).count(), 1)
       assert.equal(await card.getByText('Hà Nội', { exact: false }).count() > 0, true)
       assert.ok(main.state.requests.some((request) => request.type === 'events' && request.limit === '20'))
+      assert.equal(main.state.detailReads.length, detailsBefore)
+      await main.page.screenshot({ path: `${artifacts}/${variant}-events.png` })
     })
     await check('event cursor pagination keeps existing rows, deduplicates IDs and retries only the failed page', async () => {
       const second = { ...event, eventId: '00000000-0000-0000-0000-000000000551', name: 'Sự kiện tiếp theo' }
@@ -173,6 +226,18 @@ try {
       assert.equal(new URL(main.page.url()).searchParams.get('type'), 'groups')
       assert.ok(main.state.requests.filter((request) => request.query === 'error' && ['people', 'groups'].includes(request.type)).every((request) => request.cursor === ''))
     })
+    await check('a slow old tab response cannot overwrite newer full-search results', async () => {
+      main.state.results.set('race:people:', { ...emptySearch(), people: [{ ...person, displayName: 'Old tab response' }] })
+      main.state.delays.set('results:race:people:', 900)
+      await main.page.goto(`${baseUrl}/search?q=race&type=people`)
+      await until(() => main.state.requests.some((request) => request.query === 'race' && request.type === 'people'))
+      await main.page.getByRole('button', { name: 'Nhóm', exact: true }).click()
+      await main.page.locator('main a').filter({ hasText: group.name }).waitFor()
+      await main.page.waitForTimeout(1000)
+      assert.equal(await main.page.locator('main a').filter({ hasText: group.name }).count(), 1)
+      assert.equal(await main.page.locator('main').getByText('Old tab response').count(), 0)
+      assert.equal(await main.page.getByRole('status', { name: 'Đang tải kết quả tìm kiếm' }).count(), 0)
+    })
   }
   if (['history', 'full'].includes(phase)) {
     await check('recent searches are recorded only after an explicit search and can be searched again', async () => {
@@ -187,6 +252,8 @@ try {
       assert.equal(await recent.count(), 1)
       await recent.click()
       await main.page.waitForURL(`${baseUrl}/search?q=fookbase`)
+      // The repeated search has the same URL; wait for its new location to update the input.
+      await until(async () => await input(main.page).inputValue() === 'fookbase' && await input(main.page).getAttribute('aria-expanded') === 'false')
     })
     await check('recent history deduplicates casing and deletion/clear keep focus without navigating', async () => {
       await input(main.page).fill(' FookBASE ')
@@ -235,6 +302,7 @@ try {
       await overlay.getByRole('heading', { name: 'Tìm kiếm gần đây', exact: true }).waitFor()
       const bounds = await overlay.boundingBox()
       assert.ok(bounds.x >= 0 && bounds.width <= 375 && bounds.height <= 845)
+      await mobile.page.screenshot({ path: `${artifacts}/${variant}-375px.png` })
     })
     await check('mobile selecting a suggestion closes the overlay and opens the matching entity', async () => {
       await input(mobile.page).fill('dang')
@@ -287,8 +355,16 @@ try {
       await overlay.waitFor({ state: 'hidden' })
       assert.equal(await trigger.evaluate((element) => document.activeElement === element), true)
     })
+    await check('375px result cards wrap long unbroken post snippets and event names without horizontal overflow', async () => {
+      const title = 'SựkiệnĐăng'.repeat(30)
+      mobile.state.results.set('long:all:', { ...emptySearch(), posts: [{ ...searchPosts[0], snippet: 'Đăng'.repeat(120) }], events: [{ ...event, name: title, hostName: 'Chủsựkiện'.repeat(30), locationName: 'Địađiểm'.repeat(30) }] })
+      await mobile.page.goto(`${baseUrl}/search?q=long`)
+      await mobile.page.locator('main').getByRole('heading', { name: title, exact: true }).waitFor()
+      assert.equal(await mobile.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+    })
     await mobile.context.close()
     const tablet = await create({ viewport: { width: 768, height: 844 }, hasTouch: true, reducedMotion: 'reduce' })
+    await tablet.context.addInitScript(() => localStorage.setItem('fookbase.preferences', JSON.stringify({ language: 'vi', theme: 'light' })))
     await tablet.page.goto(`${baseUrl}/search?q=dang`)
     await check('768px search retains the desktop input and keeps the dropdown inside the viewport', async () => {
       await input(tablet.page).fill('dang')
@@ -296,12 +372,13 @@ try {
       const bounds = await tablet.page.getByRole('listbox').boundingBox()
       assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 769)
       assert.equal(await tablet.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+      await tablet.page.screenshot({ path: `${artifacts}/${variant}-768px-light.png` })
       await input(tablet.page).press('Escape')
     })
     await tablet.context.close()
   }
   assert.deepEqual(errors, [])
-  console.log(`${passed.length} global search ${phase} checks passed; no unexpected console/page errors.`)
+  console.log(`${passed.length} global search ${phase} checks passed (${variant}); no unexpected console/page errors.`)
 } catch (error) {
   if (errors.length) console.error('Unexpected browser errors:', errors)
   throw error
