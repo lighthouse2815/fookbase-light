@@ -1,4 +1,3 @@
-using Fookbase.Api.Modules.Identity.Config;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
 
@@ -6,9 +5,7 @@ namespace Fookbase.Api.Modules.Identity.Services;
 
 public sealed class ContactOtpSender(
     IEmailSender emailSender,
-    SpeedSmsSender speedSmsSender,
-    TraccarSmsSender traccarSmsSender,
-    SmsOptions smsOptions) : IContactOtpSender
+    TraccarSmsSender traccarSmsSender) : IContactOtpSender
 {
     public async Task<string> SendAsync(
         ContactIdentifier contact,
@@ -27,12 +24,7 @@ public sealed class ContactOtpSender(
             case ContactKind.Email:
                 throw new InvalidOperationException("Email delivery is not configured.");
             case ContactKind.Phone:
-                return smsOptions.Provider switch
-                {
-                    IdentityModuleConstants.SmsProviders.SpeedSms => await speedSmsSender.SendOtpAsync(contact.Value, cancellationToken),
-                    IdentityModuleConstants.SmsProviders.Traccar => await traccarSmsSender.SendOtpAsync(contact.Value, code, cancellationToken),
-                    _ => throw new InvalidOperationException("SMS delivery is not configured.")
-                };
+                return await traccarSmsSender.SendOtpAsync(contact.Value, code, cancellationToken);
             default:
                 throw new InvalidOperationException("The verification contact is unsupported.");
         }

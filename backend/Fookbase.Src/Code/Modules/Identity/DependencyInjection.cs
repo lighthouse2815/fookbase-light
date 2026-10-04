@@ -42,12 +42,6 @@ public static class DependencyInjection
         services.AddSingleton(googleAuthenticationOptions);
         services.AddSingleton(smsOptions);
         services.AddSingleton(TimeProvider.System);
-        services.AddHttpClient<SpeedSmsSender>((provider, client) =>
-        {
-            var options = provider.GetRequiredService<SmsOptions>();
-            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
-            client.Timeout = TimeSpan.FromSeconds(10);
-        });
         services.AddHttpClient<TraccarSmsSender>((provider, client) =>
         {
             var options = provider.GetRequiredService<SmsOptions>();

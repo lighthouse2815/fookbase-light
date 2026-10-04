@@ -31,7 +31,6 @@ public static class IdentityModuleConstants
 
     public static class SmsProviders
     {
-        public const string SpeedSms = "SpeedSms";
         public const string Traccar = "Traccar";
     }
 

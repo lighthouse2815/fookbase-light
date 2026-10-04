@@ -36,12 +36,28 @@ public sealed class TraccarSmsSenderTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => sender.SendOtpAsync("+84912345678", "123456"));
     }
 
+    [Fact]
+    public async Task Contact_sender_delivers_phone_otp_through_traccar()
+    {
+        var handler = new RecordingHandler(HttpStatusCode.OK);
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.traccar.org/sms/") };
+        var smsSender = new TraccarSmsSender(client, EnabledOptions(), NullLogger<TraccarSmsSender>.Instance);
+        var emailSender = new TestEmailSender();
+        var sender = new ContactOtpSender(emailSender, smsSender);
+
+        var code = await sender.SendAsync(ContactIdentifier.Parse("0912345678"), "123456");
+
+        Assert.Equal("123456", code);
+        Assert.Equal("/sms/", handler.Path);
+        Assert.Contains("\"to\":\"\\u002B84912345678\"", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("123456", handler.Body, StringComparison.Ordinal);
+        Assert.Empty(emailSender.Emails);
+    }
+
     private static SmsOptions EnabledOptions() => new()
     {
         Enabled = true,
-        Provider = IdentityModuleConstants.SmsProviders.Traccar,
-        AccessToken = "gateway-token",
-        BaseUrl = "https://www.traccar.org/sms/"
+        AccessToken = "gateway-token"
     };
 
     private sealed class RecordingHandler(HttpStatusCode statusCode) : HttpMessageHandler

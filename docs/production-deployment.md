@@ -89,7 +89,7 @@ PushNotifications__ReceiptCheckIntervalMinutes=15
 
 ## OTP qua SMS
 
-Đăng ký mới chấp nhận một email hoặc số di động Việt Nam. Email dùng SMTP; số điện thoại dùng provider HTTP được cấu hình. Demo dùng Traccar SMS Gateway cloud service: cài app trên Android, bật Cloud Service và lưu Cloud Token vào secret store hoặc file môi trường ngoài Git. Backend deployed gọi cloud service; điện thoại không cần mở port trực tiếp ra Internet.
+Đăng ký mới chấp nhận một email hoặc số di động Việt Nam. Email dùng SMTP; số điện thoại dùng Traccar SMS Gateway cloud service: cài app trên Android, bật Cloud Service và lưu Cloud Token vào secret store hoặc file môi trường ngoài Git. Backend deployed gọi cloud service; điện thoại không cần mở port trực tiếp ra Internet.
 
 ```dotenv
 Sms__Enabled=true
@@ -100,9 +100,9 @@ Sms__BaseUrl=https://www.traccar.org/sms/
 
 Không đưa `Sms__AccessToken` vào source, image, log hay biến `VITE_*`. Khi `Sms__Enabled=false` (mặc định), API không gửi SMS và trả `sms_unavailable` cho yêu cầu dùng số điện thoại; đăng ký qua email vẫn dùng được nếu SMTP bật. Sau khi bật, gửi thử tới một số điện thoại thật thuộc nhóm vận hành. App điện thoại phải có mạng, SIM gửi được SMS và được tắt battery optimization.
 
-Khi cần SpeedSMS ở production, đổi `Sms__Provider=SpeedSms`, `Sms__BaseUrl=https://api.speedsms.vn` và bổ sung `Sms__TwoFactorApplicationId`; luồng OTP/API không thay đổi. Không dùng Traccar Local Service qua Internet công khai; nếu cần endpoint local, chỉ kết nối qua VPN và HTTPS proxy đáng tin cậy.
+Không dùng Traccar Local Service qua Internet công khai; nếu cần endpoint local, chỉ kết nối qua VPN và HTTPS proxy đáng tin cậy.
 
-OTP gồm sáu số, hết hạn sau 10 phút, chỉ dùng một lần, có cooldown gửi lại 60 giây và tối đa năm lần gửi hoặc thử mã trong một giờ/challenge. Theo dõi phản hồi nhà cung cấp nhưng không log số điện thoại đầy đủ, OTP, mật khẩu hoặc token SpeedSMS.
+OTP gồm sáu số, hết hạn sau 10 phút, chỉ dùng một lần, có cooldown gửi lại 60 giây và tối đa năm lần gửi hoặc thử mã trong một giờ/challenge. Theo dõi phản hồi nhà cung cấp nhưng không log số điện thoại đầy đủ, OTP, mật khẩu hoặc Cloud Token.
 
 ## Reverse proxy, HTTPS và CORS
 

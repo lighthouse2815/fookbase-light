@@ -51,7 +51,6 @@ public sealed class ProductionRuntimeTests
     {
         var values = ProductionValues();
         values["Sms:Enabled"] = "true";
-        values["Sms:BaseUrl"] = "https://api.speedsms.vn";
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -61,28 +60,26 @@ public sealed class ProductionRuntimeTests
     }
 
     [Fact]
-    public void Production_configuration_rejects_enabled_sms_without_two_factor_application_id()
+    public void Production_configuration_rejects_unsupported_sms_provider()
     {
         var values = ProductionValues();
         values["Sms:Enabled"] = "true";
         values["Sms:AccessToken"] = "access-token";
-        values["Sms:BaseUrl"] = "https://api.speedsms.vn";
+        values["Sms:Provider"] = "Unsupported";
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             ProductionConfigurationValidator.Validate(configuration, production: true));
 
-        Assert.Contains("Sms:TwoFactorApplicationId", exception.Message);
+        Assert.Contains("Sms:Provider", exception.Message);
     }
 
     [Fact]
-    public void Production_configuration_accepts_enabled_traccar_without_speed_sms_application_id()
+    public void Production_configuration_accepts_enabled_sms_with_traccar_defaults()
     {
         var values = ProductionValues();
         values["Sms:Enabled"] = "true";
-        values["Sms:Provider"] = "Traccar";
         values["Sms:AccessToken"] = "gateway-token";
-        values["Sms:BaseUrl"] = "https://www.traccar.org/sms/";
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
 
         ProductionConfigurationValidator.Validate(configuration, production: true);
