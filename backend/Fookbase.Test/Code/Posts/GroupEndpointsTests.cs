@@ -546,6 +546,133 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         Assert.Equal(2, await db.MediaAssets.CountAsync(item => item.Id == firstMediaId || item.Id == secondMediaId));
     }
 
+    public static IEnumerable<object[]> InvalidGroupRequests()
+    {
+        foreach (var name in new[] { " ", new string('n', 121) })
+            yield return ["POST", "", new { name, description = (string?)null, privacy = "public" }, "Name"];
+        yield return ["POST", "", new { name = "group", description = new string('d', 2_001), privacy = "public" }, "Description"];
+        foreach (var privacy in new[] { "friends", "99" })
+            yield return ["POST", "", new { name = "group", description = (string?)null, privacy }, "Privacy"];
+        yield return ["PATCH", "/{groupId}", new { name = new string('n', 121), privacy = "public" }, "Name"];
+        yield return ["PATCH", "/{groupId}", new { name = "group", description = new string('d', 2_001), privacy = "public" }, "Description"];
+        yield return ["PATCH", "/{groupId}", new { name = "group", privacy = "friends" }, "Privacy"];
+        foreach (var method in new[] { "POST", "PATCH" })
+        {
+            var path = method == "POST" ? "/{groupId}/rules" : "/{groupId}/rules/{ruleId}";
+            yield return [method, path, new { title = new string('t', 201), description = (string?)null, sortOrder = 0 }, "Title"];
+            yield return [method, path, new { title = "rule", description = new string('d', 2_001), sortOrder = 0 }, "Description"];
+        }
+        yield return ["POST", "/{groupId}/invites", new { userId = Guid.Empty }, "UserId"];
+        foreach (var role in new[] { "invalid", "99" })
+            yield return ["PATCH", "/{groupId}/members/{userId}/role", new { role }, "Role"];
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidGroupRequests))]
+    public async Task Invalid_group_requests_return_field_validation_errors(
+        string method, string path, object payload, string field)
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var group = await CreateGroupAsync(owner, "public");
+        using var client = CreateAuthenticatedClient(owner);
+        var ruleId = Guid.NewGuid();
+        if (path.Contains("{ruleId}"))
+        {
+            var rule = await ReadAsync<GroupRuleResponse>(await client.PostAsJsonAsync(
+                $"/api/groups/{group.Id}/rules", new { title = "rule", sortOrder = 0 }));
+            ruleId = rule.Id;
+        }
+
+        path = "/api/groups" + path.Replace("{groupId}", group.Id.ToString())
+            .Replace("{ruleId}", ruleId.ToString()).Replace("{userId}", owner.ToString());
+        using var request = new HttpRequestMessage(new HttpMethod(method), path) { Content = JsonContent.Create(payload) };
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", problem.RootElement.GetProperty("code").GetString());
+        Assert.True(problem.RootElement.GetProperty("errors").TryGetProperty(field, out _));
+    }
+
+    public static IEnumerable<object[]> InvalidGroupPages()
+    {
+        foreach (var route in new[] { "discover", "mine", "feed", "invites/mine", "{groupId}/members", "{groupId}/join-requests", "{groupId}/posts" })
+        {
+            yield return [route, "limit=0", "Limit"];
+            yield return [route, "limit=51", "Limit"];
+            yield return [route, "cursor=invalid!", "Cursor"];
+        }
+        var invalidTicks = Convert.ToBase64String(Encoding.UTF8.GetBytes("-1:00000000000000000000000000000001"));
+        yield return ["discover", "cursor=" + Uri.EscapeDataString(invalidTicks), "Cursor"];
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidGroupPages))]
+    public async Task Invalid_group_pages_return_field_validation_errors(string route, string query, string field)
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var group = await CreateGroupAsync(owner, "public");
+        using var client = CreateAuthenticatedClient(owner);
+        using var response = await client.GetAsync($"/api/groups/{route.Replace("{groupId}", group.Id.ToString())}?{query}");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", problem.RootElement.GetProperty("code").GetString());
+        Assert.True(problem.RootElement.GetProperty("errors").TryGetProperty(field, out _));
+    }
+
+    [Theory]
+    [InlineData(" PUBLIC ", " MODERATOR ")]
+    [InlineData("0", "2")]
+    public async Task Group_validation_preserves_trimmed_boundaries_and_existing_enum_input(string privacy, string role)
+    {
+        var users = await CreateUsersAsync(2);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        var group = await ReadAsync<GroupResponse>(await owner.PostAsJsonAsync("/api/groups", new
+        {
+            name = " " + new string('n', 120) + " ",
+            description = " " + new string('d', 2_000) + " ",
+            privacy
+        }));
+        await JoinAsync(group.Id, users[1]);
+        using var changedRole = await owner.PatchAsJsonAsync($"/api/groups/{group.Id}/members/{users[1]}/role", new { role });
+        var member = await ReadAsync<GroupMemberResponse>(changedRole);
+        var rule = await ReadAsync<GroupRuleResponse>(await owner.PostAsJsonAsync($"/api/groups/{group.Id}/rules", new
+        {
+            title = " " + new string('t', 200) + " ",
+            description = " " + new string('d', 2_000) + " ",
+            sortOrder = -1
+        }));
+        var updated = await ReadAsync<GroupResponse>(await owner.PatchAsJsonAsync($"/api/groups/{group.Id}", new
+        {
+            name = " " + group.Name + " ",
+            description = new string(' ', 2_001),
+            privacy
+        }));
+        Assert.Equal(120, group.Name.Length);
+        Assert.Equal(2_000, group.Description!.Length);
+        Assert.Equal("moderator", member.Role);
+        Assert.Equal(200, rule.Title.Length);
+        Assert.Equal(-1, rule.SortOrder);
+        Assert.Null(updated.Description);
+    }
+
+    [Fact]
+    public async Task Group_page_requests_preserve_defaults_boundaries_and_cursor_pagination()
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var groups = new List<GroupResponse>();
+        for (var index = 0; index < 3; index++) groups.Add(await CreateGroupAsync(owner, "public"));
+        using var client = CreateAuthenticatedClient(owner);
+        var defaults = await ReadAsync<GroupCursorPageResponse<GroupResponse>>(await client.GetAsync("/api/groups/mine"));
+        var first = await ReadAsync<GroupCursorPageResponse<GroupResponse>>(await client.GetAsync("/api/groups/mine?limit=1"));
+        var second = await ReadAsync<GroupCursorPageResponse<GroupResponse>>(await client.GetAsync(
+            "/api/groups/mine?limit=1&cursor=" + Uri.EscapeDataString(first.NextCursor!)));
+        var maximum = await ReadAsync<GroupCursorPageResponse<GroupResponse>>(await client.GetAsync("/api/groups/mine?limit=50"));
+        Assert.Equal(groups.Select(group => group.Id).Order(), defaults.Items.Select(group => group.Id).Order());
+        Assert.Null(defaults.NextCursor);
+        Assert.NotEqual(Assert.Single(first.Items).Id, Assert.Single(second.Items).Id);
+        Assert.Equal(3, maximum.Items.Count);
+    }
+
     private async Task<GroupResponse> CreateGroupAsync(Guid ownerUserId, string privacy)
     {
         using var client = CreateAuthenticatedClient(ownerUserId);

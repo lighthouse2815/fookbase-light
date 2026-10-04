@@ -43,58 +43,54 @@ public sealed class GroupsController(GroupsService service, MediaService mediaSe
 
     [HttpGet("mine")]
     public async Task<IActionResult> GetMineAsync(
-        CancellationToken cancellationToken,
-        string? cursor = null,
-        int limit = GroupsService.DefaultPageSize)
+        [FromQuery] GroupPageRequest request,
+        CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(User, out var actorUserId))
         {
             return Unauthorized();
         }
 
-        var result = await service.GetMineAsync(actorUserId, cursor, limit, cancellationToken);
+        var result = await service.GetMineAsync(actorUserId, request.Cursor, request.Limit, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
 
     [AllowAnonymous]
     [HttpGet("discover")]
     public async Task<IActionResult> DiscoverAsync(
+        [FromQuery] GroupPageRequest request,
         CancellationToken cancellationToken,
-        string? query = null,
-        string? cursor = null,
-        int limit = GroupsService.DefaultPageSize)
+        string? query = null)
     {
-        var result = await service.DiscoverAsync(query, cursor, limit, cancellationToken);
+        var result = await service.DiscoverAsync(query, request.Cursor, request.Limit, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
 
     [HttpGet("feed")]
     public async Task<IActionResult> GetFeedAsync(
-        CancellationToken cancellationToken,
-        string? cursor = null,
-        int limit = GroupsService.DefaultPageSize)
+        [FromQuery] GroupPageRequest request,
+        CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(User, out var actorUserId))
         {
             return Unauthorized();
         }
 
-        var result = await service.GetFeedAsync(actorUserId, cursor, limit, cancellationToken);
+        var result = await service.GetFeedAsync(actorUserId, request.Cursor, request.Limit, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
 
     [HttpGet("invites/mine")]
     public async Task<IActionResult> GetMyInvitesAsync(
-        CancellationToken cancellationToken,
-        string? cursor = null,
-        int limit = GroupsService.DefaultPageSize)
+        [FromQuery] GroupPageRequest request,
+        CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(User, out var actorUserId))
         {
             return Unauthorized();
         }
 
-        var result = await service.GetMyInvitesAsync(actorUserId, cursor, limit, cancellationToken);
+        var result = await service.GetMyInvitesAsync(actorUserId, request.Cursor, request.Limit, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
 
@@ -187,15 +183,14 @@ public sealed class GroupsController(GroupsService service, MediaService mediaSe
     [HttpGet("{groupId:guid}/members")]
     public async Task<IActionResult> GetMembersAsync(
         Guid groupId,
-        CancellationToken cancellationToken,
-        string? cursor = null,
-        int limit = GroupsService.DefaultPageSize)
+        [FromQuery] GroupPageRequest request,
+        CancellationToken cancellationToken)
     {
         var result = await service.GetMembersAsync(
             groupId,
             TryGetViewerUserId(User),
-            cursor,
-            limit,
+            request.Cursor,
+            request.Limit,
             cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
@@ -232,9 +227,8 @@ public sealed class GroupsController(GroupsService service, MediaService mediaSe
     [HttpGet("{groupId:guid}/join-requests")]
     public async Task<IActionResult> GetJoinRequestsAsync(
         Guid groupId,
-        CancellationToken cancellationToken,
-        string? cursor = null,
-        int limit = GroupsService.DefaultPageSize)
+        [FromQuery] GroupPageRequest request,
+        CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(User, out var actorUserId))
         {
@@ -244,8 +238,8 @@ public sealed class GroupsController(GroupsService service, MediaService mediaSe
         var result = await service.GetJoinRequestsAsync(
             actorUserId,
             groupId,
-            cursor,
-            limit,
+            request.Cursor,
+            request.Limit,
             cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
@@ -393,15 +387,14 @@ public sealed class GroupsController(GroupsService service, MediaService mediaSe
     [HttpGet("{groupId:guid}/posts")]
     public async Task<IActionResult> GetPostsAsync(
         Guid groupId,
-        CancellationToken cancellationToken,
-        string? cursor = null,
-        int limit = GroupsService.DefaultPageSize)
+        [FromQuery] GroupPageRequest request,
+        CancellationToken cancellationToken)
     {
         var result = await service.GetPostsAsync(
             groupId,
             TryGetViewerUserId(User),
-            cursor,
-            limit,
+            request.Cursor,
+            request.Limit,
             cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }

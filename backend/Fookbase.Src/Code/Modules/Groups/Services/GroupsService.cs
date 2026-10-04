@@ -1,20 +1,19 @@
-using Fookbase.Api.Modules.Groups.Domain.Enums;
-using Fookbase.Api.Modules.Notifications.Domain.Enums;
-using System.Globalization;
-using System.Text;
 using Fookbase.Api.Modules.Friends.Services;
+using Fookbase.Api.Modules.Groups.Common;
 using Fookbase.Api.Modules.Groups.DTOs.Requests;
 using Fookbase.Api.Modules.Groups.DTOs.Responses;
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
-using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
+using Fookbase.Api.Shared.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Groups.Services;
@@ -38,36 +37,23 @@ public sealed class GroupsService(
         CreateGroupRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!TryParsePrivacy(request.Privacy, out var privacy))
-        {
-            return Failure<GroupResponse>(
-                "invalid_group_privacy",
-                "Group privacy must be public or private.",
-                ApplicationErrorType.VALIDATION);
-        }
+        var privacy = Enum.Parse<GroupPrivacy>(request.Privacy, true);
 
-        try
-        {
-            var now = timeProvider.GetUtcNow();
-            var group = new Group(
-                Guid.NewGuid(),
-                request.Name,
-                request.Description,
-                privacy,
-                actorUserId,
-                now);
-            var owner = new GroupMember(group.Id, actorUserId, GroupMemberRole.OWNER, now);
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            dbContext.Groups.Add(group);
-            dbContext.GroupMembers.Add(owner);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return ApplicationResult<GroupResponse>.Success(ToResponse(group, 1, owner.Role));
-        }
-        catch (ArgumentException exception)
-        {
-            return Failure<GroupResponse>("invalid_group", exception.Message, ApplicationErrorType.VALIDATION);
-        }
+        var now = timeProvider.GetUtcNow();
+        var group = new Group(
+            Guid.NewGuid(),
+            request.Name,
+            request.Description,
+            privacy,
+            actorUserId,
+            now);
+        var owner = new GroupMember(group.Id, actorUserId, GroupMemberRole.OWNER, now);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        dbContext.Groups.Add(group);
+        dbContext.GroupMembers.Add(owner);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return ApplicationResult<GroupResponse>.Success(ToResponse(group, 1, owner.Role));
     }
 
     public async Task<ApplicationResult<GroupResponse>> GetAsync(
@@ -99,12 +85,7 @@ public sealed class GroupsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!IsValidCursor(cursorValue) || !IsValidLimit(limit))
-        {
-            return InvalidPage<GroupCursorPageResponse<GroupResponse>>();
-        }
-
-        var cursor = DecodeCursorOrNull(cursorValue);
+        var cursor = GroupCursor.DecodeOrNull(cursorValue);
         var query =
             from membership in dbContext.GroupMembers.AsNoTracking()
             join itemGroup in dbContext.Groups.AsNoTracking() on membership.GroupId equals itemGroup.Id
@@ -140,12 +121,7 @@ public sealed class GroupsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!IsValidCursor(cursorValue) || !IsValidLimit(limit))
-        {
-            return InvalidPage<GroupCursorPageResponse<GroupResponse>>();
-        }
-
-        var cursor = DecodeCursorOrNull(cursorValue);
+        var cursor = GroupCursor.DecodeOrNull(cursorValue);
         var normalizedQuery = queryText?.Trim().ToLowerInvariant();
         var query = dbContext.Groups.AsNoTracking().Where(group =>
             group.DeletedAtUtc == null && group.Privacy == GroupPrivacy.PUBLIC);
@@ -183,12 +159,7 @@ public sealed class GroupsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!IsValidCursor(cursorValue) || !IsValidLimit(limit))
-        {
-            return InvalidPage<GroupCursorPageResponse<GroupInviteResponse>>();
-        }
-
-        var cursor = DecodeCursorOrNull(cursorValue);
+        var cursor = GroupCursor.DecodeOrNull(cursorValue);
         var query =
             from invite in dbContext.GroupInvites.AsNoTracking()
             join itemGroup in dbContext.Groups.AsNoTracking() on invite.GroupId equals itemGroup.Id
@@ -225,12 +196,7 @@ public sealed class GroupsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (!IsValidCursor(cursorValue) || !IsValidLimit(limit))
-        {
-            return InvalidPage<GroupFeedPageResponse>();
-        }
-
-        var cursor = DecodeCursorOrNull(cursorValue);
+        var cursor = GroupCursor.DecodeOrNull(cursorValue);
         var blockedUserIds = (await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken)).BlockedUserIds;
         var joinedGroupIds = dbContext.GroupMembers.AsNoTracking()
             .Where(member => member.UserId == actorUserId)
@@ -291,13 +257,7 @@ public sealed class GroupsService(
             return Forbidden<GroupResponse>();
         }
 
-        if (!TryParsePrivacy(request.Privacy, out var privacy))
-        {
-            return Failure<GroupResponse>(
-                "invalid_group_privacy",
-                "Group privacy must be public or private.",
-                ApplicationErrorType.VALIDATION);
-        }
+        var privacy = Enum.Parse<GroupPrivacy>(request.Privacy, true);
 
         var coverChanged = !request.RemoveCover && request.CoverMediaId is { } requestedCoverMediaId &&
             requestedCoverMediaId != group.CoverMediaId;
@@ -314,55 +274,48 @@ public sealed class GroupsService(
             }
         }
 
-        try
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        group.Update(request.Name, request.Description, privacy, timeProvider.GetUtcNow());
+        group.SetCover(desiredCoverMediaId, timeProvider.GetUtcNow());
+        await mediaService.SynchronizeGroupCoverReferenceAsync(
+            group.Id,
+            desiredCoverMediaId,
+            cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        if (coverChanged)
         {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            group.Update(request.Name, request.Description, privacy, timeProvider.GetUtcNow());
-            group.SetCover(desiredCoverMediaId, timeProvider.GetUtcNow());
-            await mediaService.SynchronizeGroupCoverReferenceAsync(
+            var post = await postsService.CreatePostInContainerCoreAsync(
+                actorUserId,
+                Post.CoverUpdatedPostContent,
+                PostPrivacy.PUBLIC,
+                PostContainerType.GROUP,
                 group.Id,
-                desiredCoverMediaId,
-                cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            if (coverChanged)
+                [request.CoverMediaId!.Value],
+                cancellationToken,
+                addToTimelinePhotos: false);
+            if (!post.Succeeded)
             {
-                var post = await postsService.CreatePostInContainerCoreAsync(
-                    actorUserId,
-                    Post.CoverUpdatedPostContent,
-                    PostPrivacy.PUBLIC,
-                    PostContainerType.GROUP,
-                    group.Id,
-                    [request.CoverMediaId!.Value],
-                    cancellationToken,
-                    addToTimelinePhotos: false);
-                if (!post.Succeeded)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return Failure<GroupResponse>("group_cover_post_failed", "Could not create the group cover update post.", ApplicationErrorType.CONFLICT);
-                }
-
-                var references = await mediaService.SynchronizePostReferencesAsync(
-                    actorUserId,
-                    post.Value!.Id,
-                    [request.CoverMediaId!.Value],
-                    cancellationToken);
-                if (!references.Succeeded)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return ApplicationResult<GroupResponse>.Failure(references.Error!);
-                }
-
-                await socialInteractionsService.SynchronizePostMetadataAsync(
-                    post.Value.Id,
-                    actorUserId,
-                    cancellationToken);
+                await transaction.RollbackAsync(cancellationToken);
+                return Failure<GroupResponse>("group_cover_post_failed", "Could not create the group cover update post.", ApplicationErrorType.CONFLICT);
             }
-            await transaction.CommitAsync(cancellationToken);
+
+            var references = await mediaService.SynchronizePostReferencesAsync(
+                actorUserId,
+                post.Value!.Id,
+                [request.CoverMediaId!.Value],
+                cancellationToken);
+            if (!references.Succeeded)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ApplicationResult<GroupResponse>.Failure(references.Error!);
+            }
+
+            await socialInteractionsService.SynchronizePostMetadataAsync(
+                post.Value.Id,
+                actorUserId,
+                cancellationToken);
         }
-        catch (ArgumentException exception)
-        {
-            return Failure<GroupResponse>("invalid_group", exception.Message, ApplicationErrorType.VALIDATION);
-        }
+        await transaction.CommitAsync(cancellationToken);
 
         var count = await dbContext.GroupMembers.AsNoTracking()
             .CountAsync(member => member.GroupId == groupId, cancellationToken);
@@ -493,12 +446,7 @@ public sealed class GroupsService(
             return NotFound<GroupCursorPageResponse<GroupMemberResponse>>();
         }
 
-        if (!IsValidCursor(cursorValue) || !IsValidLimit(limit))
-        {
-            return InvalidPage<GroupCursorPageResponse<GroupMemberResponse>>();
-        }
-
-        var cursor = DecodeCursorOrNull(cursorValue);
+        var cursor = GroupCursor.DecodeOrNull(cursorValue);
         var query = dbContext.GroupMembers.AsNoTracking().Where(member => member.GroupId == groupId);
         if (cursor is not null)
         {
@@ -543,12 +491,7 @@ public sealed class GroupsService(
             return Forbidden<GroupCursorPageResponse<GroupJoinRequestResponse>>();
         }
 
-        if (!IsValidCursor(cursorValue) || !IsValidLimit(limit))
-        {
-            return InvalidPage<GroupCursorPageResponse<GroupJoinRequestResponse>>();
-        }
-
-        var cursor = DecodeCursorOrNull(cursorValue);
+        var cursor = GroupCursor.DecodeOrNull(cursorValue);
         var query = dbContext.GroupJoinRequests.AsNoTracking().Where(request =>
             request.GroupId == groupId && request.Status == GroupJoinRequestStatus.PENDING);
         if (cursor is not null)
@@ -757,13 +700,7 @@ public sealed class GroupsService(
         ChangeGroupMemberRoleRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!TryParseRole(request.Role, out var targetRole))
-        {
-            return Failure<GroupMemberResponse>(
-                "invalid_group_role",
-                "Group role must be owner, admin, moderator or member.",
-                ApplicationErrorType.VALIDATION);
-        }
+        var targetRole = Enum.Parse<GroupMemberRole>(request.Role, true);
 
         var group = await FindActiveGroupAsync(groupId, cancellationToken);
         if (group is null)
@@ -880,22 +817,15 @@ public sealed class GroupsService(
             return Forbidden<GroupRuleResponse>();
         }
 
-        try
-        {
-            var rule = new GroupRule(
-                Guid.NewGuid(),
-                groupId,
-                request.Title,
-                request.Description,
-                request.SortOrder);
-            dbContext.GroupRules.Add(rule);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ApplicationResult<GroupRuleResponse>.Success(ToResponse(rule));
-        }
-        catch (ArgumentException exception)
-        {
-            return Failure<GroupRuleResponse>("invalid_group_rule", exception.Message, ApplicationErrorType.VALIDATION);
-        }
+        var rule = new GroupRule(
+            Guid.NewGuid(),
+            groupId,
+            request.Title,
+            request.Description,
+            request.SortOrder);
+        dbContext.GroupRules.Add(rule);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ApplicationResult<GroupRuleResponse>.Success(ToResponse(rule));
     }
 
     public async Task<ApplicationResult<GroupRuleResponse>> UpdateRuleAsync(
@@ -918,16 +848,9 @@ public sealed class GroupsService(
             return NotFound<GroupRuleResponse>();
         }
 
-        try
-        {
-            rule.Update(request.Title, request.Description, request.SortOrder);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ApplicationResult<GroupRuleResponse>.Success(ToResponse(rule));
-        }
-        catch (ArgumentException exception)
-        {
-            return Failure<GroupRuleResponse>("invalid_group_rule", exception.Message, ApplicationErrorType.VALIDATION);
-        }
+        rule.Update(request.Title, request.Description, request.SortOrder);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ApplicationResult<GroupRuleResponse>.Success(ToResponse(rule));
     }
 
     public async Task<ApplicationResult> DeleteRuleAsync(
@@ -988,12 +911,7 @@ public sealed class GroupsService(
             return NotFound<GroupCursorPageResponse<PostResponse>>();
         }
 
-        if (!IsValidCursor(cursorValue) || !IsValidLimit(limit))
-        {
-            return InvalidPage<GroupCursorPageResponse<PostResponse>>();
-        }
-
-        var cursor = DecodeCursorOrNull(cursorValue);
+        var cursor = GroupCursor.DecodeOrNull(cursorValue);
         IReadOnlySet<Guid> blockedUserIds = viewerUserId is null
             ? new HashSet<Guid>()
             : (await friendsService.GetAccessSnapshotAsync(viewerUserId.Value, cancellationToken)).BlockedUserIds;
@@ -1171,70 +1089,12 @@ public sealed class GroupsService(
                 .ToDictionaryAsync(item => item.GroupId, item => item.Count, cancellationToken);
     }
 
-    private static bool TryParsePrivacy(string value, out GroupPrivacy privacy) =>
-        Enum.TryParse(value, true, out privacy) && Enum.IsDefined(privacy);
-
-    private static bool TryParseRole(string value, out GroupMemberRole role) =>
-        Enum.TryParse(value, true, out role) && Enum.IsDefined(role);
-
-    public static bool IsValidCursor(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return true;
-        }
-
-        try
-        {
-            _ = DecodeCursor(value);
-            return true;
-        }
-        catch (FormatException)
-        {
-            return false;
-        }
-    }
-
-    private static bool IsValidLimit(int limit) => limit is >= 1 and <= MaximumPageSize;
-
-    private static GroupCursor? DecodeCursorOrNull(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : DecodeCursor(value);
-
-    private static GroupCursor DecodeCursor(string value)
-    {
-        try
-        {
-            var encoded = value.Replace('-', '+').Replace('_', '/');
-            encoded = encoded.PadRight(encoded.Length + (4 - encoded.Length % 4) % 4, '=');
-            var parts = Encoding.UTF8.GetString(Convert.FromBase64String(encoded)).Split(':', 2);
-            if (parts.Length != 2 ||
-                !long.TryParse(parts[0], CultureInfo.InvariantCulture, out var ticks) ||
-                !Guid.TryParseExact(parts[1], "N", out var id))
-            {
-                throw new FormatException("The group cursor is invalid.");
-            }
-
-            return new GroupCursor(new DateTimeOffset(new DateTime(ticks, DateTimeKind.Utc)), id);
-        }
-        catch (ArgumentException exception)
-        {
-            throw new FormatException("The group cursor is invalid.", exception);
-        }
-    }
-
     private static string EncodeCursor(Group group) => EncodeCursor(group.CreatedAtUtc, group.Id);
 
     private static string EncodeCursor(Post post) => EncodeCursor(post.CreatedAtUtc, post.Id);
 
-    private static string EncodeCursor(DateTimeOffset createdAtUtc, Guid id)
-    {
-        var payload = createdAtUtc.UtcDateTime.Ticks.ToString(CultureInfo.InvariantCulture) +
-            ":" + id.ToString("N");
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes(payload))
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
-    }
+    private static string EncodeCursor(DateTimeOffset createdAtUtc, Guid id) =>
+        new GroupCursor(createdAtUtc, id).Encode();
 
     private static GroupResponse ToResponse(
         Group group,
@@ -1281,12 +1141,6 @@ public sealed class GroupsService(
     private static GroupRuleResponse ToResponse(GroupRule rule) =>
         new(rule.Id, rule.GroupId, rule.Title, rule.Description, rule.SortOrder);
 
-    private static ApplicationResult<T> InvalidPage<T>() =>
-        Failure<T>(
-            "invalid_group_cursor",
-            "The group cursor or limit is invalid.",
-            ApplicationErrorType.VALIDATION);
-
     private static ApplicationResult<T> NotFound<T>() =>
         Failure<T>("group_not_found", "The group was not found.", ApplicationErrorType.NOT_FOUND);
 
@@ -1315,6 +1169,4 @@ public sealed class GroupsService(
         string message,
         ApplicationErrorType type) =>
         ApplicationResult.Failure(new ApplicationError(code, message, type));
-
-    private sealed record GroupCursor(DateTimeOffset CreatedAtUtc, Guid Id);
 }
