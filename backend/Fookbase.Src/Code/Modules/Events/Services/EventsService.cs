@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Events.Domain.Enums;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using System.Text;

@@ -436,17 +436,17 @@ public sealed class NotificationService(
         {
             return await dbContext.EventInvitations.AsNoTracking().AnyAsync(invitation =>
                 invitation.Id == notification.EntityId && invitation.InviteeUserId == recipientUserId &&
-                invitation.Status == Fookbase.Api.Modules.Events.Entities.EventInvitationStatus.PENDING &&
+                invitation.Status == Fookbase.Api.Modules.Events.Domain.Enums.EventInvitationStatus.PENDING &&
                 dbContext.Events.Any(item => item.Id == invitation.EventId && item.DeletedAtUtc == null &&
-                    item.Status == Fookbase.Api.Modules.Events.Entities.EventStatus.PUBLISHED), cancellationToken);
+                    item.Status == Fookbase.Api.Modules.Events.Domain.Enums.EventStatus.PUBLISHED), cancellationToken);
         }
 
         return await dbContext.Events.AsNoTracking().AnyAsync(item => item.Id == notification.EntityId &&
-            item.DeletedAtUtc == null && item.Status != Fookbase.Api.Modules.Events.Entities.EventStatus.DRAFT &&
-            (item.Privacy == Fookbase.Api.Modules.Events.Entities.EventPrivacy.PUBLIC ||
+            item.DeletedAtUtc == null && item.Status != Fookbase.Api.Modules.Events.Domain.Enums.EventStatus.DRAFT &&
+            (item.Privacy == Fookbase.Api.Modules.Events.Domain.Enums.EventPrivacy.PUBLIC ||
              dbContext.EventParticipants.Any(participant => participant.EventId == item.Id && participant.UserId == recipientUserId) ||
              dbContext.EventInvitations.Any(invitation => invitation.EventId == item.Id && invitation.InviteeUserId == recipientUserId &&
-                 invitation.Status == Fookbase.Api.Modules.Events.Entities.EventInvitationStatus.PENDING)), cancellationToken);
+                 invitation.Status == Fookbase.Api.Modules.Events.Domain.Enums.EventInvitationStatus.PENDING)), cancellationToken);
     }
 
     private async Task<IReadOnlyList<NotificationResponse>> ToResponsesAsync(

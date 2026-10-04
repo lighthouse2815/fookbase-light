@@ -1,5 +1,6 @@
+using Fookbase.Api.Modules.Events.Domain.Enums;
+
 namespace Fookbase.Api.Modules.Events.Entities;
-public enum EventInvitationStatus { PENDING, ACCEPTED, DECLINED }
 public sealed class EventInvitation
 {
     private EventInvitation() { }

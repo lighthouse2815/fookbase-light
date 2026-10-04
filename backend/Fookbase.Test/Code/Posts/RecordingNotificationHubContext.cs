@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Events.Domain.Enums;
 using System.Collections.Concurrent;
 using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;

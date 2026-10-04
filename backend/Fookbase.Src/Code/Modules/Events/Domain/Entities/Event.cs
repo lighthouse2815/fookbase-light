@@ -1,9 +1,7 @@
+using Fookbase.Api.Modules.Events.Domain.Enums;
+
 namespace Fookbase.Api.Modules.Events.Entities;
 
-public enum EventHostType { USER, GROUP, PAGE }
-public enum EventPrivacy { PUBLIC, PRIVATE }
-public enum EventLocationType { PHYSICAL, ONLINE }
-public enum EventStatus { DRAFT, PUBLISHED, CANCELLED }
 
 public sealed class Event
 {

@@ -1,5 +1,6 @@
+using Fookbase.Api.Modules.Events.Domain.Enums;
+
 namespace Fookbase.Api.Modules.Events.Entities;
-public enum EventParticipantStatus { GOING, INTERESTED }
 public sealed class EventParticipant
 {
     private EventParticipant() { }

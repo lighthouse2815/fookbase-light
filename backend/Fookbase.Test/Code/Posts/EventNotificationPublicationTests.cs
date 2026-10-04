@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Events.Domain.Enums;
 using Fookbase.Api.Modules.Events.DTOs.Requests;
 using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Events.Services;
