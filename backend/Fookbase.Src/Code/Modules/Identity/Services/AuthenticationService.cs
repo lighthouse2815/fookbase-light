@@ -11,8 +11,6 @@ using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
-using System.Text;
-using System.Security.Cryptography;
 
 namespace Fookbase.Api.Modules.Identity.Services;
 
@@ -21,7 +19,7 @@ public sealed class AuthenticationService(
     FookbaseDbContext dbContext,
     JwtTokenService tokenService,
     IEmailSender emailSender,
-    IContactOtpSender contactOtpSender,
+    OtpService otpService,
     EmailOptions emailOptions,
     ILogger<AuthenticationService> logger,
     AccountModerationService accountModerationService,
@@ -321,7 +319,11 @@ public sealed class AuthenticationService(
 
         if (contact.Kind == ContactKind.Phone)
         {
-            await RequestPhonePasswordResetAsync(contact, cancellationToken);
+            var phoneUser = await FindByIdentifierAsync(contact, cancellationToken);
+            if (phoneUser is { IsActive: true })
+            {
+                await otpService.SendPasswordResetAsync(phoneUser.Id, contact, cancellationToken);
+            }
             return;
         }
 
@@ -392,51 +394,12 @@ public sealed class AuthenticationService(
             ? userManager.FindByEmailAsync(contact.Value)
             : dbContext.Users.SingleOrDefaultAsync(user => user.PhoneNumber == contact.Value, cancellationToken);
 
-    private async Task RequestPhonePasswordResetAsync(
-        ContactIdentifier contact,
-        CancellationToken cancellationToken)
-    {
-        var user = await FindByIdentifierAsync(contact, cancellationToken);
-        if (user is null || !user.IsActive)
-        {
-            return;
-        }
-
-        var now = timeProvider.GetUtcNow();
-        var code = OtpCode.Create();
-        var challenge = await dbContext.PasswordResetOtps.SingleOrDefaultAsync(
-            item => item.UserId == user.Id,
-            cancellationToken);
-        if (challenge is null)
-        {
-            challenge = new PasswordResetOtp(user.Id, contact.Value, HashOtp(code), now);
-            dbContext.PasswordResetOtps.Add(challenge);
-        }
-        else if (!challenge.TryResend(HashOtp(code), now))
-        {
-            return;
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        try
-        {
-            await contactOtpSender.SendAsync(contact, code, cancellationToken);
-        }
-        catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
-        {
-            logger.LogWarning(exception, "Unable to send password reset SMS for user {UserId}.", user.Id);
-            dbContext.PasswordResetOtps.Remove(challenge);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            throw Failure(ErrorCode.SmsUnavailable, ApplicationErrorType.Conflict);
-        }
-    }
-
     private async Task ResetPhonePasswordAsync(
         ContactIdentifier contact,
         ResetPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Code) || request.Code.Length != 6 || !request.Code.All(char.IsAsciiDigit) ||
+        if (!OtpService.IsValidCode(request.Code) ||
             string.IsNullOrWhiteSpace(request.Password) || request.Password != request.ConfirmPassword)
         {
             throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.Validation);
@@ -448,33 +411,9 @@ public sealed class AuthenticationService(
             throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.Validation);
         }
 
-        var challenge = await dbContext.PasswordResetOtps.AsNoTracking().SingleOrDefaultAsync(
-            item => item.UserId == user.Id && item.PhoneNumber == contact.Value,
-            cancellationToken);
-        var now = timeProvider.GetUtcNow();
-        var codeHash = HashOtp(request.Code);
-        if (challenge is null || !challenge.IsUsableAt(now) || !CryptographicOperations.FixedTimeEquals(
-                Convert.FromHexString(challenge.CodeHash), Convert.FromHexString(codeHash)))
-        {
-            if (challenge is not null && challenge.IsUsableAt(now))
-            {
-                await dbContext.PasswordResetOtps
-                    .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now && item.FailedAttemptCount < 5)
-                    .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.FailedAttemptCount, item => item.FailedAttemptCount + 1), cancellationToken);
-            }
-            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.Validation);
-        }
-
+        var (challenge, now) = await otpService.VerifyPasswordResetAsync(user.Id, contact.Value, request.Code, cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        var consumed = await dbContext.PasswordResetOtps
-            .Where(item => item.Id == challenge.Id && item.ConsumedAtUtc == null && item.ExpiresAtUtc > now &&
-                item.FailedAttemptCount < 5 && item.CodeHash == codeHash)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.ConsumedAtUtc, now), cancellationToken);
-        if (consumed != 1)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.Validation);
-        }
+        await otpService.ConsumePasswordResetAsync(challenge, request.Code!, now, cancellationToken);
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         var reset = await userManager.ResetPasswordAsync(user, token, request.Password);
@@ -678,7 +617,4 @@ public sealed class AuthenticationService(
                 group => group.Key,
                 group => group.Select(error => error.Description).ToArray(),
                 StringComparer.Ordinal);
-
-    private static string HashOtp(string value) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 }

@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddSingleton<ContactSender>();
         services.AddSingleton<IEmailSender>(provider => provider.GetRequiredService<ContactSender>());
         services.AddScoped<IContactOtpSender>(provider => provider.GetRequiredService<ContactSender>());
+        services.AddScoped<OtpService>();
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
         services.AddScoped<GoogleAuthenticationService>();
