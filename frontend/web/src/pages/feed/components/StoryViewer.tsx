@@ -24,6 +24,13 @@ interface StoryMediaState {
   posterUrl: string | null
 }
 
+interface ReactionMutation {
+  version: number
+  desired: StoryReactionType | null
+  confirmed: Story
+  running: boolean
+}
+
 export default function StoryViewer({
   groups,
   initialAuthorIndex,
@@ -50,6 +57,10 @@ export default function StoryViewer({
   const [viewerCursor, setViewerCursor] = useState<string | null>(null)
   const [isViewerListOpen, setIsViewerListOpen] = useState(false)
   const [isLoadingViewers, setIsLoadingViewers] = useState(false)
+  const [viewerError, setViewerError] = useState<string | null>(null)
+  const viewerRequest = useRef<symbol | null>(null)
+  const reactionMutations = useRef(new Map<string, ReactionMutation>())
+  const [reactionError, setReactionError] = useState<{ storyId: string; message: string } | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const touchStart = useRef<number | null>(null)
   const activeRef = useRef<Story | undefined>(undefined)
@@ -70,7 +81,7 @@ export default function StoryViewer({
   const mediaUrl = currentMedia?.url ?? null
   const mediaReady = currentMedia?.status === 'ready'
   const mediaFailed = currentMedia?.status === 'error' || currentMedia?.status === 'unavailable'
-  const shouldPause = isPaused || isReplyFocused || isSendingReply || documentHidden || !windowFocused || !mediaReady
+  const shouldPause = isPaused || isReplyFocused || isSendingReply || isViewerListOpen || documentHidden || !windowFocused || !mediaReady
 
   useLayoutEffect(() => {
     activeRef.current = active
@@ -84,6 +95,14 @@ export default function StoryViewer({
   useEffect(() => {
     mounted.current = true
     return () => { mounted.current = false }
+  }, [])
+  const publishStory = useCallback((updated: Story) => {
+    // Mirror before React commits so simultaneous view/reaction responses merge into the same snapshot.
+    groupsRef.current = groupsRef.current.map((group) => ({
+      ...group,
+      stories: group.stories.map((story) => story.id === updated.id ? updated : story),
+    }))
+    onStoriesChangedRef.current(updated)
   }, [])
 
   const [playbackKey, setPlaybackKey] = useState(mediaKey)
@@ -100,10 +119,17 @@ export default function StoryViewer({
     setReplyStatus(null)
     setIsReplyFocused(false)
     setIsSendingReply(false)
+    setViewers([])
+    setViewerCursor(null)
+    setIsViewerListOpen(false)
+    setIsLoadingViewers(false)
+    setViewerError(null)
+    setReactionError(null)
   }
   useLayoutEffect(() => {
     replyRequest.current = null
-    return () => { replyRequest.current = null }
+    viewerRequest.current = null
+    return () => { replyRequest.current = null; viewerRequest.current = null }
   }, [activeKey])
 
   const goTo = useCallback((nextAuthorIndex: number, nextStoryIndex: number) => {
@@ -163,9 +189,9 @@ export default function StoryViewer({
     void storiesApi.markViewed(storyId).then(() => {
       viewedStories.current.add(storyId)
       const story = groupsRef.current.flatMap((group) => group.stories).find((item) => item.id === storyId)
-      if (mounted.current && story) onStoriesChangedRef.current({ ...story, isViewed: true })
+      if (mounted.current && story) publishStory({ ...story, isViewed: true })
     }).catch(() => undefined).finally(() => { viewedRequests.current.delete(storyId) })
-  }, [activeKey, mediaReady, active?.canManage, active?.isViewed])
+  }, [activeKey, mediaReady, active?.canManage, active?.isViewed, publishStory])
 
   const nextRef = useRef(next)
   useLayoutEffect(() => { nextRef.current = next }, [next])
@@ -258,13 +284,46 @@ export default function StoryViewer({
   }
 
   const setReaction = async (type: StoryReactionType) => {
+    const storyId = active.id
+    const currentStory = groupsRef.current.flatMap((group) => group.stories).find((story) => story.id === storyId) ?? active
+    const mutation = reactionMutations.current.get(storyId) ?? { version: 0, desired: currentStory.viewerReaction, confirmed: currentStory, running: false }
+    reactionMutations.current.set(storyId, mutation)
+    const selected = mutation.running ? mutation.desired : currentStory.viewerReaction
+    mutation.desired = selected === type ? null : type
+    mutation.version++
+    setReactionError(null)
+    if (mutation.running) return
+    mutation.confirmed = currentStory
+    mutation.running = true
+    const publishReaction = () => {
+      const current = groupsRef.current.flatMap((group) => group.stories).find((story) => story.id === storyId)
+      if (current) publishStory({ ...current, viewerReaction: mutation.confirmed.viewerReaction, reactionCount: mutation.confirmed.reactionCount })
+    }
+    // Serialize writes per story and coalesce queued clicks so the server also keeps the latest intent.
     try {
-      const updated = active.viewerReaction === type
-        ? await storiesApi.removeReaction(active.id).then(() => ({ ...active, viewerReaction: null, reactionCount: Math.max(0, active.reactionCount - 1) }))
-        : await storiesApi.setReaction(active.id, type)
-      onStoriesChanged(updated)
-    } catch {
-      setReplyStatus('Không thể cập nhật phản ứng.')
+      for (;;) {
+        const version = mutation.version
+        const desired = mutation.desired
+        try {
+          const updated = desired === null
+            ? await storiesApi.removeReaction(storyId).then(() => ({
+              ...mutation.confirmed,
+              viewerReaction: null,
+              reactionCount: Math.max(0, mutation.confirmed.reactionCount - (mutation.confirmed.viewerReaction ? 1 : 0)),
+            }))
+            : await storiesApi.setReaction(storyId, desired)
+          mutation.confirmed = updated
+          if (version === mutation.version && mounted.current) publishReaction()
+        } catch {
+          if (version === mutation.version && mounted.current) {
+            publishReaction()
+            if (activeRef.current?.id === storyId) setReactionError({ storyId, message: 'Không thể cập nhật phản ứng.' })
+          }
+        }
+        if (version === mutation.version) break
+      }
+    } finally {
+      mutation.running = false
     }
   }
 
@@ -293,18 +352,38 @@ export default function StoryViewer({
   }
 
   const loadViewers = async (cursor?: string) => {
-    if (!active.canManage || isLoadingViewers) return
+    if (!active.canManage || viewerRequest.current) return
+    const storyId = active.id
+    const request = Symbol()
+    viewerRequest.current = request
+    setIsViewerListOpen(true)
     setIsLoadingViewers(true)
+    setViewerError(null)
+    if (!cursor) {
+      setViewers([])
+      setViewerCursor(null)
+    }
     try {
-      const page = await storiesApi.viewers(active.id, cursor)
+      const page = await storiesApi.viewers(storyId, cursor)
+      if (viewerRequest.current !== request || activeRef.current?.id !== storyId) return
       setViewers((current) => cursor
         ? [...current, ...page.items.filter((item) => !current.some((viewer) => viewer.userId === item.userId))]
         : page.items)
       setViewerCursor(page.nextCursor)
-      setIsViewerListOpen(true)
+    } catch {
+      if (viewerRequest.current === request && activeRef.current?.id === storyId) setViewerError('Không thể tải danh sách người xem.')
     } finally {
-      setIsLoadingViewers(false)
+      if (viewerRequest.current === request) {
+        viewerRequest.current = null
+        setIsLoadingViewers(false)
+      }
     }
+  }
+  const closeViewers = () => {
+    viewerRequest.current = null
+    setIsViewerListOpen(false)
+    setIsLoadingViewers(false)
+    setViewerError(null)
   }
 
   return <div className="fixed inset-0 z-[100] grid bg-black/90 text-white" role="dialog" aria-modal="true" aria-label="Trình xem Story">
@@ -339,18 +418,21 @@ export default function StoryViewer({
         <div className="absolute inset-x-0 bottom-0 z-20 bg-linear-to-t from-black/90 via-black/45 to-transparent px-4 pb-5 pt-24">
           {active.caption && <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed">{active.caption}</p>}
           <div className="flex items-center gap-2">
-            {!active.canManage && <div className="flex rounded-full bg-white/15 p-1">{reactionChoices.map(([type, icon]) => <button key={type} type="button" onClick={() => void setReaction(type)} className={`grid h-8 w-8 place-items-center rounded-full border-0 text-base ${active.viewerReaction === type ? 'bg-white/30' : 'bg-transparent'}`} aria-label={type}>{icon}</button>)}</div>}
+            {!active.canManage && <div className="flex rounded-full bg-white/15 p-1">{reactionChoices.map(([type, icon]) => <button key={type} type="button" onClick={() => void setReaction(type)} className={`grid h-8 w-8 place-items-center rounded-full border-0 text-base ${active.viewerReaction === type ? 'bg-white/30' : 'bg-transparent'}`} aria-label={type} aria-pressed={active.viewerReaction === type}>{icon}</button>)}</div>}
             {active.reactionCount > 0 && <span className="rounded-full bg-white/15 px-3 py-2 text-xs">{active.reactionCount} phản ứng</span>}
             {active.canManage && <button type="button" onClick={() => void loadViewers()} className="ml-auto rounded-full border-0 bg-white/15 px-3 py-2 text-xs text-white">{viewersTitle}</button>}
           </div>
           {!active.canManage && <div className="mt-3 flex gap-2 rounded-full bg-white/15 p-1 pl-4"><input key={activeKey} aria-label="Trả lời Story" value={reply} onFocus={() => setIsReplyFocused(true)} onBlur={() => setIsReplyFocused(false)} maxLength={5000} onChange={(event) => setReply(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void sendReply() }} placeholder="Trả lời qua Zola Light…" className="min-w-0 flex-1 border-0 bg-transparent text-sm text-white outline-none placeholder:text-white/65" /><button type="button" disabled={!reply.trim() || isSendingReply} onClick={() => void sendReply()} className="rounded-full border-0 bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">Gửi</button></div>}
           {replyStatus && <p className="mt-2 text-xs text-white/80">{replyStatus}</p>}
+          {reactionError?.storyId === activeKey && <p role="status" className="mt-2 text-xs text-white/80">{reactionError.message}</p>}
         </div>
       </div>
 
       {isViewerListOpen && <aside className="absolute inset-x-3 bottom-3 z-30 max-h-[55vh] overflow-y-auto rounded-xl border border-white/20 bg-[#17181b]/95 p-3 shadow-2xl sm:left-auto sm:right-6 sm:w-80">
-        <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold">Người đã xem</h2><button type="button" onClick={() => setIsViewerListOpen(false)} className="border-0 bg-transparent text-white/80">×</button></div>
-        {viewers.length === 0 && !isLoadingViewers && <p className="py-4 text-center text-sm text-white/70">Chưa có lượt xem.</p>}
+        <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold">Người đã xem</h2><button type="button" onClick={closeViewers} aria-label="Đóng danh sách người xem" className="border-0 bg-transparent text-white/80 focus-visible:outline-2 focus-visible:outline-white">×</button></div>
+        {isLoadingViewers && <p role="status" className="py-2 text-center text-sm text-white/70">Đang tải người xem…</p>}
+        {viewerError && <div role="status" className="py-2 text-center text-sm text-white/70"><p>{viewerError}</p><button type="button" onClick={() => void loadViewers(viewerCursor ?? undefined)} className="mt-2 rounded-lg bg-white/10 px-3 py-2 focus-visible:outline-2 focus-visible:outline-white">Thử lại</button></div>}
+        {viewers.length === 0 && !isLoadingViewers && !viewerError && <p className="py-4 text-center text-sm text-white/70">Chưa có lượt xem.</p>}
         <div className="space-y-2">{viewers.map((viewer) => <div key={viewer.userId} className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[10px] font-bold">{viewer.displayName.slice(0, 2).toUpperCase()}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm">{viewer.displayName}</span><span className="block text-xs text-white/60">@{viewer.username}</span></span>{viewer.reactionType && <span>{reactionChoices.find(([type]) => type === viewer.reactionType)?.[1]}</span>}</div>)}</div>
         {viewerCursor && <button type="button" disabled={isLoadingViewers} onClick={() => void loadViewers(viewerCursor)} className="mt-3 w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs text-white">Tải thêm</button>}
       </aside>}
