@@ -26,7 +26,7 @@ public sealed class MessagesService(
     PushNotificationService pushNotifications)
 {
     private const int MaximumLimit = 100;
-    private const int MaximumContentLength = 5_000;
+    public const int MaximumContentLength = 5_000;
     private const int MaximumCursorLength = 256;
     private const int MaximumAttachmentCount = 10;
     private const int MaximumGroupSize = 50;

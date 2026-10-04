@@ -34,7 +34,7 @@ public sealed class StoriesService(
         Guid actorUserId,
         Guid mediaId,
         string? caption,
-        string privacy,
+        string? privacy,
         CancellationToken cancellationToken = default)
     {
         if (caption?.Trim().Length > Story.MaximumCaptionLength)
@@ -245,7 +245,7 @@ public sealed class StoriesService(
     public async Task<ApplicationResult<StoryResponse>> SetReactionAsync(
         Guid actorUserId,
         Guid storyId,
-        string reactionType,
+        string? reactionType,
         CancellationToken cancellationToken = default)
     {
         if (!TryParseReaction(reactionType, out var parsedReaction))

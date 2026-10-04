@@ -4,9 +4,11 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Messages.Services;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Stories.Domain.Enums;
@@ -59,6 +61,105 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
             using var response = await client.SendAsync(request);
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
+    }
+
+    [Theory]
+    [InlineData("", "Privacy", "Quyền riêng tư của story là bắt buộc.")]
+    [InlineData("/reply", "Content", "Nội dung trả lời story là bắt buộc.")]
+    [InlineData("/reaction", "Type", "Loại cảm xúc là bắt buộc.")]
+    public async Task Story_requests_reject_missing_or_blank_required_fields(
+        string suffix, string field, string message)
+    {
+        using var client = CreateAuthenticatedClient((await CreateUsersAsync(1))[0]);
+        var path = suffix.Length == 0 ? "/api/stories" : $"/api/stories/{Guid.NewGuid()}{suffix}";
+        foreach (var value in new string?[] { null, string.Empty, "   " })
+        {
+            var request = new Dictionary<string, object?>
+            {
+                ["MediaId"] = Guid.NewGuid(),
+                ["Privacy"] = "public",
+                ["Content"] = "A reply",
+                ["Type"] = "like"
+            };
+            if (value is null) request.Remove(field);
+            else request[field] = value;
+            using var response = await client.PostAsJsonAsync(path, request);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal("validation_failed", body.RootElement.GetProperty("code").GetString());
+            Assert.Equal(message, Assert.Single(body.RootElement.GetProperty("errors")
+                .GetProperty(field).EnumerateArray()).GetString());
+        }
+    }
+
+    [Fact]
+    public async Task Story_creation_requires_a_non_empty_media_id()
+    {
+        using var client = CreateAuthenticatedClient((await CreateUsersAsync(1))[0]);
+        foreach (var omitted in new[] { true, false })
+        {
+            var request = new Dictionary<string, object?> { ["Privacy"] = "public" };
+            if (!omitted) request["MediaId"] = Guid.Empty;
+            using var response = await client.PostAsJsonAsync("/api/stories", request);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal("Media là bắt buộc.", Assert.Single(body.RootElement.GetProperty("errors")
+                .GetProperty("MediaId").EnumerateArray()).GetString());
+        }
+    }
+
+    [Fact]
+    public async Task Story_text_limits_use_trimmed_length_and_validate_before_writing()
+    {
+        var users = await CreateUsersAsync(2);
+        var mediaId = await CreateReadyMediaAsync(users[0], MediaType.IMAGE);
+        await CreateFriendshipAsync(users[0], users[1]);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        using var friend = CreateAuthenticatedClient(users[1]);
+        using var invalidCaption = await owner.PostAsJsonAsync("/api/stories", new
+        {
+            mediaId,
+            caption = " " + new string('a', Story.MaximumCaptionLength + 1) + " ",
+            privacy = "public"
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidCaption.StatusCode);
+        using (var body = JsonDocument.Parse(await invalidCaption.Content.ReadAsStringAsync()))
+        {
+            Assert.True(body.RootElement.GetProperty("errors").TryGetProperty("Caption", out _));
+        }
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            Assert.False(await db.Stories.AnyAsync(item => item.AuthorUserId == users[0]));
+        }
+
+        var story = await CreateStoryAsync(owner, mediaId,
+            " " + new string('a', Story.MaximumCaptionLength) + " ", " PUBLIC ");
+        Assert.Equal(new string('a', Story.MaximumCaptionLength), story.Caption);
+        using var invalidReply = await friend.PostAsJsonAsync($"/api/stories/{story.Id}/reply", new
+        {
+            content = " " + new string('a', MessagesService.MaximumContentLength + 1) + " "
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidReply.StatusCode);
+        using (var body = JsonDocument.Parse(await invalidReply.Content.ReadAsStringAsync()))
+        {
+            Assert.True(body.RootElement.GetProperty("errors").TryGetProperty("Content", out _));
+        }
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            Assert.False(await db.Messages.AnyAsync(item => item.StoryId == story.Id));
+        }
+
+        using var validReply = await friend.PostAsJsonAsync($"/api/stories/{story.Id}/reply", new
+        {
+            content = " " + new string('a', MessagesService.MaximumContentLength) + " "
+        });
+        Assert.Equal(HttpStatusCode.Created, validReply.StatusCode);
+        var reply = await ReadAsync<Fookbase.Api.Modules.Messages.DTOs.Responses.MessageResponse>(validReply);
+        Assert.Equal(new string('a', MessagesService.MaximumContentLength), reply.Content);
     }
 
     [Fact]
