@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type AriaRole } from 'react'
+import { createPortal } from 'react-dom'
 import { ApiError } from '../../api/client'
 import { reportsApi, type ReportReason } from '../../api/reports'
 import { usePreferences } from '../../preferences'
@@ -9,9 +10,10 @@ interface ReportButtonProps {
   targetType: ReportTargetType
   targetId: string
   className?: string
+  role?: AriaRole
 }
 
-export default function ReportButton({ targetType, targetId, className = '' }: ReportButtonProps) {
+export default function ReportButton({ targetType, targetId, className = '', role }: ReportButtonProps) {
   const { t } = usePreferences()
   const reasons: { value: ReportReason; label: string }[] = [
     { value: 'spam', label: t('spam') }, { value: 'harassment', label: t('harassment') },
@@ -49,6 +51,7 @@ export default function ReportButton({ targetType, targetId, className = '' }: R
   return (
     <>
       <button
+        role={role}
         type="button"
         onClick={() => setIsOpen(true)}
         disabled={hasReported}
@@ -57,7 +60,7 @@ export default function ReportButton({ targetType, targetId, className = '' }: R
         {hasReported ? t('reported') : t('report')}
       </button>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/65 p-4" role="presentation" onMouseDown={() => !isSubmitting && setIsOpen(false)}>
           <form onSubmit={(event) => void submit(event)} onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="report-title" className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
@@ -84,7 +87,7 @@ export default function ReportButton({ targetType, targetId, className = '' }: R
             </div>
           </form>
         </div>
-      )}
+      , document.body)}
     </>
   )
 }
