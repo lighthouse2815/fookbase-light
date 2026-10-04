@@ -4,7 +4,7 @@ import { ApiError } from '../../api/client'
 import { mediaApi, type Media } from '../../api/media'
 import { postsApi, type Comment } from '../../api/posts'
 import { reelsApi, type Reel, type ReelFeedMode } from '../../api/reels'
-import { resolveProfileImageUrl, usersApi } from '../../api/users'
+import { resolveProfileImageUrl, usersApi, type UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
 import TextWithReferences from '../../shared/components/TextWithReferences'
@@ -45,8 +45,10 @@ function ReelAction({ label, count, active, onClick, children, buttonRef, expand
 }
 
 export default function ReelsPage() {
+  const { session } = useAuth()
   const [searchParams] = useSearchParams()
   const requestedReelId = searchParams.get('reel')
+  const [viewerProfile, setViewerProfile] = useState<UserProfile>()
   const [reels, setReels] = useState<Reel[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -56,6 +58,18 @@ export default function ReelsPage() {
   const [error, setError] = useState<string | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+  const currentUserProfile = viewerProfile?.userId === session?.user.id ? viewerProfile : undefined
+
+  useEffect(() => {
+    if (!session?.user.id) return
+    let isCurrent = true
+    void usersApi.getCurrent()
+      .then((profile) => {
+        if (isCurrent) setViewerProfile(profile)
+      })
+      .catch(() => undefined)
+    return () => { isCurrent = false }
+  }, [session?.user.id])
 
   const load = useCallback(async (cursor?: string, append = false) => {
     if (append) setIsLoadingMore(true)
@@ -121,6 +135,7 @@ export default function ReelsPage() {
           <ReelCard
             key={reel.id}
             reel={reel}
+            currentUserProfile={currentUserProfile}
             active={activeIndex === index}
             shouldPreload={Math.abs(activeIndex - index) <= 1}
             index={index}
@@ -141,8 +156,9 @@ export default function ReelsPage() {
   )
 }
 
-function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }: {
+function ReelCard({ reel, currentUserProfile, active, shouldPreload, index, onActivate, onUpdated }: {
   reel: Reel
+  currentUserProfile?: UserProfile
   active: boolean
   shouldPreload: boolean
   index: number
@@ -352,7 +368,7 @@ function ReelCard({ reel, active, shouldPreload, index, onActivate, onUpdated }:
             {!isLoadingComments && !commentsError && comments.length === 0 && <p className="py-8 text-center text-sm text-text-muted">{t('noCommentsYet')}</p>}
           </div>
           {commentSaveError && <p role="alert" className="px-4 pb-2 text-sm text-danger">{commentSaveError}</p>}
-          <CommentComposer currentUserName={session?.user.username ?? t('user')} value={commentText} placeholder={t('writeComment')} sendLabel={isSavingComment ? t('sending') : t('send')} isSubmitting={isSavingComment} onChange={(event) => setCommentText(event.target.value)} onSubmit={(event) => { event.preventDefault(); void submitComment() }} />
+          <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserProfile?.displayName ?? session?.user.username ?? t('user')} value={commentText} placeholder={t('writeComment')} sendLabel={isSavingComment ? t('sending') : t('send')} isSubmitting={isSavingComment} onChange={(event) => setCommentText(event.target.value)} onSubmit={(event) => { event.preventDefault(); void submitComment() }} />
         </aside>
       </div>
       </div>
