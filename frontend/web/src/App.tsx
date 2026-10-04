@@ -3,6 +3,7 @@ import { AuthProvider } from './auth/AuthProvider'
 import { RealtimeProvider } from './realtime/RealtimeProvider'
 import { router } from './routes'
 import { PreferencesProvider } from './preferences'
+import ToastViewport from './shared/components/ToastViewport'
 import './App.css'
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
       <AuthProvider>
         <RealtimeProvider>
           <RouterProvider router={router} />
+          <ToastViewport />
         </RealtimeProvider>
       </AuthProvider>
     </PreferencesProvider>

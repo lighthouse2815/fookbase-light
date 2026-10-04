@@ -17,6 +17,8 @@ import { getPostBackgroundClass } from './postBackgrounds'
 import { CommentComposer, DiscussionList } from './PostDiscussion'
 import { reactionChoices } from './reactionChoices'
 import type { ReactionType } from './reactionChoices'
+import { usePostInteractions } from './usePostInteractions'
+import { showToast } from '../../../shared/toastState'
 
 interface LivePostCardProps {
   post: Post
@@ -295,6 +297,7 @@ export default function LivePostCard({
   allowProfilePin = false,
 }: LivePostCardProps) {
   const { t } = usePreferences()
+  const { state: interactionState, viewerReaction, reactionCounts } = usePostInteractions(post, currentUserId)
   const [comments, setComments] = useState<Comment[]>([])
   const [commentsTotal, setCommentsTotal] = useState(0)
   const [commentsOffset, setCommentsOffset] = useState(0)
@@ -312,7 +315,6 @@ export default function LivePostCard({
   const [media, setMedia] = useState<MediaAccess[]>([])
   const [isSaved, setIsSaved] = useState(post.viewerHasSaved)
   const [isSavingPost, setIsSavingPost] = useState(false)
-  const [postActionNotice, setPostActionNotice] = useState<string | null>(null)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false)
   const [isMediaVisible, setIsMediaVisible] = useState(false)
@@ -478,27 +480,8 @@ export default function LivePostCard({
     setSelectedPhoto(null)
   }
 
-  const toggleDefaultReaction = async () => {
-    try {
-      const updatedPost = post.viewerReaction
-        ? await postsApi.removeReaction(post.id)
-        : await postsApi.setReaction(post.id, 'like')
-      onPostUpdated(updatedPost)
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReaction'))
-    }
-  }
-
-  const setReaction = async (type: ReactionType) => {
-    try {
-      const updatedPost = post.viewerReaction === type
-        ? await postsApi.removeReaction(post.id)
-        : await postsApi.setReaction(post.id, type)
-      onPostUpdated(updatedPost)
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReaction'))
-    }
-  }
+  const toggleDefaultReaction = interactionState.toggleReaction
+  const setReaction = interactionState.selectReaction
 
   const createComment = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -591,7 +574,7 @@ export default function LivePostCard({
         mediaIds: post.mediaIds,
       }))
       setEditingPostPrivacy(null)
-      setPostActionNotice('Đã cập nhật đối tượng xem bài viết.')
+      showToast('Đã cập nhật đối tượng xem bài viết.', 'success')
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableEditPost'))
     }
@@ -616,7 +599,7 @@ export default function LivePostCard({
       else await postsApi.save(post.id)
       setIsSaved(!wasSaved)
       onPostUpdated({ ...post, viewerHasSaved: !wasSaved })
-      setPostActionNotice(wasSaved ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết.')
+      showToast(wasSaved ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết.', 'success')
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật bài viết đã lưu.')
     } finally {
@@ -631,20 +614,13 @@ export default function LivePostCard({
     try {
       const updatedPost = post.isPinned ? await postsApi.unpin(post.id) : await postsApi.pin(post.id)
       onPostUpdated(updatedPost)
-      setPostActionNotice(updatedPost.isPinned ? 'Đã ghim bài viết trên trang cá nhân.' : 'Đã bỏ ghim bài viết.')
+      showToast(updatedPost.isPinned ? 'Đã ghim bài viết trên trang cá nhân.' : 'Đã bỏ ghim bài viết.', 'success')
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật trạng thái ghim bài viết.')
     } finally {
       setIsUpdatingPostPin(false)
     }
   }
-
-  useEffect(() => {
-    if (!postActionNotice) return
-
-    const timeoutId = window.setTimeout(() => setPostActionNotice(null), 3_000)
-    return () => window.clearTimeout(timeoutId)
-  }, [postActionNotice])
 
   return (
     <>
@@ -703,11 +679,11 @@ export default function LivePostCard({
       {error && <p className="px-4 pt-3 text-xs text-[#ff8a9b]">{error}</p>}
 
       <div className="mx-4 flex min-h-11 items-center justify-between gap-3 border-b border-border text-[13px] text-text-muted">
-        <ReactionSummary reactionCounts={post.reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
+        <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
         <span className="flex gap-2"><button type="button" onClick={openCommentsDialog} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{post.commentCount > 0 ? `${post.commentCount} ${t('comments')}` : ''}</button>{post.shareCount > 0 && <span>{post.shareCount} lượt chia sẻ</span>}</span>
       </div>
       <div className="mx-2 grid grid-cols-3 gap-1 py-1">
-        <ReactionPicker viewerReaction={post.viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
+        <ReactionPicker viewerReaction={viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
         <button type="button" onClick={openCommentsDialog} className="flex items-center justify-center gap-2 rounded-lg border-0 bg-transparent py-2 text-sm font-semibold text-text-muted transition-colors hover:bg-surface-2">
           <CommentIcon />{t('comment')}
         </button>
@@ -717,8 +693,7 @@ export default function LivePostCard({
       </div>
       {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} onShared={() => onPostUpdated({ ...post, shareCount: post.shareCount + 1 })} />}
     </article>
-    {postActionNotice && createPortal(<p role="status" className="fixed bottom-5 right-5 z-50 rounded-xl bg-[#1c1e21] px-4 py-3 text-sm font-semibold text-white shadow-2xl">{postActionNotice}</p>, document.body)}
-    {isReactionDialogOpen && <ReactionDialog key={post.id} postId={post.id} reactionCounts={post.reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
+    {isReactionDialogOpen && <ReactionDialog key={post.id} postId={post.id} reactionCounts={reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
     {isCommentsDialogOpen && createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
         <section role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
@@ -743,11 +718,11 @@ export default function LivePostCard({
                 </div>
               )}
               <div className="flex items-center justify-between px-4 py-2 text-[13px] text-text-muted">
-                <ReactionSummary reactionCounts={post.reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
+                <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
                 <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
               </div>
               <div className="grid grid-cols-3 border-t border-border px-2 py-1">
-                <ReactionPicker viewerReaction={post.viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
+                <ReactionPicker viewerReaction={viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
                 <span className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-text-muted"><CommentIcon />{t('comment')}</span>
                 <button type="button" onClick={() => { setIsCommentsDialogOpen(false); setIsShareOpen(true) }} className="flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-text-muted hover:bg-surface-2"><ShareIcon />{t('share')}</button>
               </div>
@@ -783,11 +758,11 @@ export default function LivePostCard({
           </header>
 
           <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[13px] text-text-muted">
-            <ReactionSummary reactionCounts={post.reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
+            <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
             <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
           </div>
           <div className="grid grid-cols-3 border-b border-border px-2 py-1">
-            <ReactionPicker viewerReaction={post.viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
+            <ReactionPicker viewerReaction={viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
             <span className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-text-muted"><CommentIcon />{t('comment')}</span>
             <button type="button" onClick={() => { closeDiscussion(); setIsShareOpen(true) }} className="flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-text-muted hover:bg-surface-2"><ShareIcon />{t('share')}</button>
           </div>
