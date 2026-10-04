@@ -4,8 +4,8 @@ namespace Fookbase.Api.Modules.Pages.Entities;
 
 public enum PageStatus
 {
-    Published,
-    Unpublished
+    PUBLISHED,
+    UNPUBLISHED
 }
 
 public sealed partial class Page
@@ -29,7 +29,7 @@ public sealed partial class Page
         Category = NormalizeCategory(category);
         Bio = NormalizeBio(bio);
         CreatedByUserId = createdByUserId;
-        Status = PageStatus.Unpublished;
+        Status = PageStatus.UNPUBLISHED;
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -71,14 +71,14 @@ public sealed partial class Page
     public void Publish(DateTimeOffset updatedAtUtc)
     {
         EnsureActive();
-        Status = PageStatus.Published;
+        Status = PageStatus.PUBLISHED;
         UpdatedAtUtc = updatedAtUtc;
     }
 
     public void Unpublish(DateTimeOffset updatedAtUtc)
     {
         EnsureActive();
-        Status = PageStatus.Unpublished;
+        Status = PageStatus.UNPUBLISHED;
         UpdatedAtUtc = updatedAtUtc;
     }
 

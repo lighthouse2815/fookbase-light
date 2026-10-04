@@ -2,6 +2,6 @@ namespace Fookbase.Api.Modules.Users.Domain.Enums;
 
 public enum FriendRequestPolicy
 {
-    Everyone,
-    FriendsOfFriends
+    EVERYONE,
+    FRIENDS_OF_FRIENDS
 }

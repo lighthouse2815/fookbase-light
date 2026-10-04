@@ -97,7 +97,7 @@ public sealed class StoriesService(
                 (story.AuthorUserId == viewerUserId ||
                  (!blockedUserIds.Contains(story.AuthorUserId) &&
                   friendUserIds.Contains(story.AuthorUserId) &&
-                  (story.Privacy == PostPrivacy.Public || story.Privacy == PostPrivacy.Friends))))
+                  (story.Privacy == PostPrivacy.PUBLIC || story.Privacy == PostPrivacy.FRIENDS))))
             .OrderBy(story => story.CreatedAtUtc)
             .ThenBy(story => story.Id)
             .ToListAsync(cancellationToken);
@@ -282,8 +282,8 @@ public sealed class StoriesService(
         var notification = await notificationService.QueueAsync(
             story.AuthorUserId,
             actorUserId,
-            NotificationType.StoryReaction,
-            NotificationEntityType.Story,
+            NotificationType.STORY_REACTION,
+            NotificationEntityType.STORY,
             story.Id,
             cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -458,7 +458,7 @@ public sealed class StoriesService(
         var authorIds = stories.Select(story => story.AuthorUserId).Distinct().ToArray();
         var mediaIds = stories.Select(story => story.MediaId).Distinct().ToArray();
         var media = await dbContext.MediaAssets.AsNoTracking()
-            .Where(asset => mediaIds.Contains(asset.Id) && asset.Status == MediaStatus.Ready &&
+            .Where(asset => mediaIds.Contains(asset.Id) && asset.Status == MediaStatus.READY &&
                             asset.DeletedAtUtc == null)
             .ToDictionaryAsync(asset => asset.Id, cancellationToken);
         var profiles = await LoadProfilesAsync(authorIds, cancellationToken);
@@ -494,7 +494,7 @@ public sealed class StoriesService(
                 continue;
             }
 
-            if (asset.MediaType == MediaType.Video &&
+            if (asset.MediaType == MediaType.VIDEO &&
                 (string.IsNullOrWhiteSpace(asset.ProcessedObjectKey) ||
                  string.IsNullOrWhiteSpace(asset.PosterObjectKey)))
             {
@@ -514,12 +514,12 @@ public sealed class StoriesService(
                 new StoryMediaResponse(
                     asset.Id,
                     asset.MediaType.ToString().ToLowerInvariant(),
-                    asset.MediaType == MediaType.Video ? "video/mp4" : asset.ContentType,
+                    asset.MediaType == MediaType.VIDEO ? "video/mp4" : asset.ContentType,
                     asset.DurationMs,
                     asset.Width,
                     asset.Height,
                     $"/api/stories/{story.Id}/media/access",
-                    asset.MediaType == MediaType.Video
+                    asset.MediaType == MediaType.VIDEO
                         ? $"/api/stories/{story.Id}/media/poster/access"
                         : null),
                 !canManage && viewedStoryIds.Contains(story.Id),
@@ -587,8 +587,8 @@ public sealed class StoriesService(
             return false;
         }
 
-        return story.Privacy == PostPrivacy.Public ||
-               (story.Privacy == PostPrivacy.Friends &&
+        return story.Privacy == PostPrivacy.PUBLIC ||
+               (story.Privacy == PostPrivacy.FRIENDS &&
                 access.FriendUserIds.Contains(story.AuthorUserId));
     }
 
@@ -596,9 +596,9 @@ public sealed class StoriesService(
     {
         privacy = value?.Trim().ToLowerInvariant() switch
         {
-            "public" => PostPrivacy.Public,
-            "friends" => PostPrivacy.Friends,
-            "onlyme" => PostPrivacy.OnlyMe,
+            "public" => PostPrivacy.PUBLIC,
+            "friends" => PostPrivacy.FRIENDS,
+            "onlyme" => PostPrivacy.ONLY_ME,
             _ => (PostPrivacy)(-1)
         };
         return Enum.IsDefined(privacy);
@@ -608,12 +608,12 @@ public sealed class StoriesService(
     {
         reaction = value?.Trim().ToLowerInvariant() switch
         {
-            "like" => StoryReactionType.Like,
-            "love" => StoryReactionType.Love,
-            "haha" => StoryReactionType.Haha,
-            "wow" => StoryReactionType.Wow,
-            "sad" => StoryReactionType.Sad,
-            "angry" => StoryReactionType.Angry,
+            "like" => StoryReactionType.LIKE,
+            "love" => StoryReactionType.LOVE,
+            "haha" => StoryReactionType.HAHA,
+            "wow" => StoryReactionType.WOW,
+            "sad" => StoryReactionType.SAD,
+            "angry" => StoryReactionType.ANGRY,
             _ => (StoryReactionType)(-1)
         };
         return Enum.IsDefined(reaction);
@@ -621,8 +621,8 @@ public sealed class StoriesService(
 
     private static string ToPrivacyString(PostPrivacy privacy) => privacy switch
     {
-        PostPrivacy.Public => "public",
-        PostPrivacy.Friends => "friends",
+        PostPrivacy.PUBLIC => "public",
+        PostPrivacy.FRIENDS => "friends",
         _ => "onlyMe"
     };
 
@@ -630,7 +630,7 @@ public sealed class StoriesService(
     {
         error = limit is < 1 or > MaximumPageSize
             ? new ApplicationError(ErrorCode.InvalidPagination,
-                $"Limit must be between 1 and {MaximumPageSize}.", ApplicationErrorType.Validation)
+                $"Limit must be between 1 and {MaximumPageSize}.", ApplicationErrorType.VALIDATION)
             : null;
         return error is null;
     }
@@ -662,22 +662,22 @@ public sealed class StoriesService(
         .Replace('/', '_');
 
     private static ApplicationResult NotFound() => ApplicationResult.Failure(new ApplicationError(
-        "story_not_found", "The story was not found.", ApplicationErrorType.NotFound));
+        "story_not_found", "The story was not found.", ApplicationErrorType.NOT_FOUND));
 
     private static ApplicationResult<T> NotFound<T>() => ApplicationResult<T>.Failure(new ApplicationError(
-        "story_not_found", "The story was not found.", ApplicationErrorType.NotFound));
+        "story_not_found", "The story was not found.", ApplicationErrorType.NOT_FOUND));
 
     private static ApplicationResult Validation(string code, string message) => ApplicationResult.Failure(
-        new ApplicationError(code, message, ApplicationErrorType.Validation));
+        new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
 
     private static ApplicationResult<T> Validation<T>(string code, string message) => ApplicationResult<T>.Failure(
-        new ApplicationError(code, message, ApplicationErrorType.Validation));
+        new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
 
     private static ApplicationResult Forbidden(string code, string message) => ApplicationResult.Failure(
-        new ApplicationError(code, message, ApplicationErrorType.Forbidden));
+        new ApplicationError(code, message, ApplicationErrorType.FORBIDDEN));
 
     private static ApplicationResult<T> Forbidden<T>(string code, string message) => ApplicationResult<T>.Failure(
-        new ApplicationError(code, message, ApplicationErrorType.Forbidden));
+        new ApplicationError(code, message, ApplicationErrorType.FORBIDDEN));
 
     private sealed record StoryAccessContext(
         Guid ViewerUserId,

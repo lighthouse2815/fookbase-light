@@ -29,13 +29,13 @@ internal sealed class CloudinaryObjectStorage(
             Encoding.UTF8.GetBytes(signatureSource + options.ApiSecret))).ToLowerInvariant();
         fields["api_key"] = options.ApiKey;
         fields["signature"] = signature;
-        var resourceType = mediaType == MediaType.Video ? "video" : "image";
+        var resourceType = mediaType == MediaType.VIDEO ? "video" : "image";
         return Task.FromResult(new DirectUploadIntent(
             $"https://api.cloudinary.com/v1_1/{options.CloudName}/{resourceType}/upload", fields));
     }
 
     public string CreateSignedGetUrl(string objectKey, MediaType mediaType) =>
-        (mediaType == MediaType.Video ? cloudinary.Api.UrlVideoUp : cloudinary.Api.UrlImgUp)
+        (mediaType == MediaType.VIDEO ? cloudinary.Api.UrlVideoUp : cloudinary.Api.UrlImgUp)
             .Secure(true).Type("authenticated").Signed(true)
             .Format(Path.GetExtension(objectKey).TrimStart('.'))
             .BuildUrl(objectKey);
@@ -81,7 +81,7 @@ internal sealed class CloudinaryObjectStorage(
     public async Task UploadFileAsync(string objectKey, MediaType mediaType, string sourcePath, string contentType,
         CancellationToken cancellationToken = default)
     {
-        if (mediaType == MediaType.Video)
+        if (mediaType == MediaType.VIDEO)
             await cloudinary.UploadAsync(new VideoUploadParams { File = new FileDescription(sourcePath), PublicId = objectKey, Type = "authenticated", Overwrite = true }, cancellationToken);
         else
             await cloudinary.UploadAsync(new ImageUploadParams { File = new FileDescription(sourcePath), PublicId = objectKey, Type = "authenticated", Overwrite = true }, cancellationToken);
@@ -97,5 +97,5 @@ internal sealed class CloudinaryObjectStorage(
     }
 
     private static ResourceType ToResourceType(MediaType mediaType) =>
-        mediaType == MediaType.Video ? ResourceType.Video : ResourceType.Image;
+        mediaType == MediaType.VIDEO ? ResourceType.Video : ResourceType.Image;
 }

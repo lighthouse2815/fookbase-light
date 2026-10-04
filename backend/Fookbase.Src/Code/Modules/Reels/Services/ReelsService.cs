@@ -89,8 +89,8 @@ public sealed class ReelsService(
         var viewer = await CreateViewerContextAsync(viewerUserId, cancellationToken);
         var reel = await ReelMediaQuery.ApplyReadyMedia(dbContext.Posts.AsNoTracking(), dbContext)
             .SingleOrDefaultAsync(
-            post => post.Id == reelId && post.PostType == PostType.Reel &&
-                    post.ContainerType == PostContainerType.Profile && post.DeletedAtUtc == null,
+            post => post.Id == reelId && post.PostType == PostType.REEL &&
+                    post.ContainerType == PostContainerType.PROFILE && post.DeletedAtUtc == null,
             cancellationToken);
         if (reel is null || !PostVisibility.CanDirectlyAccess(reel, viewer))
         {
@@ -133,8 +133,8 @@ public sealed class ReelsService(
         var viewer = await CreateRequiredViewerContextAsync(viewerUserId, cancellationToken);
         var query = ReelMediaQuery.ApplyReadyMedia(
             PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer), dbContext)
-            .Where(post => post.PostType == PostType.Reel);
-        if (feedMode == ReelFeedMode.Following)
+            .Where(post => post.PostType == PostType.REEL);
+        if (feedMode == ReelFeedMode.FOLLOWING)
         {
             var followingUserIds = dbContext.UserFollows.AsNoTracking()
                 .Where(follow => follow.FollowerUserId == viewerUserId)
@@ -143,7 +143,7 @@ public sealed class ReelsService(
         }
         List<Post> reels;
         string? nextCursor;
-        if (feedMode == ReelFeedMode.ForYou)
+        if (feedMode == ReelFeedMode.FOR_YOU)
         {
             var followedAuthorIds = dbContext.UserFollows.AsNoTracking()
                 .Where(follow => follow.FollowerUserId == viewerUserId)
@@ -220,8 +220,8 @@ public sealed class ReelsService(
     {
         var viewer = await CreateRequiredViewerContextAsync(viewerUserId, cancellationToken);
         var reel = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
-            post => post.Id == reelId && post.PostType == PostType.Reel &&
-                    post.ContainerType == PostContainerType.Profile && post.DeletedAtUtc == null,
+            post => post.Id == reelId && post.PostType == PostType.REEL &&
+                    post.ContainerType == PostContainerType.PROFILE && post.DeletedAtUtc == null,
             cancellationToken);
         if (reel is null || !PostVisibility.CanDirectlyAccess(reel, viewer))
         {
@@ -265,8 +265,8 @@ public sealed class ReelsService(
 
         var viewer = await CreateRequiredViewerContextAsync(viewerUserId, cancellationToken);
         var reel = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
-            post => post.Id == reelId && post.PostType == PostType.Reel &&
-                    post.ContainerType == PostContainerType.Profile && post.DeletedAtUtc == null,
+            post => post.Id == reelId && post.PostType == PostType.REEL &&
+                    post.ContainerType == PostContainerType.PROFILE && post.DeletedAtUtc == null,
             cancellationToken);
         if (reel is null || !PostVisibility.CanDirectlyAccess(reel, viewer))
         {
@@ -366,7 +366,7 @@ public sealed class ReelsService(
                 .ToListAsync(cancellationToken))
                 .ToHashSet();
         var mentionRows = await dbContext.ContentMentions.AsNoTracking()
-            .Where(mention => mention.SourceType == MentionSourceType.Post && reelIds.Contains(mention.SourceId))
+            .Where(mention => mention.SourceType == MentionSourceType.POST && reelIds.Contains(mention.SourceId))
             .Select(mention => new MentionRow(
                 mention.SourceId,
                 mention.MentionedUserId,
@@ -476,14 +476,14 @@ public sealed class ReelsService(
     }
 
     private static bool TryParsePrivacy(string privacy, out PostPrivacy parsedPrivacy) =>
-        Enum.TryParse(privacy, true, out parsedPrivacy) && Enum.IsDefined(parsedPrivacy);
+        EnumText.TryParse(privacy, true, out parsedPrivacy) && Enum.IsDefined(parsedPrivacy);
 
     private static bool TryParseFeedMode(string? value, out ReelFeedMode mode)
     {
         mode = value?.ToLowerInvariant() switch
         {
-            null or "" or "foryou" => ReelFeedMode.ForYou,
-            "following" => ReelFeedMode.Following,
+            null or "" or "foryou" => ReelFeedMode.FOR_YOU,
+            "following" => ReelFeedMode.FOLLOWING,
             _ => default,
         };
         return string.IsNullOrWhiteSpace(value) ||
@@ -493,9 +493,9 @@ public sealed class ReelsService(
 
     private static string PrivacyName(PostPrivacy privacy) => privacy switch
     {
-        PostPrivacy.Public => "public",
-        PostPrivacy.Friends => "friends",
-        PostPrivacy.OnlyMe => "onlyMe",
+        PostPrivacy.PUBLIC => "public",
+        PostPrivacy.FRIENDS => "friends",
+        PostPrivacy.ONLY_ME => "onlyMe",
         _ => throw new ArgumentOutOfRangeException(nameof(privacy), privacy, null)
     };
 
@@ -535,18 +535,18 @@ public sealed class ReelsService(
     }
 
     private static ApplicationResult<T> Validation<T>(string code, string message) =>
-        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
+        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
 
     private static ApplicationResult Validation(string code, string message) =>
-        ApplicationResult.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
+        ApplicationResult.Failure(new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
 
     private static ApplicationResult<T> NotFound<T>() =>
         ApplicationResult<T>.Failure(new ApplicationError(
-            "reel_not_found", "The reel was not found.", ApplicationErrorType.NotFound));
+            "reel_not_found", "The reel was not found.", ApplicationErrorType.NOT_FOUND));
 
     private static ApplicationResult NotFound() =>
         ApplicationResult.Failure(new ApplicationError(
-            "reel_not_found", "The reel was not found.", ApplicationErrorType.NotFound));
+            "reel_not_found", "The reel was not found.", ApplicationErrorType.NOT_FOUND));
 
     private sealed record ReelCursor(int Score, DateTimeOffset CreatedAtUtc, Guid Id);
     private sealed record ReelMediaRow(Guid PostId, Guid MediaId, long DurationMs, int Width, int Height);
@@ -556,5 +556,5 @@ public sealed class ReelsService(
     private sealed record ReactionRow(Guid PostId, ReactionType Type, int Count);
     private sealed record ViewCountRow(Guid ReelPostId, long ViewCount, long CompletionCount);
     private sealed record MentionRow(Guid SourceId, Guid UserId, int StartIndex, int Length);
-    private enum ReelFeedMode { ForYou, Following }
+    private enum ReelFeedMode { FOR_YOU, FOLLOWING }
 }

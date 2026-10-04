@@ -24,7 +24,7 @@ public sealed class PostMediaAtomicityTests
         var media = MediaAsset.CreatePending(
             mediaId,
             authorUserId,
-            MediaType.Image,
+            MediaType.IMAGE,
             $"{authorUserId:N}/{mediaId:N}.png",
             "photo.png",
             "image/png",
@@ -72,7 +72,7 @@ public sealed class PostMediaAtomicityTests
             Guid.NewGuid(),
             authorUserId,
             "atomic notification",
-            PostPrivacy.Public,
+            PostPrivacy.PUBLIC,
             DateTimeOffset.UtcNow);
         dbContext.Posts.Add(post);
         await dbContext.SaveChangesAsync();
@@ -98,7 +98,7 @@ public sealed class PostMediaAtomicityTests
         Assert.False(await dbContext.PostReactions.AnyAsync(reaction =>
             reaction.PostId == post.Id && reaction.UserId == actorUserId));
         Assert.False(await dbContext.Notifications.AnyAsync(notification =>
-            notification.Type == NotificationType.PostReaction && notification.EntityId == post.Id));
+            notification.Type == NotificationType.POST_REACTION && notification.EntityId == post.Id));
     }
 
     private sealed class TemporaryFookbaseDatabase(

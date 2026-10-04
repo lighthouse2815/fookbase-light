@@ -1,3 +1,4 @@
+using Fookbase.Api.Shared.Common;
 using System.Globalization;
 using System.Text;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;
@@ -222,33 +223,33 @@ public sealed class NotificationService(
 
         return notification.EntityType switch
         {
-            NotificationEntityType.FriendRequest => notification.EntityId is not null &&
+            NotificationEntityType.FRIEND_REQUEST => notification.EntityId is not null &&
                 await dbContext.FriendRequests.AsNoTracking().AnyAsync(
                     request => request.Id == notification.EntityId.Value,
                     cancellationToken),
-            NotificationEntityType.Post => notification.EntityId is not null &&
+            NotificationEntityType.POST => notification.EntityId is not null &&
                 await CanAccessPostAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
-            NotificationEntityType.Comment => notification.EntityId is not null &&
+            NotificationEntityType.COMMENT => notification.EntityId is not null &&
                 await CanAccessCommentAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
-            NotificationEntityType.Group => notification.EntityId is not null &&
+            NotificationEntityType.GROUP => notification.EntityId is not null &&
                 await CanAccessGroupAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
-            NotificationEntityType.GroupJoinRequest => notification.EntityId is not null &&
+            NotificationEntityType.GROUP_JOIN_REQUEST => notification.EntityId is not null &&
                 await CanSurfaceGroupJoinRequestAsync(
                     recipientUserId,
                     notification.EntityId.Value,
                     cancellationToken),
-            NotificationEntityType.GroupInvite => notification.EntityId is not null &&
+            NotificationEntityType.GROUP_INVITE => notification.EntityId is not null &&
                 await CanSurfaceGroupInviteAsync(
                     recipientUserId,
                     notification.EntityId.Value,
                     cancellationToken),
-            NotificationEntityType.Story => notification.EntityId is not null &&
+            NotificationEntityType.STORY => notification.EntityId is not null &&
                 await CanAccessStoryAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
-            NotificationEntityType.Page => notification.EntityId is not null &&
+            NotificationEntityType.PAGE => notification.EntityId is not null &&
                 await CanAccessPageAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
-            NotificationEntityType.PageRoleInvitation => notification.EntityId is not null &&
+            NotificationEntityType.PAGE_ROLE_INVITATION => notification.EntityId is not null &&
                 await CanSurfacePageRoleInvitationAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
-            NotificationEntityType.Event => notification.EntityId is not null &&
+            NotificationEntityType.EVENT => notification.EntityId is not null &&
                 await CanSurfaceEventAsync(notification, recipientUserId, cancellationToken),
             _ => true
         };
@@ -263,12 +264,12 @@ public sealed class NotificationService(
 
         return notification.EntityType switch
         {
-            NotificationEntityType.Post => dbContext.Posts.AsNoTracking().AnyAsync(post =>
-                post.Id == notification.EntityId.Value && post.ContainerType == PostContainerType.Page, cancellationToken),
-            NotificationEntityType.Comment =>
+            NotificationEntityType.POST => dbContext.Posts.AsNoTracking().AnyAsync(post =>
+                post.Id == notification.EntityId.Value && post.ContainerType == PostContainerType.PAGE, cancellationToken),
+            NotificationEntityType.COMMENT =>
                 (from comment in dbContext.Comments.AsNoTracking()
                  join post in dbContext.Posts.AsNoTracking() on comment.PostId equals post.Id
-                 where comment.Id == notification.EntityId.Value && post.ContainerType == PostContainerType.Page
+                 where comment.Id == notification.EntityId.Value && post.ContainerType == PostContainerType.PAGE
                  select comment.Id).AnyAsync(cancellationToken),
             _ => Task.FromResult(false)
         };
@@ -302,12 +303,12 @@ public sealed class NotificationService(
             return false;
         }
 
-        if (story.Privacy == PostPrivacy.Public)
+        if (story.Privacy == PostPrivacy.PUBLIC)
         {
             return true;
         }
 
-        return story.Privacy == PostPrivacy.Friends &&
+        return story.Privacy == PostPrivacy.FRIENDS &&
             await dbContext.Friendships.AsNoTracking().AnyAsync(
                 friendship =>
                     (friendship.UserId1 == recipientUserId && friendship.UserId2 == story.AuthorUserId) ||
@@ -341,12 +342,12 @@ public sealed class NotificationService(
             return false;
         }
 
-        if (post.ContainerType == PostContainerType.Group)
+        if (post.ContainerType == PostContainerType.GROUP)
         {
             return await CanAccessGroupAsync(recipientUserId, post.ContainerId, cancellationToken);
         }
 
-        if (post.ContainerType == PostContainerType.Page)
+        if (post.ContainerType == PostContainerType.PAGE)
         {
             return await CanAccessPageAsync(recipientUserId, post.ContainerId, cancellationToken);
         }
@@ -365,12 +366,12 @@ public sealed class NotificationService(
             return false;
         }
 
-        if (post.Privacy == PostPrivacy.Public)
+        if (post.Privacy == PostPrivacy.PUBLIC)
         {
             return true;
         }
 
-        return post.Privacy == PostPrivacy.Friends &&
+        return post.Privacy == PostPrivacy.FRIENDS &&
             await dbContext.Friendships.AsNoTracking().AnyAsync(
                 friendship =>
                     (friendship.UserId1 == recipientUserId && friendship.UserId2 == post.AuthorUserId) ||
@@ -387,7 +388,7 @@ public sealed class NotificationService(
             item => item.Id == groupId && item.DeletedAtUtc == null,
             cancellationToken);
         return group is not null &&
-            (group.Privacy == Fookbase.Api.Modules.Groups.Entities.GroupPrivacy.Public ||
+            (group.Privacy == Fookbase.Api.Modules.Groups.Entities.GroupPrivacy.PUBLIC ||
             await dbContext.GroupMembers.AsNoTracking().AnyAsync(
                 member => member.GroupId == groupId && member.UserId == recipientUserId,
                 cancellationToken));
@@ -402,7 +403,7 @@ public sealed class NotificationService(
             item => item.Id == pageId && item.DeletedAtUtc == null,
             cancellationToken);
         return page is not null &&
-            (page.Status == Fookbase.Api.Modules.Pages.Entities.PageStatus.Published ||
+            (page.Status == Fookbase.Api.Modules.Pages.Entities.PageStatus.PUBLISHED ||
              await dbContext.PageMembers.AsNoTracking().AnyAsync(
                  member => member.PageId == pageId && member.UserId == recipientUserId,
                  cancellationToken));
@@ -415,7 +416,7 @@ public sealed class NotificationService(
         (from invitation in dbContext.PageRoleInvitations.AsNoTracking()
          join page in dbContext.Pages.AsNoTracking() on invitation.PageId equals page.Id
          where invitation.Id == invitationId && invitation.InviteeUserId == recipientUserId &&
-               invitation.Status == Fookbase.Api.Modules.Pages.Entities.PageRoleInvitationStatus.Pending &&
+               invitation.Status == Fookbase.Api.Modules.Pages.Entities.PageRoleInvitationStatus.PENDING &&
                page.DeletedAtUtc == null
          select invitation.Id).AnyAsync(cancellationToken);
 
@@ -449,21 +450,21 @@ public sealed class NotificationService(
         Guid recipientUserId,
         CancellationToken cancellationToken)
     {
-        if (notification.Type == NotificationType.EventInvite)
+        if (notification.Type == NotificationType.EVENT_INVITE)
         {
             return await dbContext.EventInvitations.AsNoTracking().AnyAsync(invitation =>
                 invitation.Id == notification.EntityId && invitation.InviteeUserId == recipientUserId &&
-                invitation.Status == Fookbase.Api.Modules.Events.Entities.EventInvitationStatus.Pending &&
+                invitation.Status == Fookbase.Api.Modules.Events.Entities.EventInvitationStatus.PENDING &&
                 dbContext.Events.Any(item => item.Id == invitation.EventId && item.DeletedAtUtc == null &&
-                    item.Status == Fookbase.Api.Modules.Events.Entities.EventStatus.Published), cancellationToken);
+                    item.Status == Fookbase.Api.Modules.Events.Entities.EventStatus.PUBLISHED), cancellationToken);
         }
 
         return await dbContext.Events.AsNoTracking().AnyAsync(item => item.Id == notification.EntityId &&
-            item.DeletedAtUtc == null && item.Status != Fookbase.Api.Modules.Events.Entities.EventStatus.Draft &&
-            (item.Privacy == Fookbase.Api.Modules.Events.Entities.EventPrivacy.Public ||
+            item.DeletedAtUtc == null && item.Status != Fookbase.Api.Modules.Events.Entities.EventStatus.DRAFT &&
+            (item.Privacy == Fookbase.Api.Modules.Events.Entities.EventPrivacy.PUBLIC ||
              dbContext.EventParticipants.Any(participant => participant.EventId == item.Id && participant.UserId == recipientUserId) ||
              dbContext.EventInvitations.Any(invitation => invitation.EventId == item.Id && invitation.InviteeUserId == recipientUserId &&
-                 invitation.Status == Fookbase.Api.Modules.Events.Entities.EventInvitationStatus.Pending)), cancellationToken);
+                 invitation.Status == Fookbase.Api.Modules.Events.Entities.EventInvitationStatus.PENDING)), cancellationToken);
     }
 
     private async Task<IReadOnlyList<NotificationResponse>> ToResponsesAsync(
@@ -471,7 +472,7 @@ public sealed class NotificationService(
         CancellationToken cancellationToken)
     {
         var commentIds = notifications
-            .Where(notification => notification.EntityType == NotificationEntityType.Comment && notification.EntityId is not null)
+            .Where(notification => notification.EntityType == NotificationEntityType.COMMENT && notification.EntityId is not null)
             .Select(notification => notification.EntityId!.Value)
             .Distinct()
             .ToArray();
@@ -482,7 +483,7 @@ public sealed class NotificationService(
                 .Select(comment => new { comment.Id, comment.PostId })
                 .ToDictionaryAsync(item => item.Id, item => item.PostId, cancellationToken);
         var eventInviteIds = notifications
-            .Where(notification => notification.Type == NotificationType.EventInvite && notification.EntityId is not null)
+            .Where(notification => notification.Type == NotificationType.EVENT_INVITE && notification.EntityId is not null)
             .Select(notification => notification.EntityId!.Value)
             .Distinct()
             .ToArray();
@@ -513,9 +514,9 @@ public sealed class NotificationService(
                 ? null
                 : profiles.GetValueOrDefault(notification.ActorUserId.Value);
             Guid? parentEntityId = notification.EntityId is Guid entityId
-                ? notification.EntityType == NotificationEntityType.Comment
+                ? notification.EntityType == NotificationEntityType.COMMENT
                     ? commentPostIds.GetValueOrDefault(entityId)
-                    : notification.Type == NotificationType.EventInvite
+                    : notification.Type == NotificationType.EVENT_INVITE
                         ? eventInviteEventIds.GetValueOrDefault(entityId)
                         : null
                 : null;
@@ -525,8 +526,8 @@ public sealed class NotificationService(
                 notification.ActorUserId,
                 profile?.Username,
                 profile?.DisplayName,
-                notification.Type.ToString(),
-                notification.EntityType?.ToString(),
+                notification.Type.ToApiName(),
+                notification.EntityType?.ToApiName(),
                 notification.EntityId,
                 parentEntityId,
                 notification.IsRead,

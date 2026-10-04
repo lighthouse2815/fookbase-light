@@ -138,10 +138,10 @@ public static class PageEndpoints
         value => Results.Created($"/api/posts/{value.Id}", value));
 
     private static async Task<IResult> GetAvatarAsync(Guid pageId, ClaimsPrincipal principal, PagesService service, MediaService mediaService,
-        CancellationToken cancellationToken) => await GetMediaAsync(pageId, PageMediaSlot.Avatar, principal, service, mediaService, cancellationToken);
+        CancellationToken cancellationToken) => await GetMediaAsync(pageId, PageMediaSlot.AVATAR, principal, service, mediaService, cancellationToken);
 
     private static async Task<IResult> GetCoverAsync(Guid pageId, ClaimsPrincipal principal, PagesService service, MediaService mediaService,
-        CancellationToken cancellationToken) => await GetMediaAsync(pageId, PageMediaSlot.Cover, principal, service, mediaService, cancellationToken);
+        CancellationToken cancellationToken) => await GetMediaAsync(pageId, PageMediaSlot.COVER, principal, service, mediaService, cancellationToken);
 
     private static async Task<IResult> GetMediaAsync(Guid pageId, PageMediaSlot slot, ClaimsPrincipal principal, PagesService service,
         MediaService mediaService, CancellationToken cancellationToken)

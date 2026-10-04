@@ -2,8 +2,8 @@ namespace Fookbase.Api.Modules.Media.Entities;
 
 public enum ProfileMediaSlot
 {
-    Avatar,
-    Cover
+    AVATAR,
+    COVER
 }
 
 public sealed class ProfileMediaReference

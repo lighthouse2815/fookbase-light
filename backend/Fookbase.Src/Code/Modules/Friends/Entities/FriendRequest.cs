@@ -2,10 +2,10 @@ namespace Fookbase.Api.Modules.Friends.Entities;
 
 public enum FriendRequestStatus
 {
-    Pending,
-    Accepted,
-    Declined,
-    Cancelled
+    PENDING,
+    ACCEPTED,
+    DECLINED,
+    CANCELLED
 }
 
 public sealed class FriendRequest
@@ -26,7 +26,7 @@ public sealed class FriendRequest
         ReceiverUserId = receiverUserId;
         UserId1 = pair.UserId1;
         UserId2 = pair.UserId2;
-        Status = FriendRequestStatus.Pending;
+        Status = FriendRequestStatus.PENDING;
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -57,7 +57,7 @@ public sealed class FriendRequest
     {
         EnsureReceiver(actorUserId);
         EnsurePending();
-        Status = FriendRequestStatus.Accepted;
+        Status = FriendRequestStatus.ACCEPTED;
         RespondedAtUtc = respondedAtUtc;
     }
 
@@ -65,7 +65,7 @@ public sealed class FriendRequest
     {
         EnsureReceiver(actorUserId);
         EnsurePending();
-        Status = FriendRequestStatus.Declined;
+        Status = FriendRequestStatus.DECLINED;
         RespondedAtUtc = respondedAtUtc;
     }
 
@@ -77,14 +77,14 @@ public sealed class FriendRequest
         }
 
         EnsurePending();
-        Status = FriendRequestStatus.Cancelled;
+        Status = FriendRequestStatus.CANCELLED;
         RespondedAtUtc = respondedAtUtc;
     }
 
     public void CancelBecauseBlocked(DateTimeOffset respondedAtUtc)
     {
         EnsurePending();
-        Status = FriendRequestStatus.Cancelled;
+        Status = FriendRequestStatus.CANCELLED;
         RespondedAtUtc = respondedAtUtc;
     }
 
@@ -98,7 +98,7 @@ public sealed class FriendRequest
 
     private void EnsurePending()
     {
-        if (Status != FriendRequestStatus.Pending)
+        if (Status != FriendRequestStatus.PENDING)
         {
             throw new InvalidOperationException("The friend request is no longer pending.");
         }

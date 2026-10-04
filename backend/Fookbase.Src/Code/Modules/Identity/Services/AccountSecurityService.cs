@@ -40,7 +40,7 @@ public sealed class AccountSecurityService(
         await userManager.ResetAuthenticatorKeyAsync(user);
         var key = await userManager.GetAuthenticatorKeyAsync(user);
         if (string.IsNullOrWhiteSpace(key))
-            throw Failure(ErrorCode.TwoFactorSetupFailed, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.TwoFactorSetupFailed, ApplicationErrorType.VALIDATION);
         var issuer = Uri.EscapeDataString("Fookbase");
         var label = Uri.EscapeDataString($"Fookbase:{user.Email}");
         return new TwoFactorSetupResponse(key,
@@ -52,10 +52,10 @@ public sealed class AccountSecurityService(
     {
         var user = await authenticationService.GetActiveUserAsync(userId);
         if (!await authenticationService.VerifyAuthenticatorCodeAsync(user, code))
-            throw Failure(ErrorCode.InvalidTwoFactorCode, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidTwoFactorCode, ApplicationErrorType.VALIDATION);
         var enable = await userManager.SetTwoFactorEnabledAsync(user, true);
         if (!enable.Succeeded)
-            throw Failure(ErrorCode.TwoFactorEnableFailed, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.TwoFactorEnableFailed, ApplicationErrorType.VALIDATION);
         var codes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
         return new TwoFactorRecoveryCodesResponse(codes?.ToArray() ?? []);
     }
@@ -65,7 +65,7 @@ public sealed class AccountSecurityService(
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user is null || !user.IsActive || !user.TwoFactorEnabled)
-            throw Failure(ErrorCode.TwoFactorNotEnabled, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.TwoFactorNotEnabled, ApplicationErrorType.VALIDATION);
         var codes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
         return new TwoFactorRecoveryCodesResponse(codes?.ToArray() ?? []);
     }
@@ -75,7 +75,7 @@ public sealed class AccountSecurityService(
     {
         var user = await authenticationService.GetActiveUserAsync(userId);
         if (string.IsNullOrWhiteSpace(currentPassword) || !await userManager.CheckPasswordAsync(user, currentPassword))
-            throw Failure(ErrorCode.InvalidCredentials, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidCredentials, ApplicationErrorType.VALIDATION);
         await userManager.SetTwoFactorEnabledAsync(user, false);
         await userManager.ResetAuthenticatorKeyAsync(user);
         await authenticationService.RevokeOtherSessionsAsync(userId, null, timeProvider.GetUtcNow(), cancellationToken);
@@ -94,7 +94,7 @@ public sealed class AccountSecurityService(
 
         if (!emailSender.IsEnabled)
         {
-            throw Failure(ErrorCode.EmailUnavailable, ApplicationErrorType.Conflict);
+            throw Failure(ErrorCode.EmailUnavailable, ApplicationErrorType.CONFLICT);
         }
 
         try
@@ -110,7 +110,7 @@ public sealed class AccountSecurityService(
         catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
         {
             logger.LogWarning(exception, "Unable to resend email verification for user {UserId}.", user.Id);
-            throw Failure(ErrorCode.EmailUnavailable, ApplicationErrorType.Conflict);
+            throw Failure(ErrorCode.EmailUnavailable, ApplicationErrorType.CONFLICT);
         }
     }
 
@@ -120,18 +120,18 @@ public sealed class AccountSecurityService(
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token))
         {
-            throw Failure(ErrorCode.InvalidVerificationLink, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidVerificationLink, ApplicationErrorType.VALIDATION);
         }
 
         var user = await userManager.FindByEmailAsync(request.Email.Trim());
         if (user is null || !user.IsActive)
         {
-            throw Failure(ErrorCode.InvalidVerificationLink, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidVerificationLink, ApplicationErrorType.VALIDATION);
         }
 
         var result = await userManager.ConfirmEmailAsync(user, request.Token);
         if (!result.Succeeded)
-            throw Failure(ErrorCode.InvalidVerificationLink, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidVerificationLink, ApplicationErrorType.VALIDATION);
     }
 
     public async Task RequestPasswordResetAsync(
@@ -140,7 +140,7 @@ public sealed class AccountSecurityService(
     {
         var contact = ContactIdentifier.Parse(request.Identifier!);
 
-        if (contact.Kind == ContactKind.Phone)
+        if (contact.Kind == ContactKind.PHONE)
         {
             var phoneUser = await authenticationService.FindByIdentifierAsync(contact, cancellationToken);
             if (phoneUser is { IsActive: true })
@@ -152,7 +152,7 @@ public sealed class AccountSecurityService(
 
         if (!emailSender.IsEnabled)
         {
-            throw Failure(ErrorCode.EmailUnavailable, ApplicationErrorType.Conflict);
+            throw Failure(ErrorCode.EmailUnavailable, ApplicationErrorType.CONFLICT);
         }
 
         var user = await authenticationService.FindByIdentifierAsync(contact, cancellationToken);
@@ -174,7 +174,7 @@ public sealed class AccountSecurityService(
         catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)
         {
             logger.LogWarning(exception, "Unable to send password reset email for user {UserId}.", user.Id);
-            throw Failure(ErrorCode.EmailUnavailable, ApplicationErrorType.Conflict);
+            throw Failure(ErrorCode.EmailUnavailable, ApplicationErrorType.CONFLICT);
         }
     }
 
@@ -183,7 +183,7 @@ public sealed class AccountSecurityService(
         CancellationToken cancellationToken = default)
     {
         var contact = ContactIdentifier.Parse(request.Identifier!);
-        if (contact.Kind == ContactKind.Phone)
+        if (contact.Kind == ContactKind.PHONE)
         {
             await ResetPhonePasswordAsync(contact, request, cancellationToken);
             return;
@@ -192,19 +192,19 @@ public sealed class AccountSecurityService(
         if (string.IsNullOrWhiteSpace(request.Identifier) || string.IsNullOrWhiteSpace(request.Token) ||
             string.IsNullOrWhiteSpace(request.Password) || request.Password != request.ConfirmPassword)
         {
-            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.VALIDATION);
         }
 
         var user = await authenticationService.FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive)
         {
-            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.VALIDATION);
         }
 
         var result = await userManager.ResetPasswordAsync(user, request.Token, request.Password);
         if (!result.Succeeded)
         {
-            throw Failure(ErrorCode.ValidationFailed, ApplicationErrorType.Validation, ToErrors(result));
+            throw Failure(ErrorCode.ValidationFailed, ApplicationErrorType.VALIDATION, ToErrors(result));
         }
 
         await RevokeAllRefreshTokensAsync(user.Id, timeProvider.GetUtcNow(), cancellationToken);
@@ -218,13 +218,13 @@ public sealed class AccountSecurityService(
         if (!OtpService.IsValidCode(request.Code) ||
             string.IsNullOrWhiteSpace(request.Password) || request.Password != request.ConfirmPassword)
         {
-            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.VALIDATION);
         }
 
         var user = await authenticationService.FindByIdentifierAsync(contact, cancellationToken);
         if (user is null || !user.IsActive)
         {
-            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.Validation);
+            throw Failure(ErrorCode.InvalidPasswordReset, ApplicationErrorType.VALIDATION);
         }
 
         var (challenge, now) = await otpService.VerifyPasswordResetAsync(user.Id, contact.Value, request.Code, cancellationToken);
@@ -236,7 +236,7 @@ public sealed class AccountSecurityService(
         if (!reset.Succeeded)
         {
             await transaction.RollbackAsync(cancellationToken);
-            throw Failure(ErrorCode.ValidationFailed, ApplicationErrorType.Validation, ToErrors(reset));
+            throw Failure(ErrorCode.ValidationFailed, ApplicationErrorType.VALIDATION, ToErrors(reset));
         }
 
         await RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
@@ -251,7 +251,7 @@ public sealed class AccountSecurityService(
         if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword) ||
             request.NewPassword != request.ConfirmPassword)
         {
-            throw Failure(ErrorCode.ValidationFailed, ApplicationErrorType.Validation,
+            throw Failure(ErrorCode.ValidationFailed, ApplicationErrorType.VALIDATION,
                 new Dictionary<string, string[]>
                 {
                     ["password"] = ["Current password, matching new password, and confirmation are required."]
@@ -263,7 +263,7 @@ public sealed class AccountSecurityService(
         var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded)
         {
-            throw Failure(ErrorCode.ValidationFailed, ApplicationErrorType.Validation, ToErrors(result));
+            throw Failure(ErrorCode.ValidationFailed, ApplicationErrorType.VALIDATION, ToErrors(result));
         }
 
         var now = timeProvider.GetUtcNow();
@@ -286,7 +286,7 @@ public sealed class AccountSecurityService(
 
     private static BusinessException Failure(
         ErrorCode errorCode,
-        ApplicationErrorType type = ApplicationErrorType.Unauthorized,
+        ApplicationErrorType type = ApplicationErrorType.UNAUTHORIZED,
         IReadOnlyDictionary<string, string[]>? details = null) =>
         new(new ApplicationError(errorCode.Code, errorCode.Message, type, details));
 

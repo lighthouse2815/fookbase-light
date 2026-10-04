@@ -28,16 +28,16 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var stranger = users[2];
         await CreateFriendshipAsync(viewer, friend);
         var now = DateTimeOffset.UtcNow;
-        var ownPublic = await CreatePostAsync(viewer, PostPrivacy.Public, now.AddMinutes(-1));
-        var ownFriends = await CreatePostAsync(viewer, PostPrivacy.Friends, now.AddMinutes(-2));
-        var ownOnlyMe = await CreatePostAsync(viewer, PostPrivacy.OnlyMe, now.AddMinutes(-3));
-        var friendPublic = await CreatePostAsync(friend, PostPrivacy.Public, now.AddMinutes(-4));
-        var friendFriends = await CreatePostAsync(friend, PostPrivacy.Friends, now.AddMinutes(-5));
-        var friendOnlyMe = await CreatePostAsync(friend, PostPrivacy.OnlyMe, now.AddMinutes(-6));
-        var strangerPublic = await CreatePostAsync(stranger, PostPrivacy.Public, now.AddMinutes(-7));
-        var strangerFriends = await CreatePostAsync(stranger, PostPrivacy.Friends, now.AddMinutes(-7));
-        var strangerOnlyMe = await CreatePostAsync(stranger, PostPrivacy.OnlyMe, now.AddMinutes(-7));
-        var deleted = await CreatePostAsync(friend, PostPrivacy.Public, now.AddMinutes(-8));
+        var ownPublic = await CreatePostAsync(viewer, PostPrivacy.PUBLIC, now.AddMinutes(-1));
+        var ownFriends = await CreatePostAsync(viewer, PostPrivacy.FRIENDS, now.AddMinutes(-2));
+        var ownOnlyMe = await CreatePostAsync(viewer, PostPrivacy.ONLY_ME, now.AddMinutes(-3));
+        var friendPublic = await CreatePostAsync(friend, PostPrivacy.PUBLIC, now.AddMinutes(-4));
+        var friendFriends = await CreatePostAsync(friend, PostPrivacy.FRIENDS, now.AddMinutes(-5));
+        var friendOnlyMe = await CreatePostAsync(friend, PostPrivacy.ONLY_ME, now.AddMinutes(-6));
+        var strangerPublic = await CreatePostAsync(stranger, PostPrivacy.PUBLIC, now.AddMinutes(-7));
+        var strangerFriends = await CreatePostAsync(stranger, PostPrivacy.FRIENDS, now.AddMinutes(-7));
+        var strangerOnlyMe = await CreatePostAsync(stranger, PostPrivacy.ONLY_ME, now.AddMinutes(-7));
+        var deleted = await CreatePostAsync(friend, PostPrivacy.PUBLIC, now.AddMinutes(-8));
         await DeletePostAsync(deleted.Id);
         using var client = CreateAuthenticatedClient(viewer);
 
@@ -77,10 +77,10 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         await CreateFriendshipAsync(viewer, reverseBlockedFriend);
         await CreateFriendshipAsync(viewer, formerFriend);
         await CreateFriendshipAsync(viewer, controlFriend);
-        var first = await CreatePostAsync(blockedFriend, PostPrivacy.Friends, DateTimeOffset.UtcNow);
-        var second = await CreatePostAsync(reverseBlockedFriend, PostPrivacy.Public, DateTimeOffset.UtcNow);
-        var third = await CreatePostAsync(formerFriend, PostPrivacy.Friends, DateTimeOffset.UtcNow);
-        var control = await CreatePostAsync(controlFriend, PostPrivacy.Friends, DateTimeOffset.UtcNow);
+        var first = await CreatePostAsync(blockedFriend, PostPrivacy.FRIENDS, DateTimeOffset.UtcNow);
+        var second = await CreatePostAsync(reverseBlockedFriend, PostPrivacy.PUBLIC, DateTimeOffset.UtcNow);
+        var third = await CreatePostAsync(formerFriend, PostPrivacy.FRIENDS, DateTimeOffset.UtcNow);
+        var control = await CreatePostAsync(controlFriend, PostPrivacy.FRIENDS, DateTimeOffset.UtcNow);
         await BlockAsync(viewer, blockedFriend);
         await BlockAsync(reverseBlockedFriend, viewer);
         await UnfriendAsync(viewer, formerFriend);
@@ -105,7 +105,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var ids = Enumerable.Range(0, 4).Select(_ => Guid.NewGuid()).ToArray();
         foreach (var id in ids)
         {
-            await CreatePostAsync(viewer, PostPrivacy.OnlyMe, timestamp, id);
+            await CreatePostAsync(viewer, PostPrivacy.ONLY_ME, timestamp, id);
         }
 
         using var client = CreateAuthenticatedClient(viewer);
@@ -131,13 +131,13 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var viewer = users[0];
         var author = users[1];
         await CreateFriendshipAsync(viewer, author);
-        var post = await CreatePostAsync(author, PostPrivacy.Friends, DateTimeOffset.UtcNow);
+        var post = await CreatePostAsync(author, PostPrivacy.FRIENDS, DateTimeOffset.UtcNow);
         var mediaId = await AttachReadyMediaAsync(author, post.Id);
         var now = DateTimeOffset.UtcNow;
         await AddCommentAsync(post.Id, author, now);
         await AddCommentAsync(post.Id, viewer, now.AddTicks(1));
-        await AddReactionAsync(post.Id, author, ReactionType.Like, now);
-        await AddReactionAsync(post.Id, viewer, ReactionType.Love, now.AddTicks(1));
+        await AddReactionAsync(post.Id, author, ReactionType.LIKE, now);
+        await AddReactionAsync(post.Id, viewer, ReactionType.LOVE, now.AddTicks(1));
         using var client = CreateAuthenticatedClient(viewer);
 
         var feed = await ReadAsync<FeedPageResponse>(await client.GetAsync("/api/feed"));
@@ -167,7 +167,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         {
             var post = await CreatePostAsync(
                 viewer,
-                PostPrivacy.OnlyMe,
+                PostPrivacy.ONLY_ME,
                 timestamp.AddTicks(index));
             expectedIds.Add(post.Id);
         }
@@ -266,7 +266,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var asset = MediaAsset.CreatePending(
             mediaId,
             ownerUserId,
-            MediaType.Image,
+            MediaType.IMAGE,
             ownerUserId.ToString("N") + "/" + mediaId.ToString("N") + ".png",
             "photo.png",
             "image/png",

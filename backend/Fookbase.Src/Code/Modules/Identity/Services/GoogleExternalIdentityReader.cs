@@ -52,5 +52,5 @@ public sealed class GoogleExternalIdentityReader(IAuthenticationService authenti
         new(new ApplicationError(
             mobile ? "invalid_mobile_google_login" : "invalid_google_identity",
             mobile ? "The mobile Google sign-in is invalid or expired." : "The Google identity is invalid.",
-            ApplicationErrorType.Unauthorized));
+            ApplicationErrorType.UNAUTHORIZED));
 }

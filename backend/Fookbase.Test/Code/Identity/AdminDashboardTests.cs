@@ -209,15 +209,15 @@ public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixt
         var user = new User(Guid.NewGuid(), "dashboard@example.test", "dashboard-test", firstDay);
         db.Users.Add(user);
         db.Users.Add(new User(Guid.NewGuid(), "old-dashboard@example.test", "old-dashboard", firstDay.AddTicks(-1)));
-        var post = Post.Create(Guid.NewGuid(), user.Id, "Visible", PostPrivacy.Public, today);
-        var deleted = Post.Create(Guid.NewGuid(), user.Id, "Deleted", PostPrivacy.Public, today);
+        var post = Post.Create(Guid.NewGuid(), user.Id, "Visible", PostPrivacy.PUBLIC, today);
+        var deleted = Post.Create(Guid.NewGuid(), user.Id, "Deleted", PostPrivacy.PUBLIC, today);
         deleted.Delete(today);
         db.Posts.AddRange(post, deleted);
         foreach (var status in Enum.GetValues<ContentReportStatus>())
         {
-            var report = ContentReport.Create(Guid.NewGuid(), ReportTargetType.Post, post.Id,
-                ReportReason.Spam, null, today.AddTicks(-1));
-            if (status != ContentReportStatus.Pending) report.UpdateStatus(status, today);
+            var report = ContentReport.Create(Guid.NewGuid(), ReportTargetType.POST, post.Id,
+                ReportReason.SPAM, null, today.AddTicks(-1));
+            if (status != ContentReportStatus.PENDING) report.UpdateStatus(status, today);
             db.ContentReports.Add(report);
         }
         await db.SaveChangesAsync();

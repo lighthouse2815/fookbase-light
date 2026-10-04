@@ -58,7 +58,7 @@ public sealed class SearchService(
                 $"Limit must be between 1 and {MaximumPageSize}.");
         }
 
-        if (type == SearchType.All && !string.IsNullOrWhiteSpace(cursorValue))
+        if (type == SearchType.ALL && !string.IsNullOrWhiteSpace(cursorValue))
         {
             return Validation<GlobalSearchResponse>(
                 "invalid_search_cursor",
@@ -66,7 +66,7 @@ public sealed class SearchService(
         }
 
         var context = await CreateContextAsync(viewerUserId, cancellationToken);
-        if (type == SearchType.All)
+        if (type == SearchType.ALL)
         {
             var previewLimit = Math.Min(limit, AllPreviewLimit);
             var people = await SearchPeopleAsync(context, query, null, previewLimit, cancellationToken);
@@ -96,12 +96,12 @@ public sealed class SearchService(
 
         return type switch
         {
-            SearchType.People => ToGlobal(await SearchPeopleAsync(context, query, cursor, limit, cancellationToken)),
-            SearchType.Groups => ToGlobal(await SearchGroupsAsync(context, query, cursor, limit, cancellationToken)),
-            SearchType.Pages => ToGlobal(await SearchPagesAsync(context, query, cursor, limit, cancellationToken)),
-            SearchType.Posts => ToGlobal(await SearchPostsAsync(context, query, cursor, limit, cancellationToken)),
-            SearchType.Reels => ToGlobal(await SearchReelsAsync(context, query, cursor, limit, cancellationToken)),
-            SearchType.Events => ToGlobal(await SearchEventsAsync(query, cursor, limit, cancellationToken)),
+            SearchType.PEOPLE => ToGlobal(await SearchPeopleAsync(context, query, cursor, limit, cancellationToken)),
+            SearchType.GROUPS => ToGlobal(await SearchGroupsAsync(context, query, cursor, limit, cancellationToken)),
+            SearchType.PAGES => ToGlobal(await SearchPagesAsync(context, query, cursor, limit, cancellationToken)),
+            SearchType.POSTS => ToGlobal(await SearchPostsAsync(context, query, cursor, limit, cancellationToken)),
+            SearchType.REELS => ToGlobal(await SearchReelsAsync(context, query, cursor, limit, cancellationToken)),
+            SearchType.EVENTS => ToGlobal(await SearchEventsAsync(query, cursor, limit, cancellationToken)),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
     }
@@ -186,10 +186,10 @@ public sealed class SearchService(
                         (friendship.UserId1 == profile.UserId && friendship.UserId2 == context.Viewer.UserId)) ? "friends" :
                     dbContext.FriendRequests.AsNoTracking().Any(request =>
                         request.SenderUserId == context.Viewer.UserId && request.ReceiverUserId == profile.UserId &&
-                        request.Status == FriendRequestStatus.Pending) ? "request_sent" :
+                        request.Status == FriendRequestStatus.PENDING) ? "request_sent" :
                     dbContext.FriendRequests.AsNoTracking().Any(request =>
                         request.SenderUserId == profile.UserId && request.ReceiverUserId == context.Viewer.UserId &&
-                        request.Status == FriendRequestStatus.Pending) ? "request_received" : "none",
+                        request.Status == FriendRequestStatus.PENDING) ? "request_received" : "none",
                 Rank = EF.Functions.ILike(profile.DisplayName, exact)
                     ? 0
                     : EF.Functions.ILike(profile.DisplayName, prefix)
@@ -242,7 +242,7 @@ public sealed class SearchService(
                 item.IsFollowing,
                 item.IsFollowedBy,
                 item.FriendshipState)).ToList(),
-            rows.Count > limit ? EncodeCursor(SearchType.People, query, visible[^1].Rank, visible[^1].UserId,
+            rows.Count > limit ? EncodeCursor(SearchType.PEOPLE, query, visible[^1].Rank, visible[^1].UserId,
                 name: visible[^1].DisplayName) : null);
     }
 
@@ -259,7 +259,7 @@ public sealed class SearchService(
         var viewerUserId = context.Viewer.UserId;
         var ranked = dbContext.Groups.AsNoTracking()
             .Where(group => group.DeletedAtUtc == null &&
-                            (group.Privacy == GroupPrivacy.Public ||
+                            (group.Privacy == GroupPrivacy.PUBLIC ||
                              dbContext.GroupMembers.Any(member =>
                                  member.GroupId == group.Id && member.UserId == viewerUserId)))
             .Where(group => EF.Functions.ILike(group.Name, contains) ||
@@ -275,7 +275,7 @@ public sealed class SearchService(
                 IsMember = dbContext.GroupMembers.Any(member => member.GroupId == group.Id && member.UserId == viewerUserId),
                 HasPendingRequest = dbContext.GroupJoinRequests.Any(request =>
                     request.GroupId == group.Id && request.RequesterUserId == viewerUserId &&
-                    request.Status == GroupJoinRequestStatus.Pending),
+                    request.Status == GroupJoinRequestStatus.PENDING),
                 Rank = EF.Functions.ILike(group.Name, exact) ? 0 :
                     EF.Functions.ILike(group.Name, prefix) ? 1 : 2
             });
@@ -319,7 +319,7 @@ public sealed class SearchService(
                 item.CoverMediaId is null ? null : $"/api/groups/{item.GroupId}/cover",
                 item.MemberCount,
                 item.IsMember ? "member" : item.HasPendingRequest ? "pending" : null)).ToList(),
-            rows.Count > limit ? EncodeCursor(SearchType.Groups, query, visible[^1].Rank, visible[^1].GroupId,
+            rows.Count > limit ? EncodeCursor(SearchType.GROUPS, query, visible[^1].Rank, visible[^1].GroupId,
                 count: visible[^1].MemberCount) : null);
     }
 
@@ -335,7 +335,7 @@ public sealed class SearchService(
         var contains = "%" + query + "%";
         var viewerUserId = context.Viewer.UserId;
         var ranked = dbContext.Pages.AsNoTracking()
-            .Where(page => page.DeletedAtUtc == null && page.Status == PageStatus.Published)
+            .Where(page => page.DeletedAtUtc == null && page.Status == PageStatus.PUBLISHED)
             .Where(page => EF.Functions.ILike(page.Name, contains) ||
                            EF.Functions.ILike(page.Username, contains) ||
                            EF.Functions.ILike(page.Category, contains) ||
@@ -396,7 +396,7 @@ public sealed class SearchService(
                 item.AvatarMediaId is null ? null : $"/api/pages/{item.PageId}/avatar",
                 item.FollowerCount,
                 item.ViewerIsFollowing)).ToList(),
-            rows.Count > limit ? EncodeCursor(SearchType.Pages, query, visible[^1].Rank, visible[^1].PageId,
+            rows.Count > limit ? EncodeCursor(SearchType.PAGES, query, visible[^1].Rank, visible[^1].PageId,
                 count: visible[^1].FollowerCount) : null);
     }
 
@@ -454,7 +454,7 @@ public sealed class SearchService(
                 item.ContainerType ?? "profile",
                 postContainers[item.Id],
                 item.CreatedAtUtc)).ToList(),
-            rows.Count > limit ? EncodeCursor(SearchType.Posts, query, rows[limit - 1].Rank, rows[limit - 1].Post.Id,
+            rows.Count > limit ? EncodeCursor(SearchType.POSTS, query, rows[limit - 1].Rank, rows[limit - 1].Post.Id,
                 ticks: rows[limit - 1].Post.CreatedAtUtc.UtcDateTime.Ticks) : null);
     }
 
@@ -466,8 +466,8 @@ public sealed class SearchService(
     {
         var contains = "%" + query + "%";
         var events = dbContext.Events.AsNoTracking()
-            .Where(item => item.DeletedAtUtc == null && item.Status == EventStatus.Published &&
-                item.Privacy == EventPrivacy.Public && item.StartsAtUtc >= DateTimeOffset.UtcNow &&
+            .Where(item => item.DeletedAtUtc == null && item.Status == EventStatus.PUBLISHED &&
+                item.Privacy == EventPrivacy.PUBLIC && item.StartsAtUtc >= DateTimeOffset.UtcNow &&
                 (EF.Functions.ILike(item.Name, contains) ||
                  item.Description != null && EF.Functions.ILike(item.Description, contains)));
         if (cursor is not null)
@@ -483,13 +483,13 @@ public sealed class SearchService(
             {
                 item.Id, item.Name, item.HostType, item.HostId, item.StartsAtUtc, item.LocationType,
                 item.LocationName, item.CoverMediaId,
-                Going = dbContext.EventParticipants.Count(p => p.EventId == item.Id && p.Status == EventParticipantStatus.Going),
-                Interested = dbContext.EventParticipants.Count(p => p.EventId == item.Id && p.Status == EventParticipantStatus.Interested)
+                Going = dbContext.EventParticipants.Count(p => p.EventId == item.Id && p.Status == EventParticipantStatus.GOING),
+                Interested = dbContext.EventParticipants.Count(p => p.EventId == item.Id && p.Status == EventParticipantStatus.INTERESTED)
             }).ToListAsync(cancellationToken);
         var visible = rows.Take(limit).ToList();
-        var groupIds = visible.Where(x => x.HostType == EventHostType.Group).Select(x => x.HostId).ToArray();
-        var pageIds = visible.Where(x => x.HostType == EventHostType.Page).Select(x => x.HostId).ToArray();
-        var userIds = visible.Where(x => x.HostType == EventHostType.User).Select(x => x.HostId).ToArray();
+        var groupIds = visible.Where(x => x.HostType == EventHostType.GROUP).Select(x => x.HostId).ToArray();
+        var pageIds = visible.Where(x => x.HostType == EventHostType.PAGE).Select(x => x.HostId).ToArray();
+        var userIds = visible.Where(x => x.HostType == EventHostType.USER).Select(x => x.HostId).ToArray();
         var names = await dbContext.Groups.AsNoTracking().Where(x => groupIds.Contains(x.Id)).Select(x => new { x.Id, x.Name })
             .Concat(dbContext.Pages.AsNoTracking().Where(x => pageIds.Contains(x.Id)).Select(x => new { x.Id, x.Name }))
             .Concat(dbContext.UserProfiles.AsNoTracking().Where(x => userIds.Contains(x.UserId)).Select(x => new { Id = x.UserId, Name = x.DisplayName }))
@@ -498,7 +498,7 @@ public sealed class SearchService(
             x.HostId, names.GetValueOrDefault(x.HostId, "Event host"), x.StartsAtUtc,
             x.LocationType.ToString().ToLowerInvariant(), x.LocationName,
             x.CoverMediaId is null ? null : $"/api/events/{x.Id}/cover", x.Going, x.Interested)).ToList(),
-            rows.Count > limit ? EncodeCursor(SearchType.Events, query, 0, visible[^1].Id, ticks: visible[^1].StartsAtUtc.UtcTicks) : null);
+            rows.Count > limit ? EncodeCursor(SearchType.EVENTS, query, 0, visible[^1].Id, ticks: visible[^1].StartsAtUtc.UtcTicks) : null);
     }
 
     private async Task<SearchPage<SearchReelResponse>> SearchReelsAsync(
@@ -509,13 +509,13 @@ public sealed class SearchService(
         CancellationToken cancellationToken)
     {
         var reelCandidates = PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), context.Viewer)
-            .Where(post => post.PostType == PostType.Reel &&
+            .Where(post => post.PostType == PostType.REEL &&
                            dbContext.PostMedia.Any(postMedia =>
                                postMedia.PostId == post.Id &&
                                dbContext.MediaAssets.Any(asset =>
                                    asset.Id == postMedia.MediaId &&
-                                   asset.MediaType == MediaType.Video &&
-                                   asset.Status == MediaStatus.Ready &&
+                                   asset.MediaType == MediaType.VIDEO &&
+                                   asset.Status == MediaStatus.READY &&
                                    asset.DeletedAtUtc == null &&
                                    asset.ProcessedObjectKey != null &&
                                    asset.PosterObjectKey != null &&
@@ -558,7 +558,7 @@ public sealed class SearchService(
         var responses = await LoadReelResponsesAsync(visible, cancellationToken);
         return new(
             responses,
-            rows.Count > limit ? EncodeCursor(SearchType.Reels, query, rows[limit - 1].Rank, rows[limit - 1].Post.Id,
+            rows.Count > limit ? EncodeCursor(SearchType.REELS, query, rows[limit - 1].Rank, rows[limit - 1].Post.Id,
                 ticks: rows[limit - 1].Post.CreatedAtUtc.UtcDateTime.Ticks) : null);
     }
 
@@ -566,22 +566,22 @@ public sealed class SearchService(
     {
         var viewer = context.Viewer;
         var profilePosts = PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer)
-            .Where(post => post.PostType == PostType.Standard);
+            .Where(post => post.PostType == PostType.STANDARD);
         var groupPosts =
             from post in dbContext.Posts.AsNoTracking()
             join groupItem in dbContext.Groups.AsNoTracking() on post.ContainerId equals groupItem.Id
-            where post.PostType == PostType.Standard && post.DeletedAtUtc == null &&
-                  post.ContainerType == PostContainerType.Group && groupItem.DeletedAtUtc == null &&
-                  (groupItem.Privacy == GroupPrivacy.Public ||
+            where post.PostType == PostType.STANDARD && post.DeletedAtUtc == null &&
+                  post.ContainerType == PostContainerType.GROUP && groupItem.DeletedAtUtc == null &&
+                  (groupItem.Privacy == GroupPrivacy.PUBLIC ||
                    dbContext.GroupMembers.Any(member => member.GroupId == groupItem.Id && member.UserId == viewer.UserId)) &&
                   (post.AuthorUserId == viewer.UserId || !viewer.BlockedUserIds.Contains(post.AuthorUserId))
             select post;
         var pagePosts =
             from post in dbContext.Posts.AsNoTracking()
             join page in dbContext.Pages.AsNoTracking() on post.ContainerId equals page.Id
-            where post.PostType == PostType.Standard && post.DeletedAtUtc == null &&
-                  post.ContainerType == PostContainerType.Page && page.DeletedAtUtc == null &&
-                  page.Status == PageStatus.Published
+            where post.PostType == PostType.STANDARD && post.DeletedAtUtc == null &&
+                  post.ContainerType == PostContainerType.PAGE && page.DeletedAtUtc == null &&
+                  page.Status == PageStatus.PUBLISHED
             select post;
         return profilePosts.Concat(groupPosts).Concat(pagePosts);
     }
@@ -600,8 +600,8 @@ public sealed class SearchService(
         var mediaRows = await (
             from postMedia in dbContext.PostMedia.AsNoTracking()
             join asset in dbContext.MediaAssets.AsNoTracking() on postMedia.MediaId equals asset.Id
-            where reelIds.Contains(postMedia.PostId) && asset.MediaType == MediaType.Video &&
-                  asset.Status == MediaStatus.Ready && asset.DeletedAtUtc == null &&
+            where reelIds.Contains(postMedia.PostId) && asset.MediaType == MediaType.VIDEO &&
+                  asset.Status == MediaStatus.READY && asset.DeletedAtUtc == null &&
                   asset.ProcessedObjectKey != null && asset.PosterObjectKey != null &&
                   asset.DurationMs != null && asset.Width != null && asset.Height != null
             select new ReelMediaRow(postMedia.PostId, postMedia.MediaId, asset.DurationMs ?? 0,
@@ -695,7 +695,7 @@ public sealed class SearchService(
             error = new ApplicationError(
                 "invalid_search_query",
                 $"Query must contain between {MinimumQueryLength} and {MaximumQueryLength} characters after trimming.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
             return false;
         }
 
@@ -707,16 +707,16 @@ public sealed class SearchService(
     {
         type = value?.Trim().ToLowerInvariant() switch
         {
-            null or "" or "all" => SearchType.All,
-            "people" => SearchType.People,
-            "groups" => SearchType.Groups,
-            "pages" => SearchType.Pages,
-            "posts" => SearchType.Posts,
-            "reels" => SearchType.Reels,
-            "events" => SearchType.Events,
-            _ => SearchType.Invalid
+            null or "" or "all" => SearchType.ALL,
+            "people" => SearchType.PEOPLE,
+            "groups" => SearchType.GROUPS,
+            "pages" => SearchType.PAGES,
+            "posts" => SearchType.POSTS,
+            "reels" => SearchType.REELS,
+            "events" => SearchType.EVENTS,
+            _ => SearchType.INVALID
         };
-        return type != SearchType.Invalid;
+        return type != SearchType.INVALID;
     }
 
     private static bool TryDecodeCursor(string? value, SearchType type, string query, out SearchCursor? cursor)
@@ -777,20 +777,20 @@ public sealed class SearchService(
     private static string? ShortBio(string? value) => value is null ? null : Snippet(value);
 
     private static ApplicationResult<T> Validation<T>(string code, string message) =>
-        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
+        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
 
     private static ApplicationResult<T> Failure<T>(ApplicationError error) => ApplicationResult<T>.Failure(error);
 
     private enum SearchType
     {
-        Invalid,
-        All,
-        People,
-        Groups,
-        Pages,
-        Posts,
-        Reels,
-        Events
+        INVALID,
+        ALL,
+        PEOPLE,
+        GROUPS,
+        PAGES,
+        POSTS,
+        REELS,
+        EVENTS
     }
 
     private sealed record SearchContext(PostViewerContext Viewer);

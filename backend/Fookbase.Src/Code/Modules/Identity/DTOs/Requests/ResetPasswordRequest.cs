@@ -10,7 +10,7 @@ public sealed record ResetPasswordRequest(
     [EmailOrPhoneNumber]
     string? Identifier,
 
-    [RequiredForContact(nameof(Identifier), ContactKind.Email,
+    [RequiredForContact(nameof(Identifier), ContactKind.EMAIL,
         ErrorMessage = "Token là bắt buộc khi đặt lại mật khẩu bằng email.")]
     string? Token,
 
@@ -22,7 +22,7 @@ public sealed record ResetPasswordRequest(
     [PasswordConfirmation(nameof(Password))]
     string? ConfirmPassword,
 
-    [RequiredForContact(nameof(Identifier), ContactKind.Phone,
+    [RequiredForContact(nameof(Identifier), ContactKind.PHONE,
         ErrorMessage = "Mã OTP là bắt buộc khi đặt lại mật khẩu bằng số điện thoại.")]
     [RegularExpression("[0-9]{6}", ErrorMessage = "Mã OTP phải gồm 6 chữ số.")]
     string? Code = null);

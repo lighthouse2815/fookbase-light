@@ -18,13 +18,13 @@ public sealed class UserPrivacySettings
 
     public Guid UserId { get; private set; }
 
-    public PostPrivacy DefaultPostPrivacy { get; private set; } = PostPrivacy.Public;
+    public PostPrivacy DefaultPostPrivacy { get; private set; } = PostPrivacy.PUBLIC;
 
-    public FriendRequestPolicy FriendRequestPolicy { get; private set; } = FriendRequestPolicy.Everyone;
+    public FriendRequestPolicy FriendRequestPolicy { get; private set; } = FriendRequestPolicy.EVERYONE;
 
-    public RelationshipListVisibility FriendListVisibility { get; private set; } = RelationshipListVisibility.Public;
+    public RelationshipListVisibility FriendListVisibility { get; private set; } = RelationshipListVisibility.PUBLIC;
 
-    public RelationshipListVisibility FollowListVisibility { get; private set; } = RelationshipListVisibility.Public;
+    public RelationshipListVisibility FollowListVisibility { get; private set; } = RelationshipListVisibility.PUBLIC;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 

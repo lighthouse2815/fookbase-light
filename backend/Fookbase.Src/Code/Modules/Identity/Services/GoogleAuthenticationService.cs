@@ -40,7 +40,7 @@ public sealed class GoogleAuthenticationService(
         if (linkedUser is not null)
         {
             return await CreateCompletionAsync(
-                ExternalLoginTicketPurpose.IssueSession,
+                ExternalLoginTicketPurpose.ISSUE_SESSION,
                 client,
                 providerKey,
                 normalizedEmail,
@@ -52,7 +52,7 @@ public sealed class GoogleAuthenticationService(
         if (existingUser is not null)
         {
             return await CreateCompletionAsync(
-                ExternalLoginTicketPurpose.LinkExisting,
+                ExternalLoginTicketPurpose.LINK_EXISTING,
                 client,
                 providerKey,
                 normalizedEmail,
@@ -87,7 +87,7 @@ public sealed class GoogleAuthenticationService(
             }
 
             var completion = await CreateCompletionAsync(
-                ExternalLoginTicketPurpose.IssueSession,
+                ExternalLoginTicketPurpose.ISSUE_SESSION,
                 client,
                 providerKey,
                 normalizedEmail,
@@ -110,7 +110,7 @@ public sealed class GoogleAuthenticationService(
         string? userAgent,
         CancellationToken cancellationToken = default)
     {
-        var completion = await FindUsableCompletionAsync(code, client, ExternalLoginTicketPurpose.IssueSession, cancellationToken);
+        var completion = await FindUsableCompletionAsync(code, client, ExternalLoginTicketPurpose.ISSUE_SESSION, cancellationToken);
         if (completion is null)
         {
             throw Failure("invalid_google_completion", "The Google sign-in could not be completed.");
@@ -140,7 +140,7 @@ public sealed class GoogleAuthenticationService(
         var completion = await FindUsableCompletionAsync(
             code,
             client,
-            ExternalLoginTicketPurpose.LinkExisting,
+            ExternalLoginTicketPurpose.LINK_EXISTING,
             cancellationToken);
         if (completion is null)
         {
@@ -214,8 +214,8 @@ public sealed class GoogleAuthenticationService(
         await dbContext.SaveChangesAsync(cancellationToken);
         return new GoogleCompletionResult(
             rawCode,
-            purpose == ExternalLoginTicketPurpose.LinkExisting,
-            purpose == ExternalLoginTicketPurpose.LinkExisting ? email : null);
+            purpose == ExternalLoginTicketPurpose.LINK_EXISTING,
+            purpose == ExternalLoginTicketPurpose.LINK_EXISTING ? email : null);
     }
 
     private async Task<ExternalLoginTicket?> FindUsableCompletionAsync(
@@ -277,5 +277,5 @@ public sealed class GoogleAuthenticationService(
     }
 
     private static BusinessException Failure(string code, string message) =>
-        new BusinessException(new ApplicationError(code, message, ApplicationErrorType.Unauthorized));
+        new BusinessException(new ApplicationError(code, message, ApplicationErrorType.UNAUTHORIZED));
 }

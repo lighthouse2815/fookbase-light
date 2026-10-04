@@ -33,8 +33,8 @@ internal sealed class ObjectDeletionWorker(
                         if (asset is null)
                             throw new InvalidOperationException("Media asset for object deletion was not found.");
                         var mediaType = job.ObjectKey == asset.ObjectKey ? asset.MediaType
-                            : job.ObjectKey == MediaAsset.ProcessedKey(asset.OwnerUserId, asset.Id) ? MediaType.Video
-                            : job.ObjectKey == MediaAsset.PosterKey(asset.OwnerUserId, asset.Id) ? MediaType.Image
+                            : job.ObjectKey == MediaAsset.ProcessedKey(asset.OwnerUserId, asset.Id) ? MediaType.VIDEO
+                            : job.ObjectKey == MediaAsset.PosterKey(asset.OwnerUserId, asset.Id) ? MediaType.IMAGE
                             : throw new InvalidOperationException("Object deletion key does not belong to its media asset.");
                         await storage.DeleteAsync(job.ObjectKey, mediaType, stoppingToken);
                         job.MarkProcessed(timeProvider.GetUtcNow());

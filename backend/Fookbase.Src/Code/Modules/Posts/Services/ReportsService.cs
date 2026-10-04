@@ -34,7 +34,7 @@ public sealed class ReportsService(
 
         return await CreateAsync(
             reporterUserId,
-            ReportTargetType.User,
+            ReportTargetType.USER,
             reportedUserId,
             request,
             cancellationToken);
@@ -54,7 +54,7 @@ public sealed class ReportsService(
             return ApplicationResult<ContentReportResponse>.Failure(NotFound("The post was not found."));
         }
 
-        if (post.ContainerType == PostContainerType.Group)
+        if (post.ContainerType == PostContainerType.GROUP)
         {
             var relationships = await friendsService.GetAccessSnapshotAsync(
                 reporterUserId,
@@ -69,7 +69,7 @@ public sealed class ReportsService(
             }
         }
 
-        if (post.ContainerType == PostContainerType.Page &&
+        if (post.ContainerType == PostContainerType.PAGE &&
             !await pagePostAccessService.CanViewPageAsync(post.ContainerId, reporterUserId, cancellationToken))
         {
             return ApplicationResult<ContentReportResponse>.Failure(NotFound("The post was not found."));
@@ -81,7 +81,7 @@ public sealed class ReportsService(
                 "You cannot report your own account or content."));
         }
 
-        return await CreateAsync(reporterUserId, ReportTargetType.Post, postId, request, cancellationToken);
+        return await CreateAsync(reporterUserId, ReportTargetType.POST, postId, request, cancellationToken);
     }
 
     public async Task<ModerationSummaryResponse> GetModerationSummaryAsync(
@@ -89,7 +89,7 @@ public sealed class ReportsService(
         new(
             await dbContext.Posts.CountAsync(post => post.DeletedAtUtc == null, cancellationToken),
             await dbContext.ContentReports.CountAsync(
-                report => report.Status == ContentReportStatus.Pending,
+                report => report.Status == ContentReportStatus.PENDING,
                 cancellationToken));
 
     public async Task<ApplicationResult<PagedResponse<ModerationReportResponse>>> GetReportsAsync(
@@ -140,7 +140,7 @@ public sealed class ReportsService(
         string? status,
         CancellationToken cancellationToken = default)
     {
-        if (!TryParseStatus(status, out var parsedStatus) || parsedStatus == ContentReportStatus.Pending)
+        if (!TryParseStatus(status, out var parsedStatus) || parsedStatus == ContentReportStatus.PENDING)
         {
             return ApplicationResult<ModerationReportResponse>.Failure(Validation(
                 "Report status must be one of: reviewed, resolved, dismissed."));
@@ -194,7 +194,7 @@ public sealed class ReportsService(
             return ApplicationResult<ContentReportResponse>.Failure(new ApplicationError(
                 "already_reported",
                 "You have already reported this content.",
-                ApplicationErrorType.Conflict));
+                ApplicationErrorType.CONFLICT));
         }
 
         var report = ContentReport.Create(
@@ -211,7 +211,7 @@ public sealed class ReportsService(
     }
 
     private static bool TryParseReason(string? value, out ReportReason reason) =>
-        Enum.TryParse(value, true, out reason) && Enum.IsDefined(reason);
+        EnumText.TryParse(value, true, out reason) && Enum.IsDefined(reason);
 
     private static bool TryParseStatus(string? value, out ContentReportStatus status) =>
         Enum.TryParse(value, true, out status) && Enum.IsDefined(status);
@@ -221,7 +221,7 @@ public sealed class ReportsService(
             report.Id,
             report.TargetType.ToString().ToLowerInvariant(),
             report.TargetId,
-            report.Reason.ToString().ToLowerInvariant(),
+            report.Reason.ToApiName().ToLowerInvariant(),
             report.Details,
             report.Status.ToString().ToLowerInvariant(),
             report.CreatedAtUtc);
@@ -232,14 +232,14 @@ public sealed class ReportsService(
             report.ReporterUserId,
             report.TargetType.ToString().ToLowerInvariant(),
             report.TargetId,
-            report.Reason.ToString().ToLowerInvariant(),
+            report.Reason.ToApiName().ToLowerInvariant(),
             report.Details,
             report.Status.ToString().ToLowerInvariant(),
             report.CreatedAtUtc);
 
     private static ApplicationError Validation(string message) =>
-        new(ErrorCode.ValidationFailed, message, ApplicationErrorType.Validation);
+        new(ErrorCode.ValidationFailed, message, ApplicationErrorType.VALIDATION);
 
     private static ApplicationError NotFound(string message) =>
-        new("report_target_not_found", message, ApplicationErrorType.NotFound);
+        new("report_target_not_found", message, ApplicationErrorType.NOT_FOUND);
 }

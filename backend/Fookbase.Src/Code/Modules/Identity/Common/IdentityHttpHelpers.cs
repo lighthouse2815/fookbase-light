@@ -13,5 +13,5 @@ internal static class IdentityHttpHelpers
             : throw new BusinessException(new ApplicationError(
                 ErrorCode.InvalidAccessToken,
                 ErrorCode.InvalidAccessToken.Message,
-                ApplicationErrorType.Unauthorized));
+                ApplicationErrorType.UNAUTHORIZED));
 }

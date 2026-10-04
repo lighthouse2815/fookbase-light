@@ -51,16 +51,16 @@ public sealed class ContactSender(
     {
         switch (contact.Kind)
         {
-            case ContactKind.Email when IsEnabled:
+            case ContactKind.EMAIL when IsEnabled:
                 await SendAsync(
                     contact.Value,
                     "Fookbase verification code",
                     $"<p>Your Fookbase verification code is <strong>{code}</strong>.</p>",
                     cancellationToken);
                 return;
-            case ContactKind.Email:
+            case ContactKind.EMAIL:
                 throw new InvalidOperationException("Email delivery is not configured.");
-            case ContactKind.Phone:
+            case ContactKind.PHONE:
                 await SendSmsAsync(contact.Value, code, cancellationToken);
                 return;
             default:

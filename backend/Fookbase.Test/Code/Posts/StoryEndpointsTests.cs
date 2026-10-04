@@ -27,11 +27,11 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         var users = await CreateUsersAsync(2);
         var ownerId = users[0];
         var otherId = users[1];
-        var imageId = await CreateReadyMediaAsync(ownerId, MediaType.Image);
-        var processedVideoId = await CreateReadyMediaAsync(ownerId, MediaType.Video);
+        var imageId = await CreateReadyMediaAsync(ownerId, MediaType.IMAGE);
+        var processedVideoId = await CreateReadyMediaAsync(ownerId, MediaType.VIDEO);
         var pendingVideoId = await CreatePendingVideoAsync(ownerId);
-        var tooLongVideoId = await CreateReadyMediaAsync(ownerId, MediaType.Video, 60_001);
-        var foreignImageId = await CreateReadyMediaAsync(otherId, MediaType.Image);
+        var tooLongVideoId = await CreateReadyMediaAsync(ownerId, MediaType.VIDEO, 60_001);
+        var foreignImageId = await CreateReadyMediaAsync(otherId, MediaType.IMAGE);
         using var owner = CreateAuthenticatedClient(ownerId);
         using var anonymous = factory.CreateClient();
 
@@ -74,7 +74,7 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
     public async Task Story_responses_include_the_uploaded_avatar_path()
     {
         var ownerId = (await CreateUsersAsync(1))[0];
-        var avatarMediaId = await CreateReadyMediaAsync(ownerId, MediaType.Image);
+        var avatarMediaId = await CreateReadyMediaAsync(ownerId, MediaType.IMAGE);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
@@ -85,7 +85,7 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         }
 
         using var owner = CreateAuthenticatedClient(ownerId);
-        var story = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.Image), "avatar", "public");
+        var story = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.IMAGE), "avatar", "public");
         var tray = await ReadAsync<StoryTrayResponse>(await owner.GetAsync("/api/stories"));
 
         Assert.Equal($"/api/users/{ownerId}/avatar", story.Author.AvatarUrl);
@@ -106,9 +106,9 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         using var friend = CreateAuthenticatedClient(friendId);
         using var stranger = CreateAuthenticatedClient(strangerId);
         using var blocked = CreateAuthenticatedClient(blockedId);
-        var publicStory = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.Image), "public", "public");
-        var friendsStory = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.Image), "friends", "friends");
-        var privateStory = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.Image), "private", "onlyMe");
+        var publicStory = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.IMAGE), "public", "public");
+        var friendsStory = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.IMAGE), "friends", "friends");
+        var privateStory = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.IMAGE), "private", "onlyMe");
 
         var ownTray = await ReadAsync<StoryTrayResponse>(await owner.GetAsync("/api/stories"));
         var friendTray = await ReadAsync<StoryTrayResponse>(await friend.GetAsync("/api/stories"));
@@ -154,7 +154,7 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         using var owner = CreateAuthenticatedClient(ownerId);
         using var friend = CreateAuthenticatedClient(friendId);
         using var stranger = CreateAuthenticatedClient(strangerId);
-        var story = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.Image), "react", "public");
+        var story = await CreateStoryAsync(owner, await CreateReadyMediaAsync(ownerId, MediaType.IMAGE), "react", "public");
 
         var added = await ReadAsync<StoryResponse>(await friend.PostAsJsonAsync(
             $"/api/stories/{story.Id}/reaction", new { type = "like" }));
@@ -178,12 +178,12 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             Assert.Empty(await db.StoryReactions.Where(item => item.StoryId == story.Id).ToListAsync());
             Assert.Contains(await db.Notifications.ToListAsync(), notification =>
-                notification.Type == NotificationType.StoryReaction &&
+                notification.Type == NotificationType.STORY_REACTION &&
                 notification.RecipientUserId == ownerId &&
                 notification.ActorUserId == friendId &&
                 notification.EntityId == story.Id);
             Assert.DoesNotContain(await db.Notifications.ToListAsync(), notification =>
-                notification.Type == NotificationType.StoryReaction && notification.ActorUserId == ownerId);
+                notification.Type == NotificationType.STORY_REACTION && notification.ActorUserId == ownerId);
             Assert.True(await db.Messages.AnyAsync(item => item.Id == message.Id && item.StoryId == story.Id));
         }
 
@@ -198,9 +198,9 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
 
     private async Task<Guid> CreateExpiredStoryAsync(Guid ownerUserId)
     {
-        var mediaId = await CreateReadyMediaAsync(ownerUserId, MediaType.Image);
+        var mediaId = await CreateReadyMediaAsync(ownerUserId, MediaType.IMAGE);
         var now = DateTimeOffset.UtcNow;
-        var story = Story.Create(Guid.NewGuid(), ownerUserId, mediaId, "expired", PostPrivacy.Public,
+        var story = Story.Create(Guid.NewGuid(), ownerUserId, mediaId, "expired", PostPrivacy.PUBLIC,
             now.AddDays(-2), now.AddHours(-1));
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
@@ -230,7 +230,7 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var id = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        db.MediaAssets.Add(MediaAsset.CreatePending(id, ownerUserId, MediaType.Video,
+        db.MediaAssets.Add(MediaAsset.CreatePending(id, ownerUserId, MediaType.VIDEO,
             $"{ownerUserId:N}/{id:N}.mp4", "pending.mp4", "video/mp4", 11, now, now.AddMinutes(5)));
         await db.SaveChangesAsync();
         return id;
@@ -243,10 +243,10 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         var id = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
         var asset = MediaAsset.CreatePending(id, ownerUserId, type,
-            $"{ownerUserId:N}/{id:N}{(type == MediaType.Video ? ".mp4" : ".png")}",
-            type == MediaType.Video ? "video.mp4" : "image.png",
-            type == MediaType.Video ? "video/mp4" : "image/png", 11, now, now.AddMinutes(5));
-        if (type == MediaType.Video)
+            $"{ownerUserId:N}/{id:N}{(type == MediaType.VIDEO ? ".mp4" : ".png")}",
+            type == MediaType.VIDEO ? "video.mp4" : "image.png",
+            type == MediaType.VIDEO ? "video/mp4" : "image/png", 11, now, now.AddMinutes(5));
+        if (type == MediaType.VIDEO)
         {
             asset.MarkProcessing(11, now);
             asset.MarkVideoReady(MediaAsset.ProcessedKey(ownerUserId, id), MediaAsset.PosterKey(ownerUserId, id),

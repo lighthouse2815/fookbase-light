@@ -2,8 +2,8 @@ namespace Fookbase.Api.Modules.Friends.Entities;
 
 public enum FriendNotificationType
 {
-    FriendRequestReceived,
-    FriendRequestAccepted
+    FRIEND_REQUEST_RECEIVED,
+    FRIEND_REQUEST_ACCEPTED
 }
 
 public sealed class FriendNotification

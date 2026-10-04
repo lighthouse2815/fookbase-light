@@ -100,7 +100,7 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.True(await db.EventParticipants.AnyAsync(x => x.EventId == item.Id && x.UserId == users[1] &&
-            x.Status == EventParticipantStatus.Going));
+            x.Status == EventParticipantStatus.GOING));
     }
 
     [Fact]
@@ -129,9 +129,9 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.Groups.Add(Group.Create(groupId, "event group", null, GroupPrivacy.Public, users[0], DateTimeOffset.UtcNow));
-            db.GroupMembers.AddRange(GroupMember.Create(groupId, users[0], GroupMemberRole.Admin, DateTimeOffset.UtcNow),
-                GroupMember.Create(groupId, users[1], GroupMemberRole.Member, DateTimeOffset.UtcNow));
+            db.Groups.Add(Group.Create(groupId, "event group", null, GroupPrivacy.PUBLIC, users[0], DateTimeOffset.UtcNow));
+            db.GroupMembers.AddRange(GroupMember.Create(groupId, users[0], GroupMemberRole.ADMIN, DateTimeOffset.UtcNow),
+                GroupMember.Create(groupId, users[1], GroupMemberRole.MEMBER, DateTimeOffset.UtcNow));
             await db.SaveChangesAsync();
         }
         using var admin = CreateAuthenticatedClient(users[0]);
@@ -151,7 +151,7 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.Pages.Add(Page.Create(pageId, "Event Page", "event_page_" + Guid.NewGuid().ToString("N")[..8], "Community", null,
                 manager, DateTimeOffset.UtcNow));
-            db.PageMembers.Add(PageMember.Create(pageId, manager, PageRole.Editor, DateTimeOffset.UtcNow));
+            db.PageMembers.Add(PageMember.Create(pageId, manager, PageRole.EDITOR, DateTimeOffset.UtcNow));
             await db.SaveChangesAsync();
         }
         using var client = CreateAuthenticatedClient(manager);

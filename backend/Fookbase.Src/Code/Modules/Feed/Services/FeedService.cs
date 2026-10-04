@@ -62,13 +62,13 @@ public sealed class FeedService(
         var viewer = new PostViewerContext(viewerUserId, relationships.FriendUserIds, relationships.BlockedUserIds);
         var posts = dbContext.Posts.AsNoTracking().Where(post => post.CreatedAtUtc <= session.AsOfUtc);
         var profile = PostVisibility.ApplyDirectAccess(posts, viewer)
-            .Where(post => post.PostType == PostType.Standard ||
+            .Where(post => post.PostType == PostType.STANDARD ||
                 ReelMediaQuery.ApplyReadyMedia(dbContext.Posts, dbContext).Any(reel => reel.Id == post.Id));
         var groups = groupPostAccessService.ApplyDirectAccess(posts, viewer)
-            .Where(post => post.PostType == PostType.Standard &&
+            .Where(post => post.PostType == PostType.STANDARD &&
                 dbContext.GroupMembers.Any(member => member.GroupId == post.ContainerId && member.UserId == viewerUserId));
         var pages = pagePostAccessService.ApplyPublishedAccess(posts)
-            .Where(post => post.PostType == PostType.Standard &&
+            .Where(post => post.PostType == PostType.STANDARD &&
                 dbContext.PageFollowers.Any(follower => follower.PageId == post.ContainerId && follower.UserId == viewerUserId));
 
         var organic = new List<Candidate>();
@@ -79,25 +79,25 @@ public sealed class FeedService(
         await AddWindowAsync(profile.Where(post =>
             relationships.FollowedUserIds.Contains(post.AuthorUserId) &&
             !viewer.FriendUserIds.Contains(post.AuthorUserId) &&
-            post.Privacy == PostPrivacy.Public), options.FollowedNonFriendProfile);
+            post.Privacy == PostPrivacy.PUBLIC), options.FollowedNonFriendProfile);
         await AddWindowAsync(groups, options.GroupAffinity);
         await AddWindowAsync(pages, options.PageAffinity);
         var shares = dbContext.PostShares.AsNoTracking().Where(share =>
             share.DeletedAtUtc == null && share.CreatedAtUtc <= session.AsOfUtc);
         await AddShareWindowAsync(shares.Where(share =>
-            share.DestinationType == PostShareDestinationType.Profile &&
+            share.DestinationType == PostShareDestinationType.PROFILE &&
             share.DestinationId == viewerUserId), options.OwnAffinity);
         await AddShareWindowAsync(shares.Where(share =>
-            share.DestinationType == PostShareDestinationType.Profile &&
+            share.DestinationType == PostShareDestinationType.PROFILE &&
             share.SharingUserId != viewerUserId &&
             viewer.FriendUserIds.Contains(share.SharingUserId) &&
             !viewer.BlockedUserIds.Contains(share.SharingUserId)), options.FriendAffinity);
         await AddShareWindowAsync(shares.Where(share =>
-            share.DestinationType == PostShareDestinationType.Group &&
+            share.DestinationType == PostShareDestinationType.GROUP &&
             dbContext.GroupMembers.Any(member =>
                 member.GroupId == share.DestinationId && member.UserId == viewerUserId)), options.GroupAffinity);
         await AddShareWindowAsync(shares.Where(share =>
-            share.DestinationType == PostShareDestinationType.Page &&
+            share.DestinationType == PostShareDestinationType.PAGE &&
             dbContext.PageFollowers.Any(follower =>
                 follower.PageId == share.DestinationId && follower.UserId == viewerUserId)), options.PageAffinity);
         organic = (await RankCandidatesAsync(organic, viewerUserId, session.AsOfUtc, cancellationToken))
@@ -112,14 +112,14 @@ public sealed class FeedService(
             var oldest = session.AsOfUtc.AddDays(-options.SuggestedReelMaxAgeDays);
             var discoverable = ReelMediaQuery.ApplyReadyMedia(
                 PostVisibility.ApplyDirectAccess(posts, viewer), dbContext)
-                .Where(post => post.PostType == PostType.Reel && post.Privacy == PostPrivacy.Public &&
+                .Where(post => post.PostType == PostType.REEL && post.Privacy == PostPrivacy.PUBLIC &&
                     post.AuthorUserId != viewerUserId && !relationships.FollowedUserIds.Contains(post.AuthorUserId) &&
                     post.CreatedAtUtc >= oldest);
             suggestions = await LoadWindowAsync(discoverable, options.SuggestedReelAffinity,
                 null, session.AsOfUtc, true, cancellationToken);
             var suggestedPosts = PostVisibility.ApplyDirectAccess(posts, viewer)
-                .Where(post => post.PostType == PostType.Standard && post.Privacy == PostPrivacy.Public &&
-                    post.ContainerType == PostContainerType.Profile && post.AuthorUserId != viewerUserId &&
+                .Where(post => post.PostType == PostType.STANDARD && post.Privacy == PostPrivacy.PUBLIC &&
+                    post.ContainerType == PostContainerType.PROFILE && post.AuthorUserId != viewerUserId &&
                     !relationships.FollowedUserIds.Contains(post.AuthorUserId));
             suggestions.AddRange(await LoadWindowAsync(suggestedPosts, options.SuggestedReelAffinity,
                 null, session.AsOfUtc, true, cancellationToken));
@@ -336,9 +336,9 @@ public sealed class FeedService(
         }
 
         var candidatePostIds = candidates.Select(candidate => candidate.Post.Id).Distinct().ToArray();
-        var creatorIds = candidates.Where(candidate => candidate.Post.ContainerType == PostContainerType.Profile)
+        var creatorIds = candidates.Where(candidate => candidate.Post.ContainerType == PostContainerType.PROFILE)
             .Select(candidate => candidate.Post.AuthorUserId).Distinct().ToArray();
-        var sourceKeys = candidates.Where(candidate => candidate.Post.ContainerType is PostContainerType.Group or PostContainerType.Page)
+        var sourceKeys = candidates.Where(candidate => candidate.Post.ContainerType is PostContainerType.GROUP or PostContainerType.PAGE)
             .Select(candidate => new SourceKey(candidate.Post.ContainerType, candidate.Post.ContainerId)).Distinct().ToArray();
         var sourceIds = sourceKeys.Select(key => key.Id).Distinct().ToArray();
         var lookbackStart = asOfUtc.AddDays(-options.InteractionLookbackDays);
@@ -389,7 +389,7 @@ public sealed class FeedService(
 
         var sourcePosts = await dbContext.Posts.AsNoTracking()
             .Where(post => post.AuthorUserId == viewerUserId && post.CreatedAtUtc >= lookbackStart && post.CreatedAtUtc <= asOfUtc &&
-                sourceIds.Contains(post.ContainerId) && (post.ContainerType == PostContainerType.Group || post.ContainerType == PostContainerType.Page))
+                sourceIds.Contains(post.ContainerId) && (post.ContainerType == PostContainerType.GROUP || post.ContainerType == PostContainerType.PAGE))
             .GroupBy(post => new { post.ContainerType, post.ContainerId })
             .Select(group => new SourceAggregate(group.Key.ContainerType, group.Key.ContainerId, group.Count()))
             .ToListAsync(cancellationToken);
@@ -436,13 +436,13 @@ public sealed class FeedService(
         return candidates.Select(candidate =>
         {
             var post = candidate.Post;
-            var creatorAffinity = post.ContainerType == PostContainerType.Profile
+            var creatorAffinity = post.ContainerType == PostContainerType.PROFILE
                 ? Math.Min(options.CreatorAffinityCap, creatorSignals.GetValueOrDefault(post.AuthorUserId))
                 : 0;
-            var sourceAffinity = post.ContainerType is PostContainerType.Group or PostContainerType.Page
+            var sourceAffinity = post.ContainerType is PostContainerType.GROUP or PostContainerType.PAGE
                 ? Math.Min(options.SourceAffinityCap, sourceSignals.GetValueOrDefault(new SourceKey(post.ContainerType, post.ContainerId)))
                 : 0;
-            var watchAffinity = post.ContainerType == PostContainerType.Profile
+            var watchAffinity = post.ContainerType == PostContainerType.PROFILE
                 ? watchSignals.GetValueOrDefault(post.AuthorUserId)
                 : 0;
             var engagement = Math.Min(options.EngagementNormalizationCap, reactionEngagement.GetValueOrDefault(post.Id)) * options.ReactionEngagementWeight +
@@ -543,7 +543,7 @@ public sealed class FeedService(
                     return new[] { candidate.Share.SharingUserId };
                 }
 
-                return candidate.Post.ContainerType == PostContainerType.Page
+                return candidate.Post.ContainerType == PostContainerType.PAGE
                     ? Array.Empty<Guid>()
                     : new[] { candidate.Post.AuthorUserId };
             })
@@ -553,10 +553,10 @@ public sealed class FeedService(
             .Select(profile => new { profile.UserId, profile.Username, profile.DisplayName, profile.AvatarUrl, profile.AvatarMediaId })
             .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
         var groupIds = candidates.SelectMany(candidate =>
-            (candidate.Post.ContainerType == PostContainerType.Group
+            (candidate.Post.ContainerType == PostContainerType.GROUP
                 ? new[] { candidate.Post.ContainerId }
                 : Array.Empty<Guid>())
-            .Concat(candidate.Share?.DestinationType == PostShareDestinationType.Group
+            .Concat(candidate.Share?.DestinationType == PostShareDestinationType.GROUP
                 ? new[] { candidate.Share.DestinationId }
                 : Array.Empty<Guid>()))
             .Distinct()
@@ -566,7 +566,7 @@ public sealed class FeedService(
             .Select(group => new { group.Id, group.Name, group.Privacy })
             .ToDictionaryAsync(group => group.Id, cancellationToken);
         var destinationPageIds = candidates
-            .Where(candidate => candidate.Share?.DestinationType == PostShareDestinationType.Page)
+            .Where(candidate => candidate.Share?.DestinationType == PostShareDestinationType.PAGE)
             .Select(candidate => candidate.Share!.DestinationId)
             .Distinct()
             .ToArray();
@@ -579,7 +579,7 @@ public sealed class FeedService(
         var media = await (
             from attachment in dbContext.PostMedia.AsNoTracking()
             join asset in dbContext.MediaAssets.AsNoTracking() on attachment.MediaId equals asset.Id
-            where postIds.Contains(attachment.PostId) && asset.Status == MediaStatus.Ready && asset.DeletedAtUtc == null
+            where postIds.Contains(attachment.PostId) && asset.Status == MediaStatus.READY && asset.DeletedAtUtc == null
             orderby attachment.PostId, attachment.SortOrder
             select new { attachment.PostId, Asset = asset })
             .ToListAsync(cancellationToken);
@@ -592,7 +592,7 @@ public sealed class FeedService(
             var profile = profiles.GetValueOrDefault(post.AuthorUserId);
             PostDisplayIdentityResponse displayAuthor;
             FeedContainerResponse container;
-            if (post.ContainerType == PostContainerType.Page)
+            if (post.ContainerType == PostContainerType.PAGE)
             {
                 // Fail closed if the Page disappeared between candidate and DTO queries.
                 if (summary.DisplayAuthor is not { Type: "page" } pageAuthor) continue;
@@ -606,7 +606,7 @@ public sealed class FeedService(
                 displayAuthor = new("user", post.AuthorUserId, username,
                     string.IsNullOrWhiteSpace(displayName) ? (string.IsNullOrWhiteSpace(username) ? "Người dùng" : username) : displayName,
                     profile?.AvatarMediaId is null ? profile?.AvatarUrl : $"/api/users/{post.AuthorUserId}/avatar");
-                if (post.ContainerType == PostContainerType.Group)
+                if (post.ContainerType == PostContainerType.GROUP)
                 {
                     var group = groups.GetValueOrDefault(post.ContainerId);
                     if (group is null) continue;
@@ -620,9 +620,9 @@ public sealed class FeedService(
 
             var assets = mediaByPost[post.Id].ToList();
             ReelVideoResponse? video = null;
-            if (post.PostType == PostType.Reel)
+            if (post.PostType == PostType.REEL)
             {
-                var asset = assets.FirstOrDefault(asset => asset.MediaType == MediaType.Video &&
+                var asset = assets.FirstOrDefault(asset => asset.MediaType == MediaType.VIDEO &&
                     asset.ProcessedObjectKey != null && asset.PosterObjectKey != null &&
                     asset.DurationMs != null && asset.Width != null && asset.Height != null);
                 if (asset is null) continue;
@@ -634,9 +634,9 @@ public sealed class FeedService(
             var content = post.Content;
             var createdAtUtc = post.CreatedAtUtc;
             var updatedAtUtc = post.UpdatedAtUtc;
-            var contentType = post.PostType == PostType.Reel ? "reel" : "standardPost";
+            var contentType = post.PostType == PostType.REEL ? "reel" : "standardPost";
             var containerType = post.ContainerType.ToString().ToLowerInvariant();
-            var author = new FeedAuthorResponse(post.ContainerType == PostContainerType.Page ? null : post.AuthorUserId,
+            var author = new FeedAuthorResponse(post.ContainerType == PostContainerType.PAGE ? null : post.AuthorUserId,
                 displayAuthor.Username, displayAuthor.Name, displayAuthor.AvatarUrl);
             FeedShareResponse? shareResponse = null;
             if (candidate.Share is { } share)
@@ -655,13 +655,13 @@ public sealed class FeedService(
                         : $"/api/users/{share.SharingUserId}/avatar");
                 switch (share.DestinationType)
                 {
-                    case PostShareDestinationType.Profile:
+                    case PostShareDestinationType.PROFILE:
                         displayAuthor = new PostDisplayIdentityResponse(
                             "user", share.SharingUserId, actor.Username, actor.DisplayName, actor.AvatarUrl);
                         container = new(share.DestinationId, actor.DisplayName, actor.Username, "public");
                         author = actor;
                         break;
-                    case PostShareDestinationType.Group:
+                    case PostShareDestinationType.GROUP:
                         var group = groups.GetValueOrDefault(share.DestinationId);
                         if (group is null) continue;
                         displayAuthor = new PostDisplayIdentityResponse(
@@ -669,7 +669,7 @@ public sealed class FeedService(
                         container = new(group.Id, group.Name, null, group.Privacy.ToString().ToLowerInvariant());
                         author = actor;
                         break;
-                    case PostShareDestinationType.Page:
+                    case PostShareDestinationType.PAGE:
                         var page = destinationPages.GetValueOrDefault(share.DestinationId);
                         if (page is null) continue;
                         displayAuthor = new PostDisplayIdentityResponse(

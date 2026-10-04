@@ -13,7 +13,7 @@ public sealed record ContactIdentifier(ContactKind Kind, string Value)
         var trimmed = identifier.Trim();
         if (trimmed.Contains('@'))
         {
-            return new ContactIdentifier(ContactKind.Email, trimmed.ToLowerInvariant());
+            return new ContactIdentifier(ContactKind.EMAIL, trimmed.ToLowerInvariant());
         }
 
         var digits = NonPhoneCharacters.Replace(trimmed, string.Empty);
@@ -21,6 +21,6 @@ public sealed record ContactIdentifier(ContactKind Kind, string Value)
             ? $"+84{digits[1..]}"
             : $"+{digits.TrimStart('+')}";
 
-        return new ContactIdentifier(ContactKind.Phone, phone);
+        return new ContactIdentifier(ContactKind.PHONE, phone);
     }
 }

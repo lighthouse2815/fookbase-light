@@ -52,7 +52,7 @@ public sealed class FriendSuggestionService(
                       (friendship.UserId1 == viewerUserId && friendship.UserId2 == candidateUserId) ||
                       (friendship.UserId2 == viewerUserId && friendship.UserId1 == candidateUserId)) &&
                   !dbContext.FriendRequests.AsNoTracking().Any(request =>
-                      request.Status == FriendRequestStatus.Pending &&
+                      request.Status == FriendRequestStatus.PENDING &&
                       ((request.SenderUserId == viewerUserId && request.ReceiverUserId == candidateUserId) ||
                        (request.SenderUserId == candidateUserId && request.ReceiverUserId == viewerUserId))) &&
                   !dbContext.BlockedUsers.AsNoTracking().Any(block =>
@@ -77,7 +77,7 @@ public sealed class FriendSuggestionService(
                 join page in dbContext.Pages.AsNoTracking() on viewerFollower.PageId equals page.Id
                 where viewerFollower.UserId == viewerUserId &&
                       candidateFollower.UserId == candidateUserId &&
-                      page.DeletedAtUtc == null && page.Status == PageStatus.Published
+                      page.DeletedAtUtc == null && page.Status == PageStatus.PUBLISHED
                 select page.Id).Count()
             let score = mutualFriendCount * options.MutualFriendWeight +
                         sharedGroupCount * options.SharedGroupWeight +
@@ -155,7 +155,7 @@ public sealed class FriendSuggestionService(
             join page in dbContext.Pages.AsNoTracking() on viewerFollower.PageId equals page.Id
             where viewerFollower.UserId == viewerUserId &&
                   candidateFollower.UserId != viewerUserId &&
-                  page.DeletedAtUtc == null && page.Status == PageStatus.Published
+                  page.DeletedAtUtc == null && page.Status == PageStatus.PUBLISHED
             select candidateFollower.UserId;
 
         return mutualFriendCandidates.Distinct().OrderBy(userId => userId).Take(options.CandidateLimitPerSource)
@@ -207,7 +207,7 @@ public sealed class FriendSuggestionService(
             viewerUserId.ToString("N"));
 
     private static ApplicationError Validation(string code, string message) =>
-        new(code, message, ApplicationErrorType.Validation);
+        new(code, message, ApplicationErrorType.VALIDATION);
 
     private sealed record FriendSuggestionCursor(int Version, Guid ViewerUserId, int Score, Guid UserId);
 

@@ -59,8 +59,8 @@ public sealed class InMemoryObjectStorage : IObjectStorage
 
     public void Put(string objectKey, byte[] content, string contentType) =>
         Put(objectKey, content, contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase)
-            ? MediaType.Video
-            : MediaType.Image);
+            ? MediaType.VIDEO
+            : MediaType.IMAGE);
 
     private void Put(string objectKey, byte[] content, MediaType mediaType) =>
         objects[objectKey] = (content, mediaType);

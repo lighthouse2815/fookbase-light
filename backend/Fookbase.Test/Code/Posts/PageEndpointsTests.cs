@@ -91,7 +91,7 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Contains(await db.PageMembers.Where(member => member.PageId == created.Id).ToListAsync(),
-            member => member.UserId == ownerId && member.Role == PageRole.Owner);
+            member => member.UserId == ownerId && member.Role == PageRole.OWNER);
     }
 
     [Fact]
@@ -165,9 +165,9 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Contains(await db.PageMembers.Where(item => item.PageId == page.Id).ToListAsync(),
-            item => item.UserId == users[1] && item.Role == PageRole.Editor);
+            item => item.UserId == users[1] && item.Role == PageRole.EDITOR);
         Assert.Contains(await db.Notifications.ToListAsync(), notification => notification.RecipientUserId == users[1] &&
-            notification.Type == NotificationType.PageRoleInvite && notification.EntityId == invitation.Id);
+            notification.Type == NotificationType.PAGE_ROLE_INVITE && notification.EntityId == invitation.Id);
     }
 
     [Fact]
@@ -187,8 +187,8 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NoContent, ownerTransfers.StatusCode);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        Assert.Contains(await db.PageMembers.Where(item => item.PageId == page.Id).ToListAsync(), item => item.UserId == users[2] && item.Role == PageRole.Owner);
-        Assert.Contains(await db.PageMembers.Where(item => item.PageId == page.Id).ToListAsync(), item => item.UserId == users[0] && item.Role == PageRole.Admin);
+        Assert.Contains(await db.PageMembers.Where(item => item.PageId == page.Id).ToListAsync(), item => item.UserId == users[2] && item.Role == PageRole.OWNER);
+        Assert.Contains(await db.PageMembers.Where(item => item.PageId == page.Id).ToListAsync(), item => item.UserId == users[0] && item.Role == PageRole.ADMIN);
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             var persisted = await db.Posts.SingleAsync(item => item.Id == post.Id);
             Assert.Equal(users[0], persisted.AuthorUserId);
-            Assert.Equal(PostContainerType.Page, persisted.ContainerType);
+            Assert.Equal(PostContainerType.PAGE, persisted.ContainerType);
             Assert.Equal(page.Id, persisted.ContainerId);
         }
 
@@ -267,7 +267,7 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(users[2], persisted[editorPost.Id].AuthorUserId);
         Assert.All(persisted.Values, item =>
         {
-            Assert.Equal(PostContainerType.Page, item.ContainerType);
+            Assert.Equal(PostContainerType.PAGE, item.ContainerType);
             Assert.Equal(page.Id, item.ContainerId);
         });
     }
@@ -292,11 +292,11 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var notifications = await db.Notifications.AsNoTracking().Where(item => item.EntityId == post.Id).ToListAsync();
         Assert.Contains(notifications, item => item.RecipientUserId == users[0] && item.ActorUserId == users[1] &&
-            item.Type == NotificationType.PostReaction);
+            item.Type == NotificationType.POST_REACTION);
         Assert.Contains(notifications, item => item.RecipientUserId == users[0] && item.ActorUserId == users[1] &&
-            item.Type == NotificationType.PostComment);
+            item.Type == NotificationType.POST_COMMENT);
         Assert.DoesNotContain(notifications, item => item.ActorUserId == users[0] &&
-            (item.Type == NotificationType.PostReaction || item.Type == NotificationType.PostComment));
+            (item.Type == NotificationType.POST_REACTION || item.Type == NotificationType.POST_COMMENT));
     }
 
     [Fact]
@@ -390,7 +390,7 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
     {
         var now = DateTimeOffset.UtcNow;
         var id = Guid.NewGuid();
-        var asset = MediaAsset.CreatePending(id, ownerUserId, MediaType.Image, $"{ownerUserId:N}/{id:N}.png", "page.png", "image/png", 11, now, now.AddMinutes(5));
+        var asset = MediaAsset.CreatePending(id, ownerUserId, MediaType.IMAGE, $"{ownerUserId:N}/{id:N}.png", "page.png", "image/png", 11, now, now.AddMinutes(5));
         asset.MarkReady(11, now);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();

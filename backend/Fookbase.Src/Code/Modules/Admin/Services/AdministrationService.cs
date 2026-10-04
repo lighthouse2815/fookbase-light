@@ -29,7 +29,7 @@ public sealed class AdministrationService(
             return ApplicationResult<PagedResponse<AdminUserResponse>>.Failure(new ApplicationError(
                 ErrorCode.InvalidPagination,
                 $"Offset must be non-negative and limit must be between 1 and {IdentityModuleConstants.Administration.MaximumPageSize}.",
-                ApplicationErrorType.Validation));
+                ApplicationErrorType.VALIDATION));
         }
 
         var normalizedQuery = query?.Trim().ToLowerInvariant();
@@ -118,7 +118,7 @@ public sealed class AdministrationService(
                 return ApplicationResult<AdminUserResponse>.Failure(new ApplicationError(
                     "user_update_failed",
                     "The account status could not be updated.",
-                    ApplicationErrorType.Conflict));
+                    ApplicationErrorType.CONFLICT));
             }
         }
 
@@ -136,8 +136,8 @@ public sealed class AdministrationService(
             state?.WarningCount ?? 0, state?.SuspendedUntilUtc, state?.DisabledAtUtc);
 
     private static ApplicationError Forbidden(string message) =>
-        new("admin_action_forbidden", message, ApplicationErrorType.Forbidden);
+        new("admin_action_forbidden", message, ApplicationErrorType.FORBIDDEN);
 
     private static ApplicationError NotFound(string message) =>
-        new("user_not_found", message, ApplicationErrorType.NotFound);
+        new("user_not_found", message, ApplicationErrorType.NOT_FOUND);
 }

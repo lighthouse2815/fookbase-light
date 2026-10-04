@@ -51,7 +51,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var membership = await db.GroupMembers.SingleAsync(member => member.GroupId == response.Id);
         Assert.Equal(owner, membership.UserId);
-        Assert.Equal(GroupMemberRole.Owner, membership.Role);
+        Assert.Equal(GroupMemberRole.OWNER, membership.Role);
     }
 
     [Fact]
@@ -106,10 +106,10 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Contains(await db.GroupMembers.Where(member => member.GroupId == group.Id).ToListAsync(),
-            member => member.UserId == users[1] && member.Role == GroupMemberRole.Member);
+            member => member.UserId == users[1] && member.Role == GroupMemberRole.MEMBER);
         Assert.Contains(await db.Notifications.ToListAsync(), notification =>
             notification.RecipientUserId == users[1] &&
-            notification.Type == NotificationType.GroupJoinApproved &&
+            notification.Type == NotificationType.GROUP_JOIN_APPROVED &&
             notification.EntityId == request.Id);
     }
 
@@ -151,7 +151,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
             member => member.UserId == users[1]);
         Assert.Contains(await db.Notifications.ToListAsync(), notification =>
             notification.RecipientUserId == users[1] &&
-            notification.Type == NotificationType.GroupInvite &&
+            notification.Type == NotificationType.GROUP_INVITE &&
             notification.EntityId == invite.Id);
     }
 
@@ -310,7 +310,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var persisted = await db.Posts.SingleAsync(item => item.Id == first.Id);
         Assert.Equal(users[0], persisted.AuthorUserId);
-        Assert.Equal(PostContainerType.Group, persisted.ContainerType);
+        Assert.Equal(PostContainerType.GROUP, persisted.ContainerType);
         Assert.Equal(group.Id, persisted.ContainerId);
     }
 
@@ -524,7 +524,7 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         var asset = MediaAsset.CreatePending(
             mediaId,
             ownerUserId,
-            MediaType.Image,
+            MediaType.IMAGE,
             ownerUserId.ToString("N") + "/" + mediaId.ToString("N") + ".png",
             "group.png",
             "image/png",

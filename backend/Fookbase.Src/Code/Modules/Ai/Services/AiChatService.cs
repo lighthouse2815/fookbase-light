@@ -70,8 +70,8 @@ public sealed class AiChatService(
             var client = httpClientFactory.CreateClient(provider.HttpClientName);
             using var response = provider.Protocol switch
             {
-                AiChatProviderProtocol.Gemini => await SendGeminiAsync(client, provider.Options, input, cancellationToken),
-                AiChatProviderProtocol.OpenAiResponses => await SendOpenAiResponsesAsync(client, provider.Options, input, cancellationToken),
+                AiChatProviderProtocol.GEMINI => await SendGeminiAsync(client, provider.Options, input, cancellationToken),
+                AiChatProviderProtocol.OPEN_AI_RESPONSES => await SendOpenAiResponsesAsync(client, provider.Options, input, cancellationToken),
                 _ => await SendOpenAiChatCompletionAsync(client, provider.Options, input, cancellationToken)
             };
 
@@ -85,8 +85,8 @@ public sealed class AiChatService(
             using var document = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken);
             var content = provider.Protocol switch
             {
-                AiChatProviderProtocol.Gemini => ReadGeminiOutputText(document.RootElement),
-                AiChatProviderProtocol.OpenAiResponses => ReadResponsesOutputText(document.RootElement),
+                AiChatProviderProtocol.GEMINI => ReadGeminiOutputText(document.RootElement),
+                AiChatProviderProtocol.OPEN_AI_RESPONSES => ReadResponsesOutputText(document.RootElement),
                 _ => ReadChatCompletionOutputText(document.RootElement)
             };
 

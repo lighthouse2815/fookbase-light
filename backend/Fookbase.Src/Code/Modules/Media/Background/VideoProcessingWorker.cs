@@ -48,8 +48,8 @@ internal sealed class VideoProcessingWorker(
         var staleBefore = now.AddSeconds(-options.VideoProcessingTimeoutSeconds);
         var candidate = await db.MediaProcessingJobs.AsNoTracking()
             .Where(item =>
-                (item.Status == MediaProcessingJobStatus.Pending && item.NextAttemptAtUtc <= now) ||
-                (item.Status == MediaProcessingJobStatus.Processing &&
+                (item.Status == MediaProcessingJobStatus.PENDING && item.NextAttemptAtUtc <= now) ||
+                (item.Status == MediaProcessingJobStatus.PROCESSING &&
                  item.StartedAtUtc != null && item.StartedAtUtc < staleBefore))
             .OrderBy(item => item.NextAttemptAtUtc)
             .ThenBy(item => item.CreatedAtUtc)
@@ -62,11 +62,11 @@ internal sealed class VideoProcessingWorker(
 
         var claimed = await db.MediaProcessingJobs
             .Where(item => item.Id == candidate.Id &&
-                ((item.Status == MediaProcessingJobStatus.Pending && item.NextAttemptAtUtc <= now) ||
-                 (item.Status == MediaProcessingJobStatus.Processing &&
+                ((item.Status == MediaProcessingJobStatus.PENDING && item.NextAttemptAtUtc <= now) ||
+                 (item.Status == MediaProcessingJobStatus.PROCESSING &&
                   item.StartedAtUtc != null && item.StartedAtUtc < staleBefore)))
             .ExecuteUpdateAsync(setters => setters
-                .SetProperty(item => item.Status, MediaProcessingJobStatus.Processing)
+                .SetProperty(item => item.Status, MediaProcessingJobStatus.PROCESSING)
                 .SetProperty(item => item.AttemptCount, item => item.AttemptCount + 1)
                 .SetProperty(item => item.StartedAtUtc, now)
                 .SetProperty(item => item.LastError, (string?)null), stoppingToken);
@@ -78,7 +78,7 @@ internal sealed class VideoProcessingWorker(
         var job = await db.MediaProcessingJobs.SingleAsync(item => item.Id == candidate.Id, stoppingToken);
 
         var asset = await db.MediaAssets.SingleOrDefaultAsync(asset => asset.Id == job.MediaId, stoppingToken);
-        if (asset is null || asset.Status != MediaStatus.Processing || asset.MediaType != MediaType.Video)
+        if (asset is null || asset.Status != MediaStatus.PROCESSING || asset.MediaType != MediaType.VIDEO)
         {
             job.Fail(timeProvider.GetUtcNow(), "The media asset is no longer available for processing.");
             await db.SaveChangesAsync(stoppingToken);
@@ -94,7 +94,7 @@ internal sealed class VideoProcessingWorker(
             Directory.CreateDirectory(jobDirectory);
             var storage = scope.ServiceProvider.GetRequiredService<IObjectStorage>();
             var processor = scope.ServiceProvider.GetRequiredService<IVideoProcessor>();
-            await storage.DownloadToFileAsync(asset.ObjectKey, MediaType.Video, inputPath, stoppingToken);
+            await storage.DownloadToFileAsync(asset.ObjectKey, MediaType.VIDEO, inputPath, stoppingToken);
             var metadata = await processor.ProcessAsync(
                 inputPath,
                 normalizedPath,
@@ -103,8 +103,8 @@ internal sealed class VideoProcessingWorker(
                 stoppingToken);
             var processedKey = MediaAsset.ProcessedKey(asset.OwnerUserId, asset.Id);
             var posterKey = MediaAsset.PosterKey(asset.OwnerUserId, asset.Id);
-            await storage.UploadFileAsync(processedKey, MediaType.Video, normalizedPath, "video/mp4", stoppingToken);
-            await storage.UploadFileAsync(posterKey, MediaType.Image, posterPath, "image/jpeg", stoppingToken);
+            await storage.UploadFileAsync(processedKey, MediaType.VIDEO, normalizedPath, "video/mp4", stoppingToken);
+            await storage.UploadFileAsync(posterKey, MediaType.IMAGE, posterPath, "image/jpeg", stoppingToken);
             var completedAt = timeProvider.GetUtcNow();
             asset.MarkVideoReady(
                 processedKey,

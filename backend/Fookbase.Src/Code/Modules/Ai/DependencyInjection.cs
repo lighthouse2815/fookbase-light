@@ -16,7 +16,7 @@ public static class DependencyInjection
             {
                 client.BaseAddress = new Uri(provider.Options.ApiBaseUrl.TrimEnd('/') + "/");
                 client.Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
-                if (provider.Protocol == AiChatProviderProtocol.Gemini)
+                if (provider.Protocol == AiChatProviderProtocol.GEMINI)
                 {
                     client.DefaultRequestHeaders.Add("x-goog-api-key", provider.Options.ApiKey);
                     return;

@@ -2,12 +2,12 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 
 public enum MessageReactionType
 {
-    Like,
-    Love,
-    Haha,
-    Wow,
-    Sad,
-    Angry
+    LIKE,
+    LOVE,
+    HAHA,
+    WOW,
+    SAD,
+    ANGRY
 }
 
 public sealed class MessageReaction

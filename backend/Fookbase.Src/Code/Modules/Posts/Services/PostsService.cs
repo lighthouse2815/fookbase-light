@@ -84,8 +84,8 @@ public sealed class PostsService(
         return Map(await CreatePostInContainerCoreAsync(
             actorUserId,
             content,
-            PostPrivacy.Public,
-            PostContainerType.Group,
+            PostPrivacy.PUBLIC,
+            PostContainerType.GROUP,
             groupId,
             mediaIds,
             cancellationToken,
@@ -139,19 +139,19 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null)
         {
-            return ApplicationResult<PostResponse>.Failure(ToApplicationError(PostsServiceError.PostNotFound));
+            return ApplicationResult<PostResponse>.Failure(ToApplicationError(PostsServiceError.POST_NOT_FOUND));
         }
 
-        if (post.AuthorUserId != actorUserId || post.ContainerType != PostContainerType.Profile)
+        if (post.AuthorUserId != actorUserId || post.ContainerType != PostContainerType.PROFILE)
         {
-            return ApplicationResult<PostResponse>.Failure(ToApplicationError(PostsServiceError.Forbidden));
+            return ApplicationResult<PostResponse>.Failure(ToApplicationError(PostsServiceError.FORBIDDEN));
         }
 
         if (isPinned)
         {
             await dbContext.Posts
                 .Where(item => item.AuthorUserId == actorUserId &&
-                    item.ContainerType == PostContainerType.Profile &&
+                    item.ContainerType == PostContainerType.PROFILE &&
                     item.DeletedAtUtc == null && item.Id != postId && item.IsPinned)
                 .ExecuteUpdateAsync(
                     setters => setters.SetProperty(item => item.IsPinned, false),
@@ -189,7 +189,7 @@ public sealed class PostsService(
             ? new ApplicationError(
                 "invalid_text_background",
                 "Text backgrounds require a text-only post and a supported background.",
-                ApplicationErrorType.Validation)
+                ApplicationErrorType.VALIDATION)
             : null;
 
     public async Task<ApplicationResult> EnsurePostOwnerAsync(
@@ -202,19 +202,19 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null)
         {
-            return ApplicationResult.Failure(ToApplicationError(PostsServiceError.PostNotFound));
+            return ApplicationResult.Failure(ToApplicationError(PostsServiceError.POST_NOT_FOUND));
         }
 
-        if (post.ContainerType == PostContainerType.Page)
+        if (post.ContainerType == PostContainerType.PAGE)
         {
             return await pagePostAccessService.CanCreatePostAsync(post.ContainerId, actorUserId, cancellationToken)
                 ? ApplicationResult.Success()
-                : ApplicationResult.Failure(ToApplicationError(PostsServiceError.Forbidden));
+                : ApplicationResult.Failure(ToApplicationError(PostsServiceError.FORBIDDEN));
         }
 
         return post.AuthorUserId == actorUserId
             ? ApplicationResult.Success()
-            : ApplicationResult.Failure(ToApplicationError(PostsServiceError.Forbidden));
+            : ApplicationResult.Failure(ToApplicationError(PostsServiceError.FORBIDDEN));
     }
 
     public async Task<ApplicationResult<PostResponse>> GetPostAsync(
@@ -380,7 +380,7 @@ public sealed class PostsService(
             return ApplicationResult<PostResponse>.Failure(new ApplicationError(
                 "invalid_reaction_type",
                 "Reaction type must be one of: like, love, haha, wow, sad, angry.",
-                ApplicationErrorType.Validation));
+                ApplicationErrorType.VALIDATION));
         }
 
         return Map(await SetReactionCoreAsync(
@@ -418,7 +418,7 @@ public sealed class PostsService(
             return ApplicationResult<PagedResponse<PostReactionResponse>>.Failure(new ApplicationError(
                 "invalid_reaction_type",
                 "Reaction type must be one of: like, love, haha, wow, sad, angry.",
-                ApplicationErrorType.Validation));
+                ApplicationErrorType.VALIDATION));
         }
         else if (!string.IsNullOrWhiteSpace(reactionType))
         {
@@ -441,7 +441,7 @@ public sealed class PostsService(
             return ApplicationResult<CommentResponse>.Failure(new ApplicationError(
                 "invalid_reaction_type",
                 "Reaction type must be one of: like, love, haha, wow, sad, angry.",
-                ApplicationErrorType.Validation));
+                ApplicationErrorType.VALIDATION));
         }
 
         var error = await ChangeCommentReactionAsync(
@@ -450,7 +450,7 @@ public sealed class PostsService(
             parsedReaction,
             actor,
             cancellationToken);
-        if (error != PostsServiceError.None)
+        if (error != PostsServiceError.NONE)
         {
             return ApplicationResult<CommentResponse>.Failure(ToApplicationError(error));
         }
@@ -470,7 +470,7 @@ public sealed class PostsService(
             null,
             actor,
             cancellationToken);
-        if (error != PostsServiceError.None)
+        if (error != PostsServiceError.NONE)
         {
             return ApplicationResult<CommentResponse>.Failure(ToApplicationError(error));
         }
@@ -487,13 +487,13 @@ public sealed class PostsService(
     }
 
     private static bool TryParsePrivacy(string privacy, out PostPrivacy parsedPrivacy) =>
-        Enum.TryParse(privacy, true, out parsedPrivacy) && Enum.IsDefined(parsedPrivacy);
+        EnumText.TryParse(privacy, true, out parsedPrivacy) && Enum.IsDefined(parsedPrivacy);
 
     private static ApplicationError InvalidPrivacy() =>
         new(
             "invalid_post_privacy",
             "Post privacy must be one of: public, friends, onlyMe.",
-            ApplicationErrorType.Validation);
+            ApplicationErrorType.VALIDATION);
 
     private static ApplicationError? ValidateContent(string? content, int maximumLength, string resource)
     {
@@ -502,7 +502,7 @@ public sealed class PostsService(
             return new ApplicationError(
                 $"invalid_{resource}_content",
                 $"The {resource} content must contain between 1 and {maximumLength} characters.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
         }
 
         return null;
@@ -511,15 +511,15 @@ public sealed class PostsService(
     private ApplicationError? ValidatePost(string? content, IReadOnlyList<Guid> mediaIds)
     {
         if (string.IsNullOrWhiteSpace(content) && mediaIds.Count == 0)
-            return new ApplicationError("empty_post", "A post requires content or media.", ApplicationErrorType.Validation);
+            return new ApplicationError("empty_post", "A post requires content or media.", ApplicationErrorType.VALIDATION);
         if ((content?.Trim().Length ?? 0) > Post.MaximumContentLength)
             return new ApplicationError("invalid_post_content",
-                $"Post content cannot exceed {Post.MaximumContentLength} characters.", ApplicationErrorType.Validation);
+                $"Post content cannot exceed {Post.MaximumContentLength} characters.", ApplicationErrorType.VALIDATION);
         if (mediaIds.Count > options.MaximumAttachments)
             return new ApplicationError("too_many_attachments",
-                $"A post can contain at most {options.MaximumAttachments} media attachments.", ApplicationErrorType.Validation);
+                $"A post can contain at most {options.MaximumAttachments} media attachments.", ApplicationErrorType.VALIDATION);
         if (mediaIds.Count != mediaIds.Distinct().Count())
-            return new ApplicationError("duplicate_attachment", "Media attachments cannot be duplicated.", ApplicationErrorType.Validation);
+            return new ApplicationError("duplicate_attachment", "Media attachments cannot be duplicated.", ApplicationErrorType.VALIDATION);
         return null;
     }
 
@@ -530,7 +530,7 @@ public sealed class PostsService(
             return new ApplicationError(
                 ErrorCode.InvalidPagination,
                 $"Offset must be non-negative and limit must be between 1 and {MaximumLimit}.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
         }
 
         return null;
@@ -542,32 +542,32 @@ public sealed class PostsService(
             : ApplicationResult<T>.Failure(ToApplicationError(result.Error));
 
     private static ApplicationResult Map(PostsServiceError error) =>
-        error == PostsServiceError.None
+        error == PostsServiceError.NONE
             ? ApplicationResult.Success()
             : ApplicationResult.Failure(ToApplicationError(error));
 
     private static ApplicationError ToApplicationError(PostsServiceError error) => error switch
     {
-        PostsServiceError.PostNotFound => new(
-            "post_not_found", "The post was not found.", ApplicationErrorType.NotFound),
-        PostsServiceError.CommentNotFound => new(
-            "comment_not_found", "The comment was not found.", ApplicationErrorType.NotFound),
-        PostsServiceError.ParentCommentNotFound => new(
-            "parent_comment_not_found", "The parent comment was not found.", ApplicationErrorType.NotFound),
-        PostsServiceError.Forbidden => new(
-            ErrorCode.Forbidden, "You are not allowed to perform this operation.", ApplicationErrorType.Forbidden),
-        PostsServiceError.RelationshipBlocked => new(
-            "relationship_unavailable", "This interaction is unavailable.", ApplicationErrorType.Conflict),
-        PostsServiceError.InvalidParentComment => new(
-            "invalid_parent_comment", "A reply can only target a top-level comment on the same post.", ApplicationErrorType.Validation),
-        PostsServiceError.MediaNotAttached => new(
-            "media_not_attached", "The media is not attached to this post.", ApplicationErrorType.NotFound),
-        PostsServiceError.InvalidPostType => new(
-            "invalid_post_type", "Reels must be edited through the Reels experience.", ApplicationErrorType.Conflict),
-        PostsServiceError.ProfileMediaPostNotEditable => new(
+        PostsServiceError.POST_NOT_FOUND => new(
+            "post_not_found", "The post was not found.", ApplicationErrorType.NOT_FOUND),
+        PostsServiceError.COMMENT_NOT_FOUND => new(
+            "comment_not_found", "The comment was not found.", ApplicationErrorType.NOT_FOUND),
+        PostsServiceError.PARENT_COMMENT_NOT_FOUND => new(
+            "parent_comment_not_found", "The parent comment was not found.", ApplicationErrorType.NOT_FOUND),
+        PostsServiceError.FORBIDDEN => new(
+            ErrorCode.Forbidden, "You are not allowed to perform this operation.", ApplicationErrorType.FORBIDDEN),
+        PostsServiceError.RELATIONSHIP_BLOCKED => new(
+            "relationship_unavailable", "This interaction is unavailable.", ApplicationErrorType.CONFLICT),
+        PostsServiceError.INVALID_PARENT_COMMENT => new(
+            "invalid_parent_comment", "A reply can only target a top-level comment on the same post.", ApplicationErrorType.VALIDATION),
+        PostsServiceError.MEDIA_NOT_ATTACHED => new(
+            "media_not_attached", "The media is not attached to this post.", ApplicationErrorType.NOT_FOUND),
+        PostsServiceError.INVALID_POST_TYPE => new(
+            "invalid_post_type", "Reels must be edited through the Reels experience.", ApplicationErrorType.CONFLICT),
+        PostsServiceError.PROFILE_MEDIA_POST_NOT_EDITABLE => new(
             "profile_media_post_not_editable",
             "Avatar and cover update posts cannot be edited.",
-            ApplicationErrorType.Conflict),
+            ApplicationErrorType.CONFLICT),
         _ => throw new ArgumentOutOfRangeException(nameof(error), error, null)
     };
 
@@ -584,7 +584,7 @@ public sealed class PostsService(
             authorUserId,
             content,
             privacy,
-            PostContainerType.Profile,
+            PostContainerType.PROFILE,
             authorUserId,
             mediaIds,
             cancellationToken,
@@ -620,11 +620,11 @@ public sealed class PostsService(
             dbContext.PostMedia.Add(PostMedia.Create(post.Id, mediaIds[index], index));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
-        if (addToTimelinePhotos && containerType == PostContainerType.Profile && post.PostType == PostType.Standard)
+        if (addToTimelinePhotos && containerType == PostContainerType.PROFILE && post.PostType == PostType.STANDARD)
         {
             foreach (var mediaId in mediaIds)
             {
-                await photosService.AddSystemMediaAsync(authorUserId, PhotoAlbumType.TimelinePhotos, mediaId, cancellationToken);
+                await photosService.AddSystemMediaAsync(authorUserId, PhotoAlbumType.TIMELINE_PHOTOS, mediaId, cancellationToken);
             }
         }
         return PostsServiceResult<PostResponse>.Success(EmptySummary(post, mediaIds));
@@ -643,8 +643,8 @@ public sealed class PostsService(
             return ApplicationResult<PostResponse>.Failure(validation.Error!);
         }
 
-        var result = await CreatePostInContainerCoreAsync(actorUserId, content, PostPrivacy.Public,
-            PostContainerType.Page, pageId, mediaIds, cancellationToken);
+        var result = await CreatePostInContainerCoreAsync(actorUserId, content, PostPrivacy.PUBLIC,
+            PostContainerType.PAGE, pageId, mediaIds, cancellationToken);
         if (!result.Succeeded)
         {
             return Map(result);
@@ -668,35 +668,35 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null)
         {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.PostNotFound);
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.POST_NOT_FOUND);
         }
 
-        var canManagePagePost = post.ContainerType == PostContainerType.Page &&
+        var canManagePagePost = post.ContainerType == PostContainerType.PAGE &&
             await pagePostAccessService.CanCreatePostAsync(post.ContainerId, actorUserId, cancellationToken);
         if (post.AuthorUserId != actorUserId && !canManagePagePost)
         {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.Forbidden);
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.FORBIDDEN);
         }
 
-        if (post.PostType != PostType.Standard)
+        if (post.PostType != PostType.STANDARD)
         {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.InvalidPostType);
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.INVALID_POST_TYPE);
         }
 
         var isProfileMediaUpdate = Post.IsProfileMediaUpdateContent(post.Content);
 
-        if (post.ContainerType == PostContainerType.Group &&
+        if (post.ContainerType == PostContainerType.GROUP &&
             !await groupPostAccessService.CanCreatePostAsync(
                 post.ContainerId,
                 actorUserId,
                 cancellationToken))
         {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.Forbidden);
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.FORBIDDEN);
         }
 
-        if (post.ContainerType == PostContainerType.Page)
+        if (post.ContainerType == PostContainerType.PAGE)
         {
-            privacy = PostPrivacy.Public;
+            privacy = PostPrivacy.PUBLIC;
         }
 
         var now = timeProvider.GetUtcNow();
@@ -707,7 +707,7 @@ public sealed class PostsService(
             (!string.Equals(content, post.Content, StringComparison.Ordinal) ||
              !existingMedia.OrderBy(item => item.SortOrder).Select(item => item.MediaId).SequenceEqual(mediaIds)))
         {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.ProfileMediaPostNotEditable);
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.PROFILE_MEDIA_POST_NOT_EDITABLE);
         }
         var removed = existingMedia.Where(x => !mediaIds.Contains(x.MediaId)).ToList();
         var added = mediaIds.Where(id => existingMedia.All(x => x.MediaId != id)).ToList();
@@ -739,24 +739,24 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null)
         {
-            return PostsServiceError.PostNotFound;
+            return PostsServiceError.POST_NOT_FOUND;
         }
 
-        var canManagePagePost = actorUserId is not null && post.ContainerType == PostContainerType.Page &&
+        var canManagePagePost = actorUserId is not null && post.ContainerType == PostContainerType.PAGE &&
             await pagePostAccessService.CanCreatePostAsync(post.ContainerId, actorUserId.Value, cancellationToken);
         if (actorUserId is not null && post.AuthorUserId != actorUserId && !canManagePagePost)
         {
-            return PostsServiceError.Forbidden;
+            return PostsServiceError.FORBIDDEN;
         }
 
         if (actorUserId is not null &&
-            post.ContainerType == PostContainerType.Group &&
+            post.ContainerType == PostContainerType.GROUP &&
             !await groupPostAccessService.CanCreatePostAsync(
                 post.ContainerId,
                 actorUserId.Value,
                 cancellationToken))
         {
-            return PostsServiceError.Forbidden;
+            return PostsServiceError.FORBIDDEN;
         }
 
         var now = timeProvider.GetUtcNow();
@@ -768,7 +768,7 @@ public sealed class PostsService(
             dbContext.PostMedia.Remove(attachment);
         }
         await dbContext.SaveChangesAsync(cancellationToken);
-        return PostsServiceError.None;
+        return PostsServiceError.NONE;
     }
 
     public async Task<PostsServiceResult<PostResponse>> GetPostCoreAsync(
@@ -781,7 +781,7 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null || !await CanViewPostAsync(post, viewer, cancellationToken))
         {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.PostNotFound);
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.POST_NOT_FOUND);
         }
 
         return PostsServiceResult<PostResponse>.Success(
@@ -814,7 +814,7 @@ public sealed class PostsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        var query = VisiblePosts(viewer).Where(post => post.ContainerType == PostContainerType.Profile && post.AuthorUserId == authorUserId);
+        var query = VisiblePosts(viewer).Where(post => post.ContainerType == PostContainerType.PROFILE && post.AuthorUserId == authorUserId);
         var total = await query.CountAsync(cancellationToken);
         var posts = await query
             .OrderByDescending(post => post.IsPinned)
@@ -841,11 +841,11 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null)
         {
-            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.PostNotFound);
+            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.POST_NOT_FOUND);
         }
 
         var accessError = await GetInteractionAccessErrorAsync(actor, post, cancellationToken);
-        if (accessError != PostsServiceError.None)
+        if (accessError != PostsServiceError.NONE)
         {
             return PostsServiceResult<CommentResponse>.Failure(accessError);
         }
@@ -857,12 +857,12 @@ public sealed class PostsService(
                 cancellationToken);
             if (parent is null)
             {
-                return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.ParentCommentNotFound);
+                return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.PARENT_COMMENT_NOT_FOUND);
             }
 
             if (parent.PostId != postId || parent.ParentCommentId is not null)
             {
-                return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.InvalidParentComment);
+                return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.INVALID_PARENT_COMMENT);
             }
         }
 
@@ -873,8 +873,8 @@ public sealed class PostsService(
         var notification = await notificationService.QueueAsync(
             post.AuthorUserId,
             authorUserId,
-            NotificationType.PostComment,
-            NotificationEntityType.Post,
+            NotificationType.POST_COMMENT,
+            NotificationEntityType.POST,
             post.Id,
             cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -897,19 +897,19 @@ public sealed class PostsService(
             cancellationToken);
         if (comment is null)
         {
-            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.CommentNotFound);
+            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.COMMENT_NOT_FOUND);
         }
 
         if (comment.AuthorUserId != actorUserId)
         {
-            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.Forbidden);
+            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.FORBIDDEN);
         }
 
         if (!await dbContext.Posts.AnyAsync(
                 post => post.Id == comment.PostId && post.DeletedAtUtc == null,
                 cancellationToken))
         {
-            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.PostNotFound);
+            return PostsServiceResult<CommentResponse>.Failure(PostsServiceError.POST_NOT_FOUND);
         }
 
         comment.Update(content, timeProvider.GetUtcNow());
@@ -928,18 +928,18 @@ public sealed class PostsService(
             cancellationToken);
         if (comment is null)
         {
-            return PostsServiceError.CommentNotFound;
+            return PostsServiceError.COMMENT_NOT_FOUND;
         }
 
         if (comment.AuthorUserId != actorUserId &&
             !await pagePostAccessService.CanModerateCommentAsync(comment.PostId, actorUserId, cancellationToken))
         {
-            return PostsServiceError.Forbidden;
+            return PostsServiceError.FORBIDDEN;
         }
 
         comment.Delete(timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
-        return PostsServiceError.None;
+        return PostsServiceError.NONE;
     }
 
     public async Task<PostsServiceResult<PagedResponse<CommentResponse>>> GetCommentsCoreAsync(
@@ -954,7 +954,7 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null || !await CanViewPostAsync(post, viewer, cancellationToken))
         {
-            return PostsServiceResult<PagedResponse<CommentResponse>>.Failure(PostsServiceError.PostNotFound);
+            return PostsServiceResult<PagedResponse<CommentResponse>>.Failure(PostsServiceError.POST_NOT_FOUND);
         }
 
         var query = dbContext.Comments.AsNoTracking()
@@ -984,7 +984,7 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null || !await CanViewPostAsync(post, viewer, cancellationToken))
         {
-            return PostsServiceResult<PagedResponse<PostReactionResponse>>.Failure(PostsServiceError.PostNotFound);
+            return PostsServiceResult<PagedResponse<PostReactionResponse>>.Failure(PostsServiceError.POST_NOT_FOUND);
         }
 
         var query = dbContext.PostReactions.AsNoTracking().Where(reaction => reaction.PostId == postId)
@@ -1021,7 +1021,7 @@ public sealed class PostsService(
                 .Where(user => userIds.Contains(user.Id))
                 .ToDictionaryAsync(user => user.Id, user => user.UserName ?? user.Id.ToString(), cancellationToken);
         var pendingRequestRows = await dbContext.FriendRequests.AsNoTracking()
-            .Where(request => request.Status == FriendRequestStatus.Pending &&
+            .Where(request => request.Status == FriendRequestStatus.PENDING &&
                 ((request.SenderUserId == viewer.UserId && userIds.Contains(request.ReceiverUserId)) ||
                  (request.ReceiverUserId == viewer.UserId && userIds.Contains(request.SenderUserId))))
             .Select(request => new { request.Id, request.SenderUserId, request.ReceiverUserId })
@@ -1079,12 +1079,12 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null || !await CanViewPostAsync(post, viewer, cancellationToken))
         {
-            return PostsServiceError.PostNotFound;
+            return PostsServiceError.POST_NOT_FOUND;
         }
         return await dbContext.PostMedia.AnyAsync(
             x => x.PostId == postId && x.MediaId == mediaId, cancellationToken)
-            ? PostsServiceError.None
-            : PostsServiceError.MediaNotAttached;
+            ? PostsServiceError.NONE
+            : PostsServiceError.MEDIA_NOT_ATTACHED;
     }
 
     private async Task<PostsServiceResult<PostResponse>> ChangeReactionAsync(
@@ -1099,11 +1099,11 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null)
         {
-            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.PostNotFound);
+            return PostsServiceResult<PostResponse>.Failure(PostsServiceError.POST_NOT_FOUND);
         }
 
         var accessError = await GetInteractionAccessErrorAsync(actor, post, cancellationToken);
-        if (accessError != PostsServiceError.None)
+        if (accessError != PostsServiceError.NONE)
         {
             return PostsServiceResult<PostResponse>.Failure(accessError);
         }
@@ -1133,8 +1133,8 @@ public sealed class PostsService(
             : await notificationService.QueueAsync(
                 post.AuthorUserId,
                 actorUserId,
-                NotificationType.PostReaction,
-                NotificationEntityType.Post,
+                NotificationType.POST_REACTION,
+                NotificationEntityType.POST,
                 post.Id,
                 cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -1158,7 +1158,7 @@ public sealed class PostsService(
             cancellationToken);
         if (comment is null)
         {
-            return PostsServiceError.CommentNotFound;
+            return PostsServiceError.COMMENT_NOT_FOUND;
         }
 
         var post = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
@@ -1166,11 +1166,11 @@ public sealed class PostsService(
             cancellationToken);
         if (post is null)
         {
-            return PostsServiceError.PostNotFound;
+            return PostsServiceError.POST_NOT_FOUND;
         }
 
         var accessError = await GetInteractionAccessErrorAsync(actor, post, cancellationToken);
-        if (accessError != PostsServiceError.None)
+        if (accessError != PostsServiceError.NONE)
         {
             return accessError;
         }
@@ -1204,8 +1204,8 @@ public sealed class PostsService(
             : await notificationService.QueueAsync(
                 comment.AuthorUserId,
                 actorUserId,
-                NotificationType.CommentReaction,
-                NotificationEntityType.Comment,
+                NotificationType.COMMENT_REACTION,
+                NotificationEntityType.COMMENT,
                 comment.Id,
                 cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -1214,7 +1214,7 @@ public sealed class PostsService(
             await notificationService.PublishAsync(notification, cancellationToken);
         }
 
-        return PostsServiceError.None;
+        return PostsServiceError.NONE;
     }
 
     private IQueryable<Post> VisiblePosts(PostViewerContext? viewer)
@@ -1224,7 +1224,7 @@ public sealed class PostsService(
             .Concat(groupPostAccessService.ApplyDirectAccess(source, viewer))
             .Concat(pagePostAccessService.ApplyPublishedAccess(source))
             .Concat(eventPostAccessService.ApplyDirectAccess(source, viewer))
-            .Where(post => post.PostType == PostType.Standard);
+            .Where(post => post.PostType == PostType.STANDARD);
     }
 
     public async Task<bool> CanViewPostAsync(
@@ -1232,17 +1232,17 @@ public sealed class PostsService(
         PostViewerContext? viewer,
         CancellationToken cancellationToken)
     {
-        if (post.ContainerType == PostContainerType.Group)
+        if (post.ContainerType == PostContainerType.GROUP)
         {
             return await groupPostAccessService.CanAccessPostAsync(post, viewer, cancellationToken);
         }
 
-        if (post.ContainerType == PostContainerType.Page)
+        if (post.ContainerType == PostContainerType.PAGE)
         {
             return await pagePostAccessService.CanAccessPostAsync(post, viewer, cancellationToken);
         }
 
-        if (post.ContainerType == PostContainerType.Event)
+        if (post.ContainerType == PostContainerType.EVENT)
         {
             return await eventPostAccessService.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer)
                 .AnyAsync(item => item.Id == post.Id, cancellationToken);
@@ -1256,54 +1256,54 @@ public sealed class PostsService(
         Post post,
         CancellationToken cancellationToken)
     {
-        if (post.ContainerType == PostContainerType.Group)
+        if (post.ContainerType == PostContainerType.GROUP)
         {
             if (actor.BlockedUserIds.Contains(post.AuthorUserId))
             {
-                return PostsServiceError.RelationshipBlocked;
+                return PostsServiceError.RELATIONSHIP_BLOCKED;
             }
 
             return await groupPostAccessService.CanParticipateAsync(post, actor, cancellationToken)
-                ? PostsServiceError.None
-                : PostsServiceError.Forbidden;
+                ? PostsServiceError.NONE
+                : PostsServiceError.FORBIDDEN;
         }
 
-        if (post.ContainerType == PostContainerType.Page)
+        if (post.ContainerType == PostContainerType.PAGE)
         {
             return await pagePostAccessService.CanParticipateAsync(post, actor, cancellationToken)
-                ? PostsServiceError.None
-                : PostsServiceError.Forbidden;
+                ? PostsServiceError.NONE
+                : PostsServiceError.FORBIDDEN;
         }
 
-        if (post.ContainerType == PostContainerType.Event)
+        if (post.ContainerType == PostContainerType.EVENT)
         {
             var item = await dbContext.Events.AsNoTracking().SingleOrDefaultAsync(x => x.Id == post.ContainerId, cancellationToken);
             return item is not null && await eventPostAccessService.CanPostAsync(item, actor.UserId, cancellationToken)
-                ? PostsServiceError.None : PostsServiceError.Forbidden;
+                ? PostsServiceError.NONE : PostsServiceError.FORBIDDEN;
         }
 
         if (actor.UserId == post.AuthorUserId)
         {
-            return PostsServiceError.None;
+            return PostsServiceError.NONE;
         }
 
         if (actor.BlockedUserIds.Contains(post.AuthorUserId))
         {
-            return PostsServiceError.RelationshipBlocked;
+            return PostsServiceError.RELATIONSHIP_BLOCKED;
         }
 
-        if (post.Privacy == PostPrivacy.Public)
+        if (post.Privacy == PostPrivacy.PUBLIC)
         {
-            return PostsServiceError.None;
+            return PostsServiceError.NONE;
         }
 
-        if (post.Privacy == PostPrivacy.Friends &&
+        if (post.Privacy == PostPrivacy.FRIENDS &&
             actor.FriendUserIds.Contains(post.AuthorUserId))
         {
-            return PostsServiceError.None;
+            return PostsServiceError.NONE;
         }
 
-        return PostsServiceError.Forbidden;
+        return PostsServiceError.FORBIDDEN;
     }
 
     public async Task<IReadOnlyList<PostResponse>> LoadResponsesAsync(
@@ -1350,7 +1350,7 @@ public sealed class PostsService(
             .Where(x => postIds.Contains(x.PostId)).OrderBy(x => x.SortOrder)
             .ToListAsync(cancellationToken);
         var mentionRows = await dbContext.ContentMentions.AsNoTracking()
-            .Where(mention => mention.SourceType == MentionSourceType.Post && postIds.Contains(mention.SourceId))
+            .Where(mention => mention.SourceType == MentionSourceType.POST && postIds.Contains(mention.SourceId))
             .Select(mention => new MentionRow(
                 mention.SourceId,
                 mention.MentionedUserId,
@@ -1364,13 +1364,13 @@ public sealed class PostsService(
                 .Where(profile => mentionedUserIds.Contains(profile.UserId))
                 .ToDictionaryAsync(profile => profile.UserId, profile => profile.Username, cancellationToken);
 
-        var pageIds = posts.Where(post => post.ContainerType == PostContainerType.Page).Select(post => post.ContainerId).Distinct().ToArray();
+        var pageIds = posts.Where(post => post.ContainerType == PostContainerType.PAGE).Select(post => post.ContainerId).Distinct().ToArray();
         var pages = pageIds.Length == 0
             ? new Dictionary<Guid, PagePostIdentity>()
             : await dbContext.Pages.AsNoTracking().Where(page => pageIds.Contains(page.Id) && page.DeletedAtUtc == null)
                 .Select(page => new PagePostIdentity(page.Id, page.Username, page.Name, page.AvatarMediaId))
                 .ToDictionaryAsync(page => page.Id, cancellationToken);
-        var authorUserIds = posts.Where(post => post.ContainerType != PostContainerType.Page)
+        var authorUserIds = posts.Where(post => post.ContainerType != PostContainerType.PAGE)
             .Select(post => post.AuthorUserId)
             .Distinct()
             .ToArray();
@@ -1396,7 +1396,7 @@ public sealed class PostsService(
 
         return posts.Select(post =>
         {
-            var page = post.ContainerType == PostContainerType.Page ? pages.GetValueOrDefault(post.ContainerId) : null;
+            var page = post.ContainerType == PostContainerType.PAGE ? pages.GetValueOrDefault(post.ContainerId) : null;
             var author = authors.GetValueOrDefault(post.AuthorUserId);
             var fallbackUsername = fallbackAuthorUsernames.GetValueOrDefault(post.AuthorUserId);
             var username = PublicProfileHandle.From(author?.Username ?? fallbackUsername ?? string.Empty);
@@ -1440,7 +1440,7 @@ public sealed class PostsService(
                     mention.StartIndex,
                     mention.Length))
                 .ToList(),
-            post.PostType == PostType.Reel ? "reel" : "standardPost",
+            post.PostType == PostType.REEL ? "reel" : "standardPost",
             shareCounts.GetValueOrDefault(post.Id),
             post.IsPinned,
             savedPostIds.Contains(post.Id),
@@ -1451,7 +1451,7 @@ public sealed class PostsService(
     private static PostResponse EmptySummary(Post post, IReadOnlyList<Guid> mediaIds) =>
         new(
             post.Id,
-            post.ContainerType == PostContainerType.Page ? null : post.AuthorUserId,
+            post.ContainerType == PostContainerType.PAGE ? null : post.AuthorUserId,
             post.Content,
             PrivacyName(post.Privacy),
             post.CreatedAtUtc,
@@ -1506,7 +1506,7 @@ public sealed class PostsService(
                     user => user.UserName ?? "Người dùng",
                     cancellationToken);
         var mentionRows = await dbContext.ContentMentions.AsNoTracking()
-            .Where(mention => mention.SourceType == MentionSourceType.Comment && commentIds.Contains(mention.SourceId))
+            .Where(mention => mention.SourceType == MentionSourceType.COMMENT && commentIds.Contains(mention.SourceId))
             .Select(mention => new MentionRow(
                 mention.SourceId,
                 mention.MentionedUserId,
@@ -1564,9 +1564,9 @@ public sealed class PostsService(
 
     private static string PrivacyName(PostPrivacy privacy) => privacy switch
     {
-        PostPrivacy.Public => "public",
-        PostPrivacy.Friends => "friends",
-        PostPrivacy.OnlyMe => "onlyMe",
+        PostPrivacy.PUBLIC => "public",
+        PostPrivacy.FRIENDS => "friends",
+        PostPrivacy.ONLY_ME => "onlyMe",
         _ => throw new ArgumentOutOfRangeException(nameof(privacy), privacy, null)
     };
 }

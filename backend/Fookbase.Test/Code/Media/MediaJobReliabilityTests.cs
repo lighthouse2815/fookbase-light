@@ -13,7 +13,7 @@ public sealed class MediaJobReliabilityTests
         job.Claim(now);
         job.Claim(now.AddMinutes(3));
 
-        Assert.Equal(MediaProcessingJobStatus.Processing, job.Status);
+        Assert.Equal(MediaProcessingJobStatus.PROCESSING, job.Status);
         Assert.Equal(2, job.AttemptCount);
         Assert.Equal(now.AddMinutes(3), job.StartedAtUtc);
     }

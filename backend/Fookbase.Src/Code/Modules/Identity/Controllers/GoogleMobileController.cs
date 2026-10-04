@@ -141,5 +141,5 @@ public sealed class GoogleMobileController(
     private static BusinessException Invalid() => new(new ApplicationError(
         "invalid_mobile_google_login",
         "The mobile Google sign-in is invalid or expired.",
-        ApplicationErrorType.Unauthorized));
+        ApplicationErrorType.UNAUTHORIZED));
 }

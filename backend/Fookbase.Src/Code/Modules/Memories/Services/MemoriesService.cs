@@ -13,8 +13,8 @@ public sealed class MemoriesService(FookbaseDbContext dbContext, PostsService po
     {
         var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
         var posts = await dbContext.Posts.AsNoTracking()
-            .Where(post => post.AuthorUserId == ownerUserId && post.ContainerType == PostContainerType.Profile &&
-                post.PostType == PostType.Standard && post.DeletedAtUtc == null && post.CreatedAtUtc.Year < today.Year &&
+            .Where(post => post.AuthorUserId == ownerUserId && post.ContainerType == PostContainerType.PROFILE &&
+                post.PostType == PostType.STANDARD && post.DeletedAtUtc == null && post.CreatedAtUtc.Year < today.Year &&
                 post.CreatedAtUtc.Month == today.Month && post.CreatedAtUtc.Day == today.Day)
             .OrderByDescending(post => post.CreatedAtUtc).Take(MaximumItems).ToListAsync(cancellationToken);
         var items = await postsService.LoadResponsesAsync(posts, ownerUserId, cancellationToken);

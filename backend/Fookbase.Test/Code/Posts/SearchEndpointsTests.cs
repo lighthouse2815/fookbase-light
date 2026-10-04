@@ -146,24 +146,24 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var viewerId = await CreateUserAsync("search-container-viewer");
         var ownerId = await CreateUserAsync("search-container-owner");
         var now = DateTimeOffset.UtcNow;
-        var publicGroup = Group.Create(Guid.NewGuid(), "Needle public group", "search description", GroupPrivacy.Public, ownerId, now);
-        var privateGroup = Group.Create(Guid.NewGuid(), "Needle private group", "member only", GroupPrivacy.Private, ownerId, now);
+        var publicGroup = Group.Create(Guid.NewGuid(), "Needle public group", "search description", GroupPrivacy.PUBLIC, ownerId, now);
+        var privateGroup = Group.Create(Guid.NewGuid(), "Needle private group", "member only", GroupPrivacy.PRIVATE, ownerId, now);
         var publishedPage = Page.Create(Guid.NewGuid(), "Needle public Page", "needle.public.page", "Community", "search bio", ownerId, now);
         publishedPage.Publish(now);
         var unpublishedPage = Page.Create(Guid.NewGuid(), "Needle hidden Page", "needle.hidden.page", "Community", null, ownerId, now);
-        var pagePost = Post.CreateInContainer(Guid.NewGuid(), ownerId, "needle page post", PostPrivacy.Public,
-            PostContainerType.Page, publishedPage.Id, now, PostType.Standard);
+        var pagePost = Post.CreateInContainer(Guid.NewGuid(), ownerId, "needle page post", PostPrivacy.PUBLIC,
+            PostContainerType.PAGE, publishedPage.Id, now, PostType.STANDARD);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.Groups.AddRange(publicGroup, privateGroup);
             db.GroupMembers.AddRange(
-                GroupMember.Create(publicGroup.Id, ownerId, GroupMemberRole.Owner, now),
-                GroupMember.Create(privateGroup.Id, ownerId, GroupMemberRole.Owner, now));
+                GroupMember.Create(publicGroup.Id, ownerId, GroupMemberRole.OWNER, now),
+                GroupMember.Create(privateGroup.Id, ownerId, GroupMemberRole.OWNER, now));
             db.Pages.AddRange(publishedPage, unpublishedPage);
             db.PageMembers.AddRange(
-                PageMember.Create(publishedPage.Id, ownerId, PageRole.Owner, now),
-                PageMember.Create(unpublishedPage.Id, ownerId, PageRole.Owner, now));
+                PageMember.Create(publishedPage.Id, ownerId, PageRole.OWNER, now),
+                PageMember.Create(unpublishedPage.Id, ownerId, PageRole.OWNER, now));
             db.Posts.Add(pagePost);
             await db.SaveChangesAsync();
         }
@@ -186,7 +186,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.GroupMembers.Add(GroupMember.Create(privateGroup.Id, viewerId, GroupMemberRole.Member, now));
+            db.GroupMembers.Add(GroupMember.Create(privateGroup.Id, viewerId, GroupMemberRole.MEMBER, now));
             db.BlockedUsers.Add(BlockedUser.Create(viewerId, ownerId, now));
             await db.SaveChangesAsync();
         }
@@ -205,13 +205,13 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var viewerId = await CreateUserAsync("search-content-viewer");
         var authorId = await CreateUserAsync("search-content-author");
         var now = DateTimeOffset.UtcNow;
-        var publicPost = Post.Create(Guid.NewGuid(), authorId, "Needle public post", PostPrivacy.Public, now);
-        var secondPublicPost = Post.Create(Guid.NewGuid(), authorId, "Needle second public post", PostPrivacy.Public, now.AddTicks(1));
-        var friendsPost = Post.Create(Guid.NewGuid(), authorId, "Needle friends post", PostPrivacy.Friends, now.AddTicks(2));
-        var onlyMePost = Post.Create(Guid.NewGuid(), authorId, "Needle only me post", PostPrivacy.OnlyMe, now.AddTicks(3));
-        var reel = Post.CreateReel(Guid.NewGuid(), authorId, "Needle reel caption", PostPrivacy.Public, now.AddTicks(4));
+        var publicPost = Post.Create(Guid.NewGuid(), authorId, "Needle public post", PostPrivacy.PUBLIC, now);
+        var secondPublicPost = Post.Create(Guid.NewGuid(), authorId, "Needle second public post", PostPrivacy.PUBLIC, now.AddTicks(1));
+        var friendsPost = Post.Create(Guid.NewGuid(), authorId, "Needle friends post", PostPrivacy.FRIENDS, now.AddTicks(2));
+        var onlyMePost = Post.Create(Guid.NewGuid(), authorId, "Needle only me post", PostPrivacy.ONLY_ME, now.AddTicks(3));
+        var reel = Post.CreateReel(Guid.NewGuid(), authorId, "Needle reel caption", PostPrivacy.PUBLIC, now.AddTicks(4));
         var mediaId = Guid.NewGuid();
-        var media = MediaAsset.CreatePending(mediaId, authorId, MediaType.Video, "reel.mp4", "reel.mp4", "video/mp4", 20, now, now.AddMinutes(5));
+        var media = MediaAsset.CreatePending(mediaId, authorId, MediaType.VIDEO, "reel.mp4", "reel.mp4", "video/mp4", 20, now, now.AddMinutes(5));
         media.MarkProcessing(20, now);
         media.MarkVideoReady("processed.mp4", "poster.jpg", 1_000, 720, 1_280, now);
         using (var scope = factory.Services.CreateScope())
@@ -257,9 +257,9 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
             for (var index = 0; index < 6; index++)
             {
                 var ownerId = await CreateUserAsync("search-preview-owner-" + index);
-                var group = Group.Create(Guid.NewGuid(), "Preview group " + index, null, GroupPrivacy.Public, ownerId, now.AddTicks(index));
+                var group = Group.Create(Guid.NewGuid(), "Preview group " + index, null, GroupPrivacy.PUBLIC, ownerId, now.AddTicks(index));
                 db.Groups.Add(group);
-                db.GroupMembers.Add(GroupMember.Create(group.Id, ownerId, GroupMemberRole.Owner, now));
+                db.GroupMembers.Add(GroupMember.Create(group.Id, ownerId, GroupMemberRole.OWNER, now));
             }
             await db.SaveChangesAsync();
         }

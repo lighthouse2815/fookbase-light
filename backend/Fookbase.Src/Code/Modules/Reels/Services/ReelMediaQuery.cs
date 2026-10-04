@@ -7,7 +7,7 @@ public static class ReelMediaQuery
 {
     public static IQueryable<MediaAsset> ReadyVideos(IQueryable<MediaAsset> assets) =>
         assets.Where(asset =>
-            asset.MediaType == MediaType.Video && asset.Status == MediaStatus.Ready &&
+            asset.MediaType == MediaType.VIDEO && asset.Status == MediaStatus.READY &&
             asset.DeletedAtUtc == null && asset.ProcessedObjectKey != null &&
             asset.PosterObjectKey != null && asset.DurationMs != null &&
             asset.Width != null && asset.Height != null);

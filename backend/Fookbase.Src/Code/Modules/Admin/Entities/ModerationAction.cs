@@ -4,15 +4,15 @@ namespace Fookbase.Api.Modules.Admin.Entities;
 
 public enum ModerationActionType
 {
-    DismissReport,
-    RemovePost,
-    RemoveComment,
-    RemoveStory,
-    WarnUser,
-    SuspendUser,
-    DisableUser,
-    UnsuspendUser,
-    EnableUser
+    DISMISS_REPORT,
+    REMOVE_POST,
+    REMOVE_COMMENT,
+    REMOVE_STORY,
+    WARN_USER,
+    SUSPEND_USER,
+    DISABLE_USER,
+    UNSUSPEND_USER,
+    ENABLE_USER
 }
 
 public sealed class ModerationAction

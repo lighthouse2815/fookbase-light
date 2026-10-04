@@ -2,10 +2,10 @@ namespace Fookbase.Api.Modules.Groups.Entities;
 
 public enum GroupMemberRole
 {
-    Owner,
-    Admin,
-    Moderator,
-    Member
+    OWNER,
+    ADMIN,
+    MODERATOR,
+    MEMBER
 }
 
 public sealed class GroupMember

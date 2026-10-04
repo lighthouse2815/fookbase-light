@@ -1,9 +1,9 @@
 namespace Fookbase.Api.Modules.Events.Entities;
 
-public enum EventHostType { User, Group, Page }
-public enum EventPrivacy { Public, Private }
-public enum EventLocationType { Physical, Online }
-public enum EventStatus { Draft, Published, Cancelled }
+public enum EventHostType { USER, GROUP, PAGE }
+public enum EventPrivacy { PUBLIC, PRIVATE }
+public enum EventLocationType { PHYSICAL, ONLINE }
+public enum EventStatus { DRAFT, PUBLISHED, CANCELLED }
 
 public sealed class Event
 {
@@ -50,13 +50,13 @@ public sealed class Event
       LocationType = locationType; SetLocation(locationName, address, onlineUrl); StartsAtUtc = startsAtUtc.ToUniversalTime();
       EndsAtUtc = NormalizeEnd(endsAtUtc, StartsAtUtc); UpdatedAtUtc = now; }
     public void SetCover(Guid? mediaId, DateTimeOffset now) { EnsureActive(); CoverMediaId = mediaId; UpdatedAtUtc = now; }
-    public void Publish(DateTimeOffset now) { EnsureActive(); if (Status != EventStatus.Draft) throw new InvalidOperationException("Only draft events can be published."); Status = EventStatus.Published; UpdatedAtUtc = now; }
-    public void Cancel(DateTimeOffset now) { EnsureActive(); if (Status != EventStatus.Published) throw new InvalidOperationException("Only published events can be cancelled."); Status = EventStatus.Cancelled; UpdatedAtUtc = now; }
+    public void Publish(DateTimeOffset now) { EnsureActive(); if (Status != EventStatus.DRAFT) throw new InvalidOperationException("Only draft events can be published."); Status = EventStatus.PUBLISHED; UpdatedAtUtc = now; }
+    public void Cancel(DateTimeOffset now) { EnsureActive(); if (Status != EventStatus.PUBLISHED) throw new InvalidOperationException("Only published events can be cancelled."); Status = EventStatus.CANCELLED; UpdatedAtUtc = now; }
     public void Delete(DateTimeOffset now) { EnsureActive(); DeletedAtUtc = now; CoverMediaId = null; UpdatedAtUtc = now; }
     private void EnsureActive() { if (DeletedAtUtc is not null) throw new InvalidOperationException("A deleted event cannot be changed."); }
     private void SetLocation(string? locationName, string? address, string? onlineUrl)
     { LocationName = Clean(locationName); Address = Clean(address); OnlineUrl = Clean(onlineUrl);
-      if (LocationType == EventLocationType.Online) { if (!Uri.TryCreate(OnlineUrl, UriKind.Absolute, out var uri) || uri.Scheme is not ("https" or "http")) throw new ArgumentException("Online events require a safe http or https URL."); LocationName = null; Address = null; }
+      if (LocationType == EventLocationType.ONLINE) { if (!Uri.TryCreate(OnlineUrl, UriKind.Absolute, out var uri) || uri.Scheme is not ("https" or "http")) throw new ArgumentException("Online events require a safe http or https URL."); LocationName = null; Address = null; }
       else OnlineUrl = null; }
     private static string NormalizeName(string? value) { var text = Clean(value) ?? string.Empty; if (text.Length is < 1 or > MaximumNameLength) throw new ArgumentException($"Event name must contain 1-{MaximumNameLength} characters."); return text; }
     private static string? NormalizeDescription(string? value) { var text = Clean(value); if (text?.Length > MaximumDescriptionLength) throw new ArgumentException($"Event description cannot exceed {MaximumDescriptionLength} characters."); return text; }

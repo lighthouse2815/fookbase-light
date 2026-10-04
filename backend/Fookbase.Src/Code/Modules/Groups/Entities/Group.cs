@@ -2,8 +2,8 @@ namespace Fookbase.Api.Modules.Groups.Entities;
 
 public enum GroupPrivacy
 {
-    Public,
-    Private
+    PUBLIC,
+    PRIVATE
 }
 
 public sealed class Group

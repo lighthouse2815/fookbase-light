@@ -102,7 +102,7 @@ public sealed class UserProfileService(
                 new ApplicationError(
                     ErrorCode.InvalidPagination,
                     $"Offset must be non-negative and limit must be between 1 and {MaximumSearchLimit}.",
-                    ApplicationErrorType.Validation));
+                    ApplicationErrorType.VALIDATION));
         }
 
         var normalizedQuery = query?.Trim().ToLowerInvariant();
@@ -138,7 +138,7 @@ public sealed class UserProfileService(
                 new ApplicationError(
                     ErrorCode.ValidationFailed,
                     "One or more validation errors occurred.",
-                    ApplicationErrorType.Validation,
+                    ApplicationErrorType.VALIDATION,
                     errors));
         }
 
@@ -179,11 +179,11 @@ public sealed class UserProfileService(
             await dbContext.SaveChangesAsync(cancellationToken);
             if (request.AvatarMediaId is not null)
             {
-                await photosService.AddSystemMediaAsync(userId, PhotoAlbumType.ProfilePictures, request.AvatarMediaId.Value, cancellationToken);
+                await photosService.AddSystemMediaAsync(userId, PhotoAlbumType.PROFILE_PICTURES, request.AvatarMediaId.Value, cancellationToken);
             }
             if (request.CoverMediaId is not null)
             {
-                await photosService.AddSystemMediaAsync(userId, PhotoAlbumType.CoverPhotos, request.CoverMediaId.Value, cancellationToken);
+                await photosService.AddSystemMediaAsync(userId, PhotoAlbumType.COVER_PHOTOS, request.CoverMediaId.Value, cancellationToken);
             }
             if (avatarChanged)
             {
@@ -265,7 +265,7 @@ public sealed class UserProfileService(
         if (days is < 1 or > 30)
         {
             return ApplicationResult<IReadOnlyList<BirthdayFriendResponse>>.Failure(
-                new ApplicationError("invalid_days", "Days must be between 1 and 30.", ApplicationErrorType.Validation));
+                new ApplicationError("invalid_days", "Days must be between 1 and 30.", ApplicationErrorType.VALIDATION));
         }
 
         var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
@@ -344,7 +344,7 @@ public sealed class UserProfileService(
         return await (from profile in dbContext.UserProfiles.AsNoTracking()
                       join user in dbContext.Users.AsNoTracking() on profile.UserId equals user.Id
                       where friendUserIds.Contains(profile.UserId) && user.IsActive && profile.DateOfBirth != null &&
-                            profile.BirthdayVisibility != BirthdayVisibility.OnlyMe &&
+                            profile.BirthdayVisibility != BirthdayVisibility.ONLY_ME &&
                             !dbContext.BlockedUsers.AsNoTracking().Any(block =>
                                 (block.BlockerUserId == actorUserId && block.BlockedUserId == profile.UserId) ||
                                 (block.BlockerUserId == profile.UserId && block.BlockedUserId == actorUserId))
@@ -402,7 +402,7 @@ public sealed class UserProfileService(
             new ApplicationError(
                 "profile_not_found",
                 "The user profile was not found.",
-                ApplicationErrorType.NotFound));
+                ApplicationErrorType.NOT_FOUND));
 
     private IQueryable<UserProfileProjection> ProjectProfiles(Guid? viewerUserId)
     {
@@ -461,10 +461,10 @@ public sealed class UserProfileService(
                         (friendship.UserId1 == profile.UserId && friendship.UserId2 == viewerUserId)) ? "friends" :
                     dbContext.FriendRequests.AsNoTracking().Any(request =>
                         request.SenderUserId == viewerUserId && request.ReceiverUserId == profile.UserId &&
-                        request.Status == FriendRequestStatus.Pending) ? "request_sent" :
+                        request.Status == FriendRequestStatus.PENDING) ? "request_sent" :
                     dbContext.FriendRequests.AsNoTracking().Any(request =>
                         request.SenderUserId == profile.UserId && request.ReceiverUserId == viewerUserId &&
-                        request.Status == FriendRequestStatus.Pending) ? "request_received" : "none"
+                        request.Status == FriendRequestStatus.PENDING) ? "request_received" : "none"
             });
     }
 
@@ -473,8 +473,8 @@ public sealed class UserProfileService(
         var isOwner = viewerUserId == profile.UserId;
         var canViewBirthday = profile.DateOfBirth is not null &&
             (isOwner || viewerUserId is not null &&
-             (profile.BirthdayVisibility == BirthdayVisibility.Public ||
-              profile.BirthdayVisibility == BirthdayVisibility.Friends && profile.FriendshipState == "friends"));
+             (profile.BirthdayVisibility == BirthdayVisibility.PUBLIC ||
+              profile.BirthdayVisibility == BirthdayVisibility.FRIENDS && profile.FriendshipState == "friends"));
 
         return new UserProfileResponse(
             profile.UserId,
@@ -493,7 +493,7 @@ public sealed class UserProfileService(
             profile.IsFollowedBy,
             profile.FriendshipState,
             canViewBirthday ? new BirthdayResponse(profile.DateOfBirth!.Value.Month, profile.DateOfBirth.Value.Day) : null,
-            isOwner ? profile.BirthdayVisibility.ToString().ToLowerInvariant() : null,
+            isOwner ? profile.BirthdayVisibility.ToApiName().ToLowerInvariant() : null,
             profile.Hometown,
             profile.Workplace,
             profile.Education,

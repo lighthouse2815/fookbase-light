@@ -320,7 +320,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             using var friendClient = CreateAuthenticatedClient(friend.Id);
             var update = await friendClient.PatchAsJsonAsync("/api/users/me",
                 new UpdateUserProfileRequest(null, null, new DateOnly(2000, birthday.Month, birthday.Day), null,
-                    BirthdayVisibility: BirthdayVisibility.Friends));
+                    BirthdayVisibility: BirthdayVisibility.FRIENDS));
             Assert.Equal(HttpStatusCode.OK, update.StatusCode);
         }
 
@@ -354,11 +354,11 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             var mediaDb = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             Assert.Contains(await mediaDb.ProfileMediaReferences.AsNoTracking().ToListAsync(), reference =>
                 reference.UserId == user.Id &&
-                reference.Slot == ProfileMediaSlot.Avatar &&
+                reference.Slot == ProfileMediaSlot.AVATAR &&
                 reference.MediaId == avatar);
             Assert.Contains(await mediaDb.ProfileMediaReferences.AsNoTracking().ToListAsync(), reference =>
                 reference.UserId == user.Id &&
-                reference.Slot == ProfileMediaSlot.Cover &&
+                reference.Slot == ProfileMediaSlot.COVER &&
                 reference.MediaId == cover);
         }
 
@@ -379,7 +379,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             Assert.Equal(replacementAvatar, profile.AvatarMediaId);
             Assert.Equal(cover, profile.CoverMediaId);
             profilePicturesAlbumId = await db.PhotoAlbums.AsNoTracking()
-                .Where(item => item.OwnerUserId == user.Id && item.AlbumType == PhotoAlbumType.ProfilePictures)
+                .Where(item => item.OwnerUserId == user.Id && item.AlbumType == PhotoAlbumType.PROFILE_PICTURES)
                 .Select(item => item.Id)
                 .SingleAsync();
             Assert.True(await db.AlbumMedia.AsNoTracking()
@@ -423,13 +423,13 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             post =>
             {
                 Assert.Equal("đã cập nhật ảnh bìa.", post.Content);
-                Assert.Equal(PostPrivacy.Public, post.Privacy);
+                Assert.Equal(PostPrivacy.PUBLIC, post.Privacy);
                 Assert.True(db.PostMedia.Any(media => media.PostId == post.Id && media.MediaId == cover));
             },
             post =>
             {
                 Assert.Equal("đã cập nhật ảnh đại diện.", post.Content);
-                Assert.Equal(PostPrivacy.Public, post.Privacy);
+                Assert.Equal(PostPrivacy.PUBLIC, post.Privacy);
                 Assert.True(db.PostMedia.Any(media => media.PostId == post.Id && media.MediaId == avatar));
             });
     }
@@ -465,7 +465,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             var privacyResponse = await client.PutAsJsonAsync(
                 $"/api/posts/{post.Id}", new { content = post.Content, privacy = "friends", mediaIds });
             Assert.Equal(HttpStatusCode.OK, privacyResponse.StatusCode);
-            Assert.Equal(PostPrivacy.Friends, await db.Posts.AsNoTracking()
+            Assert.Equal(PostPrivacy.FRIENDS, await db.Posts.AsNoTracking()
                 .Where(item => item.Id == post.Id)
                 .Select(item => item.Privacy)
                 .SingleAsync());
@@ -533,7 +533,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         var asset = MediaAsset.CreatePending(
             mediaId,
             ownerUserId,
-            MediaType.Image,
+            MediaType.IMAGE,
             $"{ownerUserId:N}/{mediaId:N}.png",
             "profile.png",
             "image/png",

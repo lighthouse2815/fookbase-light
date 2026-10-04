@@ -164,7 +164,7 @@ public sealed class FriendsService(
                 viewerUserId, targetUserId, settings => settings.FriendListVisibility, cancellationToken))
         {
             return ApplicationResult<PagedResponse<FriendResponse>>.Failure(
-                ToApplicationError(FriendsOperationError.UserNotFound));
+                ToApplicationError(FriendsOperationError.USER_NOT_FOUND));
         }
 
         return ApplicationResult<PagedResponse<FriendResponse>>.Success(
@@ -213,7 +213,7 @@ public sealed class FriendsService(
             cancellationToken);
         if (notification is null)
         {
-            return ApplicationResult.Failure(ToApplicationError(FriendsOperationError.NotificationNotFound));
+            return ApplicationResult.Failure(ToApplicationError(FriendsOperationError.NOTIFICATION_NOT_FOUND));
         }
 
         notification.MarkRead(timeProvider.GetUtcNow());
@@ -254,7 +254,7 @@ public sealed class FriendsService(
 
         var pendingRequests = await dbContext.FriendRequests.AsNoTracking()
             .Where(request =>
-                request.Status == FriendRequestStatus.Pending &&
+                request.Status == FriendRequestStatus.PENDING &&
                 ((request.SenderUserId == actorUserId && relationshipUserIds.Contains(request.ReceiverUserId)) ||
                  (request.ReceiverUserId == actorUserId && relationshipUserIds.Contains(request.SenderUserId))))
             .Select(request => new { request.Id, request.SenderUserId, request.ReceiverUserId })
@@ -365,7 +365,7 @@ public sealed class FriendsService(
         {
             return Map(await RollbackFailureAsync<FriendRequestResponse>(
                 transaction,
-                FriendsOperationError.RelationshipBlocked,
+                FriendsOperationError.RELATIONSHIP_BLOCKED,
                 cancellationToken));
         }
 
@@ -373,7 +373,7 @@ public sealed class FriendsService(
         {
             return Map(await RollbackFailureAsync<FriendRequestResponse>(
                 transaction,
-                FriendsOperationError.FriendRequestRestricted,
+                FriendsOperationError.FRIEND_REQUEST_RESTRICTED,
                 cancellationToken));
         }
 
@@ -381,7 +381,7 @@ public sealed class FriendsService(
         {
             return Map(await RollbackFailureAsync<FriendRequestResponse>(
                 transaction,
-                FriendsOperationError.AlreadyFriends,
+                FriendsOperationError.ALREADY_FRIENDS,
                 cancellationToken));
         }
 
@@ -389,7 +389,7 @@ public sealed class FriendsService(
         {
             return Map(await RollbackFailureAsync<FriendRequestResponse>(
                 transaction,
-                FriendsOperationError.PendingRequestExists,
+                FriendsOperationError.PENDING_REQUEST_EXISTS,
                 cancellationToken));
         }
 
@@ -400,15 +400,15 @@ public sealed class FriendsService(
             receiverUserId,
             senderUserId,
             request.Id,
-            FriendNotificationType.FriendRequestReceived,
+            FriendNotificationType.FRIEND_REQUEST_RECEIVED,
             now);
         dbContext.FriendRequests.Add(request);
         dbContext.FriendNotifications.Add(notification);
         var generalNotification = await notificationService.QueueAsync(
             receiverUserId,
             senderUserId,
-            NotificationType.FriendRequestReceived,
-            NotificationEntityType.FriendRequest,
+            NotificationType.FRIEND_REQUEST_RECEIVED,
+            NotificationEntityType.FRIEND_REQUEST,
             request.Id,
             cancellationToken);
 
@@ -431,7 +431,7 @@ public sealed class FriendsService(
             .SingleOrDefaultAsync(request => request.Id == requestId, cancellationToken);
         if (snapshot is null)
         {
-            return ApplicationResult<FriendResponse>.Failure(ToApplicationError(FriendsOperationError.RequestNotFound));
+            return ApplicationResult<FriendResponse>.Failure(ToApplicationError(FriendsOperationError.REQUEST_NOT_FOUND));
         }
 
         var pair = UserPair.Create(snapshot.UserId1, snapshot.UserId2);
@@ -445,15 +445,15 @@ public sealed class FriendsService(
         {
             return Map(await RollbackFailureAsync<FriendResponse>(
                 transaction,
-                FriendsOperationError.Forbidden,
+                FriendsOperationError.FORBIDDEN,
                 cancellationToken));
         }
 
-        if (request.Status != FriendRequestStatus.Pending)
+        if (request.Status != FriendRequestStatus.PENDING)
         {
             return Map(await RollbackFailureAsync<FriendResponse>(
                 transaction,
-                FriendsOperationError.RequestNotPending,
+                FriendsOperationError.REQUEST_NOT_PENDING,
                 cancellationToken));
         }
 
@@ -461,7 +461,7 @@ public sealed class FriendsService(
         {
             return Map(await RollbackFailureAsync<FriendResponse>(
                 transaction,
-                FriendsOperationError.RelationshipBlocked,
+                FriendsOperationError.RELATIONSHIP_BLOCKED,
                 cancellationToken));
         }
 
@@ -469,7 +469,7 @@ public sealed class FriendsService(
         {
             return Map(await RollbackFailureAsync<FriendResponse>(
                 transaction,
-                FriendsOperationError.AlreadyFriends,
+                FriendsOperationError.ALREADY_FRIENDS,
                 cancellationToken));
         }
 
@@ -481,7 +481,7 @@ public sealed class FriendsService(
             request.SenderUserId,
             actorUserId,
             request.Id,
-            FriendNotificationType.FriendRequestAccepted,
+            FriendNotificationType.FRIEND_REQUEST_ACCEPTED,
             now);
         dbContext.Friendships.Add(friendship);
         dbContext.FriendNotifications.Add(notification);
@@ -513,8 +513,8 @@ public sealed class FriendsService(
         var generalNotification = await notificationService.QueueAsync(
             request.SenderUserId,
             actorUserId,
-            NotificationType.FriendRequestAccepted,
-            NotificationEntityType.FriendRequest,
+            NotificationType.FRIEND_REQUEST_ACCEPTED,
+            NotificationEntityType.FRIEND_REQUEST,
             request.Id,
             cancellationToken);
 
@@ -565,19 +565,19 @@ public sealed class FriendsService(
         if (friendship is null)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return FriendsOperationError.FriendshipNotFound;
+            return FriendsOperationError.FRIENDSHIP_NOT_FOUND;
         }
 
         if (!friendship.Contains(actorUserId))
         {
             await transaction.RollbackAsync(cancellationToken);
-            return FriendsOperationError.Forbidden;
+            return FriendsOperationError.FORBIDDEN;
         }
 
         dbContext.Friendships.Remove(friendship);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return FriendsOperationError.None;
+        return FriendsOperationError.NONE;
     }
 
     private async Task<FriendsOperationError> FollowCoreAsync(
@@ -599,19 +599,19 @@ public sealed class FriendsService(
         if (target is null)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return FriendsOperationError.UserNotFound;
+            return FriendsOperationError.USER_NOT_FOUND;
         }
 
         if (!target.IsActive || !target.HasProfile)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return FriendsOperationError.UserIneligible;
+            return FriendsOperationError.USER_INELIGIBLE;
         }
 
         if (await IsBlockedAsync(actorUserId, targetUserId, cancellationToken))
         {
             await transaction.RollbackAsync(cancellationToken);
-            return FriendsOperationError.RelationshipBlocked;
+            return FriendsOperationError.RELATIONSHIP_BLOCKED;
         }
 
         if (await dbContext.UserFollows.AnyAsync(follow =>
@@ -619,7 +619,7 @@ public sealed class FriendsService(
                 cancellationToken))
         {
             await transaction.CommitAsync(cancellationToken);
-            return FriendsOperationError.None;
+            return FriendsOperationError.NONE;
         }
 
         dbContext.UserFollows.Add(UserFollow.Create(actorUserId, targetUserId, timeProvider.GetUtcNow()));
@@ -629,8 +629,8 @@ public sealed class FriendsService(
             generalNotification = await notificationService.QueueAsync(
                 targetUserId,
                 actorUserId,
-                NotificationType.UserFollowed,
-                NotificationEntityType.UserFollow,
+                NotificationType.USER_FOLLOWED,
+                NotificationEntityType.USER_FOLLOW,
                 actorUserId,
                 cancellationToken);
         }
@@ -642,7 +642,7 @@ public sealed class FriendsService(
             await notificationService.PublishAsync(generalNotification, cancellationToken);
         }
 
-        return FriendsOperationError.None;
+        return FriendsOperationError.NONE;
     }
 
     private async Task<FriendsOperationError> UnfollowCoreAsync(
@@ -663,7 +663,7 @@ public sealed class FriendsService(
         }
 
         await transaction.CommitAsync(cancellationToken);
-        return FriendsOperationError.None;
+        return FriendsOperationError.NONE;
     }
 
     private async Task<FriendsOperationError> BlockCoreAsync(
@@ -680,7 +680,7 @@ public sealed class FriendsService(
                 cancellationToken))
         {
             await transaction.CommitAsync(cancellationToken);
-            return FriendsOperationError.None;
+            return FriendsOperationError.NONE;
         }
 
         var now = timeProvider.GetUtcNow();
@@ -704,7 +704,7 @@ public sealed class FriendsService(
             .Where(request =>
                 request.UserId1 == pair.UserId1 &&
                 request.UserId2 == pair.UserId2 &&
-                request.Status == FriendRequestStatus.Pending)
+                request.Status == FriendRequestStatus.PENDING)
             .ToListAsync(cancellationToken);
         foreach (var pendingRequest in pendingRequests)
         {
@@ -713,7 +713,7 @@ public sealed class FriendsService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return FriendsOperationError.None;
+        return FriendsOperationError.NONE;
     }
 
     private async Task<FriendsOperationError> UnblockCoreAsync(
@@ -734,7 +734,7 @@ public sealed class FriendsService(
         }
 
         await transaction.CommitAsync(cancellationToken);
-        return FriendsOperationError.None;
+        return FriendsOperationError.NONE;
     }
 
     private async Task<PagedResponse<FriendResponse>> GetFriendsCoreAsync(
@@ -777,7 +777,7 @@ public sealed class FriendsService(
                 viewerUserId, targetUserId, settings => settings.FollowListVisibility, cancellationToken))
         {
             return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Failure(
-                ToApplicationError(FriendsOperationError.UserNotFound));
+                ToApplicationError(FriendsOperationError.USER_NOT_FOUND));
         }
 
         FollowCursor? cursor;
@@ -941,7 +941,7 @@ public sealed class FriendsService(
                 request =>
                     request.UserId1 == pair.UserId1 &&
                     request.UserId2 == pair.UserId2 &&
-                    request.Status == FriendRequestStatus.Pending,
+                    request.Status == FriendRequestStatus.PENDING,
                 cancellationToken);
         if (pendingRequest is null)
         {
@@ -986,7 +986,7 @@ public sealed class FriendsService(
             .SingleOrDefaultAsync(request => request.Id == requestId, cancellationToken);
         if (snapshot is null)
         {
-            return FriendsOperationError.RequestNotFound;
+            return FriendsOperationError.REQUEST_NOT_FOUND;
         }
 
         var pair = UserPair.Create(snapshot.UserId1, snapshot.UserId2);
@@ -999,19 +999,19 @@ public sealed class FriendsService(
         if (actorUserId != authorizedUserId)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return FriendsOperationError.Forbidden;
+            return FriendsOperationError.FORBIDDEN;
         }
 
-        if (request.Status != FriendRequestStatus.Pending)
+        if (request.Status != FriendRequestStatus.PENDING)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return FriendsOperationError.RequestNotPending;
+            return FriendsOperationError.REQUEST_NOT_PENDING;
         }
 
         change(request, timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return FriendsOperationError.None;
+        return FriendsOperationError.NONE;
     }
 
     private async Task<PagedResponse<FriendRequestResponse>> GetRequestsAsync(
@@ -1023,7 +1023,7 @@ public sealed class FriendsService(
     {
         var query = dbContext.FriendRequests.AsNoTracking()
             .Where(request =>
-                request.Status == FriendRequestStatus.Pending &&
+                request.Status == FriendRequestStatus.PENDING &&
                 (incoming
                     ? request.ReceiverUserId == userId
                     : request.SenderUserId == userId));
@@ -1068,7 +1068,7 @@ public sealed class FriendsService(
             request =>
                 request.UserId1 == pair.UserId1 &&
                 request.UserId2 == pair.UserId2 &&
-                request.Status == FriendRequestStatus.Pending,
+                request.Status == FriendRequestStatus.PENDING,
             cancellationToken);
 
     private async Task<bool> CanViewRelationshipListAsync(
@@ -1091,10 +1091,10 @@ public sealed class FriendsService(
 
         var settings = await dbContext.UserPrivacySettings.AsNoTracking()
             .SingleOrDefaultAsync(item => item.UserId == ownerUserId, cancellationToken);
-        return (settings is null ? RelationshipListVisibility.Public : visibilitySelector(settings)) switch
+        return (settings is null ? RelationshipListVisibility.PUBLIC : visibilitySelector(settings)) switch
         {
-            RelationshipListVisibility.Public => true,
-            RelationshipListVisibility.Friends => await FriendshipExistsAsync(
+            RelationshipListVisibility.PUBLIC => true,
+            RelationshipListVisibility.FRIENDS => await FriendshipExistsAsync(
                 UserPair.Create(viewerUserId, ownerUserId), cancellationToken),
             _ => false
         };
@@ -1108,8 +1108,8 @@ public sealed class FriendsService(
         var policy = await dbContext.UserPrivacySettings.AsNoTracking()
             .Where(settings => settings.UserId == receiverUserId)
             .Select(settings => (FriendRequestPolicy?)settings.FriendRequestPolicy)
-            .SingleOrDefaultAsync(cancellationToken) ?? FriendRequestPolicy.Everyone;
-        return policy != FriendRequestPolicy.FriendsOfFriends ||
+            .SingleOrDefaultAsync(cancellationToken) ?? FriendRequestPolicy.EVERYONE;
+        return policy != FriendRequestPolicy.FRIENDS_OF_FRIENDS ||
                await FriendIds(senderUserId).Intersect(FriendIds(receiverUserId)).AnyAsync(cancellationToken);
     }
 
@@ -1182,7 +1182,7 @@ public sealed class FriendsService(
             notification.Id,
             notification.ActorUserId,
             notification.FriendRequestId,
-            notification.Type == FriendNotificationType.FriendRequestReceived
+            notification.Type == FriendNotificationType.FRIEND_REQUEST_RECEIVED
                 ? "friend_request"
                 : "friend_accepted",
             notification.CreatedAtUtc,
@@ -1226,14 +1226,14 @@ public sealed class FriendsService(
             return new ApplicationError(
                 ErrorCode.InvalidPagination,
                 $"Offset must be non-negative and limit must be between 1 and {MaximumLimit}.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
         }
 
         return null;
     }
 
     private static ApplicationError FollowValidation(string code, string message) =>
-        new(code, message, ApplicationErrorType.Validation);
+        new(code, message, ApplicationErrorType.VALIDATION);
 
     private static ApplicationResult<T> Map<T>(FriendsOperationResult<T> result) =>
         result.Succeeded
@@ -1241,7 +1241,7 @@ public sealed class FriendsService(
             : ApplicationResult<T>.Failure(ToApplicationError(result.Error));
 
     private static ApplicationResult Map(FriendsOperationError error) =>
-        error == FriendsOperationError.None
+        error == FriendsOperationError.NONE
             ? ApplicationResult.Success()
             : ApplicationResult.Failure(ToApplicationError(error));
 
@@ -1252,32 +1252,32 @@ public sealed class FriendsService(
         new(
             "self_relationship_not_allowed",
             $"A user cannot {operation} themselves.",
-            ApplicationErrorType.Validation);
+            ApplicationErrorType.VALIDATION);
 
     private static ApplicationError ToApplicationError(FriendsOperationError error) => error switch
     {
-        FriendsOperationError.RequestNotFound => new(
-            "request_not_found", "The friend request was not found.", ApplicationErrorType.NotFound),
-        FriendsOperationError.UserNotFound => new(
-            "user_not_found", "The user was not found.", ApplicationErrorType.NotFound),
-        FriendsOperationError.UserIneligible => new(
-            "user_ineligible", "The user is not eligible for this relationship operation.", ApplicationErrorType.Conflict),
-        FriendsOperationError.NotificationNotFound => new(
-            "notification_not_found", "The notification was not found.", ApplicationErrorType.NotFound),
-        FriendsOperationError.FriendshipNotFound => new(
-            "friendship_not_found", "The friendship was not found.", ApplicationErrorType.NotFound),
-        FriendsOperationError.Forbidden => new(
-            ErrorCode.Forbidden, "You are not allowed to perform this operation.", ApplicationErrorType.Forbidden),
-        FriendsOperationError.AlreadyFriends => new(
-            "already_friends", "The users are already friends.", ApplicationErrorType.Conflict),
-        FriendsOperationError.PendingRequestExists => new(
-            "pending_request_exists", "A pending friend request already exists.", ApplicationErrorType.Conflict),
-        FriendsOperationError.RelationshipBlocked => new(
-            "relationship_unavailable", "This relationship operation is unavailable.", ApplicationErrorType.Conflict),
-        FriendsOperationError.FriendRequestRestricted => new(
-            "friend_request_restricted", "This user only accepts requests from friends of friends.", ApplicationErrorType.Forbidden),
-        FriendsOperationError.RequestNotPending => new(
-            "request_not_pending", "The friend request is no longer pending.", ApplicationErrorType.Conflict),
+        FriendsOperationError.REQUEST_NOT_FOUND => new(
+            "request_not_found", "The friend request was not found.", ApplicationErrorType.NOT_FOUND),
+        FriendsOperationError.USER_NOT_FOUND => new(
+            "user_not_found", "The user was not found.", ApplicationErrorType.NOT_FOUND),
+        FriendsOperationError.USER_INELIGIBLE => new(
+            "user_ineligible", "The user is not eligible for this relationship operation.", ApplicationErrorType.CONFLICT),
+        FriendsOperationError.NOTIFICATION_NOT_FOUND => new(
+            "notification_not_found", "The notification was not found.", ApplicationErrorType.NOT_FOUND),
+        FriendsOperationError.FRIENDSHIP_NOT_FOUND => new(
+            "friendship_not_found", "The friendship was not found.", ApplicationErrorType.NOT_FOUND),
+        FriendsOperationError.FORBIDDEN => new(
+            ErrorCode.Forbidden, "You are not allowed to perform this operation.", ApplicationErrorType.FORBIDDEN),
+        FriendsOperationError.ALREADY_FRIENDS => new(
+            "already_friends", "The users are already friends.", ApplicationErrorType.CONFLICT),
+        FriendsOperationError.PENDING_REQUEST_EXISTS => new(
+            "pending_request_exists", "A pending friend request already exists.", ApplicationErrorType.CONFLICT),
+        FriendsOperationError.RELATIONSHIP_BLOCKED => new(
+            "relationship_unavailable", "This relationship operation is unavailable.", ApplicationErrorType.CONFLICT),
+        FriendsOperationError.FRIEND_REQUEST_RESTRICTED => new(
+            "friend_request_restricted", "This user only accepts requests from friends of friends.", ApplicationErrorType.FORBIDDEN),
+        FriendsOperationError.REQUEST_NOT_PENDING => new(
+            "request_not_pending", "The friend request is no longer pending.", ApplicationErrorType.CONFLICT),
         _ => throw new ArgumentOutOfRangeException(nameof(error), error, null)
     };
 
@@ -1292,26 +1292,26 @@ public sealed class FriendsService(
 
     private enum FriendsOperationError
     {
-        None,
-        RequestNotFound,
-        UserNotFound,
-        UserIneligible,
-        NotificationNotFound,
-        FriendshipNotFound,
-        Forbidden,
-        AlreadyFriends,
-        PendingRequestExists,
-        RelationshipBlocked,
-        FriendRequestRestricted,
-        RequestNotPending
+        NONE,
+        REQUEST_NOT_FOUND,
+        USER_NOT_FOUND,
+        USER_INELIGIBLE,
+        NOTIFICATION_NOT_FOUND,
+        FRIENDSHIP_NOT_FOUND,
+        FORBIDDEN,
+        ALREADY_FRIENDS,
+        PENDING_REQUEST_EXISTS,
+        RELATIONSHIP_BLOCKED,
+        FRIEND_REQUEST_RESTRICTED,
+        REQUEST_NOT_PENDING
     }
 
     private sealed record FriendsOperationResult<T>(T? Value, FriendsOperationError Error)
     {
-        public bool Succeeded => Error == FriendsOperationError.None;
+        public bool Succeeded => Error == FriendsOperationError.NONE;
 
         public static FriendsOperationResult<T> Success(T value) =>
-            new(value, FriendsOperationError.None);
+            new(value, FriendsOperationError.NONE);
 
         public static FriendsOperationResult<T> Failure(FriendsOperationError error) =>
             new(default, error);

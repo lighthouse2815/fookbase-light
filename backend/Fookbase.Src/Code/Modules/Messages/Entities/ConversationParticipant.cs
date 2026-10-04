@@ -2,9 +2,9 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 
 public enum ConversationParticipantRole
 {
-    Owner,
-    Admin,
-    Member
+    OWNER,
+    ADMIN,
+    MEMBER
 }
 
 public sealed class ConversationParticipant

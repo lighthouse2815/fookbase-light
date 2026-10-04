@@ -11,7 +11,7 @@ internal static class ApplicationResultExtensions
         var problem = new ProblemDetails
         {
             Status = error.ToStatusCode(),
-            Title = error.Type.ToString(),
+            Title = error.Type.ToApiName(),
             Detail = error.Message
         };
 
@@ -26,11 +26,11 @@ internal static class ApplicationResultExtensions
 
     public static int ToStatusCode(this ApplicationError error) => error.Type switch
     {
-        ApplicationErrorType.Validation => StatusCodes.Status400BadRequest,
-        ApplicationErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
-        ApplicationErrorType.Forbidden => StatusCodes.Status403Forbidden,
-        ApplicationErrorType.NotFound => StatusCodes.Status404NotFound,
-        ApplicationErrorType.Conflict => StatusCodes.Status409Conflict,
+        ApplicationErrorType.VALIDATION => StatusCodes.Status400BadRequest,
+        ApplicationErrorType.UNAUTHORIZED => StatusCodes.Status401Unauthorized,
+        ApplicationErrorType.FORBIDDEN => StatusCodes.Status403Forbidden,
+        ApplicationErrorType.NOT_FOUND => StatusCodes.Status404NotFound,
+        ApplicationErrorType.CONFLICT => StatusCodes.Status409Conflict,
         _ => StatusCodes.Status500InternalServerError
     };
 }

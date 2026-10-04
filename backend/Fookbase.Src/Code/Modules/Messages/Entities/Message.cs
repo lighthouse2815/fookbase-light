@@ -2,8 +2,8 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 
 public enum MessageType
 {
-    Text,
-    Media
+    TEXT,
+    MEDIA
 }
 
 public sealed class Message
@@ -69,7 +69,7 @@ public sealed class Message
 
     public void Edit(string content, DateTimeOffset editedAtUtc)
     {
-        if (DeletedAtUtc is not null || Type != MessageType.Text)
+        if (DeletedAtUtc is not null || Type != MessageType.TEXT)
         {
             throw new InvalidOperationException("Only active text messages can be edited.");
         }

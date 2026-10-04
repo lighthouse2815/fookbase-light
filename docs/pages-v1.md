@@ -13,7 +13,7 @@ Pages are public identities managed by people without exposing the publishing ma
 
 ## Posts and visibility
 
-- `PostContainerType.Page` preserves Profile and Group enum values and uses the Page Id for `ContainerId` while retaining the real publishing user in the audit field.
+- `PostContainerType.PAGE` preserves Profile and Group enum values and uses the Page Id for `ContainerId` while retaining the real publishing user in the audit field.
 - Page Posts are standard public posts only. Owner/Admin/Editor can publish, edit and delete; Owner/Admin/Moderator can remove comments.
 - Page-post responses set `authorUserId` to `null` and `displayAuthor` to the Page identity. The publishing manager is not exposed by normal post APIs.
 - Published, non-deleted Page and post determine Page-post visibility. Manager profile privacy and blocks do not suppress it.

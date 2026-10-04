@@ -2,27 +2,27 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 
 public enum ReportTargetType
 {
-    User,
-    Post
+    USER,
+    POST
 }
 
 public enum ReportReason
 {
-    Spam,
-    Harassment,
-    HateSpeech,
-    Nudity,
-    Violence,
-    Scam,
-    Other
+    SPAM,
+    HARASSMENT,
+    HATE_SPEECH,
+    NUDITY,
+    VIOLENCE,
+    SCAM,
+    OTHER
 }
 
 public enum ContentReportStatus
 {
-    Pending,
-    Reviewed,
-    Resolved,
-    Dismissed
+    PENDING,
+    REVIEWED,
+    RESOLVED,
+    DISMISSED
 }
 
 public sealed class ContentReport
@@ -48,7 +48,7 @@ public sealed class ContentReport
         TargetId = targetId;
         Reason = reason;
         Details = details;
-        Status = ContentReportStatus.Pending;
+        Status = ContentReportStatus.PENDING;
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -80,7 +80,7 @@ public sealed class ContentReport
 
     public void UpdateStatus(ContentReportStatus status, DateTimeOffset resolvedAtUtc)
     {
-        if (status == ContentReportStatus.Pending)
+        if (status == ContentReportStatus.PENDING)
         {
             throw new ArgumentException("A report cannot be moved back to pending.");
         }

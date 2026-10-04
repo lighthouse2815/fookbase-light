@@ -191,10 +191,10 @@ public sealed class SocialInteractionsService(
 
         var destinationAllowed = destinationType switch
         {
-            PostShareDestinationType.Profile => destinationId == actorUserId,
-            PostShareDestinationType.Group => await groupPostAccessService.CanCreatePostAsync(
+            PostShareDestinationType.PROFILE => destinationId == actorUserId,
+            PostShareDestinationType.GROUP => await groupPostAccessService.CanCreatePostAsync(
                 destinationId, actorUserId, cancellationToken),
-            PostShareDestinationType.Page => await pagePostAccessService.CanCreatePostAsync(
+            PostShareDestinationType.PAGE => await pagePostAccessService.CanCreatePostAsync(
                 destinationId, actorUserId, cancellationToken),
             _ => false
         };
@@ -203,7 +203,7 @@ public sealed class SocialInteractionsService(
             return ApplicationResult<CreatedPostShare>.Failure(new ApplicationError(
                 "share_destination_forbidden",
                 "You are not allowed to share to this destination.",
-                ApplicationErrorType.Forbidden));
+                ApplicationErrorType.FORBIDDEN));
         }
 
         var share = PostShare.Create(
@@ -218,8 +218,8 @@ public sealed class SocialInteractionsService(
         var notification = await notificationService.QueueAsync(
             original.AuthorUserId,
             actorUserId,
-            NotificationType.PostShared,
-            NotificationEntityType.Post,
+            NotificationType.POST_SHARED,
+            NotificationEntityType.POST,
             original.Id,
             cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -268,7 +268,7 @@ public sealed class SocialInteractionsService(
                         join hashtag in dbContext.Hashtags.AsNoTracking() on postHashtag.HashtagId equals hashtag.Id
                         join post in dbContext.Posts.AsNoTracking() on postHashtag.PostId equals post.Id
                         where hashtag.NormalizedName == tag && post.DeletedAtUtc == null &&
-                              (post.PostType == PostType.Standard || post.PostType == PostType.Reel)
+                              (post.PostType == PostType.STANDARD || post.PostType == PostType.REEL)
                         select post;
             if (scanCursor is not null)
             {
@@ -345,7 +345,7 @@ public sealed class SocialInteractionsService(
         }
 
         await SynchronizeMentionsAsync(
-            MentionSourceType.Post, post.Id, post.Content, actorUserId, post, cancellationToken);
+            MentionSourceType.POST, post.Id, post.Content, actorUserId, post, cancellationToken);
         await SynchronizeHashtagsAsync(post, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -372,7 +372,7 @@ public sealed class SocialInteractionsService(
         }
 
         await SynchronizeMentionsAsync(
-            MentionSourceType.Comment, comment.Id, comment.Content, actorUserId, post, cancellationToken);
+            MentionSourceType.COMMENT, comment.Id, comment.Content, actorUserId, post, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -434,12 +434,12 @@ public sealed class SocialInteractionsService(
                 sourceType, sourceId, mention.UserId, mention.StartIndex, mention.Length));
         }
 
-        var notificationType = sourceType == MentionSourceType.Post
-            ? NotificationType.PostMention
-            : NotificationType.CommentMention;
-        var entityType = sourceType == MentionSourceType.Post
-            ? NotificationEntityType.Post
-            : NotificationEntityType.Comment;
+        var notificationType = sourceType == MentionSourceType.POST
+            ? NotificationType.POST_MENTION
+            : NotificationType.COMMENT_MENTION;
+        var entityType = sourceType == MentionSourceType.POST
+            ? NotificationEntityType.POST
+            : NotificationEntityType.COMMENT;
         var notifications = new List<Notification>();
         foreach (var recipientUserId in resolved.Select(mention => mention.UserId).Distinct()
                      .Where(userId => !previouslyMentioned.Contains(userId)))
@@ -496,12 +496,12 @@ public sealed class SocialInteractionsService(
         PostViewerContext? viewer,
         CancellationToken cancellationToken)
     {
-        if (post.ContainerType == PostContainerType.Group)
+        if (post.ContainerType == PostContainerType.GROUP)
         {
             return await groupPostAccessService.CanAccessPostAsync(post, viewer, cancellationToken);
         }
 
-        if (post.ContainerType == PostContainerType.Page)
+        if (post.ContainerType == PostContainerType.PAGE)
         {
             return await pagePostAccessService.CanAccessPostAsync(post, viewer, cancellationToken);
         }
@@ -586,14 +586,14 @@ public sealed class SocialInteractionsService(
 
     private static ApplicationResult PostNotFound() =>
         ApplicationResult.Failure(new ApplicationError(
-            "post_not_found", "The post was not found.", ApplicationErrorType.NotFound));
+            "post_not_found", "The post was not found.", ApplicationErrorType.NOT_FOUND));
 
     private static ApplicationResult<T> PostNotFound<T>() =>
         ApplicationResult<T>.Failure(new ApplicationError(
-            "post_not_found", "The post was not found.", ApplicationErrorType.NotFound));
+            "post_not_found", "The post was not found.", ApplicationErrorType.NOT_FOUND));
 
     private static ApplicationResult<T> Validation<T>(string code, string message) =>
-        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
+        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
 
     private sealed record SavedCursor(DateTimeOffset SavedAtUtc, Guid PostId);
     private sealed record HashtagCursor(DateTimeOffset CreatedAtUtc, Guid PostId);

@@ -29,7 +29,7 @@ public sealed class RegistrationChallengeService(
     {
         var input = await ValidateStartAsync(request, cancellationToken);
         var now = timeProvider.GetUtcNow();
-        var candidate = new User(Guid.NewGuid(), input.Contact.Kind == ContactKind.Email ? input.Contact.Value : null, "pending", now);
+        var candidate = new User(Guid.NewGuid(), input.Contact.Kind == ContactKind.EMAIL ? input.Contact.Value : null, "pending", now);
         var passwordHash = userManager.PasswordHasher.HashPassword(candidate, request.Password!);
         var challenge = await otpService.StartRegistrationAsync(
             input.Contact, passwordHash, input.FirstName, input.LastName, input.DateOfBirth, input.Gender, now, cancellationToken);
@@ -61,14 +61,14 @@ public sealed class RegistrationChallengeService(
         var username = await GenerateUsernameAsync(challenge.FirstName, challenge.LastName, cancellationToken);
         var user = new User(
             Guid.NewGuid(),
-            contact.Kind == ContactKind.Email ? contact.Value : null,
+            contact.Kind == ContactKind.EMAIL ? contact.Value : null,
             username,
             now)
         {
             PasswordHash = challenge.PasswordHash,
-            EmailConfirmed = contact.Kind == ContactKind.Email,
-            PhoneNumber = contact.Kind == ContactKind.Phone ? contact.Value : null,
-            PhoneNumberConfirmed = contact.Kind == ContactKind.Phone
+            EmailConfirmed = contact.Kind == ContactKind.EMAIL,
+            PhoneNumber = contact.Kind == ContactKind.PHONE ? contact.Value : null,
+            PhoneNumberConfirmed = contact.Kind == ContactKind.PHONE
         };
         var create = await userManager.CreateAsync(user);
         if (!create.Succeeded)
@@ -77,7 +77,7 @@ public sealed class RegistrationChallengeService(
             throw new BusinessException(new ApplicationError(
                 "registration_creation_failed",
                 "The account could not be created.",
-                ApplicationErrorType.Validation,
+                ApplicationErrorType.VALIDATION,
                 create.Errors.GroupBy(error => error.Code).ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray())));
         }
 
@@ -112,7 +112,7 @@ public sealed class RegistrationChallengeService(
             throw Validation(errors);
         }
 
-        var candidate = new User(Guid.NewGuid(), contact.Kind == ContactKind.Email ? contact.Value : null, "pending", timeProvider.GetUtcNow());
+        var candidate = new User(Guid.NewGuid(), contact.Kind == ContactKind.EMAIL ? contact.Value : null, "pending", timeProvider.GetUtcNow());
         foreach (var validator in userManager.PasswordValidators)
         {
             var result = await validator.ValidateAsync(userManager, candidate, request.Password!);
@@ -138,7 +138,7 @@ public sealed class RegistrationChallengeService(
     }
 
     private async Task<bool> ContactExistsAsync(ContactIdentifier contact, CancellationToken cancellationToken) =>
-        contact.Kind == ContactKind.Email
+        contact.Kind == ContactKind.EMAIL
             ? await userManager.FindByEmailAsync(contact.Value) is not null
             : await dbContext.Users.AnyAsync(user => user.PhoneNumber == contact.Value, cancellationToken);
 
@@ -175,16 +175,16 @@ public sealed class RegistrationChallengeService(
     }
 
     private static bool TryParseGender(string? value, out Gender gender) =>
-        Enum.TryParse(value, true, out gender) && Enum.IsDefined(gender);
+        EnumText.TryParse(value, true, out gender) && Enum.IsDefined(gender);
 
     private static RegistrationChallengeResponse ToResponse(RegistrationChallenge challenge) =>
         new(challenge.Id, challenge.ExpiresAtUtc, challenge.NextResendAllowedAtUtc);
 
     private static BusinessException Validation(IReadOnlyDictionary<string, string[]> errors) =>
-        new BusinessException(new ApplicationError(ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.Validation, errors));
+        new BusinessException(new ApplicationError(ErrorCode.ValidationFailed, ErrorCode.ValidationFailed.Message, ApplicationErrorType.VALIDATION, errors));
 
     private static BusinessException Conflict(string code, string message) =>
-        new BusinessException(new ApplicationError(code, message, ApplicationErrorType.Conflict));
+        new BusinessException(new ApplicationError(code, message, ApplicationErrorType.CONFLICT));
 
     private sealed record StartInput(
         ContactIdentifier Contact,

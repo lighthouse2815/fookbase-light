@@ -92,7 +92,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal("Nguyễn An", profile.DisplayName);
         Assert.Equal("nguyen.an", profile.Username);
         Assert.Equal(new DateOnly(2000, 1, 2), profile.DateOfBirth);
-        Assert.Equal(Gender.Female, profile.Gender);
+        Assert.Equal(Gender.FEMALE, profile.Gender);
     }
 
     [Fact]
@@ -296,13 +296,13 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var now = DateTimeOffset.UtcNow;
         var challenge = new RegistrationChallenge(
-            new ContactIdentifier(ContactKind.Email, "resend@example.test"),
+            new ContactIdentifier(ContactKind.EMAIL, "resend@example.test"),
             new string('A', 64),
             "identity-password-hash",
             "Nguyễn",
             "An",
             new DateOnly(2000, 1, 2),
-            Gender.PreferNotToSay,
+            Gender.PREFER_NOT_TO_SAY,
             now);
 
         for (var send = 1; send < 5; send++)
@@ -322,7 +322,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     public void Vietnamese_phone_is_normalized_to_e164(string raw, string expected)
     {
         var contact = ContactIdentifier.Parse(raw);
-        Assert.Equal(ContactKind.Phone, contact.Kind);
+        Assert.Equal(ContactKind.PHONE, contact.Kind);
         Assert.Equal(expected, contact.Value);
     }
 
@@ -349,7 +349,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var contact = ContactIdentifier.Parse(raw);
 
-        Assert.Equal(ContactKind.Email, contact.Kind);
+        Assert.Equal(ContactKind.EMAIL, contact.Kind);
         Assert.Equal(expected, contact.Value);
     }
 
@@ -358,13 +358,13 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
     {
         var now = DateTimeOffset.UtcNow;
         var challenge = new RegistrationChallenge(
-            new ContactIdentifier(ContactKind.Email, "person@example.test"),
+            new ContactIdentifier(ContactKind.EMAIL, "person@example.test"),
             new string('A', 64),
             "identity-password-hash",
             "Nguyễn",
             "An",
             new DateOnly(2000, 1, 2),
-            Gender.PreferNotToSay,
+            Gender.PREFER_NOT_TO_SAY,
             now);
 
         for (var attempt = 0; attempt < 5; attempt++)
@@ -483,7 +483,7 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
 
         var completion = new ExternalLoginTicket(
             codeHash,
-            ExternalLoginTicketPurpose.IssueSession,
+            ExternalLoginTicketPurpose.ISSUE_SESSION,
             "web",
             "Google",
             "google-subject",

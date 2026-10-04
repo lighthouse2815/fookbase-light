@@ -30,7 +30,7 @@ public sealed class PostsUseCase(
             return ApplicationResult<PostResponse>.Failure(new ApplicationError(
                 "group_membership_required",
                 "Only active group members can create group posts.",
-                ApplicationErrorType.Forbidden));
+                ApplicationErrorType.FORBIDDEN));
         }
 
         var input = postsService.ValidatePostRequest(content, "public", mediaIds);
@@ -100,7 +100,7 @@ public sealed class PostsUseCase(
         CancellationToken cancellationToken = default)
     {
         var effectivePrivacy = string.IsNullOrWhiteSpace(privacy)
-            ? (await privacySettingsService.GetDefaultPostPrivacyAsync(actorUserId, cancellationToken)).ToString()
+            ? (await privacySettingsService.GetDefaultPostPrivacyAsync(actorUserId, cancellationToken)).ToApiName()
             : privacy;
         var input = postsService.ValidatePostRequest(content, effectivePrivacy, mediaIds);
         if (!input.Succeeded)
@@ -163,7 +163,7 @@ public sealed class PostsUseCase(
         {
             return ApplicationResult<PostResponse>.Failure(new ApplicationError(
                 "page_post_forbidden", "Only Page owners, admins, and editors can publish Page posts.",
-                ApplicationErrorType.Forbidden));
+                ApplicationErrorType.FORBIDDEN));
         }
 
         var input = postsService.ValidatePostRequest(content, "public", mediaIds);
@@ -610,7 +610,7 @@ public sealed class PostsUseCase(
                     readUrl.Value.MediaType,
                     readUrl.Value.ContentType))
             : ApplicationResult<MediaAccessResponse>.Failure(new ApplicationError(
-                "media_unavailable", "The attached media is unavailable.", ApplicationErrorType.NotFound));
+                "media_unavailable", "The attached media is unavailable.", ApplicationErrorType.NOT_FOUND));
     }
 
     private async Task<PostViewerContext?> CreateViewerContextAsync(

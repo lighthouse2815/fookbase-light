@@ -24,10 +24,10 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var users = await CreateUsersAsync(2);
         var ownerId = users[0];
         var otherId = users[1];
-        var imageId = await CreateReadyMediaAsync(ownerId, MediaType.Image);
+        var imageId = await CreateReadyMediaAsync(ownerId, MediaType.IMAGE);
         var pendingVideoId = await CreatePendingVideoAsync(ownerId);
-        var foreignVideoId = await CreateReadyMediaAsync(otherId, MediaType.Video);
-        var ownedVideoId = await CreateReadyMediaAsync(ownerId, MediaType.Video);
+        var foreignVideoId = await CreateReadyMediaAsync(otherId, MediaType.VIDEO);
+        var ownedVideoId = await CreateReadyMediaAsync(ownerId, MediaType.VIDEO);
         using var anonymous = factory.CreateClient();
         using var owner = CreateAuthenticatedClient(ownerId);
 
@@ -50,12 +50,12 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(ownedVideoId, created.Video.MediaId);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        Assert.Equal(PostType.Reel, (await db.Posts.SingleAsync(post => post.Id == created.Id)).PostType);
+        Assert.Equal(PostType.REEL, (await db.Posts.SingleAsync(post => post.Id == created.Id)).PostType);
         Assert.Equal(1, await db.PostMedia.CountAsync(item => item.PostId == created.Id));
         Assert.True(await db.MediaReferences.AnyAsync(item =>
             item.PostId == created.Id && item.MediaId == ownedVideoId));
         Assert.True(await db.Posts.AnyAsync(post =>
-            post.Content == "legacy standard" && post.PostType == PostType.Standard));
+            post.Content == "legacy standard" && post.PostType == PostType.STANDARD));
         Assert.Equal(HttpStatusCode.Conflict, (await owner.DeleteAsync("/api/media/" + ownedVideoId)).StatusCode);
     }
 
@@ -70,9 +70,9 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var author = CreateAuthenticatedClient(authorId);
         using var friend = CreateAuthenticatedClient(friendId);
         using var stranger = CreateAuthenticatedClient(strangerId);
-        var publicVideo = await CreateReadyMediaAsync(authorId, MediaType.Video);
-        var friendsVideo = await CreateReadyMediaAsync(authorId, MediaType.Video);
-        var onlyMeVideo = await CreateReadyMediaAsync(authorId, MediaType.Video);
+        var publicVideo = await CreateReadyMediaAsync(authorId, MediaType.VIDEO);
+        var friendsVideo = await CreateReadyMediaAsync(authorId, MediaType.VIDEO);
+        var onlyMeVideo = await CreateReadyMediaAsync(authorId, MediaType.VIDEO);
         var publicReel = await ReadAsync<ReelResponse>(await author.PostAsJsonAsync("/api/reels",
             new { caption = "public reel", privacy = "public", videoMediaId = publicVideo }));
         var friendsReel = await ReadAsync<ReelResponse>(await author.PostAsJsonAsync("/api/reels",
@@ -137,7 +137,7 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         }
 
         using var author = CreateAuthenticatedClient(authorId);
-        var videoId = await CreateReadyMediaAsync(authorId, MediaType.Video);
+        var videoId = await CreateReadyMediaAsync(authorId, MediaType.VIDEO);
         var created = await ReadAsync<ReelResponse>(await author.PostAsJsonAsync("/api/reels",
             new { caption = "private contact", privacy = "public", videoMediaId = videoId }));
         var loaded = await ReadAsync<ReelResponse>(await author.GetAsync("/api/reels/" + created.Id));
@@ -171,7 +171,7 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var id = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        db.MediaAssets.Add(MediaAsset.CreatePending(id, ownerUserId, MediaType.Video,
+        db.MediaAssets.Add(MediaAsset.CreatePending(id, ownerUserId, MediaType.VIDEO,
             $"{ownerUserId:N}/{id:N}.mp4", "pending.mp4", "video/mp4", 11, now, now.AddMinutes(5)));
         await db.SaveChangesAsync();
         return id;
@@ -184,10 +184,10 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var id = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
         var asset = MediaAsset.CreatePending(id, ownerUserId, mediaType,
-            $"{ownerUserId:N}/{id:N}{(mediaType == MediaType.Video ? ".mp4" : ".png")}",
-            mediaType == MediaType.Video ? "video.mp4" : "image.png",
-            mediaType == MediaType.Video ? "video/mp4" : "image/png", 11, now, now.AddMinutes(5));
-        if (mediaType == MediaType.Video)
+            $"{ownerUserId:N}/{id:N}{(mediaType == MediaType.VIDEO ? ".mp4" : ".png")}",
+            mediaType == MediaType.VIDEO ? "video.mp4" : "image.png",
+            mediaType == MediaType.VIDEO ? "video/mp4" : "image/png", 11, now, now.AddMinutes(5));
+        if (mediaType == MediaType.VIDEO)
         {
             asset.MarkProcessing(11, now);
             asset.MarkVideoReady(MediaAsset.ProcessedKey(ownerUserId, id), MediaAsset.PosterKey(ownerUserId, id),

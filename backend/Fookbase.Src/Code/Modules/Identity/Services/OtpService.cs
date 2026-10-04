@@ -40,7 +40,7 @@ public sealed class OtpService(
         else if (!challenge.TryRestart(codeHash, passwordHash, firstName, lastName, dateOfBirth, gender, now))
         {
             throw new BusinessException(new ApplicationError(
-                "registration_send_limit", "Too many verification codes were requested.", ApplicationErrorType.Conflict));
+                "registration_send_limit", "Too many verification codes were requested.", ApplicationErrorType.CONFLICT));
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -61,7 +61,7 @@ public sealed class OtpService(
         if (!challenge.TryResend(Hash(code), now))
         {
             throw new BusinessException(new ApplicationError(
-                "registration_resend_unavailable", "A new verification code cannot be sent yet.", ApplicationErrorType.Conflict));
+                "registration_resend_unavailable", "A new verification code cannot be sent yet.", ApplicationErrorType.CONFLICT));
         }
 
         await SendRegistrationCodeAsync(challenge, code, cancellationToken);
@@ -138,7 +138,7 @@ public sealed class OtpService(
             dbContext.PasswordResetOtps.Remove(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
             throw new BusinessException(new ApplicationError(
-                ErrorCode.SmsUnavailable, ErrorCode.SmsUnavailable.Message, ApplicationErrorType.Conflict));
+                ErrorCode.SmsUnavailable, ErrorCode.SmsUnavailable.Message, ApplicationErrorType.CONFLICT));
         }
     }
 
@@ -193,8 +193,8 @@ public sealed class OtpService(
             dbContext.RegistrationChallenges.Remove(challenge);
             await dbContext.SaveChangesAsync(cancellationToken);
             throw new BusinessException(new ApplicationError(
-                challenge.ContactKind == ContactKind.Email ? "email_delivery_unavailable" : "sms_delivery_unavailable",
-                "The verification code could not be delivered.", ApplicationErrorType.Conflict));
+                challenge.ContactKind == ContactKind.EMAIL ? "email_delivery_unavailable" : "sms_delivery_unavailable",
+                "The verification code could not be delivered.", ApplicationErrorType.CONFLICT));
         }
     }
 
@@ -209,8 +209,8 @@ public sealed class OtpService(
         CryptographicOperations.FixedTimeEquals(Convert.FromHexString(expected), Convert.FromHexString(supplied));
 
     private static BusinessException InvalidRegistrationCode() =>
-        new(new ApplicationError("invalid_registration_code", "The verification code is invalid or expired.", ApplicationErrorType.Unauthorized));
+        new(new ApplicationError("invalid_registration_code", "The verification code is invalid or expired.", ApplicationErrorType.UNAUTHORIZED));
 
     private static BusinessException InvalidPasswordReset() =>
-        new(new ApplicationError(ErrorCode.InvalidPasswordReset, ErrorCode.InvalidPasswordReset.Message, ApplicationErrorType.Validation));
+        new(new ApplicationError(ErrorCode.InvalidPasswordReset, ErrorCode.InvalidPasswordReset.Message, ApplicationErrorType.VALIDATION));
 }

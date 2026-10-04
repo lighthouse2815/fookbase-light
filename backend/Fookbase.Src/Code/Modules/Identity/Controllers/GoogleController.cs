@@ -151,10 +151,10 @@ public sealed class GoogleController(
     private static BusinessException InvalidGoogleClient() => new(new ApplicationError(
         "invalid_google_client",
         "The Google authentication client is unsupported.",
-        ApplicationErrorType.Validation));
+        ApplicationErrorType.VALIDATION));
 
     private static BusinessException GoogleUnavailable() => new(new ApplicationError(
         "google_unavailable",
         "Google authentication is unavailable.",
-        ApplicationErrorType.NotFound));
+        ApplicationErrorType.NOT_FOUND));
 }

@@ -2,17 +2,17 @@ namespace Fookbase.Api.Modules.Media.Entities;
 
 public enum MediaType
 {
-    Image,
-    Video
+    IMAGE,
+    VIDEO
 }
 
 public enum MediaStatus
 {
-    PendingUpload,
-    Ready,
-    Failed,
-    Deleted,
-    Processing
+    PENDING_UPLOAD,
+    READY,
+    FAILED,
+    DELETED,
+    PROCESSING
 }
 
 public sealed class MediaAsset
@@ -33,7 +33,7 @@ public sealed class MediaAsset
         Id = id;
         OwnerUserId = ownerUserId;
         MediaType = mediaType;
-        Status = MediaStatus.PendingUpload;
+        Status = MediaStatus.PENDING_UPLOAD;
         ObjectKey = objectKey;
         OriginalFileName = originalFileName;
         ContentType = contentType;
@@ -78,43 +78,43 @@ public sealed class MediaAsset
 
     public bool MarkReady(long actualSizeBytes, DateTimeOffset uploadedAtUtc)
     {
-        if (Status == MediaStatus.Ready)
+        if (Status == MediaStatus.READY)
         {
             return false;
         }
 
-        if (Status != MediaStatus.PendingUpload)
+        if (Status != MediaStatus.PENDING_UPLOAD)
         {
             throw new InvalidOperationException("Only a pending upload can become ready.");
         }
 
         ActualSizeBytes = actualSizeBytes;
         UploadedAtUtc = uploadedAtUtc;
-        Status = MediaStatus.Ready;
+        Status = MediaStatus.READY;
         return true;
     }
 
     public bool MarkFailed()
     {
-        if (Status is not (MediaStatus.PendingUpload or MediaStatus.Processing))
+        if (Status is not (MediaStatus.PENDING_UPLOAD or MediaStatus.PROCESSING))
         {
             return false;
         }
 
-        Status = MediaStatus.Failed;
+        Status = MediaStatus.FAILED;
         return true;
     }
 
     public void MarkProcessing(long actualSizeBytes, DateTimeOffset uploadedAtUtc)
     {
-        if (Status != MediaStatus.PendingUpload || MediaType != MediaType.Video)
+        if (Status != MediaStatus.PENDING_UPLOAD || MediaType != MediaType.VIDEO)
         {
             throw new InvalidOperationException("Only a pending video upload can begin processing.");
         }
 
         ActualSizeBytes = actualSizeBytes;
         UploadedAtUtc = uploadedAtUtc;
-        Status = MediaStatus.Processing;
+        Status = MediaStatus.PROCESSING;
     }
 
     public void MarkVideoReady(
@@ -125,7 +125,7 @@ public sealed class MediaAsset
         int height,
         DateTimeOffset processedAtUtc)
     {
-        if (Status != MediaStatus.Processing || MediaType != MediaType.Video ||
+        if (Status != MediaStatus.PROCESSING || MediaType != MediaType.VIDEO ||
             durationMs <= 0 || width <= 0 || height <= 0)
         {
             throw new InvalidOperationException("Only a processed video with valid metadata can become ready.");
@@ -138,18 +138,18 @@ public sealed class MediaAsset
         Height = height;
         ProcessedAtUtc = processedAtUtc;
         ProcessingError = null;
-        Status = MediaStatus.Ready;
+        Status = MediaStatus.READY;
     }
 
     public void MarkProcessingFailed(string error)
     {
-        if (Status != MediaStatus.Processing)
+        if (Status != MediaStatus.PROCESSING)
         {
             throw new InvalidOperationException("Only a processing video can fail processing.");
         }
 
         ProcessingError = error.Length <= 1000 ? error : error[..1000];
-        Status = MediaStatus.Failed;
+        Status = MediaStatus.FAILED;
     }
 
     public static string ProcessedKey(Guid ownerUserId, Guid mediaId) =>
@@ -160,17 +160,17 @@ public sealed class MediaAsset
 
     public bool Delete(DateTimeOffset deletedAtUtc)
     {
-        if (Status == MediaStatus.Deleted)
+        if (Status == MediaStatus.DELETED)
         {
             return false;
         }
 
-        if (Status != MediaStatus.Ready)
+        if (Status != MediaStatus.READY)
         {
             throw new InvalidOperationException("Only ready media can be deleted.");
         }
 
-        Status = MediaStatus.Deleted;
+        Status = MediaStatus.DELETED;
         DeletedAtUtc = deletedAtUtc;
         return true;
     }

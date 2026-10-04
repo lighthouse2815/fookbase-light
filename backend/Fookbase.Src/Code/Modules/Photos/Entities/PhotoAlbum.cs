@@ -2,17 +2,17 @@ namespace Fookbase.Api.Modules.Photos.Entities;
 
 public enum PhotoAlbumType
 {
-    Custom,
-    ProfilePictures,
-    CoverPhotos,
-    TimelinePhotos
+    CUSTOM,
+    PROFILE_PICTURES,
+    COVER_PHOTOS,
+    TIMELINE_PHOTOS
 }
 
 public enum PhotoAlbumPrivacy
 {
-    Public,
-    Friends,
-    OnlyMe
+    PUBLIC,
+    FRIENDS,
+    ONLY_ME
 }
 
 public sealed class PhotoAlbum
@@ -60,7 +60,7 @@ public sealed class PhotoAlbum
         string? description,
         PhotoAlbumPrivacy privacy,
         DateTimeOffset now) =>
-        new(id, ownerUserId, name, description, privacy, PhotoAlbumType.Custom, now);
+        new(id, ownerUserId, name, description, privacy, PhotoAlbumType.CUSTOM, now);
 
     public static PhotoAlbum CreateSystem(
         Guid id,
@@ -68,12 +68,12 @@ public sealed class PhotoAlbum
         PhotoAlbumType albumType,
         DateTimeOffset now)
     {
-        if (albumType == PhotoAlbumType.Custom)
+        if (albumType == PhotoAlbumType.CUSTOM)
         {
             throw new ArgumentException("Custom albums must be created explicitly.", nameof(albumType));
         }
 
-        return new PhotoAlbum(id, ownerUserId, SystemName(albumType), null, PhotoAlbumPrivacy.Public, albumType, now);
+        return new PhotoAlbum(id, ownerUserId, SystemName(albumType), null, PhotoAlbumPrivacy.PUBLIC, albumType, now);
     }
 
     public void UpdateCustom(string name, string? description, PhotoAlbumPrivacy privacy, DateTimeOffset now)
@@ -99,7 +99,7 @@ public sealed class PhotoAlbum
             throw new InvalidOperationException("A deleted album cannot be changed.");
         }
 
-        if (AlbumType != PhotoAlbumType.Custom)
+        if (AlbumType != PhotoAlbumType.CUSTOM)
         {
             throw new InvalidOperationException("System albums cannot be changed this way.");
         }
@@ -107,9 +107,9 @@ public sealed class PhotoAlbum
 
     private static string SystemName(PhotoAlbumType albumType) => albumType switch
     {
-        PhotoAlbumType.ProfilePictures => "Profile pictures",
-        PhotoAlbumType.CoverPhotos => "Cover photos",
-        PhotoAlbumType.TimelinePhotos => "Timeline photos",
+        PhotoAlbumType.PROFILE_PICTURES => "Profile pictures",
+        PhotoAlbumType.COVER_PHOTOS => "Cover photos",
+        PhotoAlbumType.TIMELINE_PHOTOS => "Timeline photos",
         _ => throw new ArgumentOutOfRangeException(nameof(albumType), albumType, null)
     };
 

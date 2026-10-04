@@ -19,9 +19,9 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.AvatarMediaId);
         builder.Property(profile => profile.CoverMediaId);
         builder.Property(profile => profile.BirthdayVisibility)
-            .HasDefaultValue(BirthdayVisibility.OnlyMe);
+            .HasDefaultValue(BirthdayVisibility.ONLY_ME);
         builder.Property(profile => profile.Gender)
-            .HasDefaultValue(Gender.PreferNotToSay)
+            .HasDefaultValue(Gender.PREFER_NOT_TO_SAY)
             .ValueGeneratedNever();
         builder.Property(profile => profile.CurrentCity).HasMaxLength(100);
         builder.Property(profile => profile.Hometown).HasMaxLength(100);

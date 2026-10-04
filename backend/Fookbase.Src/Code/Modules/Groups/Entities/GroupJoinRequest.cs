@@ -2,9 +2,9 @@ namespace Fookbase.Api.Modules.Groups.Entities;
 
 public enum GroupJoinRequestStatus
 {
-    Pending,
-    Approved,
-    Declined
+    PENDING,
+    APPROVED,
+    DECLINED
 }
 
 public sealed class GroupJoinRequest
@@ -18,7 +18,7 @@ public sealed class GroupJoinRequest
         Id = id;
         GroupId = groupId;
         RequesterUserId = requesterUserId;
-        Status = GroupJoinRequestStatus.Pending;
+        Status = GroupJoinRequestStatus.PENDING;
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -40,7 +40,7 @@ public sealed class GroupJoinRequest
     public void Approve(Guid actorUserId, DateTimeOffset respondedAtUtc)
     {
         EnsurePending();
-        Status = GroupJoinRequestStatus.Approved;
+        Status = GroupJoinRequestStatus.APPROVED;
         RespondedByUserId = actorUserId;
         RespondedAtUtc = respondedAtUtc;
     }
@@ -48,14 +48,14 @@ public sealed class GroupJoinRequest
     public void Decline(Guid actorUserId, DateTimeOffset respondedAtUtc)
     {
         EnsurePending();
-        Status = GroupJoinRequestStatus.Declined;
+        Status = GroupJoinRequestStatus.DECLINED;
         RespondedByUserId = actorUserId;
         RespondedAtUtc = respondedAtUtc;
     }
 
     private void EnsurePending()
     {
-        if (Status != GroupJoinRequestStatus.Pending)
+        if (Status != GroupJoinRequestStatus.PENDING)
         {
             throw new InvalidOperationException("Only pending group join requests can be changed.");
         }

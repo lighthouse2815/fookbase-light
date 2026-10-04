@@ -29,7 +29,7 @@ public sealed class GroupPostAccessService(FookbaseDbContext dbContext)
             return false;
         }
 
-        if (group.Privacy == GroupPrivacy.Public)
+        if (group.Privacy == GroupPrivacy.PUBLIC)
         {
             return true;
         }
@@ -67,12 +67,12 @@ public sealed class GroupPostAccessService(FookbaseDbContext dbContext)
         PostViewerContext? viewer)
     {
         var activePosts = posts.Where(post =>
-            post.DeletedAtUtc == null && post.ContainerType == PostContainerType.Group);
+            post.DeletedAtUtc == null && post.ContainerType == PostContainerType.GROUP);
         if (viewer is null)
         {
             return activePosts.Where(post => dbContext.Groups.Any(group =>
                 group.Id == post.ContainerId && group.DeletedAtUtc == null &&
-                group.Privacy == GroupPrivacy.Public));
+                group.Privacy == GroupPrivacy.PUBLIC));
         }
 
         var viewerUserId = viewer.UserId;
@@ -81,7 +81,7 @@ public sealed class GroupPostAccessService(FookbaseDbContext dbContext)
             (post.AuthorUserId == viewerUserId || !blockedUserIds.Contains(post.AuthorUserId)) &&
             dbContext.Groups.Any(group =>
                 group.Id == post.ContainerId && group.DeletedAtUtc == null &&
-                (group.Privacy == GroupPrivacy.Public || dbContext.GroupMembers.Any(member =>
+                (group.Privacy == GroupPrivacy.PUBLIC || dbContext.GroupMembers.Any(member =>
                     member.GroupId == group.Id && member.UserId == viewerUserId))));
     }
 
@@ -89,7 +89,7 @@ public sealed class GroupPostAccessService(FookbaseDbContext dbContext)
         Post post,
         PostViewerContext actor,
         CancellationToken cancellationToken = default) =>
-        post.ContainerType == PostContainerType.Group &&
+        post.ContainerType == PostContainerType.GROUP &&
         !actor.BlockedUserIds.Contains(post.AuthorUserId) &&
         await IsActiveMemberAsync(post.ContainerId, actor.UserId, cancellationToken);
 }

@@ -48,7 +48,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var persisted = await db.Posts.SingleAsync(item => item.Id == response.Id);
         Assert.Equal(authorUserId, persisted.AuthorUserId);
-        Assert.Equal(PostContainerType.Profile, persisted.ContainerType);
+        Assert.Equal(PostContainerType.PROFILE, persisted.ContainerType);
         Assert.Equal(authorUserId, persisted.ContainerId);
     }
 
@@ -183,11 +183,11 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             .Where(report => report.ReporterUserId == reporterUserId)
             .ToListAsync();
         Assert.Contains(reports, report =>
-            report.TargetType == ReportTargetType.Post && report.TargetId == post.Id &&
-            report.Reason == ReportReason.Harassment && report.Details == "Repeated abusive language.");
+            report.TargetType == ReportTargetType.POST && report.TargetId == post.Id &&
+            report.Reason == ReportReason.HARASSMENT && report.Details == "Repeated abusive language.");
         Assert.Contains(reports, report =>
-            report.TargetType == ReportTargetType.User && report.TargetId == reportedUserId &&
-            report.Reason == ReportReason.Scam);
+            report.TargetType == ReportTargetType.USER && report.TargetId == reportedUserId &&
+            report.Reason == ReportReason.SCAM);
     }
 
     [Fact]
@@ -239,8 +239,8 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.NotNull((await db.Posts.SingleAsync(item => item.Id == post.Id)).DeletedAtUtc);
-        Assert.Equal(ContentReportStatus.Reviewed, (await db.ContentReports.SingleAsync(item => item.Id == report.Id)).Status);
-        Assert.Contains(await db.ModerationActions.ToListAsync(), action => action.ReportId == report.Id && action.ActionType == ModerationActionType.RemovePost);
+        Assert.Equal(ContentReportStatus.REVIEWED, (await db.ContentReports.SingleAsync(item => item.Id == report.Id)).Status);
+        Assert.Contains(await db.ModerationActions.ToListAsync(), action => action.ReportId == report.Id && action.ActionType == ModerationActionType.REMOVE_POST);
     }
 
     [Fact]
@@ -259,8 +259,8 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        Assert.Equal(ContentReportStatus.Dismissed, (await db.ContentReports.SingleAsync(item => item.Id == report.Id)).Status);
-        Assert.Equal(1, await db.ModerationActions.CountAsync(action => action.ReportId == report.Id && action.ActionType == ModerationActionType.DismissReport));
+        Assert.Equal(ContentReportStatus.DISMISSED, (await db.ContentReports.SingleAsync(item => item.Id == report.Id)).Status);
+        Assert.Equal(1, await db.ModerationActions.CountAsync(action => action.ReportId == report.Id && action.ActionType == ModerationActionType.DISMISS_REPORT));
     }
 
     [Fact]
@@ -432,7 +432,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(1, await db.PostShares.CountAsync(item => item.OriginalPostId == post.Id));
         Assert.Equal(1, await db.PostHashtags.CountAsync(item => item.PostId == post.Id));
         Assert.Single(await db.Notifications.Where(item =>
-            item.Type == NotificationType.PostShared && item.EntityId == post.Id).ToListAsync());
+            item.Type == NotificationType.POST_SHARED && item.EntityId == post.Id).ToListAsync());
     }
 
     [Fact]
@@ -628,11 +628,11 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
 
         Assert.Equal(HttpStatusCode.OK, acceptance.StatusCode);
         Assert.Contains(receiverNotifications.Items, item =>
-            item.Type == NotificationType.FriendRequestReceived.ToString() &&
+            item.Type == "FriendRequestReceived" &&
             item.ActorUserId == users[0] &&
             item.EntityId == request.Id);
         Assert.Contains(senderNotifications.Items, item =>
-            item.Type == NotificationType.FriendRequestAccepted.ToString() &&
+            item.Type == "FriendRequestAccepted" &&
             item.ActorUserId == users[1] &&
             item.EntityId == request.Id);
     }
@@ -659,7 +659,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var notifications = await db.Notifications.AsNoTracking()
             .Where(item =>
-                item.Type == NotificationType.PostReaction &&
+                item.Type == NotificationType.POST_REACTION &&
                 item.EntityId == post.Id)
             .ToListAsync();
 
@@ -667,7 +667,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(users[0], notification.RecipientUserId);
         Assert.Equal(users[1], notification.ActorUserId);
         Assert.DoesNotContain(await db.Notifications.AsNoTracking().ToListAsync(), item =>
-            item.Type == NotificationType.PostReaction &&
+            item.Type == NotificationType.POST_REACTION &&
             item.RecipientUserId == users[0] &&
             item.ActorUserId == users[0]);
     }
@@ -692,16 +692,16 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Contains(await db.Notifications.AsNoTracking().ToListAsync(), item =>
-            item.Type == NotificationType.PostComment &&
+            item.Type == NotificationType.POST_COMMENT &&
             item.RecipientUserId == users[0] &&
             item.ActorUserId == users[1] &&
-            item.EntityType == NotificationEntityType.Post &&
+            item.EntityType == NotificationEntityType.POST &&
             item.EntityId == post.Id);
         Assert.Contains(await db.Notifications.AsNoTracking().ToListAsync(), item =>
-            item.Type == NotificationType.CommentReaction &&
+            item.Type == NotificationType.COMMENT_REACTION &&
             item.RecipientUserId == users[1] &&
             item.ActorUserId == users[2] &&
-            item.EntityType == NotificationEntityType.Comment &&
+            item.EntityType == NotificationEntityType.COMMENT &&
             item.EntityId == comment.Id);
     }
 
@@ -734,13 +734,13 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var otherUser = users[1];
         var now = DateTimeOffset.UtcNow;
         var oldest = Notification.Create(
-            Guid.NewGuid(), recipient, otherUser, NotificationType.PostMention, null, null, now.AddMinutes(-2));
+            Guid.NewGuid(), recipient, otherUser, NotificationType.POST_MENTION, null, null, now.AddMinutes(-2));
         var middle = Notification.Create(
-            Guid.NewGuid(), recipient, otherUser, NotificationType.PostMention, null, null, now.AddMinutes(-1));
+            Guid.NewGuid(), recipient, otherUser, NotificationType.POST_MENTION, null, null, now.AddMinutes(-1));
         var newest = Notification.Create(
-            Guid.NewGuid(), recipient, otherUser, NotificationType.PostMention, null, null, now);
+            Guid.NewGuid(), recipient, otherUser, NotificationType.POST_MENTION, null, null, now);
         var privateNotification = Notification.Create(
-            Guid.NewGuid(), otherUser, recipient, NotificationType.PostMention, null, null, now);
+            Guid.NewGuid(), otherUser, recipient, NotificationType.POST_MENTION, null, null, now);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
@@ -790,11 +790,11 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var recipientClient = CreateAuthenticatedClient(recipient);
         var post = await CreatePostAsync(postAuthorClient, "visibility target", "public");
         var blockedNotification = Notification.Create(
-            Guid.NewGuid(), recipient, actor, NotificationType.PostReaction,
-            NotificationEntityType.Post, post.Id, DateTimeOffset.UtcNow);
+            Guid.NewGuid(), recipient, actor, NotificationType.POST_REACTION,
+            NotificationEntityType.POST, post.Id, DateTimeOffset.UtcNow);
         var staleNotification = Notification.Create(
-            Guid.NewGuid(), recipient, postAuthor, NotificationType.PostComment,
-            NotificationEntityType.Post, post.Id, DateTimeOffset.UtcNow.AddTicks(1));
+            Guid.NewGuid(), recipient, postAuthor, NotificationType.POST_COMMENT,
+            NotificationEntityType.POST, post.Id, DateTimeOffset.UtcNow.AddTicks(1));
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
@@ -850,7 +850,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        Assert.Equal(MediaStatus.Deleted,
+        Assert.Equal(MediaStatus.DELETED,
             (await db.MediaAssets.SingleAsync(x => x.Id == mediaId)).Status);
     }
 
@@ -928,7 +928,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     public async Task Media_access_includes_video_metadata_for_playback()
     {
         var users = await CreateUserIdsAsync(2);
-        var videoId = await CreateReadyMediaAsync(users[0], MediaType.Video);
+        var videoId = await CreateReadyMediaAsync(users[0], MediaType.VIDEO);
         using var author = CreateAuthenticatedClient(users[0]);
         using var viewer = CreateAuthenticatedClient(users[1]);
 
@@ -1008,7 +1008,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.True((await friends.BlockAsync(blockerUserId, blockedUserId)).Succeeded);
     }
 
-    private async Task<Guid> CreateReadyMediaAsync(Guid ownerUserId, MediaType mediaType = MediaType.Image)
+    private async Task<Guid> CreateReadyMediaAsync(Guid ownerUserId, MediaType mediaType = MediaType.IMAGE)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
@@ -1018,13 +1018,13 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             mediaId,
             ownerUserId,
             mediaType,
-            $"{ownerUserId:N}/{mediaId:N}{(mediaType == MediaType.Video ? ".mp4" : ".png")}",
-            mediaType == MediaType.Video ? "video.mp4" : "photo.png",
-            mediaType == MediaType.Video ? "video/mp4" : "image/png",
+            $"{ownerUserId:N}/{mediaId:N}{(mediaType == MediaType.VIDEO ? ".mp4" : ".png")}",
+            mediaType == MediaType.VIDEO ? "video.mp4" : "photo.png",
+            mediaType == MediaType.VIDEO ? "video/mp4" : "image/png",
             11,
             now,
             now.AddMinutes(5));
-        if (mediaType == MediaType.Video)
+        if (mediaType == MediaType.VIDEO)
         {
             asset.MarkProcessing(11, now);
             asset.MarkVideoReady(

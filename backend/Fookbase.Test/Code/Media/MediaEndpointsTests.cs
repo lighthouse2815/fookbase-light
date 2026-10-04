@@ -41,7 +41,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
             services.GetRequiredService<IHttpClientFactory>());
 
         var intent = await storage.CreateDirectUploadIntentAsync(
-            "user/avatar.png", MediaType.Image, TimeSpan.FromMinutes(5));
+            "user/avatar.png", MediaType.IMAGE, TimeSpan.FromMinutes(5));
 
         Assert.Equal("https://api.cloudinary.com/v1_1/test-cloud/image/upload", intent.UploadUrl);
         Assert.Equal("authenticated", intent.UploadParameters["type"]);
@@ -65,7 +65,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
             options,
             services.GetRequiredService<IHttpClientFactory>());
 
-        var url = storage.CreateSignedGetUrl("user/avatar.png", MediaType.Image);
+        var url = storage.CreateSignedGetUrl("user/avatar.png", MediaType.IMAGE);
 
         Assert.EndsWith("/user/avatar.png.png", url);
     }
@@ -149,7 +149,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var asset = await db.MediaAssets.AsNoTracking().SingleAsync(item => item.Id == intent.MediaId);
         Assert.True(await db.MediaProcessingJobs.AnyAsync(job => job.MediaId == intent.MediaId &&
-            job.Status == MediaProcessingJobStatus.Succeeded));
+            job.Status == MediaProcessingJobStatus.SUCCEEDED));
         var storage = scope.ServiceProvider.GetRequiredService<InMemoryObjectStorage>();
         Assert.True(storage.Contains(asset.ProcessedObjectKey!));
         Assert.True(storage.Contains(asset.PosterObjectKey!));
@@ -171,7 +171,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var job = await db.MediaProcessingJobs.SingleAsync(item => item.MediaId == intent.MediaId);
-        Assert.Equal(MediaProcessingJobStatus.Failed, job.Status);
+        Assert.Equal(MediaProcessingJobStatus.FAILED, job.Status);
         Assert.Equal(3, job.AttemptCount);
         Assert.True(await db.ObjectDeletions.CountAsync(item => item.MediaId == intent.MediaId) >= 3);
     }
@@ -183,7 +183,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         using var client = CreateAuthenticatedClient(userId);
         var mediaId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        var asset = MediaAsset.CreatePending(mediaId, userId, MediaType.Video,
+        var asset = MediaAsset.CreatePending(mediaId, userId, MediaType.VIDEO,
             $"{userId:N}/{mediaId:N}.mp4", "reel.mp4", "video/mp4", 11, now, now.AddMinutes(5));
         asset.MarkProcessing(11, now);
         asset.MarkVideoReady(MediaAsset.ProcessedKey(userId, mediaId), MediaAsset.PosterKey(userId, mediaId),
@@ -237,7 +237,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
             (await owner.DeleteAsync($"/api/media/{unreferenced}")).StatusCode);
         using var verification = factory.Services.CreateScope();
         var verifyDb = verification.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        Assert.Equal(MediaStatus.Deleted,
+        Assert.Equal(MediaStatus.DELETED,
             (await verifyDb.MediaAssets.AsNoTracking().SingleAsync(x => x.Id == unreferenced)).Status);
         Assert.True(await verifyDb.ObjectDeletions.AnyAsync(x => x.MediaId == unreferenced));
     }
@@ -253,7 +253,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var message = Message.Create(Guid.NewGuid(), Guid.NewGuid(), ownerId, MessageType.Media, null, null, now);
+            var message = Message.Create(Guid.NewGuid(), Guid.NewGuid(), ownerId, MessageType.MEDIA, null, null, now);
             var conversation = Conversation.CreateGroup(Guid.NewGuid(), "Photo reference", now);
             conversation.UpdateGroup("Photo reference", photoMediaId);
             db.Messages.Add(message);

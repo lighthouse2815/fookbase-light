@@ -2,11 +2,11 @@ namespace Fookbase.Api.Shared.Common;
 
 public enum ApplicationErrorType
 {
-    Validation,
-    Unauthorized,
-    Forbidden,
-    NotFound,
-    Conflict
+    VALIDATION,
+    UNAUTHORIZED,
+    FORBIDDEN,
+    NOT_FOUND,
+    CONFLICT
 }
 
 public sealed record ApplicationError(

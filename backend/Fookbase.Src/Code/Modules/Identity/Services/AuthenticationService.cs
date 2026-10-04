@@ -196,7 +196,7 @@ public sealed class AuthenticationService(
     internal Task<User?> FindByIdentifierAsync(
         ContactIdentifier contact,
         CancellationToken cancellationToken = default) =>
-        contact.Kind == ContactKind.Email
+        contact.Kind == ContactKind.EMAIL
             ? userManager.FindByEmailAsync(contact.Value)
             : dbContext.Users.SingleOrDefaultAsync(user => user.PhoneNumber == contact.Value, cancellationToken);
 
@@ -314,7 +314,7 @@ public sealed class AuthenticationService(
         var session = await dbContext.AuthSessions.SingleOrDefaultAsync(
             item => item.Id == sessionId && item.UserId == userId, cancellationToken);
         if (session is null)
-            throw Failure(ErrorCode.SessionNotFound, ApplicationErrorType.NotFound);
+            throw Failure(ErrorCode.SessionNotFound, ApplicationErrorType.NOT_FOUND);
         session.Revoke(now);
         await dbContext.RefreshTokens.Where(token => token.SessionId == sessionId && token.RevokedAt == null && token.ExpiresAt > now)
             .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, now), cancellationToken);
@@ -338,7 +338,7 @@ public sealed class AuthenticationService(
 
     private static BusinessException Failure(
         ErrorCode errorCode,
-        ApplicationErrorType type = ApplicationErrorType.Unauthorized,
+        ApplicationErrorType type = ApplicationErrorType.UNAUTHORIZED,
         IReadOnlyDictionary<string, string[]>? details = null) =>
         new(new ApplicationError(errorCode.Code, errorCode.Message, type, details));
 }

@@ -65,13 +65,13 @@ public sealed class AiChatOptions
     internal IReadOnlyList<AiChatProvider> GetConfiguredProviders()
     {
         var providers = new List<AiChatProvider>();
-        AddProvider(providers, "Groq", "ai-chat-groq", AiChatProviderProtocol.OpenAiChatCompletions, Groq);
-        AddProvider(providers, "Gemini", "ai-chat-gemini", AiChatProviderProtocol.Gemini, Gemini);
-        AddProvider(providers, "OpenRouter", "ai-chat-openrouter", AiChatProviderProtocol.OpenAiChatCompletions, OpenRouter);
+        AddProvider(providers, "Groq", "ai-chat-groq", AiChatProviderProtocol.OPEN_AI_CHAT_COMPLETIONS, Groq);
+        AddProvider(providers, "Gemini", "ai-chat-gemini", AiChatProviderProtocol.GEMINI, Gemini);
+        AddProvider(providers, "OpenRouter", "ai-chat-openrouter", AiChatProviderProtocol.OPEN_AI_CHAT_COMPLETIONS, OpenRouter);
 
         if (providers.Count == 0 && !string.IsNullOrWhiteSpace(ApiKey))
         {
-            AddProvider(providers, "OpenAI", "ai-chat-openai", AiChatProviderProtocol.OpenAiResponses,
+            AddProvider(providers, "OpenAI", "ai-chat-openai", AiChatProviderProtocol.OPEN_AI_RESPONSES,
                 new AiChatProviderOptions { ApiKey = ApiKey, ApiBaseUrl = ApiBaseUrl, Model = Model });
         }
 
@@ -117,7 +117,7 @@ internal sealed record AiChatProvider(
 
 internal enum AiChatProviderProtocol
 {
-    OpenAiChatCompletions,
-    Gemini,
-    OpenAiResponses
+    OPEN_AI_CHAT_COMPLETIONS,
+    GEMINI,
+    OPEN_AI_RESPONSES
 }

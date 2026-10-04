@@ -2,10 +2,10 @@ namespace Fookbase.Api.Modules.Media.Entities;
 
 public enum MediaProcessingJobStatus
 {
-    Pending,
-    Processing,
-    Succeeded,
-    Failed
+    PENDING,
+    PROCESSING,
+    SUCCEEDED,
+    FAILED
 }
 
 public sealed class MediaProcessingJob
@@ -16,7 +16,7 @@ public sealed class MediaProcessingJob
     {
         Id = id;
         MediaId = mediaId;
-        Status = MediaProcessingJobStatus.Pending;
+        Status = MediaProcessingJobStatus.PENDING;
         CreatedAtUtc = createdAtUtc;
         NextAttemptAtUtc = createdAtUtc;
     }
@@ -36,12 +36,12 @@ public sealed class MediaProcessingJob
 
     public void Claim(DateTimeOffset now)
     {
-        if (Status is MediaProcessingJobStatus.Succeeded or MediaProcessingJobStatus.Failed)
+        if (Status is MediaProcessingJobStatus.SUCCEEDED or MediaProcessingJobStatus.FAILED)
         {
             throw new InvalidOperationException("A completed processing job cannot be claimed.");
         }
 
-        Status = MediaProcessingJobStatus.Processing;
+        Status = MediaProcessingJobStatus.PROCESSING;
         AttemptCount++;
         StartedAtUtc = now;
         LastError = null;
@@ -49,21 +49,21 @@ public sealed class MediaProcessingJob
 
     public void Retry(DateTimeOffset nextAttemptAtUtc, string error)
     {
-        Status = MediaProcessingJobStatus.Pending;
+        Status = MediaProcessingJobStatus.PENDING;
         NextAttemptAtUtc = nextAttemptAtUtc;
         LastError = NormalizeError(error);
     }
 
     public void Succeed(DateTimeOffset completedAtUtc)
     {
-        Status = MediaProcessingJobStatus.Succeeded;
+        Status = MediaProcessingJobStatus.SUCCEEDED;
         CompletedAtUtc = completedAtUtc;
         LastError = null;
     }
 
     public void Fail(DateTimeOffset completedAtUtc, string error)
     {
-        Status = MediaProcessingJobStatus.Failed;
+        Status = MediaProcessingJobStatus.FAILED;
         CompletedAtUtc = completedAtUtc;
         LastError = NormalizeError(error);
     }

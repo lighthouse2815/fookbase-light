@@ -15,7 +15,7 @@ public sealed class PagePostAccessService(FookbaseDbContext dbContext)
     {
         var publishedPages = VisiblePages(null);
         return posts.Where(post =>
-            post.DeletedAtUtc == null && post.ContainerType == PostContainerType.Page &&
+            post.DeletedAtUtc == null && post.ContainerType == PostContainerType.PAGE &&
             publishedPages.Any(page => page.Id == post.ContainerId));
     }
 
@@ -32,30 +32,30 @@ public sealed class PagePostAccessService(FookbaseDbContext dbContext)
     public async Task<bool> CanCreatePostAsync(Guid pageId, Guid userId, CancellationToken cancellationToken = default) =>
         await IsActivePageAsync(pageId, cancellationToken) && await dbContext.PageMembers.AsNoTracking().AnyAsync(member =>
             member.PageId == pageId && member.UserId == userId &&
-            (member.Role == PageRole.Owner || member.Role == PageRole.Admin || member.Role == PageRole.Editor),
+            (member.Role == PageRole.OWNER || member.Role == PageRole.ADMIN || member.Role == PageRole.EDITOR),
             cancellationToken);
 
     public async Task<bool> CanModeratePostAsync(Guid pageId, Guid userId, CancellationToken cancellationToken = default) =>
         await IsActivePageAsync(pageId, cancellationToken) && await dbContext.PageMembers.AsNoTracking().AnyAsync(member =>
             member.PageId == pageId && member.UserId == userId &&
-            (member.Role == PageRole.Owner || member.Role == PageRole.Admin || member.Role == PageRole.Moderator),
+            (member.Role == PageRole.OWNER || member.Role == PageRole.ADMIN || member.Role == PageRole.MODERATOR),
             cancellationToken);
 
     public async Task<bool> CanAccessPostAsync(Post post, PostViewerContext? viewer,
         CancellationToken cancellationToken = default) =>
-        post.ContainerType == PostContainerType.Page &&
+        post.ContainerType == PostContainerType.PAGE &&
         await CanViewPageAsync(post.ContainerId, viewer?.UserId, cancellationToken);
 
     public async Task<bool> CanParticipateAsync(Post post, PostViewerContext actor,
         CancellationToken cancellationToken = default) =>
-        post.ContainerType == PostContainerType.Page &&
+        post.ContainerType == PostContainerType.PAGE &&
         await CanViewPageAsync(post.ContainerId, actor.UserId, cancellationToken);
 
     public async Task<bool> CanModerateCommentAsync(Guid postId, Guid actorUserId,
         CancellationToken cancellationToken = default)
     {
         var pageId = await dbContext.Posts.AsNoTracking()
-            .Where(post => post.Id == postId && post.DeletedAtUtc == null && post.ContainerType == PostContainerType.Page)
+            .Where(post => post.Id == postId && post.DeletedAtUtc == null && post.ContainerType == PostContainerType.PAGE)
             .Select(post => (Guid?)post.ContainerId)
             .SingleOrDefaultAsync(cancellationToken);
         return pageId is not null && await CanModeratePostAsync(pageId.Value, actorUserId, cancellationToken);
@@ -69,8 +69,8 @@ public sealed class PagePostAccessService(FookbaseDbContext dbContext)
     {
         var pages = dbContext.Pages.AsNoTracking().Where(page => page.DeletedAtUtc == null);
         return viewerUserId is null
-            ? pages.Where(page => page.Status == PageStatus.Published)
-            : pages.Where(page => page.Status == PageStatus.Published ||
+            ? pages.Where(page => page.Status == PageStatus.PUBLISHED)
+            : pages.Where(page => page.Status == PageStatus.PUBLISHED ||
                 dbContext.PageMembers.Any(member =>
                     member.PageId == page.Id && member.UserId == viewerUserId.Value));
     }

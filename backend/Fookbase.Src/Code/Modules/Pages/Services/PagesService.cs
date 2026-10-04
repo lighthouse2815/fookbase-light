@@ -47,10 +47,10 @@ public sealed class PagesService(
             var now = timeProvider.GetUtcNow();
             var page = Page.Create(Guid.NewGuid(), request.Name, username, request.Category, request.Bio, actorUserId, now);
             dbContext.Pages.Add(page);
-            dbContext.PageMembers.Add(PageMember.Create(page.Id, actorUserId, PageRole.Owner, now));
+            dbContext.PageMembers.Add(PageMember.Create(page.Id, actorUserId, PageRole.OWNER, now));
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            return ApplicationResult<PageResponse>.Success(await ToResponseAsync(page, actorUserId, PageRole.Owner, cancellationToken));
+            return ApplicationResult<PageResponse>.Success(await ToResponseAsync(page, actorUserId, PageRole.OWNER, cancellationToken));
         }
         catch (DbUpdateException)
         {
@@ -74,7 +74,7 @@ public sealed class PagesService(
         }
 
         var role = viewerUserId is null ? null : await pagePostAccessService.GetRoleAsync(page.Id, viewerUserId.Value, cancellationToken);
-        if (page.Status != PageStatus.Published && role is null)
+        if (page.Status != PageStatus.PUBLISHED && role is null)
         {
             return NotFound<PageResponse>();
         }
@@ -97,7 +97,7 @@ public sealed class PagesService(
         }
 
         var role = await pagePostAccessService.GetRoleAsync(pageId, actorUserId, cancellationToken);
-        if (role is not (PageRole.Owner or PageRole.Admin))
+        if (role is not (PageRole.OWNER or PageRole.ADMIN))
         {
             return Forbidden<PageResponse>();
         }
@@ -124,7 +124,7 @@ public sealed class PagesService(
         }
 
         var role = await pagePostAccessService.GetRoleAsync(pageId, actorUserId, cancellationToken);
-        if (role is not (PageRole.Owner or PageRole.Admin))
+        if (role is not (PageRole.OWNER or PageRole.ADMIN))
         {
             return Forbidden<PageResponse>();
         }
@@ -169,7 +169,7 @@ public sealed class PagesService(
             return NotFound();
         }
 
-        if (await pagePostAccessService.GetRoleAsync(pageId, actorUserId, cancellationToken) != PageRole.Owner)
+        if (await pagePostAccessService.GetRoleAsync(pageId, actorUserId, cancellationToken) != PageRole.OWNER)
         {
             return Forbidden();
         }
@@ -201,7 +201,7 @@ public sealed class PagesService(
     public async Task<ApplicationResult> FollowAsync(Guid actorUserId, Guid pageId, CancellationToken cancellationToken = default)
     {
         var published = await dbContext.Pages.AsNoTracking().AnyAsync(
-            page => page.Id == pageId && page.DeletedAtUtc == null && page.Status == PageStatus.Published, cancellationToken);
+            page => page.Id == pageId && page.DeletedAtUtc == null && page.Status == PageStatus.PUBLISHED, cancellationToken);
         if (!published)
         {
             return NotFound();
@@ -258,7 +258,7 @@ public sealed class PagesService(
 
         var query = from page in dbContext.Pages.AsNoTracking()
                     join follower in dbContext.PageFollowers.AsNoTracking() on page.Id equals follower.PageId
-                    where follower.UserId == actorUserId && page.DeletedAtUtc == null && page.Status == PageStatus.Published
+                    where follower.UserId == actorUserId && page.DeletedAtUtc == null && page.Status == PageStatus.PUBLISHED
                     select new { Page = page, follower.FollowedAtUtc };
         if (followedAtUtc is not null)
         {
@@ -282,7 +282,7 @@ public sealed class PagesService(
         }
 
         var normalized = queryText?.Trim();
-        var query = dbContext.Pages.AsNoTracking().Where(page => page.DeletedAtUtc == null && page.Status == PageStatus.Published);
+        var query = dbContext.Pages.AsNoTracking().Where(page => page.DeletedAtUtc == null && page.Status == PageStatus.PUBLISHED);
         if (!string.IsNullOrWhiteSpace(normalized))
         {
             var pattern = $"%{normalized}%";
@@ -365,7 +365,7 @@ public sealed class PagesService(
         }
 
         if (await dbContext.PageRoleInvitations.AnyAsync(invitation => invitation.PageId == pageId &&
-                invitation.InviteeUserId == request.UserId && invitation.Status == PageRoleInvitationStatus.Pending,
+                invitation.InviteeUserId == request.UserId && invitation.Status == PageRoleInvitationStatus.PENDING,
                 cancellationToken))
         {
             return Conflict<PageRoleInvitationResponse>("page_invitation_pending", "A Page role invitation is already pending for this user.");
@@ -374,8 +374,8 @@ public sealed class PagesService(
         var now = timeProvider.GetUtcNow();
         var invitation = PageRoleInvitation.Create(Guid.NewGuid(), pageId, actorUserId, request.UserId, requestedRole, now);
         dbContext.PageRoleInvitations.Add(invitation);
-        var notification = await notificationService.QueueAsync(request.UserId, actorUserId, NotificationType.PageRoleInvite,
-            NotificationEntityType.PageRoleInvitation, invitation.Id, cancellationToken);
+        var notification = await notificationService.QueueAsync(request.UserId, actorUserId, NotificationType.PAGE_ROLE_INVITE,
+            NotificationEntityType.PAGE_ROLE_INVITATION, invitation.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         if (notification is not null)
         {
@@ -394,7 +394,7 @@ public sealed class PagesService(
         }
 
         var query = dbContext.PageRoleInvitations.AsNoTracking().Where(invitation =>
-            invitation.InviteeUserId == actorUserId && invitation.Status == PageRoleInvitationStatus.Pending);
+            invitation.InviteeUserId == actorUserId && invitation.Status == PageRoleInvitationStatus.PENDING);
         if (createdAtUtc is not null)
         {
             query = query.Where(invitation => invitation.CreatedAtUtc < createdAtUtc ||
@@ -436,7 +436,7 @@ public sealed class PagesService(
             return NotFound<PageMemberResponse>();
         }
 
-        if (member.Role == PageRole.Owner || actorRole == PageRole.Admin && member.Role == PageRole.Admin)
+        if (member.Role == PageRole.OWNER || actorRole == PageRole.ADMIN && member.Role == PageRole.ADMIN)
         {
             return Forbidden<PageMemberResponse>();
         }
@@ -458,7 +458,7 @@ public sealed class PagesService(
             return NotFound();
         }
 
-        if (member.Role == PageRole.Owner || !CanRemoveMember(actorRole, member.Role))
+        if (member.Role == PageRole.OWNER || !CanRemoveMember(actorRole, member.Role))
         {
             return Forbidden();
         }
@@ -473,7 +473,7 @@ public sealed class PagesService(
     {
         var actor = await dbContext.PageMembers.SingleOrDefaultAsync(member => member.PageId == pageId && member.UserId == actorUserId,
             cancellationToken);
-        if (actor?.Role != PageRole.Owner)
+        if (actor?.Role != PageRole.OWNER)
         {
             return Forbidden();
         }
@@ -494,8 +494,8 @@ public sealed class PagesService(
         try
         {
             var now = timeProvider.GetUtcNow();
-            actor.ChangeRole(PageRole.Admin, now);
-            target.ChangeRole(PageRole.Owner, now);
+            actor.ChangeRole(PageRole.ADMIN, now);
+            target.ChangeRole(PageRole.OWNER, now);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult.Success();
@@ -520,8 +520,8 @@ public sealed class PagesService(
             return NotFound<PageTimelineResponse>();
         }
 
-        var query = dbContext.Posts.AsNoTracking().Where(post => post.ContainerType == PostContainerType.Page &&
-            post.ContainerId == pageId && post.PostType == PostType.Standard && post.DeletedAtUtc == null);
+        var query = dbContext.Posts.AsNoTracking().Where(post => post.ContainerType == PostContainerType.PAGE &&
+            post.ContainerId == pageId && post.PostType == PostType.STANDARD && post.DeletedAtUtc == null);
         if (createdAtUtc is not null)
         {
             query = query.Where(post => post.CreatedAtUtc < createdAtUtc ||
@@ -557,7 +557,7 @@ public sealed class PagesService(
             return NotFound<Guid>();
         }
 
-        var mediaId = slot == PageMediaSlot.Avatar ? page.AvatarMediaId : page.CoverMediaId;
+        var mediaId = slot == PageMediaSlot.AVATAR ? page.AvatarMediaId : page.CoverMediaId;
         return mediaId is null ? NotFound<Guid>() : ApplicationResult<Guid>.Success(mediaId.Value);
     }
 
@@ -570,7 +570,7 @@ public sealed class PagesService(
             return NotFound<PageResponse>();
         }
 
-        if (await pagePostAccessService.GetRoleAsync(pageId, actorUserId, cancellationToken) != PageRole.Owner)
+        if (await pagePostAccessService.GetRoleAsync(pageId, actorUserId, cancellationToken) != PageRole.OWNER)
         {
             return Forbidden<PageResponse>();
         }
@@ -578,14 +578,14 @@ public sealed class PagesService(
         if (publish) page.Publish(timeProvider.GetUtcNow());
         else page.Unpublish(timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
-        return ApplicationResult<PageResponse>.Success(await ToResponseAsync(page, actorUserId, PageRole.Owner, cancellationToken));
+        return ApplicationResult<PageResponse>.Success(await ToResponseAsync(page, actorUserId, PageRole.OWNER, cancellationToken));
     }
 
     private async Task<ApplicationResult<PageRoleInvitationResponse>> RespondInvitationAsync(Guid actorUserId, Guid invitationId,
         bool accept, CancellationToken cancellationToken)
     {
         var invitation = await dbContext.PageRoleInvitations.SingleOrDefaultAsync(item => item.Id == invitationId &&
-            item.InviteeUserId == actorUserId && item.Status == PageRoleInvitationStatus.Pending, cancellationToken);
+            item.InviteeUserId == actorUserId && item.Status == PageRoleInvitationStatus.PENDING, cancellationToken);
         if (invitation is null)
         {
             return NotFound<PageRoleInvitationResponse>();
@@ -701,7 +701,7 @@ public sealed class PagesService(
             _ = Page.Create(Guid.Empty, name, normalizedUsername, category, bio, Guid.Empty, DateTimeOffset.UnixEpoch);
             if (ReservedUsernames.Contains(normalizedUsername))
             {
-                error = new ApplicationError("reserved_page_username", "This Page username is reserved.", ApplicationErrorType.Validation);
+                error = new ApplicationError("reserved_page_username", "This Page username is reserved.", ApplicationErrorType.VALIDATION);
                 return false;
             }
             error = null;
@@ -710,20 +710,20 @@ public sealed class PagesService(
         catch (ArgumentException exception)
         {
             normalizedUsername = string.Empty;
-            error = new ApplicationError("invalid_page", exception.Message, ApplicationErrorType.Validation);
+            error = new ApplicationError("invalid_page", exception.Message, ApplicationErrorType.VALIDATION);
             return false;
         }
     }
 
     private static bool TryParseAssignableRole(string role, out PageRole parsed) =>
-        Enum.TryParse(role, true, out parsed) && Enum.IsDefined(parsed) && parsed != PageRole.Owner;
+        Enum.TryParse(role, true, out parsed) && Enum.IsDefined(parsed) && parsed != PageRole.OWNER;
 
     private static bool CanManageRole(PageRole? actorRole, PageRole requestedRole) =>
-        actorRole == PageRole.Owner || actorRole == PageRole.Admin && requestedRole is PageRole.Editor or PageRole.Moderator;
+        actorRole == PageRole.OWNER || actorRole == PageRole.ADMIN && requestedRole is PageRole.EDITOR or PageRole.MODERATOR;
 
     private static bool CanRemoveMember(PageRole? actorRole, PageRole targetRole) =>
-        actorRole == PageRole.Owner && targetRole != PageRole.Owner ||
-        actorRole == PageRole.Admin && targetRole is PageRole.Editor or PageRole.Moderator;
+        actorRole == PageRole.OWNER && targetRole != PageRole.OWNER ||
+        actorRole == PageRole.ADMIN && targetRole is PageRole.EDITOR or PageRole.MODERATOR;
 
     private static string RoleName(PageRole role) => role.ToString().ToLowerInvariant();
     private static string StatusName(PageStatus status) => status.ToString().ToLowerInvariant();
@@ -731,7 +731,7 @@ public sealed class PagesService(
     private static bool TryPagination(int limit, out ApplicationError? error)
     {
         error = limit is < 1 or > MaximumPageSize
-            ? new ApplicationError(ErrorCode.InvalidPagination, $"Limit must be between 1 and {MaximumPageSize}.", ApplicationErrorType.Validation)
+            ? new ApplicationError(ErrorCode.InvalidPagination, $"Limit must be between 1 and {MaximumPageSize}.", ApplicationErrorType.VALIDATION)
             : null;
         return error is null;
     }
@@ -775,12 +775,12 @@ public sealed class PagesService(
     }
 
     private static ApplicationError InvalidCursor() =>
-        new("invalid_cursor", "The cursor is invalid.", ApplicationErrorType.Validation);
-    private static ApplicationResult NotFound() => ApplicationResult.Failure(new ApplicationError("page_not_found", "The Page was not found.", ApplicationErrorType.NotFound));
-    private static ApplicationResult<T> NotFound<T>() => ApplicationResult<T>.Failure(new ApplicationError("page_not_found", "The Page was not found.", ApplicationErrorType.NotFound));
-    private static ApplicationResult Forbidden() => ApplicationResult.Failure(new ApplicationError(ErrorCode.Forbidden, "You are not allowed to manage this Page.", ApplicationErrorType.Forbidden));
-    private static ApplicationResult<T> Forbidden<T>() => ApplicationResult<T>.Failure(new ApplicationError(ErrorCode.Forbidden, "You are not allowed to manage this Page.", ApplicationErrorType.Forbidden));
-    private static ApplicationResult<T> Validation<T>(string code, string message) => ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
-    private static ApplicationResult Validation(string code, string message) => ApplicationResult.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
-    private static ApplicationResult<T> Conflict<T>(string code, string message) => ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Conflict));
+        new("invalid_cursor", "The cursor is invalid.", ApplicationErrorType.VALIDATION);
+    private static ApplicationResult NotFound() => ApplicationResult.Failure(new ApplicationError("page_not_found", "The Page was not found.", ApplicationErrorType.NOT_FOUND));
+    private static ApplicationResult<T> NotFound<T>() => ApplicationResult<T>.Failure(new ApplicationError("page_not_found", "The Page was not found.", ApplicationErrorType.NOT_FOUND));
+    private static ApplicationResult Forbidden() => ApplicationResult.Failure(new ApplicationError(ErrorCode.Forbidden, "You are not allowed to manage this Page.", ApplicationErrorType.FORBIDDEN));
+    private static ApplicationResult<T> Forbidden<T>() => ApplicationResult<T>.Failure(new ApplicationError(ErrorCode.Forbidden, "You are not allowed to manage this Page.", ApplicationErrorType.FORBIDDEN));
+    private static ApplicationResult<T> Validation<T>(string code, string message) => ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
+    private static ApplicationResult Validation(string code, string message) => ApplicationResult.Failure(new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
+    private static ApplicationResult<T> Conflict<T>(string code, string message) => ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.CONFLICT));
 }

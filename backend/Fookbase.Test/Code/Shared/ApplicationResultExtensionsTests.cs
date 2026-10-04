@@ -8,11 +8,11 @@ namespace Fookbase.Api.IntegrationTests;
 public sealed class ApplicationResultExtensionsTests
 {
     [Theory]
-    [InlineData(ApplicationErrorType.Validation, 400, "Validation")]
-    [InlineData(ApplicationErrorType.Unauthorized, 401, "Unauthorized")]
-    [InlineData(ApplicationErrorType.Forbidden, 403, "Forbidden")]
-    [InlineData(ApplicationErrorType.NotFound, 404, "NotFound")]
-    [InlineData(ApplicationErrorType.Conflict, 409, "Conflict")]
+    [InlineData(ApplicationErrorType.VALIDATION, 400, "Validation")]
+    [InlineData(ApplicationErrorType.UNAUTHORIZED, 401, "Unauthorized")]
+    [InlineData(ApplicationErrorType.FORBIDDEN, 403, "Forbidden")]
+    [InlineData(ApplicationErrorType.NOT_FOUND, 404, "NotFound")]
+    [InlineData(ApplicationErrorType.CONFLICT, 409, "Conflict")]
     [InlineData((ApplicationErrorType)999, 500, "999")]
     public async Task Error_response_preserves_status_code_and_problem_fields(
         ApplicationErrorType type, int statusCode, string title)
@@ -47,7 +47,7 @@ public sealed class ApplicationResultExtensionsTests
         var error = new ApplicationError(
             "validation_failed",
             "One or more validation errors occurred.",
-            ApplicationErrorType.Validation,
+            ApplicationErrorType.VALIDATION,
             new Dictionary<string, string[]> { ["email"] = ["Email is required.", "Email is invalid."] });
 
         await error.ToHttpResult().ExecuteAsync(context);

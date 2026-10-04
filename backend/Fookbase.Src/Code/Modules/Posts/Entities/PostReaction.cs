@@ -2,12 +2,12 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 
 public enum ReactionType
 {
-    Like,
-    Love,
-    Haha,
-    Wow,
-    Sad,
-    Angry
+    LIKE,
+    LOVE,
+    HAHA,
+    WOW,
+    SAD,
+    ANGRY
 }
 
 public sealed class PostReaction

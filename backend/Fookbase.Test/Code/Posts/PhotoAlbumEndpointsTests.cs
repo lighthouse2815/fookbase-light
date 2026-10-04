@@ -31,7 +31,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
         Assert.Equal(HttpStatusCode.OK, albums.StatusCode);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        var album = await db.PhotoAlbums.SingleAsync(item => item.OwnerUserId == ownerId && item.AlbumType == PhotoAlbumType.ProfilePictures);
+        var album = await db.PhotoAlbums.SingleAsync(item => item.OwnerUserId == ownerId && item.AlbumType == PhotoAlbumType.PROFILE_PICTURES);
         Assert.True(await db.AlbumMedia.AnyAsync(item => item.AlbumId == album.Id && item.MediaId == mediaId));
     }
 
@@ -41,7 +41,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
         var ownerId = await CreateUserAsync();
         var friendId = await CreateUserAsync();
         var strangerId = await CreateUserAsync();
-        var albumId = await SeedAlbumAsync(ownerId, PhotoAlbumPrivacy.Friends);
+        var albumId = await SeedAlbumAsync(ownerId, PhotoAlbumPrivacy.FRIENDS);
         await AddFriendshipAsync(ownerId, friendId);
         using var friend = CreateAuthenticatedClient(friendId);
         using var stranger = CreateAuthenticatedClient(strangerId);
@@ -59,7 +59,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
     {
         var ownerId = await CreateUserAsync();
         var otherId = await CreateUserAsync();
-        var albumId = await SeedAlbumAsync(ownerId, PhotoAlbumPrivacy.OnlyMe);
+        var albumId = await SeedAlbumAsync(ownerId, PhotoAlbumPrivacy.ONLY_ME);
         var foreignMediaId = await SeedReadyImageAsync(otherId);
         var ownedMediaId = await SeedReadyImageAsync(ownerId);
         using var owner = CreateAuthenticatedClient(ownerId);
@@ -83,7 +83,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        var album = await db.PhotoAlbums.SingleAsync(item => item.OwnerUserId == ownerId && item.AlbumType == PhotoAlbumType.TimelinePhotos);
+        var album = await db.PhotoAlbums.SingleAsync(item => item.OwnerUserId == ownerId && item.AlbumType == PhotoAlbumType.TIMELINE_PHOTOS);
         Assert.True(await db.AlbumMedia.AnyAsync(item => item.AlbumId == album.Id && item.MediaId == mediaId));
     }
 
@@ -106,7 +106,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
         var media = MediaAsset.CreatePending(
             id,
             ownerId,
-            MediaType.Image,
+            MediaType.IMAGE,
             $"{ownerId:N}/{id:N}.png",
             "profile.png",
             "image/png",

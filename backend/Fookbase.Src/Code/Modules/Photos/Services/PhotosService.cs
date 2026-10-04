@@ -41,7 +41,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         var album = await Active().SingleOrDefaultAsync(item => item.Id == albumId && item.OwnerUserId == actorId, ct);
         if (album is null) return NotFound<PhotoAlbumResponse>();
         try { album.UpdateCustom(request.Name, request.Description, privacy, time.GetUtcNow()); await db.SaveChangesAsync(ct); return ApplicationResult<PhotoAlbumResponse>.Success(await ToAlbumAsync(album, actorId, ct)); }
-        catch (InvalidOperationException exception) { return Bad<PhotoAlbumResponse>("system_album_restricted", exception.Message, ApplicationErrorType.Conflict); }
+        catch (InvalidOperationException exception) { return Bad<PhotoAlbumResponse>("system_album_restricted", exception.Message, ApplicationErrorType.CONFLICT); }
         catch (ArgumentException exception) { return Bad<PhotoAlbumResponse>("invalid_album", exception.Message); }
     }
 
@@ -50,7 +50,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         var album = await Active().SingleOrDefaultAsync(item => item.Id == albumId && item.OwnerUserId == actorId, ct);
         if (album is null) return NotFound();
         try { album.DeleteCustom(time.GetUtcNow()); await db.SaveChangesAsync(ct); return ApplicationResult.Success(); }
-        catch (InvalidOperationException exception) { return Bad("system_album_restricted", exception.Message, ApplicationErrorType.Conflict); }
+        catch (InvalidOperationException exception) { return Bad("system_album_restricted", exception.Message, ApplicationErrorType.CONFLICT); }
     }
 
     public async Task<ApplicationResult<PhotoCursorPageResponse<PhotoAlbumSummaryResponse>>> GetUserAlbumsAsync(Guid ownerId, Guid? viewerId, string? cursor, int limit, CancellationToken ct = default)
@@ -74,7 +74,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         if (album is null || !await access.CanViewAsync(album, viewerId, ct)) return NotFound<PhotoCursorPageResponse<AlbumMediaResponse>>();
         var query = from item in db.AlbumMedia.AsNoTracking()
                     join asset in db.MediaAssets.AsNoTracking() on item.MediaId equals asset.Id
-                    where item.AlbumId == albumId && asset.MediaType == MediaType.Image && asset.Status == MediaStatus.Ready && asset.DeletedAtUtc == null
+                    where item.AlbumId == albumId && asset.MediaType == MediaType.IMAGE && asset.Status == MediaStatus.READY && asset.DeletedAtUtc == null
                     orderby item.SortOrder, item.MediaId
                     select item;
         if (TryDecode(cursor, out var sortAfter, out var mediaAfter)) query = query.Where(item => item.SortOrder > sortAfter.UtcTicks || item.SortOrder == sortAfter.UtcTicks && item.MediaId.CompareTo(mediaAfter) > 0);
@@ -97,16 +97,16 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
     {
         var album = await Active().SingleOrDefaultAsync(item => item.Id == albumId && item.OwnerUserId == actorId, ct);
         if (album is null) return NotFound<AlbumMediaResponse>();
-        if (album.AlbumType != PhotoAlbumType.Custom) return Bad<AlbumMediaResponse>("system_album_restricted", "Photos cannot be added directly to a system album.", ApplicationErrorType.Conflict);
+        if (album.AlbumType != PhotoAlbumType.CUSTOM) return Bad<AlbumMediaResponse>("system_album_restricted", "Photos cannot be added directly to a system album.", ApplicationErrorType.CONFLICT);
         var asset = await db.MediaAssets.AsNoTracking().SingleOrDefaultAsync(item => item.Id == mediaId, ct);
-        if (asset is null || asset.OwnerUserId != actorId) return Bad<AlbumMediaResponse>("media_not_owned", "Only your image can be added to an album.", ApplicationErrorType.Forbidden);
-        if (asset.MediaType != MediaType.Image || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null) return Bad<AlbumMediaResponse>("invalid_media", "Only ready images can be added to an album.", ApplicationErrorType.Conflict);
-        if (await db.AlbumMedia.AnyAsync(item => item.AlbumId == albumId && item.MediaId == mediaId, ct)) return Bad<AlbumMediaResponse>("album_media_exists", "This image is already in the album.", ApplicationErrorType.Conflict);
+        if (asset is null || asset.OwnerUserId != actorId) return Bad<AlbumMediaResponse>("media_not_owned", "Only your image can be added to an album.", ApplicationErrorType.FORBIDDEN);
+        if (asset.MediaType != MediaType.IMAGE || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null) return Bad<AlbumMediaResponse>("invalid_media", "Only ready images can be added to an album.", ApplicationErrorType.CONFLICT);
+        if (await db.AlbumMedia.AnyAsync(item => item.AlbumId == albumId && item.MediaId == mediaId, ct)) return Bad<AlbumMediaResponse>("album_media_exists", "This image is already in the album.", ApplicationErrorType.CONFLICT);
         var anotherCustom = await (from item in db.AlbumMedia
                                    join candidate in Active() on item.AlbumId equals candidate.Id
-                                   where item.MediaId == mediaId && candidate.AlbumType == PhotoAlbumType.Custom
+                                   where item.MediaId == mediaId && candidate.AlbumType == PhotoAlbumType.CUSTOM
                                    select item).AnyAsync(ct);
-        if (anotherCustom) return Bad<AlbumMediaResponse>("custom_album_membership_exists", "An image can belong to only one custom album.", ApplicationErrorType.Conflict);
+        if (anotherCustom) return Bad<AlbumMediaResponse>("custom_album_membership_exists", "An image can belong to only one custom album.", ApplicationErrorType.CONFLICT);
         var max = await db.AlbumMedia.Where(item => item.AlbumId == albumId).Select(item => (long?)item.SortOrder).MaxAsync(ct) ?? -1;
         var row = AlbumMedia.Create(albumId, mediaId, max + 1, time.GetUtcNow());
         db.AlbumMedia.Add(row);
@@ -131,7 +131,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         var row = await db.AlbumMedia.SingleOrDefaultAsync(item => item.AlbumId == albumId && item.MediaId == mediaId, ct);
         if (row is null) return NotFound();
         var active = await db.UserProfiles.AsNoTracking().AnyAsync(item => item.UserId == actorId && (item.AvatarMediaId == mediaId || item.CoverMediaId == mediaId), ct);
-        if (active) return Bad("active_profile_media", "Change the active avatar or cover before removing it from album history.", ApplicationErrorType.Conflict);
+        if (active) return Bad("active_profile_media", "Change the active avatar or cover before removing it from album history.", ApplicationErrorType.CONFLICT);
         db.AlbumMedia.Remove(row);
         await db.SaveChangesAsync(ct);
         return ApplicationResult.Success();
@@ -139,9 +139,9 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
 
     public async Task AddSystemMediaAsync(Guid ownerId, PhotoAlbumType type, Guid mediaId, CancellationToken ct = default)
     {
-        if (type == PhotoAlbumType.Custom) throw new ArgumentException("System album type is required.", nameof(type));
+        if (type == PhotoAlbumType.CUSTOM) throw new ArgumentException("System album type is required.", nameof(type));
         var asset = await db.MediaAssets.AsNoTracking().SingleOrDefaultAsync(item => item.Id == mediaId, ct);
-        if (asset is null || asset.OwnerUserId != ownerId || asset.MediaType != MediaType.Image || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null) return;
+        if (asset is null || asset.OwnerUserId != ownerId || asset.MediaType != MediaType.IMAGE || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null) return;
         var album = await GetOrCreateSystemAlbumAsync(ownerId, type, ct);
         if (await db.AlbumMedia.AnyAsync(item => item.AlbumId == album.Id && item.MediaId == mediaId, ct)) return;
         var max = await db.AlbumMedia.Where(item => item.AlbumId == album.Id).Select(item => (long?)item.SortOrder).MaxAsync(ct) ?? -1;
@@ -164,15 +164,15 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
     }
 
     private IQueryable<PhotoAlbum> Active() => db.PhotoAlbums.Where(item => item.DeletedAtUtc == null);
-    private async Task<PhotoAlbumResponse> ToAlbumAsync(PhotoAlbum album, Guid? viewerId, CancellationToken ct) { var summary = await ToSummaryAsync(album, ct); return new(album.Id, album.OwnerUserId, album.Name, album.Description, summary.AlbumType, summary.Privacy, summary.PhotoCount, summary.PreviewUrl, album.CreatedAtUtc, album.UpdatedAtUtc, viewerId == album.OwnerUserId && album.AlbumType == PhotoAlbumType.Custom); }
-    private async Task<PhotoAlbumSummaryResponse> ToSummaryAsync(PhotoAlbum album, CancellationToken ct) { var rows = db.AlbumMedia.AsNoTracking().Where(item => item.AlbumId == album.Id); var count = await rows.CountAsync(ct); var preview = await rows.OrderBy(item => item.SortOrder).ThenBy(item => item.MediaId).Select(item => (Guid?)item.MediaId).FirstOrDefaultAsync(ct); return new(album.Id, album.Name, album.AlbumType.ToString().ToLowerInvariant(), album.Privacy.ToString().ToLowerInvariant(), count, preview is null ? null : AccessPath(album.Id, preview.Value), album.CreatedAtUtc); }
+    private async Task<PhotoAlbumResponse> ToAlbumAsync(PhotoAlbum album, Guid? viewerId, CancellationToken ct) { var summary = await ToSummaryAsync(album, ct); return new(album.Id, album.OwnerUserId, album.Name, album.Description, summary.AlbumType, summary.Privacy, summary.PhotoCount, summary.PreviewUrl, album.CreatedAtUtc, album.UpdatedAtUtc, viewerId == album.OwnerUserId && album.AlbumType == PhotoAlbumType.CUSTOM); }
+    private async Task<PhotoAlbumSummaryResponse> ToSummaryAsync(PhotoAlbum album, CancellationToken ct) { var rows = db.AlbumMedia.AsNoTracking().Where(item => item.AlbumId == album.Id); var count = await rows.CountAsync(ct); var preview = await rows.OrderBy(item => item.SortOrder).ThenBy(item => item.MediaId).Select(item => (Guid?)item.MediaId).FirstOrDefaultAsync(ct); return new(album.Id, album.Name, album.AlbumType.ToApiName().ToLowerInvariant(), album.Privacy.ToApiName().ToLowerInvariant(), count, preview is null ? null : AccessPath(album.Id, preview.Value), album.CreatedAtUtc); }
     private static string AccessPath(Guid albumId, Guid mediaId) => $"/api/albums/{albumId}/media/{mediaId}/access";
-    private static bool TryPrivacy(string? value, out PhotoAlbumPrivacy privacy) => Enum.TryParse(value, true, out privacy) && Enum.IsDefined(privacy);
+    private static bool TryPrivacy(string? value, out PhotoAlbumPrivacy privacy) => EnumText.TryParse(value, true, out privacy) && Enum.IsDefined(privacy);
     private static bool ValidLimit(int value) => value is >= 1 and <= MaximumPageSize;
     private static string Encode(DateTimeOffset value, Guid id) => Convert.ToBase64String(Encoding.UTF8.GetBytes($"{value.UtcTicks}|{id}"));
     private static bool TryDecode(string? value, out DateTimeOffset at, out Guid id) { at=default;id=default; try { var parts=Encoding.UTF8.GetString(Convert.FromBase64String(value??string.Empty)).Split('|'); return parts.Length==2 && long.TryParse(parts[0],out var ticks) && Guid.TryParse(parts[1],out id) && (at=new DateTimeOffset(ticks,TimeSpan.Zero))!=default; } catch { return false; } }
-    private static ApplicationResult<T> Bad<T>(string code, string message, ApplicationErrorType type = ApplicationErrorType.Validation) => ApplicationResult<T>.Failure(new(code, message, type));
-    private static ApplicationResult Bad(string code = "album_not_found", string message = "The album was not found.", ApplicationErrorType type = ApplicationErrorType.NotFound) => ApplicationResult.Failure(new(code, message, type));
-    private static ApplicationResult<T> NotFound<T>() => Bad<T>("album_not_found", "The album was not found.", ApplicationErrorType.NotFound);
+    private static ApplicationResult<T> Bad<T>(string code, string message, ApplicationErrorType type = ApplicationErrorType.VALIDATION) => ApplicationResult<T>.Failure(new(code, message, type));
+    private static ApplicationResult Bad(string code = "album_not_found", string message = "The album was not found.", ApplicationErrorType type = ApplicationErrorType.NOT_FOUND) => ApplicationResult.Failure(new(code, message, type));
+    private static ApplicationResult<T> NotFound<T>() => Bad<T>("album_not_found", "The album was not found.", ApplicationErrorType.NOT_FOUND);
     private static ApplicationResult NotFound() => Bad();
 }

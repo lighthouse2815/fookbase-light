@@ -47,7 +47,7 @@ public sealed class UserPrivacySettingsService(FookbaseDbContext dbContext, Time
             return ApplicationResult<UserPrivacySettingsResponse>.Failure(new ApplicationError(
                 "invalid_privacy_setting",
                 "Privacy settings contain an unsupported value.",
-                ApplicationErrorType.Validation));
+                ApplicationErrorType.VALIDATION));
         }
 
         var settings = await EnsureCreatedAsync(userId, cancellationToken);
@@ -67,7 +67,7 @@ public sealed class UserPrivacySettingsService(FookbaseDbContext dbContext, Time
             return true;
         }
 
-        var success = Enum.TryParse(value, true, out TEnum candidate) && Enum.IsDefined(candidate);
+        var success = EnumText.TryParse(value, true, out TEnum candidate) && Enum.IsDefined(candidate);
         parsed = success ? candidate : null;
         return success;
     }
@@ -80,5 +80,5 @@ public sealed class UserPrivacySettingsService(FookbaseDbContext dbContext, Time
         settings.UpdatedAtUtc);
 
     private static string ToCamelCase<TEnum>(TEnum value) where TEnum : struct, Enum =>
-        char.ToLowerInvariant(value.ToString()[0]) + value.ToString()[1..];
+        char.ToLowerInvariant(value.ToApiName()[0]) + value.ToApiName()[1..];
 }

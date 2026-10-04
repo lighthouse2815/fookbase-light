@@ -1,5 +1,5 @@
 namespace Fookbase.Api.Modules.Events.Entities;
-public enum EventParticipantStatus { Going, Interested }
+public enum EventParticipantStatus { GOING, INTERESTED }
 public sealed class EventParticipant
 {
     private EventParticipant() { }

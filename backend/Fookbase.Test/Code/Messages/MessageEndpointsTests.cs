@@ -149,7 +149,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(1, await dbContext.Conversations.CountAsync(conversation =>
-            conversation.Type == ConversationType.Direct &&
+            conversation.Type == ConversationType.DIRECT &&
             dbContext.ConversationParticipants.Count(participant => participant.ConversationId == conversation.Id && participant.LeftAtUtc == null) == 2 &&
             dbContext.ConversationParticipants.Any(participant => participant.ConversationId == conversation.Id && participant.UserId == firstUserId) &&
             dbContext.ConversationParticipants.Any(participant => participant.ConversationId == conversation.Id && participant.UserId == secondUserId)));
@@ -338,7 +338,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         using (var scope = factory.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var media = MediaAsset.CreatePending(attachmentMediaId, users[1], MediaType.Image,
+            var media = MediaAsset.CreatePending(attachmentMediaId, users[1], MediaType.IMAGE,
                 $"tests/{attachmentMediaId}", "blocked.png", "image/png", 1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(1));
             media.MarkReady(1, DateTimeOffset.UtcNow);
             dbContext.MediaAssets.Add(media);

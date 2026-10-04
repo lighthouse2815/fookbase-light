@@ -2,8 +2,8 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 
 public enum ConversationType
 {
-    Direct,
-    Group
+    DIRECT,
+    GROUP
 }
 
 public sealed class Conversation
@@ -19,7 +19,7 @@ public sealed class Conversation
         DateTimeOffset createdAtUtc)
     {
         Id = id;
-        Type = ConversationType.Direct;
+        Type = ConversationType.DIRECT;
         UserId1 = userId1;
         UserId2 = userId2;
         CreatedAtUtc = createdAtUtc;
@@ -32,7 +32,7 @@ public sealed class Conversation
         DateTimeOffset createdAtUtc)
     {
         Id = id;
-        Type = ConversationType.Group;
+        Type = ConversationType.GROUP;
         Title = NormalizeTitle(title);
         CreatedAtUtc = createdAtUtc;
         LastMessageAtUtc = createdAtUtc;
@@ -89,7 +89,7 @@ public sealed class Conversation
 
     public void UpdateGroup(string title, Guid? photoMediaId)
     {
-        if (Type != ConversationType.Group)
+        if (Type != ConversationType.GROUP)
         {
             throw new InvalidOperationException("Only group conversations can be updated.");
         }

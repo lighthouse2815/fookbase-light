@@ -40,7 +40,7 @@ public sealed class GroupsService(
             return Failure<GroupResponse>(
                 "invalid_group_privacy",
                 "Group privacy must be public or private.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
         }
 
         try
@@ -53,7 +53,7 @@ public sealed class GroupsService(
                 privacy,
                 actorUserId,
                 now);
-            var owner = GroupMember.Create(group.Id, actorUserId, GroupMemberRole.Owner, now);
+            var owner = GroupMember.Create(group.Id, actorUserId, GroupMemberRole.OWNER, now);
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
             dbContext.Groups.Add(group);
             dbContext.GroupMembers.Add(owner);
@@ -63,7 +63,7 @@ public sealed class GroupsService(
         }
         catch (ArgumentException exception)
         {
-            return Failure<GroupResponse>("invalid_group", exception.Message, ApplicationErrorType.Validation);
+            return Failure<GroupResponse>("invalid_group", exception.Message, ApplicationErrorType.VALIDATION);
         }
     }
 
@@ -145,7 +145,7 @@ public sealed class GroupsService(
         var cursor = DecodeCursorOrNull(cursorValue);
         var normalizedQuery = queryText?.Trim().ToLowerInvariant();
         var query = dbContext.Groups.AsNoTracking().Where(group =>
-            group.DeletedAtUtc == null && group.Privacy == GroupPrivacy.Public);
+            group.DeletedAtUtc == null && group.Privacy == GroupPrivacy.PUBLIC);
         if (!string.IsNullOrWhiteSpace(normalizedQuery))
         {
             query = query.Where(group =>
@@ -190,7 +190,7 @@ public sealed class GroupsService(
             from invite in dbContext.GroupInvites.AsNoTracking()
             join itemGroup in dbContext.Groups.AsNoTracking() on invite.GroupId equals itemGroup.Id
             where invite.InviteeUserId == actorUserId &&
-                  invite.Status == GroupInviteStatus.Pending &&
+                  invite.Status == GroupInviteStatus.PENDING &&
                   itemGroup.DeletedAtUtc == null
             select new { Invite = invite, Group = itemGroup };
         if (cursor is not null)
@@ -234,7 +234,7 @@ public sealed class GroupsService(
             .Select(member => member.GroupId);
         var query = dbContext.Posts.AsNoTracking().Where(post =>
             post.DeletedAtUtc == null &&
-            post.ContainerType == PostContainerType.Group &&
+            post.ContainerType == PostContainerType.GROUP &&
             joinedGroupIds.Contains(post.ContainerId) &&
             !blockedUserIds.Contains(post.AuthorUserId));
         if (cursor is not null)
@@ -293,7 +293,7 @@ public sealed class GroupsService(
             return Failure<GroupResponse>(
                 "invalid_group_privacy",
                 "Group privacy must be public or private.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
         }
 
         var coverChanged = !request.RemoveCover && request.CoverMediaId is { } requestedCoverMediaId &&
@@ -326,8 +326,8 @@ public sealed class GroupsService(
                 var post = await postsService.CreatePostInContainerCoreAsync(
                     actorUserId,
                     Post.CoverUpdatedPostContent,
-                    PostPrivacy.Public,
-                    PostContainerType.Group,
+                    PostPrivacy.PUBLIC,
+                    PostContainerType.GROUP,
                     group.Id,
                     [request.CoverMediaId!.Value],
                     cancellationToken,
@@ -335,7 +335,7 @@ public sealed class GroupsService(
                 if (!post.Succeeded)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-                    return Failure<GroupResponse>("group_cover_post_failed", "Could not create the group cover update post.", ApplicationErrorType.Conflict);
+                    return Failure<GroupResponse>("group_cover_post_failed", "Could not create the group cover update post.", ApplicationErrorType.CONFLICT);
                 }
 
                 var references = await mediaService.SynchronizePostReferencesAsync(
@@ -358,7 +358,7 @@ public sealed class GroupsService(
         }
         catch (ArgumentException exception)
         {
-            return Failure<GroupResponse>("invalid_group", exception.Message, ApplicationErrorType.Validation);
+            return Failure<GroupResponse>("invalid_group", exception.Message, ApplicationErrorType.VALIDATION);
         }
 
         var count = await dbContext.GroupMembers.AsNoTracking()
@@ -377,7 +377,7 @@ public sealed class GroupsService(
             return NotFound();
         }
 
-        if (await GetMemberRoleAsync(groupId, actorUserId, cancellationToken) != GroupMemberRole.Owner)
+        if (await GetMemberRoleAsync(groupId, actorUserId, cancellationToken) != GroupMemberRole.OWNER)
         {
             return Forbidden();
         }
@@ -410,15 +410,15 @@ public sealed class GroupsService(
             return Failure<GroupJoinRequestResponse?>(
                 "already_group_member",
                 "The user is already a group member.",
-                ApplicationErrorType.Conflict);
+                ApplicationErrorType.CONFLICT);
         }
 
-        if (group.Privacy == GroupPrivacy.Public)
+        if (group.Privacy == GroupPrivacy.PUBLIC)
         {
             dbContext.GroupMembers.Add(GroupMember.Create(
                 groupId,
                 actorUserId,
-                GroupMemberRole.Member,
+                GroupMemberRole.MEMBER,
                 timeProvider.GetUtcNow()));
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -429,14 +429,14 @@ public sealed class GroupsService(
                 request =>
                     request.GroupId == groupId &&
                     request.RequesterUserId == actorUserId &&
-                    request.Status == GroupJoinRequestStatus.Pending,
+                    request.Status == GroupJoinRequestStatus.PENDING,
                 cancellationToken))
         {
             await transaction.RollbackAsync(cancellationToken);
             return Failure<GroupJoinRequestResponse?>(
                 "pending_group_join_request",
                 "A pending join request already exists.",
-                ApplicationErrorType.Conflict);
+                ApplicationErrorType.CONFLICT);
         }
 
         var joinRequest = GroupJoinRequest.Create(
@@ -463,12 +463,12 @@ public sealed class GroupsService(
             return NotFound();
         }
 
-        if (membership.Role == GroupMemberRole.Owner)
+        if (membership.Role == GroupMemberRole.OWNER)
         {
             return Failure(
                 "owner_cannot_leave",
                 "Transfer ownership or delete the group before leaving.",
-                ApplicationErrorType.Conflict);
+                ApplicationErrorType.CONFLICT);
         }
 
         dbContext.GroupMembers.Remove(membership);
@@ -547,7 +547,7 @@ public sealed class GroupsService(
 
         var cursor = DecodeCursorOrNull(cursorValue);
         var query = dbContext.GroupJoinRequests.AsNoTracking().Where(request =>
-            request.GroupId == groupId && request.Status == GroupJoinRequestStatus.Pending);
+            request.GroupId == groupId && request.Status == GroupJoinRequestStatus.PENDING);
         if (cursor is not null)
         {
             query = query.Where(request =>
@@ -583,7 +583,7 @@ public sealed class GroupsService(
             item =>
                 item.Id == requestId &&
                 item.GroupId == groupId &&
-                item.Status == GroupJoinRequestStatus.Pending,
+                item.Status == GroupJoinRequestStatus.PENDING,
             cancellationToken);
         if (request is null)
         {
@@ -597,7 +597,7 @@ public sealed class GroupsService(
             return Failure<GroupJoinRequestResponse>(
                 "already_group_member",
                 "The requester is already a group member.",
-                ApplicationErrorType.Conflict);
+                ApplicationErrorType.CONFLICT);
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -606,13 +606,13 @@ public sealed class GroupsService(
         dbContext.GroupMembers.Add(GroupMember.Create(
             groupId,
             request.RequesterUserId,
-            GroupMemberRole.Member,
+            GroupMemberRole.MEMBER,
             now));
         var notification = await notificationService.QueueAsync(
             request.RequesterUserId,
             actorUserId,
-            NotificationType.GroupJoinApproved,
-            NotificationEntityType.GroupJoinRequest,
+            NotificationType.GROUP_JOIN_APPROVED,
+            NotificationEntityType.GROUP_JOIN_REQUEST,
             request.Id,
             cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -640,7 +640,7 @@ public sealed class GroupsService(
             item =>
                 item.Id == requestId &&
                 item.GroupId == groupId &&
-                item.Status == GroupJoinRequestStatus.Pending,
+                item.Status == GroupJoinRequestStatus.PENDING,
             cancellationToken);
         if (request is null)
         {
@@ -663,7 +663,7 @@ public sealed class GroupsService(
             return Failure<GroupInviteResponse>(
                 "invalid_group_invitee",
                 "You cannot invite yourself.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
         }
 
         var group = await FindActiveGroupAsync(groupId, cancellationToken);
@@ -682,7 +682,7 @@ public sealed class GroupsService(
             return Failure<GroupInviteResponse>(
                 "group_invitee_not_found",
                 "The invited user does not exist.",
-                ApplicationErrorType.NotFound);
+                ApplicationErrorType.NOT_FOUND);
         }
 
         if (await dbContext.GroupMembers.AnyAsync(
@@ -692,20 +692,20 @@ public sealed class GroupsService(
             return Failure<GroupInviteResponse>(
                 "already_group_member",
                 "The invited user is already a group member.",
-                ApplicationErrorType.Conflict);
+                ApplicationErrorType.CONFLICT);
         }
 
         if (await dbContext.GroupInvites.AnyAsync(
                 invite =>
                     invite.GroupId == groupId &&
                     invite.InviteeUserId == request.UserId &&
-                    invite.Status == GroupInviteStatus.Pending,
+                    invite.Status == GroupInviteStatus.PENDING,
                 cancellationToken))
         {
             return Failure<GroupInviteResponse>(
                 "pending_group_invite",
                 "A pending group invite already exists.",
-                ApplicationErrorType.Conflict);
+                ApplicationErrorType.CONFLICT);
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -719,8 +719,8 @@ public sealed class GroupsService(
         var notification = await notificationService.QueueAsync(
             request.UserId,
             actorUserId,
-            NotificationType.GroupInvite,
-            NotificationEntityType.GroupInvite,
+            NotificationType.GROUP_INVITE,
+            NotificationEntityType.GROUP_INVITE,
             invite.Id,
             cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -759,7 +759,7 @@ public sealed class GroupsService(
             return Failure<GroupMemberResponse>(
                 "invalid_group_role",
                 "Group role must be owner, admin, moderator or member.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
         }
 
         var group = await FindActiveGroupAsync(groupId, cancellationToken);
@@ -774,22 +774,22 @@ public sealed class GroupsService(
         var target = await dbContext.GroupMembers.SingleOrDefaultAsync(
             member => member.GroupId == groupId && member.UserId == targetUserId,
             cancellationToken);
-        if (actor?.Role != GroupMemberRole.Owner || target is null)
+        if (actor?.Role != GroupMemberRole.OWNER || target is null)
         {
             return Forbidden<GroupMemberResponse>();
         }
 
-        if (target.Role == GroupMemberRole.Owner && targetUserId == actorUserId &&
-            targetRole != GroupMemberRole.Owner)
+        if (target.Role == GroupMemberRole.OWNER && targetUserId == actorUserId &&
+            targetRole != GroupMemberRole.OWNER)
         {
             return Failure<GroupMemberResponse>(
                 "owner_cannot_demote",
                 "Transfer ownership before changing the current owner's role.",
-                ApplicationErrorType.Conflict);
+                ApplicationErrorType.CONFLICT);
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        if (targetRole == GroupMemberRole.Owner)
+        if (targetRole == GroupMemberRole.OWNER)
         {
             if (targetUserId == actorUserId)
             {
@@ -797,8 +797,8 @@ public sealed class GroupsService(
                 return ApplicationResult<GroupMemberResponse>.Success(ToResponse(target));
             }
 
-            actor.ChangeRole(GroupMemberRole.Admin);
-            target.ChangeRole(GroupMemberRole.Owner);
+            actor.ChangeRole(GroupMemberRole.ADMIN);
+            target.ChangeRole(GroupMemberRole.OWNER);
             group.TransferOwnership(targetUserId, timeProvider.GetUtcNow());
         }
         else
@@ -831,12 +831,12 @@ public sealed class GroupsService(
             return Failure(
                 "use_group_leave",
                 "Use the leave endpoint to remove yourself from a group.",
-                ApplicationErrorType.Validation);
+                ApplicationErrorType.VALIDATION);
         }
 
-        var allowed = actor == GroupMemberRole.Owner
-            ? target.Role != GroupMemberRole.Owner
-            : actor == GroupMemberRole.Admin && target.Role == GroupMemberRole.Member;
+        var allowed = actor == GroupMemberRole.OWNER
+            ? target.Role != GroupMemberRole.OWNER
+            : actor == GroupMemberRole.ADMIN && target.Role == GroupMemberRole.MEMBER;
         if (!allowed)
         {
             return Forbidden();
@@ -891,7 +891,7 @@ public sealed class GroupsService(
         }
         catch (ArgumentException exception)
         {
-            return Failure<GroupRuleResponse>("invalid_group_rule", exception.Message, ApplicationErrorType.Validation);
+            return Failure<GroupRuleResponse>("invalid_group_rule", exception.Message, ApplicationErrorType.VALIDATION);
         }
     }
 
@@ -923,7 +923,7 @@ public sealed class GroupsService(
         }
         catch (ArgumentException exception)
         {
-            return Failure<GroupRuleResponse>("invalid_group_rule", exception.Message, ApplicationErrorType.Validation);
+            return Failure<GroupRuleResponse>("invalid_group_rule", exception.Message, ApplicationErrorType.VALIDATION);
         }
     }
 
@@ -996,7 +996,7 @@ public sealed class GroupsService(
             : (await friendsService.GetAccessSnapshotAsync(viewerUserId.Value, cancellationToken)).BlockedUserIds;
         var query = dbContext.Posts.AsNoTracking().Where(post =>
             post.DeletedAtUtc == null &&
-            post.ContainerType == PostContainerType.Group &&
+            post.ContainerType == PostContainerType.GROUP &&
             post.ContainerId == groupId &&
             !blockedUserIds.Contains(post.AuthorUserId));
         if (cursor is not null)
@@ -1035,7 +1035,7 @@ public sealed class GroupsService(
             item =>
                 item.Id == postId &&
                 item.DeletedAtUtc == null &&
-                item.ContainerType == PostContainerType.Group &&
+                item.ContainerType == PostContainerType.GROUP &&
                 item.ContainerId == groupId,
             cancellationToken);
         if (post is null)
@@ -1074,7 +1074,7 @@ public sealed class GroupsService(
                 item.Id == inviteId &&
                 item.GroupId == groupId &&
                 item.InviteeUserId == actorUserId &&
-                item.Status == GroupInviteStatus.Pending,
+                item.Status == GroupInviteStatus.PENDING,
             cancellationToken);
         if (invite is null || await FindActiveGroupAsync(groupId, cancellationToken) is null)
         {
@@ -1088,7 +1088,7 @@ public sealed class GroupsService(
             return Failure<GroupInviteResponse>(
                 "already_group_member",
                 "The invitee is already a group member.",
-                ApplicationErrorType.Conflict);
+                ApplicationErrorType.CONFLICT);
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -1099,7 +1099,7 @@ public sealed class GroupsService(
             dbContext.GroupMembers.Add(GroupMember.Create(
                 groupId,
                 actorUserId,
-                GroupMemberRole.Member,
+                GroupMemberRole.MEMBER,
                 now));
         }
         else
@@ -1122,9 +1122,9 @@ public sealed class GroupsService(
             return false;
         }
 
-        return await GetMemberRoleAsync(groupId, actorUserId, cancellationToken) is GroupMemberRole.Owner
-            or GroupMemberRole.Admin
-            or GroupMemberRole.Moderator;
+        return await GetMemberRoleAsync(groupId, actorUserId, cancellationToken) is GroupMemberRole.OWNER
+            or GroupMemberRole.ADMIN
+            or GroupMemberRole.MODERATOR;
     }
 
     private async Task<bool> CanManageRulesAsync(
@@ -1133,12 +1133,12 @@ public sealed class GroupsService(
         CancellationToken cancellationToken)
     {
         var role = await GetMemberRoleAsync(groupId, actorUserId, cancellationToken);
-        return role is GroupMemberRole.Owner or GroupMemberRole.Admin &&
+        return role is GroupMemberRole.OWNER or GroupMemberRole.ADMIN &&
             await FindActiveGroupAsync(groupId, cancellationToken) is not null;
     }
 
     private static bool CanManageGroup(GroupMemberRole? role) =>
-        role is GroupMemberRole.Owner or GroupMemberRole.Admin;
+        role is GroupMemberRole.OWNER or GroupMemberRole.ADMIN;
 
     private Task<Group?> FindActiveGroupAsync(Guid groupId, CancellationToken cancellationToken) =>
         dbContext.Groups.SingleOrDefaultAsync(
@@ -1282,24 +1282,24 @@ public sealed class GroupsService(
         Failure<T>(
             "invalid_group_cursor",
             "The group cursor or limit is invalid.",
-            ApplicationErrorType.Validation);
+            ApplicationErrorType.VALIDATION);
 
     private static ApplicationResult<T> NotFound<T>() =>
-        Failure<T>("group_not_found", "The group was not found.", ApplicationErrorType.NotFound);
+        Failure<T>("group_not_found", "The group was not found.", ApplicationErrorType.NOT_FOUND);
 
     private static ApplicationResult NotFound() =>
         ApplicationResult.Failure(
-            new ApplicationError("group_not_found", "The group was not found.", ApplicationErrorType.NotFound));
+            new ApplicationError("group_not_found", "The group was not found.", ApplicationErrorType.NOT_FOUND));
 
     private static ApplicationResult<T> Forbidden<T>() =>
-        Failure<T>("group_forbidden", "You are not allowed to perform this group action.", ApplicationErrorType.Forbidden);
+        Failure<T>("group_forbidden", "You are not allowed to perform this group action.", ApplicationErrorType.FORBIDDEN);
 
     private static ApplicationResult Forbidden() =>
         ApplicationResult.Failure(
             new ApplicationError(
                 "group_forbidden",
                 "You are not allowed to perform this group action.",
-                ApplicationErrorType.Forbidden));
+                ApplicationErrorType.FORBIDDEN));
 
     private static ApplicationResult<T> Failure<T>(
         string code,

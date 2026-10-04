@@ -17,7 +17,7 @@ internal sealed class PendingUploadCleanupWorker(
                 using var scope = scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
                 var now = timeProvider.GetUtcNow();
-                var assets = await db.MediaAssets.Where(x => x.Status == MediaStatus.PendingUpload &&
+                var assets = await db.MediaAssets.Where(x => x.Status == MediaStatus.PENDING_UPLOAD &&
                         x.UploadExpiresAtUtc != null && x.UploadExpiresAtUtc <= now)
                     .OrderBy(x => x.UploadExpiresAtUtc).Take(options.CleanupBatchSize)
                     .ToListAsync(stoppingToken);

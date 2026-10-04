@@ -2,9 +2,9 @@ namespace Fookbase.Api.Modules.Groups.Entities;
 
 public enum GroupInviteStatus
 {
-    Pending,
-    Accepted,
-    Declined
+    PENDING,
+    ACCEPTED,
+    DECLINED
 }
 
 public sealed class GroupInvite
@@ -24,7 +24,7 @@ public sealed class GroupInvite
         GroupId = groupId;
         InviterUserId = inviterUserId;
         InviteeUserId = inviteeUserId;
-        Status = GroupInviteStatus.Pending;
+        Status = GroupInviteStatus.PENDING;
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -47,20 +47,20 @@ public sealed class GroupInvite
     public void Accept(DateTimeOffset respondedAtUtc)
     {
         EnsurePending();
-        Status = GroupInviteStatus.Accepted;
+        Status = GroupInviteStatus.ACCEPTED;
         RespondedAtUtc = respondedAtUtc;
     }
 
     public void Decline(DateTimeOffset respondedAtUtc)
     {
         EnsurePending();
-        Status = GroupInviteStatus.Declined;
+        Status = GroupInviteStatus.DECLINED;
         RespondedAtUtc = respondedAtUtc;
     }
 
     private void EnsurePending()
     {
-        if (Status != GroupInviteStatus.Pending)
+        if (Status != GroupInviteStatus.PENDING)
         {
             throw new InvalidOperationException("Only pending group invites can be changed.");
         }

@@ -77,7 +77,7 @@ public sealed class PersistenceAtomicityTests
             if (eventData.Context!.ChangeTracker.Entries<UserProfile>().Any(entry => entry.State == EntityState.Added))
             {
                 throw new BusinessException(new ApplicationError(
-                    "profile_rejected", "Profile creation was rejected.", ApplicationErrorType.Conflict));
+                    "profile_rejected", "Profile creation was rejected.", ApplicationErrorType.CONFLICT));
             }
 
             return ValueTask.FromResult(result);

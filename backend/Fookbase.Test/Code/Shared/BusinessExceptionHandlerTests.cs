@@ -10,18 +10,18 @@ namespace Fookbase.Api.IntegrationTests;
 public sealed class BusinessExceptionHandlerTests
 {
     [Theory]
-    [InlineData(ApplicationErrorType.Validation, 400, false)]
-    [InlineData(ApplicationErrorType.Unauthorized, 401, false)]
-    [InlineData(ApplicationErrorType.Forbidden, 403, false)]
-    [InlineData(ApplicationErrorType.NotFound, 404, false)]
-    [InlineData(ApplicationErrorType.Conflict, 409, false)]
-    [InlineData(ApplicationErrorType.Validation, 400, true)]
-    [InlineData(ApplicationErrorType.Unauthorized, 401, true)]
-    [InlineData(ApplicationErrorType.Forbidden, 403, true)]
-    [InlineData(ApplicationErrorType.NotFound, 404, true)]
-    [InlineData(ApplicationErrorType.Conflict, 409, true)]
+    [InlineData(ApplicationErrorType.VALIDATION, 400, false, "Validation")]
+    [InlineData(ApplicationErrorType.UNAUTHORIZED, 401, false, "Unauthorized")]
+    [InlineData(ApplicationErrorType.FORBIDDEN, 403, false, "Forbidden")]
+    [InlineData(ApplicationErrorType.NOT_FOUND, 404, false, "NotFound")]
+    [InlineData(ApplicationErrorType.CONFLICT, 409, false, "Conflict")]
+    [InlineData(ApplicationErrorType.VALIDATION, 400, true, "Validation")]
+    [InlineData(ApplicationErrorType.UNAUTHORIZED, 401, true, "Unauthorized")]
+    [InlineData(ApplicationErrorType.FORBIDDEN, 403, true, "Forbidden")]
+    [InlineData(ApplicationErrorType.NOT_FOUND, 404, true, "NotFound")]
+    [InlineData(ApplicationErrorType.CONFLICT, 409, true, "Conflict")]
     public async Task Business_errors_use_the_contract_for_the_requested_module(
-        ApplicationErrorType type, int status, bool identity)
+        ApplicationErrorType type, int status, bool identity, string title)
     {
         using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
         await using var body = new MemoryStream();
@@ -52,7 +52,7 @@ public sealed class BusinessExceptionHandlerTests
         }
 
         Assert.Equal(status, problem.GetProperty("status").GetInt32());
-        Assert.Equal(type.ToString(), problem.GetProperty("title").GetString());
+        Assert.Equal(title, problem.GetProperty("title").GetString());
         Assert.Equal(error.Code, problem.GetProperty("code").GetString());
         Assert.Equal(error.Message, problem.GetProperty("detail").GetString());
         Assert.Equal("business-error-request", problem.GetProperty("requestId").GetString());

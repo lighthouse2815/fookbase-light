@@ -117,7 +117,7 @@ public sealed class OtpServiceTests(IdentityApiFactory factory) : IClassFixture<
             var passwordHash = manager.PasswordHasher.HashPassword(candidate, "Password123!");
 
             var failure = await Assert.ThrowsAsync<BusinessException>(() => service.StartRegistrationAsync(
-                contact, passwordHash, "OTP", "Test", new DateOnly(2000, 1, 2), Gender.Other, now));
+                contact, passwordHash, "OTP", "Test", new DateOnly(2000, 1, 2), Gender.OTHER, now));
 
             Assert.Equal("email_delivery_unavailable", failure.Error.Code);
             Assert.False(await db.RegistrationChallenges.AnyAsync(item => item.Contact == contact.Value));

@@ -41,9 +41,9 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Users.Add(new User(userId, email, email, now));
-            db.UserProfiles.Add(UserProfile.Create(userId, email, "dang", new DateOnly(2000, 1, 1), Gender.PreferNotToSay, now));
+            db.UserProfiles.Add(UserProfile.Create(userId, email, "dang", new DateOnly(2000, 1, 1), Gender.PREFER_NOT_TO_SAY, now));
         });
-        var reel = await CreateReelAsync(userId, now, PostPrivacy.OnlyMe);
+        var reel = await CreateReelAsync(userId, now, PostPrivacy.ONLY_ME);
         using var client = CreateClient(userId);
 
         var response = await client.GetAsync("/api/feed?limit=20");
@@ -63,27 +63,27 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var users = await CreateUsersAsync(5);
         var (viewer, friend, stranger, manager, groupOwner) = (users[0], users[1], users[2], users[3], users[4]);
         await BefriendAsync(viewer, friend);
-        var joined = await CreateGroupAsync(groupOwner, viewer, GroupPrivacy.Private);
-        var unjoined = await CreateGroupAsync(groupOwner, null, GroupPrivacy.Public);
-        var privateUnjoined = await CreateGroupAsync(groupOwner, null, GroupPrivacy.Private);
+        var joined = await CreateGroupAsync(groupOwner, viewer, GroupPrivacy.PRIVATE);
+        var unjoined = await CreateGroupAsync(groupOwner, null, GroupPrivacy.PUBLIC);
+        var privateUnjoined = await CreateGroupAsync(groupOwner, null, GroupPrivacy.PRIVATE);
         var followed = await CreatePageAsync(manager, viewer);
         var unpublished = await CreatePageAsync(manager, viewer, published: false);
         var unfollowed = await CreatePageAsync(manager, null);
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
-        var own = Standard(viewer, now, PostPrivacy.OnlyMe);
-        var friendPost = Standard(friend, now, PostPrivacy.Friends);
+        var own = Standard(viewer, now, PostPrivacy.ONLY_ME);
+        var friendPost = Standard(friend, now, PostPrivacy.FRIENDS);
         var nonFriendPost = Standard(stranger, now);
-        var privateFriendPost = Standard(friend, now, PostPrivacy.OnlyMe);
-        var groupPost = InContainer(groupOwner, joined.Id, PostContainerType.Group, now);
-        var unjoinedPost = InContainer(groupOwner, unjoined.Id, PostContainerType.Group, now);
-        var hiddenGroupPost = InContainer(groupOwner, privateUnjoined.Id, PostContainerType.Group, now);
-        var pagePost = InContainer(manager, followed.Id, PostContainerType.Page, now);
-        var unpublishedPost = InContainer(manager, unpublished.Id, PostContainerType.Page, now);
-        var unfollowedPost = InContainer(manager, unfollowed.Id, PostContainerType.Page, now);
+        var privateFriendPost = Standard(friend, now, PostPrivacy.ONLY_ME);
+        var groupPost = InContainer(groupOwner, joined.Id, PostContainerType.GROUP, now);
+        var unjoinedPost = InContainer(groupOwner, unjoined.Id, PostContainerType.GROUP, now);
+        var hiddenGroupPost = InContainer(groupOwner, privateUnjoined.Id, PostContainerType.GROUP, now);
+        var pagePost = InContainer(manager, followed.Id, PostContainerType.PAGE, now);
+        var unpublishedPost = InContainer(manager, unpublished.Id, PostContainerType.PAGE, now);
+        var unfollowedPost = InContainer(manager, unfollowed.Id, PostContainerType.PAGE, now);
         await SaveAsync(db => db.Posts.AddRange(own, friendPost, nonFriendPost, privateFriendPost, groupPost,
             unjoinedPost, hiddenGroupPost, pagePost, unpublishedPost, unfollowedPost));
-        var ownReel = await CreateReelAsync(viewer, now, PostPrivacy.OnlyMe);
-        var friendReel = await CreateReelAsync(friend, now, PostPrivacy.Friends);
+        var ownReel = await CreateReelAsync(viewer, now, PostPrivacy.ONLY_ME);
+        var friendReel = await CreateReelAsync(friend, now, PostPrivacy.FRIENDS);
         await BlockAsync(viewer, manager);
         using var client = CreateClient(viewer);
 
@@ -131,14 +131,14 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await BefriendAsync(viewer, blocked);
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
         await SaveAsync(db => db.Posts.AddRange(Enumerable.Range(0, 12).Select(i => Standard(viewer, now.AddSeconds(-i)))));
-        var ready = await CreateReelAsync(friend, now, PostPrivacy.Friends);
-        var hidden = await CreateReelAsync(friend, now, PostPrivacy.OnlyMe);
-        var strangersFriends = await CreateReelAsync(stranger, now, PostPrivacy.Friends);
+        var ready = await CreateReelAsync(friend, now, PostPrivacy.FRIENDS);
+        var hidden = await CreateReelAsync(friend, now, PostPrivacy.ONLY_ME);
+        var strangersFriends = await CreateReelAsync(stranger, now, PostPrivacy.FRIENDS);
         var blockedPublic = await CreateReelAsync(blocked, now);
-        var pending = await CreateReelAsync(viewer, now, status: MediaStatus.PendingUpload);
-        var processing = await CreateReelAsync(viewer, now, status: MediaStatus.Processing);
-        var failed = await CreateReelAsync(viewer, now, status: MediaStatus.Failed);
-        var missing = Post.CreateReel(Guid.NewGuid(), viewer, "Missing media", PostPrivacy.OnlyMe, now);
+        var pending = await CreateReelAsync(viewer, now, status: MediaStatus.PENDING_UPLOAD);
+        var processing = await CreateReelAsync(viewer, now, status: MediaStatus.PROCESSING);
+        var failed = await CreateReelAsync(viewer, now, status: MediaStatus.FAILED);
+        var missing = Post.CreateReel(Guid.NewGuid(), viewer, "Missing media", PostPrivacy.ONLY_ME, now);
         await SaveAsync(db => db.Posts.Add(missing));
         await BlockAsync(blocked, viewer);
         using var client = CreateClient(viewer);
@@ -172,15 +172,15 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var users = await CreateUsersAsync(3);
         var (viewer, friend, owner) = (users[0], users[1], users[2]);
         await BefriendAsync(viewer, friend);
-        var group = await CreateGroupAsync(owner, viewer, GroupPrivacy.Private);
+        var group = await CreateGroupAsync(owner, viewer, GroupPrivacy.PRIVATE);
         var page = await CreatePageAsync(owner, viewer);
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
         var anchor = Standard(viewer, now);
-        var friendPost = Standard(friend, now.AddMinutes(-1), PostPrivacy.Friends);
-        var groupPost = InContainer(owner, group.Id, PostContainerType.Group, now.AddMinutes(-2));
-        var pagePost = InContainer(owner, page.Id, PostContainerType.Page, now.AddMinutes(-3));
+        var friendPost = Standard(friend, now.AddMinutes(-1), PostPrivacy.FRIENDS);
+        var groupPost = InContainer(owner, group.Id, PostContainerType.GROUP, now.AddMinutes(-2));
+        var pagePost = InContainer(owner, page.Id, PostContainerType.PAGE, now.AddMinutes(-3));
         await SaveAsync(db => db.Posts.AddRange(anchor, friendPost, groupPost, pagePost));
-        var reel = await CreateReelAsync(friend, now.AddMinutes(-4), PostPrivacy.Friends);
+        var reel = await CreateReelAsync(friend, now.AddMinutes(-4), PostPrivacy.FRIENDS);
         var target = change switch
         {
             "leave" or "remove" or "delete-group" => groupPost.Id,
@@ -265,7 +265,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Posts.Add(newer);
-            db.PostReactions.Add(PostReaction.Create(posts[^1].Id, viewer, ReactionType.Love, DateTimeOffset.UtcNow));
+            db.PostReactions.Add(PostReaction.Create(posts[^1].Id, viewer, ReactionType.LOVE, DateTimeOffset.UtcNow));
             db.Comments.Add(Comment.Create(Guid.NewGuid(), posts[^1].Id, viewer, null, "New engagement", DateTimeOffset.UtcNow));
         });
 
@@ -291,9 +291,9 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await BefriendAsync(viewer, friend);
         await FollowAsync(viewer, followedNonFriend);
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
-        var friendPost = Standard(friend, now, PostPrivacy.Friends);
+        var friendPost = Standard(friend, now, PostPrivacy.FRIENDS);
         var followedPublic = Standard(followedNonFriend, now.AddSeconds(-1));
-        var followedFriendsOnly = Standard(followedNonFriend, now.AddSeconds(-2), PostPrivacy.Friends);
+        var followedFriendsOnly = Standard(followedNonFriend, now.AddSeconds(-2), PostPrivacy.FRIENDS);
         var strangerPublic = Standard(stranger, now.AddSeconds(-3));
         await SaveAsync(db => db.Posts.AddRange(friendPost, followedPublic, followedFriendsOnly, strangerPublic));
         var followedReel = await CreateReelAsync(followedNonFriend, now.AddSeconds(-4));
@@ -324,7 +324,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var ownPosts = Enumerable.Range(0, 4).Select(i => Standard(viewer, now.AddSeconds(-i - 2))).ToArray();
         await SaveAsync(db => db.Posts.AddRange(ownPosts));
         var publicReel = await CreateReelAsync(friend, now);
-        var friendsReel = await CreateReelAsync(friend, now.AddSeconds(-1), PostPrivacy.Friends);
+        var friendsReel = await CreateReelAsync(friend, now.AddSeconds(-1), PostPrivacy.FRIENDS);
         using var client = CreateClient(viewer);
 
         var beforeUnfollow = await ReadAsync(await client.GetAsync("/api/feed?limit=50"));
@@ -351,7 +351,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await BefriendAsync(viewer, friend);
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
         var own = Standard(viewer, now);
-        var friendPost = Standard(friend, now.AddSeconds(-1), PostPrivacy.Friends);
+        var friendPost = Standard(friend, now.AddSeconds(-1), PostPrivacy.FRIENDS);
         await SaveAsync(db => db.Posts.AddRange(own, friendPost));
         using var client = CreateClient(viewer);
 
@@ -444,8 +444,8 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var own = Standard(viewer, now);
         var friendPost = Standard(friend, now);
         var followedNonFriendPost = Standard(followedNonFriend, now);
-        var groupPost = InContainer(owner, group.Id, PostContainerType.Group, now);
-        var pagePost = InContainer(owner, page.Id, PostContainerType.Page, now);
+        var groupPost = InContainer(owner, group.Id, PostContainerType.GROUP, now);
+        var pagePost = InContainer(owner, page.Id, PostContainerType.PAGE, now);
         var oldOwn = Standard(viewer, now.AddHours(-48));
         await SaveAsync(db => db.Posts.AddRange(own, friendPost, followedNonFriendPost, groupPost, pagePost, oldOwn));
         using var client = CreateClient(viewer);
@@ -493,7 +493,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Posts.AddRange(bobPost, carolPost);
-            db.PostReactions.Add(PostReaction.Create(bobPost.Id, viewer, ReactionType.Love, now));
+            db.PostReactions.Add(PostReaction.Create(bobPost.Id, viewer, ReactionType.LOVE, now));
             db.Comments.AddRange(
                 Comment.Create(Guid.NewGuid(), bobPost.Id, viewer, null, "Great post", now),
                 Comment.Create(Guid.NewGuid(), bobPost.Id, viewer, null, "Following along", now));
@@ -516,15 +516,15 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var page = await CreatePageAsync(owner, viewer);
         var otherPage = await CreatePageAsync(owner, viewer);
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
-        var preferredGroup = InContainer(owner, group.Id, PostContainerType.Group, now);
-        var otherGroupPost = InContainer(owner, otherGroup.Id, PostContainerType.Group, now);
-        var preferredPage = InContainer(owner, page.Id, PostContainerType.Page, now);
-        var otherPagePost = InContainer(owner, otherPage.Id, PostContainerType.Page, now);
+        var preferredGroup = InContainer(owner, group.Id, PostContainerType.GROUP, now);
+        var otherGroupPost = InContainer(owner, otherGroup.Id, PostContainerType.GROUP, now);
+        var preferredPage = InContainer(owner, page.Id, PostContainerType.PAGE, now);
+        var otherPagePost = InContainer(owner, otherPage.Id, PostContainerType.PAGE, now);
         await SaveAsync(db =>
         {
             db.Posts.AddRange(preferredGroup, otherGroupPost, preferredPage, otherPagePost);
             db.Comments.Add(Comment.Create(Guid.NewGuid(), preferredGroup.Id, viewer, null, "Useful group", now));
-            db.PostReactions.Add(PostReaction.Create(preferredPage.Id, viewer, ReactionType.Like, now));
+            db.PostReactions.Add(PostReaction.Create(preferredPage.Id, viewer, ReactionType.LIKE, now));
         });
         using var client = CreateClient(viewer);
 
@@ -584,7 +584,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Posts.Add(post);
-            db.PostReactions.Add(PostReaction.Create(post.Id, viewer, ReactionType.Love, now));
+            db.PostReactions.Add(PostReaction.Create(post.Id, viewer, ReactionType.LOVE, now));
             db.Comments.Add(Comment.Create(Guid.NewGuid(), post.Id, viewer, null, "Previously interested", now));
         });
         await BlockAsync(viewer, creator);
@@ -657,10 +657,10 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
         var own = Standard(viewer, now.AddMinutes(-3));
         var friendPost = Standard(friend, now.AddMinutes(-2));
-        var groupPost = InContainer(owner, group.Id, PostContainerType.Group, now.AddMinutes(-1));
-        var pagePost = InContainer(owner, page.Id, PostContainerType.Page, now);
+        var groupPost = InContainer(owner, group.Id, PostContainerType.GROUP, now.AddMinutes(-1));
+        var pagePost = InContainer(owner, page.Id, PostContainerType.PAGE, now);
         await SaveAsync(db => db.Posts.AddRange(own, friendPost, groupPost, pagePost));
-        var reel = await CreateReelAsync(friend, now.AddSeconds(-30), PostPrivacy.Friends);
+        var reel = await CreateReelAsync(friend, now.AddSeconds(-30), PostPrivacy.FRIENDS);
         using var client = CreateClient(viewer);
         var first = await ReadAsync(await client.GetAsync("/api/feed/following?limit=2"));
         var second = await ReadAsync(await client.GetAsync(CursorUrl("/api/feed/following", 2, first.NextCursor)));
@@ -679,7 +679,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var users = await CreateUsersAsync(3);
         var (viewer, friend, owner) = (users[0], users[1], users[2]);
         await BefriendAsync(viewer, friend);
-        var group = await CreateGroupAsync(owner, viewer, GroupPrivacy.Private);
+        var group = await CreateGroupAsync(owner, viewer, GroupPrivacy.PRIVATE);
         var page = await CreatePageAsync(owner, viewer);
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
         var expected = new List<Post>();
@@ -689,13 +689,13 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
             for (var i = 0; i < 122; i++)
             {
                 var timestamp = now.AddMinutes(-i);
-                expected.Add(Standard(viewer, timestamp, PostPrivacy.OnlyMe));
-                expected.Add(Standard(friend, timestamp, PostPrivacy.Friends));
-                expected.Add(InContainer(owner, group.Id, PostContainerType.Group, timestamp));
-                expected.Add(InContainer(owner, page.Id, PostContainerType.Page, timestamp));
-                var reel = Post.CreateReel(Guid.NewGuid(), friend, "Mixed history Reel", PostPrivacy.Friends, timestamp);
+                expected.Add(Standard(viewer, timestamp, PostPrivacy.ONLY_ME));
+                expected.Add(Standard(friend, timestamp, PostPrivacy.FRIENDS));
+                expected.Add(InContainer(owner, group.Id, PostContainerType.GROUP, timestamp));
+                expected.Add(InContainer(owner, page.Id, PostContainerType.PAGE, timestamp));
+                var reel = Post.CreateReel(Guid.NewGuid(), friend, "Mixed history Reel", PostPrivacy.FRIENDS, timestamp);
                 expected.Add(reel);
-                AttachVideo(db, reel, MediaStatus.Ready);
+                AttachVideo(db, reel, MediaStatus.READY);
             }
             db.Posts.AddRange(expected);
         });
@@ -763,16 +763,16 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         Assert.True((await scope.ServiceProvider.GetRequiredService<FriendsService>().BlockAsync(viewer, other)).Succeeded);
     }
 
-    private async Task<Group> CreateGroupAsync(Guid owner, Guid? viewer, GroupPrivacy privacy = GroupPrivacy.Public)
+    private async Task<Group> CreateGroupAsync(Guid owner, Guid? viewer, GroupPrivacy privacy = GroupPrivacy.PUBLIC)
     {
         var now = DateTimeOffset.UtcNow;
         var group = Group.Create(Guid.NewGuid(), "Mixed Group " + Guid.NewGuid().ToString("N"), "Feed context", privacy, owner, now);
         await SaveAsync(db =>
         {
             db.Groups.Add(group);
-            db.GroupMembers.Add(GroupMember.Create(group.Id, owner, GroupMemberRole.Owner, now));
+            db.GroupMembers.Add(GroupMember.Create(group.Id, owner, GroupMemberRole.OWNER, now));
             if (viewer is not null)
-                db.GroupMembers.Add(GroupMember.Create(group.Id, viewer.Value, GroupMemberRole.Member, now));
+                db.GroupMembers.Add(GroupMember.Create(group.Id, viewer.Value, GroupMemberRole.MEMBER, now));
         });
         return group;
     }
@@ -786,21 +786,21 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Pages.Add(page);
-            db.PageMembers.Add(PageMember.Create(page.Id, owner, PageRole.Owner, now));
+            db.PageMembers.Add(PageMember.Create(page.Id, owner, PageRole.OWNER, now));
             if (viewer is not null)
                 db.PageFollowers.Add(PageFollower.Create(page.Id, viewer.Value, now));
         });
         return page;
     }
 
-    private static Post Standard(Guid owner, DateTimeOffset createdAt, PostPrivacy privacy = PostPrivacy.Public) =>
+    private static Post Standard(Guid owner, DateTimeOffset createdAt, PostPrivacy privacy = PostPrivacy.PUBLIC) =>
         Post.Create(Guid.NewGuid(), owner, "Mixed profile post", privacy, createdAt);
 
     private static Post InContainer(Guid owner, Guid container, PostContainerType type, DateTimeOffset createdAt) =>
-        Post.CreateInContainer(Guid.NewGuid(), owner, "Mixed container post", PostPrivacy.Public, type, container, createdAt);
+        Post.CreateInContainer(Guid.NewGuid(), owner, "Mixed container post", PostPrivacy.PUBLIC, type, container, createdAt);
 
-    private async Task<Post> CreateReelAsync(Guid owner, DateTimeOffset createdAt, PostPrivacy privacy = PostPrivacy.Public,
-        MediaStatus status = MediaStatus.Ready)
+    private async Task<Post> CreateReelAsync(Guid owner, DateTimeOffset createdAt, PostPrivacy privacy = PostPrivacy.PUBLIC,
+        MediaStatus status = MediaStatus.READY)
     {
         var reel = Post.CreateReel(Guid.NewGuid(), owner, "Mixed Reel", privacy, createdAt);
         await SaveAsync(db =>
@@ -814,13 +814,13 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     private static void AttachVideo(FookbaseDbContext db, Post reel, MediaStatus status)
     {
         var id = Guid.NewGuid();
-        var media = MediaAsset.CreatePending(id, reel.AuthorUserId, MediaType.Video, id + ".mp4", "reel.mp4", "video/mp4", 100,
+        var media = MediaAsset.CreatePending(id, reel.AuthorUserId, MediaType.VIDEO, id + ".mp4", "reel.mp4", "video/mp4", 100,
             reel.CreatedAtUtc, DateTimeOffset.UtcNow.AddMinutes(5));
-        if (status is MediaStatus.Processing or MediaStatus.Ready)
+        if (status is MediaStatus.PROCESSING or MediaStatus.READY)
             media.MarkProcessing(100, reel.CreatedAtUtc);
-        if (status == MediaStatus.Ready)
+        if (status == MediaStatus.READY)
             media.MarkVideoReady(id + "-processed.mp4", id + "-poster.jpg", 2_000, 720, 1_280, reel.CreatedAtUtc);
-        if (status == MediaStatus.Failed)
+        if (status == MediaStatus.FAILED)
             media.MarkFailed();
         db.MediaAssets.Add(media);
         db.PostMedia.Add(PostMedia.Create(reel.Id, id, 0));

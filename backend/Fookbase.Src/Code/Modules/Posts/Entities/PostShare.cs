@@ -2,9 +2,9 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 
 public enum PostShareDestinationType
 {
-    Profile,
-    Group,
-    Page
+    PROFILE,
+    GROUP,
+    PAGE
 }
 
 public sealed class PostShare

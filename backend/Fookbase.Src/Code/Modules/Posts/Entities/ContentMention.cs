@@ -2,8 +2,8 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 
 public enum MentionSourceType
 {
-    Post,
-    Comment
+    POST,
+    COMMENT
 }
 
 public sealed class ContentMention

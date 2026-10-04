@@ -9,8 +9,8 @@ public sealed class PhotoAccessService(FookbaseDbContext db)
     {
         if (viewerId == album.OwnerUserId) return true;
         if (viewerId is null || await IsBlockedAsync(album.OwnerUserId, viewerId.Value, ct)) return false;
-        return album.Privacy == PhotoAlbumPrivacy.Public ||
-               album.Privacy == PhotoAlbumPrivacy.Friends && await AreFriendsAsync(album.OwnerUserId, viewerId.Value, ct);
+        return album.Privacy == PhotoAlbumPrivacy.PUBLIC ||
+               album.Privacy == PhotoAlbumPrivacy.FRIENDS && await AreFriendsAsync(album.OwnerUserId, viewerId.Value, ct);
     }
 
     public Task<bool> IsBlockedAsync(Guid firstId, Guid secondId, CancellationToken ct = default) =>

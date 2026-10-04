@@ -20,11 +20,11 @@ public sealed class MediaService(
     private static readonly IReadOnlyDictionary<string, SupportedFormat> SupportedFormats =
         new Dictionary<string, SupportedFormat>(StringComparer.OrdinalIgnoreCase)
         {
-            ["image/jpeg"] = new(MediaType.Image, ".jpg"),
-            ["image/png"] = new(MediaType.Image, ".png"),
-            ["image/webp"] = new(MediaType.Image, ".webp"),
-            ["video/mp4"] = new(MediaType.Video, ".mp4"),
-            ["video/webm"] = new(MediaType.Video, ".webm")
+            ["image/jpeg"] = new(MediaType.IMAGE, ".jpg"),
+            ["image/png"] = new(MediaType.IMAGE, ".png"),
+            ["image/webp"] = new(MediaType.IMAGE, ".webp"),
+            ["video/mp4"] = new(MediaType.VIDEO, ".mp4"),
+            ["video/webm"] = new(MediaType.VIDEO, ".webm")
         };
 
     public async Task<ApplicationResult<UploadIntentResponse>> CreateUploadAsync(
@@ -46,7 +46,7 @@ public sealed class MediaService(
                 "Supported media types are JPEG, PNG, WebP, MP4 and WebM.");
         }
 
-        var maximumSize = format.MediaType == MediaType.Image
+        var maximumSize = format.MediaType == MediaType.IMAGE
             ? options.MaximumImageSizeBytes
             : options.MaximumVideoSizeBytes;
         if (request.SizeBytes <= 0 || request.SizeBytes > maximumSize)
@@ -85,17 +85,17 @@ public sealed class MediaService(
             return ApplicationResult<MediaResponse>.Failure(accessError);
         }
 
-        if (asset!.Status == MediaStatus.Ready)
+        if (asset!.Status == MediaStatus.READY)
         {
             return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
         }
 
-        if (asset.Status == MediaStatus.Processing)
+        if (asset.Status == MediaStatus.PROCESSING)
         {
             return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
         }
 
-        if (asset.Status != MediaStatus.PendingUpload)
+        if (asset.Status != MediaStatus.PENDING_UPLOAD)
         {
             return Conflict<MediaResponse>("invalid_media_status", "The upload cannot be completed.");
         }
@@ -114,7 +114,7 @@ public sealed class MediaService(
             return Conflict<MediaResponse>("upload_object_missing", "The uploaded object was not found.");
         }
 
-        var maximumSize = asset.MediaType == MediaType.Image
+        var maximumSize = asset.MediaType == MediaType.IMAGE
             ? options.MaximumImageSizeBytes
             : options.MaximumVideoSizeBytes;
         if (storedObject.MediaType != asset.MediaType || !storedObject.IsAuthenticated ||
@@ -137,7 +137,7 @@ public sealed class MediaService(
                 "The uploaded object signature does not match its declared content type.");
         }
 
-        if (asset.MediaType == MediaType.Image)
+        if (asset.MediaType == MediaType.IMAGE)
         {
             asset.MarkReady(storedObject.SizeBytes, now);
         }
@@ -171,13 +171,13 @@ public sealed class MediaService(
         var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == mediaId,
             cancellationToken);
-        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        if (asset is null || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null)
         {
             return ApplicationResult<MediaReadUrlResponse>.Failure(NotFound());
         }
 
         var expiry = TimeSpan.FromMinutes(options.DownloadUrlExpiryMinutes);
-        var objectKey = asset.MediaType == MediaType.Video
+        var objectKey = asset.MediaType == MediaType.VIDEO
             ? asset.ProcessedObjectKey
             : asset.ObjectKey;
         if (string.IsNullOrWhiteSpace(objectKey))
@@ -192,7 +192,7 @@ public sealed class MediaService(
                 url,
                 timeProvider.GetUtcNow().Add(expiry),
                 asset.MediaType.ToString().ToLowerInvariant(),
-                asset.MediaType == MediaType.Video ? "video/mp4" : asset.ContentType));
+                asset.MediaType == MediaType.VIDEO ? "video/mp4" : asset.ContentType));
     }
 
     public async Task<ApplicationResult<MediaReadUrlResponse>> CreatePosterReadUrlAsync(
@@ -202,15 +202,15 @@ public sealed class MediaService(
         var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == mediaId,
             cancellationToken);
-        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null ||
-            asset.MediaType != MediaType.Video || string.IsNullOrWhiteSpace(asset.PosterObjectKey))
+        if (asset is null || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null ||
+            asset.MediaType != MediaType.VIDEO || string.IsNullOrWhiteSpace(asset.PosterObjectKey))
         {
             return ApplicationResult<MediaReadUrlResponse>.Failure(NotFound());
         }
 
         var expiry = TimeSpan.FromMinutes(options.DownloadUrlExpiryMinutes);
         var url = await objectStorage.CreateSignedGetUrlAsync(
-            asset.PosterObjectKey, MediaType.Image, cancellationToken);
+            asset.PosterObjectKey, MediaType.IMAGE, cancellationToken);
         return ApplicationResult<MediaReadUrlResponse>.Success(
             new MediaReadUrlResponse(
                 asset.Id,
@@ -250,16 +250,16 @@ public sealed class MediaService(
             var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
                 item => item.Id == mediaId,
                 cancellationToken);
-            if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+            if (asset is null || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null)
             {
                 return ApplicationResult.Failure(new ApplicationError(
-                    "invalid_media", "Every attachment must be ready.", ApplicationErrorType.Conflict));
+                    "invalid_media", "Every attachment must be ready.", ApplicationErrorType.CONFLICT));
             }
 
             if (asset.OwnerUserId != ownerUserId)
             {
                 return ApplicationResult.Failure(new ApplicationError(
-                    "media_not_owned", "Only the media owner can attach it.", ApplicationErrorType.Forbidden));
+                    "media_not_owned", "Only the media owner can attach it.", ApplicationErrorType.FORBIDDEN));
             }
         }
 
@@ -274,22 +274,22 @@ public sealed class MediaService(
         var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == mediaId,
             cancellationToken);
-        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null ||
-            asset.MediaType != MediaType.Video || string.IsNullOrWhiteSpace(asset.ProcessedObjectKey) ||
+        if (asset is null || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null ||
+            asset.MediaType != MediaType.VIDEO || string.IsNullOrWhiteSpace(asset.ProcessedObjectKey) ||
             string.IsNullOrWhiteSpace(asset.PosterObjectKey) || asset.DurationMs is null ||
             asset.Width is null || asset.Height is null)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "invalid_reel_video",
                 "The reel video must be fully processed and ready.",
-                ApplicationErrorType.Conflict));
+                ApplicationErrorType.CONFLICT));
         }
 
         if (asset.OwnerUserId != ownerUserId)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_not_owned", "Only the media owner can publish this reel video.",
-                ApplicationErrorType.Forbidden));
+                ApplicationErrorType.FORBIDDEN));
         }
 
         return asset.DurationMs < options.MinimumReelDurationMs ||
@@ -297,7 +297,7 @@ public sealed class MediaService(
             ? ApplicationResult.Failure(new ApplicationError(
                 "invalid_reel_duration",
                 $"Reel videos must be between {options.MinimumReelDurationMs} and {options.MaximumReelDurationMs} milliseconds.",
-                ApplicationErrorType.Validation))
+                ApplicationErrorType.VALIDATION))
             : ApplicationResult.Success();
     }
 
@@ -309,39 +309,39 @@ public sealed class MediaService(
         var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == mediaId,
             cancellationToken);
-        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        if (asset is null || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "invalid_story_media", "Story media must be ready.", ApplicationErrorType.Conflict));
+                "invalid_story_media", "Story media must be ready.", ApplicationErrorType.CONFLICT));
         }
 
         if (asset.OwnerUserId != ownerUserId)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_not_owned", "Only the media owner can publish it as a story.",
-                ApplicationErrorType.Forbidden));
+                ApplicationErrorType.FORBIDDEN));
         }
 
-        if (asset.MediaType == MediaType.Image)
+        if (asset.MediaType == MediaType.IMAGE)
         {
             return ApplicationResult.Success();
         }
 
-        if (asset.MediaType != MediaType.Video ||
+        if (asset.MediaType != MediaType.VIDEO ||
             string.IsNullOrWhiteSpace(asset.ProcessedObjectKey) ||
             string.IsNullOrWhiteSpace(asset.PosterObjectKey) ||
             asset.DurationMs is null || asset.Width is null || asset.Height is null)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "invalid_story_video", "Story video must be fully processed and ready.",
-                ApplicationErrorType.Conflict));
+                ApplicationErrorType.CONFLICT));
         }
 
         return asset.DurationMs > options.MaximumStoryVideoDurationMs
             ? ApplicationResult.Failure(new ApplicationError(
                 "invalid_story_duration",
                 $"Story videos cannot exceed {options.MaximumStoryVideoDurationMs} milliseconds.",
-                ApplicationErrorType.Validation))
+                ApplicationErrorType.VALIDATION))
             : ApplicationResult.Success();
     }
 
@@ -353,22 +353,22 @@ public sealed class MediaService(
         var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == mediaId,
             cancellationToken);
-        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        if (asset is null || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "invalid_media", "The profile image must be ready.", ApplicationErrorType.Validation));
+                "invalid_media", "The profile image must be ready.", ApplicationErrorType.VALIDATION));
         }
 
         if (asset.OwnerUserId != ownerUserId)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "media_not_owned", "Only the media owner can use this profile image.", ApplicationErrorType.Forbidden));
+                "media_not_owned", "Only the media owner can use this profile image.", ApplicationErrorType.FORBIDDEN));
         }
 
-        return asset.MediaType == MediaType.Image
+        return asset.MediaType == MediaType.IMAGE
             ? ApplicationResult.Success()
             : ApplicationResult.Failure(new ApplicationError(
-                "invalid_profile_media_type", "Profile media must be an image.", ApplicationErrorType.Validation));
+                "invalid_profile_media_type", "Profile media must be an image.", ApplicationErrorType.VALIDATION));
     }
 
     public async Task<ApplicationResult> ValidateGroupCoverImageAsync(
@@ -379,24 +379,24 @@ public sealed class MediaService(
         var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == mediaId,
             cancellationToken);
-        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        if (asset is null || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "invalid_media", "The group cover image must be ready.", ApplicationErrorType.Validation));
+                "invalid_media", "The group cover image must be ready.", ApplicationErrorType.VALIDATION));
         }
 
         if (asset.OwnerUserId != ownerUserId)
         {
             return ApplicationResult.Failure(new ApplicationError(
                 "media_not_owned", "Only the media owner can use this group cover image.",
-                ApplicationErrorType.Forbidden));
+                ApplicationErrorType.FORBIDDEN));
         }
 
-        return asset.MediaType == MediaType.Image
+        return asset.MediaType == MediaType.IMAGE
             ? ApplicationResult.Success()
             : ApplicationResult.Failure(new ApplicationError(
                 "invalid_group_cover_media_type", "Group cover media must be an image.",
-                ApplicationErrorType.Validation));
+                ApplicationErrorType.VALIDATION));
     }
 
     public async Task<ApplicationResult> ValidatePageImageAsync(
@@ -407,22 +407,22 @@ public sealed class MediaService(
         var asset = await dbContext.MediaAssets.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == mediaId,
             cancellationToken);
-        if (asset is null || asset.Status != MediaStatus.Ready || asset.DeletedAtUtc is not null)
+        if (asset is null || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "invalid_media", "The Page image must be ready.", ApplicationErrorType.Validation));
+                "invalid_media", "The Page image must be ready.", ApplicationErrorType.VALIDATION));
         }
 
         if (asset.OwnerUserId != ownerUserId)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "media_not_owned", "Only the media owner can use this Page image.", ApplicationErrorType.Forbidden));
+                "media_not_owned", "Only the media owner can use this Page image.", ApplicationErrorType.FORBIDDEN));
         }
 
-        return asset.MediaType == MediaType.Image
+        return asset.MediaType == MediaType.IMAGE
             ? ApplicationResult.Success()
             : ApplicationResult.Failure(new ApplicationError(
-                "invalid_page_media_type", "Page avatar and cover media must be images.", ApplicationErrorType.Validation));
+                "invalid_page_media_type", "Page avatar and cover media must be images.", ApplicationErrorType.VALIDATION));
     }
 
     public async Task<ApplicationResult> SynchronizePostReferencesAsync(
@@ -461,12 +461,12 @@ public sealed class MediaService(
         var desiredMediaIds = new Dictionary<ProfileMediaSlot, Guid>();
         if (avatarMediaId is not null)
         {
-            desiredMediaIds[ProfileMediaSlot.Avatar] = avatarMediaId.Value;
+            desiredMediaIds[ProfileMediaSlot.AVATAR] = avatarMediaId.Value;
         }
 
         if (coverMediaId is not null)
         {
-            desiredMediaIds[ProfileMediaSlot.Cover] = coverMediaId.Value;
+            desiredMediaIds[ProfileMediaSlot.COVER] = coverMediaId.Value;
         }
 
         var currentReferences = await dbContext.ProfileMediaReferences
@@ -549,12 +549,12 @@ public sealed class MediaService(
         var desiredMediaIds = new Dictionary<PageMediaSlot, Guid>();
         if (avatarMediaId is not null)
         {
-            desiredMediaIds[PageMediaSlot.Avatar] = avatarMediaId.Value;
+            desiredMediaIds[PageMediaSlot.AVATAR] = avatarMediaId.Value;
         }
 
         if (coverMediaId is not null)
         {
-            desiredMediaIds[PageMediaSlot.Cover] = coverMediaId.Value;
+            desiredMediaIds[PageMediaSlot.COVER] = coverMediaId.Value;
         }
 
         var currentReferences = await dbContext.PageMediaReferences
@@ -589,15 +589,15 @@ public sealed class MediaService(
             return ApplicationResult.Failure(accessError);
         }
 
-        if (asset!.Status == MediaStatus.Deleted)
+        if (asset!.Status == MediaStatus.DELETED)
         {
             return ApplicationResult.Success();
         }
 
-        if (asset.Status != MediaStatus.Ready)
+        if (asset.Status != MediaStatus.READY)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "invalid_media_status", "Only ready media can be deleted.", ApplicationErrorType.Conflict));
+                "invalid_media_status", "Only ready media can be deleted.", ApplicationErrorType.CONFLICT));
         }
 
         var isReferencedByPost = await dbContext.MediaReferences
@@ -641,7 +641,7 @@ public sealed class MediaService(
             isReferencedByAlbum)
         {
             return ApplicationResult.Failure(new ApplicationError(
-                "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.Conflict));
+                "media_is_referenced", "Attached media cannot be deleted.", ApplicationErrorType.CONFLICT));
         }
 
         var now = timeProvider.GetUtcNow();
@@ -670,7 +670,7 @@ public sealed class MediaService(
         return asset.OwnerUserId == ownerUserId
             ? null
             : new ApplicationError("media_forbidden", "Only the media owner may access this metadata.",
-                ApplicationErrorType.Forbidden);
+                ApplicationErrorType.FORBIDDEN);
     }
 
     private async Task SaveFailedAsync(MediaAsset asset, CancellationToken cancellationToken)
@@ -700,19 +700,19 @@ public sealed class MediaService(
     private static MediaResponse ToResponse(MediaAsset asset) => new(
         asset.Id, asset.OwnerUserId,
         asset.MediaType.ToString().ToLowerInvariant(),
-        asset.Status.ToString(), asset.OriginalFileName, asset.ContentType,
+        asset.Status.ToApiName(), asset.OriginalFileName, asset.ContentType,
         asset.DeclaredSizeBytes, asset.ActualSizeBytes, asset.CreatedAtUtc,
         asset.UploadExpiresAtUtc, asset.UploadedAtUtc, asset.DeletedAtUtc,
         asset.DurationMs, asset.Width, asset.Height,
-        asset.MediaType == MediaType.Video && asset.Status == MediaStatus.Ready,
+        asset.MediaType == MediaType.VIDEO && asset.Status == MediaStatus.READY,
         asset.ProcessedAtUtc);
 
     private static ApplicationError NotFound() =>
-        new("media_not_found", "The media asset was not found.", ApplicationErrorType.NotFound);
+        new("media_not_found", "The media asset was not found.", ApplicationErrorType.NOT_FOUND);
 
     private static ApplicationResult<T> Failure<T>(string code, string message) =>
-        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Validation));
+        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
 
     private static ApplicationResult<T> Conflict<T>(string code, string message) =>
-        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.Conflict));
+        ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.CONFLICT));
 }

@@ -22,10 +22,10 @@ public sealed class MemoryEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var owner = await CreateUserAsync();
         var other = await CreateUserAsync();
         var now = DateTimeOffset.UtcNow;
-        var eligible = Post.Create(Guid.NewGuid(), owner, "memory", PostPrivacy.Public, now.AddYears(-1));
-        var deleted = Post.Create(Guid.NewGuid(), owner, "deleted", PostPrivacy.Public, now.AddYears(-1));
+        var eligible = Post.Create(Guid.NewGuid(), owner, "memory", PostPrivacy.PUBLIC, now.AddYears(-1));
+        var deleted = Post.Create(Guid.NewGuid(), owner, "deleted", PostPrivacy.PUBLIC, now.AddYears(-1));
         deleted.Delete(now);
-        var otherPost = Post.Create(Guid.NewGuid(), other, "other", PostPrivacy.Public, now.AddYears(-1));
+        var otherPost = Post.Create(Guid.NewGuid(), other, "other", PostPrivacy.PUBLIC, now.AddYears(-1));
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
