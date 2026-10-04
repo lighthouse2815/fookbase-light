@@ -9,7 +9,7 @@ function ConversationName({ userId, title }: { userId: string | null; title: str
   const { session } = useAuth();
   const user = useQuery({ queryKey: ['user', session?.user.id, userId], queryFn: () => usersApi.getById(userId!), enabled: !!userId });
   const name = title ?? user.data?.displayName ?? 'Cuộc trò chuyện';
-  return <View style={messageStyles.identity}><Avatar label={name} uri={user.data?.avatarUrl ? resolveProfileImageUrl(user.data.avatarUrl) : null} size={46} online /><View style={{ flex: 1, gap: 2 }}><Label style={{ fontWeight: '800' }} numberOfLines={1}>{name}</Label><Label muted style={{ fontSize: 12 }}>Cuộc trò chuyện</Label></View></View>;
+  return <View style={messageStyles.identity}><Avatar label={name} uri={user.data?.avatarUrl ? resolveProfileImageUrl(user.data.avatarUrl) : null} size={46} /><View style={{ flex: 1, gap: 2 }}><Label style={{ fontWeight: '800' }} numberOfLines={1}>{name}</Label><Label muted style={{ fontSize: 12 }}>Cuộc trò chuyện</Label></View></View>;
 }
 export default function Messages() {
   const { session } = useAuth();

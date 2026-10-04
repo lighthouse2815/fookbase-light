@@ -20,6 +20,7 @@ export interface Post {
   id: string
   authorUserId: string | null
   content: string
+  textBackground?: string | null
   privacy: string
   createdAtUtc: string
   updatedAtUtc: string | null
@@ -96,6 +97,7 @@ export interface CreatePostDetails {
   content: string
   privacy: string
   mediaIds?: string[]
+  textBackground?: string | null
 }
 
 const jsonBody = (value: unknown) => ({ body: JSON.stringify(value) })
