@@ -158,6 +158,25 @@ Workflow `.github/workflows/deploy-ec2.yml` vẫn chạy tự động sau mỗi 
 
 Runner phải chạy qua systemd service `actions.runner.lighthouse2815-fookbase-light.fookbase-production.service` dưới user `ubuntu`, có quyền chạy Docker và `sudo` cho các thao tác deploy. Web hiện được publish là `frontend/web`; admin và Zola Light chỉ nên thêm vào workflow sau khi có host/path production riêng.
 
+Trước mỗi build API, `scripts/deploy-ec2.sh` giữ tag image hiện tại và image rollback,
+dọn image không còn tag rồi dọn cache build chưa dùng với ngưỡng Docker Buildx
+`--max-used-space 1GB`. Runner cần Buildx hỗ trợ tùy chọn này. Các volume PostgreSQL
+và Data Protection được giữ nguyên. Dọn image trước giúp giải phóng tham chiếu đang
+giữ các layer cache cũ.
+
+Nếu ổ đĩa đầy khiến runner không bắt đầu được job, dùng SSH kiểm tra `df -h /`,
+`sudo docker system df` và health PostgreSQL. Có thể chạy riêng hai bước dọn cache:
+
+```bash
+sudo docker image prune --force
+sudo docker buildx prune --all --force --max-used-space 1GB
+curl --fail --show-error https://fookbase-light.duckdns.org/health/ready
+```
+
+Không dùng volume prune hoặc xóa dữ liệu PostgreSQL để giải phóng ổ đĩa. Sự cố ngày
+04/10/2026 đã làm ổ root 19GB đầy 100%, PostgreSQL không ghi được checkpoint và
+đăng nhập trả HTTP 500. Dọn image/cache đã phục hồi PostgreSQL và readiness HTTP 200.
+
 ## Jobs, shutdown và capacity
 
 Video jobs có claim PostgreSQL điều kiện, lease timeout, retry giới hạn và output key deterministic. `Media__MaxConcurrentJobs=1` là default production an toàn; chỉ tăng cùng giới hạn CPU/RAM thực tế và `Media__VideoProcessingBatchSize`. Object deletion chạy durable, retry có delay và chuyển sang `FailedAtUtc` sau giới hạn để dễ chẩn đoán, không busy-loop.

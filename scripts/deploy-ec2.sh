@@ -26,6 +26,10 @@ if sudo docker image inspect fookbase-light-api:production >/dev/null 2>&1; then
   sudo docker tag fookbase-light-api:production fookbase-light-api:previous
 fi
 
+# Untagged images pin old build-cache layers on the small EC2 root disk.
+sudo docker image prune --force
+sudo docker buildx prune --all --force --max-used-space 1GB
+
 sudo docker build -t fookbase-light-api:production -f backend/Fookbase.Src/Dockerfile .
 
 set -a
