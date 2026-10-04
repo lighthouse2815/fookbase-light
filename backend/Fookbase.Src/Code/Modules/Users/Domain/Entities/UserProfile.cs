@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Entities;
 
-[Table("UserProfiles")]
 [Index(nameof(Username), IsUnique = true)]
 public sealed class UserProfile
 {

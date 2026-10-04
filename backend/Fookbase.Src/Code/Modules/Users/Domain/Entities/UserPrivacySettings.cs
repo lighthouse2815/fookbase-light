@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Users.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Users.Entities;
 
-[Table("UserPrivacySettings")]
 public sealed class UserPrivacySettings
 {
     private UserPrivacySettings()
