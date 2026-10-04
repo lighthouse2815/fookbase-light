@@ -43,3 +43,7 @@ abc.txt
 # Operating systems
 .DS_Store
 Thumbs.db
+
+# Local agent workspaces
+.worktrees/
+.superpowers/sdd/
