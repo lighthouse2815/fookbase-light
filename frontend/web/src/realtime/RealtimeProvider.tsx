@@ -51,13 +51,13 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const notificationSessionRef = useRef(0)
   const notificationSessionActiveRef = useRef(false)
   const notificationRevisionRef = useRef(0)
-  const loadedNotificationsRef = useRef(false)
   const notificationPagePendingRef = useRef(false)
   const loadMorePendingRef = useRef(false)
   const notificationCursorRef = useRef<string | null>(null)
   const seenNotificationIdsRef = useRef(new Set<string>())
   const pendingNotificationReadsRef = useRef(new Set<string>())
   const pendingMarkAllRef = useRef(false)
+  const reconcileAfterMarkAllRef = useRef(false)
   const notificationReadOverridesRef = useRef(new Map<string, Pick<AppNotification, 'isRead' | 'readAtUtc'>>())
   const notificationAnimationTimeoutsRef = useRef(new Map<string, number>())
   const countRequestRef = useRef<Promise<void> | null>(null)
@@ -129,11 +129,11 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     })
   }, [updateNotificationState])
   const reloadNotifications = useCallback(() => {
-    if (!notificationSessionActiveRef.current || notificationPagePendingRef.current || loadMorePendingRef.current) return
+    if (!notificationSessionActiveRef.current || notificationPagePendingRef.current || loadMorePendingRef.current || pendingMarkAllRef.current) return
 
     const generation = notificationSessionRef.current
     notificationPagePendingRef.current = true
-    setIsLoadingNotifications(!loadedNotificationsRef.current)
+    setIsLoadingNotifications(true)
     setNotificationsError(null)
     refreshNotificationCount()
     void (async () => {
@@ -141,7 +141,6 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         const page = await notificationsApi.getPage()
         if (generation !== notificationSessionRef.current) return
         mergeNotifications(page.items)
-        loadedNotificationsRef.current = true
         notificationCursorRef.current = page.nextCursor
         setNextNotificationCursor(page.nextCursor)
         setLoadMoreNotificationsError(null)
@@ -198,9 +197,13 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         if (generation !== notificationSessionRef.current) return
         pendingNotificationReadsRef.current.delete(notificationId)
         setIsMarkingNotificationsRead(pendingNotificationReadsRef.current.size > 0 || pendingMarkAllRef.current)
+        if (!pendingMarkAllRef.current && pendingNotificationReadsRef.current.size === 0 && reconcileAfterMarkAllRef.current) {
+          reconcileAfterMarkAllRef.current = false
+          reloadNotifications()
+        }
         refreshNotificationCount()
       })
-  }, [refreshNotificationCount, updateNotificationState])
+  }, [refreshNotificationCount, reloadNotifications, updateNotificationState])
   const markAllNotificationsRead = useCallback(() => {
     if (!notificationSessionActiveRef.current || pendingMarkAllRef.current || pendingNotificationReadsRef.current.size || notificationPagePendingRef.current || loadMorePendingRef.current) return
 
@@ -211,6 +214,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     const unreadItems = snapshot.items.filter((item) => !item.isRead)
     const readAtUtc = new Date().toISOString()
     pendingMarkAllRef.current = true
+    reconcileAfterMarkAllRef.current = true
     notificationRevisionRef.current += 1
     setIsMarkingAllNotificationsRead(true)
     setIsMarkingNotificationsRead(true)
@@ -232,12 +236,18 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         pendingMarkAllRef.current = false
         setIsMarkingAllNotificationsRead(false)
         setIsMarkingNotificationsRead(pendingNotificationReadsRef.current.size > 0)
+        // A notification received while read-all was running may also have been
+        // included by the server. Reconcile its read flag after local writes settle.
+        if (pendingNotificationReadsRef.current.size === 0) {
+          reconcileAfterMarkAllRef.current = false
+          reloadNotifications()
+        }
         refreshNotificationCount()
       })
-  }, [refreshNotificationCount, updateNotificationState])
+  }, [refreshNotificationCount, reloadNotifications, updateNotificationState])
   const loadMoreNotifications = useCallback(() => {
     const cursor = notificationCursorRef.current
-    if (!notificationSessionActiveRef.current || !cursor || loadMorePendingRef.current || notificationPagePendingRef.current) return
+    if (!notificationSessionActiveRef.current || !cursor || loadMorePendingRef.current || notificationPagePendingRef.current || pendingMarkAllRef.current) return
 
     const generation = notificationSessionRef.current
     loadMorePendingRef.current = true
@@ -371,13 +381,13 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       setIncomingMessages([])
       notificationStateRef.current = { items: [], unreadCount: 0 }
       setNotificationState(notificationStateRef.current)
-      loadedNotificationsRef.current = false
       notificationPagePendingRef.current = false
       loadMorePendingRef.current = false
       notificationCursorRef.current = null
       seenNotificationIds.clear()
       pendingNotificationReads.clear()
       pendingMarkAllRef.current = false
+      reconcileAfterMarkAllRef.current = false
       notificationReadOverrides.clear()
       countRequestRef.current = null
       countRefreshRequestedRef.current = false
