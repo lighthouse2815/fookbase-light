@@ -3,13 +3,12 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
 import { PreferenceControls, usePreferences } from '../preferences'
-import { searchApi, type SearchSuggestions } from '../api/search'
 import { resolveProfileImageUrl, usersApi, type UserProfile } from '../api/users'
 import { messagesApi, type Conversation, type IncomingMessage, type Message } from '../api/messages'
 import { getNotificationPresentation } from '../shared/notificationPresentation'
 import { showToast } from '../shared/toastState'
 import NotificationCenter from '../shared/components/NotificationCenter'
-import { publicProfileHandle } from '../shared/publicProfileHandle'
+import GlobalSearch from '../pages/search/GlobalSearch'
 import { Mascot } from 'page-mascot'
 import { SidebarLinks } from './Sidebar'
 
@@ -301,9 +300,6 @@ export default function TopNavbar() {
   const { language, setLanguage, setTheme, t, theme } = usePreferences()
   const location = useLocation()
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'messages' | 'notifications' | 'profile' | null>(null)
   const lastToastedNotificationRef = useRef<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -346,33 +342,6 @@ export default function TopNavbar() {
       onOpen: () => { markNotificationRead(latestNotification.id); setActiveHeaderPopup(null); navigate(presentation.destination) },
     })
   }, [latestNotification, isNotificationsOpen, isNotificationsPage, location.pathname, location.hash, markNotificationRead, navigate])
-
-  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const query = searchQuery.trim()
-    setSuggestions(null)
-    navigate(query ? `/search?q=${encodeURIComponent(query)}` : '/search')
-  }
-
-  useEffect(() => {
-    const query = searchQuery.trim()
-    if (query.length < 2) {
-      return
-    }
-
-    const controller = new AbortController()
-    const timeoutId = window.setTimeout(() => {
-      void searchApi.suggestions(query, { signal: controller.signal })
-        .then((next) => setSuggestions(next))
-        .catch(() => {
-          if (!controller.signal.aborted) setSuggestions(null)
-        })
-    }, 300)
-    return () => {
-      controller.abort()
-      window.clearTimeout(timeoutId)
-    }
-  }, [searchQuery])
 
   useEffect(() => {
     let isCurrent = true
@@ -448,9 +417,6 @@ export default function TopNavbar() {
     }
   }, [activeHeaderPopup])
 
-  const hasSuggestions = Boolean(suggestions &&
-    (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
-
   const openFloatingConversation = useCallback((conversation: Conversation) => {
     setOpenConversation(conversation)
     setIsConversationMinimized(false)
@@ -488,28 +454,7 @@ export default function TopNavbar() {
               label="Navbar Cat Mascot"
             />
           </div>
-          <form onSubmit={submitSearch} className="relative min-w-0 flex-1 max-sm:hidden">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light text-sm">🔍</span>
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => {
-                const value = event.target.value
-                setSearchQuery(value)
-                if (value.trim().length < 2) setSuggestions(null)
-              }}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => window.setTimeout(() => setIsSearchFocused(false), 150)}
-              aria-label={t('searchFookbase')}
-              placeholder={t('searchFookbase')}
-              className="w-full bg-surface-2 border-none rounded-full text-[13px] text-text pl-9 pr-4 py-2 outline-none focus:input-focus transition-all placeholder:text-text-light"
-            />
-            {isSearchFocused && hasSuggestions && suggestions && <div className="absolute top-11 z-50 w-full overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
-              {suggestions.people.length > 0 && <div className="border-b border-border p-2 last:border-0"><p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-light">People</p>{suggestions.people.map((person) => <Link key={person.userId} to={`/profile/${person.userId}`} onClick={() => setSuggestions(null)} className="block rounded-lg px-2 py-1.5 text-sm text-text no-underline hover:bg-surface-2"><span className="font-semibold">{person.displayName}</span>{publicProfileHandle(person.username) && <span className="ml-1 text-text-muted">@{publicProfileHandle(person.username)}</span>}</Link>)}</div>}
-              {suggestions.groups.length > 0 && <div className="border-b border-border p-2 last:border-0"><p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-light">Groups</p>{suggestions.groups.map((group) => <Link key={group.groupId} to={`/groups/${group.groupId}`} onClick={() => setSuggestions(null)} className="block rounded-lg px-2 py-1.5 text-sm text-text no-underline hover:bg-surface-2">{group.name}</Link>)}</div>}
-              {suggestions.pages.length > 0 && <div className="p-2"><p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-light">Pages</p>{suggestions.pages.map((page) => <Link key={page.pageId} to={`/pages/${page.username}`} onClick={() => setSuggestions(null)} className="block rounded-lg px-2 py-1.5 text-sm text-text no-underline hover:bg-surface-2">{page.name}<span className="ml-1 text-text-muted">@{page.username}</span></Link>)}</div>}
-            </div>}
-          </form>
+          <GlobalSearch key={session!.user.id} onOpen={() => setActiveHeaderPopup(null)} />
           <Link to="/search" aria-label={t('searchFookbase')} title={t('searchFookbase')} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-text no-underline sm:hidden"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg></Link>
         </div>
 
