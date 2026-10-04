@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
@@ -13,6 +14,10 @@ using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Search.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +28,26 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
     [Fact]
+    public void Search_routes_use_controllers_and_keep_authorization_and_rate_limits()
+    {
+        using var client = factory.CreateClient();
+        var endpoints = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints
+            .OfType<RouteEndpoint>()
+            .Where(endpoint => endpoint.RoutePattern.RawText?.TrimStart('/').StartsWith("api/search") == true)
+            .ToArray();
+        Assert.Equal(2, endpoints.Length);
+        foreach (var path in new[] { "api/search", "api/search/suggestions" })
+        {
+            var endpoint = Assert.Single(endpoints, item => item.RoutePattern.RawText!.TrimStart('/') == path);
+            Assert.Equal("GET", Assert.Single(endpoint.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods));
+            Assert.NotNull(endpoint.Metadata.GetMetadata<ControllerActionDescriptor>());
+            Assert.NotNull(endpoint.Metadata.GetMetadata<IAuthorizeData>());
+            Assert.Null(endpoint.Metadata.GetMetadata<IAllowAnonymous>());
+            Assert.Equal("search", endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName);
+        }
+    }
+
+    [Fact]
     public async Task Search_requires_authentication_and_rejects_invalid_input()
     {
         using var anonymous = factory.CreateClient();
@@ -30,10 +55,77 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         using var user = CreateAuthenticatedClient(userId);
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/search?q=valid")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/search/suggestions?q=valid")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await user.GetAsync("/api/search?q=%20%20")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await user.GetAsync("/api/search?q=a")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await user.GetAsync("/api/search?q=valid&type=unknown")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await user.GetAsync("/api/search?q=valid&type=people&cursor=not-a-cursor")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Search_query_binding_preserves_validation_error_codes()
+    {
+        using var user = CreateAuthenticatedClient(await CreateUserAsync("search-binding-validation"));
+        var cases = new (string Path, string Code)[]
+        {
+            ("/api/search", "invalid_search_query"),
+            ("/api/search?q=a", "invalid_search_query"),
+            ("/api/search?q=" + new string('a', 101), "invalid_search_query"),
+            ("/api/search?q=valid&type=unknown", "invalid_search_type"),
+            ("/api/search?q=valid&limit=0", "invalid_search_limit"),
+            ("/api/search?q=valid&limit=51", "invalid_search_limit"),
+            ("/api/search?q=valid&type=all&cursor=anything", "invalid_search_cursor"),
+            ("/api/search?q=valid&type=people&cursor=not-a-cursor", "invalid_search_cursor"),
+            ("/api/search/suggestions", "invalid_search_query"),
+            ("/api/search/suggestions?q=a", "invalid_search_query"),
+            ("/api/search/suggestions?q=valid&limit=0", "invalid_search_limit"),
+            ("/api/search/suggestions?q=valid&limit=6", "invalid_search_limit")
+        };
+        foreach (var item in cases)
+        {
+            using var response = await user.GetAsync(item.Path);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            var content = await response.Content.ReadAsStringAsync();
+            Assert.False(string.IsNullOrWhiteSpace(content),
+                $"{item.Path} returned an empty body; Content-Type: {response.Content.Headers.ContentType}.");
+            using var body = JsonDocument.Parse(content);
+            Assert.Equal(item.Code, body.RootElement.GetProperty("code").GetString());
+        }
+        foreach (var path in new[] { "/api/search", "/api/search/suggestions" })
+        {
+            using var response = await user.GetAsync(path + "?q=valid&limit=invalid");
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+    }
+
+    [Fact]
+    public async Task Search_query_requests_keep_defaults_normalization_and_cursor_pagination()
+    {
+        var viewerId = await CreateUserAsync("search-query-default-viewer");
+        var query = "binding" + Guid.NewGuid().ToString("N")[..8];
+        for (var index = 0; index < 21; index++)
+        {
+            await CreateUserAsync(query + index.ToString("D2"));
+        }
+        using var viewer = CreateAuthenticatedClient(viewerId);
+        var first = await ReadAsync<GlobalSearchResponse>(await viewer.GetAsync(
+            $"/api/search?q=%20{query}%20&type=%20PeOpLe%20"));
+        Assert.Equal(20, first.People.Count);
+        Assert.NotNull(first.NextCursor);
+        var second = await ReadAsync<GlobalSearchResponse>(await viewer.GetAsync(
+            $"/api/search?q={query}&type=people&cursor={Uri.EscapeDataString(first.NextCursor!)}"));
+        Assert.Single(second.People);
+        Assert.Null(second.NextCursor);
+        Assert.DoesNotContain(second.People[0].UserId, first.People.Select(item => item.UserId));
+
+        var all = await ReadAsync<GlobalSearchResponse>(await viewer.GetAsync($"/api/search?q={query}&limit=2"));
+        Assert.Equal(2, all.People.Count);
+        var suggestions = await ReadAsync<SearchSuggestionsResponse>(await viewer.GetAsync(
+            $"/api/search/suggestions?q={query}"));
+        Assert.Equal(5, suggestions.People.Count);
+        var limitedSuggestions = await ReadAsync<SearchSuggestionsResponse>(await viewer.GetAsync(
+            $"/api/search/suggestions?q={query}&limit=1"));
+        Assert.Single(limitedSuggestions.People);
     }
 
     [Fact]

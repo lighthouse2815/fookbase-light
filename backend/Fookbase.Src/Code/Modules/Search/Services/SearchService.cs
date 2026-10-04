@@ -11,6 +11,7 @@ using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
+using Fookbase.Api.Modules.Search.Domain.Enums;
 using Fookbase.Api.Modules.Search.DTOs.Responses;
 using PublicProfileHandle = Fookbase.Api.Modules.Users.Common.PublicProfileHandle;
 using Microsoft.EntityFrameworkCore;
@@ -781,18 +782,6 @@ public sealed class SearchService(
         ApplicationResult<T>.Failure(new ApplicationError(code, message, ApplicationErrorType.VALIDATION));
 
     private static ApplicationResult<T> Failure<T>(ApplicationError error) => ApplicationResult<T>.Failure(error);
-
-    private enum SearchType
-    {
-        INVALID,
-        ALL,
-        PEOPLE,
-        GROUPS,
-        PAGES,
-        POSTS,
-        REELS,
-        EVENTS
-    }
 
     private sealed record SearchContext(PostViewerContext Viewer);
 
