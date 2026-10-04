@@ -3,6 +3,7 @@ import { ApiError } from '../../../api/client'
 import { mediaApi, type Media } from '../../../api/media'
 import { storiesApi, type Story, type StoryPrivacy, type StoryTrayAuthor } from '../../../api/stories'
 import { resolveProfileImageUrl } from '../../../api/users'
+import { useDialogFocus } from '../../../shared/useDialogFocus'
 import StoryViewer from './StoryViewer'
 
 const acceptedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
@@ -49,12 +50,15 @@ export default function StoryTray() {
   return <section className="relative">
     {error && <p className="mb-2 rounded-lg bg-danger/15 px-3 py-2 text-xs text-danger">{error} <button type="button" onClick={() => void load()} className="ml-1 underline">Thử lại</button></p>}
     <div ref={trayRef} className="flex gap-2 overflow-x-auto scroll-smooth pb-1 pr-1">
-      <button type="button" onClick={() => ownGroup ? setSelection({ authorIndex: groups.indexOf(ownGroup), storyIndex: 0 }) : setIsCreateOpen(true)} className="relative h-40 w-[108px] shrink-0 overflow-hidden rounded-xl border border-border bg-surface-2 text-left shadow-sm">
-        {ownGroup?.author.avatarUrl ? <img src={resolveProfileImageUrl(ownGroup.author.avatarUrl)} className="h-full w-full object-cover opacity-75" alt="" /> : <span className="grid h-full place-items-center text-3xl">＋</span>}
-        <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent px-2 pb-2 pt-8 text-xs font-semibold text-white">{ownGroup ? 'Story của bạn' : 'Tạo Story'}</span>
-        <span className="absolute left-1/2 top-2 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full border-2 border-white bg-primary text-sm text-white">＋</span>
-      </button>
-      {isLoading && Array.from({ length: 5 }, (_, index) => <div key={index} className="h-40 w-[108px] shrink-0 animate-pulse rounded-xl bg-surface-2" />)}
+      <div className="relative h-40 w-[108px] shrink-0">
+        <button type="button" onClick={() => ownGroup ? setSelection({ authorIndex: groups.indexOf(ownGroup), storyIndex: 0 }) : setIsCreateOpen(true)} className="relative h-full w-full overflow-hidden rounded-xl border border-border bg-surface-2 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-primary">
+          {ownGroup?.author.avatarUrl ? <img src={resolveProfileImageUrl(ownGroup.author.avatarUrl)} className="h-full w-full object-cover opacity-75" alt="" /> : <span className="grid h-full place-items-center text-3xl">{ownGroup ? ownGroup.author.displayName.slice(0, 2).toUpperCase() : '＋'}</span>}
+          <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent px-2 pb-2 pt-8 text-xs font-semibold text-white">{ownGroup ? 'Story của bạn' : 'Tạo Story'}</span>
+          {!ownGroup && <span className="absolute left-1/2 top-2 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full border-2 border-white bg-primary text-sm text-white">＋</span>}
+        </button>
+        {ownGroup && <button type="button" aria-label="Tạo Story mới" onClick={() => setIsCreateOpen(true)} className="absolute left-1/2 top-2 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full border-2 border-white bg-primary text-sm text-white focus-visible:outline-2 focus-visible:outline-primary">＋</button>}
+      </div>
+      {isLoading && Array.from({ length: 5 }, (_, index) => <div key={index} className="h-40 w-[108px] shrink-0 motion-safe:animate-pulse rounded-xl bg-surface-2" />)}
       {groups.map((group, authorIndex) => group !== ownGroup && <button key={group.author.userId} type="button" onClick={() => setSelection({ authorIndex, storyIndex: 0 })} className="relative h-40 w-[108px] shrink-0 overflow-hidden rounded-xl border bg-surface-2 text-left shadow-sm" style={{ borderColor: group.hasUnseenStories ? 'var(--color-primary)' : 'var(--color-border)' }}>
         {group.author.avatarUrl ? <img src={resolveProfileImageUrl(group.author.avatarUrl)} className="h-full w-full object-cover opacity-75" alt="" /> : <span className="grid h-full place-items-center text-2xl text-text-muted">{group.author.displayName.slice(0, 2).toUpperCase()}</span>}
         <span className="absolute left-1.5 top-1.5 grid h-8 w-8 place-items-center overflow-hidden rounded-full border-2 border-primary bg-surface text-[10px] font-bold text-text">{group.author.avatarUrl ? <img src={resolveProfileImageUrl(group.author.avatarUrl)} className="h-full w-full object-cover" alt="" /> : group.author.displayName.slice(0, 2).toUpperCase()}</span>
@@ -69,6 +73,8 @@ export default function StoryTray() {
 
 function CreateStoryDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => Promise<void> }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLElement>(null)
+  useDialogFocus(true, dialogRef, onClose)
   const [media, setMedia] = useState<Media | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
@@ -123,9 +129,9 @@ function CreateStoryDialog({ onClose, onCreated }: { onClose: () => void; onCrea
   }
 
   const status = media?.status === 'Processing' ? 'Đang xử lý video…' : media?.status === 'Failed' ? 'Video xử lý thất bại.' : media?.status === 'Ready' ? 'Media đã sẵn sàng.' : isUploading ? `Đang tải lên ${progress}%…` : 'Chọn ảnh hoặc video (video tối đa 60 giây).'
-  return <div className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-4" role="presentation"><section className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl" role="dialog" aria-modal="true" aria-label="Tạo Story">
-    <div className="flex items-center justify-between"><h2 className="font-heading text-lg font-bold text-text">Tạo Story</h2><button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-surface-2 text-text">×</button></div>
-    <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; void choose(file) }} />
+  return <div className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-4" role="presentation"><section ref={dialogRef} tabIndex={-1} className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl" role="dialog" aria-modal="true" aria-label="Tạo Story">
+    <div className="flex items-center justify-between"><h2 className="font-heading text-lg font-bold text-text">Tạo Story</h2><button type="button" onClick={onClose} aria-label="Đóng tạo Story" className="grid h-8 w-8 place-items-center rounded-full border-0 bg-surface-2 text-text focus-visible:outline-2 focus-visible:outline-primary">×</button></div>
+    <input ref={inputRef} tabIndex={-1} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; void choose(file) }} />
     <button type="button" disabled={isUploading} onClick={() => inputRef.current?.click()} className="mt-4 flex h-52 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-surface-2 text-sm text-text-muted disabled:opacity-60">
       {previewUrl && media?.mediaType === 'video' ? <video src={previewUrl} className="h-full w-full object-contain" muted controls /> : previewUrl ? <img src={previewUrl} className="h-full w-full object-contain" alt="Xem trước Story" /> : 'Chọn ảnh hoặc video'}
     </button>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { ApiError } from '../../../api/client'
 import { storiesApi, type Story, type StoryReactionType, type StoryTrayAuthor, type StoryViewer } from '../../../api/stories'
 import { resolveProfileImageUrl } from '../../../api/users'
+import { useDialogFocus } from '../../../shared/useDialogFocus'
 import { isEditableTarget } from './postPhotoLightbox'
 import { imageDurationMs, imageElapsedMs, pauseImageClock, type ImageStoryClock } from './storyPlayback'
 
@@ -62,6 +63,7 @@ export default function StoryViewer({
   const reactionMutations = useRef(new Map<string, ReactionMutation>())
   const [reactionError, setReactionError] = useState<{ storyId: string; message: string } | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
   const touchStart = useRef<number | null>(null)
   const activeRef = useRef<Story | undefined>(undefined)
   const groupsRef = useRef(groups)
@@ -82,6 +84,7 @@ export default function StoryViewer({
   const mediaReady = currentMedia?.status === 'ready'
   const mediaFailed = currentMedia?.status === 'error' || currentMedia?.status === 'unavailable'
   const shouldPause = isPaused || isReplyFocused || isSendingReply || isViewerListOpen || documentHidden || !windowFocused || !mediaReady
+  useDialogFocus(Boolean(active), dialogRef, onClose)
 
   useLayoutEffect(() => {
     activeRef.current = active
@@ -248,8 +251,8 @@ export default function StoryViewer({
       if (event.defaultPrevented) return
       if (event.key === 'Escape') { onClose(); return }
       if (isEditableTarget(event.target)) return
-      if (event.key === 'ArrowLeft') previous()
-      if (event.key === 'ArrowRight') next()
+      if (event.key === 'ArrowLeft') { event.preventDefault(); previous() }
+      if (event.key === 'ArrowRight') { event.preventDefault(); next() }
       if (event.key === ' ') {
         event.preventDefault()
         setIsPaused((current) => !current)
@@ -386,18 +389,18 @@ export default function StoryViewer({
     setViewerError(null)
   }
 
-  return <div className="fixed inset-0 z-[100] grid bg-black/90 text-white" role="dialog" aria-modal="true" aria-label="Trình xem Story">
+  return <div ref={dialogRef} tabIndex={-1} className="fixed inset-0 z-[100] grid bg-black/90 text-white [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-white" role="dialog" aria-modal="true" aria-label="Trình xem Story">
     <div className="relative mx-auto flex h-full w-full max-w-2xl items-center justify-center sm:px-4">
       <div className="relative h-full w-full overflow-hidden bg-black sm:h-[min(92vh,860px)] sm:rounded-2xl">
         <div className="absolute inset-x-3 top-3 z-20 flex gap-1" aria-label="Tiến trình Story">
           {activeGroup.stories.map((story, index) => <span key={story.id} className="h-1 flex-1 overflow-hidden rounded-full bg-white/35">
-            <span className="block h-full bg-white transition-[width]" style={{ width: index < storyIndex ? '100%' : index === storyIndex ? `${progress}%` : '0%' }} />
+            <span className="block h-full bg-white transition-[width] motion-reduce:transition-none" style={{ width: index < storyIndex ? '100%' : index === storyIndex ? `${progress}%` : '0%' }} />
           </span>)}
         </div>
         <div className="absolute inset-x-4 top-7 z-20 flex items-center gap-3">
           {active.author.avatarUrl ? <img src={resolveProfileImageUrl(active.author.avatarUrl)} className="h-9 w-9 rounded-full object-cover" alt="" /> : <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-xs font-bold">{active.author.displayName.slice(0, 2).toUpperCase()}</span>}
           <div className="min-w-0"><p className="truncate text-sm font-semibold">{active.author.displayName} <span className="font-normal text-white/70">@{active.author.username}</span></p><p className="text-xs text-white/70">{new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(active.createdAtUtc))}</p></div>
-          <button type="button" className="ml-auto grid h-9 w-9 place-items-center rounded-full border-0 bg-black/35 text-xl text-white" onClick={onClose} aria-label="Đóng Story">×</button>
+          <button type="button" data-dialog-initial-focus className="ml-auto grid h-9 w-9 place-items-center rounded-full border-0 bg-black/35 text-xl text-white" onClick={onClose} aria-label="Đóng Story">×</button>
         </div>
 
         <div className="absolute inset-0 flex h-full min-h-0 items-center justify-center" onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null }} onTouchEnd={(event) => { const start = touchStart.current; const end = event.changedTouches[0]?.clientX; touchStart.current = null; if (start === null || end === undefined || Math.abs(end - start) < 40) return; if (end > start) previous(); else next() }}>
@@ -413,7 +416,7 @@ export default function StoryViewer({
 
         <button type="button" onClick={previous} className="absolute inset-y-16 left-0 z-10 w-[35%] border-0 bg-transparent" aria-label="Story trước" />
         <button type="button" onClick={next} className="absolute inset-y-16 right-0 z-10 w-[35%] border-0 bg-transparent" aria-label="Story tiếp theo" />
-        <button type="button" onClick={() => setIsPaused((current) => !current)} className="absolute right-4 top-20 z-20 rounded-full border-0 bg-black/35 px-3 py-1 text-xs text-white">{isPaused ? 'Tiếp tục' : 'Tạm dừng'}</button>
+        <button type="button" onClick={() => setIsPaused((current) => !current)} aria-label={isPaused ? 'Tiếp tục' : 'Tạm dừng'} aria-pressed={isPaused} className="absolute right-4 top-20 z-20 rounded-full border-0 bg-black/35 px-3 py-1 text-xs text-white">{isPaused ? 'Tiếp tục' : 'Tạm dừng'}</button>
 
         <div className="absolute inset-x-0 bottom-0 z-20 bg-linear-to-t from-black/90 via-black/45 to-transparent px-4 pb-5 pt-24">
           {active.caption && <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed">{active.caption}</p>}
@@ -422,7 +425,7 @@ export default function StoryViewer({
             {active.reactionCount > 0 && <span className="rounded-full bg-white/15 px-3 py-2 text-xs">{active.reactionCount} phản ứng</span>}
             {active.canManage && <button type="button" onClick={() => void loadViewers()} className="ml-auto rounded-full border-0 bg-white/15 px-3 py-2 text-xs text-white">{viewersTitle}</button>}
           </div>
-          {!active.canManage && <div className="mt-3 flex gap-2 rounded-full bg-white/15 p-1 pl-4"><input key={activeKey} aria-label="Trả lời Story" value={reply} onFocus={() => setIsReplyFocused(true)} onBlur={() => setIsReplyFocused(false)} maxLength={5000} onChange={(event) => setReply(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void sendReply() }} placeholder="Trả lời qua Zola Light…" className="min-w-0 flex-1 border-0 bg-transparent text-sm text-white outline-none placeholder:text-white/65" /><button type="button" disabled={!reply.trim() || isSendingReply} onClick={() => void sendReply()} className="rounded-full border-0 bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">Gửi</button></div>}
+          {!active.canManage && <div className="mt-3 flex gap-2 rounded-full bg-white/15 p-1 pl-4"><input key={activeKey} aria-label="Trả lời Story" value={reply} onFocus={() => setIsReplyFocused(true)} onBlur={() => setIsReplyFocused(false)} maxLength={5000} onChange={(event) => setReply(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void sendReply() }} placeholder="Trả lời qua Zola Light…" className="min-w-0 flex-1 border-0 bg-transparent text-sm text-white outline-none placeholder:text-white/65 focus-visible:outline-2 focus-visible:outline-white" /><button type="button" disabled={!reply.trim() || isSendingReply} onClick={() => void sendReply()} className="rounded-full border-0 bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">Gửi</button></div>}
           {replyStatus && <p className="mt-2 text-xs text-white/80">{replyStatus}</p>}
           {reactionError?.storyId === activeKey && <p role="status" className="mt-2 text-xs text-white/80">{reactionError.message}</p>}
         </div>

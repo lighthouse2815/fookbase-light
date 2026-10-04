@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { storiesApi, type Story, type StoryTrayAuthor } from '../../api/stories'
-import { useDialogFocus } from '../../shared/useDialogFocus'
 import StoryViewer from '../feed/components/StoryViewer'
 
 export default function StoryDetailPage() {
@@ -12,9 +11,7 @@ export default function StoryDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<'unavailable' | 'load' | null>(null)
   const [attempt, setAttempt] = useState(0)
-  const viewerRef = useRef<HTMLDivElement>(null)
   const close = useCallback(() => navigate('/feed', { replace: true }), [navigate])
-  useDialogFocus(Boolean(story), viewerRef, close)
 
   useEffect(() => {
     let active = true
@@ -41,9 +38,7 @@ export default function StoryDetailPage() {
     setStory((current) => current?.id === updated.id ? updated : current)
   }, [])
 
-  if (story) return <div ref={viewerRef} tabIndex={-1}>
-    <StoryViewer groups={groups} initialAuthorIndex={0} initialStoryIndex={0} onClose={close} onStoriesChanged={updateStory} />
-  </div>
+  if (story) return <StoryViewer groups={groups} initialAuthorIndex={0} initialStoryIndex={0} onClose={close} onStoriesChanged={updateStory} />
 
   return <main className="mx-auto flex min-h-[calc(100dvh-var(--app-header-height))] w-full max-w-lg flex-col items-center justify-center px-4 py-6">
     {isLoading ? <div role="status" aria-label="Đang tải Story" className="w-full max-w-xs">
