@@ -7,7 +7,8 @@ import { searchApi, type SearchSuggestions } from '../api/search'
 import { resolveProfileImageUrl, usersApi, type UserProfile } from '../api/users'
 import { messagesApi, type Conversation, type IncomingMessage, type Message } from '../api/messages'
 import { getNotificationPresentation } from '../shared/notificationPresentation'
-import { formatPostTimestamp } from '../shared/formatPostTimestamp'
+import { showToast } from '../shared/toastState'
+import NotificationCenter from '../shared/components/NotificationCenter'
 import { publicProfileHandle } from '../shared/publicProfileHandle'
 import { Mascot } from 'page-mascot'
 import { SidebarLinks } from './Sidebar'
@@ -288,13 +289,9 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
 export default function TopNavbar() {
   const { session, signOut } = useAuth()
   const {
-    notifications,
     incomingMessages,
-    markAllNotificationsRead,
     markNotificationRead,
-    hasMoreNotifications,
-    isLoadingMoreNotifications,
-    loadMoreNotifications,
+    latestNotification,
     unreadMessageCount,
     unreadNotificationCount,
     markConversationRead,
@@ -308,9 +305,7 @@ export default function TopNavbar() {
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [activeHeaderPopup, setActiveHeaderPopup] = useState<'menu' | 'messages' | 'notifications' | 'profile' | null>(null)
-  const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all')
-  const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false)
-  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<ReadonlySet<string>>(() => new Set())
+  const lastToastedNotificationRef = useRef<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const fallbackDisplayName = session!.user.username.includes('@') ? 'Tài khoản của bạn' : session!.user.username
   const [displayName, setDisplayName] = useState(fallbackDisplayName)
@@ -340,6 +335,17 @@ export default function TopNavbar() {
     { path: '/games', icon: <GamesIcon />, label: t('games') },
     { path: '/profile', icon: <ProfileIcon />, label: t('profile') },
   ]
+
+  useEffect(() => {
+    if (!latestNotification || lastToastedNotificationRef.current === latestNotification.id) return
+    lastToastedNotificationRef.current = latestNotification.id
+    const presentation = getNotificationPresentation(latestNotification)
+    if (isNotificationsOpen || isNotificationsPage || !presentation.canToast || presentation.destination === location.pathname + location.hash || presentation.destination.split('#')[0] === location.pathname) return
+    showToast(presentation.text, 'info', `notification:${latestNotification.id}`, {
+      item: latestNotification,
+      onOpen: () => { markNotificationRead(latestNotification.id); setActiveHeaderPopup(null); navigate(presentation.destination) },
+    })
+  }, [latestNotification, isNotificationsOpen, isNotificationsPage, location.pathname, location.hash, markNotificationRead, navigate])
 
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -419,38 +425,31 @@ export default function TopNavbar() {
     const closePopupWhenClickingOutside = (event: PointerEvent) => {
       if (!activePopupRef.current?.contains(event.target as Node)) {
         setActiveHeaderPopup(null)
-        setIsNotificationMenuOpen(false)
         setIsAppearanceOpen(false)
       }
     }
 
     const closePopupOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
+      if (event.key !== 'Escape' || event.defaultPrevented) return
       setActiveHeaderPopup(null)
-      setIsNotificationMenuOpen(false)
       setIsAppearanceOpen(false)
       activePopupRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
     }
+    const closeNotificationWhenFocusLeaves = (event: FocusEvent) => {
+      if (activeHeaderPopup === 'notifications' && !activePopupRef.current?.contains(event.target as Node)) setActiveHeaderPopup(null)
+    }
     document.addEventListener('keydown', closePopupOnEscape)
     document.addEventListener('pointerdown', closePopupWhenClickingOutside, true)
+    document.addEventListener('focusin', closeNotificationWhenFocusLeaves)
     return () => {
       document.removeEventListener('pointerdown', closePopupWhenClickingOutside, true)
       document.removeEventListener('keydown', closePopupOnEscape)
+      document.removeEventListener('focusin', closeNotificationWhenFocusLeaves)
     }
   }, [activeHeaderPopup])
 
   const hasSuggestions = Boolean(suggestions &&
     (suggestions.people.length || suggestions.groups.length || suggestions.pages.length))
-
-  const visibleNotifications = notificationFilter === 'unread'
-    ? notifications.filter((notification) => !notification.isRead && !dismissedNotificationIds.has(notification.id))
-    : notifications.filter((notification) => !dismissedNotificationIds.has(notification.id))
-
-  const markAllNotificationsReadAndDismiss = () => {
-    setDismissedNotificationIds((current) => new Set([...current, ...notifications.map((notification) => notification.id)]))
-    markAllNotificationsRead()
-    setIsNotificationMenuOpen(false)
-  }
 
   const openFloatingConversation = useCallback((conversation: Conversation) => {
     setOpenConversation(conversation)
@@ -572,7 +571,6 @@ export default function TopNavbar() {
               type="button"
               onClick={() => {
                 setActiveHeaderPopup((current) => current === 'menu' ? null : 'menu')
-                setIsNotificationMenuOpen(false)
               }}
               className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text hover:bg-[#4e4f50] transition-colors cursor-pointer border-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               title="Menu"
@@ -599,7 +597,6 @@ export default function TopNavbar() {
                   setMessagesError(null)
                 }
                 setActiveHeaderPopup((current) => current === 'messages' ? null : 'messages')
-                setIsNotificationMenuOpen(false)
                 setIsAppearanceOpen(false)
               }}
               className={`relative flex h-10 w-10 items-center justify-center rounded-full border-0 transition-colors ${isMessagesOpen ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50]'}`}
@@ -615,53 +612,24 @@ export default function TopNavbar() {
           <div ref={notificationDropdownRef} className="relative">
             <button
               type="button"
-              onClick={() => {
-                if (isNotificationsPage) return
-                setActiveHeaderPopup((current) => current === 'notifications' ? null : 'notifications')
-                setIsNotificationMenuOpen(false)
-              }}
-              disabled={isNotificationsPage}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none text-sm relative ${isNotificationsOpen || isNotificationsPage ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-[#4e4f50] cursor-pointer'} ${isNotificationsPage ? 'cursor-default' : ''}`}
-              title={t('messageNotifications')}
-              aria-label={t('notifications')}
+              onClick={() => setActiveHeaderPopup((current) => current === 'notifications' ? null : 'notifications')}
+              onKeyDown={(event) => { if (event.key === 'ArrowDown') { event.preventDefault(); setActiveHeaderPopup('notifications') } }}
+              className={`notification-bell notification-focus relative flex h-10 w-10 items-center justify-center rounded-full border-0 text-sm ${isNotificationsOpen || isNotificationsPage ? 'bg-primary text-white' : 'bg-surface-2 text-text hover:bg-surface-hover'}`}
+              title="Thông báo"
+              aria-label={`Thông báo, ${unreadNotificationCount} chưa đọc`}
               aria-expanded={isNotificationsOpen}
+              aria-haspopup="dialog"
             >
-              <BellIcon />
-              {unreadNotificationCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-[#e41e3f] text-[10px] font-bold text-white flex items-center justify-center px-1">{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
+              <span key={`bell:${latestNotification?.id ?? 'initial'}`} className={latestNotification ? 'notification-bell-ring' : 'flex'}><BellIcon /></span>
+              {unreadNotificationCount > 0 && <span key={`badge:${latestNotification?.id ?? 'initial'}`} aria-hidden="true" className={`absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#e41e3f] px-1 text-[10px] font-bold text-white ${latestNotification ? 'notification-badge-pop' : ''}`}>{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>}
             </button>
-            {isNotificationsOpen && (
-              <div className="header-popover w-[min(24rem,calc(100vw-1rem))] rounded-2xl border border-border bg-surface shadow-2xl">
-                <div className="relative flex items-center justify-between px-4 pt-3"><h2 className="font-heading text-2xl font-bold text-text">{t('notifications')}</h2><button type="button" onClick={() => setIsNotificationMenuOpen((current) => !current)} className="grid h-9 w-9 place-items-center rounded-full border-0 bg-transparent text-xl text-text-muted cursor-pointer hover:bg-surface-2" title="Tùy chọn thông báo" aria-label="Tùy chọn thông báo" aria-expanded={isNotificationMenuOpen}>•••</button>{isNotificationMenuOpen && <div className="absolute right-4 top-12 z-10 w-56 rounded-xl border border-border bg-surface p-2 shadow-xl"><button type="button" onClick={markAllNotificationsReadAndDismiss} className="w-full rounded-lg border-0 bg-transparent px-3 py-2 text-left text-sm font-semibold text-text cursor-pointer hover:bg-surface-2">Đánh dấu tất cả là đã đọc</button></div>}</div>
-                <div className="flex gap-2 px-4 pb-3 pt-2">
-                  <button type="button" onClick={() => setNotificationFilter('all')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'all' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Tất cả</button>
-                  <button type="button" onClick={() => setNotificationFilter('unread')} className={`rounded-full border-0 px-3 py-2 text-sm font-semibold cursor-pointer ${notificationFilter === 'unread' ? 'bg-primary/20 text-primary' : 'bg-transparent text-text hover:bg-surface-2'}`}>Chưa đọc</button>
-                </div>
-                <div className="max-h-[calc(100vh-11rem)] overflow-y-auto px-2 pb-2">
-                  <div className="flex items-center justify-between px-2 pb-1"><h3 className="text-base font-bold text-text">Trước đó</h3><Link to="/notifications" onClick={() => setActiveHeaderPopup(null)} className="text-sm font-medium text-primary no-underline hover:underline">Xem tất cả</Link></div>
-                  {visibleNotifications.length === 0 ? <p className="px-4 py-6 text-center text-sm text-text-muted">{notificationFilter === 'unread' ? 'Bạn không có thông báo chưa đọc.' : t('allCaughtUp')}</p> : (
-                    <>
-                      {visibleNotifications.map((notification, index) => {
-                        const presentation = getNotificationPresentation(notification)
-                        const avatarTone = ['bg-[#87433b]', 'bg-[#5f7997]', 'bg-[#8e5b88]', 'bg-[#607b57]', 'bg-[#9b6c45]'][index % 5]
-                        return <Link key={notification.id} to={presentation.destination} onClick={() => { markNotificationRead(notification.id); setActiveHeaderPopup(null) }} className={`relative flex gap-3 rounded-xl px-2 py-2.5 no-underline transition-colors hover:bg-surface-2 ${notification.isRead ? '' : 'bg-primary/10'}`}>
-                          <span className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${presentation.actor ? avatarTone : 'bg-surface-2 text-text-muted'}`}>{presentation.actor ? presentation.actor.slice(0, 2).toUpperCase() : '!'}<span className={`absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-surface text-[11px] font-bold text-white ${presentation.badge.className}`}>{presentation.badge.icon}</span></span>
-                          <span className="min-w-0 flex-1 pr-4"><span className="block text-sm leading-5 text-text">{presentation.actor ? <><strong>{presentation.actor}</strong> {presentation.message}</> : presentation.text}</span><span className={`mt-0.5 block text-xs font-semibold ${notification.isRead ? 'text-text-light' : 'text-primary'}`}>{formatPostTimestamp(notification.createdAtUtc).compact}</span></span>
-                          {!notification.isRead && <span className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary" />}
-                        </Link>
-                      })}
-                      {hasMoreNotifications && <button type="button" onClick={loadMoreNotifications} disabled={isLoadingMoreNotifications} className="mt-2 w-full rounded-lg border-0 bg-surface-2 px-4 py-2.5 text-sm font-semibold text-text cursor-pointer hover:bg-surface-3 disabled:cursor-wait">{isLoadingMoreNotifications ? t('loading') : 'Xem thông báo trước đó'}</button>}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
+            {isNotificationsOpen && <NotificationCenter popover onOpen={() => setActiveHeaderPopup(null)} />}
           </div>
           <div ref={profileDropdownRef} className="relative">
             <button
               type="button"
               onClick={() => {
                 setActiveHeaderPopup((current) => current === 'profile' ? null : 'profile')
-                setIsNotificationMenuOpen(false)
                 setIsAppearanceOpen(false)
               }}
               className={`relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-full border-none text-[11px] font-bold text-white transition ${isProfileOpen ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : 'hover:brightness-110 cursor-pointer'} bg-primary`}

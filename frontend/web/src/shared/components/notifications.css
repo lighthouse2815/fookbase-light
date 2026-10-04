@@ -1,0 +1,18 @@
+.notification-focus:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.notification-popover { max-height: calc(100dvh - var(--app-header-height) - 1rem); overflow: visible; transform-origin: top right; animation: notification-popover-in 180ms ease-out; }
+.notification-scroll { overflow-anchor: none; }
+.notification-bell { transition: background-color 150ms, transform 120ms; }
+.notification-bell:active { transform: scale(.95); }
+.notification-bell-ring { display: flex; transform-origin: center top; animation: notification-bell-ring 250ms ease-out; }
+.notification-badge-pop { animation: notification-badge-pop 220ms ease-out; }
+.notification-enter { animation: notification-enter 180ms ease-out; }
+@keyframes notification-bell-ring { 0% { transform: rotate(-8deg); } 45% { transform: rotate(8deg); } 100% { transform: rotate(0); } }
+@keyframes notification-badge-pop { 0% { transform: scale(.85); } 45% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes notification-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes notification-popover-in { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
+@media (width < 40rem) {
+  .notification-popover { top: var(--app-header-height); right: .5rem; width: calc(100vw - 1rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .notification-focus, .notification-bell, .notification-bell-ring, .notification-badge-pop, .notification-enter, .notification-popover { animation: none; transition: none; }
+}
