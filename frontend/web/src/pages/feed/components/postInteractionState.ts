@@ -62,6 +62,7 @@ export function createPostInteractionState(post: Post, api: ReactionApi, onReact
           : await api.removeReaction(post.id)
         confirmedReaction = response.viewerReaction
         confirmedCounts = { ...response.reactionCounts }
+        if (version === requestedVersion) desiredReaction = confirmedReaction
       } catch (error) {
         // A newer choice must survive an earlier failure. Otherwise restore the confirmed vote.
         if (version === requestedVersion) desiredReaction = confirmedReaction

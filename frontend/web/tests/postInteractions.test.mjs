@@ -56,6 +56,17 @@ test('a failed final request restores the exact confirmed reaction and counts', 
   assert.equal(errors.length, 1)
 })
 
+test('a successful authoritative response settles without repeatedly rewriting a different server result', async () => {
+  const { state, requests } = setup()
+  state.selectReaction('like')
+  requests[0].resolve(post)
+  await tick()
+  assert.equal(requests.length, 1)
+  assert.equal(state.getSnapshot().viewerReaction, null)
+  assert.deepEqual(state.getSnapshot().reactionCounts, post.reactionCounts)
+  assert.equal(state.getSnapshot().reactionPending, false)
+})
+
 test('rapid choices stay optimistic and serialize/coalesce requests to the latest choice', async () => {
   const { state, requests } = setup()
   state.selectReaction('like')

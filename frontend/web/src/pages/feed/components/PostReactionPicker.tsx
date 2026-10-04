@@ -39,7 +39,11 @@ export default function PostReactionPicker({ viewerReaction, onToggleDefault, on
     keepOpen()
     focusOnOpen.current = focus
     setOpen(true)
-    if (focus && open) popupRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"], button')?.focus()
+    if (focus && open) {
+      const selectedButton = popupRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')
+        ?? popupRef.current?.querySelector<HTMLButtonElement>('button')
+      selectedButton?.focus()
+    }
   }
   const leave = () => {
     keepOpen()
