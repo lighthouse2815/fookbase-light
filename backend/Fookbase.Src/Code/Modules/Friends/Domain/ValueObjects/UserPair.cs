@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Friends.Entities;
+namespace Fookbase.Api.Modules.Friends.Domain.ValueObjects;
 
 public readonly record struct UserPair
 {

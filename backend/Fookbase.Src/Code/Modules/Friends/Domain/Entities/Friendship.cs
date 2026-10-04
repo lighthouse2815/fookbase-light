@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Friends.Domain.ValueObjects;
 namespace Fookbase.Api.Modules.Friends.Entities;
 
 public sealed class Friendship

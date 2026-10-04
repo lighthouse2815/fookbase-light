@@ -1,3 +1,5 @@
+using Fookbase.Api.Modules.Events.Domain.Enums;
+using Fookbase.Api.Modules.Friends.Domain.Enums;
 using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.Security.Cryptography;

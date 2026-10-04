@@ -1,12 +1,6 @@
+using Fookbase.Api.Modules.Friends.Domain.Enums;
+using Fookbase.Api.Modules.Friends.Domain.ValueObjects;
 namespace Fookbase.Api.Modules.Friends.Entities;
-
-public enum FriendRequestStatus
-{
-    PENDING,
-    ACCEPTED,
-    DECLINED,
-    CANCELLED
-}
 
 public sealed class FriendRequest
 {

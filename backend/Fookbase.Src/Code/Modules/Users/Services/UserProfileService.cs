@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Friends.Domain.Enums;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Users.Common;
 using Fookbase.Api.Modules.Users.Domain.Enums;

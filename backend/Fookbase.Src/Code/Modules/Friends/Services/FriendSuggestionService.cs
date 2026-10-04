@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Friends.Domain.Enums;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Fookbase.Api.Shared.Common;

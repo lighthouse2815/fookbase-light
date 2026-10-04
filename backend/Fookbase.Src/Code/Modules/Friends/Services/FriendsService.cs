@@ -1,3 +1,5 @@
+using Fookbase.Api.Modules.Friends.Domain.Enums;
+using Fookbase.Api.Modules.Friends.Domain.ValueObjects;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Shared.Common;
@@ -1328,8 +1330,3 @@ public sealed class FriendsService(
         Guid? AvatarMediaId,
         DateTimeOffset FollowedAtUtc);
 }
-
-public sealed record RelationshipAccessSnapshot(
-    IReadOnlySet<Guid> FriendUserIds,
-    IReadOnlySet<Guid> BlockedUserIds,
-    IReadOnlySet<Guid> FollowedUserIds);

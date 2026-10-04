@@ -7,9 +7,3 @@ public sealed record FriendSuggestionResponse(
     int SharedPageCount,
     string RelationshipStatus,
     bool IsFollowing);
-
-public sealed record FriendSuggestionProfileResponse(
-    Guid UserId,
-    string Username,
-    string DisplayName,
-    string? AvatarUrl);
