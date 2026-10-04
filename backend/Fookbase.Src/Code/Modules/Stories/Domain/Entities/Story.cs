@@ -1,7 +1,16 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Stories.Entities;
 
+[Table("Stories")]
+[Index(nameof(AuthorUserId), nameof(ExpiresAtUtc), nameof(CreatedAtUtc), nameof(Id))]
+[Index(nameof(ExpiresAtUtc), nameof(CreatedAtUtc))]
+[Index(nameof(MediaId))]
 public sealed class Story
 {
     public const int MaximumCaptionLength = 2_200;
@@ -26,14 +35,30 @@ public sealed class Story
         ExpiresAtUtc = expiresAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
     public Guid AuthorUserId { get; private set; }
     public Guid MediaId { get; private set; }
+    [MaxLength(MaximumCaptionLength)]
     public string? Caption { get; private set; }
     public PostPrivacy Privacy { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset ExpiresAtUtc { get; private set; }
     public DateTimeOffset? DeletedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(AuthorUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User AuthorUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(MediaId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset Media { get; private set; } = null!;
+
+    public StoryMediaReference? MediaReference { get; private set; }
+
+    public ICollection<StoryView> Views { get; private set; } = new List<StoryView>();
+
+    public ICollection<StoryReaction> Reactions { get; private set; } = new List<StoryReaction>();
 
     public static Story Create(
         Guid id,

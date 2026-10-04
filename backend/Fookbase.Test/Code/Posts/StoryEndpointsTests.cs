@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Fookbase.Api.Modules.Stories.Domain.Enums;
 using Fookbase.Api.Modules.Stories.DTOs.Responses;
 using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Modules.Users.Entities;
@@ -229,6 +230,72 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         await BlockAsync(ownerId, friendId);
         Assert.Equal(HttpStatusCode.NotFound, (await friend.PostAsJsonAsync(
             $"/api/stories/{story.Id}/reply", new { content = "blocked" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Story_relationships_load_the_graph_and_cascade_only_story_dependents()
+    {
+        var users = await CreateUsersAsync(2);
+        var mediaId = await CreateReadyMediaAsync(users[0], MediaType.IMAGE);
+        var now = DateTimeOffset.UtcNow;
+        var storyId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.Stories.Add(Story.Create(storyId, users[0], mediaId, "mapped story", PostPrivacy.PUBLIC,
+                now, now.AddHours(24)));
+            db.StoryMediaReferences.Add(StoryMediaReference.Create(storyId, mediaId, now));
+            db.StoryViews.Add(StoryView.Create(storyId, users[1], now));
+            db.StoryReactions.Add(StoryReaction.Create(storyId, users[1], StoryReactionType.LOVE, now));
+            await db.SaveChangesAsync();
+        }
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var story = await db.Stories
+                .Include(item => item.AuthorUser)
+                .Include(item => item.Media)
+                .Include(item => item.MediaReference).ThenInclude(item => item!.Media)
+                .Include(item => item.Views).ThenInclude(item => item.ViewerUser)
+                .Include(item => item.Reactions).ThenInclude(item => item.User)
+                .AsSplitQuery()
+                .SingleAsync(item => item.Id == storyId);
+            Assert.Equal(users[0], story.AuthorUser.Id);
+            Assert.Equal(mediaId, story.Media.Id);
+            Assert.Equal(mediaId, story.MediaReference!.Media.Id);
+            Assert.Same(story, story.MediaReference.Story);
+            Assert.Equal(users[1], Assert.Single(story.Views).ViewerUser.Id);
+            Assert.Equal(users[1], Assert.Single(story.Reactions).User.Id);
+        }
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var authorDelete = await Assert.ThrowsAsync<Npgsql.PostgresException>(() =>
+                db.Users.Where(item => item.Id == users[0]).ExecuteDeleteAsync());
+            var viewerDelete = await Assert.ThrowsAsync<Npgsql.PostgresException>(() =>
+                db.Users.Where(item => item.Id == users[1]).ExecuteDeleteAsync());
+            var mediaDelete = await Assert.ThrowsAsync<Npgsql.PostgresException>(() =>
+                db.MediaAssets.Where(item => item.Id == mediaId).ExecuteDeleteAsync());
+            Assert.Equal(Npgsql.PostgresErrorCodes.ForeignKeyViolation, authorDelete.SqlState);
+            Assert.Equal(Npgsql.PostgresErrorCodes.ForeignKeyViolation, viewerDelete.SqlState);
+            Assert.Equal(Npgsql.PostgresErrorCodes.ForeignKeyViolation, mediaDelete.SqlState);
+        }
+
+        // Delete without loading dependents to verify the database cascade, not EF fixup.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            await db.Stories.Where(item => item.Id == storyId).ExecuteDeleteAsync();
+        }
+        using var afterDelete = factory.Services.CreateScope();
+        var afterDeleteDb = afterDelete.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.False(await afterDeleteDb.StoryMediaReferences.AnyAsync(item => item.StoryId == storyId));
+        Assert.False(await afterDeleteDb.StoryViews.AnyAsync(item => item.StoryId == storyId));
+        Assert.False(await afterDeleteDb.StoryReactions.AnyAsync(item => item.StoryId == storyId));
+        Assert.Equal(2, await afterDeleteDb.Users.CountAsync(item => users.Contains(item.Id)));
+        Assert.True(await afterDeleteDb.MediaAssets.AnyAsync(item => item.Id == mediaId));
     }
 
     private async Task<StoryResponse> CreateStoryAsync(HttpClient client, Guid mediaId, string caption, string privacy) =>
