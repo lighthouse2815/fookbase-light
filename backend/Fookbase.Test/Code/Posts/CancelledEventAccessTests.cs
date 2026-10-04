@@ -3,6 +3,7 @@ using Fookbase.Api.Modules.Events.Services;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;

@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;

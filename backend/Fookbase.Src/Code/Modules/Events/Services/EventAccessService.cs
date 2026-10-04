@@ -1,5 +1,6 @@
 using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;

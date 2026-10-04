@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Pages.DTOs.Requests;
 using Fookbase.Api.Modules.Pages.DTOs.Responses;
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;

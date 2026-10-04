@@ -4,6 +4,7 @@ using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Friends.Config;
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Entities;
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 using Fookbase.Api.Modules.Pages.Entities;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;

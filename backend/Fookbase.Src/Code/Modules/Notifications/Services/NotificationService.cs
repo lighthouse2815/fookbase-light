@@ -403,7 +403,7 @@ public sealed class NotificationService(
             item => item.Id == pageId && item.DeletedAtUtc == null,
             cancellationToken);
         return page is not null &&
-            (page.Status == Fookbase.Api.Modules.Pages.Entities.PageStatus.PUBLISHED ||
+            (page.Status == Fookbase.Api.Modules.Pages.Domain.Enums.PageStatus.PUBLISHED ||
              await dbContext.PageMembers.AsNoTracking().AnyAsync(
                  member => member.PageId == pageId && member.UserId == recipientUserId,
                  cancellationToken));
@@ -416,7 +416,7 @@ public sealed class NotificationService(
         (from invitation in dbContext.PageRoleInvitations.AsNoTracking()
          join page in dbContext.Pages.AsNoTracking() on invitation.PageId equals page.Id
          where invitation.Id == invitationId && invitation.InviteeUserId == recipientUserId &&
-               invitation.Status == Fookbase.Api.Modules.Pages.Entities.PageRoleInvitationStatus.PENDING &&
+               invitation.Status == Fookbase.Api.Modules.Pages.Domain.Enums.PageRoleInvitationStatus.PENDING &&
                page.DeletedAtUtc == null
          select invitation.Id).AnyAsync(cancellationToken);
 

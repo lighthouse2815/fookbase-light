@@ -1,12 +1,7 @@
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 using System.Text.RegularExpressions;
 
 namespace Fookbase.Api.Modules.Pages.Entities;
-
-public enum PageStatus
-{
-    PUBLISHED,
-    UNPUBLISHED
-}
 
 public sealed partial class Page
 {

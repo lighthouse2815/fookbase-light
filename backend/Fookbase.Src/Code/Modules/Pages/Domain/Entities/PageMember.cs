@@ -1,12 +1,5 @@
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 namespace Fookbase.Api.Modules.Pages.Entities;
-
-public enum PageRole
-{
-    OWNER,
-    ADMIN,
-    EDITOR,
-    MODERATOR
-}
 
 public sealed class PageMember
 {

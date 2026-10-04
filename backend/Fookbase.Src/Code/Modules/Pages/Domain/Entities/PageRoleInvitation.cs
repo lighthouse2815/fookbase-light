@@ -1,12 +1,5 @@
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 namespace Fookbase.Api.Modules.Pages.Entities;
-
-public enum PageRoleInvitationStatus
-{
-    PENDING,
-    ACCEPTED,
-    DECLINED,
-    CANCELLED
-}
 
 public sealed class PageRoleInvitation
 {

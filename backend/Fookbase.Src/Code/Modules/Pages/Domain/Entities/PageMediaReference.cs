@@ -1,10 +1,5 @@
+using Fookbase.Api.Modules.Pages.Domain.Enums;
 namespace Fookbase.Api.Modules.Pages.Entities;
-
-public enum PageMediaSlot
-{
-    AVATAR,
-    COVER
-}
 
 public sealed class PageMediaReference
 {
