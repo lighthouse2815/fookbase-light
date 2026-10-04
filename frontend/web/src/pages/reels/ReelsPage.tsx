@@ -57,6 +57,8 @@ export default function ReelsPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [volume, setVolume] = useState(1)
+  const [isMuted, setIsMuted] = useState(true)
   const listRef = useRef<HTMLDivElement>(null)
   const currentUserProfile = viewerProfile?.userId === session?.user.id ? viewerProfile : undefined
 
@@ -138,6 +140,10 @@ export default function ReelsPage() {
             currentUserProfile={currentUserProfile}
             active={activeIndex === index}
             shouldPreload={Math.abs(activeIndex - index) <= 1}
+            volume={volume}
+            isMuted={isMuted}
+            onVolumeChange={(nextVolume) => { if (nextVolume > 0) setVolume(nextVolume); setIsMuted(nextVolume === 0) }}
+            onToggleMute={() => setIsMuted((current) => !current)}
             index={index}
             onActivate={() => setActiveIndex(index)}
             onUpdated={updateReel}
@@ -156,11 +162,15 @@ export default function ReelsPage() {
   )
 }
 
-function ReelCard({ reel, currentUserProfile, active, shouldPreload, index, onActivate, onUpdated }: {
+function ReelCard({ reel, currentUserProfile, active, shouldPreload, volume, isMuted, onVolumeChange, onToggleMute, index, onActivate, onUpdated }: {
   reel: Reel
   currentUserProfile?: UserProfile
   active: boolean
   shouldPreload: boolean
+  volume: number
+  isMuted: boolean
+  onVolumeChange: (volume: number) => void
+  onToggleMute: () => void
   index: number
   onActivate: () => void
   onUpdated: (reel: Reel) => void
@@ -172,7 +182,6 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, index, onAc
   const commentButtonRef = useRef<HTMLButtonElement>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [posterUrl, setPosterUrl] = useState<string | null>(null)
-  const [isMuted, setIsMuted] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const [isCommentsOpen, setIsCommentsOpen] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
@@ -228,6 +237,10 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, index, onAc
       .catch(() => { if (!disposed) setIsPaused(true) })
     return () => { disposed = true }
   }, [reel.id, shouldPreload, videoUrl])
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume
+  }, [volume, videoUrl])
 
   useEffect(() => {
     const video = videoRef.current
@@ -321,14 +334,19 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, index, onAc
   }
 
   const initial = reel.author.displayName.slice(0, 2).toUpperCase()
+  const volumePercent = isMuted ? 0 : Math.round(volume * 100)
   return (
     <section ref={cardRef} data-reel-index={index} className="relative flex min-h-full snap-start items-center justify-center overflow-hidden bg-black px-2 py-2 sm:px-4" onMouseEnter={onActivate}>
       <div className={`reel-stage ${commentsOpen ? 'reel-stage--comments-open' : ''}`}>
       <div className="reel-viewer">
       <div className="reel-player relative overflow-hidden rounded-lg bg-surface shadow-2xl">
-        {videoUrl ? <video ref={videoRef} src={videoUrl} poster={posterUrl ?? undefined} muted={isMuted} playsInline className="h-full w-full object-contain" onPlay={() => { onActivate(); setIsPaused(false) }} onTimeUpdate={() => { const milliseconds = Math.floor((videoRef.current?.currentTime ?? 0) * 1000); setCurrentMs(milliseconds); const threshold = Math.min(3_000, reel.video.durationMs * 0.25); if (milliseconds >= threshold) recordThreshold(false) }} onEnded={() => { setIsPaused(true); recordThreshold(true) }} /> : <div className="grid h-full place-items-center text-sm text-text-muted">Đang chuẩn bị video…</div>}
+        {videoUrl ? <video ref={videoRef} src={videoUrl} poster={posterUrl ?? undefined} muted={isMuted || !active} playsInline className="h-full w-full object-contain" onPlay={() => { onActivate(); setIsPaused(false) }} onTimeUpdate={() => { const milliseconds = Math.floor((videoRef.current?.currentTime ?? 0) * 1000); setCurrentMs(milliseconds); const threshold = Math.min(3_000, reel.video.durationMs * 0.25); if (milliseconds >= threshold) recordThreshold(false) }} onEnded={() => { setIsPaused(true); recordThreshold(true) }} /> : <div className="grid h-full place-items-center text-sm text-text-muted">Đang chuẩn bị video…</div>}
         <button type="button" onClick={() => { const video = videoRef.current; if (!video) return; if (video.paused) { if (video.ended) video.currentTime = 0; void video.play(); setIsPaused(false) } else { video.pause(); setIsPaused(true) } }} className="absolute inset-0 border-0 bg-transparent" aria-label={isPaused ? 'Phát Reel' : 'Tạm dừng Reel'} />
-        <button type="button" onClick={() => setIsMuted((current) => !current)} className="absolute left-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full border-0 bg-black/45 text-lg text-white cursor-pointer" aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}>{isMuted ? '🔇' : '🔊'}</button>
+        <div role="group" aria-label="Điều chỉnh âm thanh Reel" className="absolute left-3 right-3 top-3 z-10 flex w-fit max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full bg-black/45 pr-3 text-white">
+          <button type="button" onClick={onToggleMute} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-0 bg-transparent text-lg cursor-pointer focus-visible:outline-2 focus-visible:outline-white" aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'} aria-pressed={isMuted}>{isMuted ? '🔇' : '🔊'}</button>
+          <input aria-label="Âm lượng Reel" aria-valuetext={`${volumePercent}%`} type="range" min="0" max="100" step="1" value={volumePercent} onChange={(event) => onVolumeChange(Number(event.target.value) / 100)} className="h-10 w-20 min-w-0 accent-white cursor-pointer focus-visible:outline-2 focus-visible:outline-white sm:w-24" />
+          <span aria-hidden="true" className="w-8 shrink-0 text-right text-xs tabular-nums">{volumePercent}%</span>
+        </div>
         <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/95 via-black/55 to-transparent px-4 pb-3 pt-24 text-white pointer-events-none">
           <div className="flex items-end gap-3 pointer-events-auto">
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary text-center text-xs font-bold leading-10">{reel.author.avatarUrl ? <img src={resolveProfileImageUrl(reel.author.avatarUrl)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initial}</div>
