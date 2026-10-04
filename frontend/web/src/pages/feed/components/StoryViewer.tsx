@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { ApiError } from '../../../api/client'
 import { storiesApi, type Story, type StoryReactionType, type StoryTrayAuthor, type StoryViewer } from '../../../api/stories'
 import { resolveProfileImageUrl } from '../../../api/users'
@@ -32,6 +32,14 @@ interface ReactionMutation {
   running: boolean
 }
 
+interface MediaGesture {
+  pointerId: number
+  x: number
+  y: number
+  startedAt: number
+  moved: boolean
+}
+
 export default function StoryViewer({
   groups,
   initialAuthorIndex,
@@ -45,6 +53,8 @@ export default function StoryViewer({
   const [mediaAttempt, setMediaAttempt] = useState(0)
   const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [isHolding, setIsHolding] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
   const [documentHidden, setDocumentHidden] = useState(document.hidden)
   const [windowFocused, setWindowFocused] = useState(true)
   const [playbackBlocked, setPlaybackBlocked] = useState(false)
@@ -64,7 +74,8 @@ export default function StoryViewer({
   const [reactionError, setReactionError] = useState<{ storyId: string; message: string } | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
-  const touchStart = useRef<number | null>(null)
+  const mediaGesture = useRef<MediaGesture | null>(null)
+  const suppressMediaClick = useRef(false)
   const activeRef = useRef<Story | undefined>(undefined)
   const groupsRef = useRef(groups)
   const onStoriesChangedRef = useRef(onStoriesChanged)
@@ -83,7 +94,7 @@ export default function StoryViewer({
   const mediaUrl = currentMedia?.url ?? null
   const mediaReady = currentMedia?.status === 'ready'
   const mediaFailed = currentMedia?.status === 'error' || currentMedia?.status === 'unavailable'
-  const shouldPause = isPaused || isReplyFocused || isSendingReply || isViewerListOpen || documentHidden || !windowFocused || !mediaReady
+  const shouldPause = isPaused || isHolding || isReplyFocused || isSendingReply || isViewerListOpen || documentHidden || !windowFocused || !mediaReady
   useDialogFocus(Boolean(active), dialogRef, onClose)
 
   useLayoutEffect(() => {
@@ -113,6 +124,7 @@ export default function StoryViewer({
     setPlaybackKey(mediaKey)
     setProgress(0)
     setPlaybackBlocked(false)
+    setIsHolding(false)
   }
 
   const [replyStoryId, setReplyStoryId] = useState(activeKey)
@@ -200,11 +212,20 @@ export default function StoryViewer({
   useLayoutEffect(() => { nextRef.current = next }, [next])
   useLayoutEffect(() => {
     imageClock.current = { elapsedMs: 0, startedAt: null }
+    mediaGesture.current = null
   }, [mediaKey])
 
   useEffect(() => {
-    const visibility = () => setDocumentHidden(document.hidden)
-    const blur = () => setWindowFocused(false)
+    const releaseHold = () => {
+      if (mediaGesture.current) suppressMediaClick.current = true
+      mediaGesture.current = null
+      setIsHolding(false)
+    }
+    const visibility = () => {
+      setDocumentHidden(document.hidden)
+      if (document.hidden) releaseHold()
+    }
+    const blur = () => { setWindowFocused(false); releaseHold() }
     const focus = () => setWindowFocused(true)
     document.addEventListener('visibilitychange', visibility)
     window.addEventListener('blur', blur)
@@ -284,6 +305,42 @@ export default function StoryViewer({
     }).catch(() => {
       if (mounted.current && activeMediaKey.current === mediaKey) setPlaybackBlocked(true)
     })
+  }
+
+  const startGesture = (event: PointerEvent<HTMLDivElement>) => {
+    const target = event.target instanceof Element ? event.target : null
+    if (!event.isPrimary || event.button !== 0) return
+    suppressMediaClick.current = false
+    if (target?.closest('button:not([data-story-navigation])')) return
+    mediaGesture.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, startedAt: performance.now(), moved: false }
+    setIsHolding(true)
+    // Capture on the original target so a short tap still clicks its navigation button.
+    ;(target ?? event.currentTarget).setPointerCapture(event.pointerId)
+  }
+  const moveGesture = (event: PointerEvent<HTMLDivElement>) => {
+    const gesture = mediaGesture.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+    if (Math.max(Math.abs(event.clientX - gesture.x), Math.abs(event.clientY - gesture.y)) > 10) {
+      gesture.moved = true
+      setIsHolding(false)
+    }
+  }
+  const finishGesture = (event: PointerEvent<HTMLDivElement>) => {
+    const gesture = mediaGesture.current
+    if (!gesture || gesture.pointerId !== event.pointerId) return
+    mediaGesture.current = null
+    setIsHolding(false)
+    const dx = event.clientX - gesture.x
+    const dy = event.clientY - gesture.y
+    const swipe = Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)
+    suppressMediaClick.current = gesture.moved || swipe || performance.now() - gesture.startedAt >= 250
+    if (swipe) { if (dx > 0) previous(); else next() }
+  }
+  const cancelGesture = (event: PointerEvent<HTMLDivElement>) => {
+    if (mediaGesture.current?.pointerId !== event.pointerId) return
+    mediaGesture.current = null
+    suppressMediaClick.current = true
+    setIsHolding(false)
   }
 
   const setReaction = async (type: StoryReactionType) => {
@@ -403,20 +460,29 @@ export default function StoryViewer({
           <button type="button" data-dialog-initial-focus className="ml-auto grid h-9 w-9 place-items-center rounded-full border-0 bg-black/35 text-xl text-white" onClick={onClose} aria-label="Đóng Story">×</button>
         </div>
 
-        <div className="absolute inset-0 flex h-full min-h-0 items-center justify-center" onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null }} onTouchEnd={(event) => { const start = touchStart.current; const end = event.changedTouches[0]?.clientX; touchStart.current = null; if (start === null || end === undefined || Math.abs(end - start) < 40) return; if (end > start) previous(); else next() }}>
-          {mediaFailed && <div role="status" className="rounded-lg bg-black/70 px-4 py-3 text-center text-sm">
-            <p>{currentMedia?.status === 'unavailable' ? 'Story không còn khả dụng' : 'Không thể tải tin'}</p>
-            {currentMedia?.status === 'unavailable' ? <p className="mt-2 text-xs text-white/70">Story có thể đã hết hạn, bị xóa hoặc bạn không có quyền xem.</p> : <button type="button" onClick={() => setMediaAttempt((current) => current + 1)} className="mt-3 rounded-lg bg-white/15 px-4 py-2 focus-visible:outline-2 focus-visible:outline-white">Thử lại</button>}
-          </div>}
-          {!mediaFailed && !mediaReady && <p role="status" className="absolute text-sm text-white/80">Đang tải Story…</p>}
-          {mediaUrl && !mediaFailed && isVideo && <video key={mediaKey} ref={videoRef} src={mediaUrl} poster={currentMedia?.posterUrl ?? undefined} autoPlay={!shouldPause} playsInline className="block h-full max-h-full w-full max-w-full object-contain" onLoadedMetadata={(event) => { if (Number.isFinite(event.currentTarget.duration) && event.currentTarget.duration > 0) mediaLoaded() }} onError={mediaLoadFailed} onEnded={() => { if (activeMediaKey.current === mediaKey && !pauseRef.current) nextRef.current() }} onTimeUpdate={(event) => { const video = event.currentTarget; if (activeMediaKey.current === mediaKey && mediaReady && video.duration > 0) setProgress(Math.min(100, video.currentTime / video.duration * 100)) }} />}
-          {mediaUrl && !mediaFailed && isVideo && playbackBlocked && !shouldPause && <button type="button" aria-label="Phát video Story" onClick={playVideo} className="absolute z-20 rounded-full bg-white/20 px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-white">Phát video</button>}
-          {mediaUrl && !mediaFailed && !isVideo && <img key={mediaKey} src={mediaUrl} className="block h-full max-h-full w-full max-w-full object-contain" alt={active.caption ?? 'Story'} onLoad={mediaLoaded} onError={mediaLoadFailed} />}
-        </div>
+        <div className="absolute inset-0 touch-pan-y select-none" onPointerDown={startGesture} onPointerMove={moveGesture} onPointerUp={finishGesture} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onClickCapture={(event) => {
+          if (suppressMediaClick.current && event.detail > 0) {
+            suppressMediaClick.current = false
+            event.preventDefault()
+            event.stopPropagation()
+          }
+        }}>
+          <div className="absolute inset-0 flex h-full min-h-0 items-center justify-center">
+            {mediaFailed && <div role="status" className="rounded-lg bg-black/70 px-4 py-3 text-center text-sm">
+              <p>{currentMedia?.status === 'unavailable' ? 'Story không còn khả dụng' : 'Không thể tải tin'}</p>
+              {currentMedia?.status === 'unavailable' ? <p className="mt-2 text-xs text-white/70">Story có thể đã hết hạn, bị xóa hoặc bạn không có quyền xem.</p> : <button type="button" onClick={() => setMediaAttempt((current) => current + 1)} className="mt-3 rounded-lg bg-white/15 px-4 py-2 focus-visible:outline-2 focus-visible:outline-white">Thử lại</button>}
+            </div>}
+            {!mediaFailed && !mediaReady && <p role="status" className="absolute text-sm text-white/80">Đang tải Story…</p>}
+            {mediaUrl && !mediaFailed && isVideo && <video key={mediaKey} ref={videoRef} src={mediaUrl} poster={currentMedia?.posterUrl ?? undefined} autoPlay={!shouldPause} playsInline muted={isMuted} className="block h-full max-h-full w-full max-w-full object-contain" onLoadedMetadata={(event) => { if (Number.isFinite(event.currentTarget.duration) && event.currentTarget.duration > 0) mediaLoaded() }} onError={mediaLoadFailed} onEnded={() => { if (activeMediaKey.current === mediaKey && !pauseRef.current) nextRef.current() }} onTimeUpdate={(event) => { const video = event.currentTarget; if (activeMediaKey.current === mediaKey && mediaReady && video.duration > 0) setProgress(Math.min(100, video.currentTime / video.duration * 100)) }} />}
+            {mediaUrl && !mediaFailed && isVideo && playbackBlocked && !shouldPause && <button type="button" aria-label="Phát video Story" onClick={playVideo} className="absolute z-20 rounded-full bg-white/20 px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-white">Phát video</button>}
+            {mediaUrl && !mediaFailed && !isVideo && <img key={mediaKey} src={mediaUrl} draggable={false} className="block h-full max-h-full w-full max-w-full object-contain" alt={active.caption ?? 'Story'} onLoad={mediaLoaded} onError={mediaLoadFailed} />}
+          </div>
 
-        <button type="button" onClick={previous} className="absolute inset-y-16 left-0 z-10 w-[35%] border-0 bg-transparent" aria-label="Story trước" />
-        <button type="button" onClick={next} className="absolute inset-y-16 right-0 z-10 w-[35%] border-0 bg-transparent" aria-label="Story tiếp theo" />
+          <button type="button" data-story-navigation onClick={previous} className="absolute inset-y-16 left-0 z-10 w-[35%] border-0 bg-transparent" aria-label="Story trước" />
+          <button type="button" data-story-navigation onClick={next} className="absolute inset-y-16 right-0 z-10 w-[35%] border-0 bg-transparent" aria-label="Story tiếp theo" />
+        </div>
         <button type="button" onClick={() => setIsPaused((current) => !current)} aria-label={isPaused ? 'Tiếp tục' : 'Tạm dừng'} aria-pressed={isPaused} className="absolute right-4 top-20 z-20 rounded-full border-0 bg-black/35 px-3 py-1 text-xs text-white">{isPaused ? 'Tiếp tục' : 'Tạm dừng'}</button>
+        {isVideo && mediaUrl && !mediaFailed && <button type="button" onClick={() => setIsMuted((current) => !current)} aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'} aria-pressed={!isMuted} className="absolute left-4 top-20 z-20 grid h-8 w-8 place-items-center rounded-full bg-black/35 text-sm">{isMuted ? '🔇' : '🔊'}</button>}
 
         <div className="absolute inset-x-0 bottom-0 z-20 bg-linear-to-t from-black/90 via-black/45 to-transparent px-4 pb-5 pt-24">
           {active.caption && <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed">{active.caption}</p>}

@@ -17,6 +17,7 @@ async function check(name, run, options = {}) {
   await options.setup?.(state)
   const page = await context.newPage(); page.setDefaultTimeout(10000)
   page.on('pageerror', error => errors.push(error.stack))
+  await options.preparePage?.(page)
   try {
     await page.goto(`${baseUrl}/feed`, { waitUntil: 'domcontentloaded' })
     await page.getByRole('button', { name: options.owner ? /Story của bạn/ : /Minh$/ }).click()
@@ -77,14 +78,42 @@ try {
       await viewer.getByRole('button', { name: 'Tiếp tục', exact: true }).click(); await pause(300)
       assert.ok(await progress(viewer) > before)
     })
+    await check('document visibility pauses and returning respects another pause reason', async ({ page, viewer, reply }) => {
+      await pause(300)
+      await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange')) })
+      await pause(100); const before = await progress(viewer); await pause(350); assert.equal(await progress(viewer), before)
+      await reply.focus()
+      await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')) })
+      await pause(300); assert.equal(await progress(viewer), before)
+      await viewer.getByRole('button', { name: 'Đóng Story', exact: true }).focus(); await pause(300)
+      assert.ok(await progress(viewer) > before)
+    })
     await check('video pause/resume controls native playback and reply focus also pauses', async ({ viewer, reply }) => {
       const video = viewer.locator('video'); await pause(600); assert.equal(await video.evaluate(v => v.paused), false)
       await viewer.getByRole('button', { name: 'Tạm dừng', exact: true }).click(); const time = await video.evaluate(v => v.currentTime)
       await pause(400); assert.equal(await video.evaluate(v => v.paused), true); assert.ok(Math.abs(await video.evaluate(v => v.currentTime) - time) < 0.08)
+      const duration = await video.evaluate(v => v.duration); assert.ok(Math.abs(await progress(viewer) - time / duration * 100) < 2)
       await viewer.getByRole('button', { name: 'Tiếp tục', exact: true }).click(); await pause(300); assert.equal(await video.evaluate(v => v.paused), false)
       await reply.focus(); await pause(100); assert.equal(await video.evaluate(v => v.paused), true)
       await viewer.getByRole('button', { name: 'Đóng Story', exact: true }).focus(); await pause(200); assert.equal(await video.evaluate(v => v.paused), false)
     }, { video: true, videoBody })
+    await check('video completion advances using native duration rather than the image timer', async ({ viewer }) => {
+      await viewer.locator('img[alt="Story 2"]').waitFor(); assert.equal(await viewer.locator('video').count(), 0)
+    }, { video: true, videoBody: execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=90x160:r=10', '-t', '0.9', '-c:v', 'libvpx', '-f', 'webm', 'pipe:1']) })
+    await check('autoplay rejection is caught and explicit play respects manual pause', async ({ page, viewer }) => {
+      const play = viewer.getByRole('button', { name: 'Phát video Story', exact: true }); await play.waitFor()
+      assert.equal(await viewer.locator('video').evaluate(video => video.paused), true)
+      await viewer.getByRole('button', { name: 'Tạm dừng', exact: true }).click(); assert.equal(await play.count(), 0)
+      await viewer.getByRole('button', { name: 'Tiếp tục', exact: true }).click(); await play.waitFor()
+      await page.evaluate(() => { window.allowStoryPlayback = true }); await play.click()
+      await page.waitForFunction(() => !document.querySelector('[aria-label="Trình xem Story"] video').paused)
+    }, { video: true, videoBody, preparePage: page => page.addInitScript(() => {
+      const nativePlay = HTMLMediaElement.prototype.play
+      HTMLMediaElement.prototype.play = function () {
+        if (this.closest('[aria-label="Trình xem Story"]') && !window.allowStoryPlayback) return Promise.reject(new DOMException('Autoplay blocked by test policy', 'NotAllowedError'))
+        return nativePlay.call(this)
+      }
+    }) })
     await check('navigation stops the previously playing video', async ({ page, viewer, next }) => {
       await pause(500); await viewer.locator('video').evaluate(v => { window.oldStoryVideo = v }); await next()
       await viewer.locator('img[alt="Story 2"]').waitFor(); await pause(200)
