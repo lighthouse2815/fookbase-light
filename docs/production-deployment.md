@@ -150,11 +150,11 @@ docker compose -f compose.yml -f compose.prod.yml logs --tail=200 api
 
 Nếu deploy lỗi, giữ volume, rollback image/application tương thích schema hoặc khôi phục backup đã được diễn tập. Không force-push, không xóa volume như một bước rollback.
 
-## GitHub Actions deploy thủ công
+## GitHub Actions deploy tự động
 
-CI và deploy tự động đang tạm dừng. Push và pull request vào `main` không kích hoạt CI/CD; khi cần, chạy thủ công workflow `CI` hoặc `Deploy EC2` từ tab Actions trên GitHub. Để bật lại, khôi phục trigger `push` và `pull_request` cho `.github/workflows/ci.yml`, cùng trigger `push` với `branches: [main]` cho `.github/workflows/deploy-ec2.yml`.
+CI tự động đang tạm dừng; workflow `.github/workflows/ci.yml` chỉ chạy thủ công từ tab Actions trên GitHub. Để bật lại CI tự động, khôi phục trigger `push` và `pull_request` cho workflow này.
 
-Workflow `.github/workflows/deploy-ec2.yml` chạy trên self-hosted runner mang label `fookbase-production` tại EC2, build main web, publish source release, build API, chạy migration, chờ `/health/ready`, rồi publish static assets. Runner chủ động kết nối GitHub nên không phải mở port SSH cho dải IP GitHub Actions.
+Workflow `.github/workflows/deploy-ec2.yml` vẫn chạy tự động sau mỗi push vào `main` và có thể chạy thủ công từ tab Actions. Nó chạy trên self-hosted runner mang label `fookbase-production` tại EC2, build main web, publish source release, build API, chạy migration, chờ `/health/ready`, rồi publish static assets. Runner chủ động kết nối GitHub nên không phải mở port SSH cho dải IP GitHub Actions.
 
 Runner phải chạy qua systemd service `actions.runner.lighthouse2815-fookbase-light.fookbase-production.service` dưới user `ubuntu`, có quyền chạy Docker và `sudo` cho các thao tác deploy. Web hiện được publish là `frontend/web`; admin và Zola Light chỉ nên thêm vào workflow sau khi có host/path production riêng.
 
