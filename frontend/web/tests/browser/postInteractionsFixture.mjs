@@ -13,13 +13,44 @@ export const basePost = {
 export async function postFixtures(context, initial = {}) {
   await fixtures(context)
   await context.addInitScript(() => localStorage.setItem('fookbase.preferences', JSON.stringify({ language: 'vi', theme: 'dark' })))
-  const state = { post: { ...basePost, ...initial }, comments: [], writes: [], reactionDelay: 350, failReaction: false, commentDelay: 350, failComment: false, feedReads: 0 }
+  const state = { post: { ...basePost, ...initial }, comments: [], writes: [], reactionDelay: 350, failReaction: false, commentDelay: 350, failComment: false, actionDelay: 400, failAction: false, feedReads: 0 }
   await context.route('**/api/**', async (route) => {
     const request = route.request()
     const url = new URL(request.url())
     const path = url.pathname
     if (!path.startsWith('/api/')) return route.fallback()
-    if (path === `/api/posts/${postId}`) return route.fulfill({ json: state.post })
+    if (path === `/api/posts/${postId}`) {
+      if (request.method() === 'PUT') {
+        state.writes.push({ action: 'edit', ...request.postDataJSON() })
+        const fail = state.failAction
+        await new Promise((resolve) => setTimeout(resolve, state.actionDelay))
+        if (fail) return route.fulfill({ status: 503, json: { detail: 'Không thể lưu bài viết thử nghiệm.' } })
+        state.post = { ...state.post, ...request.postDataJSON(), updatedAtUtc: new Date().toISOString() }
+      }
+      return route.fulfill({ json: state.post })
+    }
+    if (path === `/api/posts/${postId}/save`) {
+      state.writes.push({ action: 'save', method: request.method() })
+      await new Promise((resolve) => setTimeout(resolve, state.actionDelay))
+      state.post = { ...state.post, viewerHasSaved: request.method() === 'POST' }
+      return route.fulfill({ status: 204 })
+    }
+    if (path.startsWith('/api/posts/comments/')) {
+      const id = path.split('/')[4]
+      const current = state.comments.find((comment) => comment.id === id)
+      if (!current) return route.fulfill({ status: 404, json: { detail: 'Bình luận không tồn tại.' } })
+      state.writes.push({ action: path.endsWith('/reaction') ? 'comment-reaction' : 'comment-edit', id })
+      await new Promise((resolve) => setTimeout(resolve, state.actionDelay))
+      if (path.endsWith('/reaction')) {
+        const type = request.method() === 'DELETE' ? null : request.postDataJSON().type
+        current.reactionCounts = type ? { [type]: 1 } : {}
+        current.viewerReaction = type
+      } else if (request.method() === 'PUT') {
+        current.content = request.postDataJSON().content
+        current.updatedAtUtc = new Date().toISOString()
+      }
+      return route.fulfill({ json: current })
+    }
     if (path === `/api/posts/${postId}/reaction`) {
       const type = request.method() === 'DELETE' ? null : request.postDataJSON().type
       state.writes.push({ action: 'reaction', type })

@@ -12,7 +12,7 @@ const trackErrors = (page) => {
     if (message.type() !== 'error' && message.type() !== 'warning') return
     if (/connection was stopped during negotiation|HttpConnection before stop\(\)/.test(message.text())) return
     // These two API failures are deliberately injected to verify rollback.
-    if (/503/.test(message.text()) && message.location().url.includes(`/api/posts/${postId}/`)) return
+    if (/503/.test(message.text()) && message.location().url.includes(`/api/posts/${postId}`)) return
     failures.push(`${message.type()}: ${message.text()}`)
   })
 }
@@ -33,6 +33,12 @@ try {
   await page.goto(`${baseUrl}/posts/${postId}`)
   const reaction = page.locator('[data-post-reaction]').first()
   await reaction.waitFor()
+  await check('keyboard opens a freshly mounted picker with usable focus', async () => {
+    await reaction.focus()
+    await reaction.press('ArrowDown')
+    assert.equal(await page.locator(':focus').getAttribute('aria-label'), 'Thích')
+    await page.keyboard.press('Escape')
+  })
   await check('desktop picker appears above the button without moving the card', async () => {
     const before = await page.locator('article').last().boundingBox()
     const button = await reaction.boundingBox()
@@ -136,7 +142,80 @@ try {
     await page.getByRole('button', { name: 'Đóng bình luận', exact: true }).click()
     state.failComment = false
   })
+  await check('nested comment dialogs trap focus and Escape closes only the top dialog', async () => {
+    await page.getByRole('button', { name: 'Bình luận', exact: true }).first().click()
+    const discussion = page.getByRole('dialog', { name: 'Bài viết của Người kiểm tra', exact: true })
+    await discussion.getByRole('button', { name: 'Sửa', exact: true }).first().click()
+    const editor = page.getByRole('dialog', { name: 'Chỉnh sửa bình luận', exact: true })
+    await editor.waitFor()
+    assert.equal(await editor.getByRole('textbox').evaluate((element) => element === document.activeElement), true)
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await page.locator(':focus').innerText(), 'Lưu')
+    await page.keyboard.press('Escape')
+    assert.equal(await editor.count(), 0)
+    assert.equal(await discussion.count(), 1)
+    await discussion.getByRole('button', { name: /^Xem \d+ cảm xúc$/ }).click()
+    const reactors = page.getByRole('dialog', { name: 'Người đã bày tỏ cảm xúc', exact: true })
+    await reactors.waitFor()
+    await page.keyboard.press('Escape')
+    assert.equal(await reactors.count(), 0)
+    assert.equal(await discussion.count(), 1)
+    await page.keyboard.press('Escape')
+    assert.equal(await discussion.count(), 0)
+    assert.equal(await page.evaluate(() => document.body.style.overflow), '')
+  })
+  await check('metadata save is guarded, failures use toast and preserve current interactions', async () => {
+    const trigger = page.getByRole('button', { name: 'Tùy chọn khác', exact: true })
+    await trigger.click()
+    await page.getByRole('menuitem', { name: 'Chỉnh sửa bài viết', exact: true }).click()
+    const editor = page.getByRole('dialog', { name: 'Chỉnh sửa bài viết', exact: true })
+    await editor.getByRole('textbox').fill('Bài viết đã sửa')
+    await editor.locator('form').evaluate((form) => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    })
+    assert.equal(await editor.getByRole('button', { name: 'Lưu', exact: true }).isDisabled(), true)
+    await until(async () => await editor.count() === 0)
+    assert.equal(state.writes.filter((write) => write.action === 'edit').length, 1)
+    assert.match(await page.locator('article').last().innerText(), /Bài viết đã sửa/)
+    assert.match(await page.locator('article').last().innerText(), /1 bình luận/)
+    state.failAction = true
+    await trigger.click()
+    await page.getByRole('menuitem', { name: 'Chỉnh sửa bài viết', exact: true }).click()
+    await editor.getByRole('textbox').fill('Bài viết không lưu được')
+    await editor.getByRole('button', { name: 'Lưu', exact: true }).click()
+    await until(async () => !await editor.getByRole('button', { name: 'Lưu', exact: true }).isDisabled())
+    assert.equal(await editor.getByRole('textbox').inputValue(), 'Bài viết không lưu được')
+    assert.equal(await page.getByRole('status').filter({ hasText: 'Không thể lưu bài viết thử nghiệm.' }).count(), 1)
+    await page.keyboard.press('Escape')
+    state.failAction = false
+    await page.getByRole('button', { name: 'Chia sẻ', exact: true }).first().click()
+    const share = page.getByRole('dialog', { name: 'Chia sẻ', exact: true })
+    await share.waitFor()
+    await page.keyboard.press('Escape')
+    assert.equal(await share.count(), 0)
+  })
   await context.close()
+
+  const reporting = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  await postFixtures(reporting, { authorUserId: '00000000-0000-0000-0000-000000000009' })
+  const reportPage = await reporting.newPage()
+  trackErrors(reportPage)
+  await reportPage.goto(`${baseUrl}/posts/${postId}`)
+  await check('report action keeps its modal usable after the post menu closes', async () => {
+    const trigger = reportPage.getByRole('button', { name: 'Tùy chọn khác', exact: true })
+    await trigger.click()
+    await reportPage.getByRole('menuitem', { name: 'Báo cáo', exact: true }).click()
+    const dialog = reportPage.getByRole('dialog', { name: 'Báo cáo bài viết', exact: true })
+    await dialog.waitFor()
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'false')
+    await dialog.getByRole('combobox').selectOption('spam')
+    assert.equal(await dialog.count(), 1)
+    await reportPage.keyboard.press('Escape')
+    assert.equal(await dialog.count(), 0)
+    assert.equal(await trigger.evaluate((element) => element === document.activeElement), true)
+  })
+  await reporting.close()
 
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   const mobileState = await postFixtures(mobile)

@@ -22,6 +22,7 @@ import { showToast } from '../../../shared/toastState'
 import { useAuth } from '../../../auth/useAuth'
 import ReactionPicker from './PostReactionPicker'
 import PostActionsMenu from './PostActionsMenu'
+import { useDialogFocus } from '../../../shared/useDialogFocus'
 
 interface LivePostCardProps {
   post: Post
@@ -82,6 +83,8 @@ interface ReactionDialogProps {
 }
 
 function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps) {
+  const dialogRef = useRef<HTMLElement>(null)
+  useDialogFocus(true, dialogRef, onClose)
   const pageSize = 20
   const [filter, setFilter] = useState<ReactionType | 'all'>('all')
   const [reactions, setReactions] = useState<PostReaction[]>([])
@@ -90,11 +93,18 @@ function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps
   const [error, setError] = useState<string | null>(null)
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
   const [reactionTotal, setReactionTotal] = useState(0)
-  const [requestingUserId, setRequestingUserId] = useState<string | null>(null)
+  const [requestingUserIds, setRequestingUserIds] = useState<string[]>([])
+  const friendRequestsRef = useRef(new Set<string>())
+  const pageRequestRef = useRef(0)
+  const requestGenerationRef = useRef(0)
+  const mountedRef = useRef(false)
   const total = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0)
 
   const chooseFilter = (nextFilter: ReactionType | 'all') => {
     if (nextFilter === filter) return
+    requestGenerationRef.current += 1
+    pageRequestRef.current = 0
+    setIsLoadingMore(false)
     setIsLoading(true)
     setError(null)
     setLoadMoreError(null)
@@ -102,6 +112,11 @@ function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps
     setReactionTotal(0)
     setFilter(nextFilter)
   }
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false; requestGenerationRef.current += 1 }
+  }, [])
 
   useEffect(() => {
     let isActive = true
@@ -121,41 +136,50 @@ function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps
   }, [filter, postId])
 
   const loadMore = async () => {
-    if (isLoadingMore || reactions.length >= reactionTotal) return
+    if (pageRequestRef.current || reactions.length >= reactionTotal) return
 
+    const generation = requestGenerationRef.current
+    const token = generation + 1
+    pageRequestRef.current = token
     setIsLoadingMore(true)
     setLoadMoreError(null)
     try {
       const page = await postsApi.getReactions(postId, filter === 'all' ? undefined : filter, reactions.length, pageSize)
+      if (!mountedRef.current || requestGenerationRef.current !== generation) return
       setReactions((current) => {
         const existingUserIds = new Set(current.map((reaction) => reaction.userId))
         return [...current, ...page.items.filter((reaction) => !existingUserIds.has(reaction.userId))]
       })
       setReactionTotal(page.total)
     } catch (requestError) {
-      setLoadMoreError(requestError instanceof ApiError ? requestError.message : 'Không thể tải thêm cảm xúc.')
+      if (mountedRef.current && requestGenerationRef.current === generation) setLoadMoreError(requestError instanceof ApiError ? requestError.message : 'Không thể tải thêm cảm xúc.')
     } finally {
-      setIsLoadingMore(false)
+      if (pageRequestRef.current === token) pageRequestRef.current = 0
+      if (mountedRef.current && requestGenerationRef.current === generation) setIsLoadingMore(false)
     }
   }
 
   const sendFriendRequest = async (userId: string) => {
-    setRequestingUserId(userId)
+    if (friendRequestsRef.current.has(userId)) return
+    friendRequestsRef.current.add(userId)
+    setRequestingUserIds([...friendRequestsRef.current])
     try {
       const request = await friendsApi.sendRequest(userId)
+      if (!mountedRef.current) return
       setReactions((current) => current.map((reaction) => reaction.userId === userId
         ? { ...reaction, relationshipStatus: 'request_sent', relationshipRequestId: request.id }
         : reaction))
     } catch (requestError) {
-      setLoadMoreError(requestError instanceof ApiError ? requestError.message : 'Không thể gửi lời mời kết bạn.')
+      showToast(requestError instanceof ApiError ? requestError.message : 'Không thể gửi lời mời kết bạn.')
     } finally {
-      setRequestingUserId(null)
+      friendRequestsRef.current.delete(userId)
+      if (mountedRef.current) setRequestingUserIds([...friendRequestsRef.current])
     }
   }
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={onClose}>
-      <section role="dialog" aria-modal="true" aria-label="Người đã bày tỏ cảm xúc" onMouseDown={(event) => event.stopPropagation()} className="flex max-h-[min(80vh,620px)] w-full max-w-[540px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Người đã bày tỏ cảm xúc" onMouseDown={(event) => event.stopPropagation()} className="post-discussion-enter flex max-h-[min(80vh,620px)] w-full max-w-[540px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
         <header className="relative border-b border-border px-4 pb-3 pt-4">
           <h2 className="text-center text-[17px] font-bold text-text">Cảm xúc</h2>
           <button type="button" onClick={onClose} aria-label="Đóng" className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full border-0 bg-surface-2 text-2xl leading-none text-text-muted hover:bg-surface-hover hover:text-text">×</button>
@@ -177,7 +201,7 @@ function ReactionDialog({ postId, reactionCounts, onClose }: ReactionDialogProps
               </div>
               <span className="min-w-0 flex-1 truncate font-semibold text-text">{reaction.displayName}</span>
               </Link>
-              {reaction.relationshipStatus === 'none' && <button type="button" onClick={() => void sendFriendRequest(reaction.userId)} disabled={requestingUserId === reaction.userId} className="shrink-0 rounded-lg border-0 bg-surface-2 px-3 py-1.5 text-xs font-bold text-text hover:bg-surface-hover disabled:cursor-wait disabled:opacity-70">{requestingUserId === reaction.userId ? 'Đang gửi…' : 'Thêm bạn bè'}</button>}
+              {reaction.relationshipStatus === 'none' && <button type="button" onClick={() => void sendFriendRequest(reaction.userId)} disabled={requestingUserIds.includes(reaction.userId)} className="shrink-0 rounded-lg border-0 bg-surface-2 px-3 py-1.5 text-xs font-bold text-text hover:bg-surface-hover disabled:cursor-wait disabled:opacity-70">{requestingUserIds.includes(reaction.userId) ? 'Đang gửi…' : 'Thêm bạn bè'}</button>}
               {choice && <span className="shrink-0 text-xl" aria-label={choice.label}>{choice.icon}</span>}
             </div>
           })}
@@ -239,15 +263,14 @@ export default function LivePostCard({
   const [selectedPhoto, setSelectedPhoto] = useState<MediaAccess | null>(null)
   const [commentText, setCommentText] = useState('')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
   const [isSaved, setIsSaved] = useState(post.viewerHasSaved)
-  const [isSavingPost, setIsSavingPost] = useState(false)
+  const [pendingPostAction, setPendingPostAction] = useState<string | null>(null)
+  const pendingPostActionRef = useRef<string | null>(null)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [isMediaVisible, setIsMediaVisible] = useState(false)
   const [editingPostContent, setEditingPostContent] = useState<string | null>(null)
   const [editingPostPrivacy, setEditingPostPrivacy] = useState<string | null>(null)
-  const [isUpdatingPostPin, setIsUpdatingPostPin] = useState(false)
   const [isTextBackgroundExpanded, setIsTextBackgroundExpanded] = useState(false)
   const [hasTextBackgroundOverflow, setHasTextBackgroundOverflow] = useState(false)
   const [editingComment, setEditingComment] = useState<Comment | null>(null)
@@ -256,6 +279,10 @@ export default function LivePostCard({
   const [isPostPendingDeletion, setIsPostPendingDeletion] = useState(false)
   const postCardRef = useRef<HTMLElement>(null)
   const textBackgroundContentRef = useRef<HTMLDivElement>(null)
+  const commentsDialogRef = useRef<HTMLElement>(null)
+  const photoDialogRef = useRef<HTMLDivElement>(null)
+  useDialogFocus(isCommentsDialogOpen, commentsDialogRef, () => setIsCommentsDialogOpen(false))
+  useDialogFocus(Boolean(selectedPhoto), photoDialogRef, () => setSelectedPhoto(null))
   const mountedRef = useRef(false)
   const currentDiscussionRef = useRef(discussion)
   const draftVersionRef = useRef(0)
@@ -328,20 +355,6 @@ export default function LivePostCard({
       isActive = false
     }
   }, [isMediaVisible, post.id, post.mediaIds])
-
-  useEffect(() => {
-    if (!isCommentsDialogOpen && !isReactionDialogOpen && !selectedPhoto) return
-
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsCommentsDialogOpen(false)
-        setIsReactionDialogOpen(false)
-        setSelectedPhoto(null)
-      }
-    }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [isCommentsDialogOpen, isReactionDialogOpen, selectedPhoto])
 
   useEffect(() => {
     mountedRef.current = true
@@ -432,78 +445,57 @@ export default function LivePostCard({
 
   const updateCommentReaction = (comment: Comment, type?: ReactionType) => discussion.reactToComment(comment.id, type)
 
-  const savePostEdit = async () => {
-    if (!editingPostContent?.trim()) return
-
+  async function runPostAction<T>(name: string, request: () => Promise<T>, onSuccess: (response: T) => void, fallback: string) {
+    if (pendingPostActionRef.current) return
+    pendingPostActionRef.current = name
+    setPendingPostAction(name)
     try {
-      publishPostUpdate(await postsApi.update(post.id, {
-        content: editingPostContent.trim(),
-        privacy: post.privacy,
-        mediaIds: post.mediaIds,
-      }))
-      setEditingPostContent(null)
+      const response = await request()
+      if (mountedRef.current && currentDiscussionRef.current === discussion) onSuccess(response)
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableEditPost'))
+      showToast(requestError instanceof ApiError ? requestError.message : fallback, 'error', `post-action:${post.id}`)
+    } finally {
+      pendingPostActionRef.current = null
+      if (mountedRef.current && currentDiscussionRef.current === discussion) setPendingPostAction(null)
     }
   }
 
-  const savePostPrivacy = async () => {
-    if (!editingPostPrivacy) return
+  const savePostEdit = () => {
+    if (!editingPostContent?.trim()) return
+    return runPostAction('edit', () => postsApi.update(post.id, {
+      content: editingPostContent.trim(), privacy: post.privacy, mediaIds: post.mediaIds,
+    }), (updated) => { publishPostUpdate(updated); setEditingPostContent(null) }, t('unableEditPost'))
+  }
 
-    try {
-      publishPostUpdate(await postsApi.update(post.id, {
-        content: post.content,
-        privacy: editingPostPrivacy,
-        mediaIds: post.mediaIds,
-      }))
+  const savePostPrivacy = () => {
+    if (!editingPostPrivacy) return
+    return runPostAction('privacy', () => postsApi.update(post.id, {
+      content: post.content, privacy: editingPostPrivacy, mediaIds: post.mediaIds,
+    }), (updated) => {
+      publishPostUpdate(updated)
       setEditingPostPrivacy(null)
       showToast('Đã cập nhật đối tượng xem bài viết.', 'success')
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableEditPost'))
-    }
+    }, t('unableEditPost'))
   }
 
-  const deletePost = async () => {
-    try {
-      await postsApi.delete(post.id)
-      onPostDeleted(post.id)
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableDeletePost'))
-    }
-  }
+  const deletePost = () => runPostAction('delete', () => postsApi.delete(post.id), () => {
+    setIsPostPendingDeletion(false)
+    onPostDeleted(post.id)
+  }, t('unableDeletePost'))
 
-  const savePost = async () => {
-    if (isSavingPost) return
-
+  const savePost = () => {
     const wasSaved = isSaved
-    setIsSavingPost(true)
-    try {
-      if (wasSaved) await postsApi.removeSaved(post.id)
-      else await postsApi.save(post.id)
+    return runPostAction('save', () => wasSaved ? postsApi.removeSaved(post.id) : postsApi.save(post.id), () => {
       setIsSaved(!wasSaved)
       publishPostUpdate({ ...post, viewerHasSaved: !wasSaved })
       showToast(wasSaved ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết.', 'success')
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật bài viết đã lưu.')
-    } finally {
-      setIsSavingPost(false)
-    }
+    }, 'Không thể cập nhật bài viết đã lưu.')
   }
 
-  const togglePostPin = async () => {
-    if (isUpdatingPostPin) return
-
-    setIsUpdatingPostPin(true)
-    try {
-      const updatedPost = post.isPinned ? await postsApi.unpin(post.id) : await postsApi.pin(post.id)
-      publishPostUpdate(updatedPost)
-      showToast(updatedPost.isPinned ? 'Đã ghim bài viết trên trang cá nhân.' : 'Đã bỏ ghim bài viết.', 'success')
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật trạng thái ghim bài viết.')
-    } finally {
-      setIsUpdatingPostPin(false)
-    }
-  }
+  const togglePostPin = () => runPostAction('pin', () => post.isPinned ? postsApi.unpin(post.id) : postsApi.pin(post.id), (updated) => {
+    publishPostUpdate(updated)
+    showToast(updated.isPinned ? 'Đã ghim bài viết trên trang cá nhân.' : 'Đã bỏ ghim bài viết.', 'success')
+  }, 'Không thể cập nhật trạng thái ghim bài viết.')
 
   return (
     <>
@@ -526,12 +518,12 @@ export default function LivePostCard({
           </p>
         </div>
         <PostActionsMenu label={t('moreOptions')} icon={<MoreIcon />}>
-            {canPinPost && <button role="menuitem" type="button" disabled={isUpdatingPostPin} onClick={() => { void togglePostPin() }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><PinIcon />{post.isPinned ? 'Bỏ ghim bài viết' : 'Ghim bài viết'}</button>}
-            <button role="menuitem" type="button" disabled={isSavingPost} onClick={() => { void savePost() }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
+            {canPinPost && <button role="menuitem" type="button" disabled={Boolean(pendingPostAction)} onClick={() => { void togglePostPin() }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><PinIcon />{post.isPinned ? 'Bỏ ghim bài viết' : 'Ghim bài viết'}</button>}
+            <button role="menuitem" type="button" disabled={Boolean(pendingPostAction)} onClick={() => { void savePost() }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"><BookmarkIcon />{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</button>
             {isAuthor ? <>
-              {canEditPost && <button role="menuitem" type="button" onClick={() => { setEditingPostContent(post.content) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><EditIcon />Chỉnh sửa bài viết</button>}
-              {canEditPostPrivacy && <><button role="menuitem" type="button" onClick={() => { setEditingPostPrivacy(post.privacy) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><PrivacyIcon privacy={post.privacy} />Chỉnh sửa đối tượng</button><div className="my-1 border-t border-border" /></>}
-              <button role="menuitem" type="button" onClick={() => { setIsPostPendingDeletion(true) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2"><TrashIcon />{t('delete')}</button>
+              {canEditPost && <button role="menuitem" type="button" disabled={Boolean(pendingPostAction)} onClick={() => { setEditingPostContent(post.content) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><EditIcon />Chỉnh sửa bài viết</button>}
+              {canEditPostPrivacy && <><button role="menuitem" type="button" disabled={Boolean(pendingPostAction)} onClick={() => { setEditingPostPrivacy(post.privacy) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2"><PrivacyIcon privacy={post.privacy} />Chỉnh sửa đối tượng</button><div className="my-1 border-t border-border" /></>}
+              <button role="menuitem" type="button" disabled={Boolean(pendingPostAction)} onClick={() => { setIsPostPendingDeletion(true) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-[#ff8a9b] hover:bg-surface-2"><TrashIcon />{t('delete')}</button>
             </> : <ReportButton role="menuitem" targetType="post" targetId={post.id} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-[#ff8a9b]" />}
         </PostActionsMenu>
       </header>
@@ -556,7 +548,7 @@ export default function LivePostCard({
           ))}
         </div>
       )}
-      {error && <p className="px-4 pt-3 text-xs text-[#ff8a9b]">{error}</p>}
+
 
       <div className="mx-4 flex min-h-11 items-center justify-between gap-3 border-b border-border text-[13px] text-text-muted">
         <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
@@ -576,7 +568,7 @@ export default function LivePostCard({
     {isReactionDialogOpen && <ReactionDialog key={post.id} postId={post.id} reactionCounts={reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
     {isCommentsDialogOpen && createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
-        <section role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="post-discussion-enter flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+        <section ref={commentsDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="post-discussion-enter flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
           <header className="relative flex h-13 shrink-0 items-center justify-center border-b border-border px-14">
             <h2 id={`comments-dialog-${post.id}`} className="truncate text-center text-[17px] font-bold text-text">Bài viết của {authorName}</h2>
             <button type="button" onClick={() => setIsCommentsDialogOpen(false)} aria-label="Đóng bình luận" className="absolute right-3 grid h-9 w-9 place-items-center rounded-full border-0 bg-surface-2 text-2xl leading-none text-text-muted hover:bg-surface-hover hover:text-text">×</button>
@@ -597,7 +589,7 @@ export default function LivePostCard({
                   ))}
                 </div>
               )}
-              <div className="flex items-center justify-between px-4 py-2 text-[13px] text-text-muted">
+              <div className="flex min-h-9 items-center justify-between px-4 py-2 text-[13px] text-text-muted">
                 <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
                 <span>{commentCount > 0 ? `${commentCount} ${t('comments')}` : ''}</span>
               </div>
@@ -618,7 +610,7 @@ export default function LivePostCard({
       </div>
     , document.body)}
     {selectedPhoto && createPortal(
-      <div className="fixed inset-0 z-[60] flex flex-col bg-black text-text md:flex-row" role="dialog" aria-modal="true" aria-label="Xem ảnh">
+      <div ref={photoDialogRef} tabIndex={-1} className="post-discussion-enter fixed inset-0 z-[60] flex flex-col bg-black text-text md:flex-row" role="dialog" aria-modal="true" aria-label="Xem ảnh">
         <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black p-4 md:p-8">
           <img src={selectedPhoto.url} alt={t('postAttachment')} className="max-h-full max-w-full object-contain" />
           <button type="button" onClick={closeDiscussion} aria-label="Đóng ảnh" className="absolute left-4 top-4 grid h-10 w-10 place-items-center rounded-full border-0 bg-black/55 text-2xl leading-none text-white hover:bg-black/80">×</button>
@@ -637,7 +629,7 @@ export default function LivePostCard({
             <button type="button" onClick={closeDiscussion} aria-label="Đóng ảnh" className="grid h-8 w-8 shrink-0 place-items-center rounded-full border-0 bg-surface-2 text-xl leading-none text-text-muted hover:bg-surface-hover hover:text-text">×</button>
           </header>
 
-          <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[13px] text-text-muted">
+          <div className="flex min-h-9 items-center justify-between border-b border-border px-4 py-2 text-[13px] text-text-muted">
             <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
             <span>{commentCount > 0 ? `${commentCount} ${t('comments')}` : ''}</span>
           </div>
@@ -654,38 +646,38 @@ export default function LivePostCard({
         </aside>
       </div>
     , document.body)}
-    {editingPostContent !== null && <AppDialog title="Chỉnh sửa bài viết" onClose={() => setEditingPostContent(null)}>
+    {editingPostContent !== null && <AppDialog title="Chỉnh sửa bài viết" onClose={() => { if (!pendingPostActionRef.current) setEditingPostContent(null) }}>
       <form onSubmit={(event) => { event.preventDefault(); void savePostEdit() }}>
         <label className="mt-4 block text-sm font-semibold text-text">Nội dung bài viết
-          <textarea data-dialog-initial-focus value={editingPostContent} onChange={(event) => setEditingPostContent(event.target.value)} maxLength={10_000} rows={6} className="mt-1.5 w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none focus:border-primary" />
+          <textarea data-dialog-initial-focus disabled={Boolean(pendingPostAction)} value={editingPostContent} onChange={(event) => setEditingPostContent(event.target.value)} maxLength={10_000} rows={6} className="mt-1.5 w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none focus:border-primary" />
         </label>
-        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingPostContent(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingPostContent.trim()} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Lưu</button></div>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={Boolean(pendingPostAction)} onClick={() => setEditingPostContent(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingPostContent.trim() || Boolean(pendingPostAction)} aria-busy={pendingPostAction === 'edit'} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Lưu</button></div>
       </form>
     </AppDialog>}
-    {editingPostPrivacy !== null && <AppDialog title="Chỉnh sửa đối tượng" onClose={() => setEditingPostPrivacy(null)}>
+    {editingPostPrivacy !== null && <AppDialog title="Chỉnh sửa đối tượng" onClose={() => { if (!pendingPostActionRef.current) setEditingPostPrivacy(null) }}>
       <form onSubmit={(event) => { event.preventDefault(); void savePostPrivacy() }}>
         <p className="mt-3 text-sm text-text-muted">Chọn những ai có thể xem bài viết này.</p>
-        <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input data-dialog-initial-focus type="radio" name={`post-privacy-${post.id}`} value="public" checked={editingPostPrivacy === 'public'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Công khai</label>
-        <label className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input type="radio" name={`post-privacy-${post.id}`} value="friends" checked={editingPostPrivacy === 'friends'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Bạn bè</label>
-        <label className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input type="radio" name={`post-privacy-${post.id}`} value="onlyMe" checked={editingPostPrivacy === 'onlyMe'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Chỉ mình tôi</label>
-        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingPostPrivacy(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white">Lưu</button></div>
+        <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input data-dialog-initial-focus type="radio" disabled={Boolean(pendingPostAction)} name={`post-privacy-${post.id}`} value="public" checked={editingPostPrivacy === 'public'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Công khai</label>
+        <label className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input type="radio" disabled={Boolean(pendingPostAction)} name={`post-privacy-${post.id}`} value="friends" checked={editingPostPrivacy === 'friends'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Bạn bè</label>
+        <label className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 text-sm text-text hover:bg-surface-2"><input type="radio" disabled={Boolean(pendingPostAction)} name={`post-privacy-${post.id}`} value="onlyMe" checked={editingPostPrivacy === 'onlyMe'} onChange={(event) => setEditingPostPrivacy(event.target.value)} />Chỉ mình tôi</label>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={Boolean(pendingPostAction)} onClick={() => setEditingPostPrivacy(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={Boolean(pendingPostAction)} aria-busy={pendingPostAction === 'privacy'} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white">Lưu</button></div>
       </form>
     </AppDialog>}
-    {editingComment && <AppDialog title="Chỉnh sửa bình luận" onClose={() => { setEditingComment(null); setEditingCommentContent('') }}>
+    {editingComment && <AppDialog title="Chỉnh sửa bình luận" onClose={() => { if (!busyCommentIds.includes(editingComment.id)) { setEditingComment(null); setEditingCommentContent('') } }}>
       <form onSubmit={(event) => { event.preventDefault(); void saveCommentEdit() }}>
         <label className="mt-4 block text-sm font-semibold text-text">Nội dung bình luận
-          <textarea data-dialog-initial-focus value={editingCommentContent} onChange={(event) => setEditingCommentContent(event.target.value)} maxLength={5_000} rows={4} className="mt-1.5 w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none focus:border-primary" />
+          <textarea data-dialog-initial-focus disabled={busyCommentIds.includes(editingComment.id)} value={editingCommentContent} onChange={(event) => setEditingCommentContent(event.target.value)} maxLength={5_000} rows={4} className="mt-1.5 w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none focus:border-primary" />
         </label>
-        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => { setEditingComment(null); setEditingCommentContent('') }} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingCommentContent.trim()} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Lưu</button></div>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={busyCommentIds.includes(editingComment.id)} onClick={() => { setEditingComment(null); setEditingCommentContent('') }} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingCommentContent.trim() || busyCommentIds.includes(editingComment.id)} aria-busy={busyCommentIds.includes(editingComment.id)} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Lưu</button></div>
       </form>
     </AppDialog>}
-    {isPostPendingDeletion && <AppDialog title="Xóa bài viết?" onClose={() => setIsPostPendingDeletion(false)}>
+    {isPostPendingDeletion && <AppDialog title="Xóa bài viết?" onClose={() => { if (!pendingPostActionRef.current) setIsPostPendingDeletion(false) }}>
       <p className="mt-3 text-sm text-text-muted">Bài viết này sẽ bị xóa khỏi Fookbase.</p>
-      <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setIsPostPendingDeletion(false)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" onClick={() => { setIsPostPendingDeletion(false); void deletePost() }} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Xóa</button></div>
+      <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={Boolean(pendingPostAction)} onClick={() => setIsPostPendingDeletion(false)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" disabled={Boolean(pendingPostAction)} aria-busy={pendingPostAction === 'delete'} onClick={() => void deletePost()} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Xóa</button></div>
     </AppDialog>}
-    {commentPendingDeletion && <AppDialog title="Xóa bình luận?" onClose={() => setCommentPendingDeletion(null)}>
+    {commentPendingDeletion && <AppDialog title="Xóa bình luận?" onClose={() => { if (!busyCommentIds.includes(commentPendingDeletion.id)) setCommentPendingDeletion(null) }}>
       <p className="mt-3 text-sm text-text-muted">Bình luận này sẽ bị xóa khỏi Fookbase.</p>
-      <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setCommentPendingDeletion(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" onClick={() => void deleteComment()} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Xóa</button></div>
+      <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={busyCommentIds.includes(commentPendingDeletion.id)} onClick={() => setCommentPendingDeletion(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" disabled={busyCommentIds.includes(commentPendingDeletion.id)} aria-busy={busyCommentIds.includes(commentPendingDeletion.id)} onClick={() => void deleteComment()} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Xóa</button></div>
     </AppDialog>}
     </>
   )

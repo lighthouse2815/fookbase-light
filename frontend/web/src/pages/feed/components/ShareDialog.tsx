@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../api/client'
 import { groupsApi, type Group } from '../../../api/groups'
 import { pagesApi, type Page } from '../../../api/pages'
 import { postsApi } from '../../../api/posts'
 import { useAuth } from '../../../auth/useAuth'
+import AppDialog from '../../../shared/components/AppDialog'
+import { showToast } from '../../../shared/toastState'
 
 type Destination =
   | { type: 'profile'; id: string; label: string }
@@ -34,9 +36,12 @@ export default function ShareDialog({ postId, onClose, onShared }: {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSharing, setIsSharing] = useState(false)
+  const inFlightRef = useRef(false)
+  const mountedRef = useRef(false)
 
   useEffect(() => {
     let active = true
+    mountedRef.current = true
     void Promise.all([loadAll(groupsApi.getMine), loadAll(pagesApi.mine)])
       .then(([groupItems, pageItems]) => {
         if (!active) return
@@ -47,7 +52,7 @@ export default function ShareDialog({ postId, onClose, onShared }: {
         if (active) setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải nơi chia sẻ.')
       })
       .finally(() => { if (active) setIsLoading(false) })
-    return () => { active = false }
+    return () => { active = false; mountedRef.current = false }
   }, [])
 
   const destinations: Destination[] = [
@@ -59,29 +64,29 @@ export default function ShareDialog({ postId, onClose, onShared }: {
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const [destinationType, destinationId] = selected.split(':', 2) as [Destination['type'], string]
-    if (!destinationId || isSharing) return
+    if (!destinationId || inFlightRef.current || isLoading) return
+    inFlightRef.current = true
     setError(null)
     setIsSharing(true)
     try {
       await postsApi.share(postId, { destinationType, destinationId, caption: caption.trim() || undefined })
-      onShared?.()
-      onClose()
+      if (mountedRef.current) { onShared?.(); onClose() }
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể chia sẻ nội dung này.')
+      const message = requestError instanceof ApiError ? requestError.message : 'Không thể chia sẻ nội dung này.'
+      if (mountedRef.current) setError(message)
+      showToast(message)
     } finally {
-      setIsSharing(false)
+      inFlightRef.current = false
+      if (mountedRef.current) setIsSharing(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-3" role="dialog" aria-modal="true" aria-labelledby="share-dialog-title">
-      <form onSubmit={(event) => void submit(event)} className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl">
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="share-dialog-title" className="text-lg font-bold text-text">Chia sẻ</h2>
-          <button type="button" onClick={onClose} disabled={isSharing} className="border-0 bg-transparent text-lg text-text-muted cursor-pointer">✕</button>
-        </div>
+    <AppDialog title="Chia sẻ" className="max-w-lg" onClose={() => { if (!inFlightRef.current) onClose() }}>
+      <form onSubmit={(event) => void submit(event)}>
+        <button type="button" aria-label="Đóng chia sẻ" onClick={onClose} disabled={isSharing} className="post-action-focus absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full border-0 bg-surface-2 text-lg text-text-muted disabled:opacity-50">✕</button>
         <label className="mt-4 block text-sm font-semibold text-text">Chia sẻ đến
-          <select value={selected} onChange={(event) => setSelected(event.target.value)} disabled={isLoading || isSharing} className="mt-1.5 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none disabled:opacity-50">
+          <select data-dialog-initial-focus value={selected} onChange={(event) => setSelected(event.target.value)} disabled={isLoading || isSharing} className="mt-1.5 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-50">
             {destinations.map((destination) => <option key={`${destination.type}:${destination.id}`} value={`${destination.type}:${destination.id}`}>{destination.label}</option>)}
           </select>
         </label>
@@ -93,6 +98,6 @@ export default function ShareDialog({ postId, onClose, onShared }: {
           {isSharing ? 'Đang chia sẻ…' : 'Chia sẻ'}
         </button>
       </form>
-    </div>
+    </AppDialog>
   )
 }
