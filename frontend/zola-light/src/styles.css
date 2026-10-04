@@ -139,3 +139,17 @@ a { color: #80b6ff; }
 .close-details { display: none; }
 @media (max-width: 1050px) { .zola-light-shell { grid-template-columns: minmax(240px, 310px) minmax(360px, 1fr); }.details-pane { display: none; }.mobile-details { display: block; } body.details-open .details-pane { display: block; position: fixed; z-index: 5; top: 0; right: 0; bottom: 0; width: min(340px, 92vw); box-shadow: -10px 0 40px rgb(0 0 0 / 45%); }.close-details { display: block; position: absolute; top: 10px; right: 10px; } }
 @media (max-width: 680px) { .zola-light-shell { display: block; }.conversation-pane { height: 100vh; border: 0; }.chat-pane { display: none; height: 100vh; }.zola-light-shell:has(.chat-header) .conversation-pane { display: none; }.zola-light-shell:has(.chat-header) .chat-pane { display: flex; }.mobile-back { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 50%; color: #d9e4f3; background: #252a32; font-size: 26px; }.message-list { padding: 14px; }.message-row { max-width: 93%; }.mobile-details { display: block; }.chat-header .avatar { width: 34px; height: 34px; }.composer { padding-bottom: max(14px, env(safe-area-inset-bottom)); } }
+
+.message-options { position: relative; align-self: center; }
+.message-options-toggle { width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: #98a0ad; cursor: pointer; }
+.message-options-toggle:hover, .message-options-toggle:focus-visible { background: #272a31; outline: 2px solid #4c98ff; }
+.message-options .message-actions { position: absolute; z-index: 10; bottom: 100%; right: 0; display: flex; background: #202225; padding: 6px; border-radius: 10px; box-shadow: 0 3px 14px #0003; }
+.connection-notice { padding: 10px 16px; display: flex; gap: 12px; align-items: center; background: #272a31; font-size: 13px; }
+.new-messages { align-self: center; padding: 10px 16px; border-radius: 20px; margin: 4px; border: 1px solid #303338; background: #202225; color: #e8eaed; cursor: pointer; }
+.empty-history { text-align: center; color: #98a0ad; }
+
+.message-row { flex-shrink: 0; }
+.connection-notice, .new-messages { flex-shrink: 0; }
+.connection-notice button, .attachment-loading button, .alert button { border: 1px solid #3e6da6; border-radius: 7px; padding: 5px 8px; color: #bcd9ff; background: #243b5a; }
+
+@media (pointer: coarse) { .message-options-toggle, .message-options .message-actions button, .message-options .message-actions select { width: 44px; height: 44px; } }
