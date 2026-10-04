@@ -13,7 +13,7 @@ public sealed class UserProfile
 {
     private UserProfile(){}
 
-    private UserProfile(
+    public UserProfile(
         Guid userId,
         string username,
         DateTimeOffset createdAt)
@@ -23,6 +23,20 @@ public sealed class UserProfile
         DisplayName = username;
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
+    }
+
+    public UserProfile(
+        Guid userId,
+        string username,
+        string displayName,
+        DateOnly dateOfBirth,
+        Gender gender,
+        DateTimeOffset createdAt)
+        : this(userId, username, createdAt)
+    {
+        DisplayName = displayName.Trim();
+        DateOfBirth = dateOfBirth;
+        Gender = gender;
     }
 
     [Key]
@@ -90,27 +104,6 @@ public sealed class UserProfile
     [ForeignKey(nameof(CoverMediaId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset? CoverMedia { get; private set; }
-
-    public static UserProfile Create(
-        Guid userId,
-        string username,
-        DateTimeOffset createdAt) =>
-        new(userId, username, createdAt);
-
-    public static UserProfile Create(
-        Guid userId,
-        string username,
-        string displayName,
-        DateOnly dateOfBirth,
-        Gender gender,
-        DateTimeOffset createdAt)
-    {
-        var profile = new UserProfile(userId, username, createdAt);
-        profile.DisplayName = displayName.Trim();
-        profile.DateOfBirth = dateOfBirth;
-        profile.Gender = gender;
-        return profile;
-    }
 
     public void Update(
         string? displayName,

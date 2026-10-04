@@ -803,7 +803,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         foreach (var userId in userIds)
         {
             dbContext.Users.Add(new User(userId, $"{userId:N}@test.local", userId.ToString("N"), now));
-            dbContext.UserProfiles.Add(UserProfile.Create(userId, userId.ToString("N"), now));
+            dbContext.UserProfiles.Add(new UserProfile(userId, userId.ToString("N"), now));
         }
 
         await dbContext.SaveChangesAsync();

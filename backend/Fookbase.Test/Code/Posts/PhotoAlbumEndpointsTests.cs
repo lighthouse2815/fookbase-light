@@ -94,7 +94,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.Users.Add(new User(id, $"{username}@example.com", username, DateTimeOffset.UtcNow));
-        db.UserProfiles.Add(UserProfile.Create(id, username, DateTimeOffset.UtcNow));
+        db.UserProfiles.Add(new UserProfile(id, username, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
         return id;
     }

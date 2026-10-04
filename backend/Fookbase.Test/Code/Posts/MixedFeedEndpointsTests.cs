@@ -41,7 +41,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Users.Add(new User(userId, email, email, now));
-            db.UserProfiles.Add(UserProfile.Create(userId, email, "dang", new DateOnly(2000, 1, 1), Gender.PREFER_NOT_TO_SAY, now));
+            db.UserProfiles.Add(new UserProfile(userId, email, "dang", new DateOnly(2000, 1, 1), Gender.PREFER_NOT_TO_SAY, now));
         });
         var reel = await CreateReelAsync(userId, now, PostPrivacy.ONLY_ME);
         using var client = CreateClient(userId);
@@ -740,7 +740,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Users.AddRange(users);
-            db.UserProfiles.AddRange(users.Select(user => UserProfile.Create(user.Id, user.UserName!, now)));
+            db.UserProfiles.AddRange(users.Select(user => new UserProfile(user.Id, user.UserName!, now)));
         });
         return users.Select(user => user.Id).ToArray();
     }

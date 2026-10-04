@@ -381,7 +381,7 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.Users.AddRange(users);
-        db.UserProfiles.AddRange(users.Select(user => UserProfile.Create(user.Id, user.UserName!, now)));
+        db.UserProfiles.AddRange(users.Select(user => new UserProfile(user.Id, user.UserName!, now)));
         await db.SaveChangesAsync();
         return users.Select(user => user.Id).ToArray();
     }

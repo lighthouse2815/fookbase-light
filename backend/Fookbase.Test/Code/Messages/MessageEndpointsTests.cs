@@ -419,7 +419,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         dbContext.Users.AddRange(users);
-        dbContext.UserProfiles.AddRange(users.Select(user => UserProfile.Create(user.Id, user.UserName!, now)));
+        dbContext.UserProfiles.AddRange(users.Select(user => new UserProfile(user.Id, user.UserName!, now)));
         await dbContext.SaveChangesAsync();
         return users.Select(user => user.Id).ToArray();
     }

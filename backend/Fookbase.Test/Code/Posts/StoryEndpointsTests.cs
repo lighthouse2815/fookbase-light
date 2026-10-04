@@ -78,7 +78,7 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var profile = UserProfile.Create(ownerId, "story_author", DateTimeOffset.UtcNow);
+            var profile = new UserProfile(ownerId, "story_author", DateTimeOffset.UtcNow);
             profile.Update("Story Author", null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
             db.UserProfiles.Add(profile);
             await db.SaveChangesAsync();

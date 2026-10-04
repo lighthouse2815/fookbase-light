@@ -122,7 +122,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.Users.Add(new User(user.Id, $"{user.Username}@example.com", user.Username, now));
-        db.UserProfiles.Add(UserProfile.Create(
+        db.UserProfiles.Add(new UserProfile(
             user.Id, user.Username, user.Username, new DateOnly(2000, 1, 2), Gender.FEMALE, now));
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();

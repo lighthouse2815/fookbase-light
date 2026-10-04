@@ -68,8 +68,8 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var emailProfile = UserProfile.Create(emailUserId, email, now);
-            var phoneProfile = UserProfile.Create(phoneUserId, phone, now);
+            var emailProfile = new UserProfile(emailUserId, email, now);
+            var phoneProfile = new UserProfile(phoneUserId, phone, now);
             emailProfile.Update("Private email", null, null, null, null, null, now);
             phoneProfile.Update("Private phone", null, null, null, null, null, now);
             db.Users.AddRange(
@@ -280,7 +280,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.Users.Add(new User(id, username + "-" + id.ToString("N") + "@example.com", username[..Math.Min(username.Length, 32)], now));
-        db.UserProfiles.Add(UserProfile.Create(id, username[..Math.Min(username.Length, 32)], now));
+        db.UserProfiles.Add(new UserProfile(id, username[..Math.Min(username.Length, 32)], now));
         await db.SaveChangesAsync();
         return id;
     }

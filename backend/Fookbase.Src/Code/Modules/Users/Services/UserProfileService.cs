@@ -36,7 +36,7 @@ public sealed class UserProfileService(
             return;
         }
 
-        dbContext.UserProfiles.Add(UserProfile.Create(userId, username, timeProvider.GetUtcNow()));
+        dbContext.UserProfiles.Add(new UserProfile(userId, username, timeProvider.GetUtcNow()));
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -60,7 +60,7 @@ public sealed class UserProfileService(
         CancellationToken cancellationToken = default)
     {
         if (await dbContext.UserProfiles.AnyAsync(profile => profile.UserId == userId, cancellationToken)) return;
-        dbContext.UserProfiles.Add(UserProfile.Create(userId, username, displayName, dateOfBirth, gender, timeProvider.GetUtcNow()));
+        dbContext.UserProfiles.Add(new UserProfile(userId, username, displayName, dateOfBirth, gender, timeProvider.GetUtcNow()));
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

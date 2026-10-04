@@ -201,7 +201,7 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.Users.AddRange(users);
-        db.UserProfiles.AddRange(users.Select(user => UserProfile.Create(user.Id, user.UserName!, DateTimeOffset.UtcNow)));
+        db.UserProfiles.AddRange(users.Select(user => new UserProfile(user.Id, user.UserName!, DateTimeOffset.UtcNow)));
         await db.SaveChangesAsync();
         return users.Select(user => user.Id).ToArray();
     }

@@ -203,7 +203,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.Users.AddRange(users);
         db.UserProfiles.AddRange(users.Select(user =>
-            UserProfile.Create(user.Id, user.UserName!, now)));
+            new UserProfile(user.Id, user.UserName!, now)));
         await db.SaveChangesAsync();
         return users.Select(user => user.Id).ToArray();
     }

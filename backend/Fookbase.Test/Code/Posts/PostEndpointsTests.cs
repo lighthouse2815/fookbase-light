@@ -981,7 +981,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        db.UserProfiles.Add(UserProfile.Create(userId, username, DateTimeOffset.UtcNow));
+        db.UserProfiles.Add(new UserProfile(userId, username, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
     }
 
