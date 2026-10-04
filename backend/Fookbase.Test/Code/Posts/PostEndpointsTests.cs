@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Feed.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
@@ -752,12 +753,16 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
 
         using var recipientClient = CreateAuthenticatedClient(recipient);
         using var otherClient = CreateAuthenticatedClient(otherUser);
-        foreach (var query in new[] { "?limit=0", "?limit=101", "?before=invalid" })
+        foreach (var (query, field) in new[]
+                 { ("?limit=0", "Limit"), ("?limit=101", "Limit"), ("?before=invalid", "Before"),
+                     ("?before=" + Uri.EscapeDataString(Convert.ToBase64String(
+                         Encoding.UTF8.GetBytes("3155378976000000000:" + Guid.NewGuid().ToString("N")))), "Before") })
         {
             using var invalid = await recipientClient.GetAsync("/api/notifications" + query);
             Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
-            var error = await invalid.Content.ReadFromJsonAsync<Dictionary<string, string>>();
-            Assert.Equal("invalid_notification_cursor", error!["code"]);
+            using var error = JsonDocument.Parse(await invalid.Content.ReadAsStringAsync());
+            Assert.Equal("validation_failed", error.RootElement.GetProperty("code").GetString());
+            Assert.True(error.RootElement.GetProperty("errors").TryGetProperty(field, out _));
         }
         using var malformedLimit = await recipientClient.GetAsync("/api/notifications?limit=invalid");
         Assert.Equal(HttpStatusCode.BadRequest, malformedLimit.StatusCode);

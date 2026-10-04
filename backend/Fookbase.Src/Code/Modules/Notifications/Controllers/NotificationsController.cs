@@ -17,26 +17,15 @@ public sealed class NotificationsController(
 {
     [HttpGet]
     public async Task<IActionResult> GetNotificationsAsync(
-        CancellationToken cancellationToken,
-        [FromQuery] string? before = null,
-        [FromQuery] int limit = NotificationService.DefaultPageSize)
+        [FromQuery] NotificationPageRequest request,
+        CancellationToken cancellationToken)
     {
         if (!TryGetUserId(User, out var userId))
         {
             return Unauthorized();
         }
 
-        if (limit is < 1 or > NotificationService.MaximumPageSize ||
-            !NotificationService.IsValidCursor(before))
-        {
-            return BadRequest(new
-            {
-                code = "invalid_notification_cursor",
-                message = "The notification cursor or limit is invalid."
-            });
-        }
-
-        return Ok(await notificationService.GetNotificationsAsync(userId, before, limit, cancellationToken));
+        return Ok(await notificationService.GetNotificationsAsync(userId, request.Before, request.Limit, cancellationToken));
     }
 
     [HttpGet("unread-count")]
@@ -86,9 +75,8 @@ public sealed class NotificationsController(
             return Unauthorized();
         }
 
-        return await pushNotificationService.RegisterZolaDeviceAsync(userId, request.Token, cancellationToken)
-            ? NoContent()
-            : BadRequest(new { code = "invalid_push_token", message = "The Expo push token is invalid." });
+        await pushNotificationService.RegisterZolaDeviceAsync(userId, request.Token, cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("push-tokens/zola")]

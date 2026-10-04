@@ -1,7 +1,6 @@
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Shared.Common;
-using System.Globalization;
-using System.Text;
+using Fookbase.Api.Modules.Notifications.Common;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Hubs;
@@ -71,7 +70,7 @@ public sealed class NotificationService(
     {
         var cursor = string.IsNullOrWhiteSpace(before)
             ? (NotificationCursor?)null
-            : DecodeCursor(before);
+            : NotificationCursor.Decode(before);
         var query = dbContext.Notifications.AsNoTracking()
             .Where(notification => notification.RecipientUserId == recipientUserId);
         if (cursor is not null)
@@ -106,7 +105,7 @@ public sealed class NotificationService(
         var hasMore = visible.Count > limit;
         return new NotificationPageResponse(
             await ToResponsesAsync(page, cancellationToken),
-            hasMore ? EncodeCursor(page[^1]) : null);
+            hasMore ? new NotificationCursor(page[^1].CreatedAtUtc, page[^1].Id).Encode() : null);
     }
 
     public async Task<int> GetUnreadCountAsync(
@@ -183,24 +182,6 @@ public sealed class NotificationService(
         catch (Exception)
         {
             // Realtime delivery is best effort. Persisted notifications remain the source of truth.
-        }
-    }
-
-    public static bool IsValidCursor(string? before)
-    {
-        if (string.IsNullOrWhiteSpace(before))
-        {
-            return true;
-        }
-
-        try
-        {
-            _ = DecodeCursor(before);
-            return true;
-        }
-        catch (FormatException)
-        {
-            return false;
         }
     }
 
@@ -579,42 +560,6 @@ public sealed class NotificationService(
                 pageTarget?.Username);
         }).ToList();
     }
-
-    private static string EncodeCursor(Notification notification)
-    {
-        var payload = notification.CreatedAtUtc.UtcDateTime.Ticks.ToString(CultureInfo.InvariantCulture) +
-            ":" + notification.Id.ToString("N");
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes(payload))
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
-    }
-
-    private static NotificationCursor DecodeCursor(string value)
-    {
-        try
-        {
-            var encoded = value.Replace('-', '+').Replace('_', '/');
-            encoded = encoded.PadRight(encoded.Length + (4 - encoded.Length % 4) % 4, '=');
-            var parts = Encoding.UTF8.GetString(Convert.FromBase64String(encoded)).Split(':', 2);
-            if (parts.Length != 2 ||
-                !long.TryParse(parts[0], CultureInfo.InvariantCulture, out var ticks) ||
-                !Guid.TryParseExact(parts[1], "N", out var id))
-            {
-                throw new FormatException("The notification cursor is invalid.");
-            }
-
-            return new NotificationCursor(
-                new DateTimeOffset(new DateTime(ticks, DateTimeKind.Utc)),
-                id);
-        }
-        catch (ArgumentException exception)
-        {
-            throw new FormatException("The notification cursor is invalid.", exception);
-        }
-    }
-
-    private sealed record NotificationCursor(DateTimeOffset CreatedAtUtc, Guid Id);
 
     private sealed record ActorProfile(Guid UserId, string Username, string DisplayName, string? AvatarUrl);
 

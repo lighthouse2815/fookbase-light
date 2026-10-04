@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
@@ -41,17 +42,26 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         var registered = await client.PostAsJsonAsync("/api/notifications/push-tokens/zola", new { token });
 
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
-        var error = await invalid.Content.ReadFromJsonAsync<Dictionary<string, string>>();
-        Assert.Equal("invalid_push_token", error!["code"]);
+        using var error = JsonDocument.Parse(await invalid.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", error.RootElement.GetProperty("code").GetString());
+        Assert.True(error.RootElement.GetProperty("errors").TryGetProperty("Token", out _));
         Assert.Equal(HttpStatusCode.NoContent, registered.StatusCode);
-        foreach (var invalidToken in new string?[] { null, "invalid", new('x', 256) })
+        foreach (var invalidToken in new string?[]
+                 { null, "", "   ", "invalid", "ExpoPushToken[]", "ExpoPushToken[a b]", "ExpoPushToken[a]\n",
+                     "ExpoPushToken[" + new string('x', 241) + "]" })
         {
-            using var removalRequest = new HttpRequestMessage(HttpMethod.Delete, "/api/notifications/push-tokens/zola")
+            foreach (var method in new[] { HttpMethod.Post, HttpMethod.Delete })
             {
-                Content = JsonContent.Create(new { token = invalidToken })
-            };
-            using var removal = await client.SendAsync(removalRequest);
-            Assert.Equal(HttpStatusCode.NoContent, removal.StatusCode);
+                using var invalidRequest = new HttpRequestMessage(method, "/api/notifications/push-tokens/zola")
+                {
+                    Content = JsonContent.Create(new { token = invalidToken })
+                };
+                using var rejected = await client.SendAsync(invalidRequest);
+                Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+                using var validation = JsonDocument.Parse(await rejected.Content.ReadAsStringAsync());
+                Assert.Equal("validation_failed", validation.RootElement.GetProperty("code").GetString());
+                Assert.True(validation.RootElement.GetProperty("errors").TryGetProperty("Token", out _));
+            }
         }
         using (var scope = factory.Services.CreateScope())
         {
@@ -68,6 +78,49 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         using var verificationScope = factory.Services.CreateScope();
         var verificationDb = verificationScope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.NotNull((await verificationDb.PushDevices.SingleAsync(device => device.ExpoPushToken == token)).DisabledAtUtc);
+    }
+
+    [Theory]
+    [InlineData("Exponent", "letters_123-ABC")]
+    [InlineData("Expo", "letters_123-ABC")]
+    [InlineData("Expo", null)]
+    public async Task Valid_push_tokens_can_be_registered_again_and_only_the_owner_can_disable_them(
+        string prefix, string? payload)
+    {
+        var token = $"{prefix}PushToken[{payload ?? new string('a', 240)}]";
+        var users = await CreateUsersAsync(2);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        using var other = CreateAuthenticatedClient(users[1]);
+        using var missingRemoval = await owner.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/notifications/push-tokens/zola")
+        {
+            Content = JsonContent.Create(new { token })
+        });
+        Assert.Equal(HttpStatusCode.NoContent, missingRemoval.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await owner.PostAsJsonAsync("/api/notifications/push-tokens/zola", new { token })).StatusCode);
+        using var otherRemoval = await other.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/notifications/push-tokens/zola")
+        {
+            Content = JsonContent.Create(new { token })
+        });
+        Assert.Equal(HttpStatusCode.NoContent, otherRemoval.StatusCode);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            Assert.Null((await db.PushDevices.SingleAsync(device => device.ExpoPushToken == token)).DisabledAtUtc);
+        }
+
+        using var removal = await owner.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/notifications/push-tokens/zola")
+        {
+            Content = JsonContent.Create(new { token })
+        });
+        Assert.Equal(HttpStatusCode.NoContent, removal.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await owner.PostAsJsonAsync("/api/notifications/push-tokens/zola", new { token })).StatusCode);
+        using var verificationScope = factory.Services.CreateScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var registered = await verificationDb.PushDevices.SingleAsync(device => device.ExpoPushToken == token);
+        Assert.Equal(users[0], registered.UserId);
+        Assert.Null(registered.DisabledAtUtc);
     }
 
     [Fact]

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Fookbase.Api.Modules.Notifications.Config;
 using Fookbase.Api.Modules.Notifications.DTOs.Requests;
 using Fookbase.Api.Modules.Notifications.Entities;
@@ -14,22 +13,15 @@ public sealed class PushNotificationService(
     TimeProvider timeProvider,
     ILogger<PushNotificationService> logger)
 {
-    private static readonly Regex ExpoToken = new("^(?:Exponent|Expo)PushToken\\[[A-Za-z0-9_-]+\\]$", RegexOptions.CultureInvariant);
-
-    public async Task<bool> RegisterZolaDeviceAsync(Guid userId, string? token, CancellationToken cancellationToken = default)
+    public async Task RegisterZolaDeviceAsync(Guid userId, string token, CancellationToken cancellationToken = default)
     {
-        if (!IsValidExpoToken(token))
-        {
-            return false;
-        }
-
         var now = timeProvider.GetUtcNow();
         var device = await dbContext.PushDevices.SingleOrDefaultAsync(
             item => item.ExpoPushToken == token,
             cancellationToken);
         if (device is null)
         {
-            dbContext.PushDevices.Add(PushDevice.Create(Guid.NewGuid(), userId, token!, now));
+            dbContext.PushDevices.Add(PushDevice.Create(Guid.NewGuid(), userId, token, now));
         }
         else
         {
@@ -37,16 +29,10 @@ public sealed class PushNotificationService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return true;
     }
 
-    public async Task UnregisterZolaDeviceAsync(Guid userId, string? token, CancellationToken cancellationToken = default)
+    public async Task UnregisterZolaDeviceAsync(Guid userId, string token, CancellationToken cancellationToken = default)
     {
-        if (!IsValidExpoToken(token))
-        {
-            return;
-        }
-
         var device = await dbContext.PushDevices.SingleOrDefaultAsync(
             item => item.UserId == userId && item.ExpoPushToken == token,
             cancellationToken);
@@ -194,9 +180,6 @@ public sealed class PushNotificationService(
             logger.LogWarning(exception, "Expo push receipt check failed.");
         }
     }
-
-    public static bool IsValidExpoToken(string? token) =>
-        token is not null && token.Length <= PushDevice.MaximumExpoPushTokenLength && ExpoToken.IsMatch(token);
 
     private static bool HasError(JsonElement item, string expected) =>
         item.TryGetProperty("details", out var details) && details.ValueKind == JsonValueKind.Object &&
