@@ -14,6 +14,26 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 public class GoogleMobileEndpointsTests(IdentityApiFactory factory) : IClassFixture<IdentityApiFactory>
 {
     [Theory]
+    [InlineData(false, "https://mobile.example.test/auth/callback", "https://zola.example.test/auth/callback")]
+    [InlineData(true, "", "")]
+    public async Task Disabled_mobile_google_callback_returns_not_found_without_external_identity(
+        bool enabled, string mobileCallbackUrl, string zolaMobileCallbackUrl)
+    {
+        using var app = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("GoogleAuthentication:Enabled", enabled.ToString());
+            builder.UseSetting("GoogleAuthentication:MobileCallbackUrl", mobileCallbackUrl);
+            builder.UseSetting("GoogleAuthentication:ZolaMobileCallbackUrl", zolaMobileCallbackUrl);
+        });
+        using var client = app.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        using var response = await client.GetAsync("/api/auth/google/mobile/callback");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+    }
+
+    [Theory]
     [InlineData("/api/auth/google/callback?client=web", "invalid_google_identity")]
     [InlineData("/api/auth/google/mobile/callback", "invalid_mobile_google_login")]
     public async Task Missing_external_identity_preserves_the_callback_error(string path, string code)
@@ -61,12 +81,14 @@ public class GoogleMobileEndpointsTests(IdentityApiFactory factory) : IClassFixt
         Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
     }
 
-    [Fact]
-    public async Task Zola_mobile_code_uses_its_own_callback_and_client_binding()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Zola_mobile_code_uses_its_own_callback_and_client_binding(bool mobileEnabled)
     {
         using var app = factory.WithWebHostBuilder(builder =>
         {
-            builder.UseSetting("GoogleAuthentication:MobileCallbackUrl", "https://mobile.example.test/auth/callback");
+            builder.UseSetting("GoogleAuthentication:MobileCallbackUrl", mobileEnabled ? "https://mobile.example.test/auth/callback" : "");
             builder.UseSetting("GoogleAuthentication:ZolaMobileCallbackUrl", "https://zola.example.test/auth/callback");
         });
         using var client = app.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
@@ -84,7 +106,7 @@ public class GoogleMobileEndpointsTests(IdentityApiFactory factory) : IClassFixt
             verifier,
             client = "mobile"
         });
-        Assert.Equal(HttpStatusCode.Unauthorized, wrongClient.StatusCode);
+        Assert.Equal(mobileEnabled ? HttpStatusCode.Unauthorized : HttpStatusCode.NotFound, wrongClient.StatusCode);
         var exchange = await client.PostAsJsonAsync("/api/auth/google/mobile/exchange", new
         {
             code,

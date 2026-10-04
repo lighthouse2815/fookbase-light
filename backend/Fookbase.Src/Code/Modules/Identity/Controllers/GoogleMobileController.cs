@@ -50,6 +50,12 @@ public sealed class GoogleMobileController(
     public async Task<IResult> CallbackAsync(
         CancellationToken cancellationToken)
     {
+        if (!Enabled(options, IdentityModuleConstants.ExternalLogin.Clients.Mobile) &&
+            !Enabled(options, IdentityModuleConstants.ExternalLogin.Clients.ZolaMobile))
+        {
+            return Results.NotFound();
+        }
+
         var identity = await reader.ReadAsync(HttpContext, cancellationToken, mobile: true);
         if (identity.Client is null || !Enabled(options, identity.Client))
         {
