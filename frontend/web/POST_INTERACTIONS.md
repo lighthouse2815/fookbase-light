@@ -2,6 +2,8 @@
 
 Thay đổi chỉ thuộc `frontend/web`, dùng React, TypeScript, Tailwind và `postsApi` hiện có. Không thêm dependency, endpoint hoặc thay đổi contract API.
 
+Điều hướng nhiều ảnh, loading/retry, preload, zoom/pan và swipe của lightbox Post được ghi tại [POST_PHOTO_LIGHTBOX.md](POST_PHOTO_LIGHTBOX.md).
+
 ## Trước và sau
 
 | Phần | Trước | Sau |
