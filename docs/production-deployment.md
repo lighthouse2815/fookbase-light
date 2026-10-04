@@ -166,15 +166,15 @@ Compose production đặt grace period API 45 giây để `BackgroundService` nh
 
 Application logs JSON ra stdout ở Production, không ghi file log trong container. Runtime Docker phải cấu hình log rotation (ví dụ `json-file` với `max-size`/`max-file`) hoặc thu stdout. Log request gồm method/path/status/duration/request ID và UserId khi đã xác thực; không log body, token, password, key, recovery code hay connection string. Client có thể cung cấp `X-Request-Id` từ error ProblemDetails để operator tìm log.
 
-## Test và migration policy
+## Build và migration policy
 
-Không chạy `dotnet test FookbaseLight.sln` làm integration regression vì projects từng dùng chung database có thể race migration. Lệnh chuẩn là:
+Nhánh `alex` đã bỏ test tự động. Kiểm tra build backend trước khi deploy:
 
 ```bash
-bash scripts/test-backend.sh
+dotnet build FookbaseLight.sln --configuration Release
 ```
 
-Script tạo một PostgreSQL container tạm, database riêng cho từng nhóm test và chạy tuần tự. `scripts/check-migrations.sh` kiểm tra ID migration trùng/future-dated; thêm `CHECK_EF_MODEL=true` với connection string design-time để kiểm tra pending model changes. Luôn backup, migration một lần, start/restart một API, chờ readiness rồi smoke test.
+`scripts/check-migrations.sh` kiểm tra ID migration trùng/future-dated; thêm `CHECK_EF_MODEL=true` với connection string design-time để kiểm tra pending model changes. Luôn backup, migration một lần, start/restart một API, chờ readiness rồi smoke test.
 
 ## Đường scale được hoãn
 

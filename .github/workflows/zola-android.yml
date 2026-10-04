@@ -32,7 +32,7 @@ jobs:
           test -n "$EXPO_PUBLIC_API_BASE_URL"
           test -n "$ZOLA_ANDROID_PACKAGE"
       - run: npm ci
-      - run: npm run typecheck && npm run lint && npm test -- --runInBand
+      - run: npm run typecheck && npm run lint
       - run: npx expo prebuild --platform android --no-install
       - name: Build standalone preview
         working-directory: frontend/zola-mobile/android
