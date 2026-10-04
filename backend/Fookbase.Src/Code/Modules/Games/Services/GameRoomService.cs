@@ -2,44 +2,44 @@ using System.Security.Cryptography;
 
 namespace Fookbase.Api.Modules.Games.Services;
 
-public sealed class FlappyBirdRoomService(TimeProvider timeProvider)
+public sealed class GameRoomService(TimeProvider timeProvider)
 {
     private const string RoomAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private readonly object syncRoot = new();
-    private readonly Dictionary<string, FlappyBirdRoom> rooms = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, GameRoom> rooms = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> roomCodeByConnectionId = new(StringComparer.Ordinal);
 
-    public FlappyBirdRoomMembership CreateRoom(Guid ownerUserId, string connectionId)
+    public GameRoomMembership CreateRoom(Guid ownerUserId, string connectionId)
     {
         lock (syncRoot)
         {
             EnsureConnectionIsNotInRoom(connectionId);
             var code = CreateRoomCode();
-            var room = new FlappyBirdRoom(code, ownerUserId);
-            room.ConnectionIds.Add(connectionId);
+            var room = new GameRoom(code, ownerUserId);
+            room.Players.Add(connectionId, ownerUserId);
             rooms.Add(code, room);
             roomCodeByConnectionId.Add(connectionId, code);
             return ToMembership(room, ownerUserId);
         }
     }
 
-    public FlappyBirdRoomMembership JoinRoom(string roomCode, Guid userId, string connectionId)
+    public GameRoomMembership JoinRoom(string roomCode, Guid userId, string connectionId)
     {
         lock (syncRoot)
         {
             EnsureConnectionIsNotInRoom(connectionId);
             if (!rooms.TryGetValue(roomCode, out var room))
             {
-                throw new FlappyBirdRoomException("Không tìm thấy phòng. Hãy kiểm tra lại mã phòng.");
+                throw new GameRoomException("Không tìm thấy phòng. Hãy kiểm tra lại mã phòng.");
             }
 
-            room.ConnectionIds.Add(connectionId);
+            room.Players.Add(connectionId, userId);
             roomCodeByConnectionId.Add(connectionId, roomCode);
             return ToMembership(room, userId);
         }
     }
 
-    public FlappyBirdRoomMembership? GetMembership(string connectionId, Guid userId)
+    public GameRoomMembership? GetMembership(string connectionId, Guid userId)
     {
         lock (syncRoot)
         {
@@ -50,7 +50,7 @@ public sealed class FlappyBirdRoomService(TimeProvider timeProvider)
         }
     }
 
-    public FlappyBirdRoomUpdate? LeaveRoom(string connectionId)
+    public GameRoomUpdate? LeaveRoom(string connectionId)
     {
         lock (syncRoot)
         {
@@ -60,27 +60,31 @@ public sealed class FlappyBirdRoomService(TimeProvider timeProvider)
                 return null;
             }
 
-            room.ConnectionIds.Remove(connectionId);
-            if (room.ConnectionIds.Count == 0)
+            room.Players.Remove(connectionId);
+            if (room.Players.Count == 0)
             {
                 rooms.Remove(roomCode);
             }
+            else if (!room.Players.ContainsValue(room.OwnerUserId))
+            {
+                room.OwnerUserId = room.Players.Values.First();
+            }
 
-            return new FlappyBirdRoomUpdate(roomCode, room.ConnectionIds.Count);
+            return new GameRoomUpdate(roomCode, room.Players.Count, room.OwnerUserId);
         }
     }
 
-    public FlappyBirdRoomMembership StartRound(Guid userId, string connectionId)
+    public GameRoomMembership StartRound(Guid userId, string connectionId)
     {
         lock (syncRoot)
         {
             var room = GetRoomForConnection(connectionId);
             if (room.OwnerUserId != userId)
             {
-                throw new FlappyBirdRoomException("Chỉ chủ phòng mới có thể bắt đầu vòng chơi.");
+                throw new GameRoomException("Chỉ chủ phòng mới có thể bắt đầu vòng chơi.");
             }
 
-            room.Round = new FlappyBirdRound(
+            room.Round = new GameRound(
                 Guid.NewGuid(),
                 RandomNumberGenerator.GetInt32(int.MaxValue),
                 timeProvider.GetUtcNow().AddSeconds(3));
@@ -102,12 +106,12 @@ public sealed class FlappyBirdRoomService(TimeProvider timeProvider)
         }
     }
 
-    private FlappyBirdRoom GetRoomForConnection(string connectionId)
+    private GameRoom GetRoomForConnection(string connectionId)
     {
         if (!roomCodeByConnectionId.TryGetValue(connectionId, out var roomCode) ||
             !rooms.TryGetValue(roomCode, out var room))
         {
-            throw new FlappyBirdRoomException("Hãy tạo hoặc tham gia một phòng trước.");
+            throw new GameRoomException("Hãy tạo hoặc tham gia một phòng trước.");
         }
 
         return room;
@@ -117,7 +121,7 @@ public sealed class FlappyBirdRoomService(TimeProvider timeProvider)
     {
         if (roomCodeByConnectionId.ContainsKey(connectionId))
         {
-            throw new FlappyBirdRoomException("Bạn đang ở trong một phòng khác.");
+            throw new GameRoomException("Bạn đang ở trong một phòng khác.");
         }
     }
 
@@ -138,26 +142,27 @@ public sealed class FlappyBirdRoomService(TimeProvider timeProvider)
         return code;
     }
 
-    private static FlappyBirdRoomMembership ToMembership(FlappyBirdRoom room, Guid userId) =>
-        new(room.Code, room.OwnerUserId == userId, room.ConnectionIds.Count, room.Round);
+    private static GameRoomMembership ToMembership(GameRoom room, Guid userId) =>
+        new(room.Code, room.OwnerUserId == userId, room.Players.Count, room.Round, room.OwnerUserId);
 
-    private sealed class FlappyBirdRoom(string code, Guid ownerUserId)
+    private sealed class GameRoom(string code, Guid ownerUserId)
     {
         public string Code { get; } = code;
-        public Guid OwnerUserId { get; } = ownerUserId;
-        public HashSet<string> ConnectionIds { get; } = new(StringComparer.Ordinal);
-        public FlappyBirdRound? Round { get; set; }
+        public Guid OwnerUserId { get; set; } = ownerUserId;
+        public Dictionary<string, Guid> Players { get; } = new(StringComparer.Ordinal);
+        public GameRound? Round { get; set; }
     }
 }
 
-public sealed record FlappyBirdRound(Guid Id, int Seed, DateTimeOffset StartsAtUtc);
+public sealed record GameRound(Guid Id, int Seed, DateTimeOffset StartsAtUtc);
 
-public sealed record FlappyBirdRoomMembership(
+public sealed record GameRoomMembership(
     string Code,
     bool IsHost,
     int PlayerCount,
-    FlappyBirdRound? Round);
+    GameRound? Round,
+    Guid HostUserId);
 
-public sealed record FlappyBirdRoomUpdate(string Code, int PlayerCount);
+public sealed record GameRoomUpdate(string Code, int PlayerCount, Guid HostUserId);
 
-public sealed class FlappyBirdRoomException(string message) : Exception(message);
+public sealed class GameRoomException(string message) : Exception(message);

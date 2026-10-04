@@ -21,7 +21,6 @@ using Fookbase.Api.Modules.Media.Endpoints;
 using Fookbase.Api.Modules.Media.HealthChecks;
 using Fookbase.Api.Modules.Messages.Endpoints;
 using Fookbase.Api.Modules.Messages.Hubs;
-using Fookbase.Api.Modules.Notifications.Endpoints;
 using Fookbase.Api.Modules.Notifications.Hubs;
 using Fookbase.Api.Modules.Photos;
 using Fookbase.Api.Modules.Photos.Endpoints;
@@ -144,7 +143,9 @@ var authenticationBuilder = builder.Services.AddAuthentication(JwtBearerDefaults
                 var accessToken = context.Request.Query["access_token"];
                 if (!string.IsNullOrWhiteSpace(accessToken)
                     && (context.HttpContext.Request.Path.StartsWithSegments("/hubs/messages") ||
-                        context.HttpContext.Request.Path.StartsWithSegments("/hubs/notifications")))
+                        context.HttpContext.Request.Path.StartsWithSegments("/hubs/notifications") ||
+                        context.HttpContext.Request.Path.StartsWithSegments("/hubs/flappy-bird") ||
+                        context.HttpContext.Request.Path.StartsWithSegments("/hubs/jumping")))
                 {
                     context.Token = accessToken;
                 }
@@ -381,7 +382,6 @@ app.MapFeedEndpoints();
 app.MapGroupEndpoints();
 app.MapMessageEndpoints();
 app.MapHub<MessagesHub>("/hubs/messages");
-app.MapNotificationEndpoints();
 app.MapHub<NotificationsHub>("/hubs/notifications");
 app.MapAdminEndpoints();
 app.MapMediaEndpoints();
@@ -391,6 +391,7 @@ app.MapPhotoAlbumEndpoints();
 app.MapMemoryEndpoints();
 app.MapAiChatEndpoints();
 app.MapHub<FlappyBirdHub>("/hubs/flappy-bird");
+app.MapHub<JumpingHub>("/hubs/jumping");
 
 app.Run();
 

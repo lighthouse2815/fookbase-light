@@ -165,9 +165,9 @@ export default function FlappyBirdGame() {
         return next
       })
     })
-    connection.on('RoomUpdated', ({ playerCount }: { playerCount: number }) => {
+    connection.on('RoomUpdated', ({ playerCount, hostUserId }: { playerCount: number; hostUserId: string }) => {
       if (!roomRef.current) return
-      const membership = { ...roomRef.current, playerCount }
+      const membership = { ...roomRef.current, playerCount, isHost: hostUserId === session.user.id }
       roomRef.current = membership
       setRoom(membership)
     })

@@ -8,7 +8,8 @@ public static class DependencyInjection
     public static IServiceCollection AddGamesInfrastructure(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
-        services.AddSingleton<FlappyBirdRoomService>();
+        services.AddKeyedSingleton<GameRoomService>("flappy-bird");
+        services.AddKeyedSingleton<GameRoomService>("jumping");
         return services;
     }
 }
