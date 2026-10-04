@@ -17,7 +17,7 @@ async function check(name, run, options = {}) {
   await options.setup?.(state)
   const page = await context.newPage(); page.setDefaultTimeout(10000)
   page.on('pageerror', error => errors.push(error.stack))
-  await options.preparePage?.(page)
+  await options.preparePage?.(page, state)
   try {
     await page.goto(`${baseUrl}/feed`, { waitUntil: 'domcontentloaded' })
     await page.getByRole('button', { name: options.owner ? /Story của bạn/ : /Minh$/ }).click()
@@ -180,6 +180,48 @@ try {
         }, { viewport, touch: viewport.width === 375, setup: state => { state.sizes[storyIds[0]] = size } })
       }
     }
+  }
+  if (['preload', 'full'].includes(scope)) {
+    const waitUntil = async predicate => {
+      const deadline = Date.now() + 10000
+      while (!predicate()) { assert.ok(Date.now() < deadline, 'Preload becomes observable'); await pause(30) }
+    }
+    await check('preloads just the next image and reuses signed access on next/previous', async ({ viewer, state, next, previous }) => {
+      await waitUntil(() => state.assets.includes(storyIds[1]))
+      assert.equal(state.accesses.filter(id => id === storyIds[1]).length, 1)
+      assert.equal(state.accesses.filter(id => id === storyIds[2]).length, 0)
+      await next(); await viewer.locator('img[alt="Story 2"]').evaluate(img => img.decode())
+      await previous(); await viewer.locator('img[alt="Story 1"]').evaluate(img => img.decode())
+      assert.equal(state.accesses.filter(id => id === storyIds[0]).length, 1)
+      assert.equal(state.accesses.filter(id => id === storyIds[1]).length, 1)
+    })
+    await check('does not preload the next video', async ({ viewer, state }) => {
+      await viewer.locator('img[alt="Story 1"]').evaluate(img => img.decode()); await pause(250)
+      assert.equal(state.accesses.filter(id => id === storyIds[1]).length, 0); assert.equal(state.accesses.filter(id => id === storyIds[2]).length, 0)
+    }, { setup: state => { state.stories[1].media.mediaType = 'video' } })
+    await check('expired non-owner story cannot bypass the unavailable resolver through cached access', async ({ viewer, state, next }) => {
+      await waitUntil(() => state.assets.includes(storyIds[1]))
+      await viewer.getByRole('button', { name: 'Tạm dừng', exact: true }).click()
+      await pause(2200); state.accessFailures[storyIds[1]] = 410
+      await next(); await viewer.getByText('Story không còn khả dụng', { exact: true }).waitFor()
+      assert.equal(state.accesses.filter(id => id === storyIds[1]).length, 2)
+    }, { setup: state => { state.stories[1].expiresAtUtc = new Date(Date.now() + 2000).toISOString() } })
+    await check('expired signed access is resolved again before showing the next image', async ({ viewer, state, next }) => {
+      await waitUntil(() => state.assets.includes(storyIds[1]))
+      await viewer.getByRole('button', { name: 'Tạm dừng', exact: true }).click(); await pause(1600)
+      await next(); await viewer.locator('img[alt="Story 2"]').evaluate(img => img.decode())
+      assert.equal(state.accesses.filter(id => id === storyIds[1]).length, 2)
+    }, { preparePage: async (page, state) => {
+      await page.context().route(`**/api/stories/${storyIds[1]}/media/access`, async route => {
+        state.accesses.push(storyIds[1])
+        await route.fulfill({ json: { url: `${new URL(route.request().url()).origin}/story-viewer-fixture/${storyIds[1]}.svg`, expiresAtUtc: new Date(Date.now() + 1500).toISOString() } })
+      }, { times: 1 })
+    } })
+    await check('owner archive media may reuse valid signed access after Story expiry', async ({ viewer, state, next }) => {
+      await waitUntil(() => state.assets.includes(storyIds[1]))
+      await next(); await viewer.locator('img[alt="Story 2"]').evaluate(img => img.decode())
+      assert.equal(state.accesses.filter(id => id === storyIds[1]).length, 1)
+    }, { owner: true, setup: state => { state.stories[1].expiresAtUtc = new Date(Date.now() - 1000).toISOString() } })
   }
   assert.deepEqual(errors, [])
   console.log(`${passed} Story viewer browser checks passed (${scope}).`)
