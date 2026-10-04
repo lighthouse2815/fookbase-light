@@ -195,7 +195,8 @@ public sealed class PushNotificationService(
         }
     }
 
-    public static bool IsValidExpoToken(string? token) => token is not null && token.Length <= 255 && ExpoToken.IsMatch(token);
+    public static bool IsValidExpoToken(string? token) =>
+        token is not null && token.Length <= PushDevice.MaximumExpoPushTokenLength && ExpoToken.IsMatch(token);
 
     private static bool HasError(JsonElement item, string expected) =>
         item.TryGetProperty("details", out var details) && details.ValueKind == JsonValueKind.Object &&

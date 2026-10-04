@@ -283,6 +283,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Accept_creates_mutual_follows_without_follow_notification_and_block_deletes_them()
     {
         var users = CreateUserIds(2);
+        await EnsureEligibleUsersAsync(users);
         var userA = users[0];
         var userB = users[1];
         var request = await SendRequestAsync(userA, userB);
@@ -338,6 +339,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Send_request_rejects_self_duplicate_and_reverse_pending_request()
     {
         var users = CreateUserIds(2);
+        await EnsureEligibleUsersAsync(users);
         var userA = users[0];
         var userB = users[1];
         using var clientA = CreateAuthenticatedClient(userA);
@@ -367,6 +369,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Concurrent_reverse_requests_create_only_one_pending_relationship()
     {
         var users = CreateUserIds(2);
+        await EnsureEligibleUsersAsync(users);
         var userA = users[0];
         var userB = users[1];
         using var clientA = CreateAuthenticatedClient(userA);
@@ -390,6 +393,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Only_receiver_can_accept_and_concurrent_accept_creates_one_friendship()
     {
         var users = CreateUserIds(3);
+        await EnsureEligibleUsersAsync(users);
         var userA = users[0];
         var userB = users[1];
         var userC = users[2];
@@ -424,6 +428,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Receiver_can_decline_and_sender_can_cancel()
     {
         var users = CreateUserIds(3);
+        await EnsureEligibleUsersAsync(users);
         var declinedRequest = await SendRequestAsync(users[0], users[1]);
         var cancelledRequest = await SendRequestAsync(users[0], users[2]);
         using var receiver = CreateAuthenticatedClient(users[1]);
@@ -449,6 +454,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Lists_and_status_reflect_pending_friendship_and_unfriend()
     {
         var users = CreateUserIds(2);
+        await EnsureEligibleUsersAsync(users);
         var userA = users[0];
         var userB = users[1];
         var request = await SendRequestAsync(userA, userB);
@@ -503,6 +509,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Block_removes_friendship_cancels_pending_and_prevents_both_directions()
     {
         var users = CreateUserIds(3);
+        await EnsureEligibleUsersAsync(users);
         var userA = users[0];
         var userB = users[1];
         var userC = users[2];
@@ -543,6 +550,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Unblock_does_not_restore_friendship()
     {
         var users = CreateUserIds(2);
+        await EnsureEligibleUsersAsync(users);
         var userA = users[0];
         var userB = users[1];
         await BecomeFriendsAsync(userA, userB);
@@ -566,6 +574,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     public async Task Mutual_friends_returns_intersection_from_friends_database()
     {
         var users = CreateUserIds(4);
+        await EnsureEligibleUsersAsync(users);
         var userA = users[0];
         var userB = users[1];
         var mutual1 = users[2];

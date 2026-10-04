@@ -33,7 +33,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
     [Fact]
     public async Task Zola_push_token_registration_is_authenticated_and_can_be_removed()
     {
-        var userId = Guid.NewGuid();
+        var userId = (await CreateUsersAsync(1))[0];
         const string token = "ExpoPushToken[zola_push_device_123]";
         using var client = CreateAuthenticatedClient(userId);
 

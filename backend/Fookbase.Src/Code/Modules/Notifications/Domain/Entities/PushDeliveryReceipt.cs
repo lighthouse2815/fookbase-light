@@ -1,7 +1,16 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Notifications.Entities;
 
+[Table("PushDeliveryReceipts")]
+[Index(nameof(ExpoReceiptId), IsUnique = true)]
+[Index(nameof(CheckedAtUtc), nameof(AvailableAtUtc))]
 public sealed class PushDeliveryReceipt
 {
+    public const int MaximumExpoReceiptIdLength = 64;
+
     private PushDeliveryReceipt()
     {
     }
@@ -14,10 +23,13 @@ public sealed class PushDeliveryReceipt
         AvailableAtUtc = availableAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
 
     public Guid PushDeviceId { get; private set; }
 
+    [Required]
+    [MaxLength(MaximumExpoReceiptIdLength)]
     public string ExpoReceiptId { get; private set; } = string.Empty;
 
     public DateTimeOffset AvailableAtUtc { get; private set; }
@@ -25,6 +37,11 @@ public sealed class PushDeliveryReceipt
     public DateTimeOffset? CheckedAtUtc { get; private set; }
 
     public int CheckAttempts { get; private set; }
+
+    [ForeignKey(nameof(PushDeviceId))]
+    [InverseProperty(nameof(PushDevice.DeliveryReceipts))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public PushDevice PushDevice { get; private set; } = null!;
 
     public static PushDeliveryReceipt Create(Guid id, Guid pushDeviceId, string expoReceiptId, DateTimeOffset availableAtUtc) =>
         new(id, pushDeviceId, expoReceiptId, availableAtUtc);

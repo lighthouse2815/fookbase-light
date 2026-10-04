@@ -869,8 +869,9 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
     [Fact]
     public async Task Relationship_access_is_read_directly_from_Friends()
     {
-        var firstUserId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
+        var users = await CreateUserIdsAsync(2);
+        var firstUserId = users[0];
+        var otherUserId = users[1];
         await CreateFriendshipAsync(firstUserId, otherUserId);
 
         using var scope = factory.Services.CreateScope();
