@@ -133,6 +133,7 @@ interface CommentComposerProps {
   value: string
   placeholder: string
   sendLabel: string
+  isSubmitting?: boolean
   replyingToName?: string
   onCancelReply?: () => void
   onChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -145,6 +146,7 @@ export function CommentComposer({
   value,
   placeholder,
   sendLabel,
+  isSubmitting = false,
   replyingToName,
   onCancelReply,
   onChange,
@@ -157,7 +159,7 @@ export function CommentComposer({
       {currentUserProfile?.avatarUrl ? <img src={resolveProfileImageUrl(currentUserProfile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : currentUserName.slice(0, 2).toUpperCase()}
     </div>
     <input value={value} onChange={onChange} placeholder={placeholder} className="min-w-0 flex-1 rounded-full border-0 bg-surface-2 px-4 py-2.5 text-sm text-text outline-none ring-1 ring-transparent focus:ring-primary" />
-    <button type="submit" disabled={!value.trim()} className="rounded-full border-0 bg-transparent px-2 text-sm font-bold text-primary disabled:cursor-not-allowed disabled:opacity-40">{sendLabel}</button>
+    <button type="submit" disabled={!value.trim() || isSubmitting} className="rounded-full border-0 bg-transparent px-2 text-sm font-bold text-primary disabled:cursor-not-allowed disabled:opacity-40">{sendLabel}</button>
     </div>
   </form>
 }
