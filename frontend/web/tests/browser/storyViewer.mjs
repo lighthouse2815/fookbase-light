@@ -5,22 +5,24 @@ import { storyIds, storyViewerFixture } from './storyViewerFixture.mjs'
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright')
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_EXECUTABLE, args: ['--no-sandbox'] })
 const baseUrl = process.env.STORY_BASE_URL ?? 'http://127.0.0.1:5184'
-const scope = process.env.STORY_CHECK_SCOPE ?? 'reply'
+const scope = process.env.STORY_CHECK_SCOPE ?? 'full'
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms))
 let passed = 0
 const errors = []
-const videoBody = ['playback', 'full'].includes(scope) ? execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=90x160:r=10', '-t', '12', '-c:v', 'libvpx', '-f', 'webm', 'pipe:1']) : undefined
-const progress = viewer => viewer.locator('[aria-label="Tiến trình Story"] > span > span').first().evaluate(e => parseFloat(e.style.width))
+const videoBody = ['playback', 'media', 'full'].includes(scope) ? execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=90x160:r=10', '-t', '12', '-c:v', 'libvpx', '-f', 'webm', 'pipe:1']) : undefined
+const progress = (viewer, index = 0) => viewer.locator('[aria-label="Tiến trình Story"] > span > span').nth(index).evaluate(e => parseFloat(e.style.width))
 async function check(name, run, options = {}) {
   const context = await browser.newContext({ viewport: options.viewport ?? { width: 1366, height: 900 }, hasTouch: options.touch ?? false, isMobile: options.touch ?? false })
   const state = await storyViewerFixture(context, options)
+  await options.setup?.(state)
   const page = await context.newPage(); page.setDefaultTimeout(10000)
   page.on('pageerror', error => errors.push(error.stack))
   try {
     await page.goto(`${baseUrl}/feed`, { waitUntil: 'domcontentloaded' })
     await page.getByRole('button', { name: options.owner ? /Story của bạn/ : /Minh$/ }).click()
     const viewer = page.getByRole('dialog', { name: 'Trình xem Story', exact: true })
-    await viewer.locator(options.video ? 'video' : 'img[alt="Story 1"]').waitFor()
+    await viewer.waitFor()
+    if (options.waitForMedia !== false) await viewer.locator(options.video ? 'video' : 'img[alt="Story 1"]').waitFor()
     const reply = viewer.getByPlaceholder('Trả lời qua Zola Light…')
     const next = () => viewer.getByRole('button', { name: 'Story tiếp theo', exact: true }).click()
     const previous = () => viewer.getByRole('button', { name: 'Story trước', exact: true }).click()
@@ -90,6 +92,65 @@ try {
       assert.equal(old.paused, true); assert.equal(old.connected, false); await pause(300)
       assert.equal(await page.evaluate(() => window.oldStoryVideo.currentTime), old.time)
     }, { video: true, videoBody })
+  }
+  if (['media', 'full'].includes(scope)) {
+    await check('delayed image does not start progress or mark-view before onLoad', async ({ viewer, state }) => {
+      await pause(5300); assert.equal(await progress(viewer), 0)
+      assert.equal(await viewer.locator('img[alt="Story 1"]').count(), 1); assert.equal(state.views.length, 0)
+      await viewer.locator('img[alt="Story 1"]').evaluate(img => img.decode()); await pause(300)
+      assert.ok(await progress(viewer) > 0); assert.deepEqual(state.views, [storyIds[0]])
+    }, { viewed: false, setup: state => { state.imageDelays[storyIds[0]] = 6000 } })
+    await check('broken image pauses progress and explicit retry only reloads the active media', async ({ viewer, state, reply }) => {
+      await viewer.getByText('Không thể tải tin', { exact: true }).waitFor(); await reply.fill('Giữ draft khi retry')
+      await pause(5300); assert.equal(await progress(viewer), 0); assert.equal(state.views.length, 0)
+      state.broken.delete(storyIds[0]); await viewer.getByRole('button', { name: 'Thử lại', exact: true }).click()
+      await viewer.locator('img[alt="Story 1"]').evaluate(img => img.decode())
+      assert.equal(await reply.inputValue(), 'Giữ draft khi retry'); assert.equal(state.accesses.filter(id => id === storyIds[0]).length, 2)
+    }, { viewed: false, waitForMedia: false, setup: state => state.broken.add(storyIds[0]) })
+    await check('video media load failure is local, paused, and retry recovers', async ({ viewer, state }) => {
+      await viewer.getByText('Không thể tải tin', { exact: true }).waitFor(); assert.equal(await progress(viewer), 0)
+      state.broken.delete(storyIds[0]); await viewer.getByRole('button', { name: 'Thử lại', exact: true }).click()
+      await viewer.locator('video').waitFor(); await pause(700)
+      assert.equal(await viewer.locator('video').evaluate(v => v.paused), false)
+    }, { video: true, videoBody, waitForMedia: false, setup: state => state.broken.add(storyIds[0]) })
+    for (const status of [403, 404, 410]) {
+      await check(`media access ${status} shows unavailable without an endless retry`, async ({ viewer }) => {
+        await viewer.getByText('Story không còn khả dụng', { exact: true }).waitFor()
+        assert.equal(await viewer.getByRole('button', { name: 'Thử lại', exact: true }).count(), 0)
+        assert.equal(await progress(viewer), 0)
+      }, { waitForMedia: false, setup: state => { state.accessFailures[storyIds[0]] = status } })
+    }
+    await check('transient media access error supports retry', async ({ viewer, state }) => {
+      await viewer.getByText('Không thể tải tin', { exact: true }).waitFor()
+      delete state.accessFailures[storyIds[0]]; await viewer.getByRole('button', { name: 'Thử lại', exact: true }).click()
+      await viewer.locator('img[alt="Story 1"]').evaluate(img => img.decode()); await pause(200)
+      assert.ok(await progress(viewer) > 0)
+    }, { waitForMedia: false, setup: state => { state.accessFailures[storyIds[0]] = 503 } })
+    await check('late media response cannot overwrite the next story', async ({ viewer, next }) => {
+      await next(); await viewer.locator('img[alt="Story 2"]').evaluate(img => img.decode()); await pause(1600)
+      assert.equal(await viewer.locator('img[alt="Story 1"]').count(), 0); assert.equal(await viewer.locator('img[alt="Story 2"]').count(), 1)
+      assert.ok(await progress(viewer, 1) > 10 && await progress(viewer, 1) < 60)
+    }, { waitForMedia: false, setup: state => { state.accessDelays[storyIds[0]] = 1300 } })
+    await check('mark-view confirmation keeps the image and elapsed clock intact', async ({ viewer, state }) => {
+      const beforeUrl = await viewer.locator('img[alt="Story 1"]').getAttribute('src'); await pause(1300)
+      assert.equal(await viewer.locator('img[alt="Story 1"]').getAttribute('src'), beforeUrl)
+      assert.equal(state.accesses.filter(id => id === storyIds[0]).length, 1); assert.ok(await progress(viewer) > 20)
+    }, { viewed: false, setup: state => { state.viewDelay = 900 } })
+    for (const viewport of [{ width: 1366, height: 900 }, { width: 375, height: 812 }, { width: 768, height: 1024 }]) {
+      for (const [shape, size] of [['portrait', [300, 1800]], ['landscape', [1800, 300]], ['square', [600, 600]]]) {
+        await check(`${shape} image fits its media container at ${viewport.width}px`, async ({ viewer }) => {
+          const img = viewer.locator('img[alt="Story 1"]'); await img.evaluate(img => img.decode())
+          const layout = await img.evaluate(img => {
+            const image = img.getBoundingClientRect(), container = img.parentElement.getBoundingClientRect()
+            const scale = Math.min(image.width / img.naturalWidth, image.height / img.naturalHeight)
+            return { image: { width: image.width, height: image.height, top: image.top, bottom: image.bottom }, container: { width: container.width, height: container.height, top: container.top, bottom: container.bottom }, fit: getComputedStyle(img).objectFit, visibleWidth: img.naturalWidth * scale, visibleHeight: img.naturalHeight * scale }
+          })
+          assert.equal(layout.fit, 'contain'); assert.ok(layout.image.height <= layout.container.height + 1)
+          assert.ok(layout.image.top >= layout.container.top - 1 && layout.image.bottom <= layout.container.bottom + 1)
+          assert.ok(layout.visibleHeight <= layout.container.height + 1 && layout.visibleWidth <= layout.container.width + 1)
+        }, { viewport, touch: viewport.width === 375, setup: state => { state.sizes[storyIds[0]] = size } })
+      }
+    }
   }
   assert.deepEqual(errors, [])
   console.log(`${passed} Story viewer browser checks passed (${scope}).`)

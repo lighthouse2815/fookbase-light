@@ -17,6 +17,13 @@ interface StoryViewerProps {
   onStoriesChanged: (story: Story) => void
 }
 
+interface StoryMediaState {
+  key: string
+  status: 'loading' | 'ready' | 'error' | 'unavailable'
+  url: string | null
+  posterUrl: string | null
+}
+
 export default function StoryViewer({
   groups,
   initialAuthorIndex,
@@ -26,9 +33,8 @@ export default function StoryViewer({
 }: StoryViewerProps) {
   const [authorIndex, setAuthorIndex] = useState(initialAuthorIndex)
   const [storyIndex, setStoryIndex] = useState(initialStoryIndex)
-  const [mediaUrl, setMediaUrl] = useState<string | null>(null)
-  const [posterUrl, setPosterUrl] = useState<string | null>(null)
-  const [mediaError, setMediaError] = useState<string | null>(null)
+  const [mediaState, setMediaState] = useState<StoryMediaState | null>(null)
+  const [mediaAttempt, setMediaAttempt] = useState(0)
   const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [documentHidden, setDocumentHidden] = useState(document.hidden)
@@ -46,13 +52,46 @@ export default function StoryViewer({
   const [isLoadingViewers, setIsLoadingViewers] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const touchStart = useRef<number | null>(null)
+  const activeRef = useRef<Story | undefined>(undefined)
+  const groupsRef = useRef(groups)
+  const onStoriesChangedRef = useRef(onStoriesChanged)
+  const viewedRequests = useRef(new Set<string>())
+  const viewedStories = useRef(new Set<string>())
+  const mounted = useRef(false)
+  const activeMediaKey = useRef('')
+  const pauseRef = useRef(true)
 
   const activeGroup = groups[authorIndex]
   const active = activeGroup?.stories[storyIndex]
   const activeKey = active?.id
   const isVideo = active?.media.mediaType === 'video'
-  const mediaKey = `${activeKey ?? ''}:${active?.media.mediaId ?? ''}`
-  const shouldPause = isPaused || isReplyFocused || isSendingReply || documentHidden || !windowFocused
+  const mediaKey = `${activeKey ?? ''}:${active?.media.mediaId ?? ''}:${mediaAttempt}`
+  const currentMedia = mediaState?.key === mediaKey ? mediaState : null
+  const mediaUrl = currentMedia?.url ?? null
+  const mediaReady = currentMedia?.status === 'ready'
+  const mediaFailed = currentMedia?.status === 'error' || currentMedia?.status === 'unavailable'
+  const shouldPause = isPaused || isReplyFocused || isSendingReply || documentHidden || !windowFocused || !mediaReady
+
+  useLayoutEffect(() => {
+    activeRef.current = active
+    groupsRef.current = groups
+    onStoriesChangedRef.current = onStoriesChanged
+  }, [active, groups, onStoriesChanged])
+  useLayoutEffect(() => {
+    activeMediaKey.current = mediaKey
+    pauseRef.current = shouldPause
+  }, [mediaKey, shouldPause])
+  useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false }
+  }, [])
+
+  const [playbackKey, setPlaybackKey] = useState(mediaKey)
+  if (playbackKey !== mediaKey) {
+    setPlaybackKey(mediaKey)
+    setProgress(0)
+    setPlaybackBlocked(false)
+  }
 
   const [replyStoryId, setReplyStoryId] = useState(activeKey)
   if (replyStoryId !== activeKey) {
@@ -99,30 +138,34 @@ export default function StoryViewer({
   }, [activeGroup, authorIndex, goTo, groups.length, onClose, storyIndex])
 
   useEffect(() => {
-    if (!active) return
+    const story = activeRef.current
+    if (!story) return
     let alive = true
     const timeoutId = window.setTimeout(() => {
-      setMediaUrl(null)
-      setPosterUrl(null)
-      setMediaError(null)
-      setProgress(0)
-      void Promise.all([storiesApi.mediaAccess(active), storiesApi.posterAccess(active)])
+      void Promise.all([storiesApi.mediaAccess(story), storiesApi.posterAccess(story).catch(() => null)])
         .then(([media, poster]) => {
           if (!alive) return
-          setMediaUrl(media.url)
-          setPosterUrl(poster?.url ?? null)
+          setMediaState({ key: mediaKey, status: 'loading', url: media.url, posterUrl: poster?.url ?? null })
         })
-        .catch(() => {
-          if (alive) setMediaError('Không thể tải Story này.')
+        .catch((error: unknown) => {
+          if (!alive) return
+          const unavailable = error instanceof ApiError && [403, 404, 410].includes(error.status)
+          setMediaState({ key: mediaKey, status: unavailable ? 'unavailable' : 'error', url: null, posterUrl: null })
         })
     }, 0)
-    if (!active.canManage && !active.isViewed) {
-      void storiesApi.markViewed(active.id).then(() => {
-        if (alive) onStoriesChanged({ ...active, isViewed: true })
-      }).catch(() => undefined)
-    }
     return () => { alive = false; window.clearTimeout(timeoutId) }
-  }, [active, activeKey, onStoriesChanged])
+  }, [mediaKey])
+
+  useEffect(() => {
+    if (!activeKey || !mediaReady || active?.canManage || active?.isViewed || viewedStories.current.has(activeKey) || viewedRequests.current.has(activeKey)) return
+    const storyId = activeKey
+    viewedRequests.current.add(storyId)
+    void storiesApi.markViewed(storyId).then(() => {
+      viewedStories.current.add(storyId)
+      const story = groupsRef.current.flatMap((group) => group.stories).find((item) => item.id === storyId)
+      if (mounted.current && story) onStoriesChangedRef.current({ ...story, isViewed: true })
+    }).catch(() => undefined).finally(() => { viewedRequests.current.delete(storyId) })
+  }, [activeKey, mediaReady, active?.canManage, active?.isViewed])
 
   const nextRef = useRef(next)
   useLayoutEffect(() => { nextRef.current = next }, [next])
@@ -145,7 +188,7 @@ export default function StoryViewer({
   }, [])
 
   useEffect(() => {
-    if (!activeKey || isVideo || shouldPause || !mediaUrl) return
+    if (!activeKey || isVideo || shouldPause || !mediaReady) return
     const clock = imageClock.current
     clock.startedAt = performance.now()
     const intervalId = window.setInterval(() => {
@@ -160,7 +203,7 @@ export default function StoryViewer({
       window.clearInterval(intervalId)
       pauseImageClock(clock, performance.now())
     }
-  }, [activeKey, mediaKey, shouldPause, isVideo, mediaUrl])
+  }, [activeKey, mediaKey, shouldPause, isVideo, mediaReady])
 
   useEffect(() => {
     const video = videoRef.current
@@ -168,6 +211,7 @@ export default function StoryViewer({
     let alive = true
     if (shouldPause) video.pause()
     else void video.play().then(() => {
+      if (videoRef.current !== video || pauseRef.current) video.pause()
       if (alive) setPlaybackBlocked(false)
     }).catch(() => { if (alive) setPlaybackBlocked(true) })
     return () => { alive = false; video.pause() }
@@ -192,6 +236,26 @@ export default function StoryViewer({
   const viewersTitle = useMemo(() => active?.viewerCount === 1 ? '1 lượt xem' : `${active?.viewerCount ?? 0} lượt xem`, [active?.viewerCount])
 
   if (!active) return null
+
+  const mediaLoaded = () => {
+    if (activeMediaKey.current !== mediaKey) return
+    setMediaState((current) => current?.key === mediaKey && current.status === 'loading' ? { ...current, status: 'ready' } : current)
+  }
+  const mediaLoadFailed = () => {
+    if (activeMediaKey.current !== mediaKey) return
+    videoRef.current?.pause()
+    setMediaState((current) => current?.key === mediaKey ? { ...current, status: 'error' } : current)
+  }
+  const playVideo = () => {
+    const video = videoRef.current
+    if (!video || shouldPause) return
+    void video.play().then(() => {
+      if (videoRef.current !== video || pauseRef.current) video.pause()
+      if (mounted.current && activeMediaKey.current === mediaKey) setPlaybackBlocked(false)
+    }).catch(() => {
+      if (mounted.current && activeMediaKey.current === mediaKey) setPlaybackBlocked(true)
+    })
+  }
 
   const setReaction = async (type: StoryReactionType) => {
     try {
@@ -257,12 +321,15 @@ export default function StoryViewer({
           <button type="button" className="ml-auto grid h-9 w-9 place-items-center rounded-full border-0 bg-black/35 text-xl text-white" onClick={onClose} aria-label="Đóng Story">×</button>
         </div>
 
-        <div className="absolute inset-0 grid place-items-center" onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null }} onTouchEnd={(event) => { const start = touchStart.current; const end = event.changedTouches[0]?.clientX; touchStart.current = null; if (start === null || end === undefined || Math.abs(end - start) < 40) return; if (end > start) previous(); else next() }}>
-          {mediaError && <p className="rounded-lg bg-black/70 px-4 py-3 text-sm">{mediaError}</p>}
-          {!mediaError && !mediaUrl && <p className="text-sm text-white/80">Đang tải Story…</p>}
-          {mediaUrl && isVideo && <video ref={videoRef} src={mediaUrl} poster={posterUrl ?? undefined} autoPlay={!shouldPause} playsInline className="h-full w-full object-contain" onEnded={next} onTimeUpdate={(event) => { const video = event.currentTarget; if (video.duration > 0) setProgress(Math.min(100, video.currentTime / video.duration * 100)) }} />}
-          {mediaUrl && isVideo && playbackBlocked && <button type="button" aria-label="Phát video Story" onClick={() => { void videoRef.current?.play().then(() => setPlaybackBlocked(false)).catch(() => setPlaybackBlocked(true)) }} className="absolute z-20 rounded-full bg-white/20 px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-white">Phát video</button>}
-          {mediaUrl && !isVideo && <img src={mediaUrl} className="h-full w-full object-contain" alt={active.caption ?? 'Story'} />}
+        <div className="absolute inset-0 flex h-full min-h-0 items-center justify-center" onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null }} onTouchEnd={(event) => { const start = touchStart.current; const end = event.changedTouches[0]?.clientX; touchStart.current = null; if (start === null || end === undefined || Math.abs(end - start) < 40) return; if (end > start) previous(); else next() }}>
+          {mediaFailed && <div role="status" className="rounded-lg bg-black/70 px-4 py-3 text-center text-sm">
+            <p>{currentMedia?.status === 'unavailable' ? 'Story không còn khả dụng' : 'Không thể tải tin'}</p>
+            {currentMedia?.status === 'unavailable' ? <p className="mt-2 text-xs text-white/70">Story có thể đã hết hạn, bị xóa hoặc bạn không có quyền xem.</p> : <button type="button" onClick={() => setMediaAttempt((current) => current + 1)} className="mt-3 rounded-lg bg-white/15 px-4 py-2 focus-visible:outline-2 focus-visible:outline-white">Thử lại</button>}
+          </div>}
+          {!mediaFailed && !mediaReady && <p role="status" className="absolute text-sm text-white/80">Đang tải Story…</p>}
+          {mediaUrl && !mediaFailed && isVideo && <video key={mediaKey} ref={videoRef} src={mediaUrl} poster={currentMedia?.posterUrl ?? undefined} autoPlay={!shouldPause} playsInline className="block h-full max-h-full w-full max-w-full object-contain" onLoadedMetadata={(event) => { if (Number.isFinite(event.currentTarget.duration) && event.currentTarget.duration > 0) mediaLoaded() }} onError={mediaLoadFailed} onEnded={() => { if (activeMediaKey.current === mediaKey && !pauseRef.current) nextRef.current() }} onTimeUpdate={(event) => { const video = event.currentTarget; if (activeMediaKey.current === mediaKey && mediaReady && video.duration > 0) setProgress(Math.min(100, video.currentTime / video.duration * 100)) }} />}
+          {mediaUrl && !mediaFailed && isVideo && playbackBlocked && !shouldPause && <button type="button" aria-label="Phát video Story" onClick={playVideo} className="absolute z-20 rounded-full bg-white/20 px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-white">Phát video</button>}
+          {mediaUrl && !mediaFailed && !isVideo && <img key={mediaKey} src={mediaUrl} className="block h-full max-h-full w-full max-w-full object-contain" alt={active.caption ?? 'Story'} onLoad={mediaLoaded} onError={mediaLoadFailed} />}
         </div>
 
         <button type="button" onClick={previous} className="absolute inset-y-16 left-0 z-10 w-[35%] border-0 bg-transparent" aria-label="Story trước" />
