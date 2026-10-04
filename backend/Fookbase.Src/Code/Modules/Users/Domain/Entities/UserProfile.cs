@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Users.Domain.Enums;
+using Fookbase.Api.Shared.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Entities;
@@ -137,7 +138,7 @@ public sealed class UserProfile
 
         if (bio is not null)
         {
-            Bio = NormalizeOptionalText(bio);
+            Bio = TextNormalization.NormalizeOptionalText(bio);
         }
 
         if (dateOfBirth is not null)
@@ -147,7 +148,7 @@ public sealed class UserProfile
 
         if (currentCity is not null)
         {
-            CurrentCity = NormalizeOptionalText(currentCity);
+            CurrentCity = TextNormalization.NormalizeOptionalText(currentCity);
         }
 
         if (birthdayVisibility is not null)
@@ -157,22 +158,22 @@ public sealed class UserProfile
 
         if (hometown is not null)
         {
-            Hometown = NormalizeOptionalText(hometown);
+            Hometown = TextNormalization.NormalizeOptionalText(hometown);
         }
 
         if (workplace is not null)
         {
-            Workplace = NormalizeOptionalText(workplace);
+            Workplace = TextNormalization.NormalizeOptionalText(workplace);
         }
 
         if (education is not null)
         {
-            Education = NormalizeOptionalText(education);
+            Education = TextNormalization.NormalizeOptionalText(education);
         }
 
         if (website is not null)
         {
-            Website = NormalizeOptionalText(website);
+            Website = TextNormalization.NormalizeOptionalText(website);
         }
 
         if (avatarMediaId is not null)
@@ -189,7 +190,4 @@ public sealed class UserProfile
 
         UpdatedAt = updatedAt;
     }
-
-    private static string? NormalizeOptionalText(string value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
