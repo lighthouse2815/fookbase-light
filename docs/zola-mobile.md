@@ -37,7 +37,6 @@ cd frontend/zola-mobile
 npm ci
 npm run typecheck
 npm run lint
-npm test -- --runInBand
 npm run export:android
 npm run android
 ```

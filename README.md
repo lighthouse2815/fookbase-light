@@ -183,22 +183,20 @@ cp .env.example .env.local
 npm ci
 npm run typecheck
 npm run lint
-npm test -- --runInBand
 npm run android
 ```
 
 Zola Mobile dùng HTTPS API origin và SecureStore để lưu refresh token. Hướng dẫn cấu hình
 package/bundle ID, Google App Link và build Android nằm trong [docs/zola-mobile.md](docs/zola-mobile.md).
 
-## Build và test
+## Build và kiểm tra
 
 ```bash
 dotnet restore FookbaseLight.sln
 dotnet build FookbaseLight.sln --no-restore
-bash scripts/test-backend.sh
 ```
 
-`scripts/test-backend.sh` là regression backend đầy đủ chuẩn: một project integration test chứa source trong `Code`, chia tiếp thành sáu thư mục `Identity`, `Users`, `Friends`, `Messages`, `Media` và `Posts`. Script lọc các nhóm theo namespace và chạy tuần tự trên PostgreSQL database riêng. Không dùng `dotnet test FookbaseLight.sln` làm full integration regression vì các nhóm dùng chung database có thể ảnh hưởng nhau khi chạy đồng thời. Direct solution test vẫn phù hợp cho kiểm tra không-integration có phạm vi rõ ràng.
+Nhánh `alex` đã bỏ bộ test tự động của backend và frontend. Kiểm tra mã ứng dụng bằng build, lint và kiểm tra kiểu; bộ test đầy đủ vẫn nằm trên nhánh `main`.
 
 Mỗi frontend dùng npm và package-lock riêng. Kiểm tra đầy đủ frontend:
 
