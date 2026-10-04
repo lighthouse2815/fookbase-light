@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using Fookbase.Api.Modules.Identity.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Identity.Common;
 
@@ -52,6 +53,30 @@ public sealed class PasswordConfirmationAttribute : CompareAttribute
     public PasswordConfirmationAttribute(string passwordProperty) : base(passwordProperty)
     {
         ErrorMessage = "Xác nhận mật khẩu không khớp.";
+    }
+}
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
+public sealed class RequiredForContactAttribute(string identifierProperty, ContactKind contactKind) : ValidationAttribute
+{
+    private static readonly RequiredAttribute RequiredValidator = new();
+
+    public override bool RequiresValidationContext => true;
+
+    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    {
+        var property = validationContext.ObjectType.GetProperty(identifierProperty)
+            ?? throw new InvalidOperationException($"Identifier property '{identifierProperty}' was not found.");
+        var identifier = property.GetValue(validationContext.ObjectInstance) as string;
+
+        if (string.IsNullOrWhiteSpace(identifier) ||
+            ContactIdentifier.Parse(identifier).Kind != contactKind || RequiredValidator.IsValid(value))
+        {
+            return ValidationResult.Success;
+        }
+
+        return new ValidationResult(FormatErrorMessage(validationContext.DisplayName),
+            validationContext.MemberName is null ? null : [validationContext.MemberName]);
     }
 }
 

@@ -2,12 +2,53 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Identity.Api.IntegrationTests;
 
 public sealed class PasswordRecoveryRequestValidationTests(IdentityApiFactory factory)
     : IClassFixture<IdentityApiFactory>
 {
+    [Theory]
+    [InlineData("user@example.test", null, null, "Token")]
+    [InlineData("user@example.test", "", null, "Token")]
+    [InlineData("user@example.test", "   ", null, "Token")]
+    [InlineData("user@example.test", null, "123456", "Token")]
+    [InlineData("0912345678", null, null, "Code")]
+    [InlineData("0912345678", null, "", "Code")]
+    [InlineData("0912345678", null, "   ", "Code")]
+    [InlineData("0912345678", "reset-token", null, "Code")]
+    [InlineData("user@example.test", "reset-token", null, null)]
+    [InlineData("0912345678", null, "123456", null)]
+    public void Reset_requires_the_credential_for_the_contact_kind(
+        string identifier, string? token, string? code, string? errorField)
+    {
+        var request = new ResetPasswordRequest(identifier, token, "Password123!", "Password123!", code);
+        var serviceCollection = new ServiceCollection().AddLogging();
+        serviceCollection.AddControllers();
+        using var services = serviceCollection.BuildServiceProvider();
+        var context = new ActionContext(
+            new DefaultHttpContext { RequestServices = services },
+            new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
+
+        services.GetRequiredService<IObjectModelValidator>().Validate(context, null, string.Empty, request);
+
+        Assert.Equal(errorField is null, context.ModelState.IsValid);
+        if (errorField is not null)
+        {
+            var message = errorField == "Token"
+                ? "Token là bắt buộc khi đặt lại mật khẩu bằng email."
+                : "Mã OTP là bắt buộc khi đặt lại mật khẩu bằng số điện thoại.";
+            Assert.Contains(context.ModelState[errorField]!.Errors, error => error.ErrorMessage == message);
+        }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

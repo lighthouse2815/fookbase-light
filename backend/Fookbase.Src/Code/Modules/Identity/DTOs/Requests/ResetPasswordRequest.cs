@@ -1,13 +1,17 @@
 using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Modules.Identity.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Identity.DTOs.Requests;
 
 public sealed record ResetPasswordRequest(
+
     [Required(ErrorMessage = "Email hoặc số điện thoại là bắt buộc.")]
     [EmailOrPhoneNumber]
     string? Identifier,
 
+    [RequiredForContact(nameof(Identifier), ContactKind.Email,
+        ErrorMessage = "Token là bắt buộc khi đặt lại mật khẩu bằng email.")]
     string? Token,
 
     [Required(ErrorMessage = "Mật khẩu mới là bắt buộc.")]
@@ -18,21 +22,7 @@ public sealed record ResetPasswordRequest(
     [PasswordConfirmation(nameof(Password))]
     string? ConfirmPassword,
 
+    [RequiredForContact(nameof(Identifier), ContactKind.Phone,
+        ErrorMessage = "Mã OTP là bắt buộc khi đặt lại mật khẩu bằng số điện thoại.")]
     [RegularExpression("[0-9]{6}", ErrorMessage = "Mã OTP phải gồm 6 chữ số.")]
-    string? Code = null) : IValidatableObject
-{
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (string.IsNullOrWhiteSpace(Identifier)) yield break;
-
-        if (Identifier.Contains('@'))
-        {
-            if (string.IsNullOrWhiteSpace(Token))
-                yield return new ValidationResult("Token là bắt buộc khi đặt lại mật khẩu bằng email.", [nameof(Token)]);
-        }
-        else if (string.IsNullOrWhiteSpace(Code))
-        {
-            yield return new ValidationResult("Mã OTP là bắt buộc khi đặt lại mật khẩu bằng số điện thoại.", [nameof(Code)]);
-        }
-    }
-}
+    string? Code = null);
