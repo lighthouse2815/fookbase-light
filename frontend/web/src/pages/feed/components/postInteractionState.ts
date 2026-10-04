@@ -97,6 +97,9 @@ export function createPostInteractionState(post: Post, api: ReactionApi, onReact
       if (fingerprint === lastPropFingerprint) return
       lastPropFingerprint = fingerprint
       if (running) return
+      // Replica props can contain an older vote or an optimistic metadata snapshot.
+      // After a local intent, the write's confirmed result (including rollback) owns our vote.
+      if (version > 0 && nextPost.viewerReaction !== confirmedReaction) return
       confirmedReaction = nextPost.viewerReaction
       confirmedCounts = { ...nextPost.reactionCounts }
       desiredReaction = confirmedReaction

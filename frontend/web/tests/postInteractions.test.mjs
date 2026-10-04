@@ -169,6 +169,53 @@ test('equivalent stale props with reordered keys or omitted zero counts cannot e
   assert.deepEqual(state.getSnapshot().reactionCounts, { like: 4, love: 2 })
 })
 
+test('a stale replica cannot erase a confirmed vote after current props have synchronized', async () => {
+  const { state, requests } = setup()
+  state.selectReaction('love')
+  const response = { ...post, viewerReaction: 'love', reactionCounts: { like: 3, love: 3 } }
+  requests[0].resolve(response)
+  await tick()
+  state.syncPost(response)
+  state.syncPost({ ...post })
+  assert.equal(state.getSnapshot().viewerReaction, 'love')
+  assert.deepEqual(state.getSnapshot().reactionCounts, response.reactionCounts)
+  assert.equal(state.getSnapshot().reactionPending, false)
+  assert.equal(requests.length, 1)
+})
+
+test('old optimistic metadata props cannot revive a vote after its failed request rolled back', async () => {
+  const { state, requests, errors } = setup()
+  state.selectReaction('love')
+  const optimisticProps = { ...post, viewerReaction: 'love', reactionCounts: { like: 3, love: 3 } }
+  state.syncPost(optimisticProps)
+  requests[0].reject(new Error('offline'))
+  await tick()
+  state.syncPost({ ...post })
+  state.syncPost({ ...optimisticProps })
+  assert.equal(state.getSnapshot().viewerReaction, null)
+  assert.deepEqual(state.getSnapshot().reactionCounts, post.reactionCounts)
+  assert.equal(state.getSnapshot().reactionPending, false)
+  assert.equal(errors.length, 1)
+  assert.equal(requests.length, 1)
+})
+
+test('changed counts with the same confirmed viewer vote still synchronize after a local write', async () => {
+  const { state, requests } = setup()
+  state.selectReaction('love')
+  const response = { ...post, viewerReaction: 'love', reactionCounts: { like: 3, love: 3 } }
+  requests[0].resolve(response)
+  await tick()
+  const newer = { ...response, reactionCounts: { like: 5, love: 6 } }
+  state.syncPost(newer)
+  assert.equal(state.getSnapshot().viewerReaction, 'love')
+  assert.deepEqual(state.getSnapshot().reactionCounts, newer.reactionCounts)
+  const updated = { ...newer, reactionCounts: { like: 2, love: 4 } }
+  state.syncPost(updated)
+  assert.deepEqual(state.getSnapshot().reactionCounts, updated.reactionCounts)
+  assert.equal(state.getSnapshot().reactionPending, false)
+  assert.equal(requests.length, 1)
+})
+
 test('toasts deduplicate, bound the stack, dismiss and expire automatically', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   showToast('Không thể cập nhật', 'error', 'reaction:1')
