@@ -6,7 +6,7 @@ public sealed class GroupCoverMediaReference
     {
     }
 
-    private GroupCoverMediaReference(Guid groupId, Guid mediaId, DateTimeOffset attachedAtUtc)
+    public GroupCoverMediaReference(Guid groupId, Guid mediaId, DateTimeOffset attachedAtUtc)
     {
         GroupId = groupId;
         MediaId = mediaId;
@@ -17,6 +17,4 @@ public sealed class GroupCoverMediaReference
     public Guid MediaId { get; private set; }
     public DateTimeOffset AttachedAtUtc { get; private set; }
 
-    public static GroupCoverMediaReference Create(Guid groupId, Guid mediaId, DateTimeOffset attachedAtUtc) =>
-        new(groupId, mediaId, attachedAtUtc);
 }

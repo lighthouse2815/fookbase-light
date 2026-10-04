@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -241,8 +242,8 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var viewerId = await CreateUserAsync("search-container-viewer");
         var ownerId = await CreateUserAsync("search-container-owner");
         var now = DateTimeOffset.UtcNow;
-        var publicGroup = Group.Create(Guid.NewGuid(), "Needle public group", "search description", GroupPrivacy.PUBLIC, ownerId, now);
-        var privateGroup = Group.Create(Guid.NewGuid(), "Needle private group", "member only", GroupPrivacy.PRIVATE, ownerId, now);
+        var publicGroup = new Group(Guid.NewGuid(), "Needle public group", "search description", GroupPrivacy.PUBLIC, ownerId, now);
+        var privateGroup = new Group(Guid.NewGuid(), "Needle private group", "member only", GroupPrivacy.PRIVATE, ownerId, now);
         var publishedPage = Page.Create(Guid.NewGuid(), "Needle public Page", "needle.public.page", "Community", "search bio", ownerId, now);
         publishedPage.Publish(now);
         var unpublishedPage = Page.Create(Guid.NewGuid(), "Needle hidden Page", "needle.hidden.page", "Community", null, ownerId, now);
@@ -253,8 +254,8 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.Groups.AddRange(publicGroup, privateGroup);
             db.GroupMembers.AddRange(
-                GroupMember.Create(publicGroup.Id, ownerId, GroupMemberRole.OWNER, now),
-                GroupMember.Create(privateGroup.Id, ownerId, GroupMemberRole.OWNER, now));
+                new GroupMember(publicGroup.Id, ownerId, GroupMemberRole.OWNER, now),
+                new GroupMember(privateGroup.Id, ownerId, GroupMemberRole.OWNER, now));
             db.Pages.AddRange(publishedPage, unpublishedPage);
             db.PageMembers.AddRange(
                 PageMember.Create(publishedPage.Id, ownerId, PageRole.OWNER, now),
@@ -281,7 +282,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.GroupMembers.Add(GroupMember.Create(privateGroup.Id, viewerId, GroupMemberRole.MEMBER, now));
+            db.GroupMembers.Add(new GroupMember(privateGroup.Id, viewerId, GroupMemberRole.MEMBER, now));
             db.BlockedUsers.Add(BlockedUser.Create(viewerId, ownerId, now));
             await db.SaveChangesAsync();
         }
@@ -352,9 +353,9 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
             for (var index = 0; index < 6; index++)
             {
                 var ownerId = await CreateUserAsync("search-preview-owner-" + index);
-                var group = Group.Create(Guid.NewGuid(), "Preview group " + index, null, GroupPrivacy.PUBLIC, ownerId, now.AddTicks(index));
+                var group = new Group(Guid.NewGuid(), "Preview group " + index, null, GroupPrivacy.PUBLIC, ownerId, now.AddTicks(index));
                 db.Groups.Add(group);
-                db.GroupMembers.Add(GroupMember.Create(group.Id, ownerId, GroupMemberRole.OWNER, now));
+                db.GroupMembers.Add(new GroupMember(group.Id, ownerId, GroupMemberRole.OWNER, now));
             }
             await db.SaveChangesAsync();
         }

@@ -1,10 +1,6 @@
-namespace Fookbase.Api.Modules.Groups.Entities;
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 
-public enum GroupPrivacy
-{
-    PUBLIC,
-    PRIVATE
-}
+namespace Fookbase.Api.Modules.Groups.Entities;
 
 public sealed class Group
 {
@@ -15,7 +11,7 @@ public sealed class Group
     {
     }
 
-    private Group(
+    public Group(
         Guid id,
         string name,
         string? description,
@@ -40,15 +36,6 @@ public sealed class Group
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
     public DateTimeOffset? DeletedAtUtc { get; private set; }
-
-    public static Group Create(
-        Guid id,
-        string name,
-        string? description,
-        GroupPrivacy privacy,
-        Guid ownerUserId,
-        DateTimeOffset createdAtUtc) =>
-        new(id, name, description, privacy, ownerUserId, createdAtUtc);
 
     public void Update(string name, string? description, GroupPrivacy privacy, DateTimeOffset updatedAtUtc)
     {

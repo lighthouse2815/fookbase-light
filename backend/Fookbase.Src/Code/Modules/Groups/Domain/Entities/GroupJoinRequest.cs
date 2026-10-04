@@ -1,11 +1,6 @@
-namespace Fookbase.Api.Modules.Groups.Entities;
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 
-public enum GroupJoinRequestStatus
-{
-    PENDING,
-    APPROVED,
-    DECLINED
-}
+namespace Fookbase.Api.Modules.Groups.Entities;
 
 public sealed class GroupJoinRequest
 {
@@ -13,7 +8,7 @@ public sealed class GroupJoinRequest
     {
     }
 
-    private GroupJoinRequest(Guid id, Guid groupId, Guid requesterUserId, DateTimeOffset createdAtUtc)
+    public GroupJoinRequest(Guid id, Guid groupId, Guid requesterUserId, DateTimeOffset createdAtUtc)
     {
         Id = id;
         GroupId = groupId;
@@ -29,13 +24,6 @@ public sealed class GroupJoinRequest
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? RespondedAtUtc { get; private set; }
     public Guid? RespondedByUserId { get; private set; }
-
-    public static GroupJoinRequest Create(
-        Guid id,
-        Guid groupId,
-        Guid requesterUserId,
-        DateTimeOffset createdAtUtc) =>
-        new(id, groupId, requesterUserId, createdAtUtc);
 
     public void Approve(Guid actorUserId, DateTimeOffset respondedAtUtc)
     {

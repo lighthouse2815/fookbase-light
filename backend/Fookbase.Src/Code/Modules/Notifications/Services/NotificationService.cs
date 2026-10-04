@@ -370,7 +370,7 @@ public sealed class NotificationService(
             item => item.Id == groupId && item.DeletedAtUtc == null,
             cancellationToken);
         return group is not null &&
-            (group.Privacy == Fookbase.Api.Modules.Groups.Entities.GroupPrivacy.PUBLIC ||
+            (group.Privacy == Fookbase.Api.Modules.Groups.Domain.Enums.GroupPrivacy.PUBLIC ||
             await dbContext.GroupMembers.AsNoTracking().AnyAsync(
                 member => member.GroupId == groupId && member.UserId == recipientUserId,
                 cancellationToken));

@@ -9,7 +9,7 @@ public sealed class GroupRule
     {
     }
 
-    private GroupRule(Guid id, Guid groupId, string title, string? description, int sortOrder)
+    public GroupRule(Guid id, Guid groupId, string title, string? description, int sortOrder)
     {
         Id = id;
         GroupId = groupId;
@@ -23,9 +23,6 @@ public sealed class GroupRule
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public int SortOrder { get; private set; }
-
-    public static GroupRule Create(Guid id, Guid groupId, string title, string? description, int sortOrder) =>
-        new(id, groupId, title, description, sortOrder);
 
     public void Update(string title, string? description, int sortOrder)
     {

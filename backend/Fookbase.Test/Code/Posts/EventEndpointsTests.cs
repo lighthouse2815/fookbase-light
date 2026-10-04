@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -139,9 +140,9 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.Groups.Add(Group.Create(groupId, "event group", null, GroupPrivacy.PUBLIC, users[0], DateTimeOffset.UtcNow));
-            db.GroupMembers.AddRange(GroupMember.Create(groupId, users[0], GroupMemberRole.ADMIN, DateTimeOffset.UtcNow),
-                GroupMember.Create(groupId, users[1], GroupMemberRole.MEMBER, DateTimeOffset.UtcNow));
+            db.Groups.Add(new Group(groupId, "event group", null, GroupPrivacy.PUBLIC, users[0], DateTimeOffset.UtcNow));
+            db.GroupMembers.AddRange(new GroupMember(groupId, users[0], GroupMemberRole.ADMIN, DateTimeOffset.UtcNow),
+                new GroupMember(groupId, users[1], GroupMemberRole.MEMBER, DateTimeOffset.UtcNow));
             await db.SaveChangesAsync();
         }
         using var admin = CreateAuthenticatedClient(users[0]);

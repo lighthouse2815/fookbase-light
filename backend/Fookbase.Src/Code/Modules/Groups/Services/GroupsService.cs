@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using System.Globalization;
 using System.Text;
@@ -48,14 +49,14 @@ public sealed class GroupsService(
         try
         {
             var now = timeProvider.GetUtcNow();
-            var group = Group.Create(
+            var group = new Group(
                 Guid.NewGuid(),
                 request.Name,
                 request.Description,
                 privacy,
                 actorUserId,
                 now);
-            var owner = GroupMember.Create(group.Id, actorUserId, GroupMemberRole.OWNER, now);
+            var owner = new GroupMember(group.Id, actorUserId, GroupMemberRole.OWNER, now);
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
             dbContext.Groups.Add(group);
             dbContext.GroupMembers.Add(owner);
@@ -417,7 +418,7 @@ public sealed class GroupsService(
 
         if (group.Privacy == GroupPrivacy.PUBLIC)
         {
-            dbContext.GroupMembers.Add(GroupMember.Create(
+            dbContext.GroupMembers.Add(new GroupMember(
                 groupId,
                 actorUserId,
                 GroupMemberRole.MEMBER,
@@ -441,7 +442,7 @@ public sealed class GroupsService(
                 ApplicationErrorType.CONFLICT);
         }
 
-        var joinRequest = GroupJoinRequest.Create(
+        var joinRequest = new GroupJoinRequest(
             Guid.NewGuid(),
             groupId,
             actorUserId,
@@ -605,7 +606,7 @@ public sealed class GroupsService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var now = timeProvider.GetUtcNow();
         request.Approve(actorUserId, now);
-        dbContext.GroupMembers.Add(GroupMember.Create(
+        dbContext.GroupMembers.Add(new GroupMember(
             groupId,
             request.RequesterUserId,
             GroupMemberRole.MEMBER,
@@ -711,7 +712,7 @@ public sealed class GroupsService(
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        var invite = GroupInvite.Create(
+        var invite = new GroupInvite(
             Guid.NewGuid(),
             groupId,
             actorUserId,
@@ -881,7 +882,7 @@ public sealed class GroupsService(
 
         try
         {
-            var rule = GroupRule.Create(
+            var rule = new GroupRule(
                 Guid.NewGuid(),
                 groupId,
                 request.Title,
@@ -1098,7 +1099,7 @@ public sealed class GroupsService(
         if (accept)
         {
             invite.Accept(now);
-            dbContext.GroupMembers.Add(GroupMember.Create(
+            dbContext.GroupMembers.Add(new GroupMember(
                 groupId,
                 actorUserId,
                 GroupMemberRole.MEMBER,

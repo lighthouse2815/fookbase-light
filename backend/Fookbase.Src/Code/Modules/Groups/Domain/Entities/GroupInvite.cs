@@ -1,11 +1,6 @@
-namespace Fookbase.Api.Modules.Groups.Entities;
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 
-public enum GroupInviteStatus
-{
-    PENDING,
-    ACCEPTED,
-    DECLINED
-}
+namespace Fookbase.Api.Modules.Groups.Entities;
 
 public sealed class GroupInvite
 {
@@ -13,7 +8,7 @@ public sealed class GroupInvite
     {
     }
 
-    private GroupInvite(
+    public GroupInvite(
         Guid id,
         Guid groupId,
         Guid inviterUserId,
@@ -35,14 +30,6 @@ public sealed class GroupInvite
     public GroupInviteStatus Status { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? RespondedAtUtc { get; private set; }
-
-    public static GroupInvite Create(
-        Guid id,
-        Guid groupId,
-        Guid inviterUserId,
-        Guid inviteeUserId,
-        DateTimeOffset createdAtUtc) =>
-        new(id, groupId, inviterUserId, inviteeUserId, createdAtUtc);
 
     public void Accept(DateTimeOffset respondedAtUtc)
     {

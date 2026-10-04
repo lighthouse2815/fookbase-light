@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
@@ -21,11 +22,47 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Text.Json;
 
 namespace Fookbase.Posts.Api.IntegrationTests;
 
 public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
+    [Fact]
+    public async Task Public_group_reads_allow_anonymous_access_and_writes_require_authentication()
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var group = await CreateGroupAsync(owner, "public");
+        using var client = factory.CreateClient();
+
+        foreach (var path in new[] { "", "/members", "/rules", "/posts" })
+        {
+            using var response = await client.GetAsync($"/api/groups/{group.Id}{path}");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        using var discover = await client.GetAsync("/api/groups/discover");
+        using var mine = await client.GetAsync("/api/groups/mine");
+        using var join = await client.PostAsync($"/api/groups/{group.Id}/join", null);
+        Assert.Equal(HttpStatusCode.OK, discover.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, mine.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, join.StatusCode);
+    }
+
+    [Fact]
+    public async Task Group_business_errors_preserve_their_problem_details_body()
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var group = await CreateGroupAsync(owner, "public");
+        using var client = CreateAuthenticatedClient(owner);
+        using var response = await client.PostAsync($"/api/groups/{group.Id}/leave", null);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("owner_cannot_leave", body.RootElement.GetProperty("code").GetString());
+        Assert.Equal(409, body.RootElement.GetProperty("status").GetInt32());
+    }
+
     [Fact]
     public async Task Creating_a_group_validates_input_and_creates_its_owner_membership_atomically()
     {

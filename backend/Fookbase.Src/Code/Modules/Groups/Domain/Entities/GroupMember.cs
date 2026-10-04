@@ -1,12 +1,6 @@
-namespace Fookbase.Api.Modules.Groups.Entities;
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 
-public enum GroupMemberRole
-{
-    OWNER,
-    ADMIN,
-    MODERATOR,
-    MEMBER
-}
+namespace Fookbase.Api.Modules.Groups.Entities;
 
 public sealed class GroupMember
 {
@@ -14,7 +8,7 @@ public sealed class GroupMember
     {
     }
 
-    private GroupMember(
+    public GroupMember(
         Guid groupId,
         Guid userId,
         GroupMemberRole role,
@@ -30,13 +24,6 @@ public sealed class GroupMember
     public Guid UserId { get; private set; }
     public GroupMemberRole Role { get; private set; }
     public DateTimeOffset JoinedAtUtc { get; private set; }
-
-    public static GroupMember Create(
-        Guid groupId,
-        Guid userId,
-        GroupMemberRole role,
-        DateTimeOffset joinedAtUtc) =>
-        new(groupId, userId, role, joinedAtUtc);
 
     public void ChangeRole(GroupMemberRole role)
     {

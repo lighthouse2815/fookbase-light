@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
@@ -860,7 +861,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var now = DateTimeOffset.UtcNow;
         var sharedGroupName = $"private-group-{Guid.NewGuid():N}";
         var sharedPageName = $"private-page-{Guid.NewGuid():N}";
-        var sharedGroup = Group.Create(
+        var sharedGroup = new Group(
             Guid.NewGuid(), sharedGroupName, null, GroupPrivacy.PRIVATE, viewerUserId, now);
         var sharedPage = Page.Create(
             Guid.NewGuid(),
@@ -877,9 +878,9 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             Friendship.Create(Guid.NewGuid(), mutualUserId, mutualCandidateUserId, now));
         dbContext.Groups.Add(sharedGroup);
         dbContext.GroupMembers.AddRange(
-            GroupMember.Create(sharedGroup.Id, viewerUserId, GroupMemberRole.OWNER, now),
-            GroupMember.Create(sharedGroup.Id, firstGroupCandidateUserId, GroupMemberRole.MEMBER, now),
-            GroupMember.Create(sharedGroup.Id, secondGroupCandidateUserId, GroupMemberRole.MEMBER, now));
+            new GroupMember(sharedGroup.Id, viewerUserId, GroupMemberRole.OWNER, now),
+            new GroupMember(sharedGroup.Id, firstGroupCandidateUserId, GroupMemberRole.MEMBER, now),
+            new GroupMember(sharedGroup.Id, secondGroupCandidateUserId, GroupMemberRole.MEMBER, now));
         dbContext.Pages.Add(sharedPage);
         dbContext.PageFollowers.AddRange(
             PageFollower.Create(sharedPage.Id, viewerUserId, now),
@@ -897,7 +898,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var now = DateTimeOffset.UtcNow;
-        var group = Group.Create(
+        var group = new Group(
             Guid.NewGuid(),
             $"{namePrefix}-{Guid.NewGuid():N}",
             null,
@@ -905,9 +906,9 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             viewerUserId,
             now);
         dbContext.Groups.Add(group);
-        dbContext.GroupMembers.Add(GroupMember.Create(group.Id, viewerUserId, GroupMemberRole.OWNER, now));
+        dbContext.GroupMembers.Add(new GroupMember(group.Id, viewerUserId, GroupMemberRole.OWNER, now));
         dbContext.GroupMembers.AddRange(candidateUserIds.Select(userId =>
-            GroupMember.Create(group.Id, userId, GroupMemberRole.MEMBER, now)));
+            new GroupMember(group.Id, userId, GroupMemberRole.MEMBER, now)));
         await dbContext.SaveChangesAsync();
     }
 
@@ -929,9 +930,9 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var activeGroupName = $"active-private-group-{Guid.NewGuid():N}";
         var deletedGroupName = $"deleted-private-group-{Guid.NewGuid():N}";
         var unpublishedPageName = $"unpublished-private-page-{Guid.NewGuid():N}";
-        var activeGroup = Group.Create(
+        var activeGroup = new Group(
             Guid.NewGuid(), activeGroupName, null, GroupPrivacy.PRIVATE, viewerUserId, now);
-        var deletedGroup = Group.Create(
+        var deletedGroup = new Group(
             Guid.NewGuid(), deletedGroupName, null, GroupPrivacy.PRIVATE, viewerUserId, now);
         deletedGroup.Delete(now);
         var unpublishedPage = Page.Create(
@@ -950,16 +951,16 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         dbContext.BlockedUsers.Add(BlockedUser.Create(incomingBlockerUserId, viewerUserId, now));
         dbContext.Groups.AddRange(activeGroup, deletedGroup);
         dbContext.GroupMembers.AddRange(
-            GroupMember.Create(activeGroup.Id, viewerUserId, GroupMemberRole.OWNER, now),
-            GroupMember.Create(activeGroup.Id, eligibleCandidateUserId, GroupMemberRole.MEMBER, now),
-            GroupMember.Create(activeGroup.Id, existingFriendUserId, GroupMemberRole.MEMBER, now),
-            GroupMember.Create(activeGroup.Id, outgoingPendingUserId, GroupMemberRole.MEMBER, now),
-            GroupMember.Create(activeGroup.Id, incomingPendingUserId, GroupMemberRole.MEMBER, now),
-            GroupMember.Create(activeGroup.Id, incomingBlockerUserId, GroupMemberRole.MEMBER, now),
-            GroupMember.Create(activeGroup.Id, inactiveUserId, GroupMemberRole.MEMBER, now),
-            GroupMember.Create(activeGroup.Id, profilelessUserId, GroupMemberRole.MEMBER, now),
-            GroupMember.Create(deletedGroup.Id, viewerUserId, GroupMemberRole.OWNER, now),
-            GroupMember.Create(deletedGroup.Id, deletedGroupCandidateUserId, GroupMemberRole.MEMBER, now));
+            new GroupMember(activeGroup.Id, viewerUserId, GroupMemberRole.OWNER, now),
+            new GroupMember(activeGroup.Id, eligibleCandidateUserId, GroupMemberRole.MEMBER, now),
+            new GroupMember(activeGroup.Id, existingFriendUserId, GroupMemberRole.MEMBER, now),
+            new GroupMember(activeGroup.Id, outgoingPendingUserId, GroupMemberRole.MEMBER, now),
+            new GroupMember(activeGroup.Id, incomingPendingUserId, GroupMemberRole.MEMBER, now),
+            new GroupMember(activeGroup.Id, incomingBlockerUserId, GroupMemberRole.MEMBER, now),
+            new GroupMember(activeGroup.Id, inactiveUserId, GroupMemberRole.MEMBER, now),
+            new GroupMember(activeGroup.Id, profilelessUserId, GroupMemberRole.MEMBER, now),
+            new GroupMember(deletedGroup.Id, viewerUserId, GroupMemberRole.OWNER, now),
+            new GroupMember(deletedGroup.Id, deletedGroupCandidateUserId, GroupMemberRole.MEMBER, now));
         dbContext.Pages.Add(unpublishedPage);
         dbContext.PageFollowers.AddRange(
             PageFollower.Create(unpublishedPage.Id, viewerUserId, now),

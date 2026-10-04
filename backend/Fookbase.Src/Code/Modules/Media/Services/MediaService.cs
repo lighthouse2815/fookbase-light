@@ -492,7 +492,7 @@ public sealed class MediaService(
 
         if (currentReference is null)
         {
-            dbContext.GroupCoverMediaReferences.Add(GroupCoverMediaReference.Create(
+            dbContext.GroupCoverMediaReferences.Add(new GroupCoverMediaReference(
                 groupId,
                 mediaId.Value,
                 timeProvider.GetUtcNow()));
@@ -500,7 +500,7 @@ public sealed class MediaService(
         else if (currentReference.MediaId != mediaId.Value)
         {
             dbContext.GroupCoverMediaReferences.Remove(currentReference);
-            dbContext.GroupCoverMediaReferences.Add(GroupCoverMediaReference.Create(
+            dbContext.GroupCoverMediaReferences.Add(new GroupCoverMediaReference(
                 groupId,
                 mediaId.Value,
                 timeProvider.GetUtcNow()));

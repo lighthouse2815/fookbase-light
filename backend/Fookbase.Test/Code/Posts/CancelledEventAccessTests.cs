@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Events.Services;
 using Fookbase.Api.Modules.Friends.Entities;
@@ -84,8 +85,8 @@ public sealed class CancelledEventAccessTests(PostsApiFactory factory) : IClassF
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.GroupMembers.AddRange(
-            GroupMember.Create(seeded.Event.HostId, seeded.ParticipantId, GroupMemberRole.MEMBER, DateTimeOffset.UtcNow),
-            GroupMember.Create(seeded.Event.HostId, seeded.StrangerId, GroupMemberRole.MEMBER, DateTimeOffset.UtcNow));
+            new GroupMember(seeded.Event.HostId, seeded.ParticipantId, GroupMemberRole.MEMBER, DateTimeOffset.UtcNow),
+            new GroupMember(seeded.Event.HostId, seeded.StrangerId, GroupMemberRole.MEMBER, DateTimeOffset.UtcNow));
         db.EventParticipants.Add(EventParticipant.Create(seeded.Event.Id, seeded.DeclinedId,
             EventParticipantStatus.INTERESTED, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
@@ -145,8 +146,8 @@ public sealed class CancelledEventAccessTests(PostsApiFactory factory) : IClassF
         db.UserProfiles.AddRange(users.Select(user => new UserProfile(user.Id, user.UserName!, now)));
         if (privateGroup)
         {
-            db.Groups.Add(Group.Create(hostId, "Private event group", null, GroupPrivacy.PRIVATE, users[0].Id, now));
-            db.GroupMembers.Add(GroupMember.Create(hostId, users[0].Id, GroupMemberRole.OWNER, now));
+            db.Groups.Add(new Group(hostId, "Private event group", null, GroupPrivacy.PRIVATE, users[0].Id, now));
+            db.GroupMembers.Add(new GroupMember(hostId, users[0].Id, GroupMemberRole.OWNER, now));
         }
         if (pageHost)
         {

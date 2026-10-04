@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.Data.Common;
 using System.Diagnostics;
@@ -769,13 +770,13 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     private async Task<Group> CreateGroupAsync(Guid owner, Guid? viewer, GroupPrivacy privacy = GroupPrivacy.PUBLIC)
     {
         var now = DateTimeOffset.UtcNow;
-        var group = Group.Create(Guid.NewGuid(), "Mixed Group " + Guid.NewGuid().ToString("N"), "Feed context", privacy, owner, now);
+        var group = new Group(Guid.NewGuid(), "Mixed Group " + Guid.NewGuid().ToString("N"), "Feed context", privacy, owner, now);
         await SaveAsync(db =>
         {
             db.Groups.Add(group);
-            db.GroupMembers.Add(GroupMember.Create(group.Id, owner, GroupMemberRole.OWNER, now));
+            db.GroupMembers.Add(new GroupMember(group.Id, owner, GroupMemberRole.OWNER, now));
             if (viewer is not null)
-                db.GroupMembers.Add(GroupMember.Create(group.Id, viewer.Value, GroupMemberRole.MEMBER, now));
+                db.GroupMembers.Add(new GroupMember(group.Id, viewer.Value, GroupMemberRole.MEMBER, now));
         });
         return group;
     }
