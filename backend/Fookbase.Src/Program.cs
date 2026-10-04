@@ -29,7 +29,6 @@ using Fookbase.Api.Modules.Photos;
 using Fookbase.Api.Modules.Photos.Endpoints;
 using Fookbase.Api.Modules.Reels.Endpoints;
 using Fookbase.Api.Modules.Stories.Endpoints;
-using Fookbase.Api.Modules.Users.Endpoints;
 using Fookbase.Api.Modules.Search.Endpoints;
 using Fookbase.Api.Modules.Events.Endpoints;
 using Fookbase.Api.Modules.Memories.Endpoints;
@@ -381,8 +380,6 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     Predicate = registration => registration.Tags.Contains("ready")
 }).DisableRateLimiting();
 app.MapControllers();
-app.MapUserProfileEndpoints();
-app.MapPrivacySettingsEndpoints();
 app.MapFriendEndpoints();
 app.MapFeedEndpoints();
 app.MapGroupEndpoints();
