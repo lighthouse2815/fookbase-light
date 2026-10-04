@@ -143,7 +143,7 @@ try {
   })
   await check('system icon has no fake actor; EventInvite targets the parent event', async () => {
     await open(page)
-    const system = notification(72, { type: 'AccountWarning', actorUserId: null, actorUsername: null, actorDisplayName: null, entityType: null, entityId: null, createdAtUtc: new Date().toISOString() })
+    const system = notification(72, { type: 'AccountWarning', actorUserId: null, actorUsername: null, actorDisplayName: null, actorAvatarUrl: '/api/users/moderator/avatar', entityType: null, entityId: null, createdAtUtc: new Date().toISOString() })
     await state.push(system)
     const target = row(page, system.id)
     await target.waitFor()
@@ -161,6 +161,33 @@ try {
     assert.ok(state.profileReads.every((path) => path === '/api/users/me'), 'Notifications must not request each actor profile')
   })
   await context.close()
+
+  const avatar = await create({ items: [notification(1, { actorAvatarUrl: '/api/users/minh/avatar' })] })
+  await avatar.context.route('**/api/users/minh/avatar', (route) => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" fill="#2563eb"/></svg>',
+  }))
+  await check('DTO avatars appear in rows and realtime toasts; broken images fall back without profile fetches', async () => {
+    await open(avatar.page)
+    const image = row(avatar.page, notification(1).id).locator('img')
+    await image.waitFor()
+    await until(async () => image.evaluate((element) => element.complete && element.naturalWidth > 0))
+    assert.equal(await image.getAttribute('loading'), 'lazy')
+    await avatar.page.keyboard.press('Escape')
+    const next = notification(74, { actorAvatarUrl: '/api/users/minh/avatar', createdAtUtc: new Date().toISOString() })
+    await avatar.state.push(next)
+    const toast = avatar.page.getByRole('status').filter({ hasText: /Minh/ })
+    await toast.locator('img').waitFor()
+    assert.match(await toast.locator('img').getAttribute('src'), /\/api\/users\/minh\/avatar$/)
+    await closeToasts(avatar.page)
+    await open(avatar.page)
+    const broken = notification(75, { actorAvatarUrl: 'data:image/png;base64,broken', createdAtUtc: new Date().toISOString() })
+    await avatar.state.push(broken)
+    await row(avatar.page, broken.id).waitFor()
+    await until(async () => await row(avatar.page, broken.id).locator('img').count() === 0)
+    assert.match(await row(avatar.page, broken.id).innerText(), /MI/)
+    assert.ok(avatar.state.profileReads.every((path) => path === '/api/users/me'))
+  })
+  await avatar.context.close()
 
   for (const failed of [false, true]) {
     const pending = await create({ items: [notification(1), notification(2)] })

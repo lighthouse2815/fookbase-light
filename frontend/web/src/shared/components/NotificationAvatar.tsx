@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { AppNotification } from '../../api/notifications'
+import { resolveProfileImageUrl } from '../../api/users'
 import { getNotificationPresentation, type NotificationPresentation } from '../notificationPresentation'
 
 export function NotificationIcon({ icon }: { icon: NotificationPresentation['icon'] }) {
@@ -19,8 +21,10 @@ export function NotificationIcon({ icon }: { icon: NotificationPresentation['ico
 
 export default function NotificationAvatar({ notification, compact = false }: { notification: AppNotification; compact?: boolean }) {
   const presentation = getNotificationPresentation(notification)
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null)
+  const avatarUrl = !presentation.isSystem ? notification.actorAvatarUrl : null
   return <span aria-hidden="true" className={`relative flex shrink-0 items-center justify-center rounded-full ${compact ? 'h-10 w-10 text-xs' : 'h-14 w-14 text-sm'} ${presentation.isSystem ? 'bg-primary/10 text-primary' : 'bg-primary font-bold text-white'}`}>
-    {presentation.actor ? presentation.actor.slice(0, 2).toLocaleUpperCase('vi-VN') : <span className={compact ? 'h-5 w-5' : 'h-7 w-7'}><NotificationIcon icon={presentation.icon} /></span>}
+    {avatarUrl && failedAvatarUrl !== avatarUrl ? <img src={resolveProfileImageUrl(avatarUrl)} alt="" loading="lazy" decoding="async" onError={() => setFailedAvatarUrl(avatarUrl)} className="h-full w-full rounded-full object-cover" /> : presentation.actor ? presentation.actor.slice(0, 2).toLocaleUpperCase('vi-VN') : <span className={compact ? 'h-5 w-5' : 'h-7 w-7'}><NotificationIcon icon={presentation.icon} /></span>}
     {!presentation.isSystem && !compact && <span className={`absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-surface p-1 text-white ${presentation.badge.className}`}><NotificationIcon icon={presentation.icon} /></span>}
   </span>
 }

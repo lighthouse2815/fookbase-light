@@ -38,10 +38,12 @@ export interface AppNotification {
   actorUserId: string | null
   actorUsername: string | null
   actorDisplayName: string | null
+  actorAvatarUrl?: string | null
   type: AppNotificationType
   entityType: AppNotificationEntityType | null
   entityId: string | null
   parentEntityId: string | null
+  pageUsername?: string | null
   isRead: boolean
   createdAtUtc: string
   readAtUtc: string | null
