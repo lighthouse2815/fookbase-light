@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using Fookbase.Api.Modules.Identity.Abstractions;
 using Fookbase.Api.Modules.Identity.Config;
 
 namespace Fookbase.Api.Modules.Identity.Services;

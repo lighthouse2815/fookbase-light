@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Identity.Abstractions;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;

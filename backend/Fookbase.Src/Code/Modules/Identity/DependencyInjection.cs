@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Identity.Abstractions;
 using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Identity.Config;

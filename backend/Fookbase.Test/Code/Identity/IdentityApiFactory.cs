@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Identity.Abstractions;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Services;
 using Microsoft.AspNetCore.Hosting;

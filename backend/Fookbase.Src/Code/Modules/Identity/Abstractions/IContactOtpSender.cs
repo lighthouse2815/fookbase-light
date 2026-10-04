@@ -1,6 +1,6 @@
 using Fookbase.Api.Modules.Identity.Common;
 
-namespace Fookbase.Api.Modules.Identity.Services;
+namespace Fookbase.Api.Modules.Identity.Abstractions;
 
 public interface IContactOtpSender
 {

@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Identity.Services;
+namespace Fookbase.Api.Modules.Identity.Abstractions;
 
 public interface IEmailSender
 {
