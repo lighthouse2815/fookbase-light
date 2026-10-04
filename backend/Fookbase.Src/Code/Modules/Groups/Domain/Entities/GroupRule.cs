@@ -1,5 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+
 namespace Fookbase.Api.Modules.Groups.Entities;
 
+[Table("GroupRules")]
+[Index(nameof(GroupId), nameof(SortOrder), nameof(Id))]
 public sealed class GroupRule
 {
     public const int MaximumTitleLength = 200;
@@ -18,11 +24,20 @@ public sealed class GroupRule
         SortOrder = sortOrder;
     }
 
+    [Key]
     public Guid Id { get; private set; }
     public Guid GroupId { get; private set; }
+    [Required]
+    [MaxLength(MaximumTitleLength)]
     public string Title { get; private set; } = string.Empty;
+    [MaxLength(MaximumDescriptionLength)]
     public string? Description { get; private set; }
     public int SortOrder { get; private set; }
+
+    [ForeignKey(nameof(GroupId))]
+    [InverseProperty(nameof(Group.Rules))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Group Group { get; private set; } = null!;
 
     public void Update(string title, string? description, int sortOrder)
     {

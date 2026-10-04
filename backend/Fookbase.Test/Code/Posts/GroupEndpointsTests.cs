@@ -517,6 +517,35 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.NotFound, direct.StatusCode);
     }
 
+    [Fact]
+    public async Task Replacing_group_cover_updates_the_existing_reference_and_keeps_both_media_assets()
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var group = await CreateGroupAsync(owner, "public");
+        var firstMediaId = await AddReadyMediaAsync(owner);
+        var secondMediaId = await AddReadyMediaAsync(owner);
+        using var client = CreateAuthenticatedClient(owner);
+
+        foreach (var mediaId in new[] { firstMediaId, secondMediaId })
+        {
+            using var response = await client.PatchAsJsonAsync($"/api/groups/{group.Id}", new
+            {
+                name = group.Name,
+                description = group.Description,
+                privacy = group.Privacy,
+                coverMediaId = mediaId
+            });
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.Equal(secondMediaId, (await db.Groups.SingleAsync(item => item.Id == group.Id)).CoverMediaId);
+        Assert.Equal(secondMediaId,
+            (await db.GroupCoverMediaReferences.SingleAsync(item => item.GroupId == group.Id)).MediaId);
+        Assert.Equal(2, await db.MediaAssets.CountAsync(item => item.Id == firstMediaId || item.Id == secondMediaId));
+    }
+
     private async Task<GroupResponse> CreateGroupAsync(Guid ownerUserId, string privacy)
     {
         using var client = CreateAuthenticatedClient(ownerUserId);

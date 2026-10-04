@@ -1,7 +1,14 @@
 using Fookbase.Api.Modules.Groups.Domain.Enums;
+using Fookbase.Api.Modules.Identity.Entities;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace Fookbase.Api.Modules.Groups.Entities;
 
+[Table("GroupJoinRequests")]
+[Index(nameof(GroupId), nameof(RequesterUserId), IsUnique = true)]
+[Index(nameof(GroupId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class GroupJoinRequest
 {
     private GroupJoinRequest()
@@ -17,6 +24,7 @@ public sealed class GroupJoinRequest
         CreatedAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
     public Guid GroupId { get; private set; }
     public Guid RequesterUserId { get; private set; }
@@ -24,6 +32,19 @@ public sealed class GroupJoinRequest
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? RespondedAtUtc { get; private set; }
     public Guid? RespondedByUserId { get; private set; }
+
+    [ForeignKey(nameof(GroupId))]
+    [InverseProperty(nameof(Group.JoinRequests))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Group Group { get; private set; } = null!;
+
+    [ForeignKey(nameof(RequesterUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User RequesterUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(RespondedByUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User? RespondedByUser { get; private set; }
 
     public void Approve(Guid actorUserId, DateTimeOffset respondedAtUtc)
     {
