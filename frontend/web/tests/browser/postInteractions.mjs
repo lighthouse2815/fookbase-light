@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
-import { postFixtures, postId } from './postInteractionsFixture.mjs'
+import { postFixtures, postId, viewerId } from './postInteractionsFixture.mjs'
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright')
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_EXECUTABLE, args: ['--no-sandbox'] })
-const baseUrl = process.env.GAME_BASE_URL ?? 'http://127.0.0.1:5183'
+const baseUrl = process.env.POST_BASE_URL ?? 'http://127.0.0.1:5183'
 const failures = []
 const passed = []
 const trackErrors = (page) => {
@@ -18,7 +18,7 @@ const trackErrors = (page) => {
 }
 const check = async (name, run) => { await run(); passed.push(name); console.log(`PASS ${name}`) }
 const until = async (checkValue) => {
-  for (let attempt = 0; attempt < 100; attempt++) {
+  for (let attempt = 0; attempt < 200; attempt++) {
     if (await checkValue()) return
     await new Promise((resolve) => setTimeout(resolve, 30))
   }
@@ -56,8 +56,10 @@ try {
     assert.equal(await reaction.getAttribute('aria-pressed'), 'true')
     assert.match(await reaction.innerText(), /Yêu thích/)
     await until(() => state.post.viewerReaction === 'love')
+    await reaction.hover()
     await reaction.focus()
     await reaction.press('ArrowDown')
+    assert.equal(await page.locator(':focus').getAttribute('aria-label'), 'Yêu thích')
     await page.getByRole('menuitemradio', { name: 'Wow', exact: true }).click()
     assert.match(await reaction.innerText(), /Wow/)
     await until(() => state.post.viewerReaction === 'wow')
@@ -65,6 +67,36 @@ try {
     assert.equal(await reaction.getAttribute('aria-pressed'), 'false')
     await until(() => state.post.viewerReaction === null)
     assert.deepEqual(state.post.reactionCounts, { like: 2, love: 1, wow: 0 })
+  })
+  await check('rapid reaction changes coalesce to the final intent without counter drift', async () => {
+    state.reactionDelay = 1_000
+    const before = state.writes.filter((write) => write.action === 'reaction').length
+    const choose = async (label) => {
+      await reaction.focus()
+      await reaction.press('ArrowDown')
+      await page.getByRole('menuitemradio', { name: label, exact: true }).click()
+    }
+    await choose('Yêu thích')
+    await choose('Wow')
+    await choose('Wow')
+    assert.equal(await reaction.getAttribute('aria-pressed'), 'false')
+    assert.equal(await page.getByRole('button', { name: 'Xem 3 cảm xúc', exact: true }).count(), 1)
+    await until(() => state.writes.filter((write) => write.action === 'reaction').length >= before + 2 && state.post.viewerReaction === null)
+    assert.deepEqual(state.writes.filter((write) => write.action === 'reaction').slice(before).map((write) => write.type), ['love', null])
+    state.reactionDelay = 350
+  })
+  await check('reaction failure restores the exact previous vote and counter with one toast', async () => {
+    state.failReaction = true
+    await reaction.focus()
+    await reaction.press('ArrowDown')
+    await page.getByRole('menuitemradio', { name: 'Yêu thích', exact: true }).click()
+    assert.equal(await reaction.getAttribute('aria-pressed'), 'true')
+    assert.equal(await page.getByRole('button', { name: 'Xem 4 cảm xúc', exact: true }).count(), 1)
+    await until(async () => await reaction.getAttribute('aria-pressed') === 'false')
+    assert.equal(await page.getByRole('button', { name: 'Xem 3 cảm xúc', exact: true }).count(), 1)
+    assert.equal(state.post.viewerReaction, null)
+    assert.equal(await page.getByRole('status').filter({ hasText: 'Không thể lưu cảm xúc thử nghiệm.' }).count(), 1)
+    state.failReaction = false
   })
   await check('reaction picker supports arrows, Escape and focus return', async () => {
     await reaction.focus()
@@ -217,6 +249,109 @@ try {
   })
   await reporting.close()
 
+  const racing = await browser.newContext({ viewport: { width: 1366, height: 1000 } })
+  const racingState = await postFixtures(racing)
+  const racingPage = await racing.newPage()
+  trackErrors(racingPage)
+  await racingPage.goto(`${baseUrl}/posts/${postId}`)
+  await racingPage.locator('[data-post-reaction]').first().waitFor()
+  racingState.comments = Array.from({ length: 30 }, (_, index) => ({
+    id: `00000000-0000-0000-0000-${String(index + 200).padStart(12, '0')}`,
+    postId, authorUserId: viewerId, parentCommentId: null, content: `Bình luận đã có ${index + 1}`,
+    createdAtUtc: `2026-01-01T00:00:${String(index).padStart(2, '0')}Z`, updatedAtUtc: null,
+    reactionCounts: {}, viewerReaction: null, author: { userId: viewerId, username: 'explorer', displayName: 'Người kiểm tra', avatarUrl: null },
+  }))
+  racingState.post = { ...racingState.post, commentCount: 30 }
+  racingState.commentsReadDelay = 800
+  await check('posting while a stale partial comment page loads reconciles the count and preserves pagination', async () => {
+    await racingPage.getByRole('button', { name: 'Bình luận', exact: true }).first().click()
+    const dialog = racingPage.getByRole('dialog', { name: 'Bài viết của Người kiểm tra', exact: true })
+    await dialog.getByRole('textbox', { name: 'Viết bình luận', exact: true }).fill('Bình luận khi danh sách còn tải')
+    await dialog.getByRole('button', { name: 'Gửi', exact: true }).click()
+    await until(() => racingState.comments.length === 31)
+    await until(async () => /31 bình luận/.test(await racingPage.locator('article').last().innerText()))
+    assert.equal(await dialog.locator('[data-comment-id]').count(), 21)
+    await dialog.getByRole('button', { name: 'Tải thêm bình luận', exact: true }).click()
+    await until(async () => await dialog.locator('[data-comment-id]').count() === 31)
+    assert.equal(await dialog.getByRole('button', { name: 'Tải thêm bình luận', exact: true }).count(), 0)
+    assert.equal(await dialog.getByText('Bình luận khi danh sách còn tải', { exact: true }).count(), 1)
+  })
+  await racing.close()
+
+  const duplicates = await browser.newContext({ viewport: { width: 1366, height: 1000 } })
+  const sharedState = await postFixtures(duplicates)
+  const feedPage = await duplicates.newPage()
+  trackErrors(feedPage)
+  await feedPage.goto(`${baseUrl}/feed`)
+  await until(async () => await feedPage.locator('[data-post-reaction]').count() === 3)
+  const directReaction = feedPage.locator('[data-post-reaction]').nth(0)
+  const sharedReaction = feedPage.locator('[data-post-reaction]').nth(1)
+  const otherReaction = feedPage.locator('[data-post-reaction]').nth(2)
+  const directCard = directReaction.locator('xpath=ancestor::article[1]')
+  const sharedCard = sharedReaction.locator('xpath=ancestor::article[1]')
+  const feedReads = sharedState.feedReads
+  await check('original and shared cards update together while another post and feed stay unchanged', async () => {
+    await directReaction.click()
+    assert.equal(await sharedReaction.getAttribute('aria-pressed'), 'true')
+    assert.equal(await directCard.getByRole('button', { name: 'Xem 4 cảm xúc', exact: true }).count(), 1)
+    assert.equal(await sharedCard.getByRole('button', { name: 'Xem 4 cảm xúc', exact: true }).count(), 1)
+    assert.equal(await otherReaction.getAttribute('aria-pressed'), 'false')
+    await until(() => sharedState.post.viewerReaction === 'like')
+    await sharedReaction.click()
+    assert.equal(await directReaction.getAttribute('aria-pressed'), 'false')
+    await until(() => sharedState.post.viewerReaction === null)
+    assert.equal(sharedState.feedReads, feedReads)
+  })
+  await check('comment list and count are shared across both cards without a feed refetch', async () => {
+    await directCard.getByRole('button', { name: 'Bình luận', exact: true }).click()
+    let dialog = feedPage.getByRole('dialog', { name: 'Bài viết của Người kiểm tra', exact: true })
+    await dialog.getByRole('textbox', { name: 'Viết bình luận', exact: true }).fill('Hiển thị ở cả hai vị trí')
+    await dialog.getByRole('button', { name: 'Gửi', exact: true }).dblclick()
+    assert.match(await directCard.innerText(), /1 bình luận/)
+    assert.match(await sharedCard.innerText(), /1 bình luận/)
+    await feedPage.getByRole('button', { name: 'Đóng bình luận', exact: true }).click()
+    await until(() => sharedState.comments.length === 1)
+    await sharedCard.getByRole('button', { name: 'Bình luận', exact: true }).click()
+    dialog = feedPage.getByRole('dialog', { name: 'Bài viết của Người kiểm tra', exact: true })
+    assert.equal(await dialog.locator('[data-comment-id]').count(), 1)
+    assert.equal(sharedState.writes.filter((write) => write.action === 'comment').length, 1)
+    assert.equal(sharedState.feedReads, feedReads)
+    await feedPage.keyboard.press('Escape')
+  })
+  await check('a reaction survives component unmount and remount during a pending request', async () => {
+    sharedState.reactionDelay = 800
+    await directReaction.click()
+    await feedPage.locator('a[href="/saved"]').first().click()
+    await until(async () => !await feedPage.locator('[data-post-reaction]').count())
+    await until(() => sharedState.post.viewerReaction === 'like')
+    await feedPage.locator('a[href="/feed"]').first().click()
+    await until(async () => await feedPage.locator('[data-post-reaction]').count() === 3)
+    assert.equal(await directReaction.getAttribute('aria-pressed'), 'true')
+    assert.equal(await sharedReaction.getAttribute('aria-pressed'), 'true')
+    assert.match(await directCard.innerText(), /1 bình luận/)
+  })
+  await check('a comment survives unmount without duplicate rows or lost counters on return', async () => {
+    sharedState.commentDelay = 700
+    await directCard.getByRole('button', { name: 'Bình luận', exact: true }).click()
+    const dialog = feedPage.getByRole('dialog', { name: 'Bài viết của Người kiểm tra', exact: true })
+    await dialog.getByRole('textbox', { name: 'Viết bình luận', exact: true }).fill('Bình luận khi rời trang')
+    await dialog.getByRole('button', { name: 'Gửi', exact: true }).click()
+    await feedPage.keyboard.press('Escape')
+    await feedPage.locator('a[href="/saved"]').first().click()
+    await until(async () => !await feedPage.locator('[data-post-reaction]').count())
+    await until(() => sharedState.comments.length === 2)
+    await feedPage.locator('a[href="/feed"]').first().click()
+    await until(async () => await feedPage.locator('[data-post-reaction]').count() === 3)
+    assert.match(await directCard.innerText(), /2 bình luận/)
+    assert.match(await sharedCard.innerText(), /2 bình luận/)
+    await sharedCard.getByRole('button', { name: 'Bình luận', exact: true }).click()
+    const reopened = feedPage.getByRole('dialog', { name: 'Bài viết của Người kiểm tra', exact: true })
+    assert.equal(await reopened.locator('[data-comment-id]').count(), 2)
+    assert.equal(await reopened.locator('[data-comment-id][aria-busy="true"]').count(), 0)
+    await feedPage.keyboard.press('Escape')
+  })
+  await duplicates.close()
+
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   const mobileState = await postFixtures(mobile)
   const phone = await mobile.newPage()
@@ -240,6 +375,27 @@ try {
     assert.ok(popup.x >= 0 && popup.x + popup.width <= 390)
     await phone.getByRole('menuitemradio', { name: 'Yêu thích', exact: true }).tap()
     await until(() => mobileState.post.viewerReaction === 'love')
+    assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+  })
+  await check('mobile comments, dropdown, resize and light theme remain usable', async () => {
+    await phone.getByRole('button', { name: 'Bình luận', exact: true }).first().tap()
+    const dialog = phone.getByRole('dialog', { name: 'Bài viết của Người kiểm tra', exact: true })
+    await dialog.getByRole('textbox', { name: 'Viết bình luận', exact: true }).fill('Bình luận trên điện thoại')
+    await dialog.getByRole('button', { name: 'Gửi', exact: true }).tap()
+    await until(() => mobileState.comments.length === 1)
+    await phone.getByRole('button', { name: 'Đóng bình luận', exact: true }).tap()
+    const trigger = phone.getByRole('button', { name: 'Tùy chọn khác', exact: true })
+    await trigger.tap()
+    const menu = phone.getByRole('menu', { name: 'Tùy chọn khác', exact: true })
+    await menu.waitFor()
+    await phone.setViewportSize({ width: 320, height: 740 })
+    await phone.waitForTimeout(200)
+    const bounds = await menu.boundingBox()
+    assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 320)
+    await phone.mouse.click(5, 600)
+    await phone.evaluate(() => { document.documentElement.dataset.theme = 'light' })
+    await trigger.tap()
+    assert.equal(await menu.evaluate((element) => getComputedStyle(element).backgroundColor), 'rgb(255, 255, 255)')
     assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
   })
   await mobile.close()

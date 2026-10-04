@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { createServer } from 'vite'
 
 const success = (data) => ({ success: true, data, error: null, requestId: 'request-1' })
@@ -15,13 +18,15 @@ for (const app of ['web', 'admin', 'zola-light']) {
       removeItem: (key) => storage.delete(key),
     }
     globalThis.window = new EventTarget()
+    const cacheDir = await mkdtemp(join(tmpdir(), `fookbase-auth-${app}-`))
     const server = await createServer({
       root: fileURLToPath(new URL(`../../../${app}/`, import.meta.url)),
       configFile: false,
+      cacheDir,
       server: { middlewareMode: true },
       appType: 'custom',
     })
-    t.after(() => server.close())
+    t.after(async () => { await server.close(); await rm(cacheDir, { recursive: true, force: true }) })
     const client = await server.ssrLoadModule(app === 'zola-light' ? '/src/api.ts' : '/src/api/client.ts')
     const request = client.apiRequest ?? client.request
 

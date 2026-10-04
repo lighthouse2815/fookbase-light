@@ -13,12 +13,22 @@ export const basePost = {
 export async function postFixtures(context, initial = {}) {
   await fixtures(context)
   await context.addInitScript(() => localStorage.setItem('fookbase.preferences', JSON.stringify({ language: 'vi', theme: 'dark' })))
-  const state = { post: { ...basePost, ...initial }, comments: [], writes: [], reactionDelay: 350, failReaction: false, commentDelay: 350, failComment: false, actionDelay: 400, failAction: false, feedReads: 0 }
+  const state = { post: { ...basePost, ...initial }, comments: [], writes: [], reactionDelay: 350, failReaction: false, commentDelay: 350, failComment: false, commentsReadDelay: 0, actionDelay: 400, failAction: false, feedReads: 0 }
+  const feedPost = structuredClone(state.post)
+  const toFeedItem = (post) => ({ ...post, author: { userId: post.authorUserId, username: post.displayAuthor.username, displayName: post.displayAuthor.name, avatarUrl: null }, container: { id: viewerId, name: 'Trang cá nhân' }, media: [], video: null, isSuggested: false, reactionCount: Object.values(post.reactionCounts).reduce((sum, count) => sum + count, 0) })
   await context.route('**/api/**', async (route) => {
     const request = route.request()
     const url = new URL(request.url())
     const path = url.pathname
     if (!path.startsWith('/api/')) return route.fallback()
+    if (path === '/api/birthdays/today') return route.fulfill({ json: [] })
+    if (path === '/api/feed' || path === '/api/feed/following') {
+      state.feedReads++
+      const original = toFeedItem(feedPost)
+      const shared = { ...original, id: '00000000-0000-0000-0000-000000000102', contentType: 'share', share: { id: 'share-1', originalPostId: postId, caption: 'Một bản chia sẻ của cùng bài viết', createdAtUtc: feedPost.createdAtUtc, actor: original.author, originalAuthor: feedPost.displayAuthor, originalPost: feedPost } }
+      const other = toFeedItem({ ...feedPost, id: '00000000-0000-0000-0000-000000000103', content: 'Bài viết độc lập', reactionCounts: {}, viewerReaction: null })
+      return route.fulfill({ json: { items: [original, shared, other], asOfUtc: '2026-10-01T08:00:00Z', nextCursor: null } })
+    }
     if (path === `/api/posts/${postId}`) {
       if (request.method() === 'PUT') {
         state.writes.push({ action: 'edit', ...request.postDataJSON() })
@@ -67,7 +77,9 @@ export async function postFixtures(context, initial = {}) {
       if (request.method() === 'GET') {
         const offset = Number(url.searchParams.get('offset') ?? 0)
         const limit = Number(url.searchParams.get('limit') ?? 20)
-        return route.fulfill({ json: { items: state.comments.slice(offset, offset + limit), total: state.comments.length, offset, limit } })
+        const snapshot = structuredClone({ items: state.comments.slice(offset, offset + limit), total: state.comments.length, offset, limit })
+        await new Promise((resolve) => setTimeout(resolve, state.commentsReadDelay))
+        return route.fulfill({ json: snapshot })
       }
       state.writes.push({ action: 'comment', ...request.postDataJSON() })
       const fail = state.failComment
