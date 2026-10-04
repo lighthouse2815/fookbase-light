@@ -1,8 +1,7 @@
 name: Deploy EC2
 
 on:
-  push:
-    branches: [main]
+  # Tạm dừng deploy tự động trên main; vẫn có thể chạy thủ công khi cần.
   workflow_dispatch:
 
 permissions:

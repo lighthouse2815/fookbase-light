@@ -1,8 +1,8 @@
 name: CI
 
 on:
-  push:
-  pull_request:
+  # Tạm dừng CI tự động; vẫn có thể chạy thủ công khi cần.
+  workflow_dispatch:
 
 jobs:
   mobile:
