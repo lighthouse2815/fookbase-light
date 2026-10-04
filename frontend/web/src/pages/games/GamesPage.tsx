@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { Mascot } from 'page-mascot'
+import { Link } from 'react-router-dom'
 import { usePreferences } from '../../preferences'
 import FlappyBirdGame from './FlappyBirdGame'
 import MemoryGame from './MemoryGame'
@@ -235,9 +236,14 @@ export default function GamesPage() {
     </> : <>
       <section className="games-hero" aria-labelledby="games-page-title">
         <div className="games-hero__glow" />
-        <div className="games-hero__copy"><p className="games-kicker">FOOKBASE PLAYROOM</p><h1 id="games-page-title">{t('quickBreak')}<br /><em>the fun way.</em></h1><p>Chọn một ván ngắn để đổi nhịp, luyện phản xạ hoặc rủ bạn bè cùng bay.</p><div className="games-hero__stats"><span><strong>{games.length}</strong> game</span><span><strong>{new Set(games.map((item) => item.category)).size}</strong> thể loại</span><span><strong>∞</strong> lượt vui</span></div></div>
+        <div className="games-hero__copy"><p className="games-kicker">FOOKBASE PLAYROOM</p><h1 id="games-page-title">{t('quickBreak')}<br /><em>the fun way.</em></h1><p>Chọn một ván ngắn để đổi nhịp, luyện phản xạ hoặc rủ bạn bè cùng bay.</p><div className="games-hero__stats"><span><strong>{games.length + 1}</strong> game</span><span><strong>{new Set(games.map((item) => item.category)).size + 1}</strong> thể loại</span><span><strong>∞</strong> lượt vui</span></div></div>
         <div className="games-hero__mascot"><Mascot directions="/mascots/gearbot-directions.webp" reactions="/mascots/gearbot-reactions.webp" size={148} className="shrink-0" label="Game Robot Mascot" /><span>Chơi một ván nhé?</span></div>
       </section>
+      <Link to="/game" className="group my-6 flex items-center gap-6 overflow-hidden rounded-2xl border border-[#758571]/30 bg-linear-to-r from-[#112722] via-[#1d3430] to-[#2d4540] px-6 py-6 text-[#eee8d8] no-underline transition-colors hover:border-[#d9b773]/60 max-sm:flex-wrap max-sm:gap-4">
+        <svg viewBox="0 0 96 96" className="h-20 w-20 shrink-0" aria-hidden="true"><path d="M8 81 48 59l40 22" fill="none" stroke="#607d6b" /><path d="m19 75 1-24 30-15 25 13v26L49 90Z" fill="#354e45" stroke="#779680" /><path d="m17 51 33-17 28 13-31 17Z" fill="#60776b" /><path d="M48 64v26M58 24v27m-8-23h17m-15-8h14m-6-6h4" stroke="#a0b6a4" strokeWidth="2" /><path d="M30 61v17l9 5V66Z" fill="#e2b974" /><circle cx="60" cy="14" r="2" fill="#df9d6a" /><path d="m8 51 5-17 6 17m60-16 5-18 6 18M10 72l4-15 5 15" stroke="#607d6b" strokeWidth="2" fill="none" /><circle cx="78" cy="13" r="5" fill="#c5d6bd" /></svg>
+        <div className="min-w-0 flex-1"><p className="mb-2 text-[9px] font-semibold tracking-[.22em] text-[#d9b773]">MỚI · KHÁM PHÁ 3D · GÓC NHÌN THỨ NHẤT</p><h2 className="font-heading text-2xl font-semibold tracking-tight">Tần số 0 <span className="ml-2 text-xs font-normal tracking-widest text-[#a2b2a7] max-sm:block max-sm:ml-0 max-sm:mt-2">THE LAST SIGNAL</span></h2><p className="mt-2 text-xs leading-6 text-[#b0bfb2]">Một trạm phát sóng bỏ hoang. Một tín hiệu trở lại. Tìm chìa khóa, khôi phục điện và khám phá căn phòng cuối.</p></div>
+        <span className="shrink-0 rounded-lg border border-[#d9b773]/40 px-4 py-3 text-xs text-[#e5c68f] transition-colors group-hover:bg-[#d9b773]/10">Vào game ↗</span>
+      </Link>
       <GameLibrary activeCategory={activeCategory} onCategoryChange={setActiveCategory} onSelect={(gameId) => { setSelectedGame(gameId); window.scrollTo({ top: 0, behavior: 'instant' }) }} />
     </>}
   </div></main>

@@ -54,3 +54,10 @@ export interface GameRuntime {
   elapsed: number
   eventTime: number
 }
+
+export interface GameDiagnostics {
+  elapsed: number
+  fps: number
+  calls: number
+  position: Point3
+}

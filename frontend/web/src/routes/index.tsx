@@ -6,6 +6,7 @@ import ZolaLightRedirect from '../pages/ZolaLightRedirect'
 const feedPage = lazy(() => import('../pages/feed/FeedPage'))
 const explorePage = lazy(() => import('../pages/explore/ExplorePage'))
 const gamesPage = lazy(() => import('../pages/games/GamesPage'))
+const gamePage = lazy(() => import('../game/Game'))
 const profilePage = lazy(() => import('../pages/profile/ProfilePage'))
 const userProfilePage = lazy(() => import('../pages/profile/UserProfilePage'))
 const loginPage = lazy(() => import('../pages/auth/LoginPage'))
@@ -77,6 +78,10 @@ export const router = createBrowserRouter([
       {
         path: 'games',
         element: page(gamesPage),
+      },
+      {
+        path: 'game',
+        element: page(gamePage),
       },
       {
         path: 'ai-chat',
