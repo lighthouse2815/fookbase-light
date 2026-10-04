@@ -1,9 +1,19 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Messages.Entities;
 
+[Table("Conversations")]
+[Index(nameof(UserId1), nameof(UserId2), IsUnique = true)]
+[Index(nameof(LastMessageAtUtc), nameof(Id))]
 public sealed class Conversation
 {
+    public const int MaximumTitleLength = 120;
+
     private Conversation()
     {
     }
@@ -40,6 +50,7 @@ public sealed class Conversation
         LastMessageAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
 
     // Direct conversations retain this canonical pair to preserve existing IDs and
@@ -51,6 +62,7 @@ public sealed class Conversation
 
     public ConversationType Type { get; private set; }
 
+    [MaxLength(MaximumTitleLength)]
     public string? Title { get; private set; }
 
     public Guid? PhotoMediaId { get; private set; }
@@ -58,6 +70,30 @@ public sealed class Conversation
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset LastMessageAtUtc { get; private set; }
+
+    [ForeignKey(nameof(UserId1))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User? User1 { get; private set; }
+
+    [ForeignKey(nameof(UserId2))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User? User2 { get; private set; }
+
+    [ForeignKey(nameof(PhotoMediaId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset? PhotoMedia { get; private set; }
+
+    [InverseProperty(nameof(ConversationParticipant.Conversation))]
+    public ICollection<ConversationParticipant> Participants { get; private set; } = new List<ConversationParticipant>();
+
+    [InverseProperty(nameof(ConversationReadCursor.Conversation))]
+    public ICollection<ConversationReadCursor> ReadCursors { get; private set; } = new List<ConversationReadCursor>();
+
+    [InverseProperty(nameof(Message.Conversation))]
+    public ICollection<Message> Messages { get; private set; } = new List<Message>();
+
+    [InverseProperty(nameof(MessageNotification.Conversation))]
+    public ICollection<MessageNotification> Notifications { get; private set; } = new List<MessageNotification>();
 
     public bool Contains(Guid userId) => UserId1 == userId || UserId2 == userId;
 
@@ -84,7 +120,7 @@ public sealed class Conversation
     private static string NormalizeTitle(string? value)
     {
         var normalized = value?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > 120)
+        if (normalized.Length is < 1 or > MaximumTitleLength)
         {
             throw new ArgumentException("Group conversation title must contain between 1 and 120 characters.");
         }

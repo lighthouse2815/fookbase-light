@@ -1,9 +1,19 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Messages.Entities;
 
+[Table("ConversationParticipants")]
+[PrimaryKey(nameof(ConversationId), nameof(UserId))]
+[Index(nameof(UserId), nameof(ConversationId))]
+[Index(nameof(ConversationId), nameof(UserId))]
 public sealed class ConversationParticipant
 {
+    public const int MaximumNicknameLength = 80;
+
     private ConversationParticipant()
     {
     }
@@ -31,9 +41,29 @@ public sealed class ConversationParticipant
     public Guid? LastDeliveredMessageId { get; private set; }
     public DateTimeOffset? MutedUntilUtc { get; private set; }
     public DateTimeOffset? ArchivedAtUtc { get; private set; }
+
+    [MaxLength(MaximumNicknameLength)]
     public string? Nickname { get; private set; }
 
+    [NotMapped]
     public bool IsActive => LeftAtUtc is null;
+
+    [ForeignKey(nameof(ConversationId))]
+    [InverseProperty(nameof(Conversation.Participants))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Conversation Conversation { get; private set; } = null!;
+
+    [ForeignKey(nameof(UserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User User { get; private set; } = null!;
+
+    [ForeignKey(nameof(LastReadMessageId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public Message? LastReadMessage { get; private set; }
+
+    [ForeignKey(nameof(LastDeliveredMessageId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public Message? LastDeliveredMessage { get; private set; }
 
     public void ChangeRole(ConversationParticipantRole role) => Role = role;
 
@@ -73,7 +103,7 @@ public sealed class ConversationParticipant
     public void SetNickname(string? nickname)
     {
         var normalized = string.IsNullOrWhiteSpace(nickname) ? null : nickname.Trim();
-        if (normalized?.Length > 80)
+        if (normalized?.Length > MaximumNicknameLength)
         {
             throw new ArgumentException("A participant nickname cannot exceed 80 characters.");
         }

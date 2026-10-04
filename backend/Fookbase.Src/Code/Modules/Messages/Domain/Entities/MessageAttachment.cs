@@ -1,5 +1,13 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Media.Entities;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Messages.Entities;
 
+[Table("MessageAttachments")]
+[PrimaryKey(nameof(MessageId), nameof(MediaId))]
+[Index(nameof(MediaId))]
+[Index(nameof(MessageId), nameof(SortOrder), IsUnique = true)]
 public sealed class MessageAttachment
 {
     private MessageAttachment()
@@ -16,5 +24,14 @@ public sealed class MessageAttachment
     public Guid MessageId { get; private set; }
     public Guid MediaId { get; private set; }
     public int SortOrder { get; private set; }
+
+    [ForeignKey(nameof(MessageId))]
+    [InverseProperty(nameof(Message.Attachments))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Message Message { get; private set; } = null!;
+
+    [ForeignKey(nameof(MediaId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset Media { get; private set; } = null!;
 
 }

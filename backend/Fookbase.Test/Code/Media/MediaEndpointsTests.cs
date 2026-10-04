@@ -9,6 +9,7 @@ using System.Text;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Config;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
 using Fookbase.Api.Modules.Messages.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -254,8 +255,9 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var message = new Message(Guid.NewGuid(), Guid.NewGuid(), ownerId, MessageType.MEDIA, null, null, now);
+            db.Users.Add(new User(ownerId, $"media-{ownerId:N}@example.com", $"media_{ownerId:N}"[..32], now));
             var conversation = new Conversation(Guid.NewGuid(), "Photo reference", now);
+            var message = new Message(Guid.NewGuid(), conversation.Id, ownerId, MessageType.MEDIA, null, null, now);
             conversation.UpdateGroup("Photo reference", photoMediaId);
             db.Messages.Add(message);
             db.MessageAttachments.Add(new MessageAttachment(message.Id, attachmentMediaId, 0));

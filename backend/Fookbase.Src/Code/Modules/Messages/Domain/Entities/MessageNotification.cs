@@ -1,5 +1,13 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Identity.Entities;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Messages.Entities;
 
+[Table("MessageNotifications")]
+[Index(nameof(RecipientUserId), nameof(MessageId), IsUnique = true)]
+[Index(nameof(RecipientUserId), nameof(ReadAtUtc), nameof(CreatedAtUtc))]
 public sealed class MessageNotification
 {
     private MessageNotification()
@@ -20,6 +28,7 @@ public sealed class MessageNotification
         CreatedAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
 
     public Guid RecipientUserId { get; private set; }
@@ -31,6 +40,20 @@ public sealed class MessageNotification
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? ReadAtUtc { get; private set; }
+
+    [ForeignKey(nameof(RecipientUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User RecipientUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(ConversationId))]
+    [InverseProperty(nameof(Conversation.Notifications))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Conversation Conversation { get; private set; } = null!;
+
+    [ForeignKey(nameof(MessageId))]
+    [InverseProperty(nameof(Message.Notifications))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Message Message { get; private set; } = null!;
 
     public void MarkRead(DateTimeOffset readAtUtc) => ReadAtUtc ??= readAtUtc;
 }
