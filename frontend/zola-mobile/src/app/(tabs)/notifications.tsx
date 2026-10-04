@@ -1,3 +1,5 @@
+import { router } from 'expo-router';
+import { Pressable } from 'react-native';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi, type AppNotification } from '../../api/notifications';
 import { messengerApi } from '../../api/messages';
@@ -10,8 +12,9 @@ export default function Notifications() {
   const messages = useQuery({ queryKey: ['message-notifications', session?.user.id], queryFn: () => messengerApi.notifications(), staleTime: 15_000 });
   const read = useMutation({ mutationFn: (id?: string) => id ? notificationsApi.markRead(id) : notificationsApi.markAllRead(), onSuccess: () => cache.invalidateQueries() });
   return <Screen><Label title>Thông báo</Label><Button secondary title="Đánh dấu tất cả đã đọc" disabled={read.isPending} onPress={() => read.mutate(undefined)} />{query.isPending && <Loading />}
-    {messages.data?.items.map(item => <Card key={`message-${item.message.id}`}><Label>{item.conversation.title ?? 'Cuộc trò chuyện mới'}</Label><Label>{item.message.content ?? 'Đã gửi một tệp đính kèm.'}</Label><Label muted>{new Date(item.message.createdAtUtc).toLocaleString('vi-VN')}</Label></Card>)}
+    {messages.data?.items.map(item => <Pressable key={`message-${item.message.id}`} accessibilityRole="button" accessibilityLabel={`Mở cuộc trò chuyện ${item.conversation.title ?? 'Zola'}`} onPress={() => router.push(`/conversations/${item.conversation.id}`)}><Card><Label>{item.conversation.title ?? 'Cuộc trò chuyện mới'}</Label><Label>{item.message.content ?? 'Đã gửi một tệp đính kèm.'}</Label><Label muted>{new Date(item.message.createdAtUtc).toLocaleString('vi-VN')}</Label></Card></Pressable>)}
     {query.data?.pages.flatMap(p => p.items).map(n => <NotificationCard key={n.id} notification={n} onRead={() => read.mutate(n.id)} disabled={read.isPending} />)}
+    {!query.isPending && !messages.isPending && !query.error && !messages.error && !query.data?.pages.some(page => page.items.length > 0) && !messages.data?.items.length && <Label muted>Bạn chưa có thông báo mới.</Label>}
     {query.error && <ErrorNotice error={query.error} retry={() => void query.refetch()} />}{messages.error && <ErrorNotice error={messages.error} retry={() => void messages.refetch()} />}{read.error && <ErrorNotice error={read.error} />}{query.hasNextPage && <Button title="Xem thêm" onPress={() => void query.fetchNextPage()} disabled={query.isFetchingNextPage} />}
   </Screen>;
 }

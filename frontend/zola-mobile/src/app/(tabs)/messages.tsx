@@ -20,5 +20,5 @@ export default function Messages() {
 }
 
 function ViewConversation({ conversation }: { conversation: Conversation }) {
-  return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Avatar label={conversation.title ?? 'Zola'} size={46} online={conversation.unreadCount > 0} /><ConversationName userId={conversation.participantUserId} title={conversation.title} /></View>;
+  return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Avatar label={conversation.title ?? 'Zola'} size={46} /><ConversationName userId={conversation.participantUserId} title={conversation.title} /></View>;
 }
