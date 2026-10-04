@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 namespace Fookbase.Api.Modules.Stories.DTOs.Responses;
 
 public sealed record StoryViewerResponse(

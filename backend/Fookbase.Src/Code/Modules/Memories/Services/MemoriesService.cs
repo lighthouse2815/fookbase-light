@@ -1,5 +1,5 @@
 using Fookbase.Api.Modules.Memories.DTOs.Responses;
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
 

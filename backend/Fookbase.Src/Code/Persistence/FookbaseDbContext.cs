@@ -160,6 +160,20 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
                 .IsUnique();
         });
 
+        builder.Entity<Post>(entity =>
+        {
+            entity.HasIndex(post => new { post.AuthorUserId, post.CreatedAtUtc, post.Id })
+                .HasFilter("\"DeletedAtUtc\" IS NULL");
+            entity.HasIndex(post => new { post.AuthorUserId, post.IsPinned, post.CreatedAtUtc, post.Id })
+                .HasFilter("\"DeletedAtUtc\" IS NULL");
+            entity.HasIndex(post => new { post.ContainerType, post.ContainerId, post.CreatedAtUtc, post.Id })
+                .HasFilter("\"DeletedAtUtc\" IS NULL");
+            entity.HasIndex(post => new { post.PostType, post.CreatedAtUtc, post.Id })
+                .HasFilter("\"DeletedAtUtc\" IS NULL");
+            entity.HasIndex(post => new { post.PostType, post.AuthorUserId, post.CreatedAtUtc, post.Id })
+                .HasFilter("\"DeletedAtUtc\" IS NULL");
+        });
+
         builder.ApplyConfigurationsFromAssembly(
             typeof(FookbaseDbContext).Assembly,
             type => type.Namespace?.StartsWith(

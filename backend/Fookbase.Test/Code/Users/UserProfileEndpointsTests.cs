@@ -12,6 +12,7 @@ using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Photos.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;

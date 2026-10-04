@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Admin.Entities;
 

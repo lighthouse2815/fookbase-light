@@ -8,7 +8,7 @@ using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Stories.DTOs.Responses;
 using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Modules.Users.Entities;

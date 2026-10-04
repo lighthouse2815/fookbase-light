@@ -12,6 +12,7 @@ using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;

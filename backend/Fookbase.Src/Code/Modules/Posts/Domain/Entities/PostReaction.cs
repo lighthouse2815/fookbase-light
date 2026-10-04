@@ -1,15 +1,13 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-public enum ReactionType
-{
-    LIKE,
-    LOVE,
-    HAHA,
-    WOW,
-    SAD,
-    ANGRY
-}
-
+[Table("PostReactions")]
+[PrimaryKey(nameof(PostId), nameof(UserId))]
+[Index(nameof(PostId), nameof(Type))]
+[Index(nameof(UserId), nameof(CreatedAtUtc), nameof(PostId))]
 public sealed class PostReaction
 {
     private PostReaction()
@@ -37,6 +35,10 @@ public sealed class PostReaction
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(PostId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Post Post { get; private set; } = null!;
 
     public static PostReaction Create(
         Guid postId,

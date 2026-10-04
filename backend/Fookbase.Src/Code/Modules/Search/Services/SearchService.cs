@@ -8,6 +8,7 @@ using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Shared.Common;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Modules.Search.DTOs.Responses;

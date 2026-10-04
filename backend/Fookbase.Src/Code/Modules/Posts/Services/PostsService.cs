@@ -6,6 +6,7 @@ using Fookbase.Api.Modules.Events.Services;
 using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Photos.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;

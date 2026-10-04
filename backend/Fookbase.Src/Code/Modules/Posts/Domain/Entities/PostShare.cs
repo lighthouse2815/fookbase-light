@@ -1,12 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-public enum PostShareDestinationType
-{
-    PROFILE,
-    GROUP,
-    PAGE
-}
-
+[Table("PostShares")]
+[Index(nameof(OriginalPostId), nameof(DeletedAtUtc))]
+[Index(nameof(SharingUserId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(OriginalPostId))]
+[Index(nameof(DestinationType), nameof(DestinationId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(Id))]
 public sealed class PostShare
 {
     public const int MaximumCaptionLength = Post.MaximumContentLength;
@@ -43,11 +45,16 @@ public sealed class PostShare
 
     public Guid DestinationId { get; private set; }
 
+    [MaxLength(MaximumCaptionLength)]
     public string? Caption { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(OriginalPostId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Post OriginalPost { get; private set; } = null!;
 
     public static PostShare Create(
         Guid id,

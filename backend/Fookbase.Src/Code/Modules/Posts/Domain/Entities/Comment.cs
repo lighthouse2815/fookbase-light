@@ -1,5 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Posts.Entities;
 
+[Table("Comments")]
+[Index(nameof(PostId), nameof(DeletedAtUtc), nameof(CreatedAtUtc))]
+[Index(nameof(AuthorUserId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(PostId))]
 public sealed class Comment
 {
     public const int MaximumContentLength = 5_000;
@@ -32,6 +39,8 @@ public sealed class Comment
 
     public Guid? ParentCommentId { get; private set; }
 
+    [Required]
+    [MaxLength(MaximumContentLength)]
     public string Content { get; private set; } = string.Empty;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
@@ -39,6 +48,14 @@ public sealed class Comment
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(PostId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Post Post { get; private set; } = null!;
+
+    [ForeignKey(nameof(ParentCommentId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public Comment? ParentComment { get; private set; }
 
     public static Comment Create(
         Guid id,

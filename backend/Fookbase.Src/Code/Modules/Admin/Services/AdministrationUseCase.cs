@@ -1,7 +1,7 @@
 using Fookbase.Api.Modules.Admin.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Shared.Common;
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
 

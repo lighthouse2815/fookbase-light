@@ -1,26 +1,19 @@
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-public enum PostPrivacy
-{
-    PUBLIC,
-    FRIENDS,
-    ONLY_ME
-}
-
-public enum PostContainerType
-{
-    PROFILE,
-    GROUP,
-    PAGE,
-    EVENT
-}
-
-public enum PostType
-{
-    STANDARD,
-    REEL
-}
-
+[Table("Posts")]
+[Index(nameof(AuthorUserId), nameof(CreatedAtUtc))]
+[Index(nameof(DeletedAtUtc), nameof(CreatedAtUtc))]
+[Index(nameof(AuthorUserId), nameof(CreatedAtUtc), nameof(Id))]
+[Index(nameof(AuthorUserId), nameof(IsPinned), nameof(CreatedAtUtc), nameof(Id))]
+[Index(nameof(ContainerType), nameof(ContainerId), nameof(CreatedAtUtc), nameof(Id))]
+[Index(nameof(PostType), nameof(CreatedAtUtc), nameof(Id))]
+[Index(nameof(PostType), nameof(AuthorUserId), nameof(CreatedAtUtc), nameof(Id))]
 public sealed class Post
 {
     public const int MaximumContentLength = 10_000;
@@ -56,6 +49,8 @@ public sealed class Post
 
     public Guid AuthorUserId { get; private set; }
 
+    [Required]
+    [MaxLength(MaximumContentLength)]
     public string Content { get; private set; } = string.Empty;
 
     public PostPrivacy Privacy { get; private set; }
@@ -66,8 +61,10 @@ public sealed class Post
 
     public PostType PostType { get; private set; }
 
+    [MaxLength(MaximumTextBackgroundLength)]
     public string? TextBackground { get; private set; }
 
+    [DefaultValue(false)]
     public bool IsPinned { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }

@@ -1,4 +1,4 @@
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Users.Domain.Enums;
 using Fookbase.Api.Modules.Users.DTOs.Requests;

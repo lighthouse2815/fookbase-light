@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Users.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Users.Entities;

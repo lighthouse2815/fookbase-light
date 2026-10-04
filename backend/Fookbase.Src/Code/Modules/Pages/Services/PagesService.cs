@@ -8,7 +8,7 @@ using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;

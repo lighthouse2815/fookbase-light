@@ -4,7 +4,7 @@ using System.Text;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Hubs;
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 

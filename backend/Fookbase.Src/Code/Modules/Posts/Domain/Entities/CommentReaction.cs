@@ -1,5 +1,12 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Posts.Entities;
 
+[Table("CommentReactions")]
+[PrimaryKey(nameof(CommentId), nameof(UserId))]
+[Index(nameof(CommentId), nameof(Type))]
 public sealed class CommentReaction
 {
     private CommentReaction()
@@ -27,6 +34,10 @@ public sealed class CommentReaction
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(CommentId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Comment Comment { get; private set; } = null!;
 
     public static CommentReaction Create(
         Guid commentId,

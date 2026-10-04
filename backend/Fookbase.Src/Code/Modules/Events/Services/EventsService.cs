@@ -7,7 +7,7 @@ using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
 namespace Fookbase.Api.Modules.Events.Services;

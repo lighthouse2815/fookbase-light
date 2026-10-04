@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 
 namespace Fookbase.Api.Modules.Posts.Services;

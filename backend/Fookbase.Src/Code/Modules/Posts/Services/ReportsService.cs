@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;

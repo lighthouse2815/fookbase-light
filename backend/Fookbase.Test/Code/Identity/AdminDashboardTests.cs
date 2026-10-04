@@ -8,6 +8,7 @@ using Fookbase.Api.Modules.Admin.Services;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;

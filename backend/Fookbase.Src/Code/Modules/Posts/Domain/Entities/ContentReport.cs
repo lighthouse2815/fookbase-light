@@ -1,30 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-public enum ReportTargetType
-{
-    USER,
-    POST
-}
-
-public enum ReportReason
-{
-    SPAM,
-    HARASSMENT,
-    HATE_SPEECH,
-    NUDITY,
-    VIOLENCE,
-    SCAM,
-    OTHER
-}
-
-public enum ContentReportStatus
-{
-    PENDING,
-    REVIEWED,
-    RESOLVED,
-    DISMISSED
-}
-
+[Table("ContentReports")]
+[Index(nameof(Status), nameof(CreatedAtUtc), nameof(Id))]
+[Index(nameof(ReporterUserId), nameof(TargetType), nameof(TargetId), IsUnique = true)]
+[Index(nameof(TargetType), nameof(TargetId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class ContentReport
 {
     public const int MaximumDetailsLength = 500;
@@ -62,6 +46,7 @@ public sealed class ContentReport
 
     public ReportReason Reason { get; private set; }
 
+    [MaxLength(MaximumDetailsLength)]
     public string? Details { get; private set; }
 
     public ContentReportStatus Status { get; private set; }
