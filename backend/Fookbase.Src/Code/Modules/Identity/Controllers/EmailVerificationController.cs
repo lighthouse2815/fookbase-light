@@ -11,7 +11,7 @@ namespace Fookbase.Api.Modules.Identity.Controllers;
 [ApiController]
 [Route("api/auth/email")]
 public sealed class EmailVerificationController(
-    AuthenticationService authenticationService) : ControllerBase
+    AccountSecurityService accountSecurityService) : ControllerBase
 {
     [HttpPost("verify")]
     [AllowAnonymous]
@@ -19,7 +19,7 @@ public sealed class EmailVerificationController(
         [FromBody] VerifyEmailRequest request,
         CancellationToken cancellationToken)
     {
-        await authenticationService.VerifyEmailAsync(request, cancellationToken);
+        await accountSecurityService.VerifyEmailAsync(request, cancellationToken);
 
         return Results.Ok(ApiResponse.Success(HttpContext));
     }
@@ -32,7 +32,7 @@ public sealed class EmailVerificationController(
     {
         var userId = User.GetUserId();
 
-        await authenticationService.SendEmailVerificationAsync(userId, cancellationToken);
+        await accountSecurityService.SendEmailVerificationAsync(userId, cancellationToken);
 
         return Results.Ok(ApiResponse.Success(HttpContext));
     }

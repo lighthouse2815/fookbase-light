@@ -76,12 +76,13 @@ public sealed class OtpServiceTests(IdentityApiFactory factory) : IClassFixture<
         var (user, contact) = await CreatePhoneUserAsync(scope.ServiceProvider);
         var service = scope.ServiceProvider.GetRequiredService<OtpService>();
         var authentication = scope.ServiceProvider.GetRequiredService<AuthenticationService>();
+        var security = scope.ServiceProvider.GetRequiredService<AccountSecurityService>();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.IsType<AuthenticationResponse>(await authentication.LoginAsync(new LoginRequest(contact.Value, "Password123!"), null));
         await service.SendPasswordResetAsync(user.Id, contact);
         var code = app.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(contact.Value);
 
-        var failure = await Assert.ThrowsAsync<BusinessException>(() => authentication.ResetPasswordAsync(
+        var failure = await Assert.ThrowsAsync<BusinessException>(() => security.ResetPasswordAsync(
             new ResetPasswordRequest(contact.Value, null, "NoDigits!", "NoDigits!", code)));
 
         Assert.Equal(ErrorCode.ValidationFailed.Code, failure.Error.Code);
@@ -89,7 +90,7 @@ public sealed class OtpServiceTests(IdentityApiFactory factory) : IClassFixture<
         Assert.Null((await db.PasswordResetOtps.AsNoTracking().SingleAsync(item => item.UserId == user.Id)).ConsumedAtUtc);
         Assert.Null((await db.RefreshTokens.AsNoTracking().SingleAsync(item => item.UserId == user.Id)).RevokedAt);
 
-        await authentication.ResetPasswordAsync(new ResetPasswordRequest(contact.Value, null, "NewPassword123!", "NewPassword123!", code));
+        await security.ResetPasswordAsync(new ResetPasswordRequest(contact.Value, null, "NewPassword123!", "NewPassword123!", code));
         Assert.NotNull((await db.PasswordResetOtps.AsNoTracking().SingleAsync(item => item.UserId == user.Id)).ConsumedAtUtc);
         Assert.NotNull((await db.RefreshTokens.AsNoTracking().SingleAsync(item => item.UserId == user.Id)).RevokedAt);
     }

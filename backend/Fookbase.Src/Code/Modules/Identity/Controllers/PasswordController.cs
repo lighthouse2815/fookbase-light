@@ -11,7 +11,7 @@ namespace Fookbase.Api.Modules.Identity.Controllers;
 [ApiController]
 [Route("api/auth/password")]
 public sealed class PasswordController(
-    AuthenticationService authenticationService) : ControllerBase
+    AccountSecurityService accountSecurityService) : ControllerBase
 {
     [HttpPost("forgot")]
     [AllowAnonymous]
@@ -20,7 +20,7 @@ public sealed class PasswordController(
         [FromBody] ForgotPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        await authenticationService.RequestPasswordResetAsync(request, cancellationToken);
+        await accountSecurityService.RequestPasswordResetAsync(request, cancellationToken);
 
         return Results.Ok(ApiResponse.Success(HttpContext));
     }
@@ -32,7 +32,7 @@ public sealed class PasswordController(
         [FromBody] ResetPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        await authenticationService.ResetPasswordAsync(request, cancellationToken);
+        await accountSecurityService.ResetPasswordAsync(request, cancellationToken);
 
         return Results.Ok(ApiResponse.Success(HttpContext));
     }
@@ -45,7 +45,7 @@ public sealed class PasswordController(
     {
         var userId = User.GetUserId();
 
-        var result = await authenticationService.ChangePasswordAsync(userId, request, cancellationToken);
+        var result = await accountSecurityService.ChangePasswordAsync(userId, request, cancellationToken);
 
         return Results.Ok(ApiResponse.Success(AuthenticationCookie.Present(HttpContext, result), HttpContext));
     }

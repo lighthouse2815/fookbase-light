@@ -11,7 +11,8 @@ namespace Fookbase.Api.Modules.Identity.Controllers;
 [ApiController]
 [Route("api/auth")]
 public sealed class TwoFactorController(
-    AuthenticationService authenticationService) : ControllerBase
+    AuthenticationService authenticationService,
+    AccountSecurityService accountSecurityService) : ControllerBase
 {
     [HttpPost("2fa/verify")]
     [AllowAnonymous]
@@ -30,7 +31,7 @@ public sealed class TwoFactorController(
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var result = await authenticationService.GetSecurityAsync(userId, cancellationToken);
+        var result = await accountSecurityService.GetSecurityAsync(userId, cancellationToken);
         return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
@@ -41,7 +42,7 @@ public sealed class TwoFactorController(
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var result = await authenticationService.SetupTwoFactorAsync(userId, cancellationToken);
+        var result = await accountSecurityService.SetupTwoFactorAsync(userId, cancellationToken);
         return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
@@ -53,7 +54,7 @@ public sealed class TwoFactorController(
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var result = await authenticationService.EnableTwoFactorAsync(userId, request.Code, cancellationToken);
+        var result = await accountSecurityService.EnableTwoFactorAsync(userId, request.Code, cancellationToken);
         return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 
@@ -65,7 +66,7 @@ public sealed class TwoFactorController(
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        await authenticationService.DisableTwoFactorAsync(userId, request.CurrentPassword, cancellationToken);
+        await accountSecurityService.DisableTwoFactorAsync(userId, request.CurrentPassword, cancellationToken);
         return Results.Ok(ApiResponse.Success(HttpContext));
     }
 
@@ -76,7 +77,7 @@ public sealed class TwoFactorController(
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var result = await authenticationService.RegenerateRecoveryCodesAsync(userId, cancellationToken);
+        var result = await accountSecurityService.RegenerateRecoveryCodesAsync(userId, cancellationToken);
         return Results.Ok(ApiResponse.Success(result, HttpContext));
     }
 }

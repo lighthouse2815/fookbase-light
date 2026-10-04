@@ -141,6 +141,51 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
             login.LoginProvider == "Google" && login.ProviderKey == providerKey);
     }
 
+    [Fact]
+    public async Task Two_factor_management_updates_security_state_and_revokes_sessions_when_disabled()
+    {
+        using var client = factory.CreateClient();
+        var account = await CreateAccountAsync(client);
+        using var current = AuthenticatedClient(account);
+        var initialState = await (await current.GetAsync("/api/auth/security"))
+            .Content.ReadApiDataAsync<SecurityStateResponse>();
+        Assert.False(initialState!.TwoFactorEnabled);
+
+        var setupResponse = await current.PostAsync("/api/auth/2fa/setup", null);
+        Assert.Equal(HttpStatusCode.OK, setupResponse.StatusCode);
+        var setup = await setupResponse.Content.ReadApiDataAsync<TwoFactorSetupResponse>();
+        var code = new Totp(Base32Encoding.ToBytes(setup!.SharedKey)).ComputeTotp();
+        var enableResponse = await current.PostAsJsonAsync("/api/auth/2fa/enable",
+            new TwoFactorCodeRequest($" {code[..3]}-{code[3..]} "));
+        Assert.Equal(HttpStatusCode.OK, enableResponse.StatusCode);
+        var recovery = await enableResponse.Content.ReadApiDataAsync<TwoFactorRecoveryCodesResponse>();
+        Assert.Equal(10, recovery!.RecoveryCodes.Count);
+        var enabledState = await (await current.GetAsync("/api/auth/security"))
+            .Content.ReadApiDataAsync<SecurityStateResponse>();
+        Assert.True(enabledState!.TwoFactorEnabled);
+        Assert.Equal(10, enabledState.RecoveryCodesRemaining);
+
+        var regeneratedResponse = await current.PostAsync("/api/auth/2fa/recovery-codes/regenerate", null);
+        Assert.Equal(HttpStatusCode.OK, regeneratedResponse.StatusCode);
+        var regenerated = await regeneratedResponse.Content.ReadApiDataAsync<TwoFactorRecoveryCodesResponse>();
+        Assert.Equal(10, regenerated!.RecoveryCodes.Count);
+        Assert.Empty(recovery.RecoveryCodes.Intersect(regenerated.RecoveryCodes));
+
+        var challenge = await GetChallengeAsync(client, account.User.Email!);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/2fa/verify",
+            new TwoFactorVerifyRequest(challenge, regenerated.RecoveryCodes[0]))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await current.PostAsJsonAsync("/api/auth/2fa/disable",
+            new DisableTwoFactorRequest(TestPassword))).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshRequest(account.RefreshToken))).StatusCode);
+
+        var signedIn = await LoginAsync(client, account.User.Email!, TestPassword);
+        using var afterDisable = AuthenticatedClient(signedIn);
+        var disabledState = await (await afterDisable.GetAsync("/api/auth/security"))
+            .Content.ReadApiDataAsync<SecurityStateResponse>();
+        Assert.False(disabledState!.TwoFactorEnabled);
+    }
+
     private async Task<string> EnableTwoFactorForTestAsync(Guid userId, bool recovery = false)
     {
         using var scope = factory.Services.CreateScope();
