@@ -152,7 +152,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var publishedPage = Page.Create(Guid.NewGuid(), "Needle public Page", "needle.public.page", "Community", "search bio", ownerId, now);
         publishedPage.Publish(now);
         var unpublishedPage = Page.Create(Guid.NewGuid(), "Needle hidden Page", "needle.hidden.page", "Community", null, ownerId, now);
-        var pagePost = Post.CreateInContainer(Guid.NewGuid(), ownerId, "needle page post", PostPrivacy.PUBLIC,
+        var pagePost = new Post(Guid.NewGuid(), ownerId, "needle page post", PostPrivacy.PUBLIC,
             PostContainerType.PAGE, publishedPage.Id, now, PostType.STANDARD);
         using (var scope = factory.Services.CreateScope())
         {
@@ -206,11 +206,11 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var viewerId = await CreateUserAsync("search-content-viewer");
         var authorId = await CreateUserAsync("search-content-author");
         var now = DateTimeOffset.UtcNow;
-        var publicPost = Post.Create(Guid.NewGuid(), authorId, "Needle public post", PostPrivacy.PUBLIC, now);
-        var secondPublicPost = Post.Create(Guid.NewGuid(), authorId, "Needle second public post", PostPrivacy.PUBLIC, now.AddTicks(1));
-        var friendsPost = Post.Create(Guid.NewGuid(), authorId, "Needle friends post", PostPrivacy.FRIENDS, now.AddTicks(2));
-        var onlyMePost = Post.Create(Guid.NewGuid(), authorId, "Needle only me post", PostPrivacy.ONLY_ME, now.AddTicks(3));
-        var reel = Post.CreateReel(Guid.NewGuid(), authorId, "Needle reel caption", PostPrivacy.PUBLIC, now.AddTicks(4));
+        var publicPost = new Post(Guid.NewGuid(), authorId, "Needle public post", PostPrivacy.PUBLIC, now);
+        var secondPublicPost = new Post(Guid.NewGuid(), authorId, "Needle second public post", PostPrivacy.PUBLIC, now.AddTicks(1));
+        var friendsPost = new Post(Guid.NewGuid(), authorId, "Needle friends post", PostPrivacy.FRIENDS, now.AddTicks(2));
+        var onlyMePost = new Post(Guid.NewGuid(), authorId, "Needle only me post", PostPrivacy.ONLY_ME, now.AddTicks(3));
+        var reel = new Post(Guid.NewGuid(), authorId, "Needle reel caption", PostPrivacy.PUBLIC, now.AddTicks(4), postType: PostType.REEL);
         var mediaId = Guid.NewGuid();
         var media = MediaAsset.CreatePending(mediaId, authorId, MediaType.VIDEO, "reel.mp4", "reel.mp4", "video/mp4", 20, now, now.AddMinutes(5));
         media.MarkProcessing(20, now);
@@ -220,7 +220,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.Posts.AddRange(publicPost, secondPublicPost, friendsPost, onlyMePost, reel);
             db.MediaAssets.Add(media);
-            db.PostMedia.Add(PostMedia.Create(reel.Id, mediaId, 0));
+            db.PostMedia.Add(new PostMedia(reel.Id, mediaId, 0));
             await db.SaveChangesAsync();
         }
         using var viewer = CreateAuthenticatedClient(viewerId);

@@ -215,7 +215,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         DateTimeOffset createdAtUtc,
         Guid? id = null)
     {
-        var post = Post.Create(
+        var post = new Post(
             id ?? Guid.NewGuid(),
             authorUserId,
             "feed post " + Guid.NewGuid().ToString("N"),
@@ -278,7 +278,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.MediaAssets.Add(asset);
-        db.PostMedia.Add(PostMedia.Create(postId, mediaId, 0));
+        db.PostMedia.Add(new PostMedia(postId, mediaId, 0));
         await db.SaveChangesAsync();
         return mediaId;
     }
@@ -287,7 +287,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        db.Comments.Add(Comment.Create(
+        db.Comments.Add(new Comment(
             Guid.NewGuid(),
             postId,
             authorUserId,
@@ -305,7 +305,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        db.PostReactions.Add(PostReaction.Create(postId, userId, type, createdAtUtc));
+        db.PostReactions.Add(new PostReaction(postId, userId, type, createdAtUtc));
         await db.SaveChangesAsync();
     }
 

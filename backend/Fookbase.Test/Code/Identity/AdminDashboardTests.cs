@@ -210,13 +210,13 @@ public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixt
         var user = new User(Guid.NewGuid(), "dashboard@example.test", "dashboard-test", firstDay);
         db.Users.Add(user);
         db.Users.Add(new User(Guid.NewGuid(), "old-dashboard@example.test", "old-dashboard", firstDay.AddTicks(-1)));
-        var post = Post.Create(Guid.NewGuid(), user.Id, "Visible", PostPrivacy.PUBLIC, today);
-        var deleted = Post.Create(Guid.NewGuid(), user.Id, "Deleted", PostPrivacy.PUBLIC, today);
+        var post = new Post(Guid.NewGuid(), user.Id, "Visible", PostPrivacy.PUBLIC, today);
+        var deleted = new Post(Guid.NewGuid(), user.Id, "Deleted", PostPrivacy.PUBLIC, today);
         deleted.Delete(today);
         db.Posts.AddRange(post, deleted);
         foreach (var status in Enum.GetValues<ContentReportStatus>())
         {
-            var report = ContentReport.Create(Guid.NewGuid(), ReportTargetType.POST, post.Id,
+            var report = new ContentReport(Guid.NewGuid(), ReportTargetType.POST, post.Id,
                 ReportReason.SPAM, null, today.AddTicks(-1));
             if (status != ContentReportStatus.PENDING) report.UpdateStatus(status, today);
             db.ContentReports.Add(report);

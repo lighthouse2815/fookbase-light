@@ -198,7 +198,7 @@ public sealed class ReportsService(
                 ApplicationErrorType.CONFLICT));
         }
 
-        var report = ContentReport.Create(
+        var report = new ContentReport(
             reporterUserId,
             targetType,
             targetId,

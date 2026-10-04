@@ -25,15 +25,27 @@ public sealed class Post
     {
     }
 
-    private Post(
+    public Post(
+        Guid id,
+        Guid authorUserId,
+        string content,
+        PostPrivacy privacy,
+        DateTimeOffset createdAtUtc,
+        PostType postType = PostType.STANDARD)
+        : this(id, authorUserId, content, privacy, PostContainerType.PROFILE, authorUserId,
+            createdAtUtc, postType)
+    {
+    }
+
+    public Post(
         Guid id,
         Guid authorUserId,
         string content,
         PostPrivacy privacy,
         PostContainerType containerType,
         Guid containerId,
-        PostType postType,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        PostType postType = PostType.STANDARD)
     {
         Id = id;
         AuthorUserId = authorUserId;
@@ -72,35 +84,6 @@ public sealed class Post
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
-
-    public static Post Create(
-        Guid id,
-        Guid authorUserId,
-        string content,
-        PostPrivacy privacy,
-        DateTimeOffset createdAtUtc) =>
-        new(id, authorUserId, content, privacy, PostContainerType.PROFILE, authorUserId,
-            PostType.STANDARD, createdAtUtc);
-
-    public static Post CreateInContainer(
-        Guid id,
-        Guid authorUserId,
-        string content,
-        PostPrivacy privacy,
-        PostContainerType containerType,
-        Guid containerId,
-        DateTimeOffset createdAtUtc,
-        PostType postType = PostType.STANDARD) =>
-        new(id, authorUserId, content, privacy, containerType, containerId, postType, createdAtUtc);
-
-    public static Post CreateReel(
-        Guid id,
-        Guid authorUserId,
-        string caption,
-        PostPrivacy privacy,
-        DateTimeOffset createdAtUtc) =>
-        new(id, authorUserId, caption, privacy, PostContainerType.PROFILE, authorUserId,
-            PostType.REEL, createdAtUtc);
 
     public void Update(string content, PostPrivacy privacy, DateTimeOffset updatedAtUtc)
     {

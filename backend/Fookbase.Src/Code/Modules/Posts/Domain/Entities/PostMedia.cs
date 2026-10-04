@@ -9,7 +9,7 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 public sealed class PostMedia
 {
     private PostMedia() { }
-    private PostMedia(Guid postId, Guid mediaId, int sortOrder)
+    public PostMedia(Guid postId, Guid mediaId, int sortOrder)
     {
         PostId = postId; MediaId = mediaId; SortOrder = sortOrder;
     }
@@ -21,7 +21,5 @@ public sealed class PostMedia
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
-    public static PostMedia Create(Guid postId, Guid mediaId, int sortOrder) =>
-        new(postId, mediaId, sortOrder);
     public void ChangeSortOrder(int sortOrder) => SortOrder = sortOrder;
 }

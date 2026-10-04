@@ -58,7 +58,7 @@ public sealed class SocialInteractionsService(
             return ApplicationResult.Success();
         }
 
-        dbContext.PostSaves.Add(PostSave.Create(actorUserId, postId, timeProvider.GetUtcNow()));
+        dbContext.PostSaves.Add(new PostSave(actorUserId, postId, timeProvider.GetUtcNow()));
         await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult.Success();
     }
@@ -207,7 +207,7 @@ public sealed class SocialInteractionsService(
                 ApplicationErrorType.FORBIDDEN));
         }
 
-        var share = PostShare.Create(
+        var share = new PostShare(
             Guid.NewGuid(),
             originalPostId,
             actorUserId,
@@ -431,7 +431,7 @@ public sealed class SocialInteractionsService(
 
         foreach (var mention in resolved)
         {
-            dbContext.ContentMentions.Add(ContentMention.Create(
+            dbContext.ContentMentions.Add(new ContentMention(
                 sourceType, sourceId, mention.UserId, mention.StartIndex, mention.Length));
         }
 
@@ -479,7 +479,7 @@ public sealed class SocialInteractionsService(
         {
             if (!hashtags.TryGetValue(parsedTag.NormalizedName, out var hashtag))
             {
-                hashtag = Hashtag.Create(
+                hashtag = new Hashtag(
                     Guid.NewGuid(), parsedTag.NormalizedName, parsedTag.DisplayName, timeProvider.GetUtcNow());
                 dbContext.Hashtags.Add(hashtag);
                 hashtags[parsedTag.NormalizedName] = hashtag;
@@ -488,7 +488,7 @@ public sealed class SocialInteractionsService(
 
         foreach (var hashtagId in hashtags.Values.Select(hashtag => hashtag.Id).Distinct())
         {
-            dbContext.PostHashtags.Add(PostHashtag.Create(post.Id, hashtagId));
+            dbContext.PostHashtags.Add(new PostHashtag(post.Id, hashtagId));
         }
     }
 

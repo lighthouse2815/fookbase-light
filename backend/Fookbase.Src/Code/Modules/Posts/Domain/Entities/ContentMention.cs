@@ -15,7 +15,7 @@ public sealed class ContentMention
     {
     }
 
-    private ContentMention(
+    public ContentMention(
         MentionSourceType sourceType,
         Guid sourceId,
         Guid mentionedUserId,
@@ -43,11 +43,4 @@ public sealed class ContentMention
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public User MentionedUser { get; private set; } = null!;
 
-    public static ContentMention Create(
-        MentionSourceType sourceType,
-        Guid sourceId,
-        Guid mentionedUserId,
-        int startIndex,
-        int length) =>
-        new(sourceType, sourceId, mentionedUserId, startIndex, length);
 }

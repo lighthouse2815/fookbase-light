@@ -605,7 +605,7 @@ public sealed class PostsService(
         string? textBackground = null)
     {
         var now = timeProvider.GetUtcNow();
-        var post = Post.CreateInContainer(
+        var post = new Post(
             Guid.NewGuid(),
             authorUserId,
             content,
@@ -618,7 +618,7 @@ public sealed class PostsService(
         dbContext.Posts.Add(post);
         for (var index = 0; index < mediaIds.Count; index++)
         {
-            dbContext.PostMedia.Add(PostMedia.Create(post.Id, mediaIds[index], index));
+            dbContext.PostMedia.Add(new PostMedia(post.Id, mediaIds[index], index));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         if (addToTimelinePhotos && containerType == PostContainerType.PROFILE && post.PostType == PostType.STANDARD)
@@ -721,7 +721,7 @@ public sealed class PostsService(
         foreach (var mediaId in added)
         {
             var order = mediaOrder[mediaId];
-            dbContext.PostMedia.Add(PostMedia.Create(post.Id, mediaId, order));
+            dbContext.PostMedia.Add(new PostMedia(post.Id, mediaId, order));
         }
         foreach (var item in existingMedia.Except(removed))
             item.ChangeSortOrder(mediaOrder[item.MediaId]);
@@ -868,7 +868,7 @@ public sealed class PostsService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var comment = Comment.Create(Guid.NewGuid(), postId, authorUserId, parentCommentId, content, now);
+        var comment = new Comment(Guid.NewGuid(), postId, authorUserId, parentCommentId, content, now);
 
         dbContext.Comments.Add(comment);
         var notification = await notificationService.QueueAsync(
@@ -1122,7 +1122,7 @@ public sealed class PostsService(
         }
         else if (reaction is null)
         {
-            dbContext.PostReactions.Add(PostReaction.Create(postId, actorUserId, reactionType.Value, now));
+            dbContext.PostReactions.Add(new PostReaction(postId, actorUserId, reactionType.Value, now));
         }
         else
         {
@@ -1189,7 +1189,7 @@ public sealed class PostsService(
         }
         else if (reaction is null)
         {
-            dbContext.CommentReactions.Add(CommentReaction.Create(
+            dbContext.CommentReactions.Add(new CommentReaction(
                 commentId,
                 actorUserId,
                 reactionType.Value,

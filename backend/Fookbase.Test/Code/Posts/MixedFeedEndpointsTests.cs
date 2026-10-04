@@ -139,7 +139,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var pending = await CreateReelAsync(viewer, now, status: MediaStatus.PENDING_UPLOAD);
         var processing = await CreateReelAsync(viewer, now, status: MediaStatus.PROCESSING);
         var failed = await CreateReelAsync(viewer, now, status: MediaStatus.FAILED);
-        var missing = Post.CreateReel(Guid.NewGuid(), viewer, "Missing media", PostPrivacy.ONLY_ME, now);
+        var missing = new Post(Guid.NewGuid(), viewer, "Missing media", PostPrivacy.ONLY_ME, now, postType: PostType.REEL);
         await SaveAsync(db => db.Posts.Add(missing));
         await BlockAsync(blocked, viewer);
         using var client = CreateClient(viewer);
@@ -266,8 +266,8 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Posts.Add(newer);
-            db.PostReactions.Add(PostReaction.Create(posts[^1].Id, viewer, ReactionType.LOVE, DateTimeOffset.UtcNow));
-            db.Comments.Add(Comment.Create(Guid.NewGuid(), posts[^1].Id, viewer, null, "New engagement", DateTimeOffset.UtcNow));
+            db.PostReactions.Add(new PostReaction(posts[^1].Id, viewer, ReactionType.LOVE, DateTimeOffset.UtcNow));
+            db.Comments.Add(new Comment(Guid.NewGuid(), posts[^1].Id, viewer, null, "New engagement", DateTimeOffset.UtcNow));
         });
 
         var second = await ReadAsync(await client.GetAsync(CursorUrl("/api/feed", 2, first.NextCursor)));
@@ -494,10 +494,10 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Posts.AddRange(bobPost, carolPost);
-            db.PostReactions.Add(PostReaction.Create(bobPost.Id, viewer, ReactionType.LOVE, now));
+            db.PostReactions.Add(new PostReaction(bobPost.Id, viewer, ReactionType.LOVE, now));
             db.Comments.AddRange(
-                Comment.Create(Guid.NewGuid(), bobPost.Id, viewer, null, "Great post", now),
-                Comment.Create(Guid.NewGuid(), bobPost.Id, viewer, null, "Following along", now));
+                new Comment(Guid.NewGuid(), bobPost.Id, viewer, null, "Great post", now),
+                new Comment(Guid.NewGuid(), bobPost.Id, viewer, null, "Following along", now));
         });
         using var client = CreateClient(viewer);
 
@@ -524,8 +524,8 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Posts.AddRange(preferredGroup, otherGroupPost, preferredPage, otherPagePost);
-            db.Comments.Add(Comment.Create(Guid.NewGuid(), preferredGroup.Id, viewer, null, "Useful group", now));
-            db.PostReactions.Add(PostReaction.Create(preferredPage.Id, viewer, ReactionType.LIKE, now));
+            db.Comments.Add(new Comment(Guid.NewGuid(), preferredGroup.Id, viewer, null, "Useful group", now));
+            db.PostReactions.Add(new PostReaction(preferredPage.Id, viewer, ReactionType.LIKE, now));
         });
         using var client = CreateClient(viewer);
 
@@ -585,8 +585,8 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         await SaveAsync(db =>
         {
             db.Posts.Add(post);
-            db.PostReactions.Add(PostReaction.Create(post.Id, viewer, ReactionType.LOVE, now));
-            db.Comments.Add(Comment.Create(Guid.NewGuid(), post.Id, viewer, null, "Previously interested", now));
+            db.PostReactions.Add(new PostReaction(post.Id, viewer, ReactionType.LOVE, now));
+            db.Comments.Add(new Comment(Guid.NewGuid(), post.Id, viewer, null, "Previously interested", now));
         });
         await BlockAsync(viewer, creator);
         using var client = CreateClient(viewer);
@@ -694,7 +694,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
                 expected.Add(Standard(friend, timestamp, PostPrivacy.FRIENDS));
                 expected.Add(InContainer(owner, group.Id, PostContainerType.GROUP, timestamp));
                 expected.Add(InContainer(owner, page.Id, PostContainerType.PAGE, timestamp));
-                var reel = Post.CreateReel(Guid.NewGuid(), friend, "Mixed history Reel", PostPrivacy.FRIENDS, timestamp);
+                var reel = new Post(Guid.NewGuid(), friend, "Mixed history Reel", PostPrivacy.FRIENDS, timestamp, postType: PostType.REEL);
                 expected.Add(reel);
                 AttachVideo(db, reel, MediaStatus.READY);
             }
@@ -795,15 +795,15 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     }
 
     private static Post Standard(Guid owner, DateTimeOffset createdAt, PostPrivacy privacy = PostPrivacy.PUBLIC) =>
-        Post.Create(Guid.NewGuid(), owner, "Mixed profile post", privacy, createdAt);
+        new Post(Guid.NewGuid(), owner, "Mixed profile post", privacy, createdAt);
 
     private static Post InContainer(Guid owner, Guid container, PostContainerType type, DateTimeOffset createdAt) =>
-        Post.CreateInContainer(Guid.NewGuid(), owner, "Mixed container post", PostPrivacy.PUBLIC, type, container, createdAt);
+        new Post(Guid.NewGuid(), owner, "Mixed container post", PostPrivacy.PUBLIC, type, container, createdAt);
 
     private async Task<Post> CreateReelAsync(Guid owner, DateTimeOffset createdAt, PostPrivacy privacy = PostPrivacy.PUBLIC,
         MediaStatus status = MediaStatus.READY)
     {
-        var reel = Post.CreateReel(Guid.NewGuid(), owner, "Mixed Reel", privacy, createdAt);
+        var reel = new Post(Guid.NewGuid(), owner, "Mixed Reel", privacy, createdAt, postType: PostType.REEL);
         await SaveAsync(db =>
         {
             db.Posts.Add(reel);
@@ -824,7 +824,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         if (status == MediaStatus.FAILED)
             media.MarkFailed();
         db.MediaAssets.Add(media);
-        db.PostMedia.Add(PostMedia.Create(reel.Id, id, 0));
+        db.PostMedia.Add(new PostMedia(reel.Id, id, 0));
     }
 
     private async Task SaveAsync(Action<FookbaseDbContext> seed)

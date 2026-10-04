@@ -14,7 +14,7 @@ public sealed class PostReaction
     {
     }
 
-    private PostReaction(
+    public PostReaction(
         Guid postId,
         Guid userId,
         ReactionType type,
@@ -39,13 +39,6 @@ public sealed class PostReaction
     [ForeignKey(nameof(PostId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
-
-    public static PostReaction Create(
-        Guid postId,
-        Guid userId,
-        ReactionType type,
-        DateTimeOffset createdAtUtc) =>
-        new(postId, userId, type, createdAtUtc);
 
     public void ChangeTo(ReactionType type, DateTimeOffset updatedAtUtc)
     {

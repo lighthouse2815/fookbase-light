@@ -14,7 +14,7 @@ public sealed class Hashtag
     {
     }
 
-    private Hashtag(Guid id, string normalizedName, string displayName, DateTimeOffset createdAtUtc)
+    public Hashtag(Guid id, string normalizedName, string displayName, DateTimeOffset createdAtUtc)
     {
         Id = id;
         NormalizedName = normalizedName;
@@ -34,6 +34,4 @@ public sealed class Hashtag
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
-    public static Hashtag Create(Guid id, string normalizedName, string displayName, DateTimeOffset createdAtUtc) =>
-        new(id, normalizedName, displayName, createdAtUtc);
 }

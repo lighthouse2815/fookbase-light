@@ -12,7 +12,7 @@ public sealed class PostHashtag
     {
     }
 
-    private PostHashtag(Guid postId, Guid hashtagId)
+    public PostHashtag(Guid postId, Guid hashtagId)
     {
         PostId = postId;
         HashtagId = hashtagId;
@@ -30,5 +30,4 @@ public sealed class PostHashtag
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Hashtag Hashtag { get; private set; } = null!;
 
-    public static PostHashtag Create(Guid postId, Guid hashtagId) => new(postId, hashtagId);
 }

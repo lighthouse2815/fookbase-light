@@ -17,7 +17,7 @@ public sealed class PostShare
     {
     }
 
-    private PostShare(
+    public PostShare(
         Guid id,
         Guid originalPostId,
         Guid sharingUserId,
@@ -55,16 +55,6 @@ public sealed class PostShare
     [ForeignKey(nameof(OriginalPostId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post OriginalPost { get; private set; } = null!;
-
-    public static PostShare Create(
-        Guid id,
-        Guid originalPostId,
-        Guid sharingUserId,
-        PostShareDestinationType destinationType,
-        Guid destinationId,
-        string? caption,
-        DateTimeOffset createdAtUtc) =>
-        new(id, originalPostId, sharingUserId, destinationType, destinationId, caption, createdAtUtc);
 
     public void Delete(DateTimeOffset deletedAtUtc)
     {

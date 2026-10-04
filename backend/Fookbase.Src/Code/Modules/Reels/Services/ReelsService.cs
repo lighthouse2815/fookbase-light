@@ -56,10 +56,10 @@ public sealed class ReelsService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            var post = Post.CreateReel(
-                Guid.NewGuid(), actorUserId, normalizedCaption, parsedPrivacy, timeProvider.GetUtcNow());
+            var post = new Post(
+                Guid.NewGuid(), actorUserId, normalizedCaption, parsedPrivacy, timeProvider.GetUtcNow(), postType: PostType.REEL);
             dbContext.Posts.Add(post);
-            dbContext.PostMedia.Add(PostMedia.Create(post.Id, videoMediaId, 0));
+            dbContext.PostMedia.Add(new PostMedia(post.Id, videoMediaId, 0));
             await dbContext.SaveChangesAsync(cancellationToken);
             await socialInteractionsService.SynchronizePostMetadataAsync(post.Id, actorUserId, cancellationToken);
 

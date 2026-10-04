@@ -12,7 +12,7 @@ public sealed class PostSave
     {
     }
 
-    private PostSave(Guid userId, Guid postId, DateTimeOffset savedAtUtc)
+    public PostSave(Guid userId, Guid postId, DateTimeOffset savedAtUtc)
     {
         UserId = userId;
         PostId = postId;
@@ -29,6 +29,4 @@ public sealed class PostSave
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
-    public static PostSave Create(Guid userId, Guid postId, DateTimeOffset savedAtUtc) =>
-        new(userId, postId, savedAtUtc);
 }

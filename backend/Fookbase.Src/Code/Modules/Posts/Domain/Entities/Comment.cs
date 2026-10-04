@@ -15,7 +15,7 @@ public sealed class Comment
     {
     }
 
-    private Comment(
+    public Comment(
         Guid id,
         Guid postId,
         Guid authorUserId,
@@ -56,15 +56,6 @@ public sealed class Comment
     [ForeignKey(nameof(ParentCommentId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public Comment? ParentComment { get; private set; }
-
-    public static Comment Create(
-        Guid id,
-        Guid postId,
-        Guid authorUserId,
-        Guid? parentCommentId,
-        string content,
-        DateTimeOffset createdAtUtc) =>
-        new(id, postId, authorUserId, parentCommentId, content, createdAtUtc);
 
     public void Update(string content, DateTimeOffset updatedAtUtc)
     {

@@ -69,7 +69,7 @@ public sealed class PostMediaAtomicityTests
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var authorUserId = Guid.NewGuid();
         var actorUserId = Guid.NewGuid();
-        var post = Post.Create(
+        var post = new Post(
             Guid.NewGuid(),
             authorUserId,
             "atomic notification",

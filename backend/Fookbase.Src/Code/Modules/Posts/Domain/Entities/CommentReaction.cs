@@ -13,7 +13,7 @@ public sealed class CommentReaction
     {
     }
 
-    private CommentReaction(
+    public CommentReaction(
         Guid commentId,
         Guid userId,
         ReactionType type,
@@ -38,13 +38,6 @@ public sealed class CommentReaction
     [ForeignKey(nameof(CommentId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Comment Comment { get; private set; } = null!;
-
-    public static CommentReaction Create(
-        Guid commentId,
-        Guid userId,
-        ReactionType type,
-        DateTimeOffset createdAtUtc) =>
-        new(commentId, userId, type, createdAtUtc);
 
     public void ChangeTo(ReactionType type, DateTimeOffset updatedAtUtc)
     {

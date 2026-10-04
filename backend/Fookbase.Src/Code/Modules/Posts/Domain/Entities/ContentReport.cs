@@ -17,8 +17,7 @@ public sealed class ContentReport
     {
     }
 
-    private ContentReport(
-        Guid id,
+    public ContentReport(
         Guid reporterUserId,
         ReportTargetType targetType,
         Guid targetId,
@@ -26,7 +25,7 @@ public sealed class ContentReport
         string? details,
         DateTimeOffset createdAtUtc)
     {
-        Id = id;
+        Id = Guid.NewGuid();
         ReporterUserId = reporterUserId;
         TargetType = targetType;
         TargetId = targetId;
@@ -53,15 +52,6 @@ public sealed class ContentReport
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? ResolvedAtUtc { get; private set; }
-
-    public static ContentReport Create(
-        Guid reporterUserId,
-        ReportTargetType targetType,
-        Guid targetId,
-        ReportReason reason,
-        string? details,
-        DateTimeOffset createdAtUtc) =>
-        new(Guid.NewGuid(), reporterUserId, targetType, targetId, reason, details, createdAtUtc);
 
     public void UpdateStatus(ContentReportStatus status, DateTimeOffset resolvedAtUtc)
     {
