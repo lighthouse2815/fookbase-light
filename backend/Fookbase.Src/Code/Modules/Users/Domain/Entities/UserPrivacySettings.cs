@@ -10,7 +10,7 @@ public sealed class UserPrivacySettings
     {
     }
 
-    private UserPrivacySettings(Guid userId, DateTimeOffset now)
+    public UserPrivacySettings(Guid userId, DateTimeOffset now)
     {
         UserId = userId;
         CreatedAtUtc = now;
@@ -37,8 +37,6 @@ public sealed class UserPrivacySettings
 
     [Required]
     public DateTimeOffset UpdatedAtUtc { get; private set; }
-
-    public static UserPrivacySettings Create(Guid userId, DateTimeOffset now) => new(userId, now);
 
     public void Update(
         PostPrivacy? defaultPostPrivacy,

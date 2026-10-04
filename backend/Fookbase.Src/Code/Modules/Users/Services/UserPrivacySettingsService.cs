@@ -22,7 +22,7 @@ public sealed class UserPrivacySettingsService(FookbaseDbContext dbContext, Time
             return settings;
         }
 
-        settings = UserPrivacySettings.Create(userId, timeProvider.GetUtcNow());
+        settings = new UserPrivacySettings(userId, timeProvider.GetUtcNow());
         dbContext.UserPrivacySettings.Add(settings);
         await dbContext.SaveChangesAsync(cancellationToken);
         return settings;
