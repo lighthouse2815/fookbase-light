@@ -14,6 +14,7 @@ const groupsPage = lazy(() => import('../pages/groups/GroupsPage'))
 const groupDetailPage = lazy(() => import('../pages/groups/GroupDetailPage'))
 const reelsPage = lazy(() => import('../pages/reels/ReelsPage'))
 const storyArchivePage = lazy(() => import('../pages/stories/StoryArchivePage'))
+const storyDetailPage = lazy(() => import('../pages/stories/StoryDetailPage'))
 const pagesPage = lazy(() => import('../pages/pages/PagesPage'))
 const pageCreatePage = lazy(() => import('../pages/pages/PageCreatePage'))
 const pageDetailPage = lazy(() => import('../pages/pages/PageDetailPage'))
@@ -128,6 +129,7 @@ export const router = createBrowserRouter([
         path: 'stories/archive',
         element: page(storyArchivePage),
       },
+      { path: 'stories/:storyId', element: page(storyDetailPage) },
       {
         path: 'profile',
         element: page(profilePage),

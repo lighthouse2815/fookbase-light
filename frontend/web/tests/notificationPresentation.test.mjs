@@ -25,7 +25,7 @@ test('all current notification types use existing destinations', () => {
     [{ type: 'GroupInvite', entityType: 'GroupInvite', entityId: 'invite-id' }, '/groups'],
     [{ type: 'GroupJoinApproved', entityType: 'GroupJoinRequest', entityId: 'request-id' }, '/groups'],
     [{ type: 'PageRoleInvite', entityType: 'PageRoleInvitation', entityId: 'invite-id' }, '/pages'],
-    [{ type: 'StoryReaction', entityType: 'Story' }, '/feed'],
+    [{ type: 'StoryReaction', entityType: 'Story' }, '/stories/post-id'],
     [{ type: 'EventInvite', entityType: 'Event', entityId: 'invite-id', parentEntityId: 'event-id' }, '/events/event-id'],
     [{ type: 'EventUpdated', entityType: 'Event', entityId: 'event-id' }, '/events/event-id'],
     [{ type: 'EventCancelled', entityType: 'Event', entityId: 'event-id' }, '/events/event-id'],
@@ -54,10 +54,36 @@ test('comments and event invitations never use their own IDs as parent IDs', () 
   })).destination, '/posts/post-id')
 })
 
-test('a group ID is used only when the entity actually represents a group', () => {
+test('group and page invitations select their existing acceptance flow before opening private content', () => {
   assert.equal(getNotificationPresentation(notification({
     type: 'GroupInvite', entityType: 'Group', entityId: 'group-id',
   })).destination, '/groups/group-id')
+  assert.equal(getNotificationPresentation(notification({
+    type: 'GroupInvite', entityType: 'GroupInvite', entityId: 'invite-id', parentEntityId: 'group-id',
+  })).destination, '/groups?invite=invite-id&group=group-id')
+  assert.equal(getNotificationPresentation(notification({
+    type: 'GroupJoinApproved', entityType: 'GroupJoinRequest', entityId: 'request-id', parentEntityId: 'group-id',
+  })).destination, '/groups/group-id')
+  assert.equal(getNotificationPresentation(notification({
+    type: 'PageRoleInvite', entityType: 'PageRoleInvitation', entityId: 'invite-id',
+    parentEntityId: 'page-id', pageUsername: 'trang của minh',
+  })).destination, '/pages?invite=invite-id&pageId=page-id&page=trang%20c%E1%BB%A7a%20minh')
+  assert.equal(getNotificationPresentation(notification({
+    type: 'PageRoleInvite', entityType: 'PageRoleInvitation', entityId: 'invite-id',
+    parentEntityId: 'page-id', pageUsername: null,
+  })).destination, '/pages?invite=invite-id&pageId=page-id')
+})
+
+test('old or incomplete DTOs keep safe fallbacks and Story IDs open the existing viewer route', () => {
+  for (const [type, entityType, destination] of [
+    ['GroupInvite', 'GroupInvite', '/groups'],
+    ['GroupJoinApproved', 'GroupJoinRequest', '/groups'],
+    ['PageRoleInvite', 'PageRoleInvitation', '/pages'],
+  ]) {
+    assert.equal(getNotificationPresentation(notification({ type, entityType, parentEntityId: null })).destination, destination)
+  }
+  assert.equal(getNotificationPresentation(notification({ type: 'StoryReaction', entityType: 'Story', entityId: 'story-id' })).destination, '/stories/story-id')
+  assert.equal(getNotificationPresentation(notification({ type: 'StoryReaction', entityType: 'Story', entityId: null })).destination, '/feed')
 })
 
 test('system notifications never expose a moderator or fake actor', () => {

@@ -1,7 +1,8 @@
 # Notifications Web
 
-Phạm vi thay đổi chỉ nằm trong `frontend/web`. Không thêm dependency, đổi API,
-backend, database hoặc hạ tầng SignalR.
+Web dùng API Notification và hub hiện có. BE bổ sung field phản hồi tùy chọn và
+phát hai notification Event đã có; giữ field, endpoint, cursor và tên hub cũ.
+Không thêm dependency, migration hoặc thay kiến trúc SignalR.
 
 ## Luồng và thành phần
 
@@ -12,8 +13,9 @@ backend, database hoặc hạ tầng SignalR.
   `src/shared/notificationPresentation.ts`.
 - Thời gian: giữ `formatPostTimestamp`.
 - Toast: mở rộng `toastState` và `ToastViewport` hiện có; tự đóng sau 5 giây.
-- Notification DTO không có avatar URL; chỉ dùng chữ cái từ tên actor thật,
-  không fetch profile riêng. System/thiếu actor dùng icon và câu hoàn chỉnh.
+- Avatar dùng `actorAvatarUrl`, qua `resolveProfileImageUrl` hiện có; ảnh lỗi hoặc
+  DTO cũ dùng chữ cái từ tên actor thật. Không fetch profile riêng cho từng row.
+  System/thiếu actor luôn dùng icon và câu hoàn chỉnh, kể cả DTO có avatar.
 
 API hiện có trong `src/api/notifications.ts`:
 
@@ -52,23 +54,47 @@ ngắn, có `prefers-reduced-motion`; keyboard không bị trap, ESC trả focus
 | EventInvite | `/events/:parentEntityId`; thiếu parent về `/events`, không dùng InvitationId |
 | EventUpdated, EventCancelled | `/events/:entityId` |
 | AccountWarning | `/settings/security` |
-| GroupInvite, GroupJoinApproved | `/groups/:entityId` nếu entity thật là Group; DTO invite/request hiện thiếu GroupId nên dùng `/groups` |
-| PageRoleInvite | `/pages`; DTO thiếu page username mà route chi tiết yêu cầu |
-| StoryReaction | `/feed`; hiện chưa có route mở trực tiếp StoryId |
+| GroupInvite | `/groups?invite=:entityId&group=:parentEntityId`; chọn đúng lời mời rồi mở `/groups/:groupId` sau khi chấp nhận |
+| GroupJoinApproved | `/groups/:parentEntityId`; hỗ trợ entity Group trực tiếp như trước |
+| PageRoleInvite | `/pages?invite=:entityId&pageId=:parentEntityId&page=:pageUsername`; chọn lời mời rồi mở `/pages/:pageId` sau khi chấp nhận |
+| StoryReaction | `/stories/:entityId`, dùng StoryViewer hiện có; thiếu ID về `/feed` |
 
-Audit backend cho thấy EventUpdated/EventCancelled hiện chỉ queue notification,
-chưa publish vào hub. Web hiển thị khi fetch/reconnect, nhưng không thể nhận
-realtime cho event server chưa phát. Không sửa backend trong task này.
+Group/Page lời mời được tìm qua cursor hiện có, dedupe, highlight và focus đúng
+row. Flow này xử lý nhóm riêng tư/Trang chưa xuất bản mà không nới quyền xem trước
+khi nhận lời mời. Nếu target không còn pending, kiểm tra quyền mở đúng parent một
+lần để mở nội dung đã chấp nhận; không có quyền thì hiện trạng thái không khả dụng.
+DTO cũ thiếu parent vẫn dùng `/groups` hoặc `/pages`. Query username dùng để trình
+bày lời mời; navigation sau khi chấp nhận dùng ID thật để hỗ trợ Trang đổi username.
+
+BE `NotificationService.ToResponsesAsync` dùng chung cho REST và SignalR, lấy
+avatar cùng batch actor hiện có, batch GroupInvite/GroupJoinRequest/PageRoleInvitation
+để trả `parentEntityId`, thêm `pageUsername`. Các field mới nullable và optional.
+StoryId đã nằm trong DTO, không cần thêm field.
+
+EventUpdated/EventCancelled được publish sau SaveChanges (và commit transaction
+đối với update), cho đúng participants, bỏ notification tự gửi và không gửi lại
+khi hủy lặp. So sánh schedule/location sau normalization để tránh phát update
+khi dữ liệu thực không đổi. Event đã hủy có thể được xem bởi người có RSVP/lời mời
+hợp lệ theo quyền host; không mở draft/deleted event hoặc nhóm riêng tư cho người
+ngoài. Quyền đăng bài vẫn yêu cầu event published.
+
+Story hết hạn, bị xóa hoặc không có quyền xem hiển thị trạng thái không khả dụng;
+lỗi tải tạm thời có retry. Route không vượt qua privacy/expiry của API.
+
+## File của phần bổ sung BE và Web
+
+- BE: `NotificationPageResponse.cs`, `NotificationService.cs`, `EventsService.cs`,
+  `EventAccessService.cs`; nằm trong các module Notifications/Events hiện có.
+- Web: `src/api/notifications.ts`, `src/shared/notificationPresentation.ts`,
+  `src/shared/components/NotificationAvatar.tsx`, `src/pages/groups/GroupsPage.tsx`,
+  `src/pages/pages/PagesPage.tsx`, `src/pages/stories/StoryDetailPage.tsx`,
+  `src/routes/index.tsx`.
+- BE tests: bổ sung assertion vào Group/Page/PostEndpointsTests, thêm
+  EventNotificationPublicationTests, CancelledEventAccessTests và transport recorder.
+- Web tests: notification presentation helper và browser notifications; thêm
+  Story/invitation browser checks cùng fixture riêng trong `tests/browser`.
 
 ## Kiểm tra
-
-Các file thay đổi: `src/layout/TopNavbar.tsx`,
-`src/pages/notifications/NotificationsPage.tsx`, `src/realtime/RealtimeProvider.tsx`,
-`src/realtime/context.ts`, `src/realtime/notificationState.ts`,
-`src/shared/notificationPresentation.ts`, `src/shared/toastState.ts`,
-`src/shared/components/{NotificationAvatar,NotificationCenter,NotificationList,ToastViewport}.tsx`,
-`src/shared/components/notifications.css`, `package.json`, hai test helper/state
-và hai file browser fixture/checks notification.
 
 ```sh
 npm ci
@@ -77,7 +103,9 @@ npm run build
 npm run test:notifications
 npm run test:games
 npm run test:auth
-git diff --check -- frontend/web
+npm run test:group-header
+git diff --check
+../../scripts/test-backend.sh
 ```
 
 Browser checks dùng Playwright có sẵn bên ngoài project, không thêm package app:
@@ -87,6 +115,12 @@ npm run dev -- --host 127.0.0.1 --port 5184 --strictPort
 PLAYWRIGHT_MODULE=/tmp/last-signal-browser/node_modules/playwright/index.mjs \
 NOTIFICATIONS_BASE_URL=http://127.0.0.1:5184 \
 node tests/browser/notifications.mjs
+PLAYWRIGHT_MODULE=/tmp/last-signal-browser/node_modules/playwright/index.mjs \
+NOTIFICATIONS_BASE_URL=http://127.0.0.1:5184 \
+node tests/browser/storyNotifications.mjs
+PLAYWRIGHT_MODULE=/tmp/last-signal-browser/node_modules/playwright/index.mjs \
+NOTIFICATIONS_BASE_URL=http://127.0.0.1:5184 \
+node tests/browser/invitationNotifications.mjs
 ```
 
 Fixture chỉ nằm trong tests: client SignalR thật negotiate/handshake/long-poll,
@@ -96,7 +130,9 @@ realtime/dedupe, read rollback, mark-all với event đến đồng thời, load
 error/retry, pagination và deep-link. Đây là kiểm tra browser bằng fixture,
 không thay cho demo với tài khoản/backend đang chạy.
 
-Kết quả: lint/build pass; 12 test notification, 18 browser checks,
-114 test `.test.mjs` của Web và 18 test auth pass. Build còn cảnh báo chunk lớn
-của game hiện có. Diff-check phạm vi Web sạch; diff-check toàn repo báo whitespace
-trong 9 DTO Identity backend đang thay đổi từ trước, được giữ nguyên ngoài phạm vi.
+BE integration tests dùng PostgreSQL tạm qua script của repo, kiểm tra dữ liệu
+REST/SignalR cùng avatar/parent, publication sau persist và quyền xem Event đã
+hủy. Kết quả: 462 BE tests (6/6 nhóm), 13 notification helper/state tests,
+115 Web `.test.mjs` tests, 18 auth tests và 1 group-header test pass; 19 notification,
+9 Story và 18 invitation browser checks pass. `npm ci`, lint/build và diff-check
+pass. Build còn cảnh báo chunk lớn của game hiện có.

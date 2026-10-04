@@ -103,16 +103,25 @@ function getNotificationDestination(notification: AppNotification): string {
     case 'EventUpdated':
     case 'EventCancelled':
       return entityId ? `/events/${entityId}` : '/events'
-    case 'GroupInvite':
-    case 'GroupJoinApproved':
-      // Current invite/request DTOs do not include the group ID.
-      return notification.entityType === 'Group' && entityId ? `/groups/${entityId}` : '/groups'
-    case 'PageRoleInvite':
-      // Page routes need a username; a role invitation ID cannot identify a page.
-      return '/pages'
+    case 'GroupInvite': {
+      if (notification.entityType === 'Group' && entityId) return `/groups/${entityId}`
+      // Invitees may not have permission to view a private group until accepting.
+      const groupId = getEntityId(notification.parentEntityId)
+      return groupId && entityId ? `/groups?invite=${entityId}&group=${groupId}` : '/groups'
+    }
+    case 'GroupJoinApproved': {
+      const groupId = notification.entityType === 'Group' ? entityId : getEntityId(notification.parentEntityId)
+      return groupId ? `/groups/${groupId}` : '/groups'
+    }
+    case 'PageRoleInvite': {
+      // Open the invitation first; unpublished pages require an accepted role.
+      const pageUsername = notification.pageUsername?.trim()
+      const pageId = getEntityId(notification.parentEntityId)
+      return pageId && entityId
+        ? `/pages?invite=${entityId}&pageId=${pageId}${pageUsername ? `&page=${encodeURIComponent(pageUsername)}` : ''}` : '/pages'
+    }
     case 'StoryReaction':
-      // Stories are opened from the feed; no story ID route exists.
-      return '/feed'
+      return entityId ? `/stories/${entityId}` : '/feed'
     case 'AccountWarning':
       return '/settings/security'
     default:

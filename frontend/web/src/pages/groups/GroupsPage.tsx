@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { groupsApi } from '../../api/groups'
 import type { Group, GroupFeedItem, GroupInvite } from '../../api/groups'
@@ -77,7 +77,11 @@ function GroupRow({ group }: { group: Group }) {
 
 export default function GroupsPage() {
   const { session } = useAuth()
-  const [activeView, setActiveView] = useState<GroupView>('feed')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const selectedInviteId = searchParams.get('invite')
+  const selectedGroupId = searchParams.get('group')
+  const [activeView, setActiveView] = useState<GroupView>(selectedInviteId ? 'mine' : 'feed')
   const [mine, setMine] = useState<Group[]>([])
   const [discover, setDiscover] = useState<Group[]>([])
   const [mineCursor, setMineCursor] = useState<string | null>(null)
@@ -98,6 +102,11 @@ export default function GroupsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null)
   const [requestedGroupIds, setRequestedGroupIds] = useState<ReadonlySet<string>>(() => new Set())
+  const [resolvedInviteId, setResolvedInviteId] = useState<string | null>(null)
+  const [respondingInviteId, setRespondingInviteId] = useState<string | null>(null)
+  const loadRevisionRef = useRef(0)
+  const selectedInviteRef = useRef<HTMLElement>(null)
+  const focusedInviteIdRef = useRef<string | null>(null)
 
   const loadGroupFeed = useCallback(async () => {
     setIsLoadingFeed(true)
@@ -111,6 +120,7 @@ export default function GroupsPage() {
   }, [])
 
   const load = useCallback(async (nextQuery = '') => {
+    const revision = ++loadRevisionRef.current
     setIsLoading(true)
     setError(null)
     try {
@@ -119,23 +129,54 @@ export default function GroupsPage() {
         groupsApi.discover(nextQuery),
         groupsApi.getMyInvites(),
       ])
+      if (revision !== loadRevisionRef.current) return
+      const invitationItems = new Map(pendingInvites.items.map((invite) => [invite.id, invite]))
+      let invitationCursor = pendingInvites.nextCursor
+      const visitedCursors = new Set<string>()
+      while (selectedInviteId && !invitationItems.has(selectedInviteId) && invitationCursor && !visitedCursors.has(invitationCursor)) {
+        visitedCursors.add(invitationCursor)
+        const page = await groupsApi.getMyInvites(invitationCursor)
+        if (revision !== loadRevisionRef.current) return
+        page.items.forEach((invite) => invitationItems.set(invite.id, invite))
+        invitationCursor = page.nextCursor
+      }
+      if (selectedInviteId && !invitationItems.has(selectedInviteId) && selectedGroupId) {
+        try {
+          const group = await groupsApi.get(encodeURIComponent(selectedGroupId))
+          if (revision !== loadRevisionRef.current) return
+          navigate(`/groups/${encodeURIComponent(group.id)}`, { replace: true })
+          return
+        } catch (requestError) {
+          if (!(requestError instanceof ApiError) || (requestError.status !== 403 && requestError.status !== 404)) throw requestError
+        }
+      }
+      if (revision !== loadRevisionRef.current) return
       setMine(myGroups.items)
       setMineCursor(myGroups.nextCursor)
       setDiscover(publicGroups.items)
       setDiscoverCursor(publicGroups.nextCursor)
-      setInvites(pendingInvites.items)
+      setInvites([...invitationItems.values()])
+      setResolvedInviteId(selectedInviteId)
       await loadGroupFeed()
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải danh sách nhóm.')
+      if (revision === loadRevisionRef.current) setError(requestError instanceof ApiError ? requestError.message : 'Không thể tải danh sách nhóm.')
     } finally {
-      setIsLoading(false)
+      if (revision === loadRevisionRef.current) setIsLoading(false)
     }
-  }, [loadGroupFeed])
+  }, [loadGroupFeed, selectedInviteId, selectedGroupId, navigate])
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => { void load() }, 0)
-    return () => window.clearTimeout(timeoutId)
-  }, [load])
+    const timeoutId = window.setTimeout(() => { if (selectedInviteId) setActiveView('mine'); void load() }, 0)
+    return () => { window.clearTimeout(timeoutId); loadRevisionRef.current += 1 }
+  }, [load, selectedInviteId])
+
+  useEffect(() => {
+    if (!selectedInviteId) { focusedInviteIdRef.current = null; return }
+    if (isLoading || activeView !== 'mine' || focusedInviteIdRef.current === selectedInviteId || !selectedInviteRef.current) return
+    selectedInviteRef.current.focus({ preventScroll: true })
+    selectedInviteRef.current.scrollIntoView({ behavior: 'instant', block: 'center' })
+    focusedInviteIdRef.current = selectedInviteId
+  }, [selectedInviteId, isLoading, activeView, invites])
 
   const createGroup = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -213,17 +254,28 @@ export default function GroupsPage() {
   }
 
   const respondToInvite = async (invite: GroupInvite, accept: boolean) => {
+    if (respondingInviteId) return
+    setRespondingInviteId(invite.id)
     try {
       if (accept) {
         await groupsApi.acceptInvite(invite.groupId, invite.id)
+        if (invite.id === selectedInviteId) { navigate(`/groups/${encodeURIComponent(invite.groupId)}`); return }
         setActiveView('mine')
         await load(query)
       } else {
         await groupsApi.declineInvite(invite.groupId, invite.id)
         setInvites((current) => current.filter((item) => item.id !== invite.id))
+        if (invite.id === selectedInviteId) setSearchParams((current) => {
+          const next = new URLSearchParams(current)
+          next.delete('invite')
+          next.delete('group')
+          return next
+        }, { replace: true })
       }
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật lời mời.')
+    } finally {
+      setRespondingInviteId(null)
     }
   }
 
@@ -276,7 +328,7 @@ export default function GroupsPage() {
 
           {activeView === 'discover' && <section><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="font-heading text-xl font-extrabold text-text">Gợi ý cho bạn</h2><p className="text-sm text-text-muted">Nhóm mà bạn có thể quan tâm.</p></div>{query && <button type="button" onClick={() => { setQuery(''); void load() }} className="border-0 bg-transparent text-sm font-semibold text-primary-light cursor-pointer">Xóa tìm kiếm</button>}</div>{isLoading ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-65 animate-pulse rounded-xl bg-surface" />)}</div> : discover.length > 0 ? <><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{discover.map((group) => <GroupCard key={group.id} group={group} onJoin={joinGroup} isJoining={joiningGroupId === group.id} isRequested={requestedGroupIds.has(group.id)} />)}</div>{discoverCursor && <button type="button" onClick={() => void loadMoreDiscover()} className="mt-5 rounded-md border-0 bg-surface-2 px-4 py-2 text-sm font-bold text-primary-light cursor-pointer">Xem thêm nhóm</button>}</> : <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-text-muted">Không tìm thấy nhóm công khai phù hợp.</div>}</section>}
 
-          {activeView === 'mine' && <section><div className="mb-4 flex items-end justify-between gap-3"><div><h2 className="font-heading text-xl font-extrabold text-text">Nhóm của bạn</h2><p className="text-sm text-text-muted">{mine.length} nhóm bạn đã tham gia hoặc quản lý.</p></div><button type="button" onClick={() => setIsCreateOpen(true)} className="hidden rounded-md border-0 bg-primary px-4 py-2 text-sm font-bold text-white sm:block cursor-pointer">Tạo nhóm mới</button></div>{invites.length > 0 && <section className="mb-6"><div className="mb-3 flex items-center justify-between"><h3 className="font-heading text-base font-bold text-text">Lời mời tham gia nhóm đang chờ ({invites.length})</h3></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{invites.map((invite) => <article key={invite.id} className="flex items-center gap-3 rounded-xl bg-surface p-3">{invite.group ? <GroupCover group={invite.group} className="h-12 w-12 shrink-0 rounded-lg" /> : <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary-light"><GroupGlyph className="h-6 w-6" /></span>}<div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-text">{invite.group?.name ?? 'Lời mời tham gia nhóm'}</p><p className="truncate text-xs text-text-light">{invite.group ? memberLabel(invite.group.memberCount) : 'Được gửi gần đây'}</p><div className="mt-2 flex gap-2"><button type="button" onClick={() => void respondToInvite(invite, true)} className="h-8 flex-1 rounded-md border-0 bg-primary px-2 text-xs font-bold text-white cursor-pointer">Chấp nhận</button><button type="button" onClick={() => void respondToInvite(invite, false)} className="grid h-8 w-8 place-items-center rounded-md border-0 bg-surface-2 text-text-muted cursor-pointer" aria-label="Từ chối lời mời"><MoreGlyph /></button></div></div></article>)}</div></section>}{isLoading ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="h-64 animate-pulse rounded-xl bg-surface" /><div className="h-64 animate-pulse rounded-xl bg-surface" /></div> : mine.length > 0 ? <><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{mine.map((group) => <GroupCard key={group.id} group={group} />)}</div>{mineCursor && <button type="button" onClick={() => void loadMoreMine()} className="mt-5 rounded-md border-0 bg-surface-2 px-4 py-2 text-sm font-bold text-primary-light cursor-pointer">Xem thêm nhóm</button>}</> : <div className="rounded-xl border border-border bg-surface p-8 text-center"><h3 className="font-heading text-lg font-bold text-text">Bạn chưa tham gia nhóm nào</h3><button type="button" onClick={() => setActiveView('discover')} className="mt-3 border-0 bg-transparent text-sm font-bold text-primary-light cursor-pointer">Khám phá nhóm</button></div>}</section>}
+          {activeView === 'mine' && <section><div className="mb-4 flex items-end justify-between gap-3"><div><h2 className="font-heading text-xl font-extrabold text-text">Nhóm của bạn</h2><p className="text-sm text-text-muted">{mine.length} nhóm bạn đã tham gia hoặc quản lý.</p></div><button type="button" onClick={() => setIsCreateOpen(true)} className="hidden rounded-md border-0 bg-primary px-4 py-2 text-sm font-bold text-white sm:block cursor-pointer">Tạo nhóm mới</button></div>{selectedInviteId && resolvedInviteId === selectedInviteId && !isLoading && !error && !invites.some((invite) => invite.id === selectedInviteId) && <p role="status" className="mb-4 rounded-lg border border-border bg-surface p-3 text-sm text-text-muted">Lời mời này đã được xử lý hoặc không còn khả dụng.</p>}{invites.length > 0 && <section className="mb-6"><div className="mb-3 flex items-center justify-between"><h3 className="font-heading text-base font-bold text-text">Lời mời tham gia nhóm đang chờ ({invites.length})</h3></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{invites.map((invite) => <article key={invite.id} ref={invite.id === selectedInviteId ? selectedInviteRef : undefined} tabIndex={invite.id === selectedInviteId ? -1 : undefined} data-invitation-id={invite.id} data-selected-invitation={invite.id === selectedInviteId ? "true" : undefined} className={`flex scroll-mt-[calc(var(--app-header-height)+1rem)] items-center gap-3 rounded-xl p-3 outline-primary ${invite.id === selectedInviteId ? 'bg-primary/10 ring-2 ring-primary' : 'bg-surface'}`}>{invite.group ? <GroupCover group={invite.group} className="h-12 w-12 shrink-0 rounded-lg" /> : <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary-light"><GroupGlyph className="h-6 w-6" /></span>}<div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-text">{invite.group?.name ?? 'Lời mời tham gia nhóm'}</p><p className="truncate text-xs text-text-light">{invite.group ? memberLabel(invite.group.memberCount) : 'Được gửi gần đây'}</p><div className="mt-2 flex gap-2"><button type="button" disabled={respondingInviteId !== null} onClick={() => void respondToInvite(invite, true)} className="h-8 flex-1 rounded-md border-0 bg-primary px-2 text-xs font-bold text-white cursor-pointer disabled:cursor-wait disabled:opacity-60">{respondingInviteId === invite.id ? 'Đang xử lý…' : 'Chấp nhận'}</button><button type="button" disabled={respondingInviteId !== null} onClick={() => void respondToInvite(invite, false)} className="grid h-8 w-8 place-items-center rounded-md border-0 bg-surface-2 text-text-muted cursor-pointer disabled:cursor-wait disabled:opacity-60" aria-label="Từ chối lời mời"><MoreGlyph /></button></div></div></article>)}</div></section>}{isLoading ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="h-64 animate-pulse rounded-xl bg-surface" /><div className="h-64 animate-pulse rounded-xl bg-surface" /></div> : mine.length > 0 ? <><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">{mine.map((group) => <GroupCard key={group.id} group={group} />)}</div>{mineCursor && <button type="button" onClick={() => void loadMoreMine()} className="mt-5 rounded-md border-0 bg-surface-2 px-4 py-2 text-sm font-bold text-primary-light cursor-pointer">Xem thêm nhóm</button>}</> : <div className="rounded-xl border border-border bg-surface p-8 text-center"><h3 className="font-heading text-lg font-bold text-text">Bạn chưa tham gia nhóm nào</h3><button type="button" onClick={() => setActiveView('discover')} className="mt-3 border-0 bg-transparent text-sm font-bold text-primary-light cursor-pointer">Khám phá nhóm</button></div>}</section>}
         </div>
       </main>
 
