@@ -22,6 +22,45 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
     [Fact]
+    public async Task Story_routes_use_controllers_and_require_authorization()
+    {
+        using var client = factory.CreateClient();
+        var routes = new (string Method, string Path)[]
+        {
+            ("GET", "api/stories"),
+            ("POST", "api/stories"),
+            ("GET", "api/stories/archive"),
+            ("GET", "api/stories/{storyId:guid}"),
+            ("DELETE", "api/stories/{storyId:guid}"),
+            ("POST", "api/stories/{storyId:guid}/view"),
+            ("GET", "api/stories/{storyId:guid}/viewers"),
+            ("POST", "api/stories/{storyId:guid}/reaction"),
+            ("DELETE", "api/stories/{storyId:guid}/reaction"),
+            ("POST", "api/stories/{storyId:guid}/reply"),
+            ("GET", "api/stories/{storyId:guid}/media/access"),
+            ("GET", "api/stories/{storyId:guid}/media/poster/access")
+        };
+        var endpoints = factory.Services.GetRequiredService<Microsoft.AspNetCore.Routing.EndpointDataSource>()
+            .Endpoints.OfType<Microsoft.AspNetCore.Routing.RouteEndpoint>()
+            .Where(endpoint => endpoint.RoutePattern.RawText?.TrimStart('/').StartsWith("api/stories") == true)
+            .ToArray();
+        Assert.Equal(routes.Length, endpoints.Length);
+        foreach (var route in routes)
+        {
+            var endpoint = Assert.Single(endpoints, item =>
+                item.RoutePattern.RawText!.TrimStart('/') == route.Path &&
+                item.Metadata.GetMetadata<Microsoft.AspNetCore.Routing.HttpMethodMetadata>()!
+                    .HttpMethods.Contains(route.Method));
+            Assert.NotNull(endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>());
+            Assert.NotNull(endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Authorization.IAuthorizeData>());
+            using var request = new HttpRequestMessage(new HttpMethod(route.Method),
+                "/" + route.Path.Replace("{storyId:guid}", Guid.NewGuid().ToString()));
+            using var response = await client.SendAsync(request);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+    }
+
+    [Fact]
     public async Task Story_creation_validates_media_and_releases_its_media_reference_when_deleted()
     {
         var users = await CreateUsersAsync(2);
