@@ -3,8 +3,8 @@ import { ApiError } from '../../../api/client'
 import { storiesApi, type Story, type StoryReactionType, type StoryTrayAuthor, type StoryViewer } from '../../../api/stories'
 import { resolveProfileImageUrl } from '../../../api/users'
 import { isEditableTarget } from './postPhotoLightbox'
+import { imageDurationMs, imageElapsedMs, pauseImageClock, type ImageStoryClock } from './storyPlayback'
 
-const imageDurationMs = 5_000
 const reactionChoices: ReadonlyArray<[StoryReactionType, string]> = [
   ['like', '👍'], ['love', '❤️'], ['haha', '😆'], ['wow', '😮'], ['sad', '😢'], ['angry', '😡'],
 ]
@@ -31,6 +31,10 @@ export default function StoryViewer({
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [documentHidden, setDocumentHidden] = useState(document.hidden)
+  const [windowFocused, setWindowFocused] = useState(true)
+  const [playbackBlocked, setPlaybackBlocked] = useState(false)
+  const imageClock = useRef<ImageStoryClock>({ elapsedMs: 0, startedAt: null })
   const [reply, setReply] = useState('')
   const [isReplyFocused, setIsReplyFocused] = useState(false)
   const replyRequest = useRef<symbol | null>(null)
@@ -47,7 +51,8 @@ export default function StoryViewer({
   const active = activeGroup?.stories[storyIndex]
   const activeKey = active?.id
   const isVideo = active?.media.mediaType === 'video'
-  const shouldPause = isPaused || isReplyFocused || isSendingReply
+  const mediaKey = `${activeKey ?? ''}:${active?.media.mediaId ?? ''}`
+  const shouldPause = isPaused || isReplyFocused || isSendingReply || documentHidden || !windowFocused
 
   const [replyStoryId, setReplyStoryId] = useState(activeKey)
   if (replyStoryId !== activeKey) {
@@ -119,16 +124,54 @@ export default function StoryViewer({
     return () => { alive = false; window.clearTimeout(timeoutId) }
   }, [active, activeKey, onStoriesChanged])
 
+  const nextRef = useRef(next)
+  useLayoutEffect(() => { nextRef.current = next }, [next])
+  useLayoutEffect(() => {
+    imageClock.current = { elapsedMs: 0, startedAt: null }
+  }, [mediaKey])
+
   useEffect(() => {
-    if (!active || isVideo || shouldPause || !mediaUrl) return
-    const startedAt = Date.now()
+    const visibility = () => setDocumentHidden(document.hidden)
+    const blur = () => setWindowFocused(false)
+    const focus = () => setWindowFocused(true)
+    document.addEventListener('visibilitychange', visibility)
+    window.addEventListener('blur', blur)
+    window.addEventListener('focus', focus)
+    return () => {
+      document.removeEventListener('visibilitychange', visibility)
+      window.removeEventListener('blur', blur)
+      window.removeEventListener('focus', focus)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!activeKey || isVideo || shouldPause || !mediaUrl) return
+    const clock = imageClock.current
+    clock.startedAt = performance.now()
     const intervalId = window.setInterval(() => {
-      const elapsed = Date.now() - startedAt
-      setProgress(Math.min(100, elapsed / imageDurationMs * 100))
-      if (elapsed >= imageDurationMs) next()
+      const elapsed = imageElapsedMs(clock, performance.now())
+      setProgress(elapsed / imageDurationMs * 100)
+      if (elapsed >= imageDurationMs) {
+        window.clearInterval(intervalId)
+        nextRef.current()
+      }
     }, 80)
-    return () => window.clearInterval(intervalId)
-  }, [active, activeKey, shouldPause, isVideo, mediaUrl, next])
+    return () => {
+      window.clearInterval(intervalId)
+      pauseImageClock(clock, performance.now())
+    }
+  }, [activeKey, mediaKey, shouldPause, isVideo, mediaUrl])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    let alive = true
+    if (shouldPause) video.pause()
+    else void video.play().then(() => {
+      if (alive) setPlaybackBlocked(false)
+    }).catch(() => { if (alive) setPlaybackBlocked(true) })
+    return () => { alive = false; video.pause() }
+  }, [mediaKey, mediaUrl, shouldPause])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -217,7 +260,8 @@ export default function StoryViewer({
         <div className="absolute inset-0 grid place-items-center" onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null }} onTouchEnd={(event) => { const start = touchStart.current; const end = event.changedTouches[0]?.clientX; touchStart.current = null; if (start === null || end === undefined || Math.abs(end - start) < 40) return; if (end > start) previous(); else next() }}>
           {mediaError && <p className="rounded-lg bg-black/70 px-4 py-3 text-sm">{mediaError}</p>}
           {!mediaError && !mediaUrl && <p className="text-sm text-white/80">Đang tải Story…</p>}
-          {mediaUrl && isVideo && <video ref={videoRef} src={mediaUrl} poster={posterUrl ?? undefined} autoPlay={!shouldPause} playsInline className="h-full w-full object-contain" onPlay={() => setIsPaused(false)} onPause={() => setIsPaused(true)} onEnded={next} onTimeUpdate={(event) => { const video = event.currentTarget; if (video.duration > 0) setProgress(Math.min(100, video.currentTime / video.duration * 100)) }} />}
+          {mediaUrl && isVideo && <video ref={videoRef} src={mediaUrl} poster={posterUrl ?? undefined} autoPlay={!shouldPause} playsInline className="h-full w-full object-contain" onEnded={next} onTimeUpdate={(event) => { const video = event.currentTarget; if (video.duration > 0) setProgress(Math.min(100, video.currentTime / video.duration * 100)) }} />}
+          {mediaUrl && isVideo && playbackBlocked && <button type="button" aria-label="Phát video Story" onClick={() => { void videoRef.current?.play().then(() => setPlaybackBlocked(false)).catch(() => setPlaybackBlocked(true)) }} className="absolute z-20 rounded-full bg-white/20 px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-white">Phát video</button>}
           {mediaUrl && !isVideo && <img src={mediaUrl} className="h-full w-full object-contain" alt={active.caption ?? 'Story'} />}
         </div>
 
