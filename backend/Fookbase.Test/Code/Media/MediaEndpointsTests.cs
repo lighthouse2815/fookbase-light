@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
@@ -6,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Config;
@@ -72,6 +74,25 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         Assert.EndsWith("/user/avatar.png.png", url);
     }
 
+    [Theory]
+    [InlineData("POST", "uploads")]
+    [InlineData("POST", "{id}/complete")]
+    [InlineData("GET", "{id}")]
+    [InlineData("GET", "{id}/access")]
+    [InlineData("GET", "{id}/poster/access")]
+    [InlineData("DELETE", "{id}")]
+    public async Task Media_routes_require_authentication(string method, string route)
+    {
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(new System.Net.Http.HttpMethod(method),
+            "/api/media/" + route.Replace("{id}", Guid.NewGuid().ToString()))
+        {
+            Content = JsonContent.Create(new { })
+        };
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     [Fact]
     public async Task Upload_intent_requires_jwt_and_validates_type_and_size()
     {
@@ -90,6 +111,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
             new CreateUploadRequest("photo.png", "image/png", Png.Length));
         var intent = await ReadAsync<UploadIntentResponse>(response);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal($"/api/media/{intent.MediaId}", response.Headers.Location!.OriginalString);
         Assert.Contains(intent.MediaId.ToString("N"), intent.UploadUrl);
     }
 
@@ -185,7 +207,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         using var client = CreateAuthenticatedClient(userId);
         var mediaId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        var asset = MediaAsset.CreatePending(mediaId, userId, MediaType.VIDEO,
+        var asset = new MediaAsset(mediaId, userId, MediaType.VIDEO,
             $"{userId:N}/{mediaId:N}.mp4", "reel.mp4", "video/mp4", 11, now, now.AddMinutes(5));
         asset.MarkProcessing(11, now);
         asset.MarkVideoReady(MediaAsset.ProcessedKey(userId, mediaId), MediaAsset.PosterKey(userId, mediaId),
@@ -214,7 +236,10 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         await owner.PostAsync($"/api/media/{intent.MediaId}/complete", null);
 
         Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync($"/api/media/{intent.MediaId}")).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync($"/api/media/{intent.MediaId}")).StatusCode);
+        using var forbidden = await other.GetAsync($"/api/media/{intent.MediaId}");
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        using var problem = JsonDocument.Parse(await forbidden.Content.ReadAsStringAsync());
+        Assert.Equal("media_forbidden", problem.RootElement.GetProperty("code").GetString());
         Assert.Equal(HttpStatusCode.NotFound,
             (await owner.PostAsync($"/internal/media/{intent.MediaId}/read-url", null)).StatusCode);
     }
@@ -228,7 +253,7 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.MediaReferences.Add(MediaReference.Create(referenced, Guid.NewGuid(), DateTimeOffset.UtcNow));
+            db.MediaReferences.Add(new MediaReference(referenced, Guid.NewGuid(), DateTimeOffset.UtcNow));
             await db.SaveChangesAsync();
         }
         Assert.Equal(HttpStatusCode.Conflict,

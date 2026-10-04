@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -305,7 +306,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var onlyMePost = new Post(Guid.NewGuid(), authorId, "Needle only me post", PostPrivacy.ONLY_ME, now.AddTicks(3));
         var reel = new Post(Guid.NewGuid(), authorId, "Needle reel caption", PostPrivacy.PUBLIC, now.AddTicks(4), postType: PostType.REEL);
         var mediaId = Guid.NewGuid();
-        var media = MediaAsset.CreatePending(mediaId, authorId, MediaType.VIDEO, "reel.mp4", "reel.mp4", "video/mp4", 20, now, now.AddMinutes(5));
+        var media = new MediaAsset(mediaId, authorId, MediaType.VIDEO, "reel.mp4", "reel.mp4", "video/mp4", 20, now, now.AddMinutes(5));
         media.MarkProcessing(20, now);
         media.MarkVideoReady("processed.mp4", "poster.jpg", 1_000, 720, 1_280, now);
         using (var scope = factory.Services.CreateScope())

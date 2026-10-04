@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -264,7 +265,7 @@ public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<
     {
         var now = DateTimeOffset.UtcNow;
         var mediaId = Guid.NewGuid();
-        var asset = MediaAsset.CreatePending(
+        var asset = new MediaAsset(
             mediaId,
             ownerUserId,
             MediaType.IMAGE,

@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.Data.Common;
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
@@ -816,7 +817,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     private static void AttachVideo(FookbaseDbContext db, Post reel, MediaStatus status)
     {
         var id = Guid.NewGuid();
-        var media = MediaAsset.CreatePending(id, reel.AuthorUserId, MediaType.VIDEO, id + ".mp4", "reel.mp4", "video/mp4", 100,
+        var media = new MediaAsset(id, reel.AuthorUserId, MediaType.VIDEO, id + ".mp4", "reel.mp4", "video/mp4", 100,
             reel.CreatedAtUtc, DateTimeOffset.UtcNow.AddMinutes(5));
         if (status is MediaStatus.PROCESSING or MediaStatus.READY)
             media.MarkProcessing(100, reel.CreatedAtUtc);

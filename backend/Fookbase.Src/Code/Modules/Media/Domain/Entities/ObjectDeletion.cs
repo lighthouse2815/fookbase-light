@@ -3,7 +3,7 @@ namespace Fookbase.Api.Modules.Media.Entities;
 public sealed class ObjectDeletion
 {
     private ObjectDeletion() { }
-    private ObjectDeletion(Guid id, Guid mediaId, string objectKey, DateTimeOffset createdAtUtc)
+    public ObjectDeletion(Guid id, Guid mediaId, string objectKey, DateTimeOffset createdAtUtc)
     {
         Id = id; MediaId = mediaId; ObjectKey = objectKey; CreatedAtUtc = createdAtUtc;
         NextAttemptAtUtc = createdAtUtc;
@@ -18,8 +18,6 @@ public sealed class ObjectDeletion
     public DateTimeOffset? FailedAtUtc { get; private set; }
     public int RetryCount { get; private set; }
     public string? LastError { get; private set; }
-    public static ObjectDeletion Create(Guid mediaId, string objectKey, DateTimeOffset at) =>
-        new(Guid.NewGuid(), mediaId, objectKey, at);
     public void MarkProcessed(DateTimeOffset at)
     {
         ProcessedAtUtc = at;

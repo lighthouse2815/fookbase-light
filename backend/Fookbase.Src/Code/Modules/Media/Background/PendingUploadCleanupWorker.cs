@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ internal sealed class PendingUploadCleanupWorker(
                 foreach (var asset in assets)
                 {
                     if (asset.MarkFailed())
-                        db.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.ObjectKey, now));
+                        db.ObjectDeletions.Add(new ObjectDeletion(Guid.NewGuid(), asset.Id, asset.ObjectKey, now));
                 }
                 if (assets.Count > 0) await db.SaveChangesAsync(stoppingToken);
             }

@@ -1,6 +1,6 @@
-namespace Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Media.DTOs.Responses;
 
-public sealed record ProcessedVideoMetadata(long DurationMs, int Width, int Height);
+namespace Fookbase.Api.Modules.Media.Abstractions;
 
 public interface IVideoProcessor
 {

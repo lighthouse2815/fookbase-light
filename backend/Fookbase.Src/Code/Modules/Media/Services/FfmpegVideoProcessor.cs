@@ -1,3 +1,5 @@
+using Fookbase.Api.Modules.Media.Abstractions;
+using Fookbase.Api.Modules.Media.DTOs.Responses;
 using System.Diagnostics;
 using System.Text.Json;
 

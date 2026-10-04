@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Posts.Entities;
 

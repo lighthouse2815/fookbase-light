@@ -1,3 +1,6 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
+using Fookbase.Api.Modules.Media.Abstractions;
+using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
 

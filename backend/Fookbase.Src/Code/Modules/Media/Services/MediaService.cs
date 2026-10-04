@@ -1,3 +1,5 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
+using Fookbase.Api.Modules.Media.Abstractions;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Shared.Common;
@@ -60,7 +62,7 @@ public sealed class MediaService(
         var expiresAt = now.AddMinutes(options.UploadUrlExpiryMinutes);
         var id = Guid.NewGuid();
         var objectKey = $"{ownerUserId:N}/{id:N}{format.Extension}";
-        var asset = MediaAsset.CreatePending(
+        var asset = new MediaAsset(
             id, ownerUserId, format.MediaType, objectKey, fileName, contentType,
             request.SizeBytes, now, expiresAt);
         dbContext.MediaAssets.Add(asset);
@@ -145,7 +147,7 @@ public sealed class MediaService(
         else
         {
             asset.MarkProcessing(storedObject.SizeBytes, now);
-            dbContext.MediaProcessingJobs.Add(MediaProcessingJob.Create(asset.Id, now));
+            dbContext.MediaProcessingJobs.Add(new MediaProcessingJob(Guid.NewGuid(), asset.Id, now));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult<MediaResponse>.Success(ToResponse(asset));
@@ -446,7 +448,7 @@ public sealed class MediaService(
             currentReferences.Where(reference => !desiredMediaIds.Contains(reference.MediaId)));
         foreach (var mediaId in desiredMediaIds.Except(currentReferences.Select(reference => reference.MediaId)))
         {
-            dbContext.MediaReferences.Add(MediaReference.Create(mediaId, postId, timeProvider.GetUtcNow()));
+            dbContext.MediaReferences.Add(new MediaReference(mediaId, postId, timeProvider.GetUtcNow()));
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -484,7 +486,7 @@ public sealed class MediaService(
                 continue;
             }
 
-            dbContext.ProfileMediaReferences.Add(ProfileMediaReference.Create(
+            dbContext.ProfileMediaReferences.Add(new ProfileMediaReference(
                 userId,
                 slot,
                 mediaId,
@@ -647,15 +649,15 @@ public sealed class MediaService(
 
         var now = timeProvider.GetUtcNow();
         asset.Delete(now);
-        dbContext.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.ObjectKey, now));
+        dbContext.ObjectDeletions.Add(new ObjectDeletion(Guid.NewGuid(), asset.Id, asset.ObjectKey, now));
         if (!string.IsNullOrWhiteSpace(asset.ProcessedObjectKey))
         {
-            dbContext.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.ProcessedObjectKey, now));
+            dbContext.ObjectDeletions.Add(new ObjectDeletion(Guid.NewGuid(), asset.Id, asset.ProcessedObjectKey, now));
         }
 
         if (!string.IsNullOrWhiteSpace(asset.PosterObjectKey))
         {
-            dbContext.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.PosterObjectKey, now));
+            dbContext.ObjectDeletions.Add(new ObjectDeletion(Guid.NewGuid(), asset.Id, asset.PosterObjectKey, now));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult.Success();
@@ -676,7 +678,7 @@ public sealed class MediaService(
 
     private async Task SaveFailedAsync(MediaAsset asset, CancellationToken cancellationToken)
     {
-        dbContext.ObjectDeletions.Add(ObjectDeletion.Create(
+        dbContext.ObjectDeletions.Add(new ObjectDeletion(Guid.NewGuid(),
             asset.Id,
             asset.ObjectKey,
             timeProvider.GetUtcNow()));

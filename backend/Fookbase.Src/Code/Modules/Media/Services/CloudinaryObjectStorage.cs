@@ -1,3 +1,6 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
+using Fookbase.Api.Modules.Media.Abstractions;
+using Fookbase.Api.Modules.Media.DTOs.Responses;
 using System.Security.Cryptography;
 using System.Text;
 using CloudinaryDotNet;

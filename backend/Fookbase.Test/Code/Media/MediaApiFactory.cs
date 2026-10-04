@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Abstractions;
 using Fookbase.Api.Modules.Media.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

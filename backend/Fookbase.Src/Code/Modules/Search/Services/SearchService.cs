@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;

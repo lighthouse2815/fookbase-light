@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Users.DTOs.Requests;
 using Fookbase.Api.Modules.Users.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
@@ -750,7 +751,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         var mediaDb = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var now = DateTimeOffset.UtcNow;
         var mediaId = Guid.NewGuid();
-        var asset = MediaAsset.CreatePending(
+        var asset = new MediaAsset(
             mediaId,
             ownerUserId,
             MediaType.IMAGE,

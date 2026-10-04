@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;

@@ -1,15 +1,7 @@
-namespace Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Media.Domain.Enums;
+using Fookbase.Api.Modules.Media.DTOs.Responses;
 
-using Fookbase.Api.Modules.Media.Entities;
-
-public sealed record DirectUploadIntent(
-    string UploadUrl,
-    IReadOnlyDictionary<string, string> UploadParameters);
-
-public sealed record StoredObjectInfo(
-    long SizeBytes,
-    MediaType MediaType,
-    bool IsAuthenticated);
+namespace Fookbase.Api.Modules.Media.Abstractions;
 
 public interface IObjectStorage
 {

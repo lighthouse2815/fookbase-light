@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
@@ -23,7 +24,7 @@ public sealed class PostMediaAtomicityTests
         var authorUserId = Guid.NewGuid();
         var mediaId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        var media = MediaAsset.CreatePending(
+        var media = new MediaAsset(
             mediaId,
             authorUserId,
             MediaType.IMAGE,

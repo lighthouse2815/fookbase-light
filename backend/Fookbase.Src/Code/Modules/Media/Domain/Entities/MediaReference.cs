@@ -4,7 +4,7 @@ public sealed class MediaReference
 {
     private MediaReference() { }
 
-    private MediaReference(Guid mediaId, Guid postId, DateTimeOffset attachedAtUtc)
+    public MediaReference(Guid mediaId, Guid postId, DateTimeOffset attachedAtUtc)
     {
         MediaId = mediaId;
         PostId = postId;
@@ -15,6 +15,4 @@ public sealed class MediaReference
     public Guid PostId { get; private set; }
     public DateTimeOffset AttachedAtUtc { get; private set; }
 
-    public static MediaReference Create(Guid mediaId, Guid postId, DateTimeOffset attachedAtUtc) =>
-        new(mediaId, postId, attachedAtUtc);
 }

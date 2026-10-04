@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Media.Entities;
 
 namespace Fookbase.Media.Api.IntegrationTests;
@@ -8,7 +9,7 @@ public sealed class MediaJobReliabilityTests
     public void Stale_processing_job_can_be_reclaimed_with_a_new_attempt()
     {
         var now = DateTimeOffset.UtcNow;
-        var job = MediaProcessingJob.Create(Guid.NewGuid(), now);
+        var job = new MediaProcessingJob(Guid.NewGuid(), Guid.NewGuid(), now);
 
         job.Claim(now);
         job.Claim(now.AddMinutes(3));
@@ -22,7 +23,7 @@ public sealed class MediaJobReliabilityTests
     public void Object_deletion_stops_retrying_after_its_configured_limit()
     {
         var now = DateTimeOffset.UtcNow;
-        var deletion = ObjectDeletion.Create(Guid.NewGuid(), "owner/media/object", now);
+        var deletion = new ObjectDeletion(Guid.NewGuid(), Guid.NewGuid(), "owner/media/object", now);
 
         deletion.RecordFailure(now, now.AddMinutes(1), retryLimit: 2, "first failure");
         deletion.RecordFailure(now.AddMinutes(1), now.AddMinutes(2), retryLimit: 2, "second failure");

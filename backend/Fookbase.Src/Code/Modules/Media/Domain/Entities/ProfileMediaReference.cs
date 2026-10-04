@@ -1,10 +1,6 @@
-namespace Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Media.Domain.Enums;
 
-public enum ProfileMediaSlot
-{
-    AVATAR,
-    COVER
-}
+namespace Fookbase.Api.Modules.Media.Entities;
 
 public sealed class ProfileMediaReference
 {
@@ -12,7 +8,7 @@ public sealed class ProfileMediaReference
     {
     }
 
-    private ProfileMediaReference(
+    public ProfileMediaReference(
         Guid userId,
         ProfileMediaSlot slot,
         Guid mediaId,
@@ -32,10 +28,4 @@ public sealed class ProfileMediaReference
 
     public DateTimeOffset AttachedAtUtc { get; private set; }
 
-    public static ProfileMediaReference Create(
-        Guid userId,
-        ProfileMediaSlot slot,
-        Guid mediaId,
-        DateTimeOffset attachedAtUtc) =>
-        new(userId, slot, mediaId, attachedAtUtc);
 }

@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -434,7 +435,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         using (var scope = factory.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var media = MediaAsset.CreatePending(attachmentMediaId, users[1], MediaType.IMAGE,
+            var media = new MediaAsset(attachmentMediaId, users[1], MediaType.IMAGE,
                 $"tests/{attachmentMediaId}", "blocked.png", "image/png", 1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(1));
             media.MarkReady(1, DateTimeOffset.UtcNow);
             dbContext.MediaAssets.Add(media);
@@ -568,7 +569,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             foreach (var id in mediaIds)
             {
-                var media = MediaAsset.CreatePending(id, users[0], MediaType.IMAGE,
+                var media = new MediaAsset(id, users[0], MediaType.IMAGE,
                     $"tests/{id}", "photo.png", "image/png", 1, now, now.AddMinutes(1));
                 media.MarkReady(1, now);
                 db.MediaAssets.Add(media);

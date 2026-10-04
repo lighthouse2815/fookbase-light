@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Abstractions;
 using Fookbase.Api.Modules.Media.Background;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Services;

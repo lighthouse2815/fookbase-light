@@ -1,25 +1,12 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
+
 namespace Fookbase.Api.Modules.Media.Entities;
-
-public enum MediaType
-{
-    IMAGE,
-    VIDEO
-}
-
-public enum MediaStatus
-{
-    PENDING_UPLOAD,
-    READY,
-    FAILED,
-    DELETED,
-    PROCESSING
-}
 
 public sealed class MediaAsset
 {
     private MediaAsset() { }
 
-    private MediaAsset(
+    public MediaAsset(
         Guid id,
         Guid ownerUserId,
         MediaType mediaType,
@@ -62,19 +49,6 @@ public sealed class MediaAsset
     public string? PosterObjectKey { get; private set; }
     public string? ProcessingError { get; private set; }
     public DateTimeOffset? ProcessedAtUtc { get; private set; }
-
-    public static MediaAsset CreatePending(
-        Guid id,
-        Guid ownerUserId,
-        MediaType mediaType,
-        string objectKey,
-        string originalFileName,
-        string contentType,
-        long declaredSizeBytes,
-        DateTimeOffset createdAtUtc,
-        DateTimeOffset uploadExpiresAtUtc) =>
-        new(id, ownerUserId, mediaType, objectKey, originalFileName, contentType,
-            declaredSizeBytes, createdAtUtc, uploadExpiresAtUtc);
 
     public bool MarkReady(long actualSizeBytes, DateTimeOffset uploadedAtUtc)
     {

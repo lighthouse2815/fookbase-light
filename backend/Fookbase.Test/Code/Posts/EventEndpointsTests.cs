@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -70,7 +71,7 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
             foreach (var userId in users)
             {
                 var mediaId = Guid.NewGuid();
-                var asset = MediaAsset.CreatePending(
+                var asset = new MediaAsset(
                     mediaId, userId, MediaType.IMAGE, $"{userId:N}/{mediaId:N}.png",
                     "avatar.png", "image/png", 11, now, now.AddMinutes(5));
                 asset.MarkReady(11, now);

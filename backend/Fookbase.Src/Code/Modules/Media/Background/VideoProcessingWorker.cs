@@ -1,3 +1,5 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
+using Fookbase.Api.Modules.Media.Abstractions;
 using Fookbase.Api.Modules.Media.Config;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
@@ -128,10 +130,10 @@ internal sealed class VideoProcessingWorker(
             {
                 asset.MarkProcessingFailed("Video processing failed.");
                 job.Fail(completedAt, exception.Message);
-                db.ObjectDeletions.Add(ObjectDeletion.Create(asset.Id, asset.ObjectKey, completedAt));
-                db.ObjectDeletions.Add(ObjectDeletion.Create(
+                db.ObjectDeletions.Add(new ObjectDeletion(Guid.NewGuid(), asset.Id, asset.ObjectKey, completedAt));
+                db.ObjectDeletions.Add(new ObjectDeletion(Guid.NewGuid(),
                     asset.Id, MediaAsset.ProcessedKey(asset.OwnerUserId, asset.Id), completedAt));
-                db.ObjectDeletions.Add(ObjectDeletion.Create(
+                db.ObjectDeletions.Add(new ObjectDeletion(Guid.NewGuid(),
                     asset.Id, MediaAsset.PosterKey(asset.OwnerUserId, asset.Id), completedAt));
             }
             else

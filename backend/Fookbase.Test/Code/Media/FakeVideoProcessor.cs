@@ -1,3 +1,5 @@
+using Fookbase.Api.Modules.Media.Abstractions;
+using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Services;
 
 namespace Fookbase.Media.Api.IntegrationTests;

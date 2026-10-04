@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -172,7 +173,7 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var id = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        db.MediaAssets.Add(MediaAsset.CreatePending(id, ownerUserId, MediaType.VIDEO,
+        db.MediaAssets.Add(new MediaAsset(id, ownerUserId, MediaType.VIDEO,
             $"{ownerUserId:N}/{id:N}.mp4", "pending.mp4", "video/mp4", 11, now, now.AddMinutes(5)));
         await db.SaveChangesAsync();
         return id;
@@ -184,7 +185,7 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var id = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        var asset = MediaAsset.CreatePending(id, ownerUserId, mediaType,
+        var asset = new MediaAsset(id, ownerUserId, mediaType,
             $"{ownerUserId:N}/{id:N}{(mediaType == MediaType.VIDEO ? ".mp4" : ".png")}",
             mediaType == MediaType.VIDEO ? "video.mp4" : "image.png",
             mediaType == MediaType.VIDEO ? "video/mp4" : "image/png", 11, now, now.AddMinutes(5));

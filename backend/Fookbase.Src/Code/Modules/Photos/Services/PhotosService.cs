@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Domain.Enums;
 using System.Text;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Media.Entities;

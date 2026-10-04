@@ -1,18 +1,12 @@
-namespace Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Media.Domain.Enums;
 
-public enum MediaProcessingJobStatus
-{
-    PENDING,
-    PROCESSING,
-    SUCCEEDED,
-    FAILED
-}
+namespace Fookbase.Api.Modules.Media.Entities;
 
 public sealed class MediaProcessingJob
 {
     private MediaProcessingJob() { }
 
-    private MediaProcessingJob(Guid id, Guid mediaId, DateTimeOffset createdAtUtc)
+    public MediaProcessingJob(Guid id, Guid mediaId, DateTimeOffset createdAtUtc)
     {
         Id = id;
         MediaId = mediaId;
@@ -30,9 +24,6 @@ public sealed class MediaProcessingJob
     public DateTimeOffset? StartedAtUtc { get; private set; }
     public DateTimeOffset? CompletedAtUtc { get; private set; }
     public string? LastError { get; private set; }
-
-    public static MediaProcessingJob Create(Guid mediaId, DateTimeOffset createdAtUtc) =>
-        new(Guid.NewGuid(), mediaId, createdAtUtc);
 
     public void Claim(DateTimeOffset now)
     {
