@@ -11,9 +11,7 @@ namespace Fookbase.Api.Modules.Users.Entities;
 [Index(nameof(Username), IsUnique = true)]
 public sealed class UserProfile
 {
-    private UserProfile()
-    {
-    }
+    private UserProfile(){}
 
     private UserProfile(
         Guid userId,

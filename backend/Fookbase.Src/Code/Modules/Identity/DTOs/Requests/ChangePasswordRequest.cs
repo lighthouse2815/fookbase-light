@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Identity.Common;
 namespace Fookbase.Api.Modules.Identity.DTOs.Requests;
 
 public sealed record ChangePasswordRequest(
+
     [Required(ErrorMessage = "Mật khẩu hiện tại là bắt buộc.")]
     string? CurrentPassword,
 
