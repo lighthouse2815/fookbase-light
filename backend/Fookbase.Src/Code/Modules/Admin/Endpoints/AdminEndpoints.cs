@@ -5,7 +5,6 @@ using Fookbase.Api.Modules.Admin.DTOs.Requests;
 using Fookbase.Api.Modules.Admin.Services;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
-using Fookbase.Api.Modules.Identity.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Requests;
 using Fookbase.Api.Modules.Posts.Services;
 

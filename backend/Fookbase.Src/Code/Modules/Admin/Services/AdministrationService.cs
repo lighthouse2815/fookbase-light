@@ -6,7 +6,7 @@ using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Identity.Services;
+namespace Fookbase.Api.Modules.Admin.Services;
 
 public sealed class AdministrationService(
     FookbaseDbContext dbContext,
