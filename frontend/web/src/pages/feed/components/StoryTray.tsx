@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../api/client'
 import { mediaApi, type Media } from '../../../api/media'
-import { storiesApi, type Story, type StoryPrivacy, type StoryTrayAuthor } from '../../../api/stories'
+import { storiesApi, type StoryPrivacy, type StoryTrayAuthor } from '../../../api/stories'
 import { resolveProfileImageUrl } from '../../../api/users'
 import { useDialogFocus } from '../../../shared/useDialogFocus'
-import StoryViewer from './StoryViewer'
+import StoryViewer, { type StoryUpdate } from './StoryViewer'
 
 const acceptedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
 const maximumImageBytes = 20 * 1024 * 1024
@@ -35,14 +35,11 @@ export default function StoryTray() {
     return () => window.clearTimeout(timeoutId)
   }, [load])
 
-  const updateStory = useCallback((updated: Story) => {
-    setGroups((current) => current.map((group) => ({
-      ...group,
-      hasUnseenStories: group.stories.some((story) => story.id === updated.id
-        ? !updated.isViewed && !updated.canManage
-        : !story.isViewed && !story.canManage),
-      stories: group.stories.map((story) => story.id === updated.id ? updated : story),
-    })))
+  const updateStory = useCallback((updated: StoryUpdate) => {
+    setGroups((current) => current.map((group) => {
+      const stories = group.stories.map((story) => story.id === updated.id ? { ...story, ...updated } : story)
+      return { ...group, stories, hasUnseenStories: stories.some((story) => !story.isViewed && !story.canManage) }
+    }))
   }, [])
 
   const ownGroup = groups.find((group) => group.stories.some((story) => story.canManage))

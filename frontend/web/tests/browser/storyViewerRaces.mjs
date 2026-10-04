@@ -284,6 +284,41 @@ try {
     assert.equal(await page.getByText('Không thể cập nhật phản ứng.', { exact: true }).count(), 0)
   }, { setup: state => { state.reactionDelays.like = 400; state.failReaction = true } })
 
+  await check('a successful reaction after closing persists when the story is reopened', async ({ page, viewer, state, reaction, selected }) => {
+    let responseArrived = false
+    const response = page.waitForResponse(response => response.url().endsWith(`/api/stories/${storyIds[0]}/reaction`) && response.status() === 200).then(response => { responseArrived = true; return response })
+    await reaction('like').click()
+    await eventually(() => state.reactions.length === 1, 'Reaction request starts')
+    await viewer.getByRole('button', { name: 'Đóng Story', exact: true }).click()
+    assert.equal(responseArrived, false)
+    assert.equal(await viewer.count(), 0)
+    await response
+    await eventually(() => state.stories[0].viewerReaction === 'like', 'Server reaction succeeds after close')
+    await page.getByRole('button', { name: /Minh$/ }).click()
+    await viewer.locator('img[alt="Story 1"]').waitFor()
+    await selected('like')
+    assert.equal(state.reactions.length, 1)
+    assert.equal(await viewer.getByText('1 phản ứng', { exact: true }).count(), 1)
+  }, { setup: state => { state.reactionDelays.like = 700 } })
+
+  await check('a successful mark-view after closing updates the tray and avoids a duplicate on reopen', async ({ page, viewer, state }) => {
+    let responseArrived = false
+    const response = page.waitForResponse(response => response.url().endsWith(`/api/stories/${storyIds[0]}/view`) && response.status() === 204).then(response => { responseArrived = true; return response })
+    await eventually(() => state.views.includes(storyIds[0]), 'Mark-view request starts')
+    const card = page.getByRole('button', { name: /Minh$/ })
+    assert.equal(await card.evaluate(card => card.style.borderColor), 'var(--color-primary)')
+    await viewer.getByRole('button', { name: 'Đóng Story', exact: true }).click()
+    assert.equal(responseArrived, false)
+    assert.equal(await viewer.count(), 0)
+    await response
+    await eventually(() => state.stories[0].isViewed, 'Server marks the story viewed after close')
+    await eventually(async () => await card.evaluate(card => card.style.borderColor) === 'var(--color-border)', 'Tray ring updates after the closed viewer request succeeds')
+    await card.click()
+    await eventually(() => viewer.locator('img[alt="Story 1"]').evaluate(image => image.complete && image.naturalWidth > 0), 'Reopened image is ready')
+    await pause(250)
+    assert.equal(state.views.filter(id => id === storyIds[0]).length, 1)
+  }, { viewed: false, setup: state => { state.viewDelay = 800; state.stories[1].isViewed = true } })
+
   assert.deepEqual(errors, [])
   console.log(`${passed} Story viewer race browser checks passed.`)
 } finally { await browser.close() }

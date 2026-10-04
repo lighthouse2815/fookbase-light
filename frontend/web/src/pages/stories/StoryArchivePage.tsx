@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { storiesApi, type Story, type StoryTrayAuthor } from '../../api/stories'
-import StoryViewer from '../feed/components/StoryViewer'
+import StoryViewer, { type StoryUpdate } from '../feed/components/StoryViewer'
 import { Mascot } from 'page-mascot'
 
 export default function StoryArchivePage() {
@@ -38,7 +38,7 @@ export default function StoryArchivePage() {
     hasUnseenStories: false,
     stories: [...stories].reverse(),
   }], [stories])
-  const updateStory = (updated: Story) => setStories((current) => current.map((story) => story.id === updated.id ? updated : story))
+  const updateStory = (updated: StoryUpdate) => setStories((current) => current.map((story) => story.id === updated.id ? { ...story, ...updated } : story))
 
   return <main className="mx-auto min-h-screen w-full max-w-4xl px-3 py-6 sm:px-6">
     <div className="mb-5 flex items-center gap-4">

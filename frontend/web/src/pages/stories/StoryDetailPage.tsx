@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { storiesApi, type Story, type StoryTrayAuthor } from '../../api/stories'
-import StoryViewer from '../feed/components/StoryViewer'
+import StoryViewer, { type StoryUpdate } from '../feed/components/StoryViewer'
 
 export default function StoryDetailPage() {
   const { storyId = '' } = useParams()
@@ -34,8 +34,8 @@ export default function StoryDetailPage() {
     hasUnseenStories: !story.isViewed && !story.canManage,
     stories: [story],
   }] : [], [story])
-  const updateStory = useCallback((updated: Story) => {
-    setStory((current) => current?.id === updated.id ? updated : current)
+  const updateStory = useCallback((updated: StoryUpdate) => {
+    setStory((current) => current?.id === updated.id ? { ...current, ...updated } : current)
   }, [])
 
   if (story) return <StoryViewer groups={groups} initialAuthorIndex={0} initialStoryIndex={0} onClose={close} onStoriesChanged={updateStory} />

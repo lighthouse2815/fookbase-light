@@ -11,12 +11,14 @@ const reactionChoices: ReadonlyArray<[StoryReactionType, string]> = [
   ['like', '👍'], ['love', '❤️'], ['haha', '😆'], ['wow', '😮'], ['sad', '😢'], ['angry', '😡'],
 ]
 
+export type StoryUpdate = Pick<Story, 'id'> & Partial<Pick<Story, 'isViewed' | 'viewerReaction' | 'reactionCount'>>
+
 interface StoryViewerProps {
   groups: StoryTrayAuthor[]
   initialAuthorIndex: number
   initialStoryIndex: number
   onClose: () => void
-  onStoriesChanged: (story: Story) => void
+  onStoriesChanged: (story: StoryUpdate) => void
 }
 
 interface StoryMediaState {
@@ -122,11 +124,11 @@ export default function StoryViewer({
     mounted.current = true
     return () => { mounted.current = false }
   }, [])
-  const publishStory = useCallback((updated: Story) => {
+  const publishStory = useCallback((updated: StoryUpdate) => {
     // Mirror before React commits so simultaneous view/reaction responses merge into the same snapshot.
     groupsRef.current = groupsRef.current.map((group) => ({
       ...group,
-      stories: group.stories.map((story) => story.id === updated.id ? updated : story),
+      stories: group.stories.map((story) => story.id === updated.id ? { ...story, ...updated } : story),
     }))
     onStoriesChangedRef.current(updated)
   }, [])
@@ -254,8 +256,7 @@ export default function StoryViewer({
     viewedRequests.current.add(storyId)
     void storiesApi.markViewed(storyId).then(() => {
       viewedStories.current.add(storyId)
-      const story = groupsRef.current.flatMap((group) => group.stories).find((item) => item.id === storyId)
-      if (mounted.current && story) publishStory({ ...story, isViewed: true })
+      publishStory({ id: storyId, isViewed: true })
     }).catch(() => undefined).finally(() => { viewedRequests.current.delete(storyId) })
   }, [activeKey, mediaReady, active?.canManage, active?.isViewed, publishStory])
 
@@ -411,8 +412,7 @@ export default function StoryViewer({
     mutation.confirmed = currentStory
     mutation.running = true
     const publishReaction = () => {
-      const current = groupsRef.current.flatMap((group) => group.stories).find((story) => story.id === storyId)
-      if (current) publishStory({ ...current, viewerReaction: mutation.confirmed.viewerReaction, reactionCount: mutation.confirmed.reactionCount })
+      publishStory({ id: storyId, viewerReaction: mutation.confirmed.viewerReaction, reactionCount: mutation.confirmed.reactionCount })
     }
     // Serialize writes per story and coalesce queued clicks so the server also keeps the latest intent.
     try {
@@ -428,11 +428,11 @@ export default function StoryViewer({
             }))
             : await storiesApi.setReaction(storyId, desired)
           mutation.confirmed = updated
-          if (version === mutation.version && mounted.current) publishReaction()
+          if (version === mutation.version) publishReaction()
         } catch {
-          if (version === mutation.version && mounted.current) {
+          if (version === mutation.version) {
             publishReaction()
-            if (activeRef.current?.id === storyId) setReactionError({ storyId, message: 'Không thể cập nhật phản ứng.' })
+            if (mounted.current && activeRef.current?.id === storyId) setReactionError({ storyId, message: 'Không thể cập nhật phản ứng.' })
           }
         }
         if (version === mutation.version) break
