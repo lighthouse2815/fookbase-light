@@ -1,5 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
-using Fookbase.Api.Modules.Identity.Services;
+using Fookbase.Api.Modules.Admin.Services;
 
 namespace Fookbase.Api.Modules.Identity.Middleware;
 

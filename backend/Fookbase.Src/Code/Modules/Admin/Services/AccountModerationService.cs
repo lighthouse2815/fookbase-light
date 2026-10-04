@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Identity.Services;
+namespace Fookbase.Api.Modules.Admin.Services;
 
 public sealed class AccountModerationService(FookbaseDbContext dbContext, TimeProvider timeProvider)
 {
