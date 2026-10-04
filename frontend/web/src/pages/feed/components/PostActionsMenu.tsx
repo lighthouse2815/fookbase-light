@@ -8,7 +8,7 @@ export default function PostActionsMenu({ label, icon, children }: { label: stri
   const popupRef = useRef<HTMLDivElement>(null)
   const focusOnOpen = useRef<'first' | 'last' | null>(null)
   const popupId = useId()
-  const position = useAnchoredPopup(open, triggerRef, popupRef, 'below')
+  const position = useAnchoredPopup(open, triggerRef, popupRef, 'below', setOpen)
 
   useLayoutEffect(() => {
     if (!open || !position) return

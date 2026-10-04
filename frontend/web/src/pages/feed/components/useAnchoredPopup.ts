@@ -6,6 +6,7 @@ export function useAnchoredPopup(
   anchor: RefObject<HTMLButtonElement | null>,
   popup: RefObject<HTMLDivElement | null>,
   placement: 'above' | 'below',
+  onOpenChange: (open: boolean) => void,
 ) {
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null)
   useLayoutEffect(() => {
@@ -16,6 +17,10 @@ export function useAnchoredPopup(
       const menu = popup.current
       if (!button || !menu) return
       const rect = button.getBoundingClientRect()
+      if (rect.bottom <= 0 || rect.top >= window.innerHeight || rect.right <= 0 || rect.left >= window.innerWidth) {
+        onOpenChange(false)
+        return
+      }
       const width = menu.offsetWidth
       const height = menu.offsetHeight
       const left = placement === 'above' ? rect.left + (rect.width - width) / 2 : rect.right - width
@@ -37,6 +42,6 @@ export function useAnchoredPopup(
       window.removeEventListener('resize', schedule)
       window.removeEventListener('scroll', schedule, true)
     }
-  }, [open, anchor, popup, placement])
+  }, [open, anchor, popup, placement, onOpenChange])
   return position
 }

@@ -23,7 +23,7 @@ export default function PostReactionPicker({ viewerReaction, onToggleDefault, on
   const skipClick = useRef(false)
   const focusOnOpen = useRef(false)
   const popupId = useId()
-  const position = useAnchoredPopup(open, triggerRef, popupRef, 'above')
+  const position = useAnchoredPopup(open, triggerRef, popupRef, 'above', setOpen)
   const selected = reactionChoices.find(({ type }) => type === viewerReaction)
 
   const clearPress = () => { clearTimeout(pressTimer.current ?? undefined); pressTimer.current = null }
