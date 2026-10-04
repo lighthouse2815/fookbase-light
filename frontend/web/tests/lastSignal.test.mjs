@@ -113,6 +113,19 @@ test('objectives follow the complete playable loop and reject skipping ahead', (
   assert.match(getObjective(progress).title, /Hoàn tất/)
 })
 
+test('opening the door frees the entrance while its parked 3D leaf still blocks movement', () => {
+  const opened = interact(interact(createProgress(), 'key'), 'door')
+  const entering = atOrigin()
+  entering.position.z = 2
+  walk(entering, forward, 1, getColliders(opened))
+  assert.ok(entering.position.z < -0.5)
+  const byHinge = atOrigin()
+  byHinge.position.x = -1.23
+  byHinge.position.z = 4
+  walk(byHinge, forward, 1, getColliders(opened))
+  assert.ok(byHinge.position.z >= 2.6, 'the opened door must still occupy physical space')
+})
+
 test('the horror trigger checks X/Y/Z, requires power and runs only once', () => {
   let progress = createProgress()
   assert.equal(enterStrangeRoom(progress, { x: 0, y: 0, z: -12 }), progress)

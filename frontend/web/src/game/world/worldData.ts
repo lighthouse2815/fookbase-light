@@ -50,8 +50,11 @@ const staticColliders = [
   ...TREES.map((position, index): WorldBox => ({ id: `tree-${index}`, position: [position[0], 2.5, position[2]], size: [0.75, 5, 0.75], color: '#383b30' })),
 ]
 const closedColliders = [...staticColliders, DOOR_COLLIDER]
+const openColliders = [...staticColliders, {
+  id: 'open-door-leaf', position: [-1.23, 1.45, 1.32], size: [0.41, 2.9, 2.66], color: DOOR_COLLIDER.color,
+} satisfies WorldBox]
 export function getColliders(progress: GameProgress): readonly WorldBox[] {
-  return progress.doorOpen ? staticColliders : closedColliders
+  return progress.doorOpen ? openColliders : closedColliders
 }
 
 export const INTERACTIONS: Interaction[] = [
