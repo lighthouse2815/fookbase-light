@@ -134,6 +134,7 @@ export default function PostReactionPicker({ viewerReaction, onToggleDefault, on
       }}
       onClick={() => {
         if (skipClick.current) { skipClick.current = false; return }
+        if (compact && !selected) { show(true); return }
         close()
         onToggleDefault()
       }}

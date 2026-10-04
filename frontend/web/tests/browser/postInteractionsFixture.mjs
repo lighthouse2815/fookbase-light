@@ -25,7 +25,7 @@ export async function postFixtures(context, initial = {}) {
       state.writes.push({ action: 'reaction', type })
       const fail = state.failReaction
       await new Promise((resolve) => setTimeout(resolve, state.reactionDelay))
-      if (fail) return route.fulfill({ status: 503, json: { message: 'Không thể lưu cảm xúc thử nghiệm.' } })
+      if (fail) return route.fulfill({ status: 503, json: { detail: 'Không thể lưu cảm xúc thử nghiệm.' } })
       const counts = { ...state.post.reactionCounts }
       if (state.post.viewerReaction) counts[state.post.viewerReaction]--
       if (type) counts[type] = (counts[type] ?? 0) + 1
@@ -41,7 +41,7 @@ export async function postFixtures(context, initial = {}) {
       state.writes.push({ action: 'comment', ...request.postDataJSON() })
       const fail = state.failComment
       await new Promise((resolve) => setTimeout(resolve, state.commentDelay))
-      if (fail) return route.fulfill({ status: 503, json: { message: 'Không thể gửi bình luận thử nghiệm.' } })
+      if (fail) return route.fulfill({ status: 503, json: { detail: 'Không thể gửi bình luận thử nghiệm.' } })
       const body = request.postDataJSON()
       const comment = { id: `comment-${state.comments.length + 1}`, postId, authorUserId: viewerId, parentCommentId: body.parentCommentId ?? null, content: body.content, createdAtUtc: new Date().toISOString(), updatedAtUtc: null, reactionCounts: {}, viewerReaction: null, author: { userId: viewerId, username: 'explorer', displayName: 'Người kiểm tra', avatarUrl: null } }
       state.comments.push(comment)

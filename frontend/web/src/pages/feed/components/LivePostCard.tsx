@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
@@ -19,6 +19,7 @@ import { reactionChoices } from './reactionChoices'
 import type { ReactionType } from './reactionChoices'
 import { usePostInteractions } from './usePostInteractions'
 import { showToast } from '../../../shared/toastState'
+import { useAuth } from '../../../auth/useAuth'
 import ReactionPicker from './PostReactionPicker'
 import PostActionsMenu from './PostActionsMenu'
 
@@ -226,18 +227,16 @@ export default function LivePostCard({
   allowProfilePin = false,
 }: LivePostCardProps) {
   const { t } = usePreferences()
-  const { state: interactionState, viewerReaction, reactionCounts, reactionVersion } = usePostInteractions(post, currentUserId)
-  const [comments, setComments] = useState<Comment[]>([])
-  const [commentsTotal, setCommentsTotal] = useState(0)
-  const [commentsOffset, setCommentsOffset] = useState(0)
+  const { session } = useAuth()
+  const {
+    state: interactionState, discussion, viewerReaction, reactionCounts, reactionVersion,
+    comments, commentCount, commentsLoaded, commentsLoading: isLoadingComments,
+    commentsLoadingMore: isLoadingMoreComments, commentsError, commentsHasMore,
+    commentSubmitting, busyCommentIds,
+  } = usePostInteractions(post, currentUserId)
   const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(() => Boolean(initialCommentId))
   const [isReactionDialogOpen, setIsReactionDialogOpen] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<MediaAccess | null>(null)
-  const [isLoadingComments, setIsLoadingComments] = useState(false)
-  const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false)
-  const [commentsPageError, setCommentsPageError] = useState<string | null>(null)
-  const [reactingCommentId, setReactingCommentId] = useState<string | null>(null)
-  const [commentAuthors, setCommentAuthors] = useState<Record<string, CommentAuthor>>({})
   const [commentText, setCommentText] = useState('')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -257,6 +256,15 @@ export default function LivePostCard({
   const [isPostPendingDeletion, setIsPostPendingDeletion] = useState(false)
   const postCardRef = useRef<HTMLElement>(null)
   const textBackgroundContentRef = useRef<HTMLDivElement>(null)
+  const mountedRef = useRef(false)
+  const currentDiscussionRef = useRef(discussion)
+  const draftVersionRef = useRef(0)
+  const replyVersionRef = useRef(0)
+  const commentAuthors = useMemo(() => {
+    const authors: Record<string, CommentAuthor> = {}
+    comments.forEach((comment) => { if (comment.author) authors[comment.author.userId] = comment.author })
+    return authors
+  }, [comments])
   const isAuthor = post.authorUserId === currentUserId
   const canPinPost = allowProfilePin && isAuthor && post.containerType === 'profile'
   const displayAuthor = post.displayAuthor
@@ -267,7 +275,7 @@ export default function LivePostCard({
     : post.authorUserId ? `/profile/${post.authorUserId}` : '/'
   const postTimestamp = formatPostTimestamp(post.createdAtUtc)
   const currentUserProfile = commentAuthors[currentUserId] ?? (isAuthor ? author : undefined)
-  const currentUserName = currentUserProfile?.displayName ?? 'Bạn'
+  const currentUserName = currentUserProfile?.displayName ?? session?.user.username ?? 'Bạn'
   const replyTargetName = replyTarget ? commentAuthors[replyTarget.authorUserId]?.displayName ?? 'Người dùng' : undefined
   const profileMediaUpdateStatus = post.content === 'đã cập nhật ảnh đại diện.' ||
     post.content === 'đã cập nhật ảnh bìa.'
@@ -335,61 +343,44 @@ export default function LivePostCard({
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [isCommentsDialogOpen, isReactionDialogOpen, selectedPhoto])
 
-  const cacheCommentAuthors = useCallback((items: readonly Comment[]) => {
-    setCommentAuthors((current) => {
-      const next = { ...current }
-      items.forEach((comment) => { if (comment.author) next[comment.author.userId] = comment.author })
-      return next
-    })
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
   }, [])
 
-  const loadComments = useCallback(async () => {
-    setIsLoadingComments(true)
-    setCommentsPageError(null)
-    try {
-      const page = await postsApi.getComments(post.id)
-      setComments(page.items)
-      setCommentsTotal(page.total)
-      setCommentsOffset(page.offset + page.items.length)
-      cacheCommentAuthors(page.items)
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
-    } finally {
-      setIsLoadingComments(false)
-    }
-  }, [cacheCommentAuthors, post.id, t])
+  useEffect(() => { currentDiscussionRef.current = discussion }, [discussion])
 
   useEffect(() => {
-    if (!initialCommentId || comments.length !== 0) return
-    const timer = window.setTimeout(() => { void loadComments() }, 0)
+    if (!initialCommentId) return
+    const timer = window.setTimeout(() => { void discussion.loadComments() }, 0)
     return () => window.clearTimeout(timer)
-  }, [comments.length, initialCommentId, loadComments])
+  }, [initialCommentId, discussion])
 
-  const loadMoreComments = async () => {
-    setIsLoadingMoreComments(true)
-    setCommentsPageError(null)
-    try {
-      const page = await postsApi.getComments(post.id, commentsOffset)
-      setComments((current) => [...current, ...page.items.filter((comment) => !current.some((item) => item.id === comment.id))])
-      setCommentsTotal(page.total)
-      setCommentsOffset(page.offset + page.items.length)
-      cacheCommentAuthors(page.items)
-    } catch (requestError) {
-      setCommentsPageError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
-    } finally {
-      setIsLoadingMoreComments(false)
-    }
+  const changeCommentText = (value: string) => {
+    draftVersionRef.current += 1
+    setCommentText(value)
+  }
+  const chooseReplyTarget = (comment: Comment | null) => {
+    replyVersionRef.current += 1
+    setReplyTarget(comment)
+  }
+  const loadMoreComments = () => discussion.loadComments(true)
+
+  const publishPostUpdate = (updated: Post) => {
+    if (!mountedRef.current) return
+    const reaction = interactionState.getSnapshot()
+    onPostUpdated({ ...updated, viewerReaction: reaction.viewerReaction, reactionCounts: reaction.reactionCounts, commentCount: discussion.getSnapshot().commentCount })
   }
 
   const openCommentsDialog = () => {
     setSelectedPhoto(null)
     setIsCommentsDialogOpen(true)
-    if (comments.length === 0) void loadComments()
+    void discussion.loadComments()
   }
 
   const openPhotoViewer = (photo: MediaAccess) => {
     setSelectedPhoto(photo)
-    if (comments.length === 0) void loadComments()
+    void discussion.loadComments()
   }
 
   const closeDiscussion = () => {
@@ -402,75 +393,50 @@ export default function LivePostCard({
 
   const createComment = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!commentText.trim()) return
-
-    try {
-      const parentCommentId = replyTarget?.parentCommentId ?? replyTarget?.id
-      const comment = await postsApi.createComment(post.id, commentText.trim(), parentCommentId)
-      setComments((currentComments) => [...currentComments, comment])
-      setCommentsTotal((currentTotal) => currentTotal + 1)
-      setCommentsOffset((currentOffset) => currentOffset + 1)
-      setCommentText('')
-      setReplyTarget(null)
-      cacheCommentAuthors([comment])
-      onPostUpdated({ ...post, commentCount: post.commentCount + 1 })
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableCreateComment'))
+    if (!commentText.trim() || discussion.getSnapshot().commentSubmitting) return
+    const submittedText = commentText
+    const submittedReply = replyTarget
+    const parentCommentId = submittedReply?.parentCommentId ?? submittedReply?.id
+    changeCommentText('')
+    chooseReplyTarget(null)
+    const clearedDraftVersion = draftVersionRef.current
+    const clearedReplyVersion = replyVersionRef.current
+    const comment = await discussion.createComment(submittedText, {
+      userId: currentUserId, username: session?.user.username ?? currentUserId,
+      displayName: currentUserName, avatarUrl: currentUserProfile?.avatarUrl ?? null,
+    }, parentCommentId)
+    if (comment || !mountedRef.current || currentDiscussionRef.current !== discussion) return
+    // Restore a failed draft only when the user has not started a new one.
+    if (draftVersionRef.current === clearedDraftVersion) {
+      changeCommentText(submittedText)
+      if (replyVersionRef.current === clearedReplyVersion) chooseReplyTarget(submittedReply)
     }
   }
 
   const saveCommentEdit = async () => {
     if (!editingComment || !editingCommentContent.trim()) return
-
-    try {
-      const updatedComment = await postsApi.updateComment(editingComment.id, editingCommentContent.trim())
-      setComments((currentComments) => currentComments.map((item) =>
-        item.id === updatedComment.id ? updatedComment : item,
-      ))
+    const comment = await discussion.updateComment(editingComment.id, editingCommentContent)
+    if (comment && mountedRef.current && currentDiscussionRef.current === discussion) {
       setEditingComment(null)
       setEditingCommentContent('')
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableEditComment'))
     }
   }
 
   const deleteComment = async () => {
     if (!commentPendingDeletion) return
-
-    try {
-      await postsApi.deleteComment(commentPendingDeletion.id)
-      setComments((currentComments) => currentComments.filter((item) => item.id !== commentPendingDeletion.id))
-      if (replyTarget?.id === commentPendingDeletion.id || replyTarget?.parentCommentId === commentPendingDeletion.id) setReplyTarget(null)
-      setCommentsTotal((currentTotal) => Math.max(0, currentTotal - 1))
-      setCommentsOffset((currentOffset) => Math.max(0, currentOffset - 1))
-      onPostUpdated({ ...post, commentCount: Math.max(0, post.commentCount - 1) })
-      setCommentPendingDeletion(null)
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableDeleteComment'))
-    }
+    const removed = await discussion.deleteComment(commentPendingDeletion.id)
+    if (!removed || !mountedRef.current || currentDiscussionRef.current !== discussion) return
+    if (replyTarget?.id === commentPendingDeletion.id || replyTarget?.parentCommentId === commentPendingDeletion.id) chooseReplyTarget(null)
+    setCommentPendingDeletion(null)
   }
 
-  const updateCommentReaction = async (comment: Comment, type?: ReactionType) => {
-    setReactingCommentId(comment.id)
-    try {
-      const updatedComment = type
-        ? await postsApi.setCommentReaction(comment.id, type)
-        : await postsApi.removeCommentReaction(comment.id)
-      setComments((currentComments) => currentComments.map((item) =>
-        item.id === updatedComment.id ? updatedComment : item,
-      ))
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : t('unableUpdateReaction'))
-    } finally {
-      setReactingCommentId(null)
-    }
-  }
+  const updateCommentReaction = (comment: Comment, type?: ReactionType) => discussion.reactToComment(comment.id, type)
 
   const savePostEdit = async () => {
     if (!editingPostContent?.trim()) return
 
     try {
-      onPostUpdated(await postsApi.update(post.id, {
+      publishPostUpdate(await postsApi.update(post.id, {
         content: editingPostContent.trim(),
         privacy: post.privacy,
         mediaIds: post.mediaIds,
@@ -485,7 +451,7 @@ export default function LivePostCard({
     if (!editingPostPrivacy) return
 
     try {
-      onPostUpdated(await postsApi.update(post.id, {
+      publishPostUpdate(await postsApi.update(post.id, {
         content: post.content,
         privacy: editingPostPrivacy,
         mediaIds: post.mediaIds,
@@ -515,7 +481,7 @@ export default function LivePostCard({
       if (wasSaved) await postsApi.removeSaved(post.id)
       else await postsApi.save(post.id)
       setIsSaved(!wasSaved)
-      onPostUpdated({ ...post, viewerHasSaved: !wasSaved })
+      publishPostUpdate({ ...post, viewerHasSaved: !wasSaved })
       showToast(wasSaved ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết.', 'success')
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật bài viết đã lưu.')
@@ -530,7 +496,7 @@ export default function LivePostCard({
     setIsUpdatingPostPin(true)
     try {
       const updatedPost = post.isPinned ? await postsApi.unpin(post.id) : await postsApi.pin(post.id)
-      onPostUpdated(updatedPost)
+      publishPostUpdate(updatedPost)
       showToast(updatedPost.isPinned ? 'Đã ghim bài viết trên trang cá nhân.' : 'Đã bỏ ghim bài viết.', 'success')
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Không thể cập nhật trạng thái ghim bài viết.')
@@ -594,7 +560,7 @@ export default function LivePostCard({
 
       <div className="mx-4 flex min-h-11 items-center justify-between gap-3 border-b border-border text-[13px] text-text-muted">
         <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
-        <span className="flex gap-2"><button type="button" onClick={openCommentsDialog} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{post.commentCount > 0 ? `${post.commentCount} ${t('comments')}` : ''}</button>{post.shareCount > 0 && <span>{post.shareCount} lượt chia sẻ</span>}</span>
+        <span className="flex gap-2"><button type="button" onClick={openCommentsDialog} className="border-0 bg-transparent p-0 text-[13px] text-text-muted hover:underline">{commentCount > 0 ? `${commentCount} ${t('comments')}` : ''}</button>{post.shareCount > 0 && <span>{post.shareCount} lượt chia sẻ</span>}</span>
       </div>
       <div className="mx-2 grid grid-cols-3 gap-1 py-1">
         <ReactionPicker animationVersion={reactionVersion} viewerReaction={viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
@@ -605,12 +571,12 @@ export default function LivePostCard({
           <ShareIcon />{t('share')}
         </button>
       </div>
-      {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} onShared={() => onPostUpdated({ ...post, shareCount: post.shareCount + 1 })} />}
+      {isShareOpen && <ShareDialog postId={post.id} onClose={() => setIsShareOpen(false)} onShared={() => publishPostUpdate({ ...post, shareCount: post.shareCount + 1 })} />}
     </article>
     {isReactionDialogOpen && <ReactionDialog key={post.id} postId={post.id} reactionCounts={reactionCounts} onClose={() => setIsReactionDialogOpen(false)} />}
     {isCommentsDialogOpen && createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-[2px]" role="presentation" onMouseDown={() => setIsCommentsDialogOpen(false)}>
-        <section role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+        <section role="dialog" aria-modal="true" aria-labelledby={`comments-dialog-${post.id}`} onMouseDown={(event) => event.stopPropagation()} className="post-discussion-enter flex h-[min(92vh,900px)] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
           <header className="relative flex h-13 shrink-0 items-center justify-center border-b border-border px-14">
             <h2 id={`comments-dialog-${post.id}`} className="truncate text-center text-[17px] font-bold text-text">Bài viết của {authorName}</h2>
             <button type="button" onClick={() => setIsCommentsDialogOpen(false)} aria-label="Đóng bình luận" className="absolute right-3 grid h-9 w-9 place-items-center rounded-full border-0 bg-surface-2 text-2xl leading-none text-text-muted hover:bg-surface-hover hover:text-text">×</button>
@@ -633,7 +599,7 @@ export default function LivePostCard({
               )}
               <div className="flex items-center justify-between px-4 py-2 text-[13px] text-text-muted">
                 <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
-                <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
+                <span>{commentCount > 0 ? `${commentCount} ${t('comments')}` : ''}</span>
               </div>
               <div className="grid grid-cols-3 border-t border-border px-2 py-1">
                 <ReactionPicker animationVersion={reactionVersion} viewerReaction={viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
@@ -643,11 +609,11 @@ export default function LivePostCard({
             </div>
 
             <div className="space-y-4 px-4 py-4">
-              <DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={setReplyTarget} onEdit={(comment) => { setEditingComment(comment); setEditingCommentContent(comment.content) }} onDelete={setCommentPendingDeletion} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} />
+              <DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={!commentsLoaded ? commentsError : null} paginationError={commentsLoaded ? commentsError : null} hasMore={commentsHasMore} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={chooseReplyTarget} onEdit={(comment) => { setEditingComment(comment); setEditingCommentContent(comment.content) }} onDelete={setCommentPendingDeletion} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={null} busyCommentIds={busyCommentIds} onRetryLoad={() => void discussion.loadComments()} />
             </div>
           </div>
 
-          <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserName} value={commentText} placeholder={replyTargetName ? `Trả lời ${replyTargetName}` : t('writeComment')} sendLabel={t('send')} replyingToName={replyTargetName} onCancelReply={() => setReplyTarget(null)} onChange={(event) => setCommentText(event.target.value)} onSubmit={(event) => void createComment(event)} />
+          <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserName} value={commentText} placeholder={replyTargetName ? `Trả lời ${replyTargetName}` : t('writeComment')} sendLabel={t('send')} isSubmitting={commentSubmitting} replyingToName={replyTargetName} onCancelReply={() => chooseReplyTarget(null)} onChange={(event) => changeCommentText(event.target.value)} onSubmit={(event) => void createComment(event)} />
         </section>
       </div>
     , document.body)}
@@ -673,7 +639,7 @@ export default function LivePostCard({
 
           <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[13px] text-text-muted">
             <ReactionSummary reactionCounts={reactionCounts} onClick={() => setIsReactionDialogOpen(true)} />
-            <span>{commentsTotal > 0 ? `${commentsTotal} ${t('comments')}` : ''}</span>
+            <span>{commentCount > 0 ? `${commentCount} ${t('comments')}` : ''}</span>
           </div>
           <div className="grid grid-cols-3 border-b border-border px-2 py-1">
             <ReactionPicker animationVersion={reactionVersion} viewerReaction={viewerReaction} onToggleDefault={() => void toggleDefaultReaction()} onSelect={(type) => void setReaction(type)} />
@@ -682,9 +648,9 @@ export default function LivePostCard({
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-            <div className="space-y-4"><DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={error} paginationError={commentsPageError} hasMore={commentsOffset < commentsTotal} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={setReplyTarget} onEdit={(comment) => { setEditingComment(comment); setEditingCommentContent(comment.content) }} onDelete={setCommentPendingDeletion} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={reactingCommentId} /></div>
+            <div className="space-y-4"><DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={!commentsLoaded ? commentsError : null} paginationError={commentsLoaded ? commentsError : null} hasMore={commentsHasMore} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={chooseReplyTarget} onEdit={(comment) => { setEditingComment(comment); setEditingCommentContent(comment.content) }} onDelete={setCommentPendingDeletion} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={null} busyCommentIds={busyCommentIds} onRetryLoad={() => void discussion.loadComments()} /></div>
           </div>
-          <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserName} value={commentText} placeholder={replyTargetName ? `Trả lời ${replyTargetName}` : t('writeComment')} sendLabel={t('send')} replyingToName={replyTargetName} onCancelReply={() => setReplyTarget(null)} onChange={(event) => setCommentText(event.target.value)} onSubmit={(event) => void createComment(event)} />
+          <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserName} value={commentText} placeholder={replyTargetName ? `Trả lời ${replyTargetName}` : t('writeComment')} sendLabel={t('send')} isSubmitting={commentSubmitting} replyingToName={replyTargetName} onCancelReply={() => chooseReplyTarget(null)} onChange={(event) => changeCommentText(event.target.value)} onSubmit={(event) => void createComment(event)} />
         </aside>
       </div>
     , document.body)}
