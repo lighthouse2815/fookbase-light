@@ -1,10 +1,6 @@
-namespace Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Messages.Domain.Enums;
 
-public enum MessageType
-{
-    TEXT,
-    MEDIA
-}
+namespace Fookbase.Api.Modules.Messages.Entities;
 
 public sealed class Message
 {
@@ -12,7 +8,7 @@ public sealed class Message
     {
     }
 
-    private Message(
+    public Message(
         Guid id,
         Guid conversationId,
         Guid senderUserId,
@@ -20,7 +16,7 @@ public sealed class Message
         string? content,
         Guid? replyToMessageId,
         DateTimeOffset createdAtUtc,
-        Guid? storyId)
+        Guid? storyId = null)
     {
         Id = id;
         ConversationId = conversationId;
@@ -53,17 +49,6 @@ public sealed class Message
     public DateTimeOffset? DeletedAtUtc { get; private set; }
 
     public DateTimeOffset? ReadAtUtc { get; private set; }
-
-    public static Message Create(
-        Guid id,
-        Guid conversationId,
-        Guid senderUserId,
-        MessageType type,
-        string? content,
-        Guid? replyToMessageId,
-        DateTimeOffset createdAtUtc,
-        Guid? storyId = null) =>
-        new(id, conversationId, senderUserId, type, content, replyToMessageId, createdAtUtc, storyId);
 
     public void MarkRead(DateTimeOffset readAtUtc) => ReadAtUtc ??= readAtUtc;
 

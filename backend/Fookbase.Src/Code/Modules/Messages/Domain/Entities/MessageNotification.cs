@@ -6,7 +6,7 @@ public sealed class MessageNotification
     {
     }
 
-    private MessageNotification(
+    public MessageNotification(
         Guid id,
         Guid recipientUserId,
         Guid conversationId,
@@ -31,14 +31,6 @@ public sealed class MessageNotification
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? ReadAtUtc { get; private set; }
-
-    public static MessageNotification Create(
-        Guid id,
-        Guid recipientUserId,
-        Guid conversationId,
-        Guid messageId,
-        DateTimeOffset createdAtUtc) =>
-        new(id, recipientUserId, conversationId, messageId, createdAtUtc);
 
     public void MarkRead(DateTimeOffset readAtUtc) => ReadAtUtc ??= readAtUtc;
 }

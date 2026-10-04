@@ -1,11 +1,6 @@
-namespace Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Messages.Domain.Enums;
 
-public enum ConversationParticipantRole
-{
-    OWNER,
-    ADMIN,
-    MEMBER
-}
+namespace Fookbase.Api.Modules.Messages.Entities;
 
 public sealed class ConversationParticipant
 {
@@ -13,7 +8,7 @@ public sealed class ConversationParticipant
     {
     }
 
-    private ConversationParticipant(
+    public ConversationParticipant(
         Guid conversationId,
         Guid userId,
         ConversationParticipantRole role,
@@ -39,13 +34,6 @@ public sealed class ConversationParticipant
     public string? Nickname { get; private set; }
 
     public bool IsActive => LeftAtUtc is null;
-
-    public static ConversationParticipant Create(
-        Guid conversationId,
-        Guid userId,
-        ConversationParticipantRole role,
-        DateTimeOffset joinedAtUtc) =>
-        new(conversationId, userId, role, joinedAtUtc);
 
     public void ChangeRole(ConversationParticipantRole role) => Role = role;
 

@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Messages.Domain.Enums;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -21,12 +22,38 @@ namespace Fookbase.Messages.Api.IntegrationTests;
 public sealed class MessageEndpointsTests(MessagesApiFactory factory)
     : IClassFixture<MessagesApiFactory>
 {
-    [Fact]
-    public async Task Missing_jwt_returns_unauthorized()
+    [Theory]
+    [InlineData("POST", "conversations/{id}")]
+    [InlineData("POST", "conversations/direct")]
+    [InlineData("POST", "conversations/group")]
+    [InlineData("GET", "conversations")]
+    [InlineData("GET", "conversations/{id}")]
+    [InlineData("PATCH", "conversations/{id}")]
+    [InlineData("GET", "conversations/{id}/messages")]
+    [InlineData("POST", "conversations/{id}/messages")]
+    [InlineData("GET", "conversations/{id}/search")]
+    [InlineData("POST", "conversations/{id}/read")]
+    [InlineData("POST", "conversations/{id}/participants")]
+    [InlineData("DELETE", "conversations/{id}/participants/{id}")]
+    [InlineData("PATCH", "conversations/{id}/participants/{id}/role")]
+    [InlineData("POST", "conversations/{id}/leave")]
+    [InlineData("POST", "conversations/{id}/transfer-ownership")]
+    [InlineData("POST", "{id}/reactions")]
+    [InlineData("DELETE", "{id}/reactions")]
+    [InlineData("PATCH", "{id}")]
+    [InlineData("DELETE", "{id}")]
+    [InlineData("GET", "media/{id}/read-url")]
+    [InlineData("GET", "notifications")]
+    public async Task Message_routes_require_authentication(string method, string route)
     {
         using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(new HttpMethod(method),
+            "/api/messages/" + route.Replace("{id}", Guid.NewGuid().ToString()))
+        {
+            Content = JsonContent.Create(new { })
+        };
 
-        var response = await client.GetAsync("/api/messages/conversations");
+        using var response = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -140,6 +167,9 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         var repeatedConversation = await reused.Content.ReadFromJsonAsync<ConversationResponse>();
         Assert.NotNull(conversation);
         Assert.Equal(conversation!.Id, repeatedConversation!.Id);
+        var reversed = await recipient.PostAsJsonAsync("/api/messages/conversations/direct", new { userId = senderUserId });
+        Assert.Equal(HttpStatusCode.OK, reversed.StatusCode);
+        Assert.Equal(conversation.Id, (await reversed.Content.ReadFromJsonAsync<ConversationResponse>())!.Id);
         using (var scope = factory.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
@@ -279,6 +309,8 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
             new { content = "Not allowed" });
 
         Assert.Equal(HttpStatusCode.Forbidden, read.StatusCode);
+        using var readError = JsonDocument.Parse(await read.Content.ReadAsStringAsync());
+        Assert.Equal("conversation_access_denied", readError.RootElement.GetProperty("code").GetString());
         Assert.Equal(HttpStatusCode.Forbidden, send.StatusCode);
     }
 
@@ -406,7 +438,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
                 $"tests/{attachmentMediaId}", "blocked.png", "image/png", 1, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(1));
             media.MarkReady(1, DateTimeOffset.UtcNow);
             dbContext.MediaAssets.Add(media);
-            dbContext.MessageAttachments.Add(MessageAttachment.Create(blockedMessage!.Id, attachmentMediaId, 0));
+            dbContext.MessageAttachments.Add(new MessageAttachment(blockedMessage!.Id, attachmentMediaId, 0));
             await dbContext.SaveChangesAsync();
         }
         Assert.Equal(HttpStatusCode.Created, (await third.PostAsJsonAsync(

@@ -6,7 +6,7 @@ public sealed class ConversationReadCursor
     {
     }
 
-    private ConversationReadCursor(Guid conversationId, Guid userId)
+    public ConversationReadCursor(Guid conversationId, Guid userId)
     {
         ConversationId = conversationId;
         UserId = userId;
@@ -21,9 +21,6 @@ public sealed class ConversationReadCursor
     public DateTimeOffset? LastReadMessageCreatedAtUtc { get; private set; }
 
     public DateTimeOffset? LastReadAtUtc { get; private set; }
-
-    public static ConversationReadCursor Create(Guid conversationId, Guid userId) =>
-        new(conversationId, userId);
 
     public bool AdvanceTo(Guid messageId, DateTimeOffset messageCreatedAtUtc, DateTimeOffset readAtUtc)
     {

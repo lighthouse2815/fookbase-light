@@ -1,14 +1,6 @@
-namespace Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Messages.Domain.Enums;
 
-public enum MessageReactionType
-{
-    LIKE,
-    LOVE,
-    HAHA,
-    WOW,
-    SAD,
-    ANGRY
-}
+namespace Fookbase.Api.Modules.Messages.Entities;
 
 public sealed class MessageReaction
 {
@@ -16,7 +8,7 @@ public sealed class MessageReaction
     {
     }
 
-    private MessageReaction(Guid messageId, Guid userId, MessageReactionType type, DateTimeOffset createdAtUtc)
+    public MessageReaction(Guid messageId, Guid userId, MessageReactionType type, DateTimeOffset createdAtUtc)
     {
         MessageId = messageId;
         UserId = userId;
@@ -29,9 +21,6 @@ public sealed class MessageReaction
     public MessageReactionType Type { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
-
-    public static MessageReaction Create(Guid messageId, Guid userId, MessageReactionType type, DateTimeOffset createdAtUtc) =>
-        new(messageId, userId, type, createdAtUtc);
 
     public void ChangeTo(MessageReactionType type, DateTimeOffset updatedAtUtc)
     {

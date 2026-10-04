@@ -6,7 +6,7 @@ public sealed class MessageAttachment
     {
     }
 
-    private MessageAttachment(Guid messageId, Guid mediaId, int sortOrder)
+    public MessageAttachment(Guid messageId, Guid mediaId, int sortOrder)
     {
         MessageId = messageId;
         MediaId = mediaId;
@@ -17,6 +17,4 @@ public sealed class MessageAttachment
     public Guid MediaId { get; private set; }
     public int SortOrder { get; private set; }
 
-    public static MessageAttachment Create(Guid messageId, Guid mediaId, int sortOrder) =>
-        new(messageId, mediaId, sortOrder);
 }

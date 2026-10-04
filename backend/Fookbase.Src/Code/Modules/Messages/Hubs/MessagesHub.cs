@@ -49,9 +49,3 @@ public sealed class MessagesHub : Hub
         await messagesService.NotifyTypingAsync(actorUserId, conversationId, Context.ConnectionAborted);
     }
 }
-
-public sealed class SubjectUserIdProvider : IUserIdProvider
-{
-    public string? GetUserId(HubConnectionContext connection) =>
-        connection.User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
-}

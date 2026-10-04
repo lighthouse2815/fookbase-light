@@ -1,10 +1,6 @@
-namespace Fookbase.Api.Modules.Messages.Entities;
+using Fookbase.Api.Modules.Messages.Domain.Enums;
 
-public enum ConversationType
-{
-    DIRECT,
-    GROUP
-}
+namespace Fookbase.Api.Modules.Messages.Entities;
 
 public sealed class Conversation
 {
@@ -12,7 +8,7 @@ public sealed class Conversation
     {
     }
 
-    private Conversation(
+    public Conversation(
         Guid id,
         Guid userId1,
         Guid userId2,
@@ -20,13 +16,19 @@ public sealed class Conversation
     {
         Id = id;
         Type = ConversationType.DIRECT;
-        UserId1 = userId1;
-        UserId2 = userId2;
+        if (userId1 == userId2)
+        {
+            throw new ArgumentException("A conversation requires two different users.");
+        }
+
+        (UserId1, UserId2) = userId1.CompareTo(userId2) < 0
+            ? (userId1, userId2)
+            : (userId2, userId1);
         CreatedAtUtc = createdAtUtc;
         LastMessageAtUtc = createdAtUtc;
     }
 
-    private Conversation(
+    public Conversation(
         Guid id,
         string title,
         DateTimeOffset createdAtUtc)
@@ -56,25 +58,6 @@ public sealed class Conversation
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset LastMessageAtUtc { get; private set; }
-
-    public static Conversation Create(
-        Guid id,
-        Guid firstUserId,
-        Guid secondUserId,
-        DateTimeOffset createdAtUtc)
-    {
-        if (firstUserId == secondUserId)
-        {
-            throw new ArgumentException("A conversation requires two different users.");
-        }
-
-        return firstUserId.CompareTo(secondUserId) < 0
-            ? new Conversation(id, firstUserId, secondUserId, createdAtUtc)
-            : new Conversation(id, secondUserId, firstUserId, createdAtUtc);
-    }
-
-    public static Conversation CreateGroup(Guid id, string title, DateTimeOffset createdAtUtc) =>
-        new(id, title, createdAtUtc);
 
     public bool Contains(Guid userId) => UserId1 == userId || UserId2 == userId;
 

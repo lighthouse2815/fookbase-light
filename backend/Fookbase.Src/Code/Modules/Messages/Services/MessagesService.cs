@@ -7,6 +7,7 @@ using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Messages.DTOs.Requests;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
+using Fookbase.Api.Modules.Messages.Domain.Enums;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Notifications.Services;
@@ -46,15 +47,15 @@ public sealed class MessagesService(
         if (conversation is null)
         {
             var now = timeProvider.GetUtcNow();
-            conversation = Conversation.Create(Guid.NewGuid(), actorUserId, participantUserId, now);
+            conversation = new Conversation(Guid.NewGuid(), actorUserId, participantUserId, now);
             dbContext.Conversations.Add(conversation);
             dbContext.ConversationParticipants.AddRange(
-                ConversationParticipant.Create(conversation.Id, conversation.UserId1!.Value, ConversationParticipantRole.MEMBER, now),
-                ConversationParticipant.Create(conversation.Id, conversation.UserId2!.Value, ConversationParticipantRole.MEMBER, now));
+                new ConversationParticipant(conversation.Id, conversation.UserId1!.Value, ConversationParticipantRole.MEMBER, now),
+                new ConversationParticipant(conversation.Id, conversation.UserId2!.Value, ConversationParticipantRole.MEMBER, now));
             // Kept as a compatibility projection for existing direct chat clients/imports.
             dbContext.ConversationReadCursors.AddRange(
-                ConversationReadCursor.Create(conversation.Id, conversation.UserId1.Value),
-                ConversationReadCursor.Create(conversation.Id, conversation.UserId2.Value));
+                new ConversationReadCursor(conversation.Id, conversation.UserId1.Value),
+                new ConversationReadCursor(conversation.Id, conversation.UserId2.Value));
             try
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -92,11 +93,11 @@ public sealed class MessagesService(
         try
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            conversation = Conversation.CreateGroup(Guid.NewGuid(), request.Title, now);
+            conversation = new Conversation(Guid.NewGuid(), request.Title, now);
             conversation.UpdateGroup(request.Title, request.PhotoMediaId);
             dbContext.Conversations.Add(conversation);
-            dbContext.ConversationParticipants.Add(ConversationParticipant.Create(conversation.Id, actorUserId, ConversationParticipantRole.OWNER, now));
-            dbContext.ConversationParticipants.AddRange(participantIds.Select(id => ConversationParticipant.Create(conversation.Id, id, ConversationParticipantRole.MEMBER, now)));
+            dbContext.ConversationParticipants.Add(new ConversationParticipant(conversation.Id, actorUserId, ConversationParticipantRole.OWNER, now));
+            dbContext.ConversationParticipants.AddRange(participantIds.Select(id => new ConversationParticipant(conversation.Id, id, ConversationParticipantRole.MEMBER, now)));
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
@@ -218,7 +219,7 @@ public sealed class MessagesService(
         if (conversation.Type == ConversationType.DIRECT)
         {
             var legacyCursor = await dbContext.ConversationReadCursors.SingleOrDefaultAsync(cursor => cursor.ConversationId == conversationId && cursor.UserId == actorUserId, cancellationToken);
-            if (legacyCursor is null) { legacyCursor = ConversationReadCursor.Create(conversationId, actorUserId); dbContext.ConversationReadCursors.Add(legacyCursor); }
+            if (legacyCursor is null) { legacyCursor = new ConversationReadCursor(conversationId, actorUserId); dbContext.ConversationReadCursors.Add(legacyCursor); }
             legacyCursor.AdvanceTo(lastRead.Id, lastRead.CreatedAtUtc, now);
             await dbContext.Messages.Where(message => message.ConversationId == conversationId && message.SenderUserId != actorUserId && message.ReadAtUtc == null &&
                     (message.CreatedAtUtc < lastRead.CreatedAtUtc || (message.CreatedAtUtc == lastRead.CreatedAtUtc && message.Id.CompareTo(lastRead.Id) <= 0)))
@@ -291,17 +292,17 @@ public sealed class MessagesService(
             if (!media.Succeeded) return ApplicationResult<MessageResponse>.Failure(media.Error!);
         }
         var now = timeProvider.GetUtcNow();
-        var message = Message.Create(Guid.NewGuid(), conversationId, actorUserId, attachmentIds.Length == 0 ? MessageType.TEXT : MessageType.MEDIA,
+        var message = new Message(Guid.NewGuid(), conversationId, actorUserId, attachmentIds.Length == 0 ? MessageType.TEXT : MessageType.MEDIA,
             string.IsNullOrWhiteSpace(content) ? null : content, request.ReplyToMessageId, now, storyId);
         conversation.RecordMessage(now);
         dbContext.Messages.Add(message);
-        dbContext.MessageAttachments.AddRange(attachmentIds.Select((mediaId, index) => MessageAttachment.Create(message.Id, mediaId, index)));
+        dbContext.MessageAttachments.AddRange(attachmentIds.Select((mediaId, index) => new MessageAttachment(message.Id, mediaId, index)));
         var recipients = await GetVisibleRecipientUserIdsAsync(conversation, actorUserId, cancellationToken);
         var recipientParticipants = await dbContext.ConversationParticipants.Where(participant => participant.ConversationId == conversationId && participant.LeftAtUtc == null && recipients.Contains(participant.UserId)).ToListAsync(cancellationToken);
         foreach (var recipient in recipientParticipants)
         {
             recipient.MarkDelivered(message.Id);
-            dbContext.MessageNotifications.Add(MessageNotification.Create(Guid.NewGuid(), recipient.UserId, conversationId, message.Id, now));
+            dbContext.MessageNotifications.Add(new MessageNotification(Guid.NewGuid(), recipient.UserId, conversationId, message.Id, now));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         var actorBlockedUserIds = (await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken)).BlockedUserIds;
@@ -363,7 +364,7 @@ public sealed class MessagesService(
         var visibilityError = await ValidateMessageVisibilityAsync(actorUserId, message, cancellationToken);
         if (visibilityError is not null) return ApplicationResult<MessageReactionResponse>.Failure(visibilityError);
         var reaction = await dbContext.MessageReactions.SingleOrDefaultAsync(item => item.MessageId == messageId && item.UserId == actorUserId, cancellationToken);
-        if (reaction is null) { reaction = MessageReaction.Create(messageId, actorUserId, type, timeProvider.GetUtcNow()); dbContext.MessageReactions.Add(reaction); }
+        if (reaction is null) { reaction = new MessageReaction(messageId, actorUserId, type, timeProvider.GetUtcNow()); dbContext.MessageReactions.Add(reaction); }
         else reaction.ChangeTo(type, timeProvider.GetUtcNow());
         await dbContext.SaveChangesAsync(cancellationToken);
         var response = ToReactionResponse(reaction);
@@ -406,7 +407,7 @@ public sealed class MessagesService(
         foreach (var userId in newIds)
         {
             var target = existing.SingleOrDefault(participant => participant.UserId == userId);
-            if (target is null) { target = ConversationParticipant.Create(conversationId, userId, ConversationParticipantRole.MEMBER, now); dbContext.ConversationParticipants.Add(target); }
+            if (target is null) { target = new ConversationParticipant(conversationId, userId, ConversationParticipantRole.MEMBER, now); dbContext.ConversationParticipants.Add(target); }
             else target.Rejoin(ConversationParticipantRole.MEMBER, now);
             if (latest is not null) target.AdvanceReadCursor(latest.Id, latest.CreatedAtUtc, now);
         }
