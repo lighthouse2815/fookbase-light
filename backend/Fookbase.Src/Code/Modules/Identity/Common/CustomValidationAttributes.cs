@@ -47,6 +47,15 @@ public sealed class TrimmedStringLengthAttribute(int maximumLength) : StringLeng
 }
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
+public sealed class PasswordConfirmationAttribute : CompareAttribute
+{
+    public PasswordConfirmationAttribute(string passwordProperty) : base(passwordProperty)
+    {
+        ErrorMessage = "Xác nhận mật khẩu không khớp.";
+    }
+}
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
 public sealed class NonEmptyGuidAttribute : ValidationAttribute
 {
     public NonEmptyGuidAttribute() : base("Mã yêu cầu là bắt buộc.")
