@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Friends.Entities;

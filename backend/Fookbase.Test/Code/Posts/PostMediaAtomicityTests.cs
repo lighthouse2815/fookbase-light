@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;

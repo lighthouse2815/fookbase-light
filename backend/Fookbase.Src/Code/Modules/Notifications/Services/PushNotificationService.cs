@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Fookbase.Api.Modules.Notifications.Config;
+using Fookbase.Api.Modules.Notifications.DTOs.Requests;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -199,6 +200,4 @@ public sealed class PushNotificationService(
     private static bool HasError(JsonElement item, string expected) =>
         item.TryGetProperty("details", out var details) && details.ValueKind == JsonValueKind.Object &&
         details.TryGetProperty("error", out var error) && error.GetString() == expected;
-
-    private sealed record ExpoPushMessage(string To, string Title, string Body, string Sound, object Data);
 }

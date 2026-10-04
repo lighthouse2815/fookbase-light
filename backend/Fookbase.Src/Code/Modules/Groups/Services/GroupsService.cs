@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using System.Globalization;
 using System.Text;
 using Fookbase.Api.Modules.Friends.Services;

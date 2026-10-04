@@ -41,7 +41,18 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         var registered = await client.PostAsJsonAsync("/api/notifications/push-tokens/zola", new { token });
 
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        var error = await invalid.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.Equal("invalid_push_token", error!["code"]);
         Assert.Equal(HttpStatusCode.NoContent, registered.StatusCode);
+        foreach (var invalidToken in new string?[] { null, "invalid", new('x', 256) })
+        {
+            using var removalRequest = new HttpRequestMessage(HttpMethod.Delete, "/api/notifications/push-tokens/zola")
+            {
+                Content = JsonContent.Create(new { token = invalidToken })
+            };
+            using var removal = await client.SendAsync(removalRequest);
+            Assert.Equal(HttpStatusCode.NoContent, removal.StatusCode);
+        }
         using (var scope = factory.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();

@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;

@@ -1,40 +1,6 @@
+using Fookbase.Api.Modules.Notifications.Domain.Enums;
+
 namespace Fookbase.Api.Modules.Notifications.Entities;
-
-public enum NotificationType
-{
-    FRIEND_REQUEST_RECEIVED,
-    FRIEND_REQUEST_ACCEPTED,
-    POST_REACTION,
-    POST_COMMENT,
-    COMMENT_REACTION,
-    POST_SHARED,
-    POST_MENTION,
-    COMMENT_MENTION,
-    GROUP_INVITE,
-    GROUP_JOIN_APPROVED,
-    STORY_REACTION,
-    PAGE_ROLE_INVITE,
-    USER_FOLLOWED,
-    EVENT_INVITE,
-    EVENT_UPDATED,
-    EVENT_CANCELLED
-    ,ACCOUNT_WARNING
-}
-
-public enum NotificationEntityType
-{
-    FRIEND_REQUEST,
-    POST,
-    COMMENT,
-    GROUP,
-    GROUP_JOIN_REQUEST,
-    GROUP_INVITE,
-    STORY,
-    PAGE,
-    PAGE_ROLE_INVITATION,
-    USER_FOLLOW,
-    EVENT
-}
 
 public sealed class Notification
 {

@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -751,6 +752,15 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
 
         using var recipientClient = CreateAuthenticatedClient(recipient);
         using var otherClient = CreateAuthenticatedClient(otherUser);
+        foreach (var query in new[] { "?limit=0", "?limit=101", "?before=invalid" })
+        {
+            using var invalid = await recipientClient.GetAsync("/api/notifications" + query);
+            Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+            var error = await invalid.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+            Assert.Equal("invalid_notification_cursor", error!["code"]);
+        }
+        using var malformedLimit = await recipientClient.GetAsync("/api/notifications?limit=invalid");
+        Assert.Equal(HttpStatusCode.BadRequest, malformedLimit.StatusCode);
         var firstPage = await ReadAsync<NotificationPageResponse>(
             await recipientClient.GetAsync("/api/notifications?limit=2"));
         var secondPage = await ReadAsync<NotificationPageResponse>(
@@ -773,6 +783,8 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Single(secondPage.Items);
         Assert.Equal(oldest.Id, secondPage.Items[0].Id);
         Assert.Equal(HttpStatusCode.NotFound, unauthorizedRead.StatusCode);
+        var missing = await unauthorizedRead.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.Equal("notification_not_found", missing!["code"]);
         Assert.Equal(3, countBefore!.UnreadNotificationCount);
         Assert.Equal(HttpStatusCode.NoContent, read.StatusCode);
         Assert.Equal(2, countAfterOne!.UnreadNotificationCount);

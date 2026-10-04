@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using System.Text;
 using Fookbase.Api.Modules.Events.DTOs.Requests;
 using Fookbase.Api.Modules.Events.DTOs.Responses;
