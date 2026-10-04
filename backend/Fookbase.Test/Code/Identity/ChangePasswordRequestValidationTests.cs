@@ -19,6 +19,7 @@ public sealed class ChangePasswordRequestValidationTests
 
         Assert.False(isValid);
         Assert.Contains(results, result =>
-            result.ErrorMessage == "Password confirmation does not match the new password.");
+            result.ErrorMessage == "Password confirmation does not match the new password."
+            && result.MemberNames.Contains(nameof(ChangePasswordRequest.ConfirmPassword)));
     }
 }
