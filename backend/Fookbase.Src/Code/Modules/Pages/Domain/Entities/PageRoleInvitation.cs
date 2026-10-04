@@ -1,6 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Pages.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Pages.Entities;
 
+[Table("PageRoleInvitations")]
+[Index(nameof(PageId), nameof(InviteeUserId), IsUnique = true)]
+[Index(nameof(InviteeUserId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class PageRoleInvitation
 {
     private PageRoleInvitation()
@@ -19,6 +27,7 @@ public sealed class PageRoleInvitation
         CreatedAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
     public Guid PageId { get; private set; }
     public Guid InviterUserId { get; private set; }
@@ -27,6 +36,19 @@ public sealed class PageRoleInvitation
     public PageRoleInvitationStatus Status { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? RespondedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(PageId))]
+    [InverseProperty(nameof(Page.RoleInvitations))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Page Page { get; private set; } = null!;
+
+    [ForeignKey(nameof(InviterUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User InviterUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(InviteeUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User InviteeUser { get; private set; } = null!;
 
     public static PageRoleInvitation Create(Guid id, Guid pageId, Guid inviterUserId, Guid inviteeUserId,
         PageRole role, DateTimeOffset createdAtUtc) => new(id, pageId, inviterUserId, inviteeUserId, role, createdAtUtc);

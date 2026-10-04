@@ -1,8 +1,17 @@
-using Fookbase.Api.Modules.Pages.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.RegularExpressions;
+using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Pages.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Pages.Entities;
 
+[Table("Pages")]
+[Index(nameof(Username), IsUnique = true)]
+[Index(nameof(Status), nameof(Name), nameof(Id))]
+[Index(nameof(CreatedByUserId), nameof(CreatedAtUtc))]
 public sealed partial class Page
 {
     public const int MinimumUsernameLength = 3;
@@ -28,10 +37,19 @@ public sealed partial class Page
         CreatedAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
+    [Required]
+    [MaxLength(MaximumNameLength)]
     public string Name { get; private set; } = string.Empty;
+    [Required]
+    [MaxLength(MaximumUsernameLength)]
+    [Column(TypeName = "citext")]
     public string Username { get; private set; } = string.Empty;
+    [Required]
+    [MaxLength(MaximumCategoryLength)]
     public string Category { get; private set; } = string.Empty;
+    [MaxLength(MaximumBioLength)]
     public string? Bio { get; private set; }
     public Guid? AvatarMediaId { get; private set; }
     public Guid? CoverMediaId { get; private set; }
@@ -40,6 +58,23 @@ public sealed partial class Page
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
     public DateTimeOffset? DeletedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(CreatedByUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User CreatedByUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(AvatarMediaId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset? AvatarMedia { get; private set; }
+
+    [ForeignKey(nameof(CoverMediaId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset? CoverMedia { get; private set; }
+
+    public ICollection<PageMember> Members { get; private set; } = new List<PageMember>();
+    public ICollection<PageFollower> Followers { get; private set; } = new List<PageFollower>();
+    public ICollection<PageRoleInvitation> RoleInvitations { get; private set; } = new List<PageRoleInvitation>();
+    public ICollection<PageMediaReference> MediaReferences { get; private set; } = new List<PageMediaReference>();
 
     public static Page Create(Guid id, string name, string username, string category, string? bio,
         Guid createdByUserId, DateTimeOffset createdAtUtc) =>

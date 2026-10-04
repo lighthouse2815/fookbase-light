@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Fookbase.Api.Modules.Feed.DTOs.Responses;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Identity.Entities;
@@ -362,6 +363,146 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var replacement = await AddReadyImageAsync(ownerId);
         (await owner.PatchAsJsonAsync($"/api/pages/{page.Id}/media", new { avatarMediaId = replacement })).EnsureSuccessStatusCode();
         Assert.True((await media.DeleteAsync(ownerId, avatar)).Succeeded);
+    }
+
+    [Theory]
+    [InlineData("Name", "Tên trang là bắt buộc.")]
+    [InlineData("Username", "Tên người dùng của trang là bắt buộc.")]
+    [InlineData("Category", "Danh mục trang là bắt buộc.")]
+    public async Task Page_requests_validate_required_fields_before_writing(string field, string message)
+    {
+        using var owner = CreateAuthenticatedClient((await CreateUsersAsync(1))[0]);
+        foreach (var value in new string?[] { null, string.Empty, "   " })
+        {
+            var request = new Dictionary<string, object?>
+            {
+                ["Name"] = "A Page", ["Username"] = "annotation.page", ["Category"] = "Integration"
+            };
+            request[field] = value;
+            foreach (var update in new[] { false, true })
+            {
+                using var response = update
+                    ? await owner.PatchAsJsonAsync($"/api/pages/{Guid.NewGuid()}", request)
+                    : await owner.PostAsJsonAsync("/api/pages", request);
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                Assert.Contains(body.RootElement.GetProperty("errors").GetProperty(field).EnumerateArray(),
+                    error => error.GetString() == message);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Page_manager_requests_reject_empty_user_ids_and_blank_roles()
+    {
+        using var owner = CreateAuthenticatedClient((await CreateUsersAsync(1))[0]);
+        var cases = new (string Suffix, string Field, object Value, string Message)[]
+        {
+            ("invitations", "UserId", Guid.Empty, "Người dùng là bắt buộc."),
+            ("transfer-ownership", "UserId", Guid.Empty, "Người dùng là bắt buộc."),
+            ("invitations", "Role", "   ", "Vai trò trên trang là bắt buộc."),
+            ($"members/{Guid.NewGuid()}/role", "Role", "   ", "Vai trò trên trang là bắt buộc.")
+        };
+        foreach (var item in cases)
+        {
+            var request = new Dictionary<string, object?> { ["UserId"] = Guid.NewGuid(), ["Role"] = "editor" };
+            request[item.Field] = item.Value;
+            var path = $"/api/pages/{Guid.NewGuid()}/{item.Suffix}";
+            using var response = item.Suffix.StartsWith("members/")
+                ? await owner.PatchAsJsonAsync(path, request)
+                : await owner.PostAsJsonAsync(path, request);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Contains(body.RootElement.GetProperty("errors").GetProperty(item.Field).EnumerateArray(),
+                error => error.GetString() == item.Message);
+        }
+    }
+
+    [Fact]
+    public async Task Page_name_length_validation_uses_trimmed_length()
+    {
+        using var owner = CreateAuthenticatedClient((await CreateUsersAsync(1))[0]);
+        var username = "limits." + Guid.NewGuid().ToString("N");
+        using var invalid = await owner.PostAsJsonAsync("/api/pages", new
+        {
+            name = new string('a', Page.MaximumNameLength + 1), username, category = "Integration"
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        using (var body = JsonDocument.Parse(await invalid.Content.ReadAsStringAsync()))
+        {
+            Assert.True(body.RootElement.GetProperty("errors").TryGetProperty("Name", out _));
+        }
+        var page = await ReadAsync<PageResponse>(await owner.PostAsJsonAsync("/api/pages", new
+        {
+            name = " " + new string('a', Page.MaximumNameLength) + " ", username, category = " Integration "
+        }));
+        Assert.Equal(new string('a', Page.MaximumNameLength), page.Name);
+        Assert.Equal("Integration", page.Category);
+    }
+
+    [Fact]
+    public async Task Page_relationships_load_and_cascade_only_page_dependents()
+    {
+        var users = await CreateUsersAsync(2);
+        var avatar = await AddReadyImageAsync(users[0]);
+        var cover = await AddReadyImageAsync(users[0]);
+        var now = DateTimeOffset.UtcNow;
+        var pageId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var page = Page.Create(pageId, "Mapping Page", "mapping." + pageId.ToString("N"), "Integration", null, users[0], now);
+            page.SetMedia(avatar, cover, now);
+            db.Pages.Add(page);
+            db.PageMembers.Add(PageMember.Create(pageId, users[0], PageRole.OWNER, now));
+            db.PageFollowers.Add(PageFollower.Create(pageId, users[1], now));
+            db.PageRoleInvitations.Add(PageRoleInvitation.Create(Guid.NewGuid(), pageId, users[0], users[1], PageRole.EDITOR, now));
+            db.PageMediaReferences.AddRange(PageMediaReference.Create(pageId, PageMediaSlot.AVATAR, avatar, now),
+                PageMediaReference.Create(pageId, PageMediaSlot.COVER, cover, now));
+            await db.SaveChangesAsync();
+        }
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var page = await db.Pages.Include(item => item.CreatedByUser)
+                .Include(item => item.AvatarMedia).Include(item => item.CoverMedia)
+                .Include(item => item.Members).ThenInclude(item => item.User)
+                .Include(item => item.Followers).ThenInclude(item => item.User)
+                .Include(item => item.RoleInvitations).ThenInclude(item => item.InviterUser)
+                .Include(item => item.RoleInvitations).ThenInclude(item => item.InviteeUser)
+                .Include(item => item.MediaReferences).ThenInclude(item => item.Media)
+                .AsSplitQuery().SingleAsync(item => item.Id == pageId);
+            Assert.Equal(users[0], page.CreatedByUser.Id);
+            Assert.Equal(avatar, page.AvatarMedia!.Id);
+            Assert.Equal(cover, page.CoverMedia!.Id);
+            Assert.Equal(users[0], Assert.Single(page.Members).User.Id);
+            Assert.Equal(users[1], Assert.Single(page.Followers).User.Id);
+            var invitation = Assert.Single(page.RoleInvitations);
+            Assert.Equal(users[0], invitation.InviterUser.Id);
+            Assert.Equal(users[1], invitation.InviteeUser.Id);
+            Assert.Equal(2, page.MediaReferences.Count);
+            Assert.All(page.MediaReferences, item => { Assert.Same(page, item.Page); Assert.Equal(item.MediaId, item.Media.Id); });
+            var userDelete = await Assert.ThrowsAsync<Npgsql.PostgresException>(() =>
+                db.Users.Where(item => item.Id == users[0]).ExecuteDeleteAsync());
+            var mediaDelete = await Assert.ThrowsAsync<Npgsql.PostgresException>(() =>
+                db.MediaAssets.Where(item => item.Id == avatar).ExecuteDeleteAsync());
+            Assert.Equal(Npgsql.PostgresErrorCodes.ForeignKeyViolation, userDelete.SqlState);
+            Assert.Equal(Npgsql.PostgresErrorCodes.ForeignKeyViolation, mediaDelete.SqlState);
+        }
+        // Delete without loading dependents to exercise database cascades.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            await db.Pages.Where(item => item.Id == pageId).ExecuteDeleteAsync();
+        }
+        using var afterDelete = factory.Services.CreateScope();
+        var afterDeleteDb = afterDelete.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.False(await afterDeleteDb.PageMembers.AnyAsync(item => item.PageId == pageId));
+        Assert.False(await afterDeleteDb.PageFollowers.AnyAsync(item => item.PageId == pageId));
+        Assert.False(await afterDeleteDb.PageRoleInvitations.AnyAsync(item => item.PageId == pageId));
+        Assert.False(await afterDeleteDb.PageMediaReferences.AnyAsync(item => item.PageId == pageId));
+        Assert.Equal(2, await afterDeleteDb.Users.CountAsync(item => users.Contains(item.Id)));
+        Assert.Equal(2, await afterDeleteDb.MediaAssets.CountAsync(item => item.Id == avatar || item.Id == cover));
     }
 
     private async Task<PageResponse> CreatePageAsync(HttpClient client, string username) =>

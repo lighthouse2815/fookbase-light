@@ -174,6 +174,17 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
                 .HasFilter("\"DeletedAtUtc\" IS NULL");
         });
 
+        builder.Entity<Page>(entity =>
+        {
+            entity.HasIndex(page => page.Username).HasFilter("\"DeletedAtUtc\" IS NULL");
+            entity.HasIndex(page => new { page.Status, page.Name, page.Id }).HasFilter("\"DeletedAtUtc\" IS NULL");
+            entity.HasIndex(page => new { page.CreatedByUserId, page.CreatedAtUtc }).HasFilter("\"DeletedAtUtc\" IS NULL");
+        });
+
+        builder.Entity<PageRoleInvitation>()
+            .HasIndex(invitation => new { invitation.PageId, invitation.InviteeUserId })
+            .HasFilter("\"Status\" = 0");
+
         builder.ApplyConfigurationsFromAssembly(
             typeof(FookbaseDbContext).Assembly,
             type => type.Namespace?.StartsWith(
