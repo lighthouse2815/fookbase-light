@@ -8,7 +8,14 @@ export interface RealtimeContextValue {
   unreadMessageCount: number
   unreadNotificationCount: number
   hasMoreNotifications: boolean
+  isLoadingNotifications: boolean
+  notificationsError: string | null
+  loadMoreNotificationsError: string | null
   isLoadingMoreNotifications: boolean
+  isMarkingNotificationsRead: boolean
+  isMarkingAllNotificationsRead: boolean
+  latestNotification: AppNotification | null
+  recentNotificationIds: ReadonlySet<string>
   typingConversationIds: ReadonlySet<string>
   onlineUserIds: ReadonlySet<string>
   readAtByConversation: ReadonlyMap<string, string>
@@ -16,6 +23,7 @@ export interface RealtimeContextValue {
   markNotificationRead: (notificationId: string) => void
   markAllNotificationsRead: () => void
   loadMoreNotifications: () => void
+  reloadNotifications: () => void
   sendTyping: (conversationId: string) => void
 }
 
