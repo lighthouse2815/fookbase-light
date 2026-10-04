@@ -43,14 +43,15 @@ public static class DependencyInjection
         services.AddSingleton(googleAuthenticationOptions);
         services.AddSingleton(smsOptions);
         services.AddSingleton(TimeProvider.System);
-        services.AddHttpClient<TraccarSmsSender>((provider, client) =>
+        services.AddHttpClient(nameof(ContactSender), (provider, client) =>
         {
             var options = provider.GetRequiredService<SmsOptions>();
             client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
             client.Timeout = TimeSpan.FromSeconds(10);
         });
-        services.AddSingleton<IEmailSender, SmtpEmailSender>();
-        services.AddScoped<IContactOtpSender, ContactOtpSender>();
+        services.AddSingleton<ContactSender>();
+        services.AddSingleton<IEmailSender>(provider => provider.GetRequiredService<ContactSender>());
+        services.AddScoped<IContactOtpSender>(provider => provider.GetRequiredService<ContactSender>());
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthenticationService>();
         services.AddScoped<GoogleAuthenticationService>();
