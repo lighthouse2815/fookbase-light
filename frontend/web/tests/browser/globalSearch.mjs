@@ -174,6 +174,51 @@ try {
       assert.ok(main.state.requests.filter((request) => request.query === 'error' && ['people', 'groups'].includes(request.type)).every((request) => request.cursor === ''))
     })
   }
+  if (['history', 'full'].includes(phase)) {
+    await check('recent searches are recorded only after an explicit search and can be searched again', async () => {
+      await input(main.page).fill('typed-only')
+      assert.equal(await main.page.evaluate(() => (localStorage.getItem('fookbase.search.recent.00000000-0000-0000-0000-000000000007') ?? '').includes('typed-only')), false)
+      await input(main.page).fill('fookbase')
+      await input(main.page).press('Enter')
+      await main.page.waitForURL(`${baseUrl}/search?q=fookbase`)
+      await input(main.page).focus()
+      await main.page.getByRole('button', { name: 'Xóa nội dung tìm kiếm', exact: true }).click()
+      const recent = main.page.getByRole('button', { name: 'Tìm lại “fookbase”', exact: true })
+      assert.equal(await recent.count(), 1)
+      await recent.click()
+      await main.page.waitForURL(`${baseUrl}/search?q=fookbase`)
+    })
+    await check('recent history deduplicates casing and deletion/clear keep focus without navigating', async () => {
+      await input(main.page).fill(' FookBASE ')
+      await input(main.page).press('Enter')
+      await main.page.waitForURL(`${baseUrl}/search?q=FookBASE`)
+      await main.page.getByRole('button', { name: 'Xóa nội dung tìm kiếm', exact: true }).click()
+      const saved = await main.page.evaluate(() => JSON.parse(localStorage.getItem('fookbase.search.recent.00000000-0000-0000-0000-000000000007')))
+      assert.equal(saved.filter((query) => query.toLowerCase() === 'fookbase').length, 1)
+      assert.equal(saved[0], 'FookBASE')
+      const before = main.page.url()
+      await main.page.getByRole('button', { name: 'Xóa tìm kiếm “FookBASE”', exact: true }).click()
+      assert.equal(main.page.url(), before)
+      assert.equal(await input(main.page).evaluate((element) => document.activeElement === element), true)
+      assert.equal(await main.page.getByRole('button', { name: 'Tìm lại “FookBASE”', exact: true }).count(), 0)
+      if (await main.page.getByRole('button', { name: 'Xóa tất cả', exact: true }).count()) await main.page.getByRole('button', { name: 'Xóa tất cả', exact: true }).click()
+      await main.page.getByText('Chưa có tìm kiếm gần đây.', { exact: true }).waitFor()
+    })
+    await check('broken or unavailable history storage cannot block the search flow', async () => {
+      await main.page.evaluate(() => localStorage.setItem('fookbase.search.recent.00000000-0000-0000-0000-000000000007', '{broken'))
+      await input(main.page).blur()
+      await input(main.page).focus()
+      await main.page.getByText('Chưa có tìm kiếm gần đây.', { exact: true }).waitFor()
+      await main.page.evaluate(() => {
+        const native = Storage.prototype.setItem
+        Storage.prototype.setItem = function (key, value) { if (key.startsWith('fookbase.search.recent.')) throw new Error('Quota exceeded'); return native.call(this, key, value) }
+      })
+      await input(main.page).fill('quota')
+      await input(main.page).press('Enter')
+      await main.page.waitForURL(`${baseUrl}/search?q=quota`)
+      await main.page.locator('main').getByRole('heading', { name: 'Tìm kiếm', exact: true }).waitFor()
+    })
+  }
   await main.context.close()
   assert.deepEqual(errors, [])
   console.log(`${passed.length} global search ${phase} checks passed; no unexpected console/page errors.`)

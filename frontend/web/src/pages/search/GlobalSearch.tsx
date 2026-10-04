@@ -5,6 +5,7 @@ import { resolveProfileImageUrl } from '../../api/users'
 import { usePreferences } from '../../preferences'
 import HighlightedText from './HighlightedText'
 import { flattenSearchSuggestions, getNextSearchIndex, type SearchSuggestion } from './searchPresentation'
+import { addRecentSearch, readRecentSearches, writeRecentSearches } from './recentSearches'
 
 interface SuggestionsState {
   query: string
@@ -12,7 +13,7 @@ interface SuggestionsState {
   items: SearchSuggestion[]
 }
 
-export default function GlobalSearch({ onOpen }: { onOpen: () => void }) {
+export default function GlobalSearch({ onOpen, userId }: { onOpen: () => void; userId: string }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { t } = usePreferences()
@@ -22,6 +23,7 @@ export default function GlobalSearch({ onOpen }: { onOpen: () => void }) {
   const [retry, setRetry] = useState(0)
   const [response, setResponse] = useState<SuggestionsState>({ query: '', status: 'idle', items: [] })
   const [locationKey, setLocationKey] = useState(location.key)
+  const [recent, setRecent] = useState(() => readRecentSearches(userId))
   const inputRef = useRef<HTMLInputElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const generationRef = useRef(0)
@@ -43,9 +45,12 @@ export default function GlobalSearch({ onOpen }: { onOpen: () => void }) {
   }
 
   const close = () => { setIsOpen(false); setActiveIndex(-1) }
-  const search = () => {
+  const updateRecent = (next: string[]) => { setRecent(next); writeRecentSearches(userId, next) }
+  const search = (value = trimmed) => {
+    const submitted = value.trim()
+    if (submitted.length >= 2 && submitted.length <= 100) updateRecent(addRecentSearch(recent, submitted))
     close()
-    navigate(trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : '/search')
+    navigate(submitted ? `/search?q=${encodeURIComponent(submitted)}` : '/search')
   }
   const select = (index: number) => {
     const item = items[index]
@@ -100,17 +105,22 @@ export default function GlobalSearch({ onOpen }: { onOpen: () => void }) {
   return <div ref={wrapperRef} className="relative min-w-0 flex-1 max-sm:hidden" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) close() }}>
     <form role="search" onSubmit={(event) => { event.preventDefault(); search() }} className="relative">
       <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-light">⌕</span>
-      <input ref={inputRef} type="search" role="combobox" aria-autocomplete="list" aria-label={t('searchFookbase')} aria-expanded={isOpen} aria-controls={isOpen ? listId : undefined} aria-activedescendant={isOpen && activeIndex >= 0 ? optionId(activeIndex) : undefined} autoComplete="off" maxLength={100} value={query} onChange={(event) => {
+      <input ref={inputRef} type="search" role="combobox" aria-autocomplete="list" aria-label={t('searchFookbase')} aria-expanded={isOpen && eligible} aria-controls={isOpen && eligible ? listId : undefined} aria-activedescendant={isOpen && activeIndex >= 0 ? optionId(activeIndex) : undefined} autoComplete="off" maxLength={100} value={query} onChange={(event) => {
         setQuery(event.target.value); setActiveIndex(-1); setResponse({ query: '', status: 'idle', items: [] }); setIsOpen(true)
-      }} onFocus={() => { onOpen(); setIsOpen(true) }} onKeyDown={keyDown} placeholder={t('searchFookbase')} className="h-10 w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-11 text-[13px] text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary" />
+      }} onFocus={() => { onOpen(); setRecent(readRecentSearches(userId)); setIsOpen(true) }} onKeyDown={keyDown} placeholder={t('searchFookbase')} className="h-10 w-full rounded-full border-0 bg-surface-2 py-2 pl-9 pr-11 text-[13px] text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary [&::-webkit-search-cancel-button]:hidden" />
       {query && <button type="button" aria-label="Xóa nội dung tìm kiếm" onClick={() => { setQuery(''); setActiveIndex(-1); setResponse({ query: '', status: 'idle', items: [] }); setIsOpen(true); inputRef.current?.focus() }} className="absolute right-0 top-0 grid h-10 w-10 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-3 focus-visible:ring-2 focus-visible:ring-primary">×</button>}
     </form>
     {isOpen && <div className="absolute left-0 top-12 z-[60] w-[max(100%,20rem)] max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-border bg-surface shadow-xl">
       {loading && <div role="status" aria-label="Đang tải gợi ý" className="space-y-2 p-3"><span className="sr-only">Đang tải gợi ý…</span>{Array.from({ length: 4 }, (_, index) => <div key={index} aria-hidden="true" className="flex items-center gap-3 motion-safe:animate-pulse"><span className="h-10 w-10 shrink-0 rounded-full bg-surface-2" /><span className="flex-1 space-y-2"><span className="block h-3 w-3/4 rounded bg-surface-2" /><span className="block h-2.5 w-1/2 rounded bg-surface-2" /></span></div>)}</div>}
       {failed && <div role="status" className="p-4 text-sm text-text-muted"><p>Không thể tải gợi ý</p><button type="button" aria-label="Thử lại gợi ý" onClick={() => { setResponse({ query: '', status: 'idle', items: [] }); setRetry((value) => value + 1) }} className="mt-2 min-h-11 rounded-lg border-0 bg-surface-2 px-3 font-semibold text-primary hover:bg-surface-3">Thử lại</button></div>}
       {eligible && ready && items.length === 0 && <p role="status" className="px-4 py-4 text-sm text-text-muted">Không tìm thấy gợi ý cho “{trimmed}”</p>}
-      {!eligible && <p className="px-4 py-4 text-sm text-text-muted">Nhập ít nhất 2 ký tự để tìm kiếm.</p>}
-      <div id={listId} role="listbox" aria-label="Gợi ý tìm kiếm" className="max-h-[min(26rem,calc(100dvh-8rem))] overflow-y-auto overscroll-contain p-2">
+      {trimmed.length === 1 && <p className="px-4 py-4 text-sm text-text-muted">Nhập ít nhất 2 ký tự để tìm kiếm.</p>}
+      {!trimmed && <section aria-label="Tìm kiếm gần đây" className="p-2">
+        <div className="flex items-center justify-between gap-2 px-2"><h2 className="text-sm font-semibold text-text">Tìm kiếm gần đây</h2>{recent.length > 0 && <button type="button" onClick={() => { updateRecent([]); inputRef.current?.focus() }} className="min-h-11 shrink-0 rounded-lg border-0 bg-transparent px-2 text-xs font-semibold text-primary hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary">Xóa tất cả</button>}</div>
+        {recent.length === 0 && <p className="px-2 py-3 text-sm text-text-muted">Chưa có tìm kiếm gần đây.</p>}
+        {recent.map((value) => <div key={value} className="flex items-center rounded-xl hover:bg-surface-2"><button type="button" aria-label={`Tìm lại “${value}”`} onClick={() => search(value)} className="flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border-0 bg-transparent px-2 py-2 text-left text-sm text-text focus-visible:ring-2 focus-visible:ring-primary"><span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-text-muted">◷</span><span className="truncate">{value}</span></button><button type="button" aria-label={`Xóa tìm kiếm “${value}”`} onClick={() => { updateRecent(recent.filter((item) => item !== value)); inputRef.current?.focus() }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-3 focus-visible:ring-2 focus-visible:ring-primary">×</button></div>)}
+      </section>}
+      {eligible && <div id={listId} role="listbox" aria-label="Gợi ý tìm kiếm" className="max-h-[min(26rem,calc(100dvh-8rem))] overflow-y-auto overscroll-contain p-2">
         {items.map((item, index) => <div key={item.key} role="presentation">
           {items[index - 1]?.category !== item.category && <p aria-hidden="true" className="px-2 pb-1 pt-2 text-xs font-semibold text-text-muted">{item.category}</p>}
           <Link id={optionId(index)} role="option" aria-selected={activeIndex === index} tabIndex={-1} to={item.destination} onMouseMove={() => setActiveIndex(index)} onMouseDown={(event) => event.preventDefault()} onClick={close} className={`flex min-h-14 items-center gap-3 rounded-xl px-2 py-2 text-text no-underline hover:bg-surface-2 ${activeIndex === index ? 'bg-surface-2 ring-1 ring-primary/40' : ''}`}>
@@ -118,8 +128,8 @@ export default function GlobalSearch({ onOpen }: { onOpen: () => void }) {
             <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold"><HighlightedText text={item.label} query={trimmed} /></span><span className="block truncate text-xs text-text-muted"><HighlightedText text={item.secondary} query={trimmed} /></span></span>
           </Link>
         </div>)}
-        {eligible && <button id={optionId(items.length)} role="option" aria-selected={activeIndex === items.length} tabIndex={-1} type="button" onMouseMove={() => setActiveIndex(items.length)} onMouseDown={(event) => event.preventDefault()} onClick={search} className={`mt-1 min-h-11 w-full rounded-xl border-0 px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-surface-2 ${activeIndex === items.length ? 'bg-surface-2 ring-1 ring-primary/40' : 'bg-transparent'}`}>Xem tất cả kết quả cho “{trimmed}”</button>}
-      </div>
+        <button id={optionId(items.length)} role="option" aria-selected={activeIndex === items.length} tabIndex={-1} type="button" onMouseMove={() => setActiveIndex(items.length)} onMouseDown={(event) => event.preventDefault()} onClick={() => search()} className={`mt-1 min-h-11 w-full rounded-xl border-0 px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-surface-2 ${activeIndex === items.length ? 'bg-surface-2 ring-1 ring-primary/40' : 'bg-transparent'}`}>Xem tất cả kết quả cho “{trimmed}”</button>
+      </div>}
     </div>}
   </div>
 }

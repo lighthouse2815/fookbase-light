@@ -454,7 +454,7 @@ export default function TopNavbar() {
               label="Navbar Cat Mascot"
             />
           </div>
-          <GlobalSearch key={session!.user.id} onOpen={() => setActiveHeaderPopup(null)} />
+          <GlobalSearch key={session!.user.id} userId={session!.user.id} onOpen={() => setActiveHeaderPopup(null)} />
           <Link to="/search" aria-label={t('searchFookbase')} title={t('searchFookbase')} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-text no-underline sm:hidden"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg></Link>
         </div>
 
