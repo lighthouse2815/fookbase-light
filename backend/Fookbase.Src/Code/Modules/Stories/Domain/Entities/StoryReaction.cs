@@ -1,14 +1,6 @@
-namespace Fookbase.Api.Modules.Stories.Entities;
+using Fookbase.Api.Modules.Stories.Domain.Enums;
 
-public enum StoryReactionType
-{
-    LIKE,
-    LOVE,
-    HAHA,
-    WOW,
-    SAD,
-    ANGRY
-}
+namespace Fookbase.Api.Modules.Stories.Entities;
 
 public sealed class StoryReaction
 {

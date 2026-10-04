@@ -10,6 +10,7 @@ using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Stories.Config;
+using Fookbase.Api.Modules.Stories.Domain.Enums;
 using Fookbase.Api.Modules.Stories.DTOs.Responses;
 using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Shared.ErrorHandling;
