@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../api/client'
 import { storiesApi, type Story, type StoryReactionType, type StoryTrayAuthor, type StoryViewer } from '../../../api/stories'
 import { resolveProfileImageUrl } from '../../../api/users'
+import { isEditableTarget } from './postPhotoLightbox'
 
 const imageDurationMs = 5_000
 const reactionChoices: ReadonlyArray<[StoryReactionType, string]> = [
@@ -31,6 +32,8 @@ export default function StoryViewer({
   const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [reply, setReply] = useState('')
+  const [isReplyFocused, setIsReplyFocused] = useState(false)
+  const replyRequest = useRef<symbol | null>(null)
   const [isSendingReply, setIsSendingReply] = useState(false)
   const [replyStatus, setReplyStatus] = useState<string | null>(null)
   const [viewers, setViewers] = useState<StoryViewer[]>([])
@@ -44,6 +47,20 @@ export default function StoryViewer({
   const active = activeGroup?.stories[storyIndex]
   const activeKey = active?.id
   const isVideo = active?.media.mediaType === 'video'
+  const shouldPause = isPaused || isReplyFocused || isSendingReply
+
+  const [replyStoryId, setReplyStoryId] = useState(activeKey)
+  if (replyStoryId !== activeKey) {
+    setReplyStoryId(activeKey)
+    setReply('')
+    setReplyStatus(null)
+    setIsReplyFocused(false)
+    setIsSendingReply(false)
+  }
+  useLayoutEffect(() => {
+    replyRequest.current = null
+    return () => { replyRequest.current = null }
+  }, [activeKey])
 
   const goTo = useCallback((nextAuthorIndex: number, nextStoryIndex: number) => {
     if (!groups[nextAuthorIndex]?.stories[nextStoryIndex]) return
@@ -103,7 +120,7 @@ export default function StoryViewer({
   }, [active, activeKey, onStoriesChanged])
 
   useEffect(() => {
-    if (!active || isVideo || isPaused || !mediaUrl) return
+    if (!active || isVideo || shouldPause || !mediaUrl) return
     const startedAt = Date.now()
     const intervalId = window.setInterval(() => {
       const elapsed = Date.now() - startedAt
@@ -111,11 +128,13 @@ export default function StoryViewer({
       if (elapsed >= imageDurationMs) next()
     }, 80)
     return () => window.clearInterval(intervalId)
-  }, [active, activeKey, isPaused, isVideo, mediaUrl, next])
+  }, [active, activeKey, shouldPause, isVideo, mediaUrl, next])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.defaultPrevented) return
+      if (event.key === 'Escape') { onClose(); return }
+      if (isEditableTarget(event.target)) return
       if (event.key === 'ArrowLeft') previous()
       if (event.key === 'ArrowRight') next()
       if (event.key === ' ') {
@@ -144,17 +163,25 @@ export default function StoryViewer({
 
   const sendReply = async () => {
     const content = reply.trim()
-    if (!content || isSendingReply || active.canManage) return
+    if (!content || replyRequest.current || active.canManage) return
+    const storyIdAtSubmit = active.id
+    const request = Symbol()
+    replyRequest.current = request
     setIsSendingReply(true)
     setReplyStatus(null)
     try {
-      await storiesApi.reply(active.id, content)
-      setReply('')
+      await storiesApi.reply(storyIdAtSubmit, content)
+      if (replyRequest.current !== request) return
+      setReply((current) => current.trim() === content ? '' : current)
       setReplyStatus('Đã gửi vào Zola Light.')
     } catch (error) {
+      if (replyRequest.current !== request) return
       setReplyStatus(error instanceof ApiError ? error.message : 'Không thể gửi phản hồi.')
     } finally {
-      setIsSendingReply(false)
+      if (replyRequest.current === request) {
+        replyRequest.current = null
+        setIsSendingReply(false)
+      }
     }
   }
 
@@ -190,7 +217,7 @@ export default function StoryViewer({
         <div className="absolute inset-0 grid place-items-center" onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null }} onTouchEnd={(event) => { const start = touchStart.current; const end = event.changedTouches[0]?.clientX; touchStart.current = null; if (start === null || end === undefined || Math.abs(end - start) < 40) return; if (end > start) previous(); else next() }}>
           {mediaError && <p className="rounded-lg bg-black/70 px-4 py-3 text-sm">{mediaError}</p>}
           {!mediaError && !mediaUrl && <p className="text-sm text-white/80">Đang tải Story…</p>}
-          {mediaUrl && isVideo && <video ref={videoRef} src={mediaUrl} poster={posterUrl ?? undefined} autoPlay={!isPaused} playsInline className="h-full w-full object-contain" onPlay={() => setIsPaused(false)} onPause={() => setIsPaused(true)} onEnded={next} onTimeUpdate={(event) => { const video = event.currentTarget; if (video.duration > 0) setProgress(Math.min(100, video.currentTime / video.duration * 100)) }} />}
+          {mediaUrl && isVideo && <video ref={videoRef} src={mediaUrl} poster={posterUrl ?? undefined} autoPlay={!shouldPause} playsInline className="h-full w-full object-contain" onPlay={() => setIsPaused(false)} onPause={() => setIsPaused(true)} onEnded={next} onTimeUpdate={(event) => { const video = event.currentTarget; if (video.duration > 0) setProgress(Math.min(100, video.currentTime / video.duration * 100)) }} />}
           {mediaUrl && !isVideo && <img src={mediaUrl} className="h-full w-full object-contain" alt={active.caption ?? 'Story'} />}
         </div>
 
@@ -205,7 +232,7 @@ export default function StoryViewer({
             {active.reactionCount > 0 && <span className="rounded-full bg-white/15 px-3 py-2 text-xs">{active.reactionCount} phản ứng</span>}
             {active.canManage && <button type="button" onClick={() => void loadViewers()} className="ml-auto rounded-full border-0 bg-white/15 px-3 py-2 text-xs text-white">{viewersTitle}</button>}
           </div>
-          {!active.canManage && <div className="mt-3 flex gap-2 rounded-full bg-white/15 p-1 pl-4"><input value={reply} maxLength={5000} onChange={(event) => setReply(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void sendReply() }} placeholder="Trả lời qua Zola Light…" className="min-w-0 flex-1 border-0 bg-transparent text-sm text-white outline-none placeholder:text-white/65" /><button type="button" disabled={!reply.trim() || isSendingReply} onClick={() => void sendReply()} className="rounded-full border-0 bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">Gửi</button></div>}
+          {!active.canManage && <div className="mt-3 flex gap-2 rounded-full bg-white/15 p-1 pl-4"><input key={activeKey} aria-label="Trả lời Story" value={reply} onFocus={() => setIsReplyFocused(true)} onBlur={() => setIsReplyFocused(false)} maxLength={5000} onChange={(event) => setReply(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void sendReply() }} placeholder="Trả lời qua Zola Light…" className="min-w-0 flex-1 border-0 bg-transparent text-sm text-white outline-none placeholder:text-white/65" /><button type="button" disabled={!reply.trim() || isSendingReply} onClick={() => void sendReply()} className="rounded-full border-0 bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">Gửi</button></div>}
           {replyStatus && <p className="mt-2 text-xs text-white/80">{replyStatus}</p>}
         </div>
       </div>
