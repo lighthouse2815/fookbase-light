@@ -13,7 +13,10 @@ export interface PostInteractionSnapshot {
   reactionVersion: number
 }
 
-const reactionFingerprint = (post: Post) => JSON.stringify([post.viewerReaction, post.reactionCounts])
+const reactionFingerprint = (post: Post) => JSON.stringify([
+  post.viewerReaction,
+  Object.entries(post.reactionCounts).filter(([, count]) => count !== 0).sort(([a], [b]) => a.localeCompare(b)),
+])
 
 // Move only the viewer's vote; all other counts (including future server types) stay intact.
 function withViewerReaction(counts: Record<string, number>, previous: string | null, next: string | null) {

@@ -156,6 +156,19 @@ test('sync uses genuinely changed server data but never overwrites a pending cho
   await tick()
 })
 
+test('equivalent stale props with reordered keys or omitted zero counts cannot erase a confirmed local vote', async () => {
+  const initial = { ...post, reactionCounts: { like: 3, love: 2, wow: 0 } }
+  const { state, requests } = setup(initial)
+  state.selectReaction('like')
+  requests[0].resolve({ ...post, viewerReaction: 'like', reactionCounts: { like: 4, love: 2 } })
+  await tick()
+  const confirmed = state.getSnapshot()
+  state.syncPost({ ...post, reactionCounts: { love: 2, like: 3 } })
+  assert.equal(state.getSnapshot(), confirmed)
+  assert.equal(state.getSnapshot().viewerReaction, 'like')
+  assert.deepEqual(state.getSnapshot().reactionCounts, { like: 4, love: 2 })
+})
+
 test('toasts deduplicate, bound the stack, dismiss and expire automatically', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   showToast('Không thể cập nhật', 'error', 'reaction:1')

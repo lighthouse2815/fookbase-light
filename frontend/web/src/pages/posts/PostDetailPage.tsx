@@ -48,7 +48,7 @@ export default function PostDetailPage() {
         </button>
         <Mascot directions="/mascots/owl-directions.webp" reactions="/mascots/owl-reactions.webp" size={40} label="Post owl mascot" />
       </div>
-      <LivePostCard post={post} currentUserId={session.user.id} initialCommentId={match?.[1]} onPostUpdated={setPost} onPostDeleted={() => navigate('/feed', { replace: true })} />
+      <LivePostCard key={post.id} post={post} currentUserId={session.user.id} initialCommentId={match?.[1]} onPostUpdated={setPost} onPostDeleted={() => navigate('/feed', { replace: true })} />
     </main>
   )
 }
