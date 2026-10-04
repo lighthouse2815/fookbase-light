@@ -20,21 +20,28 @@ Sáu reaction được giữ nguyên: `like`, `love`, `haha`, `wow`, `sad`, `ang
 
 - `postInteractionState.ts` giữ hai state: server đã xác nhận và lựa chọn mới nhất của user. Chỉ một request reaction chạy tại một thời điểm cho một Post. Những lựa chọn trung gian được gộp; counter chỉ chuyển một phiếu của user giữa các loại.
 - Response server cập nhật state đã xác nhận. Lựa chọn mới hơn vẫn được giữ trên UI. Nếu request cuối thất bại, rollback về state cuối đã xác nhận; lỗi của request trước không xóa lựa chọn mới hơn. Không refetch feed.
+- Sau local intent, props của bản sao cũ hoặc snapshot optimistic từ action sửa Post không thay thế reaction đã xác nhận/rollback. Props có cùng reaction của viewer vẫn cập nhật count tăng/giảm của người khác.
+- Trước mỗi request trong queue reaction, kiểm tra viewer của session hiện tại. Đổi tài khoản hủy các lựa chọn còn chờ của user cũ, rollback store cũ và không hiện toast sang user mới; refresh token của cùng user vẫn tiếp tục queue. Request đã gửi trước khi đổi tài khoản vẫn được reconcile cho store của user ban đầu.
 - `postDiscussionState.ts` thêm comment với `clientId` và `pending`. Khi thành công, thay bằng Comment thật nhưng giữ `clientId` làm React key; deduplicate nếu một trang GET đã chứa server ID. Khi lỗi, chỉ gỡ dòng tạm và phần cộng counter của dòng đó.
 - Guard đồng bộ chặn double submit, kể cả từ hai card của cùng Post. Input vẫn cho phép gõ bản nháp tiếp theo trong lúc gửi. Bản nháp thất bại và reply target chỉ được khôi phục nếu user chưa đổi chúng. Không set state của card đã unmount hoặc đã chuyển sang Post khác.
 - Offset phân trang chỉ dựa trên các dòng server đã đọc, không tăng vì comment tạm/mới. Response GET cũ không ghi đè count hoặc edit mới. Nếu xóa dòng trước trong lúc tải trang kế tiếp, đọc lại trang comments tại offset đã sửa. Backend hiện chỉ xóa comment đó, giữ các reply; frontend tuân theo behavior này.
+- Một DELETE có thể đã thay đổi offset trên server trước khi response tới frontend. Việc đọc trang chờ các DELETE đang chạy; trang đã đọc trong lúc DELETE chạy được bỏ và tải lại sau khi xóa hoàn tất. Trang comments mới cũng tăng version để counter GET cũ không ghi đè tổng mới hơn.
 - Nếu GET comments và submit chạy đồng thời, số tổng có thể đã bao gồm comment mới hoặc chưa. Sau khi write hoàn tất, chỉ dùng GET Post hiện có để xác nhận counter trong trường hợp này; không tải lại feed. Response counter cũ cũng không ghi đè submit mới hơn.
 - `usePostInteractions.ts` dùng `useSyncExternalStore`, subscription riêng từng Post. Dọn entry không hoạt động khi cache đạt ngưỡng 200; entry có subscriber/request vẫn được giữ. Optimistic reaction/comment không cập nhật state của Feed. Thứ tự key hoặc việc API bỏ count bằng zero không làm mất reaction đã xác nhận.
 
 Cache phục vụ state trong tab hiện tại; không bổ sung đồng bộ realtime giữa tab/thiết bị. API tạo comment trả Comment, không trả tổng mới: frontend quản lý counter cho thao tác của mình và lấy tổng từ API tải comments khi phù hợp. Không bổ sung idempotency contract cho POST comment; guard ngăn gửi trùng trong phiên thao tác hiện tại.
+
+API reaction không có revision để xác định độ mới của hai props cạnh tranh. Sau tương tác trong tab này, kết quả write đã xác nhận được ưu tiên cho reaction của viewer tới khi cache được tạo lại; thay đổi reaction của chính viewer từ thiết bị khác chưa được đồng bộ. Các response count chưa từng thấy nhưng có cùng reaction không thể phân biệt chắc chắn mới/cũ chỉ bằng contract hiện có.
 
 ## Accessibility và styling
 
 - Nút reaction có `aria-pressed`, `aria-haspopup`, `aria-expanded`; popup dùng `menuitemradio` với `aria-checked`. Arrow keys/Home/End điều hướng; Enter/Space chọn; Escape trả focus; Tab rời popup.
 - Long press 450ms trên touch mở picker, bị hủy khi di chuyển quá 10px hoặc pointer cancel; không gọi `preventDefault` để chặn scroll. Tap ngắn trên Post giữ hành vi Like/bỏ reaction hiện tại.
 - Popup trong portal không làm card đổi kích thước hoặc bị overflow của ảnh/modal cắt. Vị trí được cập nhật khi scroll/resize và giới hạn trong viewport.
+- Khi nút của Post cuộn hoàn toàn khỏi viewport, picker/dropdown tự đóng; không trả focus theo cách kéo trang trở lại nút.
 - Animation 150–220ms; `prefers-reduced-motion` tắt scale/bounce/transition không cần thiết. Dùng token surface/text/border/primary/danger và theme sáng/tối hiện có.
 - `useDialogFocus.ts` tái sử dụng logic focus của AppDialog cho modal Post/ảnh/reaction. Button có trạng thái disabled/aria-busy tại action cần thiết; Post không biến thành loading spinner.
+- Khi tất cả controls trong modal đang disabled, Tab/Shift+Tab giữ focus trên panel; sau khi request thất bại và controls hoạt động lại, keyboard tiếp tục đi trong modal như bình thường.
 - Toast có live region/status, nút đóng accessible; không dùng `alert()` và không block UI.
 
 ## File thay đổi
@@ -103,13 +110,15 @@ Browser test đi qua UI và `postsApi` thật của frontend; response/delay/503
 | `npm run lint` | Đạt, không lỗi hoặc warning lint |
 | TypeScript (`tsc -b` trong `npm run build`) | Đạt |
 | `npm run build` | Đạt |
-| `npm run test:games` | 96/96 đạt, gồm 28 test reaction/comment/toast và 68 test hiện có |
+| `npm run test:games` | 102/102 đạt, gồm 34 test reaction/comment/toast và 68 test hiện có |
 | `npm run test:auth` | 18/18 đạt |
 | `npm run test:group-header` | 1/1 đạt |
-| Browser trên dev `:5183` | 20/20 đạt |
-| Browser trên production build preview `:5194` | 20/20 đạt |
+| Browser trên dev `:5183` | 24/24 đạt |
+| Browser trên production build preview `:5194` | 24/24 đạt |
 | Console/page errors trong hai lượt browser | Không có lỗi/warning ngoài các trường hợp cố ý hoặc đã tồn tại được ghi ở trên |
 
 Test race dùng Feed/Post đã tải với count bằng 0, sau đó API comments có 30 dòng và trả trang đầu chậm hơn submit. Sau khi gửi một comment, UI có count 31, trang đầu 21 dòng, tải tiếp đủ 31 dòng và chỉ một bản của comment mới. Các test logic còn kiểm tra phản hồi counter cũ không ghi đè submit mới, dữ liệu Post mới hoặc trừ hai lần khi xóa comment.
+
+Lượt bổ sung kiểm tra props cũ sau thành công/rollback, trang đã phản ánh DELETE trước lúc response xóa về, counter đọc trước trang comments mới, focus modal khi mọi controls disabled, đổi tài khoản trong queue reaction, refresh token cùng viewer và đóng popup khi cuộn nút khỏi viewport. Ca popup được chạy thất bại với guard tắt, sau đó chạy đạt khi bật sửa lỗi.
 
 Build vẫn có warning kích thước chunk `Game` khoảng 956 kB từ game 3D đã có; thay đổi Post không sửa phần game. Browser verification dùng response API có kiểm soát, không phải xác nhận các thao tác ghi với tài khoản thật trên production.
