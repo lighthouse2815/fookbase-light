@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { feedApi } from '../../api/feed'
@@ -16,22 +16,60 @@ import FeedShareCard from './components/FeedShareCard'
 import LivePostCard from './components/LivePostCard'
 import NewPostBox from './components/NewPostBox'
 import StoryTray from './components/StoryTray'
+import { clearFeedSnapshot, readFeedSnapshot, saveFeedSnapshot } from './feedSnapshot'
+import { authSessionChangedEvent, getAuthSession } from '../../auth/session'
 
 export default function FeedPage() {
   const { session } = useAuth()
+  return <FeedContent key={session!.user.id} userId={session!.user.id} />
+}
+
+function FeedContent({ userId }: { userId: string }) {
+  const { session } = useAuth()
   const { t } = usePreferences()
-  const [mode, setMode] = useState<FeedMode>('home')
-  const [posts, setPosts] = useState<FeedItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [initial] = useState(() => readFeedSnapshot(userId))
+  const [mode, setMode] = useState<FeedMode>(initial?.mode ?? 'home')
+  const [posts, setPosts] = useState<FeedItem[]>(initial?.posts ?? [])
+  const [isLoading, setIsLoading] = useState(!initial)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(initial?.nextCursor ?? null)
   const [error, setError] = useState<string | null>(null)
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
   const [todayBirthdayCount, setTodayBirthdayCount] = useState(0)
   const requestRef = useRef<AbortController | null>(null)
-  const snapshotRef = useRef<{ asOfUtc: string; nextCursor: string | null; mode: FeedMode } | null>(null)
+  const snapshotRef = useRef<{ asOfUtc: string; nextCursor: string | null; mode: FeedMode } | null>(initial)
   const currentModeRef = useRef(mode)
   const mountedRef = useRef(false)
+  const cachedModeRef = useRef(initial?.mode)
+  const scrollRef = useRef(initial?.scrollY ?? 0)
+  const latestFeedRef = useRef({ mode, posts, nextCursor })
+  useLayoutEffect(() => { latestFeedRef.current = { mode, posts, nextCursor } }, [mode, posts, nextCursor])
+
+  useLayoutEffect(() => {
+    if (!initial) return
+    window.scrollTo(0, initial.scrollY)
+    const frame = window.requestAnimationFrame(() => window.scrollTo(0, initial.scrollY))
+    return () => window.cancelAnimationFrame(frame)
+  }, [initial])
+
+  useEffect(() => {
+    const persist = () => {
+      const current = latestFeedRef.current
+      const page = snapshotRef.current
+      if (page && page.mode === current.mode && getAuthSession()?.user.id === userId) {
+        saveFeedSnapshot(userId, { ...current, asOfUtc: page.asOfUtc, scrollY: scrollRef.current, savedAt: Date.now() })
+      }
+    }
+    const scrolled = () => { scrollRef.current = window.scrollY; persist() }
+    const sessionChanged = () => { if (getAuthSession()?.user.id !== userId) clearFeedSnapshot() }
+    window.addEventListener('scroll', scrolled, { passive: true })
+    window.addEventListener(authSessionChangedEvent, sessionChanged)
+    return () => {
+      persist()
+      window.removeEventListener('scroll', scrolled)
+      window.removeEventListener(authSessionChangedEvent, sessionChanged)
+    }
+  }, [userId])
 
   const loadFeed = useCallback(async (cursor?: string) => {
     const append = cursor !== undefined
@@ -45,9 +83,6 @@ export default function FeedPage() {
       setIsLoadingMore(true)
       setLoadMoreError(null)
     } else {
-      snapshotRef.current = null
-      setPosts([])
-      setNextCursor(null)
       setIsLoading(true)
       setIsLoadingMore(false)
       setError(null)
@@ -86,6 +121,7 @@ export default function FeedPage() {
   useEffect(() => {
     mountedRef.current = true
     const timeoutId = window.setTimeout(() => {
+      if (cachedModeRef.current === mode) { cachedModeRef.current = undefined; return }
       void loadFeed()
     }, 0)
 
@@ -95,7 +131,7 @@ export default function FeedPage() {
       requestRef.current?.abort()
       requestRef.current = null
     }
-  }, [loadFeed])
+  }, [loadFeed, mode])
 
   useEffect(() => { void birthdaysApi.getToday().then((items) => setTodayBirthdayCount(items.length)).catch(() => undefined) }, [])
 
@@ -111,6 +147,7 @@ export default function FeedPage() {
     setLoadMoreError(null)
     setIsLoading(true)
     setIsLoadingMore(false)
+    scrollRef.current = 0
     setMode(nextMode)
   }
 
@@ -178,7 +215,8 @@ export default function FeedPage() {
         </section>
         <div className="flex flex-col gap-4" aria-busy={isLoading || isLoadingMore}>
           {error && <div role="alert" className="rounded-lg bg-[#e41e3f]/10 border border-[#e41e3f]/40 p-3 text-sm text-[#ff8a9b]"><p>{error}</p><button type="button" onClick={() => void loadFeed()} className="mt-2 rounded-md border border-[#ff8a9b]/50 bg-transparent px-3 py-1 text-xs font-semibold text-[#ff8a9b] cursor-pointer">{t('refresh')}</button></div>}
-          {isLoading && <div className="flex flex-col gap-4" aria-label={t('loadingFeed')}><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /></div>}
+          {isLoading && posts.length > 0 && <p role="status" className="text-sm text-text-muted">{t('feedRefreshing')}</p>}
+          {isLoading && posts.length === 0 && <div className="flex flex-col gap-4" aria-label={t('loadingFeed')}><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /><div className="h-52 rounded-xl bg-surface-2 animate-pulse" /></div>}
           {!isLoading && posts.length === 0 && !error && (
             <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface py-10 px-4 text-center">
               <Mascot
