@@ -11,7 +11,7 @@ const trackErrors = (page) => {
   page.on('console', (message) => {
     if (message.type() !== 'error' && message.type() !== 'warning') return
     if (/connection was stopped during negotiation|HttpConnection before stop\(\)/.test(message.text())) return
-    // These two API failures are deliberately injected to verify rollback.
+    // API failures are deliberately injected to verify rollback and error recovery.
     if (/503/.test(message.text()) && message.location().url.includes(`/api/posts/${postId}`)) return
     failures.push(`${message.type()}: ${message.text()}`)
   })
@@ -226,6 +226,43 @@ try {
     await share.waitFor()
     await page.keyboard.press('Escape')
     assert.equal(await share.count(), 0)
+  })
+  await check('pending dialogs keep Tab and Shift+Tab inside and recover focus after success or error', async () => {
+    state.shareDelay = 900
+    const trigger = page.getByRole('button', { name: 'Chia sẻ', exact: true }).first()
+    const dialog = page.getByRole('dialog', { name: 'Chia sẻ', exact: true })
+    const submit = dialog.getByRole('button', { name: 'Chia sẻ', exact: true })
+    const verifyPendingFocus = async () => {
+      await until(async () => await dialog.getByRole('button', { name: 'Đang chia sẻ…', exact: true }).isDisabled())
+      assert.equal(await dialog.locator('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])').count(), 0)
+      await page.keyboard.press('Tab')
+      assert.equal(await dialog.evaluate((element) => element === document.activeElement), true)
+      await page.keyboard.press('Shift+Tab')
+      assert.equal(await dialog.evaluate((element) => element === document.activeElement), true)
+    }
+    await trigger.click()
+    await submit.click()
+    await verifyPendingFocus()
+    await until(async () => await dialog.count() === 0)
+    assert.equal(await trigger.evaluate((element) => element === document.activeElement), true)
+    assert.equal(state.post.shareCount, 1)
+
+    state.failShare = true
+    await trigger.click()
+    await submit.click()
+    await verifyPendingFocus()
+    await until(async () => await dialog.getByRole('button', { name: 'Chia sẻ', exact: true }).isEnabled())
+    assert.equal(await dialog.getByRole('alert').innerText(), 'Không thể chia sẻ bài viết thử nghiệm.')
+    await page.keyboard.press('Tab')
+    assert.equal(await dialog.getByRole('button', { name: 'Đóng chia sẻ', exact: true }).evaluate((element) => element === document.activeElement), true)
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await submit.evaluate((element) => element === document.activeElement), true)
+    await page.keyboard.press('Escape')
+    assert.equal(await dialog.count(), 0)
+    assert.equal(await trigger.evaluate((element) => element === document.activeElement), true)
+    assert.equal(state.post.shareCount, 1)
+    assert.equal(state.writes.filter((write) => write.action === 'share').length, 2)
+    state.failShare = false
   })
   await context.close()
 

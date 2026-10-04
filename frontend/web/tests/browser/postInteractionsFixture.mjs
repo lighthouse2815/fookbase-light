@@ -13,7 +13,7 @@ export const basePost = {
 export async function postFixtures(context, initial = {}) {
   await fixtures(context)
   await context.addInitScript(() => localStorage.setItem('fookbase.preferences', JSON.stringify({ language: 'vi', theme: 'dark' })))
-  const state = { post: { ...basePost, ...initial }, comments: [], writes: [], reactionDelay: 350, failReaction: false, commentDelay: 350, failComment: false, commentsReadDelay: 0, actionDelay: 400, failAction: false, feedReads: 0 }
+  const state = { post: { ...basePost, ...initial }, comments: [], writes: [], reactionDelay: 350, failReaction: false, commentDelay: 350, failComment: false, commentsReadDelay: 0, actionDelay: 400, failAction: false, shareDelay: 350, failShare: false, feedReads: 0 }
   const feedPost = structuredClone(state.post)
   const toFeedItem = (post) => ({ ...post, author: { userId: post.authorUserId, username: post.displayAuthor.username, displayName: post.displayAuthor.name, avatarUrl: null }, container: { id: viewerId, name: 'Trang cá nhân' }, media: [], video: null, isSuggested: false, reactionCount: Object.values(post.reactionCounts).reduce((sum, count) => sum + count, 0) })
   await context.route('**/api/**', async (route) => {
@@ -44,6 +44,19 @@ export async function postFixtures(context, initial = {}) {
       await new Promise((resolve) => setTimeout(resolve, state.actionDelay))
       state.post = { ...state.post, viewerHasSaved: request.method() === 'POST' }
       return route.fulfill({ status: 204 })
+    }
+    if (path === `/api/posts/${postId}/shares`) {
+      const body = request.postDataJSON()
+      state.writes.push({ action: 'share', ...body })
+      const fail = state.failShare
+      await new Promise((resolve) => setTimeout(resolve, state.shareDelay))
+      if (fail) return route.fulfill({ status: 503, json: { detail: 'Không thể chia sẻ bài viết thử nghiệm.' } })
+      state.post = { ...state.post, shareCount: state.post.shareCount + 1 }
+      return route.fulfill({ json: {
+        id: `share-${state.post.shareCount}`, sharingUserId: viewerId,
+        destinationType: body.destinationType, destinationId: body.destinationId,
+        caption: body.caption ?? null, createdAtUtc: new Date().toISOString(), originalPost: state.post,
+      } })
     }
     if (path.startsWith('/api/posts/comments/')) {
       const id = path.split('/')[4]

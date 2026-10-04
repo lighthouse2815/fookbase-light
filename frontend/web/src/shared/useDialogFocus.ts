@@ -34,9 +34,14 @@ export function useDialogFocus(open: boolean, ref: RefObject<HTMLElement | null>
       }
       if (event.key !== 'Tab') return
       const focusable = focusableElements(dialog)
+      if (focusable.length === 0) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
       const first = focusable[0] ?? dialog
       const last = focusable.at(-1) ?? dialog
-      if (!dialog.contains(document.activeElement)) {
+      if (!dialog.contains(document.activeElement) || document.activeElement === dialog) {
         event.preventDefault()
         ;(event.shiftKey ? last : first).focus()
       } else if (event.shiftKey && document.activeElement === first) {
