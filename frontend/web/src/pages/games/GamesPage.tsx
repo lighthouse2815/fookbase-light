@@ -3,6 +3,7 @@ import { Mascot } from 'page-mascot'
 import { Link } from 'react-router-dom'
 import { usePreferences } from '../../preferences'
 import FlappyBirdGame from './FlappyBirdGame'
+import JumpingGame from './JumpingGame'
 import MemoryGame from './MemoryGame'
 import Twenty48Game from './Twenty48Game'
 import SnakeGame from './SnakeGame'
@@ -15,7 +16,7 @@ import LightsGame from './LightsGame'
 import { GravityFlipGame, NeonDriftGame } from './ThreeDGames'
 import './games.css'
 
-type GameId = 'tic-tac-toe' | 'flappy-bird' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle' | 'melody' | 'star-catch' | 'lights' | 'neon-drift' | 'gravity-flip'
+type GameId = 'tic-tac-toe' | 'flappy-bird' | 'jumping' | 'memory' | '2048' | 'snake' | 'minesweeper' | 'whack-mole' | 'sliding-puzzle' | 'melody' | 'star-catch' | 'lights' | 'neon-drift' | 'gravity-flip'
 type Mark = 'X' | 'O'
 type Cell = Mark | null
 
@@ -31,6 +32,12 @@ interface GameDefinition {
 }
 
 const games: GameDefinition[] = [
+  {
+    id: 'jumping', title: 'Jumping', category: 'Phản xạ', badge: 'Có online', component: JumpingGame,
+    description: 'Nhảy qua chướng ngại vật, giữ nhịp chạy hoặc tạo phòng để thi cùng bạn bè.',
+    accent: 'from-[#4d786d] via-[#a9b59a] to-[#edc48d]',
+    icon: <svg viewBox="0 0 96 96" className="h-full w-full" aria-hidden="true"><rect x="4" y="4" width="88" height="88" rx="22" fill="#f4dfbd" /><circle cx="72" cy="25" r="11" fill="#edbd7a" /><path d="m6 71 23-32 19 26 14-16 29 25v13H6Z" fill="#8faf97" /><path d="M8 78h80" stroke="#3e665d" strokeWidth="5" /><rect x="61" y="58" width="14" height="18" rx="2" fill="#98616a" /><circle cx="35" cy="41" r="13" fill="#ffd07a" stroke="#654c50" strokeWidth="2" /><circle cx="36" cy="38" r="1.8" fill="#654c50" /><circle cx="42" cy="38" r="1.8" fill="#654c50" /><path d="M35 44q4 4 8 0M18 59l-5 7m13-8-1 10" fill="none" stroke="#654c50" strokeWidth="2" strokeLinecap="round" /></svg>,
+  },
   {
     id: 'neon-drift', title: 'Neon Drift 3D', category: '3D Arcade', badge: 'Điều khiển lạ', component: NeonDriftGame,
     description: 'Rê để lái tàu qua đường hầm neon và nhấn đúp để xuyên vật thể bằng Phase Shift.',
