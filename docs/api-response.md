@@ -72,6 +72,6 @@ vẫn nhận refresh token trong JSON và gửi token trong body như trước. 
 cũ có thể gửi token body một lần qua transport cookie để được xoay vòng rồi xóa
 refresh token khỏi `localStorage`.
 
-Trên nhánh `alex`, kiểm tra bằng `dotnet build FookbaseLight.sln`, lint/build các
-client web/admin/zola-light và typecheck/lint các client mobile. Bộ test tự động
-vẫn nằm trên nhánh `main`.
+Kiểm tra: `bash scripts/test-backend.sh`, nhóm test Shared, và
+`npm --prefix frontend/web run test:auth` (client web/admin/zola-light).
+Mobile có test client, session, Google và logout trong Jest.

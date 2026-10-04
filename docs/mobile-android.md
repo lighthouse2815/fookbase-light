@@ -34,6 +34,7 @@ npm ci
 npx expo-doctor
 npm run typecheck
 npm run lint
+npm test -- --runInBand
 npm run export:android
 # Development build, cần thiết bị/emulator và Metro:
 npm run android
@@ -45,7 +46,7 @@ CMAKE_BUILD_PARALLEL_LEVEL=1 ./gradlew assembleRelease --no-daemon --max-workers
 
 Lệnh preview trên nhắm ARM64 và emulator x86_64; chưa nghiệm thu thiết bị 32-bit. APK ở `android/app/build/outputs/apk/release/app-release.apk`. Gradle template ký bản này bằng khóa development: chỉ phân phối nội bộ, không dùng để phát hành cửa hàng. Build đầu tải NDK/CMake và có thể mất nhiều thời gian.
 
-CI thủ công chạy Doctor/type/lint/export. Workflow thủ công **Android preview APK** build và giữ APK 14 ngày; đặt GitHub repository variables `MOBILE_API_BASE_URL`, `MOBILE_ANDROID_PACKAGE`, tùy chọn `MOBILE_CALLBACK_URL` trước khi chạy. Không tự publish store.
+CI thường chạy Doctor/type/lint/Jest/export. Workflow thủ công **Android preview APK** build và giữ APK 14 ngày; đặt GitHub repository variables `MOBILE_API_BASE_URL`, `MOBILE_ANDROID_PACKAGE`, tùy chọn `MOBILE_CALLBACK_URL` trước khi chạy. Không tự publish store.
 
 `eas.json` có development, preview APK và production AAB. Nếu dùng EAS cần đăng nhập/liên kết project của chủ dự án, cấu hình môi trường và signing trong secret store. Tăng `android.versionCode` trước mỗi bản phát hành mới; không commit keystore/password.
 
@@ -57,9 +58,9 @@ Domain callback cần phục vụ `/.well-known/assetlinks.json` qua HTTPS với
 
 ## Kiểm thử và giới hạn bàn giao
 
-Nhánh `alex` đã bỏ các test tự động; kiểm tra mobile bằng `npm run typecheck`, `npm run lint`, export và nghiệm thu trên thiết bị thật.
+Các test JS kiểm tra session, refresh, upload, Google state, logout, saved state, UI và cleanup realtime. Backend có integration tests Google mobile (verifier sai, replay, chống dùng callback web) chạy bằng `bash scripts/test-backend.sh` với PostgreSQL riêng.
 
-Cần nghiệm thu trên API HTTPS thật với hai tài khoản và Android thật: đăng nhập/refresh/kill/logout, media picker/upload, gửi nhận chat/nhóm/reconnect, bàn phím/chữ lớn, phát video/background, Google cold callback/2FA và upgrade APK. Export không thay cho kiểm thử native. Chưa có domain API, callback, package ID chính thức và signing từ chủ dự án thì không coi bản build nội bộ là bản production hoàn thành.
+Cần nghiệm thu trên API HTTPS thật với hai tài khoản và Android thật: đăng nhập/refresh/kill/logout, media picker/upload, gửi nhận chat/nhóm/reconnect, bàn phím/chữ lớn, phát video/background, Google cold callback/2FA và upgrade APK. Unit tests và export không thay cho kiểm thử native. Chưa có domain API, callback, package ID chính thức và signing từ chủ dự án thì không coi bản build nội bộ là bản production hoàn thành.
 
 ### Bản preview đã xác minh ngày 20/09/2026
 

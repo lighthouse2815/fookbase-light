@@ -21,6 +21,7 @@ jobs:
       - run: npx expo-doctor
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm test -- --runInBand
       - run: npm run export:android
 
   backend:
@@ -36,6 +37,8 @@ jobs:
         run: |
           dotnet restore backend/Fookbase.Src/Fookbase.Api.csproj
           dotnet build backend/Fookbase.Src/Fookbase.Api.csproj --no-restore --configuration Release
+      - name: Run isolated backend integration tests
+        run: bash scripts/test-backend.sh
       - name: Check EF model has no pending changes
         env:
           ConnectionStrings__FookbaseDatabase: Host=postgres;Port=5432;Database=fookbase_ci;Username=fookbase_ci;Password=ci-only-not-production
@@ -55,11 +58,12 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: frontend/${{ matrix.app }}/package-lock.json
-      - name: Install, lint and build ${{ matrix.app }}
+      - name: Install, lint, test and build ${{ matrix.app }}
         working-directory: frontend/${{ matrix.app }}
         run: |
           npm ci
           npm run lint
+          if [ "${{ matrix.app }}" = "web" ]; then npm run test:group-header; fi
           npm run build
 
   container:

@@ -26,6 +26,7 @@ EXPO_PUBLIC_MOBILE_CALLBACK_URL=https://zola.example.com/auth/callback
 npm ci
 npm run typecheck
 npm run lint
+npm test -- --runInBand
 npm run export:android
 npm run android
 ```

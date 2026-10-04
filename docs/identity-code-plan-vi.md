@@ -145,8 +145,6 @@ Chỉ tách khi có ranh giới thực tế và giữ nguyên DTO, route, error 
 
 ## Kiểm chứng bắt buộc
 
-Các yêu cầu test trong kế hoạch này áp dụng cho nhánh `main`; nhánh `alex` đã bỏ bộ test tự động và dùng build, lint, kiểm tra kiểu để kiểm tra mã ứng dụng.
-
 - `dotnet build` cho API và test project.
 - Nhóm test Identity và Shared.
 - `bash scripts/test-backend.sh` cho toàn bộ backend.
