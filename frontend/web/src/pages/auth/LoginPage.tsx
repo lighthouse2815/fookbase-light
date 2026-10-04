@@ -72,6 +72,16 @@ export default function LoginPage() {
       ? { code: googleCompletionCode, email: searchParams.get('email') ?? '' }
       : null)
   const completedGoogleCodes = useRef(new Set<string>())
+  const submitRef = useRef(false)
+  const [now, setNow] = useState(Date.now)
+  const resendSeconds = registrationChallenge ? Math.max(0, Math.ceil((Date.parse(registrationChallenge.resendAvailableAtUtc) - now) / 1000)) : 0
+  const registrationExpired = Boolean(registrationChallenge && Date.parse(registrationChallenge.expiresAtUtc) <= now)
+
+  useEffect(() => {
+    if (!registrationChallenge) return
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [registrationChallenge])
 
   const accountMode = searchParams.get('mode')
   const linkedEmail = searchParams.get('email') ?? ''
@@ -153,12 +163,17 @@ export default function LoginPage() {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (submitRef.current) return
+    if (registrationChallenge && Date.parse(registrationChallenge.expiresAtUtc) <= Date.now()) { setError(t('verificationCodeExpired')); return }
+    submitRef.current = true
     setError(null)
     setNotice(null)
     setIsSubmitting(true)
 
     try {
-      if (isGoogleLinking) {
+      if (twoFactorChallenge) {
+        await completeTwoFactor(twoFactorChallenge, twoFactorCode)
+      } else if (isGoogleLinking) {
         const response = await linkGoogleSignIn(googleLinkCompletion.code, password)
         if ('twoFactorRequired' in response) setTwoFactorChallenge(response.challenge)
       } else if (isRequestingReset) {
@@ -188,6 +203,7 @@ export default function LoginPage() {
         } else {
           const dateOfBirth = `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
           setRegistrationChallenge(await signUp({ firstName, lastName, dateOfBirth, gender, contact: email, password }))
+          setNow(Date.now())
           setRegistrationCode('')
         }
       } else {
@@ -197,8 +213,24 @@ export default function LoginPage() {
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : t('unableAuthenticate'))
     } finally {
+      submitRef.current = false
       setIsSubmitting(false)
     }
+  }
+
+  const resendCode = async () => {
+    if (submitRef.current || !registrationChallenge || Date.parse(registrationChallenge.resendAvailableAtUtc) > Date.now()) return
+    submitRef.current = true
+    setIsSubmitting(true)
+    setError(null)
+    setNotice(null)
+    try {
+      setRegistrationChallenge(await resendRegistration(registrationChallenge.challengeId))
+      setRegistrationCode('')
+      setNow(Date.now())
+      setNotice(t('verificationCodeResent'))
+    } catch (reason) { setError(reason instanceof ApiError ? reason.message : t('unableAuthenticate')) }
+    finally { submitRef.current = false; setIsSubmitting(false) }
   }
 
   const switchMode = () => {
@@ -208,12 +240,15 @@ export default function LoginPage() {
     setPassword('')
     setRegistrationChallenge(null)
     setRegistrationCode('')
+    setTwoFactorChallenge(null)
+    setTwoFactorCode('')
     setIsResettingPhone(false)
     setPasswordResetCode('')
   }
 
   const returnToSignIn = () => {
     setSearchParams({})
+    setIsRegistering(false)
     setGoogleLinkCompletion(null)
     setError(null)
     setNotice(null)
@@ -221,6 +256,8 @@ export default function LoginPage() {
     setConfirmPassword('')
     setRegistrationChallenge(null)
     setRegistrationCode('')
+    setTwoFactorChallenge(null)
+    setTwoFactorCode('')
     setIsResettingPhone(false)
     setPasswordResetCode('')
   }
@@ -268,7 +305,7 @@ export default function LoginPage() {
             {notice && <p role="status" className="mb-5 rounded-xl border border-primary/35 bg-primary/10 px-4 py-3 text-sm leading-5 text-primary-light">{notice}</p>}
 
             {twoFactorChallenge ? (
-              <div className="flex flex-col gap-5"><label className="flex flex-col gap-2 text-sm font-semibold text-text">Mã xác thực<input autoFocus inputMode="numeric" autoComplete="one-time-code" value={twoFactorCode} onChange={(event) => setTwoFactorCode(event.target.value)} className={fieldClassName} /></label><button type="button" className="rounded-xl bg-primary px-4 py-3 font-bold text-white" disabled={isSubmitting || !twoFactorCode.trim()} onClick={() => { setIsSubmitting(true); void completeTwoFactor(twoFactorChallenge, twoFactorCode).catch((reason) => setError(reason instanceof ApiError ? reason.message : t('unableAuthenticate'))).finally(() => setIsSubmitting(false)) }}>Xác minh</button></div>
+              <div className="flex flex-col gap-5"><label className="flex flex-col gap-2 text-sm font-semibold text-text">{t('verificationCode')}<input required autoFocus disabled={isSubmitting} inputMode="numeric" autoComplete="one-time-code" value={twoFactorCode} onChange={(event) => setTwoFactorCode(event.target.value)} className={fieldClassName} /></label><button type="submit" className="rounded-xl bg-primary px-4 py-3 font-bold text-white disabled:opacity-60" disabled={isSubmitting || !twoFactorCode.trim()}>{t(isSubmitting ? 'pleaseWait' : 'verifyCode')}</button></div>
             ) : isVerifying ? (
               <div className="rounded-xl border border-border bg-surface-2/60 p-5 text-sm leading-6 text-text-muted">
                 {(!linkedEmail || !linkedToken) && t('invalidVerificationLink')}
@@ -280,15 +317,16 @@ export default function LoginPage() {
               <div className="flex flex-col gap-5">
                 <label className="flex flex-col gap-2 text-sm font-semibold text-text">
                   {t('verificationCode')}
-                  <input required autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={registrationCode} onChange={(event) => setRegistrationCode(event.target.value.replace(/\D/g, ''))} placeholder="123456" className={fieldClassName} />
+                  <input required autoFocus disabled={isSubmitting} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={registrationCode} onChange={(event) => setRegistrationCode(event.target.value.replace(/\D/g, ''))} placeholder="123456" className={fieldClassName} />
                 </label>
-                <button disabled={isSubmitting || registrationCode.length !== 6} className="rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 disabled:cursor-not-allowed disabled:opacity-60">
+                <button disabled={isSubmitting || registrationExpired || registrationCode.length !== 6} className="rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 disabled:cursor-not-allowed disabled:opacity-60">
                   {isSubmitting ? t('pleaseWait') : t('verifyAndCreateAccount')}
                 </button>
-                <button type="button" disabled={isSubmitting} onClick={() => { setIsSubmitting(true); void resendRegistration(registrationChallenge.challengeId).then(setRegistrationChallenge).catch((reason) => setError(reason instanceof ApiError ? reason.message : t('unableAuthenticate'))).finally(() => setIsSubmitting(false)) }} className="rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text disabled:opacity-60">
-                  {t('resendCode')}
+                {registrationExpired && <p role="status" className="text-sm text-danger">{t('verificationCodeExpired')}</p>}
+                <button type="button" disabled={isSubmitting || resendSeconds > 0} onClick={() => void resendCode()} className="rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text disabled:opacity-60">
+                  {resendSeconds > 0 ? t('resendCodeCountdown').replace('{seconds}', String(resendSeconds)) : t('resendCode')}
                 </button>
-                <button type="button" disabled={isSubmitting} onClick={() => { setRegistrationChallenge(null); setRegistrationCode(''); setError(null) }} className="text-sm font-semibold text-primary-light hover:text-text">
+                <button type="button" disabled={isSubmitting} onClick={() => { setRegistrationChallenge(null); setRegistrationCode(''); setError(null); setNotice(null) }} className="text-sm font-semibold text-primary-light hover:text-text">
                   {t('editRegistrationDetails')}
                 </button>
               </div>
@@ -347,17 +385,17 @@ export default function LoginPage() {
               </>
             )}
 
-            {isVerifying || isRequestingReset || isResetting ? (
-              <button type="button" onClick={returnToSignIn} className="mt-6 w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2">{t('backToSignIn')}</button>
+            {twoFactorChallenge || isVerifying || isRequestingReset || isResetting ? (
+              <button type="button" disabled={isSubmitting} onClick={returnToSignIn} className="mt-6 w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2 disabled:opacity-60">{t('backToSignIn')}</button>
             ) : (
               <>
-                {!isRegistering && !isGoogleLinking && <button type="button" onClick={() => setSearchParams({ mode: 'forgot' })} className="mt-4 text-sm font-semibold text-primary-light hover:text-text">{t('forgotPassword')}</button>}
+                {!isRegistering && !isGoogleLinking && <button type="button" disabled={isSubmitting} onClick={() => setSearchParams({ mode: 'forgot' })} className="mt-4 text-sm font-semibold text-primary-light hover:text-text disabled:opacity-60">{t('forgotPassword')}</button>}
                 {!isRegistering && !isGoogleLinking && googleEnabled && <>
                   <div className="my-6 flex items-center gap-3 text-xs font-medium text-text-light"><span className="h-px flex-1 bg-border" />{t('or')}<span className="h-px flex-1 bg-border" /></div>
                   {isEmbeddedBrowser ? <p className="rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-sm leading-5 text-text-muted">{t('openExternalBrowserGoogle')}</p> : <button type="button" onClick={() => window.location.assign(`${apiBaseUrl}/api/auth/google/start?client=web`)} className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2"><span className="mr-2 text-base text-[#4285f4]">G</span>{t('continueWithGoogle')}</button>}
                 </>}
                 {!isGoogleLinking && <><div className="my-6 flex items-center gap-3 text-xs font-medium text-text-light"><span className="h-px flex-1 bg-border" />{t('or')}<span className="h-px flex-1 bg-border" /></div>
-                  <button type="button" onClick={switchMode} className="w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2">
+                  <button type="button" disabled={isSubmitting} onClick={switchMode} className="w-full rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm font-bold text-text transition hover:border-primary/60 hover:bg-surface-2 disabled:opacity-60">
                     {isRegistering ? t('alreadyHaveAccount') : t('createNewAccount')}
                   </button></>}
               </>
