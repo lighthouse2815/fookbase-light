@@ -198,6 +198,73 @@ test('a newer post prop count cannot be overwritten by an earlier counter read',
   assert.equal(state.getSnapshot().commentCount, 40)
 })
 
+test('pagination waits for a pending deletion before reading the shifted server offset', async () => {
+  const { state, requests } = setup(30)
+  const existing = Array.from({ length: 30 }, (_, index) => comment(`real-${String(index + 1).padStart(2, '0')}`))
+  const loading = state.loadComments()
+  requests[0].resolve(page(existing.slice(0, 20), 30))
+  await loading
+  const deleting = state.deleteComment('real-01')
+  const more = state.loadComments(true)
+  assert.equal(requests.length, 2, 'do not read an offset that is being shifted by a deletion')
+  requests[1].resolve()
+  await deleting
+  await tick()
+  assert.deepEqual(requests[2].args, ['post-1', 19])
+  requests[2].resolve(page(existing.slice(20), 29, 19))
+  await more
+  assert.equal(state.getSnapshot().comments.length, 29)
+  assert.equal(state.getSnapshot().commentCount, 29)
+  assert.equal(state.getSnapshot().commentsHasMore, false)
+})
+
+test('a page observing a deletion before its response waits and rereads without missing a row or double decrement', async () => {
+  const { state, requests } = setup(30)
+  const existing = Array.from({ length: 30 }, (_, index) => comment(`real-${String(index + 1).padStart(2, '0')}`))
+  const loading = state.loadComments()
+  requests[0].resolve(page(existing.slice(0, 20), 30))
+  await loading
+  const more = state.loadComments(true)
+  const deleting = state.deleteComment('real-01')
+  // The server has deleted row 1, but the DELETE response is still delayed.
+  requests[1].resolve(page(existing.slice(21), 29, 20))
+  await tick()
+  assert.equal(requests.length, 3, 'wait for deletion rather than repeatedly fetching a changing offset')
+  assert.equal(state.getSnapshot().commentsLoadingMore, true)
+  requests[2].resolve()
+  await deleting
+  await tick()
+  assert.deepEqual(requests[3].args, ['post-1', 19])
+  requests[3].resolve(page(existing.slice(20), 29, 19))
+  await more
+  assert.equal(state.getSnapshot().comments.length, 29)
+  assert.equal(state.getSnapshot().commentCount, 29)
+  assert.equal(state.getSnapshot().comments.some(({ id }) => id === 'real-21'), true)
+  assert.equal(state.getSnapshot().commentsHasMore, false)
+})
+
+test('an earlier count read cannot overwrite a newer comments page total', async () => {
+  const { state, requests } = setup()
+  const loading = state.loadComments()
+  const submission = state.createComment('Mới', author)
+  requests[0].resolve(page([comment('real-01'), comment('real-02')], 4))
+  await loading
+  requests[1].resolve(comment('real-05'))
+  await submission
+  const earlierCount = requests.find((request) => request.action === 'count')
+  const more = state.loadComments(true)
+  requests.findLast((request) => request.action === 'get').resolve(page([comment('real-03'), comment('real-04'), comment('real-05')], 6, 2))
+  await more
+  assert.equal(state.getSnapshot().commentCount, 6)
+  earlierCount.resolve({ ...post, commentCount: 5 })
+  await tick()
+  assert.equal(state.getSnapshot().commentCount, 6)
+  const latestCount = requests.filter((request) => request.action === 'count')[1]
+  latestCount.resolve({ ...post, commentCount: 6 })
+  await tick()
+  assert.equal(state.getSnapshot().commentsHasMore, true)
+})
+
 test('concurrent loads deduplicate, failures stay retryable and empty results are cached', async () => {
   const { state, requests } = setup()
   const loading = state.loadComments()

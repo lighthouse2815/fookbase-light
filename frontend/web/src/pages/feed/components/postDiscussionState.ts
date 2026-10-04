@@ -26,6 +26,7 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
   const deletedIds = new Set<string>()
   const modifiedVersions = new Map<string, number>()
   const busyIds = new Set<string>()
+  const pendingDeletions = new Set<Promise<void>>()
   let comments: DiscussionComment[] = []
   let confirmedCount = post.commentCount
   let knownServerTotal = post.commentCount
@@ -80,13 +81,15 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
     reading = true
     loadingMore = more
     readError = null
-    const readVersion = version
-    const readDeletionVersion = deletionVersion
     publish()
     let retryPage = false
     try {
+      // A committed DELETE can shift offsets before its response reaches this tab.
+      while (pendingDeletions.size > 0) await Promise.allSettled(pendingDeletions)
+      const readVersion = version
+      const readDeletionVersion = deletionVersion
       const page = await api.getComments(post.id, more ? offset : 0)
-      if (deletionVersion !== readDeletionVersion) {
+      if (pendingDeletions.size > 0 || deletionVersion !== readDeletionVersion) {
         // Deleting an earlier row shifts offset pagination. Read at the corrected offset.
         retryPage = true
       } else {
@@ -106,6 +109,7 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
         // A response read before a local write cannot replace that write's count.
         if (version === readVersion && !submitting) confirmedCount = page.total
         else needsCountRefresh = true
+        version += 1
         loaded = true
       }
     } catch (error) {
@@ -176,8 +180,11 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
     if (busyIds.has(id) || !comments.some((comment) => comment.id === id && !comment.pending)) return false
     busyIds.add(id)
     publish()
+    let request: Promise<void> | undefined
     try {
-      await api.deleteComment(id)
+      request = api.deleteComment(id)
+      pendingDeletions.add(request)
+      await request
       // The existing backend soft-deletes only this comment, retaining its replies.
       comments = comments.filter((comment) => comment.id !== id)
       confirmedCount = Math.max(0, confirmedCount - 1)
@@ -192,6 +199,7 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
       onError(error, 'Không thể xóa bình luận. Vui lòng thử lại.')
       return false
     } finally {
+      if (request) pendingDeletions.delete(request)
       busyIds.delete(id)
       publish()
       void refreshCommentCount()
