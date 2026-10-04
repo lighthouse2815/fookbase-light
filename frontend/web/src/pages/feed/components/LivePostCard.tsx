@@ -266,6 +266,9 @@ export default function LivePostCard({
   const [commentText, setCommentText] = useState('')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
+  const [failedMediaIds, setFailedMediaIds] = useState<ReadonlySet<string>>(new Set())
+  const mediaGenerationRef = useRef(0)
+  const pendingMediaRef = useRef(new Set<string>())
   const [isSaved, setIsSaved] = useState(post.viewerHasSaved)
   const [pendingPostAction, setPendingPostAction] = useState<string | null>(null)
   const pendingPostActionRef = useRef<string | null>(null)
@@ -343,22 +346,35 @@ export default function LivePostCard({
     return () => observer.disconnect()
   }, [isMediaVisible, post.mediaIds.length])
 
+  const loadMedia = useCallback(async (mediaId: string, generation: number) => {
+    if (pendingMediaRef.current.has(mediaId)) return
+    pendingMediaRef.current.add(mediaId)
+    setFailedMediaIds(current => { const next = new Set(current); next.delete(mediaId); return next })
+    setMedia(current => current.filter(item => item.mediaId !== mediaId))
+    try {
+      const item = await postsApi.getMediaAccess(post.id, mediaId)
+      if (generation !== mediaGenerationRef.current) return
+      setMedia(current => [...current.filter(existing => existing.mediaId !== mediaId), item]
+        .sort((a, b) => post.mediaIds.indexOf(a.mediaId) - post.mediaIds.indexOf(b.mediaId)))
+    } catch {
+      if (generation === mediaGenerationRef.current) setFailedMediaIds(current => new Set(current).add(mediaId))
+    } finally {
+      if (generation === mediaGenerationRef.current) pendingMediaRef.current.delete(mediaId)
+    }
+  }, [post.id, post.mediaIds])
+
   useEffect(() => {
     if (!isMediaVisible) return
-    let isActive = true
-
-    void Promise.all(post.mediaIds.map((mediaId) => postsApi.getMediaAccess(post.id, mediaId)))
-      .then((media) => {
-        if (isActive) setMedia(media)
-      })
-      .catch(() => {
-        if (isActive) setMedia([])
-      })
-
-    return () => {
-      isActive = false
-    }
-  }, [isMediaVisible, post.id, post.mediaIds])
+    const generation = ++mediaGenerationRef.current
+    pendingMediaRef.current.clear()
+    void Promise.resolve().then(() => {
+      if (generation !== mediaGenerationRef.current) return
+      setMedia([])
+      setFailedMediaIds(new Set())
+      post.mediaIds.forEach(mediaId => void loadMedia(mediaId, generation))
+    })
+    return () => { mediaGenerationRef.current += 1 }
+  }, [isMediaVisible, loadMedia, post.mediaIds])
 
   useEffect(() => {
     mountedRef.current = true
@@ -553,18 +569,25 @@ export default function LivePostCard({
           {hasTextBackgroundOverflow && <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/45 to-transparent px-4 pb-4 pt-10"><button type="button" onClick={() => setIsTextBackgroundExpanded((current) => !current)} className="rounded-full border border-white/35 bg-black/45 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-sm hover:bg-black/60">{isTextBackgroundExpanded ? 'Thu gọn' : 'Xem thêm'}</button></div>}
         </div>
         : <div className="px-4 pb-3 pt-1"><TextWithReferences content={post.content} mentions={post.mentions} className="text-[15px] leading-[1.45] text-text whitespace-pre-wrap" /></div>)}
-      {media.length > 0 && (
-        <div className={`grid overflow-hidden bg-black ${media.length > 1 ? 'grid-cols-2 gap-0.5' : 'grid-cols-1'}`}>
-          {media.map((item) => item.mediaType === 'video' ? (
-            <video key={item.mediaId} controls preload="metadata" className={`w-full bg-black object-contain ${media.length > 1 ? 'max-h-80' : 'max-h-[760px]'}`}>
-              <source src={item.url} type={item.contentType} />
-              {t('browserNoVideo')}
-            </video>
-          ) : (
-            <button key={item.mediaId} type="button" onClick={() => openPhotoViewer(item)} aria-label="Xem ảnh" className="border-0 bg-black p-0 text-left">
-              <img src={item.url} alt={t('postAttachment')} loading="lazy" decoding="async" className={`w-full bg-black ${media.length > 1 ? 'h-52 object-cover sm:h-72' : 'max-h-[760px] object-contain'}`} />
-            </button>
-          ))}
+      {post.mediaIds.length > 0 && (
+        <div className={`grid overflow-hidden bg-surface-2 ${post.mediaIds.length > 1 ? 'grid-cols-2 gap-0.5' : 'grid-cols-1'}`}>
+          {post.mediaIds.map(mediaId => {
+            const item = media.find(entry => entry.mediaId === mediaId)
+            if (failedMediaIds.has(mediaId)) return <div key={mediaId} data-media-error={mediaId} role="alert" className="grid min-h-52 place-content-center gap-3 p-4 text-center text-sm text-text-muted">
+              <p>{t('postMediaFailed')}</p><button type="button" onClick={() => void loadMedia(mediaId, mediaGenerationRef.current)} className="rounded-lg border border-border px-4 py-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-primary">{t('retry')}</button>
+            </div>
+            if (!item) return <div key={mediaId} data-media-loading={mediaId} role="status" aria-label={t('postMediaLoading')} className="min-h-52 bg-surface-2 motion-safe:animate-pulse" />
+            const fail = () => setFailedMediaIds(current => new Set(current).add(mediaId))
+            return item.mediaType === 'video' ? (
+              <video key={item.mediaId} src={item.url} controls preload="metadata" onError={fail} className={`w-full bg-black object-contain ${post.mediaIds.length > 1 ? 'max-h-80' : 'max-h-[760px]'}`}>
+                {t('browserNoVideo')}
+              </video>
+            ) : (
+              <button key={item.mediaId} type="button" onClick={() => openPhotoViewer(item)} aria-label="Xem ảnh" className="border-0 bg-black p-0 text-left focus-visible:outline-2 focus-visible:outline-primary">
+                <img src={item.url} alt={t('postAttachment')} loading="lazy" decoding="async" onError={fail} className={`w-full bg-black ${post.mediaIds.length > 1 ? 'h-52 object-cover sm:h-72' : 'min-h-52 max-h-[760px] object-contain'}`} />
+              </button>
+            )
+          })}
         </div>
       )}
 
