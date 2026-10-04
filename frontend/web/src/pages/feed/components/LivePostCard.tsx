@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../api/client'
@@ -23,6 +23,8 @@ import { useAuth } from '../../../auth/useAuth'
 import ReactionPicker from './PostReactionPicker'
 import PostActionsMenu from './PostActionsMenu'
 import { useDialogFocus } from '../../../shared/useDialogFocus'
+import PostLightboxMedia from './PostLightboxMedia'
+import { clampMediaIndex, getSelectedMediaIndex, isEditableTarget } from './postPhotoLightbox'
 
 interface LivePostCardProps {
   post: Post
@@ -260,7 +262,7 @@ export default function LivePostCard({
   } = usePostInteractions(post, currentUserId)
   const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(() => Boolean(initialCommentId))
   const [isReactionDialogOpen, setIsReactionDialogOpen] = useState(false)
-  const [selectedPhoto, setSelectedPhoto] = useState<MediaAccess | null>(null)
+  const [photoSelection, setPhotoSelection] = useState<{ mediaId: string; index: number } | null>(null)
   const [commentText, setCommentText] = useState('')
   const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
   const [media, setMedia] = useState<MediaAccess[]>([])
@@ -281,8 +283,10 @@ export default function LivePostCard({
   const textBackgroundContentRef = useRef<HTMLDivElement>(null)
   const commentsDialogRef = useRef<HTMLElement>(null)
   const photoDialogRef = useRef<HTMLDivElement>(null)
+  const currentMediaIndex = getSelectedMediaIndex(media, photoSelection)
+  const isPhotoOpen = currentMediaIndex >= 0
   useDialogFocus(isCommentsDialogOpen, commentsDialogRef, () => setIsCommentsDialogOpen(false))
-  useDialogFocus(Boolean(selectedPhoto), photoDialogRef, () => setSelectedPhoto(null))
+  useDialogFocus(isPhotoOpen, photoDialogRef, () => setPhotoSelection(null))
   const mountedRef = useRef(false)
   const currentDiscussionRef = useRef(discussion)
   const draftVersionRef = useRef(0)
@@ -386,20 +390,35 @@ export default function LivePostCard({
   }
 
   const openCommentsDialog = () => {
-    setSelectedPhoto(null)
+    setPhotoSelection(null)
     setIsCommentsDialogOpen(true)
     void discussion.loadComments()
   }
 
   const openPhotoViewer = (photo: MediaAccess) => {
-    setSelectedPhoto(photo)
+    const index = media.findIndex((item) => item.mediaId === photo.mediaId)
+    if (index < 0) return
+    postCardRef.current?.querySelectorAll('video').forEach((video) => video.pause())
+    setPhotoSelection({ mediaId: photo.mediaId, index })
     void discussion.loadComments()
   }
 
-  const closeDiscussion = () => {
+  const closeDiscussion = useCallback(() => {
     setIsCommentsDialogOpen(false)
-    setSelectedPhoto(null)
-  }
+    setPhotoSelection(null)
+  }, [])
+  const changeMedia = useCallback((direction: -1 | 1) => {
+    setPhotoSelection((selection) => {
+      if (selection === null || media.length === 0) return null
+      const index = clampMediaIndex(getSelectedMediaIndex(media, selection) + direction, media.length)
+      return { index, mediaId: media[index].mediaId }
+    })
+  }, [media])
+  const previousMedia = useCallback(() => changeMedia(-1), [changeMedia])
+  const nextMedia = useCallback(() => changeMedia(1), [changeMedia])
+  const updateMediaAccess = useCallback((updated: MediaAccess) => {
+    setMedia((current) => current.map((item) => item.mediaId === updated.mediaId ? updated : item))
+  }, [])
 
   const toggleDefaultReaction = interactionState.toggleReaction
   const setReaction = interactionState.selectReaction
@@ -609,14 +628,18 @@ export default function LivePostCard({
         </section>
       </div>
     , document.body)}
-    {selectedPhoto && createPortal(
-      <div ref={photoDialogRef} tabIndex={-1} className="post-discussion-enter fixed inset-0 z-[60] flex flex-col bg-black text-text md:flex-row" role="dialog" aria-modal="true" aria-label="Xem ảnh">
-        <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black p-4 md:p-8">
-          <img src={selectedPhoto.url} alt={t('postAttachment')} className="max-h-full max-w-full object-contain" />
-          <button type="button" onClick={closeDiscussion} aria-label="Đóng ảnh" className="absolute left-4 top-4 grid h-10 w-10 place-items-center rounded-full border-0 bg-black/55 text-2xl leading-none text-white hover:bg-black/80">×</button>
-        </div>
+    {isPhotoOpen && createPortal(
+      <div ref={photoDialogRef} tabIndex={-1} className="post-discussion-enter fixed inset-0 z-[60] flex flex-col bg-black text-text md:flex-row" role="dialog" aria-modal="true" aria-label="Xem ảnh" onKeyDown={(event) => {
+        if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || isEditableTarget(event.target)) return
+        const target = event.target
+        // Menus and nested dialogs live in portals; their arrow keys belong to them.
+        if (!(target instanceof Element) || !event.currentTarget.contains(target) || target.closest('video, [role="menu"], [role="slider"]')) return
+        if (event.key === 'ArrowLeft') { event.preventDefault(); previousMedia() }
+        else if (event.key === 'ArrowRight') { event.preventDefault(); nextMedia() }
+      }}>
+        <PostLightboxMedia postId={post.id} media={media} currentIndex={currentMediaIndex} onPrevious={previousMedia} onNext={nextMedia} onClose={closeDiscussion} onMediaResolved={updateMediaAccess} altText={t('postAttachment')} />
 
-        <aside className="flex h-[48vh] w-full shrink-0 flex-col border-t border-border bg-surface md:h-full md:w-[390px] md:border-l md:border-t-0">
+        <aside data-photo-sidebar className="flex h-[48vh] w-full shrink-0 flex-col border-t border-border bg-surface md:h-full md:w-[390px] md:border-l md:border-t-0">
           <header className="flex items-start gap-3 border-b border-border px-4 py-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-white">
               {authorAvatarUrl ? <img src={resolveProfileImageUrl(authorAvatarUrl)} alt="" className="h-full w-full object-cover" /> : authorName.slice(0, 2).toUpperCase()}
@@ -639,7 +662,7 @@ export default function LivePostCard({
             <button type="button" onClick={() => { closeDiscussion(); setIsShareOpen(true) }} className="flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-text-muted hover:bg-surface-2"><ShareIcon />{t('share')}</button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <div data-photo-sidebar-scroll className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
             <div className="space-y-4"><DiscussionList initialCommentId={initialCommentId} comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId} isLoading={isLoadingComments} isLoadingMore={isLoadingMoreComments} error={!commentsLoaded ? commentsError : null} paginationError={commentsLoaded ? commentsError : null} hasMore={commentsHasMore} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')} editLabel={t('edit')} deleteLabel={t('delete')} onLoadMore={() => void loadMoreComments()} onReply={chooseReplyTarget} onEdit={(comment) => { setEditingComment(comment); setEditingCommentContent(comment.content) }} onDelete={setCommentPendingDeletion} onReact={(comment, type) => void updateCommentReaction(comment, type)} onRemoveReaction={(comment) => void updateCommentReaction(comment)} reactingCommentId={null} busyCommentIds={busyCommentIds} onRetryLoad={() => void discussion.loadComments()} /></div>
           </div>
           <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserName} value={commentText} placeholder={replyTargetName ? `Trả lời ${replyTargetName}` : t('writeComment')} sendLabel={t('send')} isSubmitting={commentSubmitting} replyingToName={replyTargetName} onCancelReply={() => chooseReplyTarget(null)} onChange={(event) => changeCommentText(event.target.value)} onSubmit={(event) => void createComment(event)} />
