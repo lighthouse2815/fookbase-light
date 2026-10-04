@@ -1,10 +1,8 @@
-using System.Text;
-using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Shared.Common;
+using Fookbase.Api.Modules.Messages.Common;
 using Fookbase.Api.Modules.Messages.DTOs.Requests;
 using Fookbase.Api.Modules.Messages.DTOs.Responses;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
@@ -12,6 +10,7 @@ using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Notifications.Services;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -26,11 +25,9 @@ public sealed class MessagesService(
     MediaService mediaService,
     PushNotificationService pushNotifications)
 {
-    private const int MaximumLimit = 100;
-    public const int MaximumContentLength = 5_000;
-    private const int MaximumCursorLength = 256;
-    private const int MaximumAttachmentCount = 10;
-    private const int MaximumGroupSize = 50;
+    public const int MaximumLimit = 100;
+    public const int MaximumContentLength = Message.MaximumContentLength;
+    public const int MaximumGroupSize = 50;
 
     public Task<ApplicationResult<ConversationResponse>> GetOrCreateConversationAsync(Guid actorUserId, Guid participantUserId, CancellationToken cancellationToken = default) =>
         GetOrCreateDirectConversationAsync(actorUserId, participantUserId, cancellationToken);
@@ -75,11 +72,9 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<ConversationResponse>> CreateGroupConversationAsync(Guid actorUserId, CreateGroupConversationRequest request, CancellationToken cancellationToken = default)
     {
-        var participantIds = request.ParticipantUserIds?.ToArray() ?? [];
-        if (participantIds.Length is < 1 or >= MaximumGroupSize || participantIds.Any(id => id == Guid.Empty || id == actorUserId) || participantIds.Distinct().Count() != participantIds.Length)
-            return Failure<ConversationResponse>("invalid_group_participants", $"A group needs between 1 and {MaximumGroupSize - 1} distinct participants besides its creator.");
-        if (string.IsNullOrWhiteSpace(request.Title) || request.Title.Trim().Length > 120)
-            return Failure<ConversationResponse>("invalid_group_title", "A group title containing between 1 and 120 characters is required.");
+        var participantIds = request.ParticipantUserIds.ToArray();
+        if (participantIds.Contains(actorUserId))
+            return Failure<ConversationResponse>("invalid_group_participants", "The creator is already a group participant.");
         if (await dbContext.Users.AsNoTracking().CountAsync(user => participantIds.Contains(user.Id), cancellationToken) != participantIds.Length)
             return Failure<ConversationResponse>("group_participant_not_found", "Every group participant must be an existing user.", ApplicationErrorType.NOT_FOUND);
         if (request.PhotoMediaId is not null)
@@ -90,9 +85,8 @@ public sealed class MessagesService(
 
         var now = timeProvider.GetUtcNow();
         Conversation conversation;
-        try
+        await using (var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken))
         {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
             conversation = new Conversation(Guid.NewGuid(), request.Title, now);
             conversation.UpdateGroup(request.Title, request.PhotoMediaId);
             dbContext.Conversations.Add(conversation);
@@ -100,10 +94,6 @@ public sealed class MessagesService(
             dbContext.ConversationParticipants.AddRange(participantIds.Select(id => new ConversationParticipant(conversation.Id, id, ConversationParticipantRole.MEMBER, now)));
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-        }
-        catch (ArgumentException error)
-        {
-            return Failure<ConversationResponse>("invalid_group_title", error.Message);
         }
 
         var response = await BuildConversationResponseAsync(conversation, actorUserId, cancellationToken);
@@ -113,8 +103,7 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<PagedResponse<ConversationResponse>>> GetConversationsAsync(Guid actorUserId, string? before, int limit, bool includeArchived, CancellationToken cancellationToken = default)
     {
-        var paginationError = ValidateConversationPagination(before, limit, out var cursor);
-        if (paginationError is not null) return ApplicationResult<PagedResponse<ConversationResponse>>.Failure(paginationError);
+        var cursor = string.IsNullOrWhiteSpace(before) ? null : MessageCursorCodec.Decode<ConversationCursor>(before);
 
         var snapshot = await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken);
         var permittedDirectUsers = snapshot.FriendUserIds.Except(snapshot.BlockedUserIds).ToArray();
@@ -165,16 +154,11 @@ public sealed class MessagesService(
                 var media = await mediaService.ValidateGroupCoverImageAsync(actorUserId, request.PhotoMediaId.Value, cancellationToken);
                 if (!media.Succeeded) return ApplicationResult<ConversationResponse>.Failure(media.Error!);
             }
-            try { conversation.UpdateGroup(request.Title ?? conversation.Title!, request.RemovePhoto ? null : request.PhotoMediaId ?? conversation.PhotoMediaId); }
-            catch (ArgumentException error) { return Failure<ConversationResponse>("invalid_group_title", error.Message); }
+            conversation.UpdateGroup(request.Title ?? conversation.Title!, request.RemovePhoto ? null : request.PhotoMediaId ?? conversation.PhotoMediaId);
         }
-        try
-        {
-            if (request.Archived is not null) participant.SetArchived(request.Archived.Value, timeProvider.GetUtcNow());
-            if (request.MutedUntilUtc is not null) participant.SetMutedUntil(request.MutedUntilUtc);
-            if (request.Nickname is not null) participant.SetNickname(request.Nickname);
-        }
-        catch (ArgumentException error) { return Failure<ConversationResponse>("invalid_participant_nickname", error.Message); }
+        if (request.Archived is not null) participant.SetArchived(request.Archived.Value, timeProvider.GetUtcNow());
+        if (request.MutedUntilUtc is not null) participant.SetMutedUntil(request.MutedUntilUtc);
+        if (request.Nickname is not null) participant.SetNickname(request.Nickname);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         var response = await BuildConversationResponseAsync(conversation, actorUserId, cancellationToken);
@@ -184,8 +168,7 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<MessageHistoryResponse>> GetMessagesAsync(Guid actorUserId, Guid conversationId, string? before, int limit, CancellationToken cancellationToken = default)
     {
-        var paginationError = ValidateMessagePagination(before, limit, out var cursor);
-        if (paginationError is not null) return ApplicationResult<MessageHistoryResponse>.Failure(paginationError);
+        var cursor = string.IsNullOrWhiteSpace(before) ? null : MessageCursorCodec.Decode<MessageCursor>(before);
         var access = await GetActiveConversationAccessAsync(actorUserId, conversationId, cancellationToken);
         if (!access.Succeeded) return ApplicationResult<MessageHistoryResponse>.Failure(access.Error!);
         var relationshipError = await ValidateConversationRelationshipAsync(access.Value!.Conversation, actorUserId, cancellationToken);
@@ -272,8 +255,6 @@ public sealed class MessagesService(
     {
         var attachmentIds = request.MediaIds?.ToArray() ?? [];
         var content = request.Content?.Trim();
-        if ((string.IsNullOrWhiteSpace(content) && attachmentIds.Length == 0) || (!string.IsNullOrWhiteSpace(content) && content.Length > MaximumContentLength) || attachmentIds.Length > MaximumAttachmentCount || attachmentIds.Distinct().Count() != attachmentIds.Length)
-            return Failure<MessageResponse>("invalid_message_content", $"A message needs text or up to {MaximumAttachmentCount} distinct ready attachments.");
         var access = await GetActiveConversationAccessAsync(actorUserId, conversationId, cancellationToken);
         if (!access.Succeeded) return ApplicationResult<MessageResponse>.Failure(access.Error!);
         var conversation = access.Value!.Conversation;
@@ -321,8 +302,7 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<MessageResponse>> EditMessageAsync(Guid actorUserId, Guid messageId, EditMessageRequest request, CancellationToken cancellationToken = default)
     {
-        var content = request.Content?.Trim();
-        if (string.IsNullOrWhiteSpace(content) || content.Length > MaximumContentLength) return Failure<MessageResponse>("invalid_message_content", $"Message content must contain between 1 and {MaximumContentLength} characters.");
+        var content = request.Content.Trim();
         var message = await dbContext.Messages.SingleOrDefaultAsync(item => item.Id == messageId, cancellationToken);
         if (message is null) return Failure<MessageResponse>("message_not_found", "The message was not found.", ApplicationErrorType.NOT_FOUND);
         var access = await GetActiveConversationAccessAsync(actorUserId, message.ConversationId, cancellationToken);
@@ -354,7 +334,7 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<MessageReactionResponse>> SetReactionAsync(Guid actorUserId, Guid messageId, SetMessageReactionRequest request, CancellationToken cancellationToken = default)
     {
-        if (!Enum.TryParse<MessageReactionType>(request.Type, true, out var type) || !Enum.IsDefined(type)) return Failure<MessageReactionResponse>("invalid_reaction", "Reaction type must be one of: like, love, haha, wow, sad, angry.");
+        var type = Enum.Parse<MessageReactionType>(request.Type, true);
         var message = await dbContext.Messages.SingleOrDefaultAsync(item => item.Id == messageId, cancellationToken);
         if (message is null || message.DeletedAtUtc is not null) return Failure<MessageReactionResponse>("message_not_found", "The message was not found.", ApplicationErrorType.NOT_FOUND);
         var access = await GetActiveConversationAccessAsync(actorUserId, message.ConversationId, cancellationToken);
@@ -392,8 +372,7 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<ConversationResponse>> AddParticipantsAsync(Guid actorUserId, Guid conversationId, AddConversationParticipantsRequest request, CancellationToken cancellationToken = default)
     {
-        var userIds = request.UserIds?.ToArray() ?? [];
-        if (userIds.Length is < 1 or > MaximumGroupSize || userIds.Any(id => id == Guid.Empty) || userIds.Distinct().Count() != userIds.Length) return Failure<ConversationResponse>("invalid_group_participants", "Participant IDs must be distinct and non-empty.");
+        var userIds = request.UserIds.ToArray();
         var access = await GetActiveConversationAccessAsync(actorUserId, conversationId, cancellationToken);
         if (!access.Succeeded) return ApplicationResult<ConversationResponse>.Failure(access.Error!);
         var (conversation, actor) = access.Value!;
@@ -436,7 +415,7 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<bool>> ChangeParticipantRoleAsync(Guid actorUserId, Guid conversationId, Guid userId, ChangeConversationParticipantRoleRequest request, CancellationToken cancellationToken = default)
     {
-        if (!Enum.TryParse<ConversationParticipantRole>(request.Role, true, out var role) || !Enum.IsDefined(role) || role == ConversationParticipantRole.OWNER) return Failure<bool>("invalid_participant_role", "Role must be admin or member.");
+        var role = Enum.Parse<ConversationParticipantRole>(request.Role, true);
         var access = await GetActiveConversationAccessAsync(actorUserId, conversationId, cancellationToken);
         if (!access.Succeeded) return ApplicationResult<bool>.Failure(access.Error!);
         var (conversation, actor) = access.Value!;
@@ -478,10 +457,9 @@ public sealed class MessagesService(
         return ApplicationResult<bool>.Success(true);
     }
 
-    public async Task<ApplicationResult<IReadOnlyList<MessageResponse>>> SearchMessagesAsync(Guid actorUserId, Guid conversationId, string? queryText, CancellationToken cancellationToken = default)
+    public async Task<ApplicationResult<IReadOnlyList<MessageResponse>>> SearchMessagesAsync(Guid actorUserId, Guid conversationId, string queryText, CancellationToken cancellationToken = default)
     {
-        var query = queryText?.Trim();
-        if (string.IsNullOrWhiteSpace(query) || query.Length > 200) return Failure<IReadOnlyList<MessageResponse>>("invalid_search_query", "Search text must contain between 1 and 200 characters.");
+        var query = queryText.Trim();
         var access = await GetActiveConversationAccessAsync(actorUserId, conversationId, cancellationToken);
         if (!access.Succeeded) return ApplicationResult<IReadOnlyList<MessageResponse>>.Failure(access.Error!);
         var relationshipError = await ValidateConversationRelationshipAsync(access.Value!.Conversation, actorUserId, cancellationToken);
@@ -515,7 +493,6 @@ public sealed class MessagesService(
 
     public async Task<ApplicationResult<PagedResponse<IncomingMessageResponse>>> GetUnreadNotificationsAsync(Guid actorUserId, int offset, int limit, CancellationToken cancellationToken = default)
     {
-        if (offset < 0 || limit is < 1 or > MaximumLimit) return Failure<PagedResponse<IncomingMessageResponse>>(ErrorCode.InvalidPagination, $"Offset must be non-negative and limit must be between 1 and {MaximumLimit}.");
         var accessSnapshot = await friendsService.GetAccessSnapshotAsync(actorUserId, cancellationToken);
         var blocked = accessSnapshot.BlockedUserIds;
         var permittedDirectUsers = accessSnapshot.FriendUserIds.Except(blocked).ToArray();
@@ -762,34 +739,11 @@ public sealed class MessagesService(
     private static bool CanManageConversation(ConversationParticipantRole role) => role is ConversationParticipantRole.OWNER or ConversationParticipantRole.ADMIN;
     private static bool CanRemoveParticipant(ConversationParticipantRole actor, ConversationParticipantRole target, bool self) => target != ConversationParticipantRole.OWNER && (actor == ConversationParticipantRole.OWNER || (actor == ConversationParticipantRole.ADMIN && target == ConversationParticipantRole.MEMBER && !self));
 
-    private static ApplicationError? ValidateConversationPagination(string? before, int limit, out ConversationCursor? cursor)
-    {
-        cursor = null;
-        if (limit is < 1 or > MaximumLimit) return new ApplicationError(ErrorCode.InvalidPagination, $"Limit must be between 1 and {MaximumLimit}.", ApplicationErrorType.VALIDATION);
-        if (string.IsNullOrWhiteSpace(before)) return null;
-        return before.Length > MaximumCursorLength || !TryDecodeCursor(before, out cursor) ? new ApplicationError("invalid_conversation_cursor", "The conversation cursor is invalid.", ApplicationErrorType.VALIDATION) : null;
-    }
-    private static ApplicationError? ValidateMessagePagination(string? before, int limit, out MessageCursor? cursor)
-    {
-        cursor = null;
-        if (limit is < 1 or > MaximumLimit) return new ApplicationError(ErrorCode.InvalidPagination, $"Limit must be between 1 and {MaximumLimit}.", ApplicationErrorType.VALIDATION);
-        if (string.IsNullOrWhiteSpace(before)) return null;
-        return before.Length > MaximumCursorLength || !TryDecodeCursor(before, out cursor) ? new ApplicationError("invalid_message_cursor", "The message history cursor is invalid.", ApplicationErrorType.VALIDATION) : null;
-    }
-    private static string EncodeConversationCursor(Conversation conversation) => EncodeCursor(new ConversationCursor(conversation.LastMessageAtUtc, conversation.Id));
-    private static string EncodeMessageCursor(Message message) => EncodeCursor(new MessageCursor(message.CreatedAtUtc, message.Id));
-    private static string EncodeCursor<T>(T cursor) => Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(cursor)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-    private static bool TryDecodeCursor(string value, out ConversationCursor? cursor) => TryDecode(value, out cursor);
-    private static bool TryDecodeCursor(string value, out MessageCursor? cursor) => TryDecode(value, out cursor);
-    private static bool TryDecode<T>(string value, out T? cursor)
-    {
-        cursor = default;
-        try { var base64 = value.Replace('-', '+').Replace('_', '/'); base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '='); cursor = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(Convert.FromBase64String(base64))); return cursor is not null; }
-        catch (ArgumentException) { return false; } catch (FormatException) { return false; } catch (JsonException) { return false; }
-    }
+    private static string EncodeConversationCursor(Conversation conversation) =>
+        MessageCursorCodec.Encode(new ConversationCursor(conversation.LastMessageAtUtc, conversation.Id));
+    private static string EncodeMessageCursor(Message message) =>
+        MessageCursorCodec.Encode(new MessageCursor(message.CreatedAtUtc, message.Id));
     private static ApplicationResult<T> Failure<T>(string code, string message, ApplicationErrorType type = ApplicationErrorType.VALIDATION) => ApplicationResult<T>.Failure(new ApplicationError(code, message, type));
     private static ApplicationResult<T> Conflict<T>(string code, string message) => Failure<T>(code, message, ApplicationErrorType.CONFLICT);
     private static ApplicationResult<T> Forbidden<T>() => Failure<T>("conversation_access_denied", "You do not have access to this conversation.", ApplicationErrorType.FORBIDDEN);
-    private sealed record ConversationCursor(DateTimeOffset LastMessageAtUtc, Guid ConversationId);
-    private sealed record MessageCursor(DateTimeOffset CreatedAtUtc, Guid MessageId);
 }

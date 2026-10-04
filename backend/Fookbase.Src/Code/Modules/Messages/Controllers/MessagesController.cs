@@ -37,10 +37,10 @@ public sealed class MessagesController(MessagesService service) : ControllerBase
     }
 
     [HttpGet("conversations")]
-    public async Task<IActionResult> GetConversationsAsync(CancellationToken cancellationToken, string? before = null, int limit = 20, bool includeArchived = false)
+    public async Task<IActionResult> GetConversationsAsync([FromQuery] ConversationPageRequest request, CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(User, out var actorUserId)) return Unauthorized();
-        var result = await service.GetConversationsAsync(actorUserId, before, limit, includeArchived, cancellationToken);
+        var result = await service.GetConversationsAsync(actorUserId, request.Before, request.Limit, request.IncludeArchived, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
 
@@ -61,10 +61,10 @@ public sealed class MessagesController(MessagesService service) : ControllerBase
     }
 
     [HttpGet("conversations/{conversationId:guid}/messages")]
-    public async Task<IActionResult> GetMessagesAsync(Guid conversationId, CancellationToken cancellationToken, string? before = null, int limit = 50)
+    public async Task<IActionResult> GetMessagesAsync(Guid conversationId, [FromQuery] MessageHistoryRequest request, CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(User, out var actorUserId)) return Unauthorized();
-        var result = await service.GetMessagesAsync(actorUserId, conversationId, before, limit, cancellationToken);
+        var result = await service.GetMessagesAsync(actorUserId, conversationId, request.Before, request.Limit, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
 
@@ -77,10 +77,10 @@ public sealed class MessagesController(MessagesService service) : ControllerBase
     }
 
     [HttpGet("conversations/{conversationId:guid}/search")]
-    public async Task<IActionResult> SearchMessagesAsync(Guid conversationId, CancellationToken cancellationToken, string? q = null)
+    public async Task<IActionResult> SearchMessagesAsync(Guid conversationId, [FromQuery] MessageSearchRequest request, CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(User, out var actorUserId)) return Unauthorized();
-        var result = await service.SearchMessagesAsync(actorUserId, conversationId, q, cancellationToken);
+        var result = await service.SearchMessagesAsync(actorUserId, conversationId, request.Query, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
 
@@ -173,10 +173,10 @@ public sealed class MessagesController(MessagesService service) : ControllerBase
     }
 
     [HttpGet("notifications")]
-    public async Task<IActionResult> GetUnreadNotificationsAsync(CancellationToken cancellationToken, int offset = 0, int limit = 100)
+    public async Task<IActionResult> GetUnreadNotificationsAsync([FromQuery] MessageNotificationPageRequest request, CancellationToken cancellationToken)
     {
         if (!TryGetActorUserId(User, out var actorUserId)) return Unauthorized();
-        var result = await service.GetUnreadNotificationsAsync(actorUserId, offset, limit, cancellationToken);
+        var result = await service.GetUnreadNotificationsAsync(actorUserId, request.Offset, request.Limit, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : new ObjectResult(result.Error!.ToProblemDetails()) { StatusCode = result.Error!.ToStatusCode() };
     }
 

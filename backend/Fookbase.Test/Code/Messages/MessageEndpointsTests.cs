@@ -458,6 +458,165 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
             $"/api/messages/media/{attachmentMediaId}/read-url")).StatusCode);
     }
 
+    public static IEnumerable<object[]> InvalidMessageRequests()
+    {
+        var userId = Guid.NewGuid();
+        yield return ["POST", "conversations/direct", new { userId = Guid.Empty }, "UserId"];
+        yield return ["POST", "conversations/{id}/transfer-ownership", new { userId = Guid.Empty }, "UserId"];
+        foreach (var title in new string?[] { null, "   ", new('t', 121) })
+            yield return ["POST", "conversations/group", new { title, participantUserIds = new[] { userId } }, "Title"];
+        foreach (var ids in new Guid[]?[] { null, [], [Guid.Empty], [userId, userId], Enumerable.Range(0, 50).Select(_ => Guid.NewGuid()).ToArray() })
+            yield return ["POST", "conversations/group", new { title = "Group", participantUserIds = ids }, "ParticipantUserIds"];
+        foreach (var ids in new Guid[]?[] { null, [], [Guid.Empty], [userId, userId], Enumerable.Range(0, 51).Select(_ => Guid.NewGuid()).ToArray() })
+            yield return ["POST", "conversations/{id}/participants", new { userIds = ids }, "UserIds"];
+        foreach (var content in new string?[] { null, "   ", new('m', 5001) })
+        {
+            yield return ["POST", "conversations/{id}/messages", new { content }, "Content"];
+            yield return ["PATCH", "{id}", new { content }, "Content"];
+        }
+        foreach (var ids in new Guid[][] { [Guid.Empty], [userId, userId], Enumerable.Range(0, 11).Select(_ => Guid.NewGuid()).ToArray() })
+            yield return ["POST", "conversations/{id}/messages", new { content = "Photo", mediaIds = ids }, "MediaIds"];
+        foreach (var type in new string?[] { null, " ", "unknown", "999" })
+            yield return ["POST", "{id}/reactions", new { type }, "Type"];
+        foreach (var role in new string?[] { null, " ", "owner", "unknown", "999" })
+            yield return ["PATCH", "conversations/{id}/participants/{id}/role", new { role }, "Role"];
+        foreach (var title in new[] { " ", new string('t', 121) })
+            yield return ["PATCH", "conversations/{id}", new { title }, "Title"];
+        yield return ["PATCH", "conversations/{id}", new { nickname = new string('n', 81) }, "Nickname"];
+        foreach (var query in new[] { "", "?q=%20", "?q=" + new string('q', 201) })
+            yield return ["GET", "conversations/{id}/search" + query, null!, "q"];
+        foreach (var route in new[] { "conversations", "conversations/{id}/messages" })
+        {
+            foreach (var limit in new[] { "0", "101", "invalid" })
+                yield return ["GET", route + "?limit=" + limit, null!, "Limit"];
+            foreach (var before in new[] { "invalid", "bnVsbA", "W10", new string('x', 257) })
+                yield return ["GET", route + "?before=" + before, null!, "Before"];
+        }
+        yield return ["GET", "notifications?offset=-1", null!, "Offset"];
+        foreach (var limit in new[] { "0", "101" })
+            yield return ["GET", "notifications?limit=" + limit, null!, "Limit"];
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidMessageRequests))]
+    public async Task Invalid_message_requests_return_field_validation_errors(
+        string method, string route, object? payload, string field)
+    {
+        using var client = CreateAuthenticatedClient(Guid.NewGuid());
+        using var request = new HttpRequestMessage(new HttpMethod(method),
+            "/api/messages/" + route.Replace("{id}", Guid.NewGuid().ToString()))
+        {
+            Content = payload is null ? null : JsonContent.Create(payload)
+        };
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", problem.RootElement.GetProperty("code").GetString());
+        Assert.True(problem.RootElement.GetProperty("errors").TryGetProperty(field, out _));
+    }
+
+    [Fact]
+    public async Task Valid_message_boundaries_are_normalized_and_keep_business_checks()
+    {
+        var users = await CreateUsersAsync(2);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        using var participant = CreateAuthenticatedClient(users[1]);
+        var title = new string('t', 120);
+        using var created = await owner.PostAsJsonAsync("/api/messages/conversations/group", new
+        {
+            title = "  " + title + "  ", participantUserIds = new[] { users[1] }
+        });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var conversation = (await created.Content.ReadFromJsonAsync<ConversationResponse>())!;
+        Assert.Equal(title, conversation.Title);
+        Assert.Equal($"/api/messages/conversations/{conversation.Id}", created.Headers.Location!.OriginalString);
+        var content = new string('m', 5000);
+        using var sent = await owner.PostAsJsonAsync($"/api/messages/conversations/{conversation.Id}/messages",
+            new { content = "  " + content + "  " });
+        Assert.Equal(HttpStatusCode.Created, sent.StatusCode);
+        var message = (await sent.Content.ReadFromJsonAsync<MessageResponse>())!;
+        Assert.Equal(content, message.Content);
+        Assert.Equal($"/api/messages/conversations/{conversation.Id}/messages/{message.Id}", sent.Headers.Location!.OriginalString);
+        using var edited = await owner.PatchAsJsonAsync($"/api/messages/{message.Id}", new { content = " " + content + " " });
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        Assert.Equal(content, (await edited.Content.ReadFromJsonAsync<MessageResponse>())!.Content);
+        using var reacted = await participant.PostAsJsonAsync($"/api/messages/{message.Id}/reactions", new { type = "LoVe" });
+        Assert.Equal(HttpStatusCode.OK, reacted.StatusCode);
+        Assert.Equal("love", (await reacted.Content.ReadFromJsonAsync<MessageReactionResponse>())!.Type);
+        using var role = await owner.PatchAsJsonAsync($"/api/messages/conversations/{conversation.Id}/participants/{users[1]}/role", new { role = "AdMiN" });
+        Assert.Equal(HttpStatusCode.NoContent, role.StatusCode);
+        using var update = await owner.PatchAsJsonAsync($"/api/messages/conversations/{conversation.Id}", new { nickname = " " + new string('n', 80) + " " });
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        using var history = await owner.GetAsync($"/api/messages/conversations/{conversation.Id}/messages?limit=100&before=%20");
+        Assert.Equal(HttpStatusCode.OK, history.StatusCode);
+        using var notifications = await owner.GetAsync("/api/messages/notifications?offset=0&limit=100");
+        Assert.Equal(HttpStatusCode.OK, notifications.StatusCode);
+        using var selfParticipant = await owner.PostAsJsonAsync("/api/messages/conversations/group", new { title = "Self", participantUserIds = new[] { users[0] } });
+        Assert.Equal(HttpStatusCode.BadRequest, selfParticipant.StatusCode);
+        using var selfProblem = JsonDocument.Parse(await selfParticipant.Content.ReadAsStringAsync());
+        Assert.Equal("invalid_group_participants", selfProblem.RootElement.GetProperty("code").GetString());
+        using var missingParticipant = await owner.PostAsJsonAsync("/api/messages/conversations/group", new { title = "Missing", participantUserIds = new[] { Guid.NewGuid() } });
+        Assert.Equal(HttpStatusCode.NotFound, missingParticipant.StatusCode);
+        using var missingProblem = JsonDocument.Parse(await missingParticipant.Content.ReadAsStringAsync());
+        Assert.Equal("group_participant_not_found", missingProblem.RootElement.GetProperty("code").GetString());
+
+        var now = DateTimeOffset.UtcNow;
+        var mediaIds = Enumerable.Range(0, 10).Select(_ => Guid.NewGuid()).ToArray();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            foreach (var id in mediaIds)
+            {
+                var media = MediaAsset.CreatePending(id, users[0], MediaType.IMAGE,
+                    $"tests/{id}", "photo.png", "image/png", 1, now, now.AddMinutes(1));
+                media.MarkReady(1, now);
+                db.MediaAssets.Add(media);
+            }
+            await db.SaveChangesAsync();
+        }
+        using var mediaSent = await owner.PostAsJsonAsync($"/api/messages/conversations/{conversation.Id}/messages", new { content = (string?)null, mediaIds });
+        Assert.Equal(HttpStatusCode.Created, mediaSent.StatusCode);
+        var mediaMessage = (await mediaSent.Content.ReadFromJsonAsync<MessageResponse>())!;
+        Assert.Null(mediaMessage.Content);
+        Assert.Equal("media", mediaMessage.Type);
+        Assert.Equal(mediaIds, mediaMessage.Attachments!.Select(attachment => attachment.MediaId));
+
+        using var secondCreated = await owner.PostAsJsonAsync("/api/messages/conversations/group",
+            new { title = "Second conversation", participantUserIds = new[] { users[1] } });
+        Assert.Equal(HttpStatusCode.Created, secondCreated.StatusCode);
+        var firstPage = (await owner.GetFromJsonAsync<PagedResponse<ConversationResponse>>("/api/messages/conversations?limit=1"))!;
+        Assert.Single(firstPage.Items);
+        Assert.NotNull(firstPage.NextCursor);
+        var secondPage = (await owner.GetFromJsonAsync<PagedResponse<ConversationResponse>>(
+            "/api/messages/conversations?limit=1&before=" + Uri.EscapeDataString(firstPage.NextCursor)))!;
+        Assert.Single(secondPage.Items);
+        Assert.NotEqual(firstPage.Items[0].Id, secondPage.Items[0].Id);
+        Assert.Null(secondPage.NextCursor);
+    }
+
+    [Fact]
+    public async Task Group_size_limit_counts_existing_members_after_request_validation()
+    {
+        var users = await CreateUsersAsync(51);
+        using var owner = CreateAuthenticatedClient(users[0]);
+        using var created = await owner.PostAsJsonAsync("/api/messages/conversations/group", new
+        {
+            title = "Full group", participantUserIds = users.Skip(1).Take(49).ToArray()
+        });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var conversation = (await created.Content.ReadFromJsonAsync<ConversationResponse>())!;
+        Assert.Equal(50, conversation.Participants!.Count);
+
+        using var added = await owner.PostAsJsonAsync($"/api/messages/conversations/{conversation.Id}/participants",
+            new { userIds = new[] { users[50] } });
+        Assert.Equal(HttpStatusCode.BadRequest, added.StatusCode);
+        using var problem = JsonDocument.Parse(await added.Content.ReadAsStringAsync());
+        Assert.Equal("group_size_limit", problem.RootElement.GetProperty("code").GetString());
+        var unchanged = (await owner.GetFromJsonAsync<ConversationResponse>($"/api/messages/conversations/{conversation.Id}"))!;
+        Assert.Equal(50, unchanged.Participants!.Count);
+    }
+
     private HttpClient CreateAuthenticatedClient(Guid userId)
     {
         using var scope = factory.Services.CreateScope();
