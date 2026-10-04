@@ -6,7 +6,7 @@ using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Modules.Users.Domain.Enums;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;

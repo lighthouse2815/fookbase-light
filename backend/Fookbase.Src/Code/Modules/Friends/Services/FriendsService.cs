@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Messages.Hubs;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
+using Fookbase.Api.Modules.Users.Domain.Enums;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.DataProtection;

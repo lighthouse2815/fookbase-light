@@ -1,6 +1,6 @@
 namespace Fookbase.Api.Modules.Users.DTOs.Requests;
 
-using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Modules.Users.Domain.Enums;
 
 public sealed record UpdateUserProfileRequest(
     string? DisplayName,

@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Modules.Users.Domain.Enums;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Photos.Entities;

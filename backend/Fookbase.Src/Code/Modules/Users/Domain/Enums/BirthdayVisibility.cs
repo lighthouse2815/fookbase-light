@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Users.Entities;
+namespace Fookbase.Api.Modules.Users.Domain.Enums;
 
 public enum BirthdayVisibility
 {

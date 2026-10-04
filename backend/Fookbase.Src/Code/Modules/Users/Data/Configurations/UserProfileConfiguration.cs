@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Users.Domain.Enums;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

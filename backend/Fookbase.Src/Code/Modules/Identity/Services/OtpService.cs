@@ -5,7 +5,7 @@ using Fookbase.Api.Modules.Identity.Abstractions;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Modules.Users.Domain.Enums;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
