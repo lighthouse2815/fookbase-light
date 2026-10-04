@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { ApiError } from '../../../api/client'
 import { postsApi, type Post } from '../../../api/posts'
+import { getAuthSession } from '../../../auth/session'
 import { showToast } from '../../../shared/toastState'
 import { createPostInteractionState, type PostInteractionState } from './postInteractionState'
 import { createPostDiscussionState, type PostDiscussionState } from './postDiscussionState'
@@ -18,7 +19,17 @@ function getState(post: Post, viewerId: string) {
       if (states.size < 200) break
     }
   }
-  const reactions = createPostInteractionState(post, postsApi, (error) => {
+  const isCurrentViewer = () => getAuthSession()?.user.id === viewerId
+  const writeReaction = async (postId: string, type: string | null) => {
+    // The queue may outlive its card; never send a previous viewer's intent with a new session.
+    if (!isCurrentViewer()) throw new Error('Phiên đăng nhập đã thay đổi.')
+    return type ? postsApi.setReaction(postId, type) : postsApi.removeReaction(postId)
+  }
+  const reactions = createPostInteractionState(post, {
+    setReaction: writeReaction,
+    removeReaction: (postId) => writeReaction(postId, null),
+  }, (error) => {
+    if (!isCurrentViewer()) return
     showToast(error instanceof ApiError ? error.message : 'Không thể cập nhật cảm xúc. Vui lòng thử lại.', 'error', `reaction:${post.id}`)
   })
   const discussion = createPostDiscussionState(post, postsApi, (error, fallback) => {

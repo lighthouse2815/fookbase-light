@@ -13,7 +13,7 @@ export const basePost = {
 export async function postFixtures(context, initial = {}) {
   await fixtures(context)
   await context.addInitScript(() => localStorage.setItem('fookbase.preferences', JSON.stringify({ language: 'vi', theme: 'dark' })))
-  const state = { post: { ...basePost, ...initial }, comments: [], writes: [], reactionDelay: 350, failReaction: false, commentDelay: 350, failComment: false, commentsReadDelay: 0, actionDelay: 400, failAction: false, shareDelay: 350, failShare: false, feedReads: 0 }
+  const state = { post: { ...basePost, ...initial }, comments: [], writes: [], reactionResponses: 0, reactionDelay: 350, failReaction: false, commentDelay: 350, failComment: false, commentsReadDelay: 0, actionDelay: 400, failAction: false, shareDelay: 350, failShare: false, feedReads: 0 }
   const feedPost = structuredClone(state.post)
   const toFeedItem = (post) => ({ ...post, author: { userId: post.authorUserId, username: post.displayAuthor.username, displayName: post.displayAuthor.name, avatarUrl: null }, container: { id: viewerId, name: 'Trang cá nhân' }, media: [], video: null, isSuggested: false, reactionCount: Object.values(post.reactionCounts).reduce((sum, count) => sum + count, 0) })
   await context.route('**/api/**', async (route) => {
@@ -76,7 +76,7 @@ export async function postFixtures(context, initial = {}) {
     }
     if (path === `/api/posts/${postId}/reaction`) {
       const type = request.method() === 'DELETE' ? null : request.postDataJSON().type
-      state.writes.push({ action: 'reaction', type })
+      state.writes.push({ action: 'reaction', type, authorization: request.headers().authorization })
       const fail = state.failReaction
       await new Promise((resolve) => setTimeout(resolve, state.reactionDelay))
       if (fail) return route.fulfill({ status: 503, json: { detail: 'Không thể lưu cảm xúc thử nghiệm.' } })
@@ -84,7 +84,9 @@ export async function postFixtures(context, initial = {}) {
       if (state.post.viewerReaction) counts[state.post.viewerReaction]--
       if (type) counts[type] = (counts[type] ?? 0) + 1
       state.post = { ...state.post, viewerReaction: type, reactionCounts: counts }
-      return route.fulfill({ json: state.post })
+      await route.fulfill({ json: state.post })
+      state.reactionResponses++
+      return
     }
     if (path === `/api/posts/${postId}/comments`) {
       if (request.method() === 'GET') {
