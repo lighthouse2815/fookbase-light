@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getSearchDestination, flattenSearchSuggestions, getNextSearchIndex, getHighlightParts } from '../src/pages/search/searchPresentation.ts'
+import { getSearchDestination, flattenSearchSuggestions, getNextSearchIndex, getHighlightParts, mergeSearchResults } from '../src/pages/search/searchPresentation.ts'
 
 test('every search result uses its existing entity route, and Posts always use Post detail', () => {
   const cases = [['people', 'user-1', '/profile/user-1'], ['groups', 'group-1', '/groups/group-1'], ['pages', 'page.name', '/pages/page.name'], ['posts', 'post-1', '/posts/post-1'], ['reels', 'reel-1', '/reels?reel=reel-1'], ['events', 'event-1', '/events/event-1']]
@@ -45,4 +45,18 @@ test('highlight treats query as literal substring and returns safe plain text pa
   assert.equal(parts.map((part) => part.text).join(''), text)
   assert.deepEqual(getHighlightParts('abc', ''), [{ text: 'abc', match: false }])
   assert.deepEqual(getHighlightParts('abc', 'xy'), [{ text: 'abc', match: false }])
+})
+
+test('cursor results preserve existing order and deduplicate each entity type including Events', () => {
+  const empty = { people: [], groups: [], pages: [], posts: [], reels: [], nextCursor: null }
+  const merged = mergeSearchResults({ ...empty, events: [{ eventId: 'first' }], posts: [{ postId: 'existing' }] }, { ...empty, events: [{ eventId: 'first' }, { eventId: 'next' }, { eventId: 'next' }], posts: [{ postId: 'new' }, { postId: 'existing' }], nextCursor: 'last' })
+  assert.deepEqual(merged.events.map((item) => item.eventId), ['first', 'next'])
+  assert.deepEqual(merged.posts.map((item) => item.postId), ['existing', 'new'])
+  assert.equal(merged.nextCursor, 'last')
+})
+
+test('older Search responses without optional Events/Hashtags remain usable', () => {
+  const empty = { people: [], groups: [], pages: [], posts: [], reels: [], nextCursor: null }
+  assert.deepEqual(mergeSearchResults(empty, empty).events, [])
+  assert.deepEqual(mergeSearchResults(empty, empty).hashtags, [])
 })

@@ -1,7 +1,7 @@
 import { apiRequest } from './client'
 import type { Post } from './posts'
 
-export type SearchType = 'all' | 'people' | 'groups' | 'pages' | 'posts' | 'reels'
+export type SearchType = 'all' | 'people' | 'groups' | 'pages' | 'posts' | 'reels' | 'events'
 
 export interface SearchPerson {
   userId: string
@@ -72,6 +72,20 @@ export interface SearchHashtag {
   displayName: string
 }
 
+export interface SearchEvent {
+  eventId: string
+  name: string
+  hostType: string
+  hostId: string
+  hostName: string
+  startsAtUtc: string
+  locationType: string
+  locationName: string | null
+  coverUrl: string | null
+  goingCount: number
+  interestedCount: number
+}
+
 export interface GlobalSearchResponse {
   people: SearchPerson[]
   groups: SearchGroup[]
@@ -80,6 +94,7 @@ export interface GlobalSearchResponse {
   reels: SearchReel[]
   nextCursor: string | null
   hashtags?: SearchHashtag[]
+  events?: SearchEvent[]
 }
 
 export interface SearchSuggestions {

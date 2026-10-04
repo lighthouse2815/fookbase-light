@@ -1,7 +1,7 @@
-import type { SearchSuggestions, SearchType } from '../../api/search'
+import type { GlobalSearchResponse, SearchSuggestions, SearchType } from '../../api/search'
 import { publicProfileHandle } from '../../shared/publicProfileHandle.ts'
 
-type DestinationType = Exclude<SearchType, 'all'> | 'events'
+type DestinationType = Exclude<SearchType, 'all'>
 export function getSearchDestination(type: DestinationType, identifier: string) {
   const id = encodeURIComponent(identifier)
   if (type === 'people') return `/profile/${id}`
@@ -37,6 +37,29 @@ export function getNextSearchIndex(index: number, count: number, direction: -1 |
   if (count < 1) return -1
   if (index < 0) return direction > 0 ? 0 : count - 1
   return Math.max(0, Math.min(count - 1, index + direction))
+}
+
+function mergeById<T>(current: readonly T[], next: readonly T[], id: (item: T) => string): T[] {
+  const seen = new Set<string>()
+  return [...current, ...next].filter((item) => {
+    const key = id(item)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+export function mergeSearchResults(current: GlobalSearchResponse, next: GlobalSearchResponse): GlobalSearchResponse {
+  return {
+    people: mergeById(current.people, next.people, (item) => item.userId),
+    groups: mergeById(current.groups, next.groups, (item) => item.groupId),
+    pages: mergeById(current.pages, next.pages, (item) => item.pageId),
+    posts: mergeById(current.posts, next.posts, (item) => item.postId),
+    reels: mergeById(current.reels, next.reels, (item) => item.reelId),
+    events: mergeById(current.events ?? [], next.events ?? [], (item) => item.eventId),
+    hashtags: mergeById(current.hashtags ?? [], next.hashtags ?? [], (item) => item.tag),
+    nextCursor: next.nextCursor,
+  }
 }
 
 const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').replace(/[đĐ]/g, 'd').toLocaleLowerCase('vi')
