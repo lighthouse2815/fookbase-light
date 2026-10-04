@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Media.Common;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Media.Abstractions;
 using Fookbase.Api.Modules.Media.Config;
@@ -18,45 +19,14 @@ public sealed class MediaService(
     MediaOptions options,
     TimeProvider timeProvider)
 {
-    private sealed record SupportedFormat(MediaType MediaType, string Extension);
-
-    private static readonly IReadOnlyDictionary<string, SupportedFormat> SupportedFormats =
-        new Dictionary<string, SupportedFormat>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["image/jpeg"] = new(MediaType.IMAGE, ".jpg"),
-            ["image/png"] = new(MediaType.IMAGE, ".png"),
-            ["image/webp"] = new(MediaType.IMAGE, ".webp"),
-            ["video/mp4"] = new(MediaType.VIDEO, ".mp4"),
-            ["video/webm"] = new(MediaType.VIDEO, ".webm")
-        };
-
     public async Task<ApplicationResult<UploadIntentResponse>> CreateUploadAsync(
         Guid ownerUserId,
         CreateUploadRequest request,
         CancellationToken cancellationToken = default)
     {
-        var fileName = Path.GetFileName(request.FileName ?? string.Empty);
-        var contentType = request.ContentType?.Trim().ToLowerInvariant() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length > 255)
-        {
-            return Failure<UploadIntentResponse>("invalid_file_name",
-                "A file name containing at most 255 characters is required.");
-        }
-
-        if (!SupportedFormats.TryGetValue(contentType, out var format))
-        {
-            return Failure<UploadIntentResponse>("unsupported_media_type",
-                "Supported media types are JPEG, PNG, WebP, MP4 and WebM.");
-        }
-
-        var maximumSize = format.MediaType == MediaType.IMAGE
-            ? options.MaximumImageSizeBytes
-            : options.MaximumVideoSizeBytes;
-        if (request.SizeBytes <= 0 || request.SizeBytes > maximumSize)
-        {
-            return Failure<UploadIntentResponse>("invalid_file_size",
-                $"The declared {format.MediaType.ToString().ToLowerInvariant()} size is invalid.");
-        }
+        var fileName = Path.GetFileName(request.FileName);
+        var contentType = request.ContentType.Trim().ToLowerInvariant();
+        var format = MediaFormat.SupportedFormats[contentType];
 
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.AddMinutes(options.UploadUrlExpiryMinutes);

@@ -16,6 +16,7 @@ using Fookbase.Api.Modules.Messages.Domain.Enums;
 using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -345,6 +346,85 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         }
 
         throw new TimeoutException($"Media {mediaId} did not reach {expectedStatus}.");
+    }
+
+    public static IEnumerable<object[]> InvalidUploadRequests()
+    {
+        foreach (var fileName in new string?[] { null, "", " ", "folder/", "folder/   ", new('f', 256) })
+            yield return [new { fileName, contentType = "image/png", sizeBytes = 1 }, "FileName"];
+        foreach (var contentType in new string?[] { null, "", " ", "text/plain", "image/gif", "video/quicktime" })
+            yield return [new { fileName = "file", contentType, sizeBytes = 1 }, "ContentType"];
+        foreach (var sizeBytes in new[] { 0L, -1L, long.MinValue, 20L * 1024 * 1024 + 1 })
+            yield return [new { fileName = "photo.png", contentType = "image/png", sizeBytes }, "SizeBytes"];
+        yield return [new { fileName = "video.mp4", contentType = "video/mp4", sizeBytes = 500L * 1024 * 1024 + 1 }, "SizeBytes"];
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidUploadRequests))]
+    public async Task Invalid_upload_requests_return_field_validation_errors(object payload, string field)
+    {
+        using var client = CreateAuthenticatedClient(CreateUserId());
+        using var response = await client.PostAsJsonAsync("/api/media/uploads", payload);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", problem.RootElement.GetProperty("code").GetString());
+        Assert.True(problem.RootElement.GetProperty("errors").TryGetProperty(field, out _));
+    }
+
+    [Theory]
+    [InlineData("image/jpeg", ".jpg", 20L * 1024 * 1024)]
+    [InlineData("image/png", ".png", 20L * 1024 * 1024)]
+    [InlineData("image/webp", ".webp", 20L * 1024 * 1024)]
+    [InlineData("video/mp4", ".mp4", 500L * 1024 * 1024)]
+    [InlineData("video/webm", ".webm", 500L * 1024 * 1024)]
+    public async Task Upload_validation_preserves_supported_formats_size_boundaries_and_file_name_normalization(
+        string contentType, string extension, long sizeBytes)
+    {
+        var userId = CreateUserId();
+        using var client = CreateAuthenticatedClient(userId);
+        var fileName = new string('f', 255 - extension.Length) + extension;
+        using var response = await client.PostAsJsonAsync("/api/media/uploads", new
+        {
+            fileName = new string('p', 300) + "/" + fileName,
+            contentType = "  " + contentType.ToUpperInvariant() + "  ",
+            sizeBytes
+        });
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var intent = (await response.Content.ReadFromJsonAsync<UploadIntentResponse>())!;
+        var metadata = (await client.GetFromJsonAsync<MediaResponse>($"/api/media/{intent.MediaId}"))!;
+        Assert.Equal(fileName, metadata.FileName);
+        Assert.Equal(contentType, metadata.ContentType);
+        Assert.Equal(sizeBytes, metadata.DeclaredSizeBytes);
+        Assert.Equal("PendingUpload", metadata.Status);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.EndsWith(extension, (await db.MediaAssets.SingleAsync(item => item.Id == intent.MediaId)).ObjectKey);
+    }
+
+    [Fact]
+    public async Task Upload_validation_uses_the_configured_image_and_video_size_limits()
+    {
+        using var configuredFactory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("Media:MaximumImageSizeBytes", "7");
+            builder.UseSetting("Media:MaximumVideoSizeBytes", "11");
+        });
+        using var authenticated = CreateAuthenticatedClient(CreateUserId());
+        using var client = configuredFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = authenticated.DefaultRequestHeaders.Authorization;
+
+        foreach (var (contentType, maximumSize) in new[] { ("image/png", 7), ("video/mp4", 11) })
+        {
+            using var allowed = await client.PostAsJsonAsync("/api/media/uploads",
+                new CreateUploadRequest("file", contentType, maximumSize));
+            Assert.Equal(HttpStatusCode.Created, allowed.StatusCode);
+            using var rejected = await client.PostAsJsonAsync("/api/media/uploads",
+                new CreateUploadRequest("file", contentType, maximumSize + 1));
+            Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+            using var problem = JsonDocument.Parse(await rejected.Content.ReadAsStringAsync());
+            Assert.Equal("validation_failed", problem.RootElement.GetProperty("code").GetString());
+            Assert.True(problem.RootElement.GetProperty("errors").TryGetProperty("SizeBytes", out _));
+        }
     }
 
     private static Guid CreateUserId() => Guid.NewGuid();
