@@ -65,7 +65,7 @@ public static class AdminEndpoints
         }
 
         var result = await administrationService.UpdateUserStatusAsync(
-            actorUserId, userId, request.IsActive, cancellationToken);
+            actorUserId, userId, request.IsActive!.Value, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 

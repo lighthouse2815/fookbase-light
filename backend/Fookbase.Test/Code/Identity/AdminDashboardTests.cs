@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using Fookbase.Api.Modules.Admin.DTOs.Responses;
 using Fookbase.Api.Modules.Admin.Services;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
@@ -14,6 +16,66 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 
 public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixture<IdentityApiFactory>
 {
+    [Theory]
+    [InlineData("{}", HttpStatusCode.BadRequest, true, true)]
+    [InlineData("{\"isActive\":null}", HttpStatusCode.BadRequest, true, true)]
+    [InlineData("{\"isActive\":false}", HttpStatusCode.OK, true, false)]
+    [InlineData("{\"isActive\":true}", HttpStatusCode.OK, false, true)]
+    public async Task User_status_requires_an_explicit_boolean_before_changing_the_account(
+        string body, HttpStatusCode expectedStatus, bool initialIsActive, bool expectedIsActive)
+    {
+        var suffix = Guid.NewGuid().ToString("N")[..12];
+        var adminEmail = $"status-admin-{suffix}@example.test";
+        const string password = "Dashboard-test123!";
+        using var client = factory.CreateClient();
+        var administrator = await TestAccountSetup.CreateAsync(
+            factory, client, adminEmail, $"status-admin-{suffix}", password);
+        var target = await TestAccountSetup.CreateAsync(
+            factory, client, $"status-user-{suffix}@example.test", $"status-user-{suffix}", password);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+            if (!await roleManager.RoleExistsAsync("Admin"))
+                Assert.True((await roleManager.CreateAsync(new IdentityRole<Guid>("Admin") { Id = Guid.NewGuid() })).Succeeded);
+
+            var manager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var admin = await manager.FindByIdAsync(administrator.User.Id.ToString());
+            Assert.NotNull(admin);
+            Assert.True((await manager.AddToRoleAsync(admin, "Admin")).Succeeded);
+            if (!initialIsActive)
+            {
+                var user = await manager.FindByIdAsync(target.User.Id.ToString());
+                Assert.NotNull(user);
+                user.Disable();
+                Assert.True((await manager.UpdateAsync(user)).Succeeded);
+            }
+        }
+
+        using var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(adminEmail, password));
+        login.EnsureSuccessStatusCode();
+        var session = await login.Content.ReadApiDataAsync<AuthenticationResponse>();
+        Assert.NotNull(session);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+        using var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+        using var response = await client.PatchAsync($"/api/admin/users/{target.User.Id}/status", content);
+
+        Assert.Equal(expectedStatus, response.StatusCode);
+        if (expectedStatus == HttpStatusCode.BadRequest)
+        {
+            using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Contains(problem.RootElement.GetProperty("errors").EnumerateObject(), field =>
+                field.Name.EndsWith(nameof(UpdateUserStatusRequest.IsActive), StringComparison.Ordinal) &&
+                field.Value.EnumerateArray().Any(error => error.GetString() == "Trạng thái hoạt động là bắt buộc."));
+        }
+
+        using var verificationScope = factory.Services.CreateScope();
+        var persisted = await verificationScope.ServiceProvider.GetRequiredService<UserManager<User>>()
+            .FindByIdAsync(target.User.Id.ToString());
+        Assert.NotNull(persisted);
+        Assert.Equal(expectedIsActive, persisted.IsActive);
+    }
+
     [Fact]
     public async Task Dashboard_requires_authentication()
     {
