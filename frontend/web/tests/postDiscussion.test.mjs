@@ -13,6 +13,7 @@ function setup(total = 0) {
   const errors = []
   const request = (action, ...args) => new Promise((resolve, reject) => requests.push({ action, args, resolve, reject }))
   const state = createPostDiscussionState({ ...post, commentCount: total }, {
+    getById: (...args) => request('count', ...args),
     getComments: (...args) => request('get', ...args),
     createComment: (...args) => request('create', ...args),
     updateComment: (...args) => request('update', ...args),
@@ -78,6 +79,8 @@ test('first-page reads cannot erase a pending comment or a locally confirmed cou
   assert.equal(state.getSnapshot().comments.length, 2)
   assert.equal(state.getSnapshot().commentCount, 2)
   assert.equal(state.getSnapshot().commentsHasMore, false)
+  requests.find((request) => request.action === 'count').resolve({ ...post, commentCount: 2 })
+  await tick()
 })
 
 test('a read containing the server-created ID reconciles without duplicates or counting twice', async () => {
@@ -93,6 +96,8 @@ test('a read containing the server-created ID reconciles without duplicates or c
   assert.equal(state.getSnapshot().comments.length, 1)
   assert.equal(state.getSnapshot().comments[0].clientId, key)
   assert.equal(state.getSnapshot().commentCount, 1)
+  requests.find((request) => request.action === 'count').resolve({ ...post, commentCount: 1 })
+  await tick()
 })
 
 test('pagination keeps its server offset after submitting a comment on a partially loaded thread', async () => {
@@ -110,6 +115,87 @@ test('pagination keeps its server offset after submitting a comment on a partial
   assert.equal(state.getSnapshot().comments.length, 5)
   assert.equal(state.getSnapshot().commentCount, 5)
   assert.equal(state.getSnapshot().commentsHasMore, false)
+})
+
+test('a stale feed count and a partial first page racing with submit reconcile through the existing Post GET', async () => {
+  const { state, requests } = setup()
+  const loading = state.loadComments()
+  const submission = state.createComment('Mới', author)
+  const existing = Array.from({ length: 20 }, (_, index) => comment(`real-${String(index + 1).padStart(2, '0')}`))
+  requests[0].resolve(page(existing, 30))
+  await loading
+  requests[1].resolve(comment('real-31'))
+  await submission
+  const countRequest = requests.find((request) => request.action === 'count')
+  assert.deepEqual(countRequest.args, ['post-1'])
+  countRequest.resolve({ ...post, commentCount: 31 })
+  await tick()
+  assert.equal(state.getSnapshot().commentCount, 31)
+  assert.equal(state.getSnapshot().comments.length, 21)
+  assert.equal(state.getSnapshot().commentsHasMore, true)
+})
+
+test('counter reconciliation started before another submit cannot erase the newer optimistic comment', async () => {
+  const { state, requests } = setup()
+  const loading = state.loadComments()
+  const submission = state.createComment('Đầu tiên', author)
+  requests[0].resolve(page([]))
+  await loading
+  requests[1].resolve(comment('real-01'))
+  await submission
+  const firstCount = requests.find((request) => request.action === 'count')
+  const nextSubmission = state.createComment('Tiếp theo', author)
+  firstCount.resolve({ ...post, commentCount: 1 })
+  await tick()
+  assert.equal(state.getSnapshot().commentCount, 2)
+  const nextCreate = requests.filter((request) => request.action === 'create')[1]
+  nextCreate.resolve(comment('real-02'))
+  await nextSubmission
+  const latestCount = requests.filter((request) => request.action === 'count')[1]
+  latestCount.resolve({ ...post, commentCount: 2 })
+  await tick()
+  assert.equal(state.getSnapshot().commentCount, 2)
+  assert.equal(state.getSnapshot().comments.length, 2)
+})
+
+test('a counter response including a pending deletion cannot decrement the same comment twice', async () => {
+  const { state, requests } = setup(30)
+  const loading = state.loadComments()
+  const submission = state.createComment('Mới', author)
+  const existing = Array.from({ length: 20 }, (_, index) => comment(`real-${String(index + 1).padStart(2, '0')}`))
+  requests[0].resolve(page(existing, 30))
+  await loading
+  requests[1].resolve(comment('real-31'))
+  await submission
+  const firstCount = requests.find((request) => request.action === 'count')
+  const deletion = state.deleteComment('real-01')
+  firstCount.resolve({ ...post, commentCount: 30 })
+  await tick()
+  assert.equal(state.getSnapshot().commentCount, 31)
+  requests.find((request) => request.action === 'delete').resolve()
+  await deletion
+  assert.equal(state.getSnapshot().commentCount, 30)
+  requests.filter((request) => request.action === 'count')[1].resolve({ ...post, commentCount: 30 })
+  await tick()
+  assert.equal(state.getSnapshot().commentCount, 30)
+})
+
+test('a newer post prop count cannot be overwritten by an earlier counter read', async () => {
+  const { state, requests } = setup()
+  const loading = state.loadComments()
+  const submission = state.createComment('Mới', author)
+  requests[0].resolve(page([]))
+  await loading
+  requests[1].resolve(comment('real-01'))
+  await submission
+  const firstCount = requests.find((request) => request.action === 'count')
+  state.syncPost({ ...post, commentCount: 40 })
+  firstCount.resolve({ ...post, commentCount: 1 })
+  await tick()
+  assert.equal(state.getSnapshot().commentCount, 40)
+  requests.filter((request) => request.action === 'count')[1].resolve({ ...post, commentCount: 40 })
+  await tick()
+  assert.equal(state.getSnapshot().commentCount, 40)
 })
 
 test('concurrent loads deduplicate, failures stay retryable and empty results are cached', async () => {

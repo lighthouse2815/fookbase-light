@@ -1,6 +1,6 @@
 import type { Comment, CommentAuthor, Post, postsApi } from '../../../api/posts'
 
-type DiscussionApi = Pick<typeof postsApi, 'getComments' | 'createComment' | 'updateComment' | 'deleteComment' | 'setCommentReaction' | 'removeCommentReaction'>
+type DiscussionApi = Pick<typeof postsApi, 'getById' | 'getComments' | 'createComment' | 'updateComment' | 'deleteComment' | 'setCommentReaction' | 'removeCommentReaction'>
 
 export interface DiscussionComment extends Comment {
   clientId?: string
@@ -28,6 +28,7 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
   const busyIds = new Set<string>()
   let comments: DiscussionComment[] = []
   let confirmedCount = post.commentCount
+  let knownServerTotal = post.commentCount
   let lastPropCount = post.commentCount
   let offset = 0
   let loaded = false
@@ -37,9 +38,11 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
   let submitting = false
   let version = 0
   let deletionVersion = 0
+  let needsCountRefresh = false
+  let refreshingCount = false
   const hasMore = () => offset < Math.max(0, confirmedCount - localCreatedIds.size)
   const makeSnapshot = (): PostDiscussionSnapshot => ({
-    comments, commentCount: confirmedCount + (submitting ? 1 : 0),
+    comments, commentCount: Math.max(confirmedCount + (submitting ? 1 : 0), knownServerTotal, comments.length),
     commentsLoaded: loaded, commentsLoading: reading && !loadingMore,
     commentsLoadingMore: reading && loadingMore, commentsError: readError,
     commentsHasMore: hasMore(), commentSubmitting: submitting, busyCommentIds: [...busyIds],
@@ -48,6 +51,29 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
   const publish = () => { snapshot = makeSnapshot(); listeners.forEach((listener) => listener()) }
   const ordered = (items: Iterable<DiscussionComment>) => [...items].sort((a, b) =>
     a.createdAtUtc.localeCompare(b.createdAtUtc) || a.id.localeCompare(b.id))
+
+  const refreshCommentCount = async () => {
+    if (!needsCountRefresh || refreshingCount || submitting || reading || busyIds.size > 0) return
+    needsCountRefresh = false
+    refreshingCount = true
+    const readVersion = version
+    try {
+      // A comments page read during a write may include that write or precede it.
+      // The existing Post GET, started after the write settles, resolves this ambiguity.
+      const response = await api.getById(post.id)
+      if (version === readVersion && !submitting && busyIds.size === 0) {
+        confirmedCount = response.commentCount
+        knownServerTotal = response.commentCount
+      }
+      else needsCountRefresh = true
+    } catch {
+      // The write already succeeded/rolled back. Keep the local count until the next read.
+    } finally {
+      refreshingCount = false
+      publish()
+    }
+    if (needsCountRefresh) void refreshCommentCount()
+  }
 
   const loadComments = async (more = false) => {
     if (reading || (!more && loaded) || (more && !hasMore())) return
@@ -75,9 +101,11 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
           localCreatedIds.delete(comment.id)
         }
         comments = ordered(merged.values())
+        knownServerTotal = page.total
         offset = page.offset + page.items.length
         // A response read before a local write cannot replace that write's count.
         if (version === readVersion && !submitting) confirmedCount = page.total
+        else needsCountRefresh = true
         loaded = true
       }
     } catch (error) {
@@ -87,6 +115,7 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
       publish()
     }
     if (retryPage) await loadComments(more)
+    else void refreshCommentCount()
   }
 
   const createComment = async (content: string, author: CommentAuthor, parentCommentId?: string) => {
@@ -118,7 +147,9 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
       return null
     } finally {
       submitting = false
+      confirmedCount = Math.max(confirmedCount, knownServerTotal, comments.length)
       publish()
+      void refreshCommentCount()
     }
   }
 
@@ -137,6 +168,7 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
     } finally {
       busyIds.delete(id)
       publish()
+      void refreshCommentCount()
     }
   }
 
@@ -149,6 +181,7 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
       // The existing backend soft-deletes only this comment, retaining its replies.
       comments = comments.filter((comment) => comment.id !== id)
       confirmedCount = Math.max(0, confirmedCount - 1)
+      knownServerTotal = Math.max(0, knownServerTotal - 1)
       if (pagedIds.delete(id)) offset = Math.max(0, offset - 1)
       localCreatedIds.delete(id)
       deletedIds.add(id)
@@ -161,18 +194,21 @@ export function createPostDiscussionState(post: Post, api: DiscussionApi, onErro
     } finally {
       busyIds.delete(id)
       publish()
+      void refreshCommentCount()
     }
   }
 
   return {
     getSnapshot: () => snapshot,
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener) } },
-    get canEvict() { return listeners.size === 0 && !reading && !submitting && busyIds.size === 0 },
+    get canEvict() { return listeners.size === 0 && !reading && !submitting && !refreshingCount && busyIds.size === 0 },
     syncPost: (next: Post) => {
       if (next.commentCount === lastPropCount) return
       lastPropCount = next.commentCount
       if (reading || submitting || busyIds.size > 0) return
       confirmedCount = next.commentCount
+      knownServerTotal = next.commentCount
+      version += 1
       publish()
     },
     loadComments,
