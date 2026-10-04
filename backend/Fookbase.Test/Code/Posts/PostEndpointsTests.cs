@@ -736,13 +736,13 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var recipient = users[0];
         var otherUser = users[1];
         var now = DateTimeOffset.UtcNow;
-        var oldest = Notification.Create(
+        var oldest = new Notification(
             Guid.NewGuid(), recipient, otherUser, NotificationType.POST_MENTION, null, null, now.AddMinutes(-2));
-        var middle = Notification.Create(
+        var middle = new Notification(
             Guid.NewGuid(), recipient, otherUser, NotificationType.POST_MENTION, null, null, now.AddMinutes(-1));
-        var newest = Notification.Create(
+        var newest = new Notification(
             Guid.NewGuid(), recipient, otherUser, NotificationType.POST_MENTION, null, null, now);
-        var privateNotification = Notification.Create(
+        var privateNotification = new Notification(
             Guid.NewGuid(), otherUser, recipient, NotificationType.POST_MENTION, null, null, now);
         using (var scope = factory.Services.CreateScope())
         {
@@ -808,7 +808,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         const string externalAvatarUrl = "https://example.com/avatar.png";
         await CreateProfileAsync(actorId, actorUsername);
         var avatarMediaId = usesMedia ? await CreateReadyMediaAsync(actorId) : (Guid?)null;
-        var notification = Notification.Create(Guid.NewGuid(), users[0], actorId,
+        var notification = new Notification(Guid.NewGuid(), users[0], actorId,
             NotificationType.USER_FOLLOWED, NotificationEntityType.USER_FOLLOW, actorId, DateTimeOffset.UtcNow);
         using (var scope = factory.Services.CreateScope())
         {
@@ -841,10 +841,10 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using var postAuthorClient = CreateAuthenticatedClient(postAuthor);
         using var recipientClient = CreateAuthenticatedClient(recipient);
         var post = await CreatePostAsync(postAuthorClient, "visibility target", "public");
-        var blockedNotification = Notification.Create(
+        var blockedNotification = new Notification(
             Guid.NewGuid(), recipient, actor, NotificationType.POST_REACTION,
             NotificationEntityType.POST, post.Id, DateTimeOffset.UtcNow);
-        var staleNotification = Notification.Create(
+        var staleNotification = new Notification(
             Guid.NewGuid(), recipient, postAuthor, NotificationType.POST_COMMENT,
             NotificationEntityType.POST, post.Id, DateTimeOffset.UtcNow.AddTicks(1));
         using (var scope = factory.Services.CreateScope())

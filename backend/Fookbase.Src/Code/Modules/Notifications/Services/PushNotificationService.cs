@@ -21,7 +21,7 @@ public sealed class PushNotificationService(
             cancellationToken);
         if (device is null)
         {
-            dbContext.PushDevices.Add(PushDevice.Create(Guid.NewGuid(), userId, token, now));
+            dbContext.PushDevices.Add(new PushDevice(Guid.NewGuid(), userId, token, now));
         }
         else
         {
@@ -99,7 +99,7 @@ public sealed class PushNotificationService(
                     ticket.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String &&
                     !string.IsNullOrWhiteSpace(id.GetString()))
                 {
-                    dbContext.PushDeliveryReceipts.Add(PushDeliveryReceipt.Create(
+                    dbContext.PushDeliveryReceipts.Add(new PushDeliveryReceipt(
                         Guid.NewGuid(), device.Id, id.GetString()!, now.AddMinutes(15)));
                 }
             }

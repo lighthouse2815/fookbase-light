@@ -16,7 +16,7 @@ public sealed class PushDevice
     {
     }
 
-    private PushDevice(Guid id, Guid userId, string expoPushToken, DateTimeOffset registeredAtUtc)
+    public PushDevice(Guid id, Guid userId, string expoPushToken, DateTimeOffset registeredAtUtc)
     {
         Id = id;
         UserId = userId;
@@ -42,9 +42,6 @@ public sealed class PushDevice
     public User User { get; private set; } = null!;
 
     public ICollection<PushDeliveryReceipt> DeliveryReceipts { get; private set; } = new List<PushDeliveryReceipt>();
-
-    public static PushDevice Create(Guid id, Guid userId, string expoPushToken, DateTimeOffset registeredAtUtc) =>
-        new(id, userId, expoPushToken, registeredAtUtc);
 
     public void Register(Guid userId, DateTimeOffset registeredAtUtc)
     {

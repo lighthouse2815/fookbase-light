@@ -50,7 +50,7 @@ public sealed class NotificationService(
             }
         }
 
-        var notification = Notification.Create(
+        var notification = new Notification(
             Guid.NewGuid(),
             recipientUserId,
             actorUserId,

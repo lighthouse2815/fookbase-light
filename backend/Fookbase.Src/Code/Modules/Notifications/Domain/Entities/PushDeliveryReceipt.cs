@@ -15,7 +15,7 @@ public sealed class PushDeliveryReceipt
     {
     }
 
-    private PushDeliveryReceipt(Guid id, Guid pushDeviceId, string expoReceiptId, DateTimeOffset availableAtUtc)
+    public PushDeliveryReceipt(Guid id, Guid pushDeviceId, string expoReceiptId, DateTimeOffset availableAtUtc)
     {
         Id = id;
         PushDeviceId = pushDeviceId;
@@ -42,9 +42,6 @@ public sealed class PushDeliveryReceipt
     [InverseProperty(nameof(PushDevice.DeliveryReceipts))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public PushDevice PushDevice { get; private set; } = null!;
-
-    public static PushDeliveryReceipt Create(Guid id, Guid pushDeviceId, string expoReceiptId, DateTimeOffset availableAtUtc) =>
-        new(id, pushDeviceId, expoReceiptId, availableAtUtc);
 
     public void MarkChecked(DateTimeOffset checkedAtUtc) => CheckedAtUtc ??= checkedAtUtc;
 

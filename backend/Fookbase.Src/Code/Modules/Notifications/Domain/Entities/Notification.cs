@@ -16,7 +16,7 @@ public sealed class Notification
     {
     }
 
-    private Notification(
+    public Notification(
         Guid id,
         Guid recipientUserId,
         Guid? actorUserId,
@@ -60,16 +60,6 @@ public sealed class Notification
     [ForeignKey(nameof(ActorUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User? ActorUser { get; private set; }
-
-    public static Notification Create(
-        Guid id,
-        Guid recipientUserId,
-        Guid? actorUserId,
-        NotificationType type,
-        NotificationEntityType? entityType,
-        Guid? entityId,
-        DateTimeOffset createdAtUtc) =>
-        new(id, recipientUserId, actorUserId, type, entityType, entityId, createdAtUtc);
 
     public void Refresh(DateTimeOffset createdAtUtc)
     {
