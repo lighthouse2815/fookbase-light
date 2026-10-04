@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useRealtime } from '../realtime/useRealtime'
@@ -184,62 +184,148 @@ function formatMessageDay(value: string) {
   return new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date)
 }
 
-function FloatingConversation({ conversation, profile, currentUserId, incomingMessages, isOnline, readAtUpdate, onClose, onMinimize, onRead, onMessageSent }: {
+function FloatingConversation({ conversation, profile, currentUserId, incomingMessages, isOnline, readAtUpdate, draft, sending, onSend, onDraftChange, onClose, onMinimize, onRead, onMessageSent }: {
   conversation: Conversation
   profile?: UserProfile
   currentUserId: string
   incomingMessages: IncomingMessage[]
   isOnline: boolean
   readAtUpdate?: string
+  draft: string
+  sending: boolean
+  onSend: (content: string) => Promise<Message>
+  onDraftChange: (draft: string, expectedDraft?: string) => void
   onClose: () => void
   onMinimize: () => void
-  onRead: (conversationId: string, messageId?: string) => void
+  onRead: (conversationId: string, messageId?: string) => Promise<void>
   onMessageSent: (message: Message) => void
 }) {
   const [messages, setMessages] = useState<Message[]>([])
-  const [draft, setDraft] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-  const [isSending, setIsSending] = useState(false)
+  const [sendingLocally, setIsSending] = useState(false)
+  const isSending = sendingLocally || sending
   const [pendingMessage, setPendingMessage] = useState<Message | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasNewMessages, setHasNewMessages] = useState(false)
+  const requestRef = useRef(false)
+  const sendRef = useRef(false)
+  const mountedRef = useRef(false)
+  const generationRef = useRef(0)
+  const autoScrollRef = useRef(true)
+  const prependScrollRef = useRef<{ top: number; height: number; anchorId?: string; anchorTop?: number } | null>(null)
+  const messagesRef = useRef(messages)
+  const readPendingRef = useRef(false)
+  const readIdsRef = useRef(new Set<string>())
+  const { messagesConnectionStatus, messagesRevision, reconnectMessages } = useRealtime()
+  useLayoutEffect(() => { messagesRef.current = messages }, [messages])
   const name = conversationName(conversation, new Map(profile ? [[profile.userId, profile]] : []))
   const initials = name.slice(0, 2).toUpperCase()
 
+  const loadMessages = useCallback(async (before?: string) => {
+    if (requestRef.current) return
+    requestRef.current = true
+    const generation = generationRef.current
+    setError(null)
+    if (before) setIsLoadingMore(true)
+    try {
+      const page = await messagesApi.getMessages(conversation.id, before)
+      if (!mountedRef.current || generation !== generationRef.current) return
+      if (before && viewportRef.current) {
+        const viewport = viewportRef.current
+        const bounds = viewport.getBoundingClientRect()
+        const anchor = [...viewport.querySelectorAll<HTMLElement>('[data-message-id]')].find(row => row.getBoundingClientRect().bottom > bounds.top)
+        prependScrollRef.current = { top: viewport.scrollTop, height: viewport.scrollHeight, anchorId: anchor?.dataset.messageId, anchorTop: anchor?.getBoundingClientRect().top }
+      }
+      setMessages(current => [...current.filter(item => !page.items.some(next => next.id === item.id)), ...page.items]
+        .sort((a, b) => Date.parse(a.createdAtUtc) - Date.parse(b.createdAtUtc) || a.id.localeCompare(b.id)))
+      if (before || !messagesRef.current.length) setNextCursor(page.hasMore ? page.nextCursor : null)
+    } catch {
+      if (mountedRef.current && generation === generationRef.current) setError('Không thể tải tin nhắn. Hãy thử lại.')
+    } finally {
+      if (mountedRef.current && generation === generationRef.current) {
+        requestRef.current = false
+        setIsLoading(false)
+        setIsLoadingMore(false)
+      }
+    }
+  }, [conversation.id])
+
   useEffect(() => {
-    let isCurrent = true
-    void messagesApi.getMessages(conversation.id)
-      .then((page) => {
-        if (!isCurrent) return
-        setMessages(page.items)
-        onRead(conversation.id, page.items.at(-1)?.id)
+    mountedRef.current = true
+    requestRef.current = false
+    void Promise.resolve().then(() => { if (mountedRef.current) void loadMessages() })
+    return () => { mountedRef.current = false; generationRef.current += 1 }
+  }, [loadMessages])
+
+  useEffect(() => {
+    const received = incomingMessages.filter(item => item.conversation.id === conversation.id).map(item => item.message)
+    if (!received.length) return
+    void Promise.resolve().then(() => {
+      if (!mountedRef.current) return
+      const unseen = received.some(message => !messagesRef.current.some(item => item.id === message.id))
+      if (!autoScrollRef.current && unseen) setHasNewMessages(true)
+      setMessages(current => {
+        const additions = received.filter(message => !current.some(item => item.id === message.id))
+        return [...current, ...additions].sort((a, b) => Date.parse(a.createdAtUtc) - Date.parse(b.createdAtUtc) || a.id.localeCompare(b.id))
       })
-      .catch(() => { if (isCurrent) setError('Không thể tải tin nhắn.') })
-      .finally(() => { if (isCurrent) setIsLoading(false) })
-    return () => { isCurrent = false }
-  }, [conversation.id, onRead])
+    })
+  }, [conversation.id, incomingMessages])
 
   useEffect(() => {
-    const received = incomingMessages.filter((item) => item.conversation.id === conversation.id).map((item) => item.message)
-    if (received.length === 0) return
-    void Promise.resolve().then(() => setMessages((current) => [...current, ...received.filter((message) => !current.some((item) => item.id === message.id))]))
-    onRead(conversation.id, received.at(-1)?.id)
-  }, [conversation.id, incomingMessages, onRead])
+    if (readAtUpdate || messagesRevision > 0 || conversation.lastMessage?.id) void Promise.resolve().then(() => { if (mountedRef.current) void loadMessages() })
+  }, [loadMessages, readAtUpdate, messagesRevision, conversation.lastMessage?.id])
 
+  const readVisible = useCallback(function readVisibleMessages(): void {
+    const viewport = viewportRef.current
+    if (!viewport || document.visibilityState !== 'visible' || readPendingRef.current) return
+    const bounds = viewport.getBoundingClientRect()
+    const rows = [...viewport.querySelectorAll<HTMLElement>('[data-message-id]')]
+    const latest = [...messagesRef.current].reverse().find(message => {
+      if (message.senderUserId === currentUserId || readIdsRef.current.has(message.id)) return false
+      const row = rows.find(element => element.dataset.messageId === message.id)
+      if (!row) return false
+      const rect = row.getBoundingClientRect()
+      return rect.height > 0 && Math.min(rect.bottom, bounds.bottom, window.innerHeight) - Math.max(rect.top, bounds.top, 0) >= Math.min(rect.height, bounds.height) * 0.5
+    })
+    if (!latest) return
+    readPendingRef.current = true
+    void onRead(conversation.id, latest.id).then(() => {
+      const index = messagesRef.current.findIndex(message => message.id === latest.id)
+      messagesRef.current.slice(0, index + 1).forEach(message => readIdsRef.current.add(message.id))
+      window.requestAnimationFrame(() => { if (mountedRef.current) readVisibleMessages() })
+    }).catch(() => { if (mountedRef.current) setError('Chưa thể cập nhật trạng thái đã đọc. Hãy thử lại.') })
+      .finally(() => { readPendingRef.current = false })
+  }, [conversation.id, currentUserId, onRead])
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const previous = prependScrollRef.current
+    if (previous) {
+      const anchor = [...viewport.querySelectorAll<HTMLElement>('[data-message-id]')].find(row => row.dataset.messageId === previous.anchorId)
+      if (anchor && previous.anchorTop !== undefined) viewport.scrollTop += anchor.getBoundingClientRect().top - previous.anchorTop
+      else viewport.scrollTop = previous.top + viewport.scrollHeight - previous.height
+      prependScrollRef.current = null
+    } else if (autoScrollRef.current) viewport.scrollTop = viewport.scrollHeight
+    readVisible()
+  }, [messages, pendingMessage, readVisible])
   useEffect(() => {
-    if (!readAtUpdate) return
-    void messagesApi.getMessages(conversation.id).then((page) => setMessages(page.items)).catch(() => undefined)
-  }, [conversation.id, readAtUpdate])
+    document.addEventListener('visibilitychange', readVisible)
+    return () => document.removeEventListener('visibilitychange', readVisible)
+  }, [readVisible])
 
   const visibleMessages = pendingMessage ? [...messages, pendingMessage] : messages
-  const latestOwnMessageId = [...visibleMessages].reverse().find((message) => message.senderUserId === currentUserId && !message.deletedAtUtc)?.id
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ block: 'end' }) }, [messages, pendingMessage])
+  const latestOwnMessageId = [...visibleMessages].reverse().find(message => message.senderUserId === currentUserId && !message.deletedAtUtc)?.id
 
   const send = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const content = draft.trim()
-    if (!content || isSending) return
+    if (!content || sendRef.current || isSending) return
+    sendRef.current = true
+    autoScrollRef.current = true
     setIsSending(true)
     setError(null)
     const temporaryMessage: Message = {
@@ -247,15 +333,17 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
     }
     setPendingMessage(temporaryMessage)
     try {
-      const message = await messagesApi.sendMessage(conversation.id, content)
-      setMessages((current) => [...current, message])
+      const message = await onSend(content)
+      setMessages((current) => [...current.filter(item => item.id !== message.id), message]
+        .sort((a, b) => Date.parse(a.createdAtUtc) - Date.parse(b.createdAtUtc) || a.id.localeCompare(b.id)))
       setPendingMessage(null)
-      setDraft('')
+      onDraftChange('', draft)
       onMessageSent(message)
     } catch {
       setPendingMessage(null)
       setError('Không thể gửi tin nhắn.')
     } finally {
+      sendRef.current = false
       setIsSending(false)
     }
   }
@@ -264,22 +352,30 @@ function FloatingConversation({ conversation, profile, currentUserId, incomingMe
     <header className="flex shrink-0 items-center gap-2 border-b border-border bg-surface px-3 py-2.5">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>
       <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{name}</strong><small className="block truncate text-xs text-text-muted">{isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</small></span>
-      <button type="button" onClick={onMinimize} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-2" aria-label="Thu nhỏ đoạn chat">−</button>
-      <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-2" aria-label="Đóng đoạn chat">×</button>
+      <button type="button" disabled={isSending} onClick={onMinimize} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-2" aria-label="Thu nhỏ đoạn chat">−</button>
+      <button type="button" disabled={isSending} onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full border-0 bg-transparent text-lg text-text-muted hover:bg-surface-2" aria-label="Đóng đoạn chat">×</button>
     </header>
-    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-bg px-3 py-3">
+    {messagesConnectionStatus !== 'connected' && <div role="status" className="flex items-center gap-2 bg-surface-2 px-3 py-2 text-xs text-text-muted">{messagesConnectionStatus === 'disconnected' ? 'Tin nhắn trực tiếp đang mất kết nối.' : 'Đang kết nối lại…'}{messagesConnectionStatus === 'disconnected' && <button type="button" onClick={() => void reconnectMessages()} className="font-semibold text-primary">Thử lại</button>}</div>}
+    <div ref={viewportRef} data-chat-history className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-bg px-3 py-3" aria-busy={isLoading || isLoadingMore} onScroll={() => {
+      const viewport = viewportRef.current
+      if (!viewport) return
+      autoScrollRef.current = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 64
+      if (autoScrollRef.current) setHasNewMessages(false)
+      readVisible()
+    }}>
+      {nextCursor && <button type="button" disabled={isLoadingMore} onClick={() => void loadMessages(nextCursor)} className="shrink-0 rounded-lg border border-border px-3 py-2 text-xs text-text">{isLoadingMore ? 'Đang tải…' : 'Tải tin cũ hơn'}</button>}
       {isLoading && <p className="my-auto text-center text-sm text-text-muted">Đang tải tin nhắn…</p>}
       {!isLoading && messages.length === 0 && !error && <p className="my-auto text-center text-sm text-text-muted">Chưa có tin nhắn. Hãy gửi lời chào.</p>}
       {visibleMessages.map((message, index) => {
         const isMine = message.senderUserId === currentUserId
         const status = message.id !== latestOwnMessageId ? null : message.id === pendingMessage?.id ? 'Đang gửi' : message.readAtUtc ? 'Đã xem' : 'Đã gửi'
-        return <div key={message.id}>{(index === 0 || !sameMessageDay(visibleMessages[index - 1].createdAtUtc, message.createdAtUtc)) && <p className="my-4 text-center text-[11px] text-text-light">{formatMessageDay(message.createdAtUtc)}</p>}<div className={`flex items-end gap-1.5 ${isMine ? 'justify-end' : 'justify-start'}`} title={new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(message.createdAtUtc))}>{!isMine && <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[9px] font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>}<div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm ${isMine ? 'rounded-br-md bg-linear-to-br from-violet-600 to-blue-600 text-white' : 'rounded-bl-md bg-surface-2 text-text'}`}><p className="whitespace-pre-wrap break-words">{message.deletedAtUtc ? 'Tin nhắn đã gỡ' : message.content ?? 'Đã gửi tệp đính kèm'}</p>{status && <span className="mt-1 block text-right text-[10px] text-white/75">{status}</span>}</div></div></div>
+        return <div key={message.id}>{(index === 0 || !sameMessageDay(visibleMessages[index - 1].createdAtUtc, message.createdAtUtc)) && <p className="my-4 text-center text-[11px] text-text-light">{formatMessageDay(message.createdAtUtc)}</p>}<div data-message-id={message.id} className={`flex items-end gap-1.5 ${isMine ? 'justify-end' : 'justify-start'}`} title={new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(message.createdAtUtc))}>{!isMine && <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[9px] font-bold text-white">{profile?.avatarUrl ? <img src={resolveProfileImageUrl(profile.avatarUrl)} alt="" className="h-full w-full object-cover" /> : initials}</span>}<div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm ${isMine ? 'rounded-br-md bg-linear-to-br from-violet-600 to-blue-600 text-white' : 'rounded-bl-md bg-surface-2 text-text'}`}><p className="whitespace-pre-wrap break-words">{message.deletedAtUtc ? 'Tin nhắn đã gỡ' : message.content ?? 'Đã gửi tệp đính kèm'}</p>{status && <span className="mt-1 block text-right text-[10px] text-white/75">{status}</span>}</div></div></div>
       })}
-      <div ref={messagesEndRef} />
     </div>
-    {error && <p className="border-t border-border bg-[#e41e3f]/10 px-3 py-2 text-xs text-[#ff8a9b]">{error}</p>}
+    {hasNewMessages && <button type="button" onClick={() => { if (viewportRef.current) viewportRef.current.scrollTop = viewportRef.current.scrollHeight; autoScrollRef.current = true; setHasNewMessages(false); readVisible() }} className="self-center rounded-full border border-border bg-surface-2 px-4 py-2 text-xs text-text">Có tin nhắn mới ↓</button>}
+    {error && <p role="alert" className="border-t border-border bg-[#e41e3f]/10 px-3 py-2 text-xs text-[#ff8a9b]">{error} <button type="button" onClick={() => { readVisible(); void loadMessages() }} className="font-semibold underline">Thử lại</button></p>}
     <form onSubmit={(event) => void send(event)} className="flex shrink-0 gap-2 border-t border-border bg-surface p-2.5">
-      <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Nhập tin nhắn" disabled={isSending} className="min-w-0 flex-1 rounded-full border-0 bg-surface-2 px-3 py-2 text-sm text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary disabled:opacity-60" />
+      <input value={draft} onChange={(event) => onDraftChange(event.target.value)} aria-label="Nhập tin nhắn" placeholder="Nhập tin nhắn" disabled={isSending} className="min-w-0 flex-1 rounded-full border-0 bg-surface-2 px-3 py-2 text-sm text-text outline-none placeholder:text-text-light focus:ring-2 focus:ring-primary disabled:opacity-60" />
       <button type="submit" disabled={!draft.trim() || isSending} className="rounded-full border-0 bg-primary px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Gửi</button>
     </form>
   </section>
@@ -314,6 +410,9 @@ export default function TopNavbar() {
   const [messagesError, setMessagesError] = useState<string | null>(null)
   const [openConversation, setOpenConversation] = useState<Conversation | null>(null)
   const [isConversationMinimized, setIsConversationMinimized] = useState(false)
+  const [chatDrafts, setChatDrafts] = useState<ReadonlyMap<string, string>>(new Map())
+  const [sendingConversationIds, setSendingConversationIds] = useState<ReadonlySet<string>>(new Set())
+  const sendingConversationsRef = useRef(new Set<string>())
   const menuDropdownRef = useRef<HTMLDivElement>(null)
   const messagesDropdownRef = useRef<HTMLDivElement>(null)
   const notificationDropdownRef = useRef<HTMLDivElement>(null)
@@ -421,18 +520,24 @@ export default function TopNavbar() {
     setOpenConversation(conversation)
     setIsConversationMinimized(false)
     setActiveHeaderPopup(null)
-    setConversations((current) => current.map((item) => item.id === conversation.id ? { ...item, unreadCount: 0 } : item))
   }, [])
-
-  const markFloatingConversationRead = useCallback((conversationId: string, messageId?: string) => {
-    markConversationRead(conversationId, messageId)
-    setConversations((current) => current.map((item) => item.id === conversationId ? { ...item, unreadCount: 0 } : item))
-  }, [markConversationRead])
 
   const updateFloatingConversation = useCallback((message: Message) => {
     setConversations((current) => current.map((item) => item.id === message.conversationId
       ? { ...item, lastMessage: message, lastMessageAtUtc: message.createdAtUtc }
       : item))
+    setOpenConversation(current => current?.id === message.conversationId ? { ...current, lastMessage: message, lastMessageAtUtc: message.createdAtUtc } : current)
+  }, [])
+
+  const sendFloatingMessage = useCallback(async (conversationId: string, content: string) => {
+    if (sendingConversationsRef.current.has(conversationId)) throw new Error('Tin nhắn đang được gửi.')
+    sendingConversationsRef.current.add(conversationId)
+    setSendingConversationIds(current => new Set(current).add(conversationId))
+    try { return await messagesApi.sendMessage(conversationId, content) }
+    finally {
+      sendingConversationsRef.current.delete(conversationId)
+      setSendingConversationIds(current => { const next = new Set(current); next.delete(conversationId); return next })
+    }
   }, [])
 
   return (
@@ -636,9 +741,16 @@ export default function TopNavbar() {
           incomingMessages={incomingMessages}
           isOnline={openConversation.participantUserId !== null && onlineUserIds.has(openConversation.participantUserId)}
           readAtUpdate={readAtByConversation.get(openConversation.id)}
+          draft={chatDrafts.get(openConversation.id) ?? ''}
+          sending={sendingConversationIds.has(openConversation.id)}
+          onSend={content => sendFloatingMessage(openConversation.id, content)}
+          onDraftChange={(draft, expectedDraft) => setChatDrafts(current => {
+            if (expectedDraft !== undefined && current.get(openConversation.id) !== expectedDraft) return current
+            return new Map(current).set(openConversation.id, draft)
+          })}
           onClose={() => setOpenConversation(null)}
           onMinimize={() => setIsConversationMinimized(true)}
-          onRead={markFloatingConversationRead}
+          onRead={markConversationRead}
           onMessageSent={updateFloatingConversation}
         />
       ))}

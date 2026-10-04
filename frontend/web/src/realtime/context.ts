@@ -4,6 +4,9 @@ import type { AppNotification } from '../api/notifications'
 
 export interface RealtimeContextValue {
   incomingMessages: IncomingMessage[]
+  messagesConnectionStatus: 'connecting' | 'connected' | 'reconnecting' | 'disconnected'
+  messagesRevision: number
+  reconnectMessages: () => Promise<void>
   notifications: AppNotification[]
   unreadMessageCount: number
   unreadNotificationCount: number
@@ -19,7 +22,7 @@ export interface RealtimeContextValue {
   typingConversationIds: ReadonlySet<string>
   onlineUserIds: ReadonlySet<string>
   readAtByConversation: ReadonlyMap<string, string>
-  markConversationRead: (conversationId: string, lastReadMessageId?: string) => void
+  markConversationRead: (conversationId: string, lastReadMessageId?: string) => Promise<void>
   markNotificationRead: (notificationId: string) => void
   markAllNotificationsRead: () => void
   loadMoreNotifications: () => void

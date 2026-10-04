@@ -16,7 +16,7 @@ export default function MainLayout() {
   return (
     <div className="flex flex-col min-h-screen bg-bg">
       {/* Top Navbar */}
-      <TopNavbar />
+      <TopNavbar key={session.user.id} />
 
       {/* Body: Sidebar + Main Content */}
       <div className="flex mt-[var(--app-header-height)] min-h-[calc(100dvh-var(--app-header-height))]">

@@ -31,6 +31,8 @@ interface MessagesRead {
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth()
   const [incomingMessages, setIncomingMessages] = useState<IncomingMessage[]>([])
+  const [messagesConnectionStatus, setMessagesConnectionStatus] = useState<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('connecting')
+  const [messagesRevision, setMessagesRevision] = useState(0)
   const [notificationState, setNotificationState] = useState<NotificationState>({ items: [], unreadCount: 0 })
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(Boolean(session))
   const [notificationsError, setNotificationsError] = useState<string | null>(null)
@@ -62,18 +64,50 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const notificationAnimationTimeoutsRef = useRef(new Map<string, number>())
   const countRequestRef = useRef<Promise<void> | null>(null)
   const countRefreshRequestedRef = useRef(false)
+  const incomingRevisionRef = useRef(0)
+  const unreadRequestRef = useRef(0)
+  const incomingAtRevisionRef = useRef(new Map<string, { revision: number; incoming: IncomingMessage }>())
   const addIncomingMessages = useCallback((nextMessages: IncomingMessage[]) => {
+    const revision = ++incomingRevisionRef.current
+    for (const incoming of nextMessages) incomingAtRevisionRef.current.set(incoming.message.id, { revision, incoming })
     setIncomingMessages((current) => [
       ...current,
       ...nextMessages.filter((nextMessage) => !current.some((item) => item.message.id === nextMessage.message.id)),
     ])
   }, [])
-  const markConversationRead = useCallback((conversationId: string, lastReadMessageId?: string) => {
-    setIncomingMessages((current) => current.filter((item) => item.conversation.id !== conversationId))
-    if (lastReadMessageId) {
-      void messagesApi.markConversationRead(conversationId, lastReadMessageId).catch(() => undefined)
-    }
+  const refreshUnreadMessages = useCallback(async () => {
+    const generation = notificationSessionRef.current
+    const revision = incomingRevisionRef.current
+    const request = ++unreadRequestRef.current
+    const page = await messagesApi.getUnreadNotifications()
+    if (generation !== notificationSessionRef.current || request !== unreadRequestRef.current) return
+    const additions = [...incomingAtRevisionRef.current.values()]
+      .filter(item => item.revision > revision && !page.items.some(existing => existing.message.id === item.incoming.message.id))
+      .map(item => item.incoming)
+    incomingAtRevisionRef.current = new Map([...page.items, ...additions].map(incoming => [incoming.message.id, { revision: incomingRevisionRef.current, incoming }]))
+    setIncomingMessages([...page.items, ...additions])
   }, [])
+  const markConversationRead = useCallback(async (conversationId: string, lastReadMessageId?: string) => {
+    if (!lastReadMessageId) return
+    const generation = notificationSessionRef.current
+    await messagesApi.markConversationRead(conversationId, lastReadMessageId)
+    if (generation !== notificationSessionRef.current) return
+    // Reconcile with the server so messages arriving during the write keep their badge.
+    await refreshUnreadMessages()
+  }, [refreshUnreadMessages])
+  const reconnectMessages = useCallback(async () => {
+    const connection = messagesConnectionRef.current
+    if (connection?.state !== HubConnectionState.Disconnected) return
+    const generation = notificationSessionRef.current
+    setMessagesConnectionStatus('connecting')
+    try {
+      await connection.start()
+    } catch { if (generation === notificationSessionRef.current) setMessagesConnectionStatus('disconnected'); return }
+    if (generation !== notificationSessionRef.current) return
+    setMessagesConnectionStatus('connected')
+    setMessagesRevision(current => current + 1)
+    void refreshUnreadMessages().catch(() => undefined)
+  }, [refreshUnreadMessages])
   const updateNotificationState = useCallback((update: (current: NotificationState) => NotificationState) => {
     const next = update(notificationStateRef.current)
     notificationStateRef.current = next
@@ -282,11 +316,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     let active = true
     notificationSessionRef.current += 1
     notificationSessionActiveRef.current = true
-    void messagesApi.getUnreadNotifications()
-      .then((page) => {
-        if (active) addIncomingMessages(page.items)
-      })
-      .catch(() => undefined)
+    void refreshUnreadMessages().catch(() => undefined)
     reloadNotifications()
 
     const connection = new HubConnectionBuilder()
@@ -343,7 +373,15 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         return new Map(current).set(read.conversationId, read.readAtUtc)
       })
     })
-    void connection.start().catch(() => undefined)
+    connection.onreconnecting(() => { if (active) { setMessagesConnectionStatus('reconnecting'); setOnlineUserIds(new Set()) } })
+    connection.onclose(() => { if (active) { setMessagesConnectionStatus('disconnected'); setOnlineUserIds(new Set()) } })
+    connection.onreconnected(() => {
+      if (!active) return
+      setMessagesConnectionStatus('connected')
+      setMessagesRevision(current => current + 1)
+      void refreshUnreadMessages().catch(() => undefined)
+    })
+    void connection.start().then(() => { if (active) setMessagesConnectionStatus('connected') }).catch(() => { if (active) setMessagesConnectionStatus('disconnected') })
 
     const notificationsConnection = new HubConnectionBuilder()
       .withUrl(apiBaseUrl + '/hubs/notifications', {
@@ -379,6 +417,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       setTypingConversationIds(new Set())
       setOnlineUserIds(new Set())
       setIncomingMessages([])
+      incomingAtRevisionRef.current.clear()
+      incomingRevisionRef.current += 1
       notificationStateRef.current = { items: [], unreadCount: 0 }
       setNotificationState(notificationStateRef.current)
       notificationPagePendingRef.current = false
@@ -406,10 +446,13 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       void connection.stop()
       void notificationsConnection.stop()
     }
-  }, [addIncomingMessages, receiveNotification, reloadNotifications, session])
+  }, [addIncomingMessages, receiveNotification, reloadNotifications, refreshUnreadMessages, session])
 
   const value = useMemo(() => ({
     incomingMessages,
+    messagesConnectionStatus,
+    messagesRevision,
+    reconnectMessages,
     notifications: notificationState.items,
     unreadMessageCount: incomingMessages.length,
     unreadNotificationCount: notificationState.unreadCount,
@@ -431,7 +474,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     loadMoreNotifications,
     reloadNotifications,
     sendTyping,
-  }), [incomingMessages, isLoadingNotifications, notificationsError, loadMoreNotificationsError, isLoadingMoreNotifications, isMarkingNotificationsRead, isMarkingAllNotificationsRead, latestNotification, recentNotificationIds, loadMoreNotifications, reloadNotifications, markAllNotificationsRead, markConversationRead, markNotificationRead, nextNotificationCursor, notificationState, onlineUserIds, readAtByConversation, sendTyping, typingConversationIds])
+  }), [messagesConnectionStatus, messagesRevision, reconnectMessages, incomingMessages, isLoadingNotifications, notificationsError, loadMoreNotificationsError, isLoadingMoreNotifications, isMarkingNotificationsRead, isMarkingAllNotificationsRead, latestNotification, recentNotificationIds, loadMoreNotifications, reloadNotifications, markAllNotificationsRead, markConversationRead, markNotificationRead, nextNotificationCursor, notificationState, onlineUserIds, readAtByConversation, sendTyping, typingConversationIds])
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>
 }
