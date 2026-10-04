@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.DTOs.Requests;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
@@ -14,6 +15,39 @@ namespace Fookbase.Identity.Api.IntegrationTests;
 
 public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : IClassFixture<IdentityApiFactory>
 {
+    [Theory]
+    [InlineData("/api/auth/2fa/enable", "Code", "Mã xác thực hai bước là bắt buộc.")]
+    [InlineData("/api/auth/2fa/disable", "CurrentPassword", "Mật khẩu hiện tại là bắt buộc.")]
+    [InlineData("/api/auth/2fa/verify", "Challenge", "Mã yêu cầu xác thực hai bước là bắt buộc.")]
+    [InlineData("/api/auth/2fa/verify", "Code", "Mã xác thực hai bước là bắt buộc.")]
+    public async Task Missing_or_blank_two_factor_field_returns_vietnamese_validation_error(
+        string endpoint, string field, string message)
+    {
+        using var client = factory.CreateClient();
+        var account = await CreateAccountAsync(client);
+        using var current = AuthenticatedClient(account);
+
+        foreach (var value in new string?[] { null, string.Empty, "   " })
+        {
+            var request = new Dictionary<string, string?>
+            {
+                ["Challenge"] = Guid.NewGuid().ToString("N"),
+                ["Code"] = "123456",
+                ["CurrentPassword"] = TestPassword
+            };
+            request[field] = value;
+
+            using var response = await current.PostAsJsonAsync(endpoint, request);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var error = document.RootElement.GetProperty("error");
+            Assert.Equal("validation_failed", error.GetProperty("code").GetString());
+            var fieldError = Assert.Single(error.GetProperty("details").GetProperty(field).EnumerateArray());
+            Assert.Equal(message, fieldError.GetString());
+        }
+    }
+
     [Fact]
     public async Task Friends_of_friends_policy_rejects_unrelated_and_allows_mutual_friend()
     {
