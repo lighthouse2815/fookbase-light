@@ -74,5 +74,73 @@ for (const app of ['web', 'admin', 'zola-light']) {
       assert.equal(new Headers(fetch.mock.calls[2].arguments[1].headers).get('Authorization'), 'Bearer fresh')
       assert.deepEqual(get(), { accessToken: 'fresh', user: { id: 'user-1' } })
     })
+
+    const sessions = app === 'zola-light' ? client : await server.ssrLoadModule(
+      app === 'web' ? '/src/auth/session.ts' : '/src/session.ts')
+    const save = sessions.saveAuthSession ?? sessions.saveSession
+    const get = sessions.getAuthSession ?? sessions.getSession
+    const clear = sessions.clearAuthSession ?? sessions.clearSession
+
+    for (const status of [429, 503]) {
+      await t.test(`preserves the session when refresh returns ${status}`, async (t) => {
+        save({ ...session, accessToken: 'expired' })
+        const responses = [Response.json({}, { status: 401 }), Response.json({ detail: 'Try later.' }, { status })]
+        t.mock.method(globalThis, 'fetch', async () => responses.shift())
+        await assert.rejects(request('/api/feed'), { status })
+        assert.equal(get().accessToken, 'expired')
+      })
+    }
+
+    await t.test('preserves the session on a network failure during refresh', async (t) => {
+      save({ ...session, accessToken: 'expired' })
+      let calls = 0
+      t.mock.method(globalThis, 'fetch', async () => {
+        if (++calls === 1) return Response.json({}, { status: 401 })
+        throw new TypeError('Network unavailable')
+      })
+      await assert.rejects(request('/api/feed'), { status: 0 })
+      assert.equal(get().accessToken, 'expired')
+    })
+
+    await t.test('clears an invalid session when refresh is rejected', async (t) => {
+      save({ ...session, accessToken: 'expired' })
+      t.mock.method(globalThis, 'fetch', async () => Response.json({}, { status: 401 }))
+      await assert.rejects(request('/api/feed'), { status: 401 })
+      assert.equal(get(), null)
+    })
+
+    await t.test('coalesces refresh requests made by concurrent expired requests', async (t) => {
+      save({ ...session, accessToken: 'expired' })
+      let refreshCalls = 0
+      let releaseRefresh
+      const gate = new Promise((resolve) => { releaseRefresh = resolve })
+      t.mock.method(globalThis, 'fetch', async (url, init) => {
+        if (url.endsWith('/api/auth/refresh')) {
+          refreshCalls++
+          await gate
+          return Response.json(success(session))
+        }
+        return new Headers(init.headers).get('Authorization') === 'Bearer fresh'
+          ? Response.json({ items: [] }) : Response.json({}, { status: 401 })
+      })
+      const requests = [request('/api/feed'), request('/api/messages/conversations')]
+      await new Promise((resolve) => setImmediate(resolve))
+      assert.equal(refreshCalls, 1)
+      releaseRefresh()
+      assert.deepEqual(await Promise.all(requests), [{ items: [] }, { items: [] }])
+    })
+
+    await t.test('does not restore a session after the user signs out during refresh', async (t) => {
+      save({ ...session, accessToken: 'expired' })
+      t.mock.method(globalThis, 'fetch', async (url) => {
+        if (url.endsWith('/api/auth/refresh')) {
+          clear()
+          return Response.json(success(session))
+        }
+        return Response.json({}, { status: 401 })
+      })
+      await assert.rejects(request('/api/feed'), { status: 401 })
+      assert.equal(get(), null)
+    })
   })
 }

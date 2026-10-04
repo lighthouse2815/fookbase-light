@@ -6,6 +6,8 @@ const preferencesStorageKey = 'fookbase.preferences'
 
 const messages = {
   en: {
+    offlineSessionNotice: 'You are offline. Your session is kept; reconnect to continue.',
+    sessionRefreshFailed: 'Unable to refresh your session. Reconnecting.',
     home: 'Home',
     feed: 'Feed',
     explore: 'Explore',
@@ -182,6 +184,8 @@ const messages = {
     scam: 'Scam or fraud', other: 'Other', additionalDetails: 'Additional details', optional: 'optional', tellUsWhatHappened: 'Tell us what happened', sendReport: 'Send report',
   },
   vi: {
+    offlineSessionNotice: 'Bạn đang mất kết nối. Phiên đăng nhập được giữ; hãy kết nối lại để tiếp tục.',
+    sessionRefreshFailed: 'Chưa thể làm mới phiên đăng nhập. Đang thử kết nối lại.',
     home: 'Trang chủ',
     feed: 'Bảng tin',
     explore: 'Khám phá',

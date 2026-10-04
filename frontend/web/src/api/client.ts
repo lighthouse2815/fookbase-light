@@ -3,7 +3,7 @@ import { clearAuthSession, getAuthSession, saveAuthSession } from '../auth/sessi
 
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? ''
 const accessTokenStorageKey = 'fookbase.accessToken'
-let refreshPromise: Promise<string | null> | null = null
+let refreshPromise: Promise<AuthenticationResponse | null> | null = null
 
 export class ApiError extends Error {
   readonly status: number
@@ -41,37 +41,45 @@ function createHeaders(path: string, init: RequestInit, accessToken: string | nu
   return headers
 }
 
-async function refreshAccessToken() {
+async function requestFreshSession() {
   const session = getAuthSession()
   if (!session) return null
 
-  try {
-    const response = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Fookbase-Auth-Transport': 'cookie:web',
-      },
-      body: JSON.stringify(session.refreshToken ? { refreshToken: session.refreshToken } : {}),
-    })
-    if (!response.ok) throw new Error('Refresh token is invalid.')
-
-    const { data: nextSession } = await response.json() as { data: AuthenticationResponse }
-    saveAuthSession(nextSession)
-    return nextSession.accessToken
-  } catch {
+  const response = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Fookbase-Auth-Transport': 'cookie:web',
+    },
+    body: JSON.stringify(session.refreshToken ? { refreshToken: session.refreshToken } : {}),
+  })
+  const current = getAuthSession()
+  // Ignore a response for a session that has since signed out or changed.
+  if (!current || current.user.id !== session.user.id || current.accessToken !== session.accessToken) {
+    return current?.user.id === session.user.id ? current : null
+  }
+  if (response.status === 401 || response.status === 403) {
     clearAuthSession()
     return null
   }
-}
-
-function getRefreshedAccessToken() {
-  if (!refreshPromise) {
-    refreshPromise = refreshAccessToken().finally(() => { refreshPromise = null })
+  if (!response.ok) {
+    const problem = await response.json().catch(() => null) as ApiErrorBody | null
+    throw new ApiError(problem?.error?.message ?? problem?.detail ?? problem?.title ?? 'Không thể làm mới phiên đăng nhập. Vui lòng thử lại.', response.status)
   }
 
+  const { data: nextSession } = await response.json() as { data: AuthenticationResponse }
+  // Reading the response body may take long enough for the user to sign out.
+  if (getAuthSession()?.accessToken !== session.accessToken) return null
+  saveAuthSession(nextSession)
+  return nextSession
+}
+
+export function refreshAuthSession() {
+  if (!refreshPromise) {
+    refreshPromise = requestFreshSession().finally(() => { refreshPromise = null })
+  }
   return refreshPromise
 }
 
@@ -95,7 +103,7 @@ export async function apiRequest<T>(
       headers: createHeaders(path, init, accessToken),
     })
     if (response.status === 401 && canRetryWithRefresh(path, accessToken)) {
-      const refreshedAccessToken = await getRefreshedAccessToken()
+      const refreshedAccessToken = (await refreshAuthSession())?.accessToken
       if (refreshedAccessToken) {
         response = await fetch(`${apiBaseUrl}${path}`, {
           ...init,
@@ -104,7 +112,9 @@ export async function apiRequest<T>(
         })
       }
     }
-  } catch {
+  } catch (error) {
+    if (init.signal?.aborted) throw error
+    if (error instanceof ApiError) throw error
     throw new ApiError('Không thể kết nối đến máy chủ.', 0)
   }
 

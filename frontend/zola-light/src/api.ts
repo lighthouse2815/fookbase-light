@@ -5,6 +5,7 @@ export function resolveApiUrl(url: string) {
 }
 
 const sessionKey = 'fookbase.zola-light.session'
+let refreshPromise: Promise<AuthSession | null> | null = null
 
 export interface AuthenticatedUser {
   id: string
@@ -68,13 +69,28 @@ async function refreshSession() {
     },
     body: JSON.stringify(session.refreshToken ? { refreshToken: session.refreshToken } : {}),
   })
-  if (!response.ok) {
+  const current = getSession()
+  if (!current || current.user.id !== session.user.id || current.accessToken !== session.accessToken) {
+    return current?.user.id === session.user.id ? current : null
+  }
+  if (response.status === 401 || response.status === 403) {
     clearSession()
     return null
   }
+  if (!response.ok) {
+    throw new ApiError('Không thể làm mới phiên đăng nhập. Vui lòng thử lại.', response.status)
+  }
   const { data: next } = await response.json() as { data: AuthSession }
+  if (getSession()?.accessToken !== session.accessToken) return null
   saveSession(next)
   return next
+}
+
+function refreshAuthSession() {
+  if (!refreshPromise) {
+    refreshPromise = refreshSession().finally(() => { refreshPromise = null })
+  }
+  return refreshPromise
 }
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -93,9 +109,12 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   try {
     response = await send(getSession()?.accessToken ?? null)
     if (response.status === 401 && !path.startsWith('/api/auth/')) {
-      response = await send((await refreshSession())?.accessToken ?? null)
+      const nextSession = await refreshAuthSession()
+      if (nextSession) response = await send(nextSession.accessToken)
     }
-  } catch {
+  } catch (error) {
+    if (init.signal?.aborted) throw error
+    if (error instanceof ApiError) throw error
     throw new ApiError('Không thể kết nối tới máy chủ.', 0)
   }
   if (!response.ok) {

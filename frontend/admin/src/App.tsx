@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AdminDashboard from './AdminDashboard'
 import { authApi } from './api/auth'
 import type { AuthenticationResponse } from './api/auth'
-import { ApiError } from './api/client'
+import { ApiError, refreshAuthSession } from './api/client'
 import LoginPage from './LoginPage'
 import { usePreferences } from './preferences'
 import { adminSessionChangedEvent, clearSession, getSession, saveSession } from './session'
 
 export default function App() {
-  const { t } = usePreferences()
+  const { t, language } = usePreferences()
   const [session, setSession] = useState<AuthenticationResponse | null>(() => getSession())
+  const [refreshFailed, setRefreshFailed] = useState(false)
+  const [isRetrying, setIsRetrying] = useState(false)
+  const retryRefreshRef = useRef<() => void>(() => undefined)
 
   const applySession = (nextSession: AuthenticationResponse) => {
     saveSession(nextSession)
@@ -44,6 +47,7 @@ export default function App() {
       }
 
       setSession(nextSession)
+      setRefreshFailed(false)
     }
     window.addEventListener(adminSessionChangedEvent, synchronizeSession)
     return () => window.removeEventListener(adminSessionChangedEvent, synchronizeSession)
@@ -54,26 +58,45 @@ export default function App() {
 
     const refreshAt = new Date(session.accessTokenExpiresAt).getTime() - 60_000
     const delay = Math.max(0, refreshAt - Date.now())
-    const timeoutId = window.setTimeout(() => {
-      void authApi.refresh(session.refreshToken)
-        .then((refreshedSession) => {
+    let active = true
+    let timeoutId: number
+    const refresh = async () => {
+      window.clearTimeout(timeoutId)
+      setIsRetrying(true)
+      try {
+        const refreshedSession = await refreshAuthSession()
+        if (active && refreshedSession) {
           if (!refreshedSession.user.roles.includes('Admin')) {
             clearSession()
             setSession(null)
             return
           }
-
           applySession(refreshedSession)
-        })
-        .catch(() => {
-          clearSession()
-          setSession(null)
-        })
-    }, delay)
-
-    return () => window.clearTimeout(timeoutId)
+          setRefreshFailed(false)
+        }
+      } catch {
+        if (!active) return
+        setRefreshFailed(true)
+        timeoutId = window.setTimeout(() => void refresh(), 30_000)
+      } finally { setIsRetrying(false) }
+    }
+    const online = () => { if (Date.now() >= refreshAt) void refresh() }
+    retryRefreshRef.current = () => void refresh()
+    timeoutId = window.setTimeout(() => void refresh(), delay)
+    window.addEventListener('online', online)
+    return () => {
+      active = false
+      window.clearTimeout(timeoutId)
+      window.removeEventListener('online', online)
+      retryRefreshRef.current = () => undefined
+    }
   }, [session])
 
   if (!session) return <LoginPage onSignIn={signIn} />
-  return <AdminDashboard username={session.user.username} onSignOut={signOut} />
+  return <><AdminDashboard username={session.user.username} onSignOut={signOut} />
+    {refreshFailed && <div role="status" className="fixed bottom-4 left-4 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-border bg-surface p-4 text-sm text-text shadow-xl">
+      <span>{language === 'vi' ? 'Chưa thể làm mới phiên đăng nhập. Đang thử kết nối lại.' : 'Unable to refresh your session. Reconnecting.'}</span>
+      <button type="button" disabled={isRetrying} onClick={() => retryRefreshRef.current()} className="shrink-0 rounded-lg px-3 py-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-60">{t('retry')}</button>
+    </div>}
+  </>
 }
