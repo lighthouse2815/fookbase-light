@@ -1,7 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Users.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Entities;
 
+[Table("UserProfiles")]
+[Index(nameof(Username), IsUnique = true)]
 public sealed class UserProfile
 {
     private UserProfile()
@@ -20,16 +27,25 @@ public sealed class UserProfile
         UpdatedAt = createdAt;
     }
 
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid UserId { get; private set; }
 
+    [Required]
+    [MaxLength(32)]
     public string Username { get; private set; } = string.Empty;
 
+    [Required]
+    [MaxLength(100)]
     public string DisplayName { get; private set; } = string.Empty;
 
+    [MaxLength(500)]
     public string? Bio { get; private set; }
 
+    [MaxLength(2048)]
     public string? AvatarUrl { get; private set; }
 
+    [MaxLength(2048)]
     public string? CoverUrl { get; private set; }
 
     public Guid? AvatarMediaId { get; private set; }
@@ -38,23 +54,41 @@ public sealed class UserProfile
 
     public DateOnly? DateOfBirth { get; private set; }
 
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Gender Gender { get; private set; } = Gender.PREFER_NOT_TO_SAY;
 
     public BirthdayVisibility BirthdayVisibility { get; private set; } = BirthdayVisibility.ONLY_ME;
 
+    [MaxLength(100)]
     public string? CurrentCity { get; private set; }
 
+    [MaxLength(100)]
     public string? Hometown { get; private set; }
 
+    [MaxLength(150)]
     public string? Workplace { get; private set; }
 
+    [MaxLength(150)]
     public string? Education { get; private set; }
 
+    [MaxLength(2048)]
     public string? Website { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
+
+    [ForeignKey(nameof(UserId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public User User { get; private set; } = null!;
+
+    [ForeignKey(nameof(AvatarMediaId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset? AvatarMedia { get; private set; }
+
+    [ForeignKey(nameof(CoverMediaId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset? CoverMedia { get; private set; }
 
     public static UserProfile Create(
         Guid userId,

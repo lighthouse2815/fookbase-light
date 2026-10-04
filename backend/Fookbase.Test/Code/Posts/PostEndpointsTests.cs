@@ -58,7 +58,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var authorUserId = (await CreateUserIdsAsync(1))[0];
         const string username = "post_author";
         await CreateProfileAsync(authorUserId, username);
-        var avatarMediaId = Guid.NewGuid();
+        var avatarMediaId = await CreateReadyMediaAsync(authorUserId);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
@@ -444,7 +444,7 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var viewerUserId = users[2];
         const string authorUsername = "shared_author";
         await CreateProfileAsync(authorUserId, authorUsername);
-        var avatarMediaId = Guid.NewGuid();
+        var avatarMediaId = await CreateReadyMediaAsync(authorUserId);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();

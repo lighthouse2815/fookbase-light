@@ -8,6 +8,7 @@ using Fookbase.Api.Modules.Events.DTOs.Responses;
 using Fookbase.Api.Modules.Events.Entities;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
@@ -61,14 +62,21 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
         var users = await CreateUsersAsync(2);
         var ownerId = users[0];
         var attendeeId = users[1];
-        var avatarMediaId = Guid.NewGuid();
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var ownerProfile = await db.UserProfiles.SingleAsync(item => item.UserId == ownerId);
-            var attendeeProfile = await db.UserProfiles.SingleAsync(item => item.UserId == attendeeId);
-            ownerProfile.Update(null, null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
-            attendeeProfile.Update(null, null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
+            var now = DateTimeOffset.UtcNow;
+            foreach (var userId in users)
+            {
+                var mediaId = Guid.NewGuid();
+                var asset = MediaAsset.CreatePending(
+                    mediaId, userId, MediaType.IMAGE, $"{userId:N}/{mediaId:N}.png",
+                    "avatar.png", "image/png", 11, now, now.AddMinutes(5));
+                asset.MarkReady(11, now);
+                db.MediaAssets.Add(asset);
+                var profile = await db.UserProfiles.SingleAsync(item => item.UserId == userId);
+                profile.Update(null, null, null, null, mediaId, null, now);
+            }
             await db.SaveChangesAsync();
         }
 

@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using Fookbase.Api.Modules.Users.Domain.Enums;
+using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Users.Services;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Photos.Entities;
@@ -44,6 +45,90 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         Assert.Null(profile.Bio);
         Assert.Equal(1, await dbContext.UserProfiles.CountAsync(
             item => item.UserId == user.Id));
+    }
+
+    [Fact]
+    public async Task Profile_creation_rejects_a_missing_user()
+    {
+        var user = CreateUser();
+        using var scope = factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<UserProfileService>();
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => service.EnsureCreatedAsync(user.Id, user.Username));
+
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.False(await db.UserProfiles.AnyAsync(profile => profile.UserId == user.Id));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Profile_media_rejects_a_missing_asset(bool isAvatar)
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var profile = await db.UserProfiles.SingleAsync(item => item.UserId == user.Id);
+        var missingMediaId = Guid.NewGuid();
+        profile.Update(null, null, null, null,
+            isAvatar ? missingMediaId : null, isAvatar ? null : missingMediaId, DateTimeOffset.UtcNow);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+
+        db.ChangeTracker.Clear();
+        var persisted = await db.UserProfiles.SingleAsync(item => item.UserId == user.Id);
+        Assert.Null(persisted.AvatarMediaId);
+        Assert.Null(persisted.CoverMediaId);
+    }
+
+    [Fact]
+    public async Task Profile_loads_user_and_media_and_cascades_when_user_is_deleted()
+    {
+        var user = CreateUser();
+        await EnsureProfileAsync(user);
+        var avatarId = await CreateReadyImageAsync(user.Id);
+        var coverId = await CreateReadyImageAsync(user.Id);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        var profile = await db.UserProfiles.SingleAsync(item => item.UserId == user.Id);
+        profile.Update(null, null, null, null, avatarId, coverId, DateTimeOffset.UtcNow);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+
+        var loaded = await db.UserProfiles.AsNoTracking()
+            .Include(item => item.User)
+            .Include(item => item.AvatarMedia)
+            .Include(item => item.CoverMedia)
+            .SingleAsync(item => item.UserId == user.Id);
+
+        Assert.Equal(user.Id, loaded.User.Id);
+        Assert.Equal(avatarId, loaded.AvatarMedia!.Id);
+        Assert.Equal(coverId, loaded.CoverMedia!.Id);
+
+        await db.Users.Where(item => item.Id == user.Id).ExecuteDeleteAsync();
+
+        Assert.False(await db.UserProfiles.AnyAsync(item => item.UserId == user.Id));
+        Assert.Equal(2, await db.MediaAssets.CountAsync(item => item.Id == avatarId || item.Id == coverId));
+    }
+
+    [Fact]
+    public async Task Profile_preserves_zero_gender_value_instead_of_database_default()
+    {
+        var user = CreateUser();
+        var now = DateTimeOffset.UtcNow;
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        db.Users.Add(new User(user.Id, $"{user.Username}@example.com", user.Username, now));
+        db.UserProfiles.Add(UserProfile.Create(
+            user.Id, user.Username, user.Username, new DateOnly(2000, 1, 2), Gender.FEMALE, now));
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+
+        var profile = await db.UserProfiles.SingleAsync(item => item.UserId == user.Id);
+
+        Assert.Equal(Gender.FEMALE, profile.Gender);
+        Assert.Equal(BirthdayVisibility.ONLY_ME, profile.BirthdayVisibility);
     }
 
     [Fact]
@@ -97,11 +182,6 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.Users.AddRange(
-                new User(viewer.Id, $"{viewer.Username}@example.com", viewer.Username, now),
-                new User(target.Id, $"{target.Username}@example.com", target.Username, now),
-                new User(blockedRelation.Id, $"{blockedRelation.Username}@example.com", blockedRelation.Username, now),
-                new User(viewerBlockedRelation.Id, $"{viewerBlockedRelation.Username}@example.com", viewerBlockedRelation.Username, now));
             db.UserFollows.AddRange(
                 UserFollow.Create(viewer.Id, target.Id, now),
                 UserFollow.Create(target.Id, viewer.Id, now),
@@ -267,9 +347,6 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.Users.AddRange(
-                new User(owner.Id, $"{owner.Username}@example.com", owner.Username, now),
-                new User(friend.Id, $"{friend.Username}@example.com", friend.Username, now));
             db.Friendships.Add(Friendship.Create(Guid.NewGuid(), owner.Id, friend.Id, now));
             await db.SaveChangesAsync();
         }
@@ -303,10 +380,6 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.Users.AddRange(
-                new User(actor.Id, $"{actor.Username}@example.com", actor.Username, now),
-                new User(visibleFriend.Id, $"{visibleFriend.Username}@example.com", visibleFriend.Username, now),
-                new User(blockedFriend.Id, $"{blockedFriend.Username}@example.com", blockedFriend.Username, now));
             db.Friendships.AddRange(
                 Friendship.Create(Guid.NewGuid(), actor.Id, visibleFriend.Id, now),
                 Friendship.Create(Guid.NewGuid(), actor.Id, blockedFriend.Id, now));
@@ -484,8 +557,14 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
     {
         using var scope = factory.Services.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<UserProfileService>();
-        var existed = await scope.ServiceProvider.GetRequiredService<FookbaseDbContext>()
-            .UserProfiles.AnyAsync(profile => profile.UserId == user.Id);
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        if (!await db.Users.AnyAsync(item => item.Id == user.Id))
+        {
+            db.Users.Add(new User(user.Id, $"{user.Username}@example.com", user.Username, DateTimeOffset.UtcNow));
+            await db.SaveChangesAsync();
+        }
+
+        var existed = await db.UserProfiles.AnyAsync(profile => profile.UserId == user.Id);
         await service.EnsureCreatedAsync(user.Id, user.Username);
         return !existed;
     }
