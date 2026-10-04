@@ -103,6 +103,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
             .SingleAsync(item => item.UserId == user.Id);
 
         Assert.Equal(user.Id, loaded.User.Id);
+        Assert.Same(loaded, loaded.User.Profile);
         Assert.Equal(avatarId, loaded.AvatarMedia!.Id);
         Assert.Equal(coverId, loaded.CoverMedia!.Id);
 

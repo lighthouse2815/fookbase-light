@@ -12,9 +12,11 @@ using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Reels.Entities;
 using Fookbase.Api.Modules.Stories.Entities;
 using Fookbase.Api.Modules.Users.Entities;
+using Fookbase.Api.Persistence.Conventions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 
 namespace Fookbase.Api.Persistence;
 
@@ -135,6 +137,13 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<ObjectDeletion> ObjectDeletions => Set<ObjectDeletion>();
 
     public DbSet<MediaProcessingJob> MediaProcessingJobs => Set<MediaProcessingJob>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        configurationBuilder.Conventions.Add(services => new DefaultValueAttributeConvention(
+            services.GetRequiredService<ProviderConventionSetBuilderDependencies>()));
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

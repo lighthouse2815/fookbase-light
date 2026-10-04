@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
@@ -54,9 +55,11 @@ public sealed class UserProfile
 
     public DateOnly? DateOfBirth { get; private set; }
 
+    [DefaultValue(Gender.PREFER_NOT_TO_SAY)]
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Gender Gender { get; private set; } = Gender.PREFER_NOT_TO_SAY;
 
+    [DefaultValue(BirthdayVisibility.ONLY_ME)]
     public BirthdayVisibility BirthdayVisibility { get; private set; } = BirthdayVisibility.ONLY_ME;
 
     [MaxLength(100)]
@@ -79,6 +82,7 @@ public sealed class UserProfile
     public DateTimeOffset UpdatedAt { get; private set; }
 
     [ForeignKey(nameof(UserId))]
+    [InverseProperty(nameof(User.Profile))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public User User { get; private set; } = null!;
 

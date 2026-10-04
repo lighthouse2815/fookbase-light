@@ -1,7 +1,9 @@
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Users.Domain.Enums;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Fookbase.Users.Api.IntegrationTests;
@@ -18,11 +20,27 @@ public sealed class UserProfileModelTests
 
         Assert.Equal(profile.FindPrimaryKey()!.Properties, foreignKey.Properties);
         Assert.Equal(nameof(UserProfile.User), foreignKey.DependentToPrincipal!.Name);
+        Assert.Equal(nameof(User.Profile), foreignKey.PrincipalToDependent!.Name);
         Assert.True(foreignKey.IsRequired);
         Assert.True(foreignKey.IsUnique);
+        Assert.False(foreignKey.IsRequiredDependent);
         Assert.Equal(DeleteBehavior.Cascade, foreignKey.DeleteBehavior);
         Assert.Equal(ValueGenerated.Never, profile.FindProperty(nameof(UserProfile.UserId))!.ValueGenerated);
         Assert.Equal(ValueGenerated.Never, profile.FindProperty(nameof(UserProfile.Gender))!.ValueGenerated);
+    }
+
+    [Fact]
+    public void Profile_preserves_database_defaults_declared_on_the_entity()
+    {
+        using var dbContext = CreateDbContext();
+        var profile = dbContext.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(UserProfile))!;
+        var gender = profile.FindProperty(nameof(UserProfile.Gender))!;
+        var birthdayVisibility = profile.FindProperty(nameof(UserProfile.BirthdayVisibility))!;
+
+        Assert.Equal(Gender.PREFER_NOT_TO_SAY, gender.GetDefaultValue());
+        Assert.Equal(ValueGenerated.Never, gender.ValueGenerated);
+        Assert.Equal(BirthdayVisibility.ONLY_ME, birthdayVisibility.GetDefaultValue());
+        Assert.Equal(ValueGenerated.OnAdd, birthdayVisibility.ValueGenerated);
     }
 
     [Theory]
