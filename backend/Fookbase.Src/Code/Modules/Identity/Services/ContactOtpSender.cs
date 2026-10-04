@@ -7,7 +7,7 @@ public sealed class ContactOtpSender(
     IEmailSender emailSender,
     TraccarSmsSender traccarSmsSender) : IContactOtpSender
 {
-    public async Task<string> SendAsync(
+    public async Task SendAsync(
         ContactIdentifier contact,
         string code,
         CancellationToken cancellationToken = default)
@@ -20,11 +20,12 @@ public sealed class ContactOtpSender(
                     "Fookbase verification code",
                     $"<p>Your Fookbase verification code is <strong>{code}</strong>.</p>",
                     cancellationToken);
-                return code;
+                return;
             case ContactKind.Email:
                 throw new InvalidOperationException("Email delivery is not configured.");
             case ContactKind.Phone:
-                return await traccarSmsSender.SendOtpAsync(contact.Value, code, cancellationToken);
+                await traccarSmsSender.SendOtpAsync(contact.Value, code, cancellationToken);
+                return;
             default:
                 throw new InvalidOperationException("The verification contact is unsupported.");
         }

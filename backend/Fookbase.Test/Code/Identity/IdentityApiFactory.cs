@@ -97,11 +97,11 @@ public sealed class TestContactOtpSender : IContactOtpSender
 {
     private readonly ConcurrentDictionary<string, string> codes = new(StringComparer.Ordinal);
 
-    public Task<string> SendAsync(ContactIdentifier contact, string code, CancellationToken cancellationToken = default)
+    public Task SendAsync(ContactIdentifier contact, string code, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         codes[contact.Value] = code;
-        return Task.FromResult(code);
+        return Task.CompletedTask;
     }
 
     public string LastCodeFor(string contact) =>

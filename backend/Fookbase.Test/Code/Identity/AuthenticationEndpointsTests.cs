@@ -256,6 +256,41 @@ public sealed class AuthenticationEndpointsTests(IdentityApiFactory factory)
         Assert.Equal(HttpStatusCode.Conflict, repeated.StatusCode);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Registration_resend_delivers_a_verifiable_otp(bool phone)
+    {
+        var contact = phone
+            ? $"09{RandomNumberGenerator.GetInt32(10_000_000, 99_999_999)}"
+            : $"otp-resend-{Guid.NewGuid():N}@example.test";
+        using var client = factory.CreateClient();
+        using var start = await client.PostAsJsonAsync(
+            "/api/auth/registration/start",
+            new RegistrationStartRequest("An", "Nguyễn", new DateOnly(2000, 1, 2), "other", contact, "Password123!"));
+        Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+        var challenge = await start.Content.ReadApiDataAsync<RegistrationChallengeResponse>();
+        Assert.NotNull(challenge);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        await dbContext.RegistrationChallenges
+            .Where(item => item.Id == challenge.ChallengeId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(
+                item => item.NextResendAllowedAtUtc, DateTimeOffset.UtcNow.AddMinutes(-1)));
+
+        using var resend = await client.PostAsJsonAsync(
+            "/api/auth/registration/resend", new RegistrationResendRequest(challenge.ChallengeId));
+        Assert.Equal(HttpStatusCode.OK, resend.StatusCode);
+        var persisted = await dbContext.RegistrationChallenges.SingleAsync(item => item.Id == challenge.ChallengeId);
+        Assert.Equal(2, persisted.SendCount);
+
+        var code = factory.Services.GetRequiredService<TestContactOtpSender>().LastCodeFor(ContactIdentifier.Parse(contact).Value);
+        using var verify = await client.PostAsJsonAsync(
+            "/api/auth/registration/verify", new RegistrationVerifyRequest(challenge.ChallengeId, code));
+        Assert.Equal(HttpStatusCode.Created, verify.StatusCode);
+    }
+
     [Fact]
     public void Registration_challenge_allows_at_most_five_sends_per_hour()
     {

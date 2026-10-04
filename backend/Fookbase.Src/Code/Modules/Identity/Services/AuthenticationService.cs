@@ -499,9 +499,7 @@ public sealed class AuthenticationService(
         await dbContext.SaveChangesAsync(cancellationToken);
         try
         {
-            var deliveredCode = await contactOtpSender.SendAsync(contact, code, cancellationToken);
-            challenge.ReplaceCodeHash(HashOtp(deliveredCode));
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await contactOtpSender.SendAsync(contact, code, cancellationToken);
             return;
         }
         catch (Exception exception) when (exception is not BusinessException and not OperationCanceledException)

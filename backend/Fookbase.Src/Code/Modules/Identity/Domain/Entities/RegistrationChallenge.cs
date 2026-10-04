@@ -154,11 +154,4 @@ public sealed class RegistrationChallenge
         SendCount++;
         return true;
     }
-
-    public void ReplaceCodeHash(string codeHash)
-    {
-        IdentityInputValidator.ValidateSha256Hex(codeHash, "Mã băm OTP", nameof(codeHash));
-        CodeHash = codeHash;
-    }
-
 }

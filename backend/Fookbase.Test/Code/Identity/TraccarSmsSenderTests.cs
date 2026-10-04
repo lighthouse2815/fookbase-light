@@ -16,9 +16,8 @@ public sealed class TraccarSmsSenderTests
         using var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.traccar.org/sms/") };
         var sender = new TraccarSmsSender(client, EnabledOptions(), NullLogger<TraccarSmsSender>.Instance);
 
-        var code = await sender.SendOtpAsync("+84912345678", "123456");
+        await sender.SendOtpAsync("+84912345678", "123456");
 
-        Assert.Equal("123456", code);
         Assert.Equal(HttpMethod.Post, handler.Method);
         Assert.Equal("/sms/", handler.Path);
         Assert.Equal("gateway-token", handler.Authorization);
@@ -45,9 +44,8 @@ public sealed class TraccarSmsSenderTests
         var emailSender = new TestEmailSender();
         var sender = new ContactOtpSender(emailSender, smsSender);
 
-        var code = await sender.SendAsync(ContactIdentifier.Parse("0912345678"), "123456");
+        await sender.SendAsync(ContactIdentifier.Parse("0912345678"), "123456");
 
-        Assert.Equal("123456", code);
         Assert.Equal("/sms/", handler.Path);
         Assert.Contains("\"to\":\"\\u002B84912345678\"", handler.Body, StringComparison.Ordinal);
         Assert.Contains("123456", handler.Body, StringComparison.Ordinal);

@@ -5,7 +5,7 @@ namespace Fookbase.Api.Modules.Identity.Services;
 
 public sealed class TraccarSmsSender(HttpClient client, SmsOptions options, ILogger<TraccarSmsSender> logger)
 {
-    public async Task<string> SendOtpAsync(
+    public async Task SendOtpAsync(
         string phoneNumber,
         string code,
         CancellationToken cancellationToken = default)
@@ -31,7 +31,5 @@ public sealed class TraccarSmsSender(HttpClient client, SmsOptions options, ILog
             logger.LogWarning("Traccar rejected OTP dispatch with HTTP status {StatusCode}.", (int)response.StatusCode);
             throw new InvalidOperationException("The SMS provider could not deliver the verification code.");
         }
-
-        return code;
     }
 }
