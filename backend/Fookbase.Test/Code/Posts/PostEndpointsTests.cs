@@ -779,6 +779,40 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
         Assert.Equal(0, countAfterAll!.UnreadNotificationCount);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Notifications_include_the_actors_existing_avatar_url(bool usesMedia)
+    {
+        var users = await CreateUserIdsAsync(2);
+        var actorId = users[1];
+        var actorUsername = $"notification_{actorId:N}"[..32];
+        const string externalAvatarUrl = "https://example.com/avatar.png";
+        await CreateProfileAsync(actorId, actorUsername);
+        var avatarMediaId = usesMedia ? await CreateReadyMediaAsync(actorId) : (Guid?)null;
+        var notification = Notification.Create(Guid.NewGuid(), users[0], actorId,
+            NotificationType.USER_FOLLOWED, NotificationEntityType.USER_FOLLOW, actorId, DateTimeOffset.UtcNow);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var profile = await db.UserProfiles.SingleAsync(item => item.UserId == actorId);
+            profile.Update("Notification Actor", null, null, null, avatarMediaId, null, DateTimeOffset.UtcNow);
+            if (!usesMedia) db.Entry(profile).Property(item => item.AvatarUrl).CurrentValue = externalAvatarUrl;
+            db.Notifications.Add(notification);
+            await db.SaveChangesAsync();
+        }
+
+        using var recipient = CreateAuthenticatedClient(users[0]);
+        var notifications = await ReadAsync<NotificationPageResponse>(await recipient.GetAsync("/api/notifications"));
+        var response = Assert.Single(notifications.Items);
+        Assert.Equal(actorId, response.ActorUserId);
+        Assert.Equal(actorUsername, response.ActorUsername);
+        Assert.Equal("Notification Actor", response.ActorDisplayName);
+        Assert.Equal(usesMedia ? $"/api/users/{actorId}/avatar" : externalAvatarUrl, response.ActorAvatarUrl);
+        Assert.Null(response.PageUsername);
+        await RecordingNotificationHubContext.AssertPublishedResponseAsync(factory.Services, response);
+    }
+
     [Fact]
     public async Task Blocked_and_stale_post_notifications_are_not_returned()
     {

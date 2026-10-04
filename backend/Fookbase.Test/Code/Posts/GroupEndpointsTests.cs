@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Groups.DTOs.Responses;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
@@ -111,6 +112,11 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
             notification.RecipientUserId == users[1] &&
             notification.Type == NotificationType.GROUP_JOIN_APPROVED &&
             notification.EntityId == request.Id);
+        var notifications = await ReadAsync<NotificationPageResponse>(await requester.GetAsync("/api/notifications"));
+        var approvedNotification = Assert.Single(notifications.Items, item => item.Type == "GroupJoinApproved");
+        Assert.Equal(request.Id, approvedNotification.EntityId);
+        Assert.Equal(group.Id, approvedNotification.ParentEntityId);
+        await RecordingNotificationHubContext.AssertPublishedResponseAsync(factory.Services, approvedNotification);
     }
 
     [Fact]
@@ -131,6 +137,11 @@ public sealed class GroupEndpointsTests(PostsApiFactory factory) : IClassFixture
         var duplicate = await owner.PostAsJsonAsync(
             $"/api/groups/{group.Id}/invites",
             new { userId = users[1] });
+        var notifications = await ReadAsync<NotificationPageResponse>(await firstInvitee.GetAsync("/api/notifications"));
+        var inviteNotification = Assert.Single(notifications.Items, item => item.Type == "GroupInvite");
+        Assert.Equal(invite.Id, inviteNotification.EntityId);
+        Assert.Equal(group.Id, inviteNotification.ParentEntityId);
+        await RecordingNotificationHubContext.AssertPublishedResponseAsync(factory.Services, inviteNotification);
         var accepted = await firstInvitee.PostAsync(
             $"/api/groups/{group.Id}/invites/{invite.Id}/accept", null);
         var secondInviteResponse = await owner.PostAsJsonAsync(

@@ -12,7 +12,9 @@ public sealed record NotificationResponse(
     Guid? ParentEntityId,
     bool IsRead,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? ReadAtUtc);
+    DateTimeOffset? ReadAtUtc,
+    string? ActorAvatarUrl = null,
+    string? PageUsername = null);
 
 public sealed record NotificationPageResponse(
     IReadOnlyList<NotificationResponse> Items,

@@ -493,6 +493,38 @@ public sealed class NotificationService(
                 .Where(invitation => eventInviteIds.Contains(invitation.Id))
                 .Select(invitation => new { invitation.Id, invitation.EventId })
                 .ToDictionaryAsync(item => item.Id, item => item.EventId, cancellationToken);
+        var groupInviteIds = notifications
+            .Where(notification => notification.EntityType == NotificationEntityType.GROUP_INVITE && notification.EntityId is not null)
+            .Select(notification => notification.EntityId!.Value)
+            .Distinct()
+            .ToArray();
+        var groupInviteGroupIds = groupInviteIds.Length == 0
+            ? new Dictionary<Guid, Guid>()
+            : await dbContext.GroupInvites.AsNoTracking()
+                .Where(invite => groupInviteIds.Contains(invite.Id))
+                .ToDictionaryAsync(invite => invite.Id, invite => invite.GroupId, cancellationToken);
+        var groupJoinRequestIds = notifications
+            .Where(notification => notification.EntityType == NotificationEntityType.GROUP_JOIN_REQUEST && notification.EntityId is not null)
+            .Select(notification => notification.EntityId!.Value)
+            .Distinct()
+            .ToArray();
+        var groupJoinRequestGroupIds = groupJoinRequestIds.Length == 0
+            ? new Dictionary<Guid, Guid>()
+            : await dbContext.GroupJoinRequests.AsNoTracking()
+                .Where(request => groupJoinRequestIds.Contains(request.Id))
+                .ToDictionaryAsync(request => request.Id, request => request.GroupId, cancellationToken);
+        var pageInvitationIds = notifications
+            .Where(notification => notification.EntityType == NotificationEntityType.PAGE_ROLE_INVITATION && notification.EntityId is not null)
+            .Select(notification => notification.EntityId!.Value)
+            .Distinct()
+            .ToArray();
+        var pageInvitationTargets = pageInvitationIds.Length == 0
+            ? new Dictionary<Guid, PageInvitationTarget>()
+            : await (from invitation in dbContext.PageRoleInvitations.AsNoTracking()
+                     join page in dbContext.Pages.AsNoTracking() on invitation.PageId equals page.Id
+                     where pageInvitationIds.Contains(invitation.Id) && page.DeletedAtUtc == null
+                     select new PageInvitationTarget(invitation.Id, page.Id, page.Username))
+                .ToDictionaryAsync(target => target.InvitationId, cancellationToken);
         var actorUserIds = notifications
             .Where(notification => notification.ActorUserId is not null)
             .Select(notification => notification.ActorUserId!.Value)
@@ -505,7 +537,8 @@ public sealed class NotificationService(
                 .Select(profile => new ActorProfile(
                     profile.UserId,
                     profile.Username,
-                    profile.DisplayName))
+                    profile.DisplayName,
+                    profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar"))
                 .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
 
         return notifications.Select(notification =>
@@ -513,13 +546,21 @@ public sealed class NotificationService(
             var profile = notification.ActorUserId is null
                 ? null
                 : profiles.GetValueOrDefault(notification.ActorUserId.Value);
-            Guid? parentEntityId = notification.EntityId is Guid entityId
-                ? notification.EntityType == NotificationEntityType.COMMENT
-                    ? commentPostIds.GetValueOrDefault(entityId)
-                    : notification.Type == NotificationType.EVENT_INVITE
-                        ? eventInviteEventIds.GetValueOrDefault(entityId)
-                        : null
+            var pageTarget = notification.EntityType == NotificationEntityType.PAGE_ROLE_INVITATION && notification.EntityId is Guid invitationId
+                ? pageInvitationTargets.GetValueOrDefault(invitationId)
                 : null;
+            Guid? parentEntityId = notification.EntityId is Guid entityId
+                ? notification.EntityType switch
+                {
+                    NotificationEntityType.COMMENT => commentPostIds.GetValueOrDefault(entityId),
+                    NotificationEntityType.EVENT when notification.Type == NotificationType.EVENT_INVITE => eventInviteEventIds.GetValueOrDefault(entityId),
+                    NotificationEntityType.GROUP_INVITE => groupInviteGroupIds.GetValueOrDefault(entityId),
+                    NotificationEntityType.GROUP_JOIN_REQUEST => groupJoinRequestGroupIds.GetValueOrDefault(entityId),
+                    NotificationEntityType.PAGE_ROLE_INVITATION => pageTarget?.PageId,
+                    _ => null
+                }
+                : null;
+            if (parentEntityId == Guid.Empty) parentEntityId = null;
             return new NotificationResponse(
                 notification.Id,
                 notification.RecipientUserId,
@@ -532,7 +573,9 @@ public sealed class NotificationService(
                 parentEntityId,
                 notification.IsRead,
                 notification.CreatedAtUtc,
-                notification.ReadAtUtc);
+                notification.ReadAtUtc,
+                profile?.AvatarUrl,
+                pageTarget?.Username);
         }).ToList();
     }
 
@@ -572,5 +615,7 @@ public sealed class NotificationService(
 
     private sealed record NotificationCursor(DateTimeOffset CreatedAtUtc, Guid Id);
 
-    private sealed record ActorProfile(Guid UserId, string Username, string DisplayName);
+    private sealed record ActorProfile(Guid UserId, string Username, string DisplayName, string? AvatarUrl);
+
+    private sealed record PageInvitationTarget(Guid InvitationId, Guid PageId, string Username);
 }

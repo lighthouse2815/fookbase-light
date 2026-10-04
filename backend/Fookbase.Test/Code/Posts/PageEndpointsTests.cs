@@ -9,6 +9,7 @@ using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
+using Fookbase.Api.Modules.Notifications.DTOs.Responses;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Pages.DTOs.Responses;
 using Fookbase.Api.Modules.Pages.Entities;
@@ -157,6 +158,12 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var invitation = await ReadAsync<PageRoleInvitationResponse>(created);
         var duplicate = await owner.PostAsJsonAsync($"/api/pages/{page.Id}/invitations", new { userId = users[1], role = "editor" });
         var mine = await ReadAsync<PageCursorPageResponse<PageRoleInvitationResponse>>(await invitee.GetAsync("/api/pages/invitations/mine"));
+        var notifications = await ReadAsync<NotificationPageResponse>(await invitee.GetAsync("/api/notifications"));
+        var inviteNotification = Assert.Single(notifications.Items, item => item.Type == "PageRoleInvite");
+        Assert.Equal(invitation.Id, inviteNotification.EntityId);
+        Assert.Equal(page.Id, inviteNotification.ParentEntityId);
+        Assert.Equal(page.Username, inviteNotification.PageUsername);
+        await RecordingNotificationHubContext.AssertPublishedResponseAsync(factory.Services, inviteNotification);
         var accepted = await invitee.PostAsync($"/api/pages/invitations/{invitation.Id}/accept", null);
 
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
