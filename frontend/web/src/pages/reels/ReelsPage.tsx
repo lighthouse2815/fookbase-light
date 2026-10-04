@@ -397,6 +397,7 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, volume, isM
 
 function CreateReelDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (reel: Reel) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const publicationRef = useRef<AbortController | null>(null)
   const [media, setMedia] = useState<Media | null>(null)
   const [caption, setCaption] = useState('')
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'onlyMe'>('public')
@@ -408,12 +409,19 @@ function CreateReelDialog({ onClose, onCreated }: { onClose: () => void; onCreat
   const [isPublishing, setIsPublishing] = useState(false)
 
   useEffect(() => {
-    if (media?.status !== 'Processing') return
+    return () => publicationRef.current?.abort()
+  }, [])
+
+  useEffect(() => {
+    if (media?.status !== 'Processing' || isPublishing) return
+    let disposed = false
     const intervalId = window.setInterval(() => {
-      void mediaApi.getMetadata(media.id).then(setMedia).catch(() => setError('Không thể kiểm tra trạng thái xử lý video.'))
+      void mediaApi.getMetadata(media.id)
+        .then((nextMedia) => { if (!disposed) { setMedia(nextMedia); setError(null) } })
+        .catch(() => { if (!disposed) setError('Không thể kiểm tra trạng thái xử lý video.') })
     }, 2_000)
-    return () => window.clearInterval(intervalId)
-  }, [media?.id, media?.status])
+    return () => { disposed = true; window.clearInterval(intervalId) }
+  }, [media?.id, media?.status, isPublishing])
 
   useEffect(() => {
     if (media?.status !== 'Ready' || !media.hasProcessedVideo) return
@@ -445,18 +453,37 @@ function CreateReelDialog({ onClose, onCreated }: { onClose: () => void; onCreat
   }
 
   const publish = async () => {
-    if (!media || media.status !== 'Ready' || !media.hasProcessedVideo) return
+    if (!media || isUploading || isPublishing ||
+      (media.status !== 'Processing' && (media.status !== 'Ready' || !media.hasProcessedVideo))) return
+    const publication = new AbortController()
+    publicationRef.current = publication
     setIsPublishing(true)
     setError(null)
     try {
-      onCreated(await reelsApi.create({ caption: caption.trim(), privacy, videoMediaId: media.id }))
+      let readyMedia = media
+      while (readyMedia.status === 'Processing') {
+        await new Promise((resolve) => window.setTimeout(resolve, 2_000))
+        if (publication.signal.aborted) return
+        readyMedia = await mediaApi.getMetadata(media.id)
+        if (publication.signal.aborted) return
+        setMedia(readyMedia)
+      }
+      if (readyMedia.status !== 'Ready' || !readyMedia.hasProcessedVideo) {
+        throw new Error('Xử lý video thất bại. Hãy chọn video khác.')
+      }
+      onCreated(await reelsApi.create({ caption: caption.trim(), privacy, videoMediaId: readyMedia.id }))
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Không thể xuất bản Reel.')
+      if (!publication.signal.aborted) {
+        setError(requestError instanceof Error ? requestError.message : 'Không thể xuất bản Reel.')
+      }
     } finally {
-      setIsPublishing(false)
+      if (publicationRef.current === publication) publicationRef.current = null
+      if (!publication.signal.aborted) setIsPublishing(false)
     }
   }
 
-  const status = isUploading ? `Đang tải lên ${progress}%` : media?.status === 'Processing' ? 'Đang xử lý video…' : media?.status === 'Failed' ? 'Xử lý video thất bại. Hãy chọn video khác.' : media?.status === 'Ready' ? 'Video đã sẵn sàng để xuất bản.' : 'Chọn một video MP4 hoặc WebM.'
-  return <div className="fixed inset-0 z-[70] grid place-items-center bg-black/75 p-3"><div role="dialog" aria-modal="true" aria-label="Tạo Reel" className="max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl"><div className="flex items-center justify-between"><h1 className="text-lg font-bold text-text">Tạo Reel</h1><button type="button" onClick={onClose} aria-label="Đóng" disabled={isUploading || isPublishing} className="border-0 bg-transparent text-lg text-text-muted">✕</button></div><div className="mt-4 rounded-xl border border-dashed border-border bg-surface-2 p-4 text-center"><input ref={inputRef} type="file" accept="video/mp4,video/webm" className="hidden" onChange={(event) => { void chooseFile(event.target.files?.[0]); event.target.value = '' }} /><button type="button" onClick={() => inputRef.current?.click()} disabled={isUploading || isPublishing} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Chọn video</button><p className="mt-3 text-sm text-text-muted">{status}</p>{previewUrl && <video src={previewUrl} poster={posterUrl ?? undefined} controls className="mt-3 max-h-64 w-full rounded-lg bg-black" />}</div><textarea value={caption} maxLength={10_000} onChange={(event) => setCaption(event.target.value)} placeholder="Thêm chú thích (không bắt buộc)" className="mt-4 min-h-24 w-full rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none" /><select value={privacy} onChange={(event) => setPrivacy(event.target.value as typeof privacy)} className="mt-3 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"><option value="public">Công khai</option><option value="friends">Bạn bè</option><option value="onlyMe">Chỉ mình tôi</option></select>{error && <p className="mt-3 text-sm text-[#ff8a9b]">{error}</p>}<button type="button" onClick={() => void publish()} disabled={media?.status !== 'Ready' || !media.hasProcessedVideo || isPublishing} className="mt-4 w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">{isPublishing ? 'Đang xuất bản…' : 'Xuất bản Reel'}</button></div></div>
+  const isProcessing = media?.status === 'Processing'
+  const canPublish = isProcessing || (media?.status === 'Ready' && media.hasProcessedVideo)
+  const status = isUploading ? `Đang tải lên ${progress}%` : isProcessing ? (isPublishing ? 'Đang xử lý video. Reel sẽ được đăng khi video sẵn sàng. Giữ cửa sổ này mở; đóng để hủy đăng.' : 'Đang xử lý video… Có thể mất vài phút. Bạn có thể bấm Xuất bản Reel ngay, không cần tải lại video.') : media?.status === 'Failed' ? 'Xử lý video thất bại. Hãy chọn video khác.' : media?.status === 'Ready' ? 'Video đã sẵn sàng để xuất bản.' : 'Chọn một video MP4 hoặc WebM.'
+  return <div className="fixed inset-0 z-[70] grid place-items-center bg-black/75 p-3"><div role="dialog" aria-modal="true" aria-label="Tạo Reel" className="max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl"><div className="flex items-center justify-between"><h1 className="text-lg font-bold text-text">Tạo Reel</h1><button type="button" onClick={onClose} aria-label="Đóng" disabled={isUploading || (isPublishing && !isProcessing)} className="border-0 bg-transparent text-lg text-text-muted">✕</button></div><div className="mt-4 rounded-xl border border-dashed border-border bg-surface-2 p-4 text-center"><input ref={inputRef} type="file" accept="video/mp4,video/webm" className="hidden" onChange={(event) => { void chooseFile(event.target.files?.[0]); event.target.value = '' }} /><button type="button" onClick={() => inputRef.current?.click()} disabled={isUploading || isPublishing} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Chọn video</button><p className="mt-3 text-sm text-text-muted" role="status">{status}</p>{previewUrl && <video src={previewUrl} poster={posterUrl ?? undefined} controls className="mt-3 max-h-64 w-full rounded-lg bg-black" />}</div><textarea value={caption} maxLength={10_000} disabled={isPublishing} onChange={(event) => setCaption(event.target.value)} placeholder="Thêm chú thích (không bắt buộc)" className="mt-4 min-h-24 w-full rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none" /><select value={privacy} disabled={isPublishing} onChange={(event) => setPrivacy(event.target.value as typeof privacy)} className="mt-3 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"><option value="public">Công khai</option><option value="friends">Bạn bè</option><option value="onlyMe">Chỉ mình tôi</option></select>{error && <p className="mt-3 text-sm text-[#ff8a9b]">{error}</p>}<button type="button" onClick={() => void publish()} disabled={!canPublish || isUploading || isPublishing} className="mt-4 w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">{isPublishing ? (isProcessing ? 'Đang chờ video…' : 'Đang xuất bản…') : 'Xuất bản Reel'}</button></div></div>
 }
