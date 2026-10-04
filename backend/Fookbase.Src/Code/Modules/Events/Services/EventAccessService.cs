@@ -14,6 +14,23 @@ public sealed class EventAccessService(FookbaseDbContext dbContext)
     public async Task<bool> CanViewAsync(Event item, Guid? userId, CancellationToken ct = default)
     { if (item.DeletedAtUtc is not null || userId is null) return false;
       if (await CanManageAsync(item,userId.Value,ct)) return true;
+      if (item.Status == EventStatus.CANCELLED)
+      {
+          if (item.HostType == EventHostType.USER && await IsBlockedAsync(userId.Value, item.HostId, ct)) return false;
+          if (item.HostType == EventHostType.GROUP && !await dbContext.Groups.AsNoTracking().AnyAsync(group =>
+              group.Id == item.HostId && group.DeletedAtUtc == null &&
+              (group.Privacy == GroupPrivacy.PUBLIC || dbContext.GroupMembers.Any(member =>
+                  member.GroupId == group.Id && member.UserId == userId.Value)), ct)) return false;
+          if (item.HostType == EventHostType.PAGE && !await dbContext.Pages.AsNoTracking().AnyAsync(page =>
+              page.Id == item.HostId && page.DeletedAtUtc == null &&
+              (page.Status == PageStatus.PUBLISHED || dbContext.PageMembers.Any(member =>
+                  member.PageId == page.Id && member.UserId == userId.Value)), ct)) return false;
+          return await dbContext.EventParticipants.AsNoTracking().AnyAsync(participant =>
+              participant.EventId == item.Id && participant.UserId == userId.Value, ct) ||
+              await dbContext.EventInvitations.AsNoTracking().AnyAsync(invitation =>
+                  invitation.EventId == item.Id && invitation.InviteeUserId == userId.Value &&
+                  invitation.Status == EventInvitationStatus.PENDING, ct);
+      }
       if (item.Status != EventStatus.PUBLISHED) return false;
       if (item.Privacy == EventPrivacy.PUBLIC) return item.HostType != EventHostType.USER || !await IsBlockedAsync(userId.Value,item.HostId,ct);
       return await dbContext.EventParticipants.AsNoTracking().AnyAsync(x=>x.EventId==item.Id && x.UserId==userId.Value,ct) ||
