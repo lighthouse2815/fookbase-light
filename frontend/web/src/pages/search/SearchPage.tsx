@@ -49,7 +49,7 @@ function PageCard({ item }: { item: SearchPageResult }) {
 
 function PostCard({ item }: { item: SearchPost }) {
   const author = item.displayAuthor?.name ?? (item.authorUserId ? 'Người dùng' : 'Bài viết')
-  const destination = item.containerType === 'group' ? `/groups/${item.containerId}` : item.displayAuthor?.type === 'page' ? `/pages/${item.displayAuthor.username}` : item.authorUserId ? `/profile/${item.authorUserId}` : '/feed'
+  const destination = `/posts/${item.postId}`
   return <Link to={destination} className="flex gap-3 rounded-xl border border-border bg-surface p-4 no-underline transition-colors hover:bg-surface-2"><Avatar src={item.displayAuthor?.avatarUrl ?? null} label={author} /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3 text-xs text-text-muted"><span className="truncate font-semibold text-text">{author}</span><time className="shrink-0">{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(item.createdAtUtc))}</time></div><p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-text">{item.snippet || `${item.mediaIds.length} tệp đính kèm`}</p><p className="mt-2 text-xs text-text-muted">{item.commentCount} bình luận · {Object.values(item.reactionCounts).reduce((sum, count) => sum + count, 0)} cảm xúc · {item.containerType}</p></div></Link>
 }
 
