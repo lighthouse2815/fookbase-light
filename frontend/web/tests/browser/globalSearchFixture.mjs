@@ -39,6 +39,7 @@ export async function searchFixtures(context) {
       return route.fulfill({ json: result })
     }
     const postIndex = searchPostIds.indexOf(path.split('/').at(-1))
+    if (path === `/api/users/${personId}`) return route.fulfill({ json: { ...person, coverUrl: null, dateOfBirth: null, currentCity: null, createdAt: '2026-10-01T08:00:00Z', updatedAt: '2026-10-01T08:00:00Z' } })
     if (path.startsWith('/api/posts/') && postIndex >= 0) {
       const item = searchPosts[postIndex]
       return route.fulfill({ json: { ...basePost, id: item.postId, content: item.snippet, displayAuthor: item.displayAuthor, containerType: item.containerType } })
