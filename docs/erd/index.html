@@ -42,6 +42,9 @@
     .toolbar button:hover, .toolbar a:hover { background: #f0f6f8; }
     .toolbar button:disabled { cursor: default; color: #8d9da8; background: #f5f7f8; }
     #zoomLevel { min-width: 44px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+    #overviewOptions { display: inline-flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: #35556b; cursor: pointer; }
+    #overviewOptions input { width: 16px; height: 16px; accent-color: #167d8d; margin: 0; flex: none; }
+    #overviewOptions[hidden] { display: none; }
     .toolbar-links { margin-left: auto; display: flex; gap: 8px; }
     .viewport { position: relative; flex: 1; min-height: 180px; overflow: auto; overscroll-behavior: contain; background-color: #eef3f6; background-image: radial-gradient(#ccd9e0 .7px, transparent .7px); background-size: 16px 16px; }
     #stage { display: grid; place-items: center; min-width: 100%; min-height: 100%; padding: 24px; }
@@ -66,11 +69,15 @@
       .brand h1 { font-size: 18px; }
       .search { padding: 12px 18px; }
       #diagramList { max-height: 190px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; padding: 0 10px 10px; }
+      .overview-item { grid-column: 1 / -1; }
       .sidebar-footer { padding: 12px 18px; }
       .diagram-header { padding: 18px; }
       h2 { font-size: 20px; }
       .toolbar { padding: 10px 18px; }
-      .toolbar-links { margin-left: 0; }
+      #overviewOptions { display: inline-flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; color: #35556b; cursor: pointer; }
+    #overviewOptions input { width: 16px; height: 16px; accent-color: #167d8d; margin: 0; flex: none; }
+    #overviewOptions[hidden] { display: none; }
+    .toolbar-links { margin-left: 0; }
       .viewport { flex: none; height: 65dvh; min-height: 360px; }
       .legend, details { padding-left: 18px; padding-right: 18px; }
     }
@@ -82,12 +89,12 @@
     <aside class="sidebar" aria-label="Chọn sơ đồ">
       <div class="brand">
         <h1>Fookbase Light<br>Quan hệ entity</h1>
-        <p>70 bảng EF · 1 bảng lịch sử<br>116 khóa ngoại · 18 sơ đồ</p>
+        <p>70 bảng EF · 1 bảng lịch sử<br>116 khóa ngoại · 14 module</p>
       </div>
       <div class="search">
         <label for="searchInput">Tìm nhóm hoặc tên bảng</label>
         <input id="searchInput" type="search" placeholder="Ví dụ: Groups, UserProfiles…" autocomplete="off" spellcheck="false">
-        <p id="resultCount" role="status">18 sơ đồ</p>
+        <p id="resultCount" role="status">Tổng quan · 14 module · hạ tầng</p>
       </div>
       <ul id="diagramList" aria-label="Danh sách sơ đồ"></ul>
       <div class="sidebar-footer">
@@ -97,9 +104,9 @@
     </aside>
     <main>
       <header class="diagram-header">
-        <p class="eyebrow" id="diagramNumber">Sơ đồ 08 / 18</p>
-        <h2 id="diagramTitle">Nhóm cộng đồng</h2>
-        <p id="diagramSummary">6 bảng trong nhóm · 13 khóa ngoại · 2 bảng liên quan</p>
+        <p class="eyebrow" id="diagramNumber">Tổng quan · 14 module và hạ tầng</p>
+        <h2 id="diagramTitle">Tổng quan tất cả bảng</h2>
+        <p id="diagramSummary">71 bảng, gom theo module. Bật quan hệ giữa các module để xem toàn bộ liên kết.</p>
       </header>
       <div class="toolbar" role="group" aria-label="Điều khiển sơ đồ">
         <button id="zoomOut" type="button" aria-label="Thu nhỏ" title="Thu nhỏ (−)">−</button>
@@ -107,15 +114,16 @@
         <button id="zoomIn" type="button" aria-label="Phóng to" title="Phóng to (+)">+</button>
         <button id="fitDiagram" type="button" title="Vừa khung (F)">Vừa khung</button>
         <button id="actualSize" type="button" title="Kích thước gốc (0)">100%</button>
+        <label id="overviewOptions" for="crossModuleLinks"><input id="crossModuleLinks" type="checkbox">Hiện quan hệ giữa các module</label>
         <div class="toolbar-links">
-          <a id="openSvg" href="08-groups.svg" target="_blank" rel="noopener">Mở SVG</a>
-          <a id="downloadSvg" href="08-groups.svg" download="08-groups.svg">Tải SVG</a>
+          <a id="openSvg" href="00-overview.svg" target="_blank" rel="noopener">Mở SVG</a>
+          <a id="downloadSvg" href="00-overview.svg" download="00-overview.svg">Tải SVG</a>
         </div>
       </div>
       <div id="viewport" class="viewport" tabindex="0" role="region" aria-label="Sơ đồ quan hệ. Cuộn để xem; phím cộng/trừ để thay đổi kích thước." aria-busy="true">
         <p id="imageStatus" role="status">Đang mở sơ đồ…</p>
         <div id="stage">
-          <img id="diagramImage" src="08-groups.svg" alt="Sơ đồ quan hệ entity của nhóm cộng đồng" hidden>
+          <img id="diagramImage" src="00-overview.svg" alt="Tổng quan các bảng theo module của Fookbase Light" hidden>
         </div>
       </div>
       <div class="legend" aria-label="Chú giải">
@@ -128,16 +136,16 @@
         <div id="tableList" class="tables"></div>
         <p class="table-note">Nhãn xám là bảng liên quan từ nhóm khác. Phóng to rồi cuộn để đọc tên cột và bậc quan hệ.</p>
       </details>
-      <noscript><p class="noscript">Bật JavaScript để chọn nhóm và phóng to. Bạn vẫn có thể mở sơ đồ Groups bằng liên kết SVG hoặc xem đầy đủ trong PDF.</p></noscript>
+      <noscript><p class="noscript">Bật JavaScript để chọn nhóm và phóng to. Bạn vẫn có thể mở sơ đồ tổng quan bằng liên kết SVG hoặc xem đầy đủ trong PDF.</p></noscript>
     </main>
   </div>
-  <script id="diagramData" type="application/json">[{"slug":"01-identity-core","title":"Identity: tài khoản và phân quyền","owned":["AspNetUsers","AspNetRoles","AspNetUserRoles","AspNetUserClaims","AspNetRoleClaims","AspNetUserLogins","AspNetUserTokens"],"context":[],"fk_count":6,"logic_count":0},{"slug":"02-authentication","title":"Phiên và xác thực","owned":["AuthSessions","RefreshTokens","ExternalLoginTickets","PasswordResetOtps","RegistrationChallenges","TwoFactorLoginChallenges"],"context":["AspNetUsers"],"fk_count":7,"logic_count":0},{"slug":"03-users","title":"Hồ sơ và quyền riêng tư","owned":["UserProfiles","UserPrivacySettings"],"context":["AspNetUsers","MediaAssets"],"fk_count":3,"logic_count":1},{"slug":"04-friends","title":"Bạn bè, theo dõi và chặn","owned":["FriendRequests","Friendships","UserFollows","BlockedUsers","FriendNotifications"],"context":["AspNetUsers"],"fk_count":13,"logic_count":0},{"slug":"05-posts","title":"Bài viết, bình luận và cảm xúc","owned":["Posts","Comments","PostMedia","PostReactions","CommentReactions"],"context":["AspNetUsers","MediaAssets"],"fk_count":5,"logic_count":5},{"slug":"06-social-interactions","title":"Lưu, chia sẻ, đề cập và hashtag","owned":["PostSaves","PostShares","ContentMentions","Hashtags","PostHashtags"],"context":["AspNetUsers","Posts"],"fk_count":5,"logic_count":2},{"slug":"07-media","title":"Media và công việc nền","owned":["MediaAssets","MediaReferences","ProfileMediaReferences","MediaProcessingJobs","ObjectDeletions"],"context":["AspNetUsers","Posts"],"fk_count":6,"logic_count":1},{"slug":"08-groups","title":"Nhóm cộng đồng","owned":["Groups","GroupMembers","GroupJoinRequests","GroupInvites","GroupRules","GroupCoverMediaReferences"],"context":["AspNetUsers","MediaAssets"],"fk_count":13,"logic_count":0},{"slug":"09-pages","title":"Trang cộng đồng","owned":["Pages","PageMembers","PageFollowers","PageRoleInvitations","PageMediaReferences"],"context":["AspNetUsers","MediaAssets"],"fk_count":12,"logic_count":0},{"slug":"10-conversations","title":"Hội thoại, thành viên và mốc đọc","owned":["Conversations","ConversationParticipants","ConversationReadCursors"],"context":["AspNetUsers","MediaAssets","Messages"],"fk_count":10,"logic_count":0},{"slug":"11-messages","title":"Tin nhắn, đính kèm và thông báo tin","owned":["Messages","MessageAttachments","MessageReactions","MessageNotifications"],"context":["AspNetUsers","Conversations","MediaAssets","Stories"],"fk_count":11,"logic_count":0},{"slug":"12-notifications","title":"Thông báo và push mobile","owned":["Notifications","PushDevices","PushDeliveryReceipts"],"context":["AspNetUsers"],"fk_count":4,"logic_count":0},{"slug":"13-moderation","title":"Báo cáo và kiểm duyệt","owned":["ContentReports","ModerationActions","UserModerationStates"],"context":["AspNetUsers"],"fk_count":4,"logic_count":1},{"slug":"14-events","title":"Sự kiện","owned":["Events","EventParticipants","EventInvitations","EventCoverMediaReferences"],"context":["AspNetUsers","MediaAssets"],"fk_count":9,"logic_count":0},{"slug":"15-photos","title":"Ảnh và album","owned":["PhotoAlbums","AlbumMedia"],"context":["AspNetUsers","MediaAssets"],"fk_count":0,"logic_count":3},{"slug":"16-stories","title":"Stories","owned":["Stories","StoryMediaReferences","StoryViews","StoryReactions"],"context":["AspNetUsers","MediaAssets"],"fk_count":8,"logic_count":0},{"slug":"17-reels","title":"Lượt xem Reel","owned":["ReelViews"],"context":["AspNetUsers","Posts"],"fk_count":0,"logic_count":2},{"slug":"18-migration-history","title":"Lịch sử migration EF Core","owned":["__EFMigrationsHistory"],"context":[],"fk_count":0,"logic_count":0}]</script>
+  <script id="diagramData" type="application/json">[{"slug":"00-overview","title":"Tổng quan tất cả bảng","owned":["AspNetUsers","AspNetRoles","AspNetUserRoles","AspNetUserClaims","AspNetRoleClaims","AspNetUserLogins","AspNetUserTokens","AuthSessions","RefreshTokens","ExternalLoginTickets","PasswordResetOtps","RegistrationChallenges","TwoFactorLoginChallenges","UserProfiles","UserPrivacySettings","FriendRequests","Friendships","UserFollows","BlockedUsers","FriendNotifications","Posts","Comments","PostMedia","PostReactions","CommentReactions","PostSaves","PostShares","ContentMentions","Hashtags","PostHashtags","ContentReports","MediaAssets","MediaReferences","ProfileMediaReferences","MediaProcessingJobs","ObjectDeletions","Groups","GroupMembers","GroupJoinRequests","GroupInvites","GroupRules","GroupCoverMediaReferences","Pages","PageMembers","PageFollowers","PageRoleInvitations","PageMediaReferences","Conversations","ConversationParticipants","ConversationReadCursors","Messages","MessageAttachments","MessageReactions","MessageNotifications","Notifications","PushDevices","PushDeliveryReceipts","ModerationActions","UserModerationStates","Events","EventParticipants","EventInvitations","EventCoverMediaReferences","PhotoAlbums","AlbumMedia","Stories","StoryMediaReferences","StoryViews","StoryReactions","ReelViews","__EFMigrationsHistory"],"context":[],"fk_count":116,"logic_count":15,"internal_fk_count":54,"internal_logic_count":1,"overview":true,"modules":["Identity","Users","Friends","Posts","Media","Groups","Pages","Messages","Notifications","Admin","Events","Photos","Stories","Reels","Hạ tầng"]},{"slug":"module-identity","module":"Identity","title":"Tài khoản, phân quyền và xác thực","owned":["AspNetUsers","AspNetRoles","AspNetUserRoles","AspNetUserClaims","AspNetRoleClaims","AspNetUserLogins","AspNetUserTokens","AuthSessions","RefreshTokens","ExternalLoginTickets","PasswordResetOtps","RegistrationChallenges","TwoFactorLoginChallenges"],"context":[],"fk_count":13,"logic_count":0},{"slug":"03-users","title":"Hồ sơ và quyền riêng tư","owned":["UserProfiles","UserPrivacySettings"],"context":["AspNetUsers","MediaAssets"],"fk_count":3,"logic_count":1,"module":"Users"},{"slug":"04-friends","title":"Bạn bè, theo dõi và chặn","owned":["FriendRequests","Friendships","UserFollows","BlockedUsers","FriendNotifications"],"context":["AspNetUsers"],"fk_count":13,"logic_count":0,"module":"Friends"},{"slug":"module-posts","module":"Posts","title":"Bài viết và tương tác","owned":["Posts","Comments","PostMedia","PostReactions","CommentReactions","PostSaves","PostShares","ContentMentions","Hashtags","PostHashtags","ContentReports"],"context":["AspNetUsers","MediaAssets"],"fk_count":10,"logic_count":8},{"slug":"07-media","title":"Media và công việc nền","owned":["MediaAssets","MediaReferences","ProfileMediaReferences","MediaProcessingJobs","ObjectDeletions"],"context":["AspNetUsers","Posts"],"fk_count":6,"logic_count":1,"module":"Media"},{"slug":"08-groups","title":"Nhóm cộng đồng","owned":["Groups","GroupMembers","GroupJoinRequests","GroupInvites","GroupRules","GroupCoverMediaReferences"],"context":["AspNetUsers","MediaAssets"],"fk_count":13,"logic_count":0,"module":"Groups"},{"slug":"09-pages","title":"Trang cộng đồng","owned":["Pages","PageMembers","PageFollowers","PageRoleInvitations","PageMediaReferences"],"context":["AspNetUsers","MediaAssets"],"fk_count":12,"logic_count":0,"module":"Pages"},{"slug":"module-messages","module":"Messages","title":"Hội thoại và tin nhắn","owned":["Conversations","ConversationParticipants","ConversationReadCursors","Messages","MessageAttachments","MessageReactions","MessageNotifications"],"context":["AspNetUsers","MediaAssets","Stories"],"fk_count":21,"logic_count":0},{"slug":"12-notifications","title":"Thông báo và push mobile","owned":["Notifications","PushDevices","PushDeliveryReceipts"],"context":["AspNetUsers"],"fk_count":4,"logic_count":0,"module":"Notifications"},{"slug":"module-admin","module":"Admin","title":"Quyết định kiểm duyệt và trạng thái tài khoản","owned":["ModerationActions","UserModerationStates"],"context":["AspNetUsers","ContentReports"],"fk_count":4,"logic_count":0},{"slug":"14-events","title":"Sự kiện","owned":["Events","EventParticipants","EventInvitations","EventCoverMediaReferences"],"context":["AspNetUsers","MediaAssets"],"fk_count":9,"logic_count":0,"module":"Events"},{"slug":"15-photos","title":"Ảnh và album","owned":["PhotoAlbums","AlbumMedia"],"context":["AspNetUsers","MediaAssets"],"fk_count":0,"logic_count":3,"module":"Photos"},{"slug":"16-stories","title":"Stories","owned":["Stories","StoryMediaReferences","StoryViews","StoryReactions"],"context":["AspNetUsers","MediaAssets"],"fk_count":8,"logic_count":0,"module":"Stories"},{"slug":"17-reels","title":"Lượt xem Reel","owned":["ReelViews"],"context":["AspNetUsers","Posts"],"fk_count":0,"logic_count":2,"module":"Reels"},{"slug":"18-migration-history","title":"Lịch sử migration EF Core","owned":["__EFMigrationsHistory"],"context":[],"fk_count":0,"logic_count":0,"module":"Hạ tầng"}]</script>
   <script>
     'use strict';
     const diagrams = JSON.parse(document.getElementById('diagramData').textContent);
-    const elements = Object.fromEntries(['searchInput', 'resultCount', 'diagramList', 'diagramNumber', 'diagramTitle', 'diagramSummary', 'zoomOut', 'zoomIn', 'zoomLevel', 'fitDiagram', 'actualSize', 'openSvg', 'downloadSvg', 'viewport', 'stage', 'diagramImage', 'imageStatus', 'tableList'].map(id => [id, document.getElementById(id)]));
+    const elements = Object.fromEntries(['searchInput', 'resultCount', 'diagramList', 'diagramNumber', 'diagramTitle', 'diagramSummary', 'zoomOut', 'zoomIn', 'zoomLevel', 'fitDiagram', 'actualSize', 'openSvg', 'downloadSvg', 'viewport', 'stage', 'diagramImage', 'imageStatus', 'tableList', 'overviewOptions', 'crossModuleLinks'].map(id => [id, document.getElementById(id)]));
     const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
-    let selected = diagrams.find(item => item.slug === '08-groups');
+    let selected = diagrams.find(item => item.overview);
     let zoom = 1;
     let fitted = true;
     let naturalWidth = 0;
@@ -145,31 +153,35 @@
     const minZoom = 0.02;
     const maxZoom = 4;
 
+    function renderDiagramButton(item, query) {
+      const li = document.createElement('li');
+      if (item.overview) li.className = 'overview-item';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'diagram-button';
+      button.dataset.slug = item.slug;
+      button.setAttribute('aria-pressed', String(item.slug === selected.slug));
+      const title = document.createElement('strong');
+      title.textContent = item.overview ? item.title : `${item.module} — ${item.title}`;
+      const subtitle = document.createElement('span');
+      const tableMatches = query ? [...item.owned, ...item.context].filter(table => normalize(table).includes(query)) : [];
+      subtitle.textContent = tableMatches.length ? `Khớp: ${tableMatches.join(', ')}` : item.overview ? '71 bảng · gom theo 14 module và hạ tầng' : `${item.owned.length} bảng · ${item.fk_count} FK${item.logic_count ? ` · ${item.logic_count} tham chiếu` : ''}`;
+      button.append(title, subtitle);
+      button.addEventListener('click', () => selectDiagram(item));
+      li.append(button);
+      return li;
+    }
+
     function renderSidebar() {
       const query = normalize(elements.searchInput.value.trim());
-      const matches = diagrams.filter(item => normalize([item.title, item.slug, ...item.owned, ...item.context].join(' ')).includes(query));
+      const matches = diagrams.filter(item => normalize([item.title, item.slug, item.module || '', ...(item.modules || []), ...item.owned, ...item.context].join(' ')).includes(query));
       elements.diagramList.replaceChildren();
-      elements.resultCount.textContent = query ? `${matches.length} / ${diagrams.length} sơ đồ phù hợp` : `${diagrams.length} sơ đồ`;
-      matches.forEach(item => {
-        const li = document.createElement('li');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'diagram-button';
-        button.setAttribute('aria-pressed', String(item.slug === selected.slug));
-        const title = document.createElement('strong');
-        title.textContent = `${item.slug.slice(0, 2)}. ${item.title}`;
-        const subtitle = document.createElement('span');
-        const tableMatches = query ? [...item.owned, ...item.context].filter(table => normalize(table).includes(query)) : [];
-        subtitle.textContent = tableMatches.length ? `Khớp: ${tableMatches.join(', ')}` : `${item.owned.length} bảng · ${item.fk_count} FK${item.logic_count ? ` · ${item.logic_count} tham chiếu` : ''}`;
-        button.append(title, subtitle);
-        button.addEventListener('click', () => selectDiagram(item));
-        li.append(button);
-        elements.diagramList.append(li);
-      });
+      elements.resultCount.textContent = query ? `${matches.length} / ${diagrams.length} sơ đồ phù hợp` : 'Tổng quan · 14 module · hạ tầng';
+      matches.forEach(item => elements.diagramList.append(renderDiagramButton(item, query)));
       if (!matches.length) {
         const li = document.createElement('li');
         li.className = 'empty';
-        li.textContent = 'Không tìm thấy nhóm hoặc bảng. Thử tên ngắn hơn, ví dụ: Group.';
+        li.textContent = 'Không tìm thấy module hoặc bảng. Thử tên ngắn hơn, ví dụ: Group.';
         elements.diagramList.append(li);
       }
     }
@@ -201,17 +213,40 @@
 
     function changeZoom(factor) { fitted = false; applyZoom(zoom * factor); }
 
-    function selectDiagram(item, updateHash = true) {
-      selected = item;
+    function currentSvgSlug() {
+      return selected.overview && elements.crossModuleLinks.checked ? '00-overview-all-links' : selected.slug;
+    }
+
+    function loadSelectedImage(updateHash = true) {
+      const item = selected;
+      const slug = currentSvgSlug();
       naturalWidth = 0;
       naturalHeight = 0;
       fitted = true;
-      elements.diagramNumber.textContent = `Sơ đồ ${item.slug.slice(0, 2)} / ${diagrams.length}`;
+      if (item.overview) {
+        elements.diagramSummary.textContent = elements.crossModuleLinks.checked
+          ? `71 bảng trong 14 module và hạ tầng · Hiện toàn bộ ${item.fk_count} khóa ngoại và ${item.logic_count} tham chiếu nghiệp vụ, gồm liên kết giữa các module.`
+          : `71 bảng trong 14 module và hạ tầng · Hiện ${item.internal_fk_count} khóa ngoại và ${item.internal_logic_count} tham chiếu nội bộ; 62 FK và 14 tham chiếu giữa các module đang ẩn.`;
+      } else {
+        elements.diagramSummary.textContent = `${item.owned.length} bảng trong nhóm · ${item.fk_count} khóa ngoại${item.logic_count ? ` · ${item.logic_count} tham chiếu nghiệp vụ` : ''}${item.context.length ? ` · ${item.context.length} bảng liên quan` : ''}`;
+      }
+      elements.openSvg.href = `${slug}.svg`;
+      elements.downloadSvg.href = `${slug}.svg`;
+      elements.downloadSvg.download = `${slug}.svg`;
+      elements.imageStatus.textContent = 'Đang mở sơ đồ…';
+      elements.imageStatus.hidden = false;
+      elements.diagramImage.hidden = true;
+      elements.viewport.setAttribute('aria-busy', 'true');
+      elements.diagramImage.alt = item.overview ? `Tổng quan các bảng theo module${elements.crossModuleLinks.checked ? ', hiển thị mọi liên kết' : ', hiển thị liên kết nội bộ'}` : `Sơ đồ quan hệ entity: ${item.title}`;
+      elements.diagramImage.src = `${slug}.svg`;
+      if (updateHash) location.hash = slug;
+    }
+
+    function selectDiagram(item, updateHash = true) {
+      selected = item;
+      elements.diagramNumber.textContent = item.overview ? 'Tổng quan · 14 module và hạ tầng' : item.module === 'Hạ tầng' ? 'Hạ tầng EF Core' : `Module ${item.module}`;
       elements.diagramTitle.textContent = item.title;
-      elements.diagramSummary.textContent = `${item.owned.length} bảng trong nhóm · ${item.fk_count} khóa ngoại${item.logic_count ? ` · ${item.logic_count} tham chiếu nghiệp vụ` : ''}${item.context.length ? ` · ${item.context.length} bảng liên quan` : ''}`;
-      elements.openSvg.href = `${item.slug}.svg`;
-      elements.downloadSvg.href = `${item.slug}.svg`;
-      elements.downloadSvg.download = `${item.slug}.svg`;
+      elements.overviewOptions.hidden = !item.overview;
       elements.tableList.replaceChildren();
       [...item.owned.map(name => ({ name, context: false })), ...item.context.map(name => ({ name, context: true }))].forEach(table => {
         const chip = document.createElement('span');
@@ -219,14 +254,13 @@
         chip.textContent = table.name;
         elements.tableList.append(chip);
       });
-      elements.imageStatus.textContent = 'Đang mở sơ đồ…';
-      elements.imageStatus.hidden = false;
-      elements.diagramImage.hidden = true;
-      elements.viewport.setAttribute('aria-busy', 'true');
-      elements.diagramImage.alt = `Sơ đồ quan hệ entity: ${item.title}`;
-      elements.diagramImage.src = `${item.slug}.svg`;
-      if (updateHash) location.hash = item.slug;
+      loadSelectedImage(updateHash);
       renderSidebar();
+    }
+
+    function diagramFromHash() {
+      if (location.hash === '#00-overview-all-links') return diagrams.find(item => item.overview);
+      return diagrams.find(item => `#${item.slug}` === location.hash);
     }
 
     elements.diagramImage.addEventListener('load', () => {
@@ -244,6 +278,7 @@
       elements.viewport.setAttribute('aria-busy', 'false');
     });
     elements.searchInput.addEventListener('input', renderSidebar);
+    elements.crossModuleLinks.addEventListener('change', () => loadSelectedImage());
     elements.zoomOut.addEventListener('click', () => changeZoom(1 / 1.25));
     elements.zoomIn.addEventListener('click', () => changeZoom(1.25));
     elements.fitDiagram.addEventListener('click', fitDiagram);
@@ -259,10 +294,13 @@
     });
     window.addEventListener('resize', () => { if (fitted) fitDiagram(); else applyZoom(zoom, false); });
     window.addEventListener('hashchange', () => {
-      const item = diagrams.find(diagram => `#${diagram.slug}` === location.hash);
-      if (item && item.slug !== selected.slug) selectDiagram(item, false);
+      const item = diagramFromHash();
+      if (!item) return;
+      if (item.overview) elements.crossModuleLinks.checked = location.hash === '#00-overview-all-links';
+      if (item.slug !== selected.slug || elements.diagramImage.getAttribute('src') !== `${currentSvgSlug()}.svg`) selectDiagram(item, false);
     });
-    selectDiagram(diagrams.find(item => `#${item.slug}` === location.hash) || selected, false);
+    elements.crossModuleLinks.checked = location.hash === '#00-overview-all-links';
+    selectDiagram(diagramFromHash() || selected, false);
   </script>
 </body>
 </html>

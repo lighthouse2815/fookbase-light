@@ -1,16 +1,18 @@
 # Quan hệ entity và sơ đồ ERD Fookbase Light
 
-Bộ tài liệu gồm bảng quan hệ trong [file Word](../Quan-he-entity-Fookbase-Light.docx), [bản PDF](Quan-he-entity-Fookbase-Light.pdf) và sơ đồ SVG có thể phóng to. Sơ đồ được chia thành 17 nhóm để đọc rõ từng chức năng, kèm một sơ đồ riêng cho bảng lịch sử migration.
+Bộ tài liệu gồm bảng quan hệ trong [file Word](../Quan-he-entity-Fookbase-Light.docx), [bản PDF](Quan-he-entity-Fookbase-Light.pdf) và sơ đồ SVG có thể phóng to. Trang xem có một sơ đồ tổng quan, 14 mục module và một mục hạ tầng. Word/PDF giữ phần đặc tả chi tiết theo các nhóm chức năng.
 
 Nguồn đối chiếu là model EF Core hiện tại của `FookbaseDbContext`, cấu hình/annotation entity và service trong repository, tại ngày 05/10/2026. Model có **70 bảng và 116 FK**; thêm `__EFMigrationsHistory` thành **71 bảng** trong danh mục. Có **15 tham chiếu logic đơn** và **7 nhóm tham chiếu đa hình** được phân biệt với FK. Đây là cấu trúc khai báo trong mã nguồn, không phải bản kiểm kê trực tiếp một database đã triển khai.
 
 ## Mở và xem sơ đồ
 
-1. Mở [index.html](index.html) trong Chrome, Firefox hoặc Edge để chọn sơ đồ và xem các tài liệu đi kèm. Có thể mở trực tiếp file trên máy, không cần khởi chạy backend.
-2. Chọn một SVG trong danh mục bên dưới để xem riêng. Trong browser, dùng chức năng phóng to để đọc tên cột và đường nối.
-3. Trong VS Code, nhấp phải file `.svg`, chọn **Open With… → Image Preview**. Có thể mở từ Explorer nếu editor đang hiển thị mã XML của SVG.
-4. Xem [bảng quan hệ dạng Markdown](quan-he.md) để tra các FK và tìm nhanh trong VS Code.
-5. Dùng [ef-model.json](ef-model.json) để tra đầy đủ cột, kiểu dữ liệu, nullable, PK, unique index và FK. Sơ đồ chỉ chọn các cột cần thiết để thể hiện quan hệ; các file `.dot` cùng tên giữ nguồn Graphviz của từng sơ đồ.
+1. Mở [index.html](index.html) trong Chrome, Firefox hoặc Edge. Trang mặc định mở **Tổng quan tất cả bảng**: 71 bảng trong 14 khung module và một khung hạ tầng. Có thể mở trực tiếp file trên máy, không cần khởi chạy backend.
+2. Tổng quan mặc định hiện 54 FK và một tham chiếu nội bộ module. Bật **Hiện quan hệ giữa các module** để xem đủ 116 FK và 15 tham chiếu đơn. Phóng to rồi cuộn để đọc bảng; chọn module bên trái để xem từng cột và cardinality.
+3. Xem riêng [SVG tổng quan](00-overview.svg), [PDF tổng quan](00-overview.pdf), hoặc [SVG đầy đủ liên kết](00-overview-all-links.svg).
+4. Chọn một SVG trong danh mục bên dưới để xem riêng. Trong browser, dùng chức năng phóng to để đọc tên cột và đường nối.
+5. Trong VS Code, nhấp phải file `.svg`, chọn **Open With… → Image Preview**. Có thể mở từ Explorer nếu editor đang hiển thị mã XML của SVG.
+6. Xem [bảng quan hệ dạng Markdown](quan-he.md) để tra các FK và tìm nhanh trong VS Code.
+7. Dùng [ef-model.json](ef-model.json) để tra đầy đủ cột, kiểu dữ liệu, nullable, PK, unique index và FK. Sơ đồ chỉ chọn các cột cần thiết để thể hiện quan hệ; các file `.dot` cùng tên giữ nguồn Graphviz của từng sơ đồ.
 
 ## Chú giải và cách đọc
 
@@ -30,31 +32,30 @@ Nguồn đối chiếu là model EF Core hiện tại của `FookbaseDbContext`,
 
 Unique index trong JSON có thể áp dụng cho một cột, nhiều cột hoặc chỉ các bản ghi thỏa điều kiện lọc. Ví dụ khóa `(PageId, UserId)` ngăn trùng quan hệ thành viên, nhưng không tự đảm bảo chỉ có một thành viên mang vai trò Owner. Các điều kiện vai trò, trạng thái hoạt động và quyền truy cập còn được kiểm tra trong service. Cardinality của đường `REF` phải đọc cùng quy tắc nghiệp vụ vì database không ràng buộc liên kết đó bằng FK.
 
-## Danh mục 71 bảng
+## Danh mục 71 bảng theo module
 
-Mỗi bảng được liệt kê đúng một lần trong cột “Bảng thuộc nhóm”. Các bảng màu xám trên SVG chỉ cung cấp ngữ cảnh và không được tính thêm. 17 nhóm dưới đây là cách chia tài liệu để xem sơ đồ; một số mô-đun source như Identity, Posts hoặc Messages được tách thành nhiều nhóm.
+Module được xác định theo namespace entity trong backend. Sáu entity có sẵn của ASP.NET Core Identity thuộc module Identity. Mỗi bảng chỉ xuất hiện một lần trong tổng quan; `ContentReports` thuộc Posts, còn Admin chứa quyết định kiểm duyệt và trạng thái tài khoản.
 
-| STT | Nhóm / sơ đồ SVG | Số bảng | Bảng thuộc nhóm |
-|---|---|---:|---|
-| 01 | [Identity: tài khoản và phân quyền](01-identity-core.svg) | 7 | `AspNetUsers`, `AspNetRoles`, `AspNetUserRoles`, `AspNetUserClaims`, `AspNetRoleClaims`, `AspNetUserLogins`, `AspNetUserTokens` |
-| 02 | [Phiên và xác thực](02-authentication.svg) | 6 | `AuthSessions`, `RefreshTokens`, `ExternalLoginTickets`, `PasswordResetOtps`, `RegistrationChallenges`, `TwoFactorLoginChallenges` |
-| 03 | [Hồ sơ và quyền riêng tư](03-users.svg) | 2 | `UserProfiles`, `UserPrivacySettings` |
-| 04 | [Bạn bè, theo dõi và chặn](04-friends.svg) | 5 | `FriendRequests`, `Friendships`, `UserFollows`, `BlockedUsers`, `FriendNotifications` |
-| 05 | [Bài viết, bình luận và cảm xúc](05-posts.svg) | 5 | `Posts`, `Comments`, `PostMedia`, `PostReactions`, `CommentReactions` |
-| 06 | [Lưu, chia sẻ, đề cập và hashtag](06-social-interactions.svg) | 5 | `PostSaves`, `PostShares`, `ContentMentions`, `Hashtags`, `PostHashtags` |
-| 07 | [Media và công việc nền](07-media.svg) | 5 | `MediaAssets`, `MediaReferences`, `ProfileMediaReferences`, `MediaProcessingJobs`, `ObjectDeletions` |
-| 08 | [Nhóm cộng đồng](08-groups.svg) | 6 | `Groups`, `GroupMembers`, `GroupJoinRequests`, `GroupInvites`, `GroupRules`, `GroupCoverMediaReferences` |
-| 09 | [Trang cộng đồng](09-pages.svg) | 5 | `Pages`, `PageMembers`, `PageFollowers`, `PageRoleInvitations`, `PageMediaReferences` |
-| 10 | [Hội thoại, thành viên và mốc đọc](10-conversations.svg) | 3 | `Conversations`, `ConversationParticipants`, `ConversationReadCursors` |
-| 11 | [Tin nhắn, đính kèm và thông báo tin](11-messages.svg) | 4 | `Messages`, `MessageAttachments`, `MessageReactions`, `MessageNotifications` |
-| 12 | [Thông báo và push mobile](12-notifications.svg) | 3 | `Notifications`, `PushDevices`, `PushDeliveryReceipts` |
-| 13 | [Báo cáo và kiểm duyệt](13-moderation.svg) | 3 | `ContentReports`, `ModerationActions`, `UserModerationStates` |
-| 14 | [Sự kiện](14-events.svg) | 4 | `Events`, `EventParticipants`, `EventInvitations`, `EventCoverMediaReferences` |
-| 15 | [Ảnh và album](15-photos.svg) | 2 | `PhotoAlbums`, `AlbumMedia` |
-| 16 | [Stories](16-stories.svg) | 4 | `Stories`, `StoryMediaReferences`, `StoryViews`, `StoryReactions` |
-| 17 | [Lượt xem Reel](17-reels.svg) | 1 | `ReelViews` |
-| 18 | [Lịch sử migration](18-migration-history.svg) | 1 | `__EFMigrationsHistory` |
-| | **Tổng** | **71** | **70 bảng từ model EF Core + 1 bảng hệ thống migration** |
+| Module / sơ đồ chi tiết | Số bảng | Bảng thuộc module |
+|---|---:|---|
+| [Identity](module-identity.svg) | 13 | `AspNetRoleClaims`, `AspNetRoles`, `AspNetUserClaims`, `AspNetUserLogins`, `AspNetUserRoles`, `AspNetUsers`, `AspNetUserTokens`, `AuthSessions`, `ExternalLoginTickets`, `PasswordResetOtps`, `RefreshTokens`, `RegistrationChallenges`, `TwoFactorLoginChallenges` |
+| [Users](03-users.svg) | 2 | `UserPrivacySettings`, `UserProfiles` |
+| [Friends](04-friends.svg) | 5 | `BlockedUsers`, `FriendNotifications`, `FriendRequests`, `Friendships`, `UserFollows` |
+| [Posts](module-posts.svg) | 11 | `CommentReactions`, `Comments`, `ContentMentions`, `ContentReports`, `Hashtags`, `PostHashtags`, `PostMedia`, `PostReactions`, `Posts`, `PostSaves`, `PostShares` |
+| [Media](07-media.svg) | 5 | `MediaAssets`, `MediaProcessingJobs`, `MediaReferences`, `ObjectDeletions`, `ProfileMediaReferences` |
+| [Groups](08-groups.svg) | 6 | `GroupCoverMediaReferences`, `GroupInvites`, `GroupJoinRequests`, `GroupMembers`, `GroupRules`, `Groups` |
+| [Pages](09-pages.svg) | 5 | `PageFollowers`, `PageMediaReferences`, `PageMembers`, `PageRoleInvitations`, `Pages` |
+| [Messages](module-messages.svg) | 7 | `ConversationParticipants`, `ConversationReadCursors`, `Conversations`, `MessageAttachments`, `MessageNotifications`, `MessageReactions`, `Messages` |
+| [Notifications](12-notifications.svg) | 3 | `Notifications`, `PushDeliveryReceipts`, `PushDevices` |
+| [Admin](module-admin.svg) | 2 | `ModerationActions`, `UserModerationStates` |
+| [Events](14-events.svg) | 4 | `EventCoverMediaReferences`, `EventInvitations`, `EventParticipants`, `Events` |
+| [Photos](15-photos.svg) | 2 | `AlbumMedia`, `PhotoAlbums` |
+| [Stories](16-stories.svg) | 4 | `Stories`, `StoryMediaReferences`, `StoryReactions`, `StoryViews` |
+| [Reels](17-reels.svg) | 1 | `ReelViews` |
+| [Infrastructure](18-migration-history.svg) | 1 | `__EFMigrationsHistory` |
+| **Tổng** | **71** | **70 bảng EF + một bảng lịch sử migration** |
+
+Tổng quan hiển thị tên bảng, PK và số FK để dễ nhìn toàn bộ cấu trúc. Sơ đồ từng module giữ các cột PK/FK/REF và cardinality. Bảng không có FK vẫn xuất hiện đầy đủ; các nhóm tham chiếu đa hình được giải thích trong bảng quan hệ.
 
 ## Những quan hệ cần đọc đúng
 
@@ -88,3 +89,5 @@ Các nhóm sau được trình bày riêng trong Word/PDF và gắn `REF` trên 
 - [ReelMediaQuery](../../backend/Fookbase.Src/Code/Modules/Reels/Services/ReelMediaQuery.cs): bài Reel và video sẵn sàng.
 
 Khi schema thay đổi, cập nhật dữ liệu model, bảng quan hệ và các SVG liên quan cùng nhau. Ràng buộc xóa trong FK áp dụng khi xóa vật lý; `DeletedAtUtc`, trạng thái nghiệp vụ và việc dọn file còn được xử lý bởi các luồng service/worker.
+
+Sơ đồ `00-overview-all-links.dot` giữ vị trí các module từ bản tổng quan. Khi render lại tệp này, dùng engine Graphviz `nop2` (tương đương `neato -n2`) để giữ bố cục đã lưu.

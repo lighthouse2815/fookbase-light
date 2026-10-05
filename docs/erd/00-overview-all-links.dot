@@ -1,0 +1,790 @@
+// Fixed module positions; render with Graphviz engine nop2 (neato -n2).
+digraph ERD {
+	graph [bb="0,0,3532,1257.2",
+		bgcolor=white,
+		fontname=Arial,
+		fontsize=22,
+		label="Fookbase Light — 71 bảng / 14 module + hạ tầng\nQuan hệ nội bộ từng module; bật liên kết giữa module trong \
+trang xem",
+		labelloc=t,
+		lheight=0.73,
+		lp="1766,1226.8",
+		lwidth=10.07,
+		nodesep=0.25,
+		pack=true,
+		packmode=array4,
+		pad=0.35,
+		rankdir=TB,
+		ranksep=0.7,
+		splines=spline
+	];
+	node [fontname=Arial,
+		label="\N",
+		shape=plain
+	];
+	edge [arrowsize=0.6,
+		color="#167D8D",
+		fontcolor="#35556B",
+		fontname=Arial,
+		fontsize=8,
+		penwidth=1.2
+	];
+	subgraph cluster_Identity {
+		graph [bb="0,774,1329,1196.4",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Identity — Tài khoản và xác thực\n13 bảng",
+			lheight=0.57,
+			lp="664.5,1172",
+			lwidth=3.52,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		AspNetRoleClaims	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AspNetRoleClaims</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="79,960.8",
+			width=1.6856];
+		AspNetRoles	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AspNetRoles</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="140,1090",
+			width=1.2317];
+		AspNetUserClaims	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AspNetUserClaims</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="326,960.8",
+			width=1.695];
+		AspNetUserLogins	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AspNetUserLogins</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: LoginProvider, ProviderKey</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="469,960.8",
+			width=2.1476];
+		AspNetUserRoles	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AspNetUserRoles</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: UserId, RoleId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="202,960.8",
+			width=1.6023];
+		AspNetUserTokens	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AspNetUserTokens</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: UserId, LoginProvider, Name</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="632,960.8",
+			width=2.2478];
+		AspNetUsers	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AspNetUsers</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="765,1090",
+			width=1.2412];
+		AuthSessions	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AuthSessions</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="765,960.8",
+			width=1.3058];
+		ExternalLoginTickets	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ExternalLoginTickets</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="885,960.8",
+			width=1.8801];
+		PasswordResetOtps	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PasswordResetOtps</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="1023,960.8",
+			width=1.8154];
+		RefreshTokens	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>RefreshTokens</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="938,831.6",
+			width=1.3985];
+		RegistrationChallenges	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>RegistrationChallenges</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="1069,1090",
+			width=2.0559];
+		TwoFactorLoginChallenges	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>TwoFactorLoginChallenges</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="1225,960.8",
+			width=2.3797];
+	}
+	subgraph cluster_Users {
+		graph [bb="1616,0,1889,164",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Users — Hồ sơ và quyền riêng tư\n2 bảng",
+			lheight=0.57,
+			lp="1752.5,139.6",
+			lwidth=3.57,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		UserPrivacySettings	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>UserPrivacySettings</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="1701,57.6",
+			width=1.8156];
+		UserProfiles	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>UserProfiles</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="1828,57.6",
+			width=1.1764];
+	}
+	subgraph cluster_Friends {
+		graph [bb="355,473,975,766.2",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Friends — Bạn bè, theo dõi, chặn\n5 bảng",
+			lheight=0.57,
+			lp="665,741.8",
+			lwidth=3.61,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		BlockedUsers	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>BlockedUsers</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: BlockerUserId, BlockedUserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="456,659.8",
+			width=2.3094];
+		FriendNotifications	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>FriendNotifications</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="609,530.6",
+			width=1.713];
+		FriendRequests	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>FriendRequests</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">4 FK</FONT></TD></TR></TABLE>>,
+			pos="609,659.8",
+			width=1.454];
+		Friendships	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Friendships</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="720,659.8",
+			width=1.139];
+		UserFollows	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>UserFollows</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: FollowerUserId, FollowingUserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="868,659.8",
+			width=2.4637];
+	}
+	subgraph cluster_Posts {
+		graph [bb="2176,774,2884,1196.4",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Posts — Bài viết và tương tác\n11 bảng",
+			lheight=0.57,
+			lp="2530,1172",
+			lwidth=3.11,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		CommentReactions	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>CommentReactions</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: CommentId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="2349,831.6",
+			width=1.7595];
+		Comments	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Comments</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="2349,960.8",
+			width=1.0557];
+		ContentMentions	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ContentMentions</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: SourceType, SourceId, StartIndex</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="2286,1090",
+			width=2.549];
+		ContentReports	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ContentReports</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="2448,1090",
+			width=1.4536];
+		Hashtags	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Hashtags</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="2552,1090",
+			width=0.94469];
+		PostHashtags	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PostHashtags</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: PostId, HashtagId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="2250,960.8",
+			width=1.561];
+		PostMedia	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PostMedia</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: PostId, MediaId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="2526,960.8",
+			width=1.4219];
+		PostReactions	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PostReactions</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: PostId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="2631,960.8",
+			width=1.3522];
+		PostSaves	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PostSaves</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: UserId, PostId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="2733,960.8",
+			width=1.3369];
+		PostShares	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PostShares</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="2826,960.8",
+			width=1.1115];
+		Posts	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Posts</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="2629,1090",
+			width=0.6483];
+	}
+	subgraph cluster_Media {
+		graph [bb="1473,473,2033,766.2",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Media — Tệp và công việc nền\n5 bảng",
+			lheight=0.57,
+			lp="1753,741.8",
+			lwidth=3.41,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		MediaAssets	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>MediaAssets</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="1750,659.8",
+			width=1.2134];
+		MediaProcessingJobs	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>MediaProcessingJobs</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="1561,530.6",
+			width=1.9543];
+		MediaReferences	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>MediaReferences</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: MediaId, PostId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="1693,530.6",
+			width=1.5655];
+		ObjectDeletions	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ObjectDeletions</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="1807,530.6",
+			width=1.4632];
+		ProfileMediaReferences	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ProfileMediaReferences</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: UserId, Slot</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="1940,530.6",
+			width=2.0841];
+	}
+	subgraph cluster_Groups {
+		graph [bb="2892,839,3532,1132.2",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Groups — Nhóm cộng đồng\n6 bảng",
+			lheight=0.57,
+			lp="3212,1107.8",
+			lwidth=3.03,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		GroupCoverMediaReferences	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>GroupCoverMediaReferences</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: GroupId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="3001,896.6",
+			width=2.5378];
+		GroupInvites	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>GroupInvites</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="3141,896.6",
+			width=1.2224];
+		GroupJoinRequests	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>GroupJoinRequests</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="3254,896.6",
+			width=1.7872];
+		GroupMembers	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>GroupMembers</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: GroupId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="3375,896.6",
+			width=1.445];
+		GroupRules	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>GroupRules</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="3473,896.6",
+			width=1.1482];
+		Groups	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Groups</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="3254,1025.8",
+			width=0.78706];
+	}
+	subgraph cluster_Pages {
+		graph [bb="2271,473,2790,766.2",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Pages — Trang cộng đồng\n5 bảng",
+			lheight=0.57,
+			lp="2530.5,741.8",
+			lwidth=2.91,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		PageFollowers	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PageFollowers</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: PageId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="2339,530.6",
+			width=1.3833];
+		PageMediaReferences	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PageMediaReferences</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: PageId, Slot</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="2464,530.6",
+			width=1.9638];
+		PageMembers	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PageMembers</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: PageId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="2589,530.6",
+			width=1.3833];
+		PageRoleInvitations	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PageRoleInvitations</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="2708,530.6",
+			width=1.7874];
+		Pages	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Pages</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="2526,659.8",
+			width=0.68549];
+	}
+	subgraph cluster_Messages {
+		graph [bb="1337,774,2168,1196.4",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Messages — Hội thoại và tin nhắn\n7 bảng",
+			lheight=0.57,
+			lp="1752.5,1172",
+			lwidth=3.75,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		ConversationParticipants	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ConversationParticipants</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: ConversationId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">4 FK</FONT></TD></TR></TABLE>>,
+			pos="2070,831.6",
+			width=2.2135];
+		ConversationReadCursors	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ConversationReadCursors</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: ConversationId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="1438,831.6",
+			width=2.3061];
+		Conversations	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Conversations</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="1695,1090",
+			width=1.3522];
+		MessageAttachments	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>MessageAttachments</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: MessageId, MediaId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="1904,831.6",
+			width=1.908];
+		MessageNotifications	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>MessageNotifications</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="1608,831.6",
+			width=1.9078];
+		MessageReactions	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>MessageReactions</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: MessageId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="1756,831.6",
+			width=1.6951];
+		Messages	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Messages</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">4 FK</FONT></TD></TR></TABLE>>,
+			pos="1756,960.8",
+			width=0.99124];
+	}
+	subgraph cluster_Notifications {
+		graph [bb="1614,172,1892,465.2",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Notifications — Thông báo và push\n3 bảng",
+			lheight=0.57,
+			lp="1753,440.8",
+			lwidth=3.64,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		Notifications	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Notifications</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="1686,358.8",
+			width=1.2037];
+		PushDeliveryReceipts	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PushDeliveryReceipts</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="1798,229.6",
+			width=1.9453];
+		PushDevices	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PushDevices</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="1798,358.8",
+			width=1.232];
+	}
+	subgraph cluster_Admin {
+		graph [bb="2371,237,2689,401",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Admin — Báo cáo và kiểm duyệt\n2 bảng",
+			lheight=0.57,
+			lp="2530,376.6",
+			lwidth=3.52,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		ModerationActions	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ModerationActions</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="2450,294.6",
+			width=1.7037];
+		UserModerationStates	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>UserModerationStates</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">1 FK</FONT></TD></TR></TABLE>>,
+			pos="2600,294.6",
+			width=1.9634];
+	}
+	subgraph cluster_Events {
+		graph [bb="2988,473,3436,766.2",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Events — Sự kiện\n4 bảng",
+			lheight=0.57,
+			lp="3212,741.8",
+			lwidth=1.97,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		EventCoverMediaReferences	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>EventCoverMediaReferences</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: EventId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="3096,530.6",
+			width=2.4917];
+		EventInvitations	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>EventInvitations</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">3 FK</FONT></TD></TR></TABLE>>,
+			pos="3244,530.6",
+			width=1.4817];
+		EventParticipants	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>EventParticipants</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: EventId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="3360,530.6",
+			width=1.6023];
+		Events	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Events</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="3244,659.8",
+			width=0.74099];
+	}
+	subgraph cluster_Photos {
+		graph [bb="3070,237,3355,401",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Photos — Ảnh và album\n2 bảng",
+			lheight=0.57,
+			lp="3212.5,376.6",
+			lwidth=2.55,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		AlbumMedia	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>AlbumMedia</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: AlbumId, MediaId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="3143,294.6",
+			width=1.5377];
+		PhotoAlbums	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>PhotoAlbums</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="3291,294.6",
+			width=1.2777];
+	}
+	subgraph cluster_Stories {
+		graph [bb="454,172,876,465.2",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Stories — Stories\n4 bảng",
+			lheight=0.57,
+			lp="665,440.8",
+			lwidth=1.80,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		Stories	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>Stories</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="672,358.8",
+			width=0.75947];
+		StoryMediaReferences	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>StoryMediaReferences</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: StoryId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="544,229.6",
+			width=1.9915];
+		StoryReactions	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>StoryReactions</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: StoryId, UserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="672,229.6",
+			width=1.417];
+		StoryViews	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>StoryViews</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: StoryId, ViewerUserId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">2 FK</FONT></TD></TR></TABLE>>,
+			pos="793,229.6",
+			width=1.8077];
+	}
+	subgraph cluster_Reels {
+		graph [bb="2432,0,2629,164",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Reels — Lượt xem Reel\n1 bảng",
+			lheight=0.57,
+			lp="2530.5,139.6",
+			lwidth=2.52,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		ReelViews	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>ReelViews</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: Id</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="2530,57.6",
+			width=1.019];
+	}
+	subgraph cluster_Infrastructure {
+		graph [bb="523,0,806,164",
+			color="#BCD0DB",
+			fillcolor="#F3F8FA",
+			fontcolor="#183B56",
+			fontsize=17,
+			label="Infrastructure — Lịch sử migration\n1 bảng",
+			lheight=0.57,
+			lp="664.5,139.6",
+			lwidth=3.71,
+			margin=18,
+			penwidth=1.3,
+			style="rounded,filled"
+		];
+		__EFMigrationsHistory	[height=1.1,
+			label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6" COLOR="#BDD1DC" BGCOLOR="white"><TR><TD BGCOLOR="#183B56"><FONT COLOR="white" POINT-SIZE="12"><B>__EFMigrationsHistory</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#35556B" POINT-SIZE="10">PK: MigrationId</FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT COLOR="#667788" POINT-SIZE="9">0 FK</FONT></TD></TR></TABLE>>,
+			pos="664,57.6",
+			width=2.0096];
+	}
+	AspNetRoles -> AspNetRoleClaims	[label=RoleId,
+		lp="-8,774",
+		pos="e,97.405,1000.2 121.53,1050.5 114.96,1036.8 107.51,1021.2 100.69,1007"];
+	AspNetRoles -> AspNetUserRoles	[label=RoleId,
+		lp="-8,774",
+		pos="e,183.29,1000.2 158.77,1050.5 165.45,1036.8 173.03,1021.2 179.95,1007"];
+	AspNetUsers -> AspNetUserClaims	[label=UserId,
+		lp="-8,774",
+		pos="e,386.97,998.71 720.48,1082.9 650.41,1072.4 510.73,1047.5 393.92,1001.5"];
+	AspNetUsers -> AspNetUserLogins	[label=UserId,
+		lp="-8,774",
+		pos="e,546.13,998.67 720.65,1071.5 678.59,1054.8 613.53,1028.4 553.09,1001.8"];
+	AspNetUsers -> AspNetUserRoles	[label=UserId,
+		lp="-8,774",
+		pos="e,259.38,998.52 720.61,1086.8 632.64,1081.3 430.86,1062.6 266.67,1001.3"];
+	AspNetUsers -> AspNetUserTokens	[label=UserId,
+		lp="-8,774",
+		pos="e,672.13,1000.2 724.73,1050.5 709.89,1036.3 692.97,1020.1 677.68,1005.5"];
+	AspNetUsers -> AuthSessions	[label=UserId,
+		lp="-8,774",
+		pos="e,765,1000.2 765,1050.5 765,1037 765,1021.8 765,1007.8"];
+	AspNetUsers -> ExternalLoginTickets	[label=UserId,
+		lp="-8,774",
+		pos="e,848.79,1000.2 801.33,1050.5 814.72,1036.3 829.99,1020.1 843.78,1005.5"];
+	AspNetUsers -> PasswordResetOtps	[label=UserId,
+		lp="-8,774",
+		pos="e,957.69,998.49 809.35,1069.3 846.27,1052.6 900.27,1027.7 950.89,1002"];
+	AspNetUsers -> RefreshTokens	[label=UserId,
+		lp="1115.4,960.8",
+		pos="e,988.03,847.24 809.57,1083.5 890.2,1072.4 1055.1,1044.8 1089,1000.4 1110.4,972.42 1106.5,951.75 1089,921.2 1068.9,886.11 1028.9,\
+863.56 995.14,850"];
+	AspNetUsers -> TwoFactorLoginChallenges	[label=UserId,
+		lp="-8,774",
+		pos="e,1139.4,998.92 809.54,1080.9 878.29,1067.8 1014.2,1039.7 1132,1001.3"];
+	AuthSessions -> RefreshTokens	[label=SessionId,
+		lp="-8,774",
+		pos="e,887.68,868.8 811.94,924.22 813.31,923.2 814.66,922.19 816,921.2 837.25,905.45 860.73,888.33 881.37,873.37"];
+	RefreshTokens -> RefreshTokens	[label=ReplacedByTokenId,
+		lp="1042.4,831.6",
+		pos="e,988.07,808.16 988.07,855.04 998.68,852.66 1006.3,844.85 1006.3,831.6 1006.3,821.46 1001.9,814.5 994.98,810.73"];
+	FriendRequests -> FriendNotifications	[label=FriendRequestId,
+		lp="347,473",
+		pos="e,609,569.98 609,620.29 609,606.84 609,591.61 609,577.61"];
+	Comments -> CommentReactions	[label=CommentId,
+		lp="2168,774",
+		pos="e,2349,870.98 2349,921.29 2349,907.84 2349,892.61 2349,878.61"];
+	Comments -> Comments	[label=ParentCommentId,
+		lp="2437.5,960.8",
+		pos="e,2387,936.75 2387,984.85 2397.2,983.58 2405,975.56 2405,960.8 2405,949.73 2400.6,942.45 2394.1,938.97"];
+	Hashtags -> PostHashtags	[label=HashtagId,
+		lp="2168,774",
+		pos="e,2305.9,998.54 2518.1,1056.1 2515.2,1054 2512.1,1052 2509,1050.4 2430.7,1008.7 2395.6,1035.1 2313,1001.5"];
+	Posts -> Comments	[label=PostId,
+		lp="2168,774",
+		pos="e,2386.8,974.27 2606,1059.5 2602.5,1056.2 2598.8,1053 2595,1050.4 2577.9,1038.7 2460,998.64 2393.9,976.6"];
+	Posts -> PostHashtags	[label=PostId,
+		lp="2168,774",
+		pos="e,2306.2,998.83 2605.9,1058.5 2602.6,1055.4 2598.9,1052.6 2595,1050.4 2485,988.72 2431.9,1044.9 2313.4,1001.5"];
+	Posts -> PostMedia	[label=PostId,
+		lp="2168,774",
+		pos="e,2557.2,1000.4 2605.9,1060.5 2593,1044.5 2576.6,1024.3 2562.1,1006.4"];
+	Posts -> PostReactions	[label=PostId,
+		lp="2168,774",
+		pos="e,2630.4,1000.2 2629.6,1050.5 2629.8,1037 2630.1,1021.8 2630.3,1007.8"];
+	Posts -> PostSaves	[label=PostId,
+		lp="2168,774",
+		pos="e,2701.7,1000.1 2652.1,1060.8 2665.3,1044.6 2682.2,1023.9 2697.1,1005.7"];
+	Posts -> PostShares	[label=OriginalPostId,
+		lp="2168,774",
+		pos="e,2786.5,997.09 2652.2,1077.4 2681.6,1062.3 2733.6,1034.3 2780.2,1001.5"];
+	MediaAssets -> MediaProcessingJobs	[label=MediaId,
+		lp="1465,473",
+		pos="e,1618.1,570.05 1706.6,629.62 1682.3,613.25 1651.5,592.54 1624.6,574.37"];
+	MediaAssets -> MediaReferences	[label=MediaId,
+		lp="1465,473",
+		pos="e,1710.2,569.98 1732.7,620.29 1726.6,606.59 1719.6,591.04 1713.3,576.83"];
+	MediaAssets -> ObjectDeletions	[label=MediaId,
+		lp="1465,473",
+		pos="e,1789.8,569.98 1767.3,620.29 1773.4,606.59 1780.4,591.04 1786.7,576.83"];
+	MediaAssets -> ProfileMediaReferences	[label=MediaId,
+		lp="1465,473",
+		pos="e,1882.6,570.05 1793.6,629.62 1818,613.25 1849,592.54 1876.1,574.37"];
+	Groups -> GroupCoverMediaReferences	[label=GroupId,
+		lp="2884,839",
+		pos="e,3077.7,936.16 3226,1010.7 3192,993.65 3133.4,964.18 3084.5,939.59"];
+	Groups -> GroupInvites	[label=GroupId,
+		lp="2884,839",
+		pos="e,3174.9,935.76 3225.8,993.03 3211.9,977.43 3195,958.38 3179.9,941.42"];
+	Groups -> GroupJoinRequests	[label=GroupId,
+		lp="2884,839",
+		pos="e,3254,935.98 3254,986.29 3254,972.84 3254,957.61 3254,943.61"];
+	Groups -> GroupMembers	[label=GroupId,
+		lp="2884,839",
+		pos="e,3338.4,936.11 3282.1,995.3 3297.2,979.34 3316.3,959.3 3333.2,941.54"];
+	Groups -> GroupRules	[label=GroupId,
+		lp="2884,839",
+		pos="e,3431.9,933.53 3282.3,1012.9 3316.2,998.12 3374.5,970.98 3425.4,937.82"];
+	Pages -> PageFollowers	[label=PageId,
+		lp="2263,473",
+		pos="e,2388.7,567.21 2501.3,642.71 2475.9,626.03 2434.9,598.97 2395.1,571.6"];
+	Pages -> PageMediaReferences	[label=PageId,
+		lp="2263,473",
+		pos="e,2482.7,569.98 2507.2,620.29 2500.6,606.59 2493,591.04 2486,576.83"];
+	Pages -> PageMembers	[label=PageId,
+		lp="2263,473",
+		pos="e,2570,569.98 2545.1,620.29 2551.9,606.59 2559.6,591.04 2566.6,576.83"];
+	Pages -> PageRoleInvitations	[label=PageId,
+		lp="2263,473",
+		pos="e,2652.9,570.11 2550.5,641.65 2575.1,624.47 2613.9,597.37 2646.8,574.35"];
+	Conversations -> ConversationParticipants	[label=ConversationId,
+		lp="2009.2,960.8",
+		pos="e,2035.3,870.99 1743.6,1071.6 1784,1056 1842.1,1031 1888,1000.4 1941.9,964.52 1995.3,912.79 2030.2,876.27"];
+	Conversations -> ConversationReadCursors	[label=ConversationId,
+		lp="1601.1,960.8",
+		pos="e,1464.7,870.93 1646.6,1057.8 1623.6,1041.9 1596.3,1021.5 1574.2,1000.4 1534.1,962.25 1495,912.37 1469.1,876.93"];
+	Conversations -> MessageNotifications	[label=ConversationId,
+		lp="1684.1,960.8",
+		pos="e,1617.9,871 1677.4,1050.6 1670.7,1035.1 1663.2,1017.1 1657.2,1000.4 1642.6,959.75 1629.1,912.47 1619.9,878.48"];
+	Conversations -> Messages	[label=ConversationId,
+		lp="1329,774",
+		pos="e,1737.6,1000.2 1713.5,1050.5 1720,1036.8 1727.5,1021.2 1734.3,1007"];
+	Messages -> ConversationParticipants	[label=LastDeliveredMessageId,
+		lp="1329,774",
+		pos="e,1990.4,867.67 1791.4,946.42 1836,929.43 1915.1,898.99 1982,871.2 1982.4,871.02 1982.9,870.84 1983.3,870.66"];
+	Messages -> ConversationParticipants	[label=LastReadMessageId,
+		lp="1329,774",
+		pos="e,1990.4,867.67 1791.4,946.42 1836,929.43 1915.1,898.99 1982,871.2 1982.4,871.02 1982.9,870.84 1983.3,870.66"];
+	Messages -> ConversationReadCursors	[label=LastReadMessageId,
+		lp="1329,774",
+		pos="e,1520.6,867.71 1720.5,935.93 1711.8,930.64 1702.2,925.37 1693,921.2 1623.9,890.05 1601.2,897 1530,871.2 1529.2,870.92 1528.4,870.64 \
+1527.7,870.35"];
+	Messages -> MessageAttachments	[label=MessageId,
+		lp="1329,774",
+		pos="e,1859.3,871.03 1791.4,929.33 1810.1,913.34 1833.2,893.48 1853.6,875.92"];
+	Messages -> MessageNotifications	[label=MessageId,
+		lp="1329,774",
+		pos="e,1652.7,871.03 1720.6,929.33 1701.9,913.34 1678.8,893.48 1658.4,875.92"];
+	Messages -> MessageReactions	[label=MessageId,
+		lp="1329,774",
+		pos="e,1756,870.98 1756,921.29 1756,907.84 1756,892.61 1756,878.61"];
+	Messages -> Messages	[label=ReplyToMessageId,
+		lp="1844.1,960.8",
+		pos="e,1791.6,936.67 1791.6,984.93 1801.8,983.98 1809.7,975.94 1809.7,960.8 1809.7,949.44 1805.3,942.08 1798.7,938.71"];
+	PushDevices -> PushDeliveryReceipts	[label=PushDeviceId,
+		lp="1606,172",
+		pos="e,1798,268.98 1798,319.29 1798,305.84 1798,290.61 1798,276.61"];
+	Events -> EventCoverMediaReferences	[label=EventId,
+		lp="2980,473",
+		pos="e,3140.8,570.11 3217.5,636.06 3197.8,619.12 3170.3,595.48 3146.5,574.98"];
+	Events -> EventInvitations	[label=EventId,
+		lp="2980,473",
+		pos="e,3244,569.98 3244,620.29 3244,606.84 3244,591.61 3244,577.61"];
+	Events -> EventParticipants	[label=EventId,
+		lp="2980,473",
+		pos="e,3325.1,569.82 3270.6,629.62 3285.3,613.53 3303.8,593.24 3320.1,575.3"];
+	PhotoAlbums -> AlbumMedia	[arrowhead=none,
+		color="#B47723",
+		constraint=false,
+		fontcolor="#8E621E",
+		label=AlbumId,
+		lp="3221.7,302.4",
+		penwidth=0.9,
+		pos="3245,294.6 3230.2,294.6 3213.6,294.6 3198.1,294.6",
+		style=dashed];
+	Stories -> StoryMediaReferences	[label=StoryId,
+		lp="446,172",
+		pos="e,582.76,269.12 644.85,330.82 628.35,314.43 606.89,293.1 588.01,274.34"];
+	Stories -> StoryReactions	[label=StoryId,
+		lp="446,172",
+		pos="e,672,268.98 672,319.29 672,305.84 672,290.61 672,276.61"];
+	Stories -> StoryViews	[label=StoryId,
+		lp="446,172",
+		pos="e,756.3,269.18 699.15,329.25 714.44,313.19 733.84,292.79 751.04,274.71"];
+"AspNetUsers" -> "BlockedUsers" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "BlockedUsers" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "ContentMentions" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "ConversationParticipants" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "ConversationReadCursors" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "Conversations" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Conversations" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Conversations" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "EventCoverMediaReferences" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "EventInvitations" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "EventInvitations" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "EventParticipants" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "Events" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Events" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "FriendNotifications" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "FriendNotifications" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "FriendRequests" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "FriendRequests" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "FriendRequests" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "FriendRequests" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Friendships" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Friendships" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "GroupCoverMediaReferences" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "GroupInvites" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "GroupInvites" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "GroupJoinRequests" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "GroupJoinRequests" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "GroupMembers" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "Groups" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Groups" [color="#8EADB9", penwidth=0.8];
+"Posts" -> "MediaReferences" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "MessageAttachments" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "MessageNotifications" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "MessageReactions" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Messages" [color="#8EADB9", penwidth=0.8];
+"Stories" -> "Messages" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "ModerationActions" [color="#8EADB9", penwidth=0.8];
+"ContentReports" -> "ModerationActions" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "ModerationActions" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Notifications" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Notifications" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "PageFollowers" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "PageMediaReferences" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "PageMembers" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "PageRoleInvitations" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "PageRoleInvitations" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "Pages" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "Pages" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Pages" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "ProfileMediaReferences" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "PushDevices" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "Stories" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "Stories" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "StoryMediaReferences" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "StoryReactions" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "StoryViews" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "UserFollows" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "UserFollows" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "UserModerationStates" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "UserProfiles" [color="#8EADB9", penwidth=0.8];
+"MediaAssets" -> "UserProfiles" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "UserProfiles" [color="#8EADB9", penwidth=0.8];
+"AspNetUsers" -> "UserPrivacySettings" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "MediaAssets" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "Posts" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "Comments" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"MediaAssets" -> "PostMedia" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "PostReactions" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "CommentReactions" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "PostSaves" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "PostShares" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "ContentReports" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "PhotoAlbums" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"MediaAssets" -> "AlbumMedia" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"Posts" -> "ReelViews" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+"AspNetUsers" -> "ReelViews" [label="", style=dashed, color="#B47723", fontcolor="#8E621E", arrowhead=none, penwidth=0.9, constraint=false];
+}

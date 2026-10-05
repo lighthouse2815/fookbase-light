@@ -1,6 +1,6 @@
 # Bảng quan hệ entity — Fookbase Light
 
-Nguồn: mô hình runtime EF Core ngày 05/10/2026; không đọc dữ liệu database triển khai. 70 bảng EF + `__EFMigrationsHistory`; 116 FK. Xem [trình xem sơ đồ](index.html), [Word](../Quan-he-entity-Fookbase-Light.docx), [PDF](Quan-he-entity-Fookbase-Light.pdf).
+Nguồn: mô hình runtime EF Core ngày 05/10/2026; không đọc dữ liệu database triển khai. 70 bảng EF + `__EFMigrationsHistory`; 116 FK. Xem [tổng quan 71 bảng theo module](00-overview.svg), [trình xem sơ đồ](index.html), [Word](../Quan-he-entity-Fookbase-Light.docx), [PDF](Quan-he-entity-Fookbase-Light.pdf).
 
 `Cha → con` có dạng `1 → 0..n`, `0..1 → 0..n` hoặc `1 → 0..1`; tham chiếu nghiệp vụ không được coi là FK.
 
