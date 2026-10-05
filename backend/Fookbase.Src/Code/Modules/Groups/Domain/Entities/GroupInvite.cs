@@ -1,5 +1,6 @@
 using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Persistence.Annotations;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
@@ -8,6 +9,7 @@ namespace Fookbase.Api.Modules.Groups.Entities;
 
 [Table("GroupInvites")]
 [Index(nameof(GroupId), nameof(InviteeUserId), IsUnique = true)]
+[IndexFilter("\"Status\" = 0", nameof(GroupId), nameof(InviteeUserId))]
 [Index(nameof(InviteeUserId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class GroupInvite
 {

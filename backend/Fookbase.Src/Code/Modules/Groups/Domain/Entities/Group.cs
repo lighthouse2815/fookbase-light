@@ -1,6 +1,7 @@
 using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Persistence.Annotations;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
@@ -9,7 +10,9 @@ namespace Fookbase.Api.Modules.Groups.Entities;
 
 [Table("Groups")]
 [Index(nameof(Privacy), nameof(Name))]
+[IndexFilter("\"DeletedAtUtc\" IS NULL", nameof(Privacy), nameof(Name))]
 [Index(nameof(OwnerUserId), nameof(CreatedAtUtc))]
+[IndexFilter("\"DeletedAtUtc\" IS NULL", nameof(OwnerUserId), nameof(CreatedAtUtc))]
 public sealed class Group
 {
     public const int MaximumNameLength = 120;
