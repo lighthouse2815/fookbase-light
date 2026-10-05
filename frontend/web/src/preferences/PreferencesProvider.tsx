@@ -6,6 +6,9 @@ const preferencesStorageKey = 'fookbase.preferences'
 
 const messages = {
   en: {
+    routeErrorTitle: 'Unable to open this page',
+    routeErrorDescription: 'Check your connection and try again. Your saved drafts are kept.',
+    backToFeed: 'Back to feed',
     offlineSessionNotice: 'You are offline. Your session is kept; reconnect to continue.',
     sessionRefreshFailed: 'Unable to refresh your session. Reconnecting.',
     composerContent: 'Post content',
@@ -203,6 +206,9 @@ const messages = {
     scam: 'Scam or fraud', other: 'Other', additionalDetails: 'Additional details', optional: 'optional', tellUsWhatHappened: 'Tell us what happened', sendReport: 'Send report',
   },
   vi: {
+    routeErrorTitle: 'Không thể mở trang này',
+    routeErrorDescription: 'Kiểm tra kết nối rồi thử lại. Các bản nháp đã lưu vẫn được giữ.',
+    backToFeed: 'Về bảng tin',
     offlineSessionNotice: 'Bạn đang mất kết nối. Phiên đăng nhập được giữ; hãy kết nối lại để tiếp tục.',
     sessionRefreshFailed: 'Chưa thể làm mới phiên đăng nhập. Đang thử kết nối lại.',
     composerContent: 'Nội dung bài viết',

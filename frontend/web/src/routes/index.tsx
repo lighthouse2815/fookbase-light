@@ -2,6 +2,7 @@ import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import MainLayout from '../layout/MainLayout'
 import ZolaLightRedirect from '../pages/ZolaLightRedirect'
+import RouteErrorPage from './RouteErrorPage'
 
 const feedPage = lazy(() => import('../pages/feed/FeedPage'))
 const explorePage = lazy(() => import('../pages/explore/ExplorePage'))
@@ -42,10 +43,12 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: page(loginPage),
+    errorElement: <RouteErrorPage />,
   },
   {
     path: '/',
     element: <MainLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         index: true,
@@ -142,6 +145,6 @@ export const router = createBrowserRouter([
         path: '*',
         element: <Navigate to="/feed" replace />,
       },
-    ],
+    ].map(route => ({ ...route, errorElement: <RouteErrorPage /> })),
   },
 ])

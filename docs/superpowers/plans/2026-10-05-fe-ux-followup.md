@@ -74,8 +74,8 @@
 **Files:** `frontend/web/src/routes/index.tsx`, component RouteErrorPage gần routes, tests/browser/routeRecovery.mjs; preferences nếu cần.
 **Interfaces:** Dùng `errorElement`, `useRouteError`, `useLocation`, Link và cơ chế reload trình duyệt có sẵn. Không thêm thư viện error tracking.
 
-- [ ] Browser test làm lỗi lazy module và route render, xác nhận giao diện tiếng Việt không stack trace và nút thử lại/về feed hoạt động.
-- [ ] Thêm error boundary cho login/root và child route để phục hồi cả chunk load/render, giữ shell khi có thể.
-- [ ] Retry đúng URL bằng tải lại thật để React.lazy không giữ rejected promise; route fallback không lặp lỗi, người chưa login mở login hợp lý.
-- [ ] Tôn trọng language/theme, semantic alert/status và keyboard focus; browser tests + web build/lint.
+- [x] Browser test làm lỗi lazy module và route render, xác nhận giao diện tiếng Việt không stack trace và nút thử lại/về feed hoạt động.
+- [x] Thêm error boundary cho login/root và child route để phục hồi cả chunk load/render, giữ shell khi có thể.
+- [x] Retry đúng URL bằng tải lại thật để React.lazy không giữ rejected promise; route fallback không lặp lỗi, người chưa login mở login hợp lý.
+- [x] Tôn trọng language/theme, semantic alert/status và keyboard focus; browser tests + web build/lint.
 - [ ] Root review, commit/push riêng; chạy checks chung và export Android, xác nhận main và frontend sạch.
