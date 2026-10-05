@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useRef, useState } from 'react'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useLocalSearchParams } from 'expo-router'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { eventsApi, type Event, type EventInvitation } from '../../api/events'
 import { resolveProfileImageUrl } from '../../api/users'
 import { useAuth } from '../../auth/AuthProvider'
@@ -45,7 +46,21 @@ function InvitationCard({ invitation, pending, onAccept, onDecline }: { invitati
 
 export default function EventsScreen() {
   const { session } = useAuth()
+  const { eventId } = useLocalSearchParams<{ eventId?: string }>()
+  return <EventsScreenContent key={`${session?.user.id}:${eventId}`} />
+}
+
+function EventsScreenContent() {
+  const { session } = useAuth()
   const cache = useQueryClient()
+  const { eventId } = useLocalSearchParams<{ eventId?: string }>()
+  const scrollRef = useRef<ScrollView>(null)
+  const scrolled = useRef(false)
+  const selected = useQuery({
+    queryKey: ['events', session?.user.id, 'selected', eventId],
+    enabled: !!session && !!eventId,
+    queryFn: () => eventsApi.get(eventId!),
+  })
   const [mode, setMode] = useState<EventMode>('upcoming')
   const [input, setInput] = useState('')
   const [search, setSearch] = useState('')
@@ -61,13 +76,19 @@ export default function EventsScreen() {
   const pendingInvitations = invitations.data?.pages.flatMap(page => page.items) ?? []
   const theme = useTheme()
 
-  return <Screen>
+  return <Screen scrollRef={scrollRef}>
     <View style={eventStyles.hero}><View style={[eventStyles.heroIcon, { backgroundColor: `${theme.accent}22` }]}><Icon name="sparkle" color={theme.accent} size={27} /></View><View style={{ flex: 1 }}><Label title style={{ fontSize: 26 }}>Sự kiện</Label><Text style={{ color: theme.muted, fontSize: 13 }}>Đừng bỏ lỡ những cuộc gặp gỡ sắp tới.</Text></View></View>
     {pendingInvitations.length > 0 && <View style={{ gap: 8 }}><Label style={{ fontWeight: '800' }}>Lời mời dành cho bạn</Label>{pendingInvitations.map(invitation => <InvitationCard key={invitation.id} invitation={invitation} pending={inviteAction.isPending} onAccept={() => inviteAction.mutate(() => eventsApi.acceptInvitation(invitation.id))} onDecline={() => inviteAction.mutate(() => eventsApi.declineInvitation(invitation.id))} />)}</View>}
     <View style={[eventStyles.modeTabs, { backgroundColor: theme.surface2, borderColor: theme.border }]}>{(Object.keys(modeLabels) as EventMode[]).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: mode === value }} onPress={() => setMode(value)} style={[eventStyles.modeTab, mode === value && { backgroundColor: theme.card }]}><Text style={{ color: mode === value ? theme.primary : theme.muted, fontWeight: '800', fontSize: 12 }}>{modeLabels[value]}</Text></Pressable>)}</View>
     {mode === 'discover' && <View style={eventStyles.searchRow}><View style={{ flex: 1 }}><Field label="Tìm sự kiện" value={input} onChangeText={setInput} placeholder="Tên, địa điểm hoặc chủ đề" returnKeyType="search" onSubmitEditing={() => setSearch(input)} /></View><Button compact title="Tìm" onPress={() => setSearch(input)} /></View>}
-    {events.isPending && <Loading />}{items.map(event => <EventCard key={event.id} event={event} pending={rsvp.isPending} onRsvp={status => rsvp.mutate({ event, status })} />)}
-    {!events.isPending && !events.error && items.length === 0 && <Card tone="soft" style={eventStyles.empty}><Icon name="sparkle" color={theme.accent} size={24} /><Label style={{ fontWeight: '800' }}>Chưa có sự kiện ở đây</Label><Text style={{ color: theme.muted, textAlign: 'center', fontSize: 13 }}>Hãy thử khám phá thêm các cộng đồng và chủ đề bạn thích.</Text></Card>}
+    {eventId && selected.isPending && <Loading />}
+    {selected.error && <ErrorNotice error={selected.error} retry={() => void selected.refetch()} />}
+    {selected.data && <View accessibilityLabel="Sự kiện đã chọn từ tìm kiếm" onLayout={event => { if (!scrolled.current) { scrolled.current = true; scrollRef.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: true }); } }} style={{ borderWidth: 2, borderColor: theme.primary, borderRadius: 16, padding: 4, gap: 8 }}>
+      <Label style={{ color: theme.primary, fontWeight: '800' }}>Sự kiện đã chọn từ tìm kiếm</Label>
+      <EventCard event={selected.data} pending={rsvp.isPending} onRsvp={status => rsvp.mutate({ event: selected.data!, status })} />
+    </View>}
+    {events.isPending && <Loading />}{items.filter(item => item.id !== selected.data?.id).map(event => <EventCard key={event.id} event={event} pending={rsvp.isPending} onRsvp={status => rsvp.mutate({ event, status })} />)}
+    {!events.isPending && !events.error && items.length === 0 && !selected.data && !eventId && <Card tone="soft" style={eventStyles.empty}><Icon name="sparkle" color={theme.accent} size={24} /><Label style={{ fontWeight: '800' }}>Chưa có sự kiện ở đây</Label><Text style={{ color: theme.muted, textAlign: 'center', fontSize: 13 }}>Hãy thử khám phá thêm các cộng đồng và chủ đề bạn thích.</Text></Card>}
     {events.error && <ErrorNotice error={events.error} retry={() => void events.refetch()} />}{rsvp.error && <ErrorNotice error={rsvp.error} />}{inviteAction.error && <ErrorNotice error={inviteAction.error} />}{events.hasNextPage && <Button secondary title={events.isFetchingNextPage ? 'Đang tải…' : 'Xem thêm sự kiện'} disabled={events.isFetchingNextPage} onPress={() => void events.fetchNextPage()} />}
   </Screen>
 }

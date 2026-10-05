@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useRef, useState } from 'react'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useLocalSearchParams } from 'expo-router'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { pagesApi, type Page, type PageInvitation } from '../../api/pages'
 import { useAuth } from '../../auth/AuthProvider'
 import { Avatar, Button, Card, ErrorNotice, Field, Icon, Label, Loading, Screen, styles, useTheme } from '../../components/ui'
@@ -49,7 +50,21 @@ function InvitationCard({ invitation, pending, onAccept, onDecline }: { invitati
 
 export default function PagesScreen() {
   const { session } = useAuth()
+  const { pageId } = useLocalSearchParams<{ pageId?: string }>()
+  return <PagesScreenContent key={`${session?.user.id}:${pageId}`} />
+}
+
+function PagesScreenContent() {
+  const { session } = useAuth()
   const cache = useQueryClient()
+  const { pageId } = useLocalSearchParams<{ pageId?: string }>()
+  const scrollRef = useRef<ScrollView>(null)
+  const scrolled = useRef(false)
+  const selected = useQuery({
+    queryKey: ['pages', session?.user.id, 'selected', pageId],
+    enabled: !!session && !!pageId,
+    queryFn: () => pagesApi.get(pageId!),
+  })
   const [mode, setMode] = useState<PageMode>('discover')
   const [input, setInput] = useState('')
   const [search, setSearch] = useState('')
@@ -71,14 +86,20 @@ export default function PagesScreen() {
   const pendingInvitations = invitations.data?.pages.flatMap(page => page.items) ?? []
   const theme = useTheme()
 
-  return <Screen>
+  return <Screen scrollRef={scrollRef}>
     <View style={pageStyles.hero}><View style={[pageStyles.heroIcon, { backgroundColor: `${theme.primary}1c` }]}><Icon name="people" color={theme.primary} size={28} /></View><View style={{ flex: 1 }}><Label title style={{ fontSize: 26 }}>Trang</Label><Text style={{ color: theme.muted, fontSize: 13 }}>Theo dõi những thương hiệu và cộng đồng bạn yêu thích.</Text></View></View>
     {pendingInvitations.length > 0 && <View style={{ gap: 8 }}><Label style={{ fontWeight: '800' }}>Lời mời quản lý</Label>{pendingInvitations.map(invitation => <InvitationCard key={invitation.id} invitation={invitation} pending={inviteAction.isPending} onAccept={() => inviteAction.mutate(() => pagesApi.acceptInvitation(invitation.id))} onDecline={() => inviteAction.mutate(() => pagesApi.declineInvitation(invitation.id))} />)}</View>}
     <View style={[pageStyles.modeTabs, { backgroundColor: theme.surface2, borderColor: theme.border }]}>{(Object.keys(modeLabels) as PageMode[]).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: mode === value }} onPress={() => setMode(value)} style={[pageStyles.modeTab, mode === value && { backgroundColor: theme.card }]}><Text style={{ color: mode === value ? theme.primary : theme.muted, fontWeight: '800', fontSize: 12 }}>{modeLabels[value]}</Text></Pressable>)}</View>
     {mode === 'discover' && <View style={pageStyles.searchRow}><View style={{ flex: 1 }}><Field label="Tìm trang" value={input} onChangeText={setInput} placeholder="Tên trang hoặc chủ đề" returnKeyType="search" onSubmitEditing={() => setSearch(input)} /></View><Button compact title="Tìm" onPress={() => setSearch(input)} /></View>}
+    {pageId && selected.isPending && <Loading />}
+    {selected.error && <ErrorNotice error={selected.error} retry={() => void selected.refetch()} />}
+    {selected.data && <View accessibilityLabel="Trang đã chọn từ tìm kiếm" onLayout={event => { if (!scrolled.current) { scrolled.current = true; scrollRef.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: true }); } }} style={{ borderWidth: 2, borderColor: theme.primary, borderRadius: 16, padding: 4, gap: 8 }}>
+      <Label style={{ color: theme.primary, fontWeight: '800' }}>Trang đã chọn từ tìm kiếm</Label>
+      <PageCard page={selected.data} pending={action.isPending} onToggleFollow={() => action.mutate(() => selected.data!.isFollowing ? pagesApi.unfollow(selected.data!.id) : pagesApi.follow(selected.data!.id))} />
+    </View>}
     {pages.isPending && <Loading />}
-    {items.map(page => <PageCard key={page.id} page={page} pending={action.isPending} onToggleFollow={() => action.mutate(() => page.isFollowing ? pagesApi.unfollow(page.id) : pagesApi.follow(page.id))} />)}
-    {!pages.isPending && !pages.error && items.length === 0 && <Card tone="soft" style={pageStyles.empty}><Icon name="sparkle" color={theme.accent} size={24} /><Label style={{ fontWeight: '800' }}>{mode === 'mine' ? 'Bạn chưa quản lý Trang nào' : mode === 'following' ? 'Chưa có Trang được theo dõi' : 'Chưa tìm thấy Trang phù hợp'}</Label><Text style={{ color: theme.muted, textAlign: 'center', fontSize: 13, lineHeight: 19 }}>{mode === 'discover' ? 'Thử một từ khóa khác để tìm những cộng đồng mới.' : 'Khám phá Trang để làm đầy không gian này.'}</Text></Card>}
+    {items.filter(item => item.id !== selected.data?.id).map(page => <PageCard key={page.id} page={page} pending={action.isPending} onToggleFollow={() => action.mutate(() => page.isFollowing ? pagesApi.unfollow(page.id) : pagesApi.follow(page.id))} />)}
+    {!pages.isPending && !pages.error && items.length === 0 && !selected.data && !pageId && <Card tone="soft" style={pageStyles.empty}><Icon name="sparkle" color={theme.accent} size={24} /><Label style={{ fontWeight: '800' }}>{mode === 'mine' ? 'Bạn chưa quản lý Trang nào' : mode === 'following' ? 'Chưa có Trang được theo dõi' : 'Chưa tìm thấy Trang phù hợp'}</Label><Text style={{ color: theme.muted, textAlign: 'center', fontSize: 13, lineHeight: 19 }}>{mode === 'discover' ? 'Thử một từ khóa khác để tìm những cộng đồng mới.' : 'Khám phá Trang để làm đầy không gian này.'}</Text></Card>}
     {pages.error && <ErrorNotice error={pages.error} retry={() => void pages.refetch()} />}{action.error && <ErrorNotice error={action.error} />}{inviteAction.error && <ErrorNotice error={inviteAction.error} />}
     {pages.hasNextPage && <Button secondary title={pages.isFetchingNextPage ? 'Đang tải…' : 'Xem thêm Trang'} disabled={pages.isFetchingNextPage} onPress={() => void pages.fetchNextPage()} />}
   </Screen>

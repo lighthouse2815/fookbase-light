@@ -64,10 +64,10 @@
 **Files:** `frontend/mobile/src/app/search.tsx`, `frontend/mobile/src/api/search.ts` chỉ nếu cần; feature/component nhỏ và tests ngoài app.
 **Interfaces:** Dùng API tổng hợp/suggestions đã có; mở people/groups/posts/pages/events/hashtags qua route có thật. Không thêm route giả.
 
-- [ ] Viết test thất bại cho nhiều loại kết quả, lọc loại, empty/error/retry, truy vấn cũ trả trễ và context tài khoản.
-- [ ] Dùng React Query để khóa kết quả theo account/query/type, debounce hợp lý; Enter/tìm kiếm rõ ràng, loading không giả empty.
-- [ ] Hiển thị kết quả loại đã hỗ trợ và navigation đúng. Loại chưa có màn detail mở màn/list phù hợp đã có, không tạo placeholder.
-- [ ] Chạy Jest, typecheck/lint, self-review và report; root review, commit/push riêng.
+- [x] Viết test thất bại cho nhiều loại kết quả, lọc loại, empty/error/retry, truy vấn cũ trả trễ và context tài khoản.
+- [x] Dùng React Query để khóa kết quả theo account/query/type, debounce hợp lý; Enter/tìm kiếm rõ ràng, loading không giả empty.
+- [x] Hiển thị kết quả loại đã hỗ trợ và navigation đúng. Loại chưa có màn detail mở màn/list phù hợp đã có, không tạo placeholder.
+- [x] Chạy Jest, typecheck/lint, self-review và report; root review, commit/push riêng.
 
 ### Task 5: Phục hồi lỗi route web
 

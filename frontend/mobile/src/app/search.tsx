@@ -1,15 +1,7 @@
-import { useState } from 'react';
-import { router } from 'expo-router';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { usersApi } from '../api/users';
 import { useAuth } from '../auth/AuthProvider';
-import { AppHeader, Button, Card, ErrorNotice, Field, Label, Loading, Screen } from '../components/ui';
+import { SearchScreen } from '../features/search/SearchScreen';
+
 export default function Search() {
-  const [text, setText] = useState(''); const [term, setTerm] = useState(''); const { session } = useAuth();
-  const query = useInfiniteQuery({ queryKey: ['search-users', session?.user.id, term], enabled: !!term, initialPageParam: 0, queryFn: ({ pageParam }) => usersApi.search(term, pageParam), getNextPageParam: p => p.offset + p.items.length < p.total ? p.offset + p.items.length : undefined });
-  return <Screen><AppHeader title="Tìm kiếm" subtitle="Tìm người, nhóm và nội dung trên Fookbase" /><Field label="Tên hoặc tên người dùng" value={text} onChangeText={setText} returnKeyType="search" onSubmitEditing={() => setTerm(text.trim())} /><Button title="Tìm kiếm" disabled={!text.trim()} onPress={() => setTerm(text.trim())} />
-    {query.isFetching && <Loading />}{query.error && <ErrorNotice error={query.error} retry={() => void query.refetch()} />}
-    {query.data?.pages.flatMap(p => p.items).map(user => <Card key={user.userId}><Label>{user.displayName}</Label>{!!user.username && <Label muted>@{user.username}</Label>}<Button secondary title="Xem hồ sơ" onPress={() => router.push(`/profile/${user.userId}`)} /></Card>)}
-    {query.data?.pages[0].total === 0 && <Label>Không tìm thấy người dùng.</Label>}{query.hasNextPage && <Button title="Xem thêm" onPress={() => void query.fetchNextPage()} disabled={query.isFetchingNextPage} />}
-  </Screen>;
+  const { session } = useAuth();
+  return <SearchScreen key={session?.user.id ?? 'signed-out'} accountId={session?.user.id} />;
 }

@@ -1,4 +1,4 @@
-import type { ComponentProps, PropsWithChildren, ReactNode } from 'react';
+import type { ComponentProps, PropsWithChildren, ReactNode, Ref } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, useColorScheme, View, type ColorValue, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
@@ -30,9 +30,9 @@ export function AppHeader({ title, subtitle, onSearch, action }: { title: string
   </View>;
 }
 
-export function Screen({ children, scroll = true, style }: PropsWithChildren<{ scroll?: boolean; style?: StyleProp<ViewStyle> }>) {
+export function Screen({ children, scroll = true, style, scrollRef }: PropsWithChildren<{ scroll?: boolean; style?: StyleProp<ViewStyle>; scrollRef?: Ref<ScrollView> }>) {
   const t = useTheme();
-  const content = scroll ? <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.screen, style]}>{children}</ScrollView> : <View style={[styles.screen, style]}>{children}</View>;
+  const content = scroll ? <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.screen, style]}>{children}</ScrollView> : <View style={[styles.screen, style]}>{children}</View>;
   return <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: t.bg }}>{content}</SafeAreaView>;
 }
 

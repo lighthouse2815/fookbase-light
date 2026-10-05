@@ -93,13 +93,13 @@ export interface SearchSuggestionsResult {
 }
 
 export const searchApi = {
-  search: (queryText: string, type: SearchType = 'all', cursor?: string, limit = 20) => {
+  search: (queryText: string, type: SearchType = 'all', cursor?: string, limit = 20, init?: RequestInit) => {
     const query = new URLSearchParams({ q: queryText, type, limit: String(limit) })
     if (cursor) query.set('cursor', cursor)
-    return apiRequest<GlobalSearchResult>(`/api/search?${query.toString()}`)
+    return apiRequest<GlobalSearchResult>(`/api/search?${query.toString()}`, init)
   },
-  suggestions: (queryText: string, limit = 5) => {
+  suggestions: (queryText: string, limit = 5, init?: RequestInit) => {
     const query = new URLSearchParams({ q: queryText, limit: String(limit) })
-    return apiRequest<SearchSuggestionsResult>(`/api/search/suggestions?${query.toString()}`)
+    return apiRequest<SearchSuggestionsResult>(`/api/search/suggestions?${query.toString()}`, init)
   },
 }

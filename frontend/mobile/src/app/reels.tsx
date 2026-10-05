@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { reelsApi, type ReelFeedMode } from '../api/reels';
 import { postsApi } from '../api/posts';
 import { resolveProfileImageUrl, usersApi } from '../api/users';
@@ -11,16 +11,39 @@ import { ErrorNotice, Icon, IconButton, Label, Loading, useTheme } from '../comp
 import { MediaView } from '../components/MediaView';
 
 export default function Reels() {
+  const { session } = useAuth();
+  const { reelId } = useLocalSearchParams<{ reelId?: string }>();
+  return <ReelsContent key={`${session?.user.id}:${reelId}`} />;
+}
+function ReelsContent() {
+  const { reelId } = useLocalSearchParams<{ reelId?: string }>();
+  const [includeSelected, setIncludeSelected] = useState(true);
+  const modeVersion = useRef(0);
   const [mode, setMode] = useState<ReelFeedMode>('forYou'); const [index, setIndex] = useState(0); const { session } = useAuth(); const t = useTheme(); const cache = useQueryClient();
   const { height: viewportHeight } = useWindowDimensions();
   const query = useInfiniteQuery({ queryKey: ['reels', session?.user.id, mode], initialPageParam: undefined as string | undefined, queryFn: ({ pageParam }) => reelsApi.getFeed(mode, pageParam), getNextPageParam: p => p.nextCursor ?? undefined });
-  const items = query.data?.pages.flatMap(p => p.items) ?? []; const current = items[index];
+  const selected = useQuery({ queryKey: ['reels', session?.user.id, 'selected', reelId], enabled: !!session && !!reelId && includeSelected, queryFn: () => reelsApi.get(reelId!) });
+  const feedItems = query.data?.pages.flatMap(p => p.items) ?? [];
+  const items = Array.from(new Map((includeSelected && selected.data ? [selected.data, ...feedItems] : feedItems).map(item => [item.id, item])).values());
+  const waitingForSelected = !!reelId && includeSelected && !selected.data;
+  const current = waitingForSelected ? undefined : items[index];
   const action = useMutation({ mutationFn: (operation: () => Promise<unknown>) => operation(), onSuccess: () => cache.invalidateQueries({ queryKey: ['reels', session?.user.id] }) });
-  const next = () => { if (index < items.length - 1) setIndex(index + 1); else void query.fetchNextPage().then(result => { if ((result.data?.pages.flatMap(p => p.items).length ?? 0) > index + 1) setIndex(index + 1); }); };
+  const next = () => {
+    const version = modeVersion.current;
+    if (index < items.length - 1) setIndex(index + 1);
+    else void query.fetchNextPage().then(result => {
+      if (version !== modeVersion.current) return;
+      const ids = new Set(result.data?.pages.flatMap(page => page.items.map(item => item.id)));
+      if (includeSelected && selected.data) ids.add(selected.data.id);
+      if (ids.size > index + 1) setIndex(index + 1);
+    });
+  };
   return <View style={reelStyles.screen}>
     <View style={reelStyles.topbar}><Pressable accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => router.back()} style={reelStyles.back}><Text style={reelStyles.backText}>‹</Text></Pressable><Text style={reelStyles.title}>Reels</Text><View style={reelStyles.topActions}><IconButton label="Tìm Reels" icon="search" onPress={() => router.push('/search')} /><IconButton label="Tạo Reel" icon="add" onPress={() => router.push({ pathname: '/media/create', params: { kind: 'reel' } })} /></View></View>
-    <View style={reelStyles.modeTabs}>{(['forYou', 'following'] as const).map((value, position) => <Pressable key={value} accessibilityRole="tab" accessibilityLabel={position === 0 ? 'Dành cho bạn' : 'Đang theo dõi'} accessibilityState={{ selected: mode === value }} onPress={() => { setIndex(0); setMode(value); }} style={[reelStyles.modeTab, mode === value && reelStyles.modeTabActive]}><Text style={reelStyles.modeText}>{position === 0 ? 'Dành cho bạn' : 'Đang theo dõi'}</Text></Pressable>)}</View>
-    {query.isPending && <View style={reelStyles.center}><Loading /></View>}
+    <View style={reelStyles.modeTabs}>{(['forYou', 'following'] as const).map((value, position) => <Pressable key={value} accessibilityRole="tab" accessibilityLabel={position === 0 ? 'Dành cho bạn' : 'Đang theo dõi'} accessibilityState={{ selected: mode === value }} onPress={() => { modeVersion.current++; setIndex(0); setIncludeSelected(false); setMode(value); }} style={[reelStyles.modeTab, mode === value && reelStyles.modeTabActive]}><Text style={reelStyles.modeText}>{position === 0 ? 'Dành cho bạn' : 'Đang theo dõi'}</Text></Pressable>)}</View>
+    {waitingForSelected && selected.isPending && <View style={reelStyles.center}><Loading /></View>}
+    {selected.error && includeSelected && <View style={reelStyles.center}><ErrorNotice error={selected.error} retry={() => void selected.refetch()} /></View>}
+    {query.isPending && (!includeSelected || !selected.data) && !waitingForSelected && <View style={reelStyles.center}><Loading /></View>}
     {query.error && <View style={reelStyles.center}><ErrorNotice error={query.error} retry={() => void query.refetch()} /></View>}
     {current && <View style={reelStyles.stage}>
       <MediaView path={`/api/reels/${current.id}/video/access`} height={Math.max(440, viewportHeight - 150)} nativeControls={false} borderRadius={0} contentFit="cover" autoPlay loop />
@@ -30,7 +53,7 @@ export default function Reels() {
       {action.error && <View style={reelStyles.actionError}><ErrorNotice error={action.error} /></View>}
       <Pressable accessibilityRole="button" accessibilityLabel="Reel tiếp theo" onPress={next} disabled={query.isFetchingNextPage || (index >= items.length - 1 && !query.hasNextPage)} style={reelStyles.nextZone} />
     </View>}
-    {!current && !query.isPending && !query.error && <View style={reelStyles.center}><Label muted>Chưa có Reel để xem.</Label></View>}
+    {!current && !waitingForSelected && !query.isPending && !query.error && <View style={reelStyles.center}><Label muted>Chưa có Reel để xem.</Label></View>}
   </View>;
 }
 
