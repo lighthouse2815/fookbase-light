@@ -38,3 +38,19 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## SEO và Google Search
+
+Trang gốc công khai được React/Vite pre-render sẵn vào HTML khi build để giới thiệu nhất quán các tên thương hiệu **Fookbase**, **Fookbase Light** và `fookbase-light`. Người dùng đã đăng nhập vẫn đi theo luồng ứng dụng tại `/feed`; các trang ứng dụng không phải trang đích tìm kiếm sẽ dùng `noindex`.
+
+Mặc định, site public là `https://fookbase-light.duckdns.org`. Đặt `VITE_SITE_URL` thành một HTTP(S) origin khi build (qua `frontend/web/.env.production.local` hoặc biến môi trường của process build) nếu deploy sang domain khác. Biến này tạo đồng bộ canonical URL, Open Graph, JSON-LD, `robots.txt` và `sitemap.xml`; không thêm path, query, hash hoặc credential. Sitemap chỉ liệt kê trang gốc, còn `robots.txt` vẫn cho crawler truy cập các route ứng dụng để chúng đọc được chỉ thị `noindex`.
+
+Sau khi deploy, owner domain cần tự thực hiện trong [Google Search Console](https://search.google.com/search-console/about):
+
+1. Tạo property **URL prefix** đúng với origin production và xác minh quyền sở hữu.
+2. Gửi `https://<domain>/sitemap.xml`, rồi dùng URL Inspection để yêu cầu index trang gốc.
+3. Theo dõi báo cáo Search results theo truy vấn, trang và lỗi lập chỉ mục.
+
+Tham khảo hướng dẫn chính thức của Google về [khởi động Search Console](https://developers.google.com/search/docs/monitor-debug/search-console-start), [sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview) và [yêu cầu Google thu thập lại URL](https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl). Repository không lưu credential Search Console, nên bước xác minh/gửi sitemap cần do owner có quyền tài khoản thực hiện. Các bước này giúp Google phát hiện và hiểu site, nhưng không bảo đảm thứ hạng hoặc xuất hiện ngay trên trang đầu.
+
+Kiểm tra SEO trên bản build production bằng `npm run build`, rồi chạy `npm run preview -- --host 127.0.0.1 --port 5197 --strictPort`. Ở terminal khác, chạy `node tests/browser/seo.mjs` với Playwright/Chromium đã cài; có thể đặt `PLAYWRIGHT_MODULE` để dùng Playwright ngoài repository và `SEO_BASE_URL` nếu đổi cổng. Bộ kiểm tra bao gồm HTML trước khi chạy JavaScript, sitemap/robots, giao diện điện thoại khi tắt JavaScript và luồng vào trang đăng nhập/bảng tin. Với static hosting, các route ứng dụng dùng chung HTML entry; chỉ thị `noindex` cho chúng được cập nhật khi JavaScript chạy.

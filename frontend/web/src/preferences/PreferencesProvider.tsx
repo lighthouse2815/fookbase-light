@@ -431,7 +431,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   const t = useCallback((key: string) => messages[language][key as keyof typeof messages.en], [language])
 
   useEffect(() => {
-    document.documentElement.lang = language
+    document.documentElement.lang = window.location.pathname === '/' ? 'vi' : language
     document.documentElement.dataset.theme = theme
     localStorage.setItem(preferencesStorageKey, JSON.stringify({ language, theme }))
   }, [language, theme])
