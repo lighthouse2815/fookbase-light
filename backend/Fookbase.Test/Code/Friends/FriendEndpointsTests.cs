@@ -17,6 +17,7 @@ using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Pages.Entities;
 using Fookbase.Api.Modules.Users.Entities;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -606,6 +607,62 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var response = await client.GetAsync("/api/friends?limit=101");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/friends", "offset=-1", "Offset")]
+    [InlineData("/api/friends", "limit=0", "Limit")]
+    [InlineData("/api/friends/requests/incoming", "limit=101", "Limit")]
+    [InlineData("/api/friends/requests/outgoing", "offset=-1", "Offset")]
+    [InlineData("/api/friends/notifications/unread", "limit=0", "Limit")]
+    [InlineData("/api/friends/blocks", "offset=-1", "Offset")]
+    [InlineData("/api/friends/mutual/{userId}", "limit=101", "Limit")]
+    [InlineData("/api/friends/suggestions", "limit=51", "Limit")]
+    [InlineData("/api/friends/suggestions", "cursor=not-a-cursor", "Cursor")]
+    [InlineData("/api/users/{userId}/friends", "offset=-1", "Offset")]
+    [InlineData("/api/users/{userId}/followers", "limit=101", "Limit")]
+    [InlineData("/api/users/{userId}/following", "limit=0", "Limit")]
+    [InlineData("/api/users/{userId}/followers", "cursor=not-a-cursor", "Cursor")]
+    [InlineData("/api/users/{userId}/following", "cursor=not-a-cursor", "Cursor")]
+    public async Task Invalid_relationship_queries_return_request_validation_errors(
+        string path, string query, string field)
+    {
+        var userIds = CreateUserIds(2);
+        await EnsureEligibleUsersAsync(userIds);
+        using var client = CreateAuthenticatedClient(userIds[0]);
+        using var response = await client.GetAsync(
+            $"{path.Replace("{userId}", userIds[1].ToString())}?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(payload.RootElement.TryGetProperty("errors", out var errors));
+        Assert.True(errors.TryGetProperty(field, out var messages));
+        Assert.NotEmpty(messages.EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Suggestion_request_uses_configured_default_and_maximum_page_sizes()
+    {
+        var userIds = CreateUserIds(5);
+        await EnsureEligibleUsersAsync(userIds);
+        await SeedSharedGroupAsync(userIds[0], userIds.Skip(1), "configured-suggestion-page");
+        using var authenticated = CreateAuthenticatedClient(userIds[0]);
+        using var configuredFactory = factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+        {
+            services.Remove(services.Single(descriptor => descriptor.ServiceType == typeof(FriendSuggestionOptions)));
+            services.AddSingleton(new FriendSuggestionOptions { DefaultPageSize = 2, MaximumPageSize = 3 });
+        }));
+        using var client = configuredFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = authenticated.DefaultRequestHeaders.Authorization;
+
+        var defaultPage = await client.GetFromJsonAsync<SuggestionPage>("/api/friends/suggestions");
+        Assert.Equal(2, defaultPage!.Items.Count);
+        var maximumPage = await client.GetFromJsonAsync<SuggestionPage>("/api/friends/suggestions?limit=3");
+        Assert.Equal(3, maximumPage!.Items.Count);
+        using var invalidResponse = await client.GetAsync("/api/friends/suggestions?limit=4");
+        Assert.Equal(HttpStatusCode.BadRequest, invalidResponse.StatusCode);
+        using var payload = JsonDocument.Parse(await invalidResponse.Content.ReadAsStringAsync());
+        Assert.True(payload.RootElement.GetProperty("errors").TryGetProperty("Limit", out _));
     }
 
     [Fact]

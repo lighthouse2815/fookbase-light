@@ -10,7 +10,6 @@ using AppDataProtectionOptions = Fookbase.Api.Shared.Config.DataProtectionOption
 using AppForwardedHeadersOptions = Fookbase.Api.Shared.Config.ForwardedHeadersOptions;
 using Fookbase.Api.Shared.Config;
 using Fookbase.Api.Shared.HealthChecks;
-using Fookbase.Api.Modules.Friends.Endpoints;
 using Fookbase.Api.Modules.Feed.Endpoints;
 using Fookbase.Api.Modules.Admin;
 using Fookbase.Api.Modules.Identity.Common;
@@ -372,7 +371,6 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     Predicate = registration => registration.Tags.Contains("ready")
 }).DisableRateLimiting();
 app.MapControllers();
-app.MapFriendEndpoints();
 app.MapFeedEndpoints();
 app.MapHub<MessagesHub>("/hubs/messages");
 app.MapHub<NotificationsHub>("/hubs/notifications");

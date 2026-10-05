@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Friends.Common;
 using Fookbase.Api.Modules.Friends.Domain.Enums;
 using Fookbase.Api.Modules.Friends.Domain.ValueObjects;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
@@ -13,8 +14,6 @@ using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
-using System.Security.Cryptography;
-using System.Text.Json;
 
 namespace Fookbase.Api.Modules.Friends.Services;
 
@@ -25,10 +24,10 @@ public sealed class FriendsService(
     IDataProtectionProvider protectionProvider,
     TimeProvider timeProvider)
 {
-    private const int MaximumLimit = 100;
+    public const int DefaultPageSize = 20;
+    public const int MaximumPageSize = 100;
     public const int DefaultFollowPageSize = 20;
     public const int MaximumFollowPageSize = 100;
-    private const int FollowCursorVersion = 1;
 
     public async Task<ApplicationResult<FriendRequestResponse>> SendRequestAsync(
         Guid actorUserId,
@@ -142,13 +141,13 @@ public sealed class FriendsService(
         return Map(await UnblockCoreAsync(actorUserId, blockedUserId, cancellationToken));
     }
 
-    public Task<ApplicationResult<PagedResponse<FriendResponse>>> GetFriendsAsync(
+    public async Task<ApplicationResult<PagedResponse<FriendResponse>>> GetFriendsAsync(
         Guid actorUserId,
         int offset,
         int limit,
         CancellationToken cancellationToken = default) =>
-        ReadPageAsync(offset, limit, (normalizedOffset, normalizedLimit) =>
-            GetFriendsCoreAsync(actorUserId, normalizedOffset, normalizedLimit, cancellationToken));
+        ApplicationResult<PagedResponse<FriendResponse>>.Success(
+            await GetFriendsCoreAsync(actorUserId, offset, limit, cancellationToken));
 
     public async Task<ApplicationResult<PagedResponse<FriendResponse>>> GetVisibleFriendsAsync(
         Guid viewerUserId,
@@ -157,12 +156,6 @@ public sealed class FriendsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        var paginationError = ValidatePagination(offset, limit);
-        if (paginationError is not null)
-        {
-            return ApplicationResult<PagedResponse<FriendResponse>>.Failure(paginationError);
-        }
-
         if (!await CanViewRelationshipListAsync(
                 viewerUserId, targetUserId, settings => settings.FriendListVisibility, cancellationToken))
         {
@@ -174,37 +167,37 @@ public sealed class FriendsService(
             await GetFriendsCoreAsync(targetUserId, offset, limit, cancellationToken));
     }
 
-    public Task<ApplicationResult<PagedResponse<FriendRequestResponse>>> GetIncomingRequestsAsync(
+    public async Task<ApplicationResult<PagedResponse<FriendRequestResponse>>> GetIncomingRequestsAsync(
         Guid actorUserId,
         int offset,
         int limit,
         CancellationToken cancellationToken = default) =>
-        ReadPageAsync(offset, limit, (normalizedOffset, normalizedLimit) =>
-            GetIncomingRequestsCoreAsync(actorUserId, normalizedOffset, normalizedLimit, cancellationToken));
+        ApplicationResult<PagedResponse<FriendRequestResponse>>.Success(
+            await GetIncomingRequestsCoreAsync(actorUserId, offset, limit, cancellationToken));
 
-    public Task<ApplicationResult<PagedResponse<FriendRequestResponse>>> GetOutgoingRequestsAsync(
+    public async Task<ApplicationResult<PagedResponse<FriendRequestResponse>>> GetOutgoingRequestsAsync(
         Guid actorUserId,
         int offset,
         int limit,
         CancellationToken cancellationToken = default) =>
-        ReadPageAsync(offset, limit, (normalizedOffset, normalizedLimit) =>
-            GetOutgoingRequestsCoreAsync(actorUserId, normalizedOffset, normalizedLimit, cancellationToken));
+        ApplicationResult<PagedResponse<FriendRequestResponse>>.Success(
+            await GetOutgoingRequestsCoreAsync(actorUserId, offset, limit, cancellationToken));
 
-    public Task<ApplicationResult<PagedResponse<BlockedUserResponse>>> GetBlockedUsersAsync(
+    public async Task<ApplicationResult<PagedResponse<BlockedUserResponse>>> GetBlockedUsersAsync(
         Guid actorUserId,
         int offset,
         int limit,
         CancellationToken cancellationToken = default) =>
-        ReadPageAsync(offset, limit, (normalizedOffset, normalizedLimit) =>
-            GetBlockedUsersCoreAsync(actorUserId, normalizedOffset, normalizedLimit, cancellationToken));
+        ApplicationResult<PagedResponse<BlockedUserResponse>>.Success(
+            await GetBlockedUsersCoreAsync(actorUserId, offset, limit, cancellationToken));
 
-    public Task<ApplicationResult<PagedResponse<FriendNotificationResponse>>> GetUnreadNotificationsAsync(
+    public async Task<ApplicationResult<PagedResponse<FriendNotificationResponse>>> GetUnreadNotificationsAsync(
         Guid actorUserId,
         int offset,
         int limit,
         CancellationToken cancellationToken = default) =>
-        ReadPageAsync(offset, limit, (normalizedOffset, normalizedLimit) =>
-            GetUnreadNotificationsCoreAsync(actorUserId, normalizedOffset, normalizedLimit, cancellationToken));
+        ApplicationResult<PagedResponse<FriendNotificationResponse>>.Success(
+            await GetUnreadNotificationsCoreAsync(actorUserId, offset, limit, cancellationToken));
 
     public async Task<ApplicationResult> MarkNotificationReadAsync(
         Guid actorUserId,
@@ -339,12 +332,6 @@ public sealed class FriendsService(
         if (actorUserId == otherUserId)
         {
             return SelfFailure<MutualFriendsResponse>("query mutual friends with");
-        }
-
-        var paginationError = ValidatePagination(offset, limit);
-        if (paginationError is not null)
-        {
-            return ApplicationResult<MutualFriendsResponse>.Failure(paginationError);
         }
 
         return Map(await GetMutualFriendsCoreAsync(
@@ -770,12 +757,6 @@ public sealed class FriendsService(
         int limit,
         CancellationToken cancellationToken)
     {
-        if (limit is < 1 or > MaximumFollowPageSize)
-        {
-            return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Failure(
-                FollowValidation("invalid_follow_limit", $"Limit must be between 1 and {MaximumFollowPageSize}."));
-        }
-
         if (!await CanViewRelationshipListAsync(
                 viewerUserId, targetUserId, settings => settings.FollowListVisibility, cancellationToken))
         {
@@ -783,16 +764,8 @@ public sealed class FriendsService(
                 ToApplicationError(FriendsOperationError.USER_NOT_FOUND));
         }
 
-        FollowCursor? cursor;
-        try
-        {
-            cursor = DecodeFollowCursor(cursorValue, viewerUserId, direction, targetUserId);
-        }
-        catch (FormatException)
-        {
-            return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Failure(
-                FollowValidation("invalid_follow_cursor", "The follow cursor is invalid."));
-        }
+        var cursor = FollowCursor.DecodeOrNull(
+            cursorValue, viewerUserId, direction, targetUserId, protectionProvider);
 
         var isFollowers = direction == "followers";
         var query =
@@ -837,11 +810,8 @@ public sealed class FriendsService(
             item.FollowedAtUtc)).ToList();
         var page = items.Take(limit).ToList();
         var nextCursor = items.Count > limit
-            ? EncodeFollowCursor(
-                new FollowCursor(page[^1].FollowedAtUtc, page[^1].UserId),
-                viewerUserId,
-                direction,
-                targetUserId)
+            ? new FollowCursor(page[^1].FollowedAtUtc, page[^1].UserId)
+                .Encode(viewerUserId, direction, targetUserId, protectionProvider)
             : null;
         return ApplicationResult<CursorPageResponse<UserFollowResponse>>.Success(
             new CursorPageResponse<UserFollowResponse>(
@@ -1116,53 +1086,6 @@ public sealed class FriendsService(
                await FriendIds(senderUserId).Intersect(FriendIds(receiverUserId)).AnyAsync(cancellationToken);
     }
 
-    private FollowCursor? DecodeFollowCursor(
-        string? value,
-        Guid viewerUserId,
-        string direction,
-        Guid targetUserId)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        try
-        {
-            if (value.Length is < 1 or > 4096)
-            {
-                throw new FormatException();
-            }
-
-            return JsonSerializer.Deserialize<FollowCursor>(
-                CreateFollowCursorProtector(viewerUserId, direction, targetUserId).Unprotect(value))
-                ?? throw new FormatException();
-        }
-        catch (Exception exception) when (exception is CryptographicException or JsonException or ArgumentException)
-        {
-            throw new FormatException("The follow cursor is invalid.", exception);
-        }
-    }
-
-    private string EncodeFollowCursor(
-        FollowCursor cursor,
-        Guid viewerUserId,
-        string direction,
-        Guid targetUserId) =>
-        CreateFollowCursorProtector(viewerUserId, direction, targetUserId)
-            .Protect(JsonSerializer.Serialize(cursor));
-
-    private IDataProtector CreateFollowCursorProtector(
-        Guid viewerUserId,
-        string direction,
-        Guid targetUserId) =>
-        protectionProvider.CreateProtector(
-            "Fookbase.Follows",
-            FollowCursorVersion.ToString(),
-            viewerUserId.ToString("N"),
-            direction,
-            targetUserId.ToString("N"));
-
     private Task<int> AcquirePairLockAsync(UserPair pair, CancellationToken cancellationToken) =>
         dbContext.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT pg_advisory_xact_lock(hashtextextended({PairLockKey(pair)}, 0))",
@@ -1207,36 +1130,6 @@ public sealed class FriendsService(
             // The notification is persisted and will be fetched when the recipient reconnects.
         }
     }
-
-    private static async Task<ApplicationResult<PagedResponse<T>>> ReadPageAsync<T>(
-        int offset,
-        int limit,
-        Func<int, int, Task<PagedResponse<T>>> reader)
-    {
-        var paginationError = ValidatePagination(offset, limit);
-        if (paginationError is not null)
-        {
-            return ApplicationResult<PagedResponse<T>>.Failure(paginationError);
-        }
-
-        return ApplicationResult<PagedResponse<T>>.Success(await reader(offset, limit));
-    }
-
-    private static ApplicationError? ValidatePagination(int offset, int limit)
-    {
-        if (offset < 0 || limit < 1 || limit > MaximumLimit)
-        {
-            return new ApplicationError(
-                ErrorCode.InvalidPagination,
-                $"Offset must be non-negative and limit must be between 1 and {MaximumLimit}.",
-                ApplicationErrorType.VALIDATION);
-        }
-
-        return null;
-    }
-
-    private static ApplicationError FollowValidation(string code, string message) =>
-        new(code, message, ApplicationErrorType.VALIDATION);
 
     private static ApplicationResult<T> Map<T>(FriendsOperationResult<T> result) =>
         result.Succeeded
@@ -1319,8 +1212,6 @@ public sealed class FriendsService(
         public static FriendsOperationResult<T> Failure(FriendsOperationError error) =>
             new(default, error);
     }
-
-    private sealed record FollowCursor(DateTimeOffset FollowedAtUtc, Guid UserId);
 
     private sealed record FollowListItem(
         Guid UserId,

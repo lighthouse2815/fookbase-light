@@ -10,6 +10,7 @@ public static class DependencyInjection
         FriendSuggestionOptions friendSuggestionOptions)
     {
         friendSuggestionOptions.Validate();
+        services.AddHttpContextAccessor();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton(friendSuggestionOptions);
         services.AddScoped<FriendsService>();

@@ -1,6 +1,5 @@
+using Fookbase.Api.Modules.Friends.Common;
 using Fookbase.Api.Modules.Friends.Domain.Enums;
-using System.Security.Cryptography;
-using System.Text.Json;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Friends.Config;
 using Fookbase.Api.Modules.Friends.DTOs.Responses;
@@ -17,8 +16,6 @@ public sealed class FriendSuggestionService(
     IDataProtectionProvider protectionProvider,
     FriendSuggestionOptions options)
 {
-    private const int CursorVersion = 1;
-
     public async Task<ApplicationResult<CursorPageResponse<FriendSuggestionResponse>>> GetSuggestionsAsync(
         Guid viewerUserId,
         string? cursorValue,
@@ -26,22 +23,7 @@ public sealed class FriendSuggestionService(
         CancellationToken cancellationToken = default)
     {
         var limit = requestedLimit ?? options.DefaultPageSize;
-        if (limit is < 1 or > 50 || limit > options.MaximumPageSize)
-        {
-            return ApplicationResult<CursorPageResponse<FriendSuggestionResponse>>.Failure(
-                Validation("invalid_suggestion_limit", $"Limit must be between 1 and {options.MaximumPageSize}."));
-        }
-
-        FriendSuggestionCursor? cursor;
-        try
-        {
-            cursor = DecodeCursor(cursorValue, viewerUserId);
-        }
-        catch (FormatException)
-        {
-            return ApplicationResult<CursorPageResponse<FriendSuggestionResponse>>.Failure(
-                Validation("invalid_suggestion_cursor", "The friend suggestion cursor is invalid."));
-        }
+        var cursor = FriendSuggestionCursor.DecodeOrNull(cursorValue, viewerUserId, protectionProvider);
 
         var viewerFriendIds = FriendIds(viewerUserId);
         var candidateIds = CandidateIds(viewerUserId, viewerFriendIds);
@@ -114,7 +96,8 @@ public sealed class FriendSuggestionService(
             .ToListAsync(cancellationToken);
         var page = rows.Take(limit).ToList();
         var nextCursor = rows.Count > limit
-            ? EncodeCursor(new FriendSuggestionCursor(CursorVersion, viewerUserId, page[^1].Score, page[^1].UserId), viewerUserId)
+            ? new FriendSuggestionCursor(FriendSuggestionCursor.CurrentVersion, viewerUserId, page[^1].Score, page[^1].UserId)
+                .Encode(viewerUserId, protectionProvider)
             : null;
         var response = page.Select(item => new FriendSuggestionResponse(
             new FriendSuggestionProfileResponse(
@@ -172,45 +155,4 @@ public sealed class FriendSuggestionService(
             .Select(friendship => friendship.UserId1 == viewerUserId
                 ? friendship.UserId2
                 : friendship.UserId1);
-
-    private FriendSuggestionCursor? DecodeCursor(string? value, Guid viewerUserId)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        try
-        {
-            if (value.Length is < 1 or > 4_096)
-            {
-                throw new FormatException();
-            }
-
-            var cursor = JsonSerializer.Deserialize<FriendSuggestionCursor>(
-                CreateCursorProtector(viewerUserId).Unprotect(value)) ?? throw new FormatException();
-            return cursor.Version == CursorVersion && cursor.ViewerUserId == viewerUserId
-                ? cursor
-                : throw new FormatException();
-        }
-        catch (Exception exception) when (exception is CryptographicException or JsonException or ArgumentException)
-        {
-            throw new FormatException("The friend suggestion cursor is invalid.", exception);
-        }
-    }
-
-    private string EncodeCursor(FriendSuggestionCursor cursor, Guid viewerUserId) =>
-        CreateCursorProtector(viewerUserId).Protect(JsonSerializer.Serialize(cursor));
-
-    private IDataProtector CreateCursorProtector(Guid viewerUserId) =>
-        protectionProvider.CreateProtector(
-            "Fookbase.FriendSuggestions",
-            CursorVersion.ToString(),
-            viewerUserId.ToString("N"));
-
-    private static ApplicationError Validation(string code, string message) =>
-        new(code, message, ApplicationErrorType.VALIDATION);
-
-    private sealed record FriendSuggestionCursor(int Version, Guid ViewerUserId, int Score, Guid UserId);
-
 }
