@@ -11,20 +11,5 @@ internal sealed class UserFollowConfiguration : IEntityTypeConfiguration<UserFol
         builder.ToTable("UserFollows", table => table.HasCheckConstraint(
             "CK_UserFollows_DifferentUsers",
             "\"FollowerUserId\" <> \"FollowingUserId\""));
-        builder.HasKey(follow => new { follow.FollowerUserId, follow.FollowingUserId });
-        builder.Property(follow => follow.FollowedAtUtc).IsRequired();
-        builder.HasIndex(follow => new { follow.FollowingUserId, follow.FollowerUserId });
-        builder.HasIndex(follow => new
-        {
-            follow.FollowerUserId,
-            follow.FollowedAtUtc,
-            follow.FollowingUserId
-        });
-        builder.HasIndex(follow => new
-        {
-            follow.FollowingUserId,
-            follow.FollowedAtUtc,
-            follow.FollowerUserId
-        });
     }
 }

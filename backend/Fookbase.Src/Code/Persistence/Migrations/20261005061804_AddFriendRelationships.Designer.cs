@@ -3,6 +3,7 @@ using System;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fookbase.Api.Persistence.Migrations
 {
     [DbContext(typeof(FookbaseDbContext))]
-    partial class FookbaseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261005061804_AddFriendRelationships")]
+    partial class AddFriendRelationships
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -159,22 +162,19 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CoverMediaId");
-
-                    b.HasIndex("CreatedByUserId");
-
                     b.HasIndex("HostType", "HostId", "StartsAtUtc")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
                     b.HasIndex("Status", "Privacy", "StartsAtUtc")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
-                    b.ToTable("Events");
+                    b.ToTable("Events", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", b =>
                 {
                     b.Property<Guid>("EventId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("AttachedAtUtc")
@@ -187,7 +187,7 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("EventCoverMediaReferences");
+                    b.ToTable("EventCoverMediaReferences", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventInvitation", b =>
@@ -216,14 +216,12 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InviterUserId");
-
                     b.HasIndex("EventId", "InviteeUserId")
                         .HasFilter("\"Status\" = 0");
 
                     b.HasIndex("InviteeUserId", "Status", "CreatedAtUtc");
 
-                    b.ToTable("EventInvitations");
+                    b.ToTable("EventInvitations", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventParticipant", b =>
@@ -244,7 +242,7 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasIndex("UserId", "Status");
 
-                    b.ToTable("EventParticipants");
+                    b.ToTable("EventParticipants", (string)null);
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.BlockedUser", b =>
@@ -2525,89 +2523,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.Event", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "CoverMedia")
-                        .WithMany()
-                        .HasForeignKey("CoverMediaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CoverMedia");
-
-                    b.Navigation("CreatedByUser");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Events.Entities.Event", "Event")
-                        .WithOne("CoverMediaReference")
-                        .HasForeignKey("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", "EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Event");
-
-                    b.Navigation("Media");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventInvitation", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Events.Entities.Event", "Event")
-                        .WithMany("Invitations")
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "InviteeUser")
-                        .WithMany()
-                        .HasForeignKey("InviteeUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "InviterUser")
-                        .WithMany()
-                        .HasForeignKey("InviterUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Event");
-
-                    b.Navigation("InviteeUser");
-
-                    b.Navigation("InviterUser");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventParticipant", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Events.Entities.Event", "Event")
-                        .WithMany("Participants")
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Event");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.BlockedUser", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "BlockedAccount")
@@ -3559,15 +3474,6 @@ namespace Fookbase.Api.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.Event", b =>
-                {
-                    b.Navigation("CoverMediaReference");
-
-                    b.Navigation("Invitations");
-
-                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendRequest", b =>

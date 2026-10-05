@@ -11,8 +11,5 @@ internal sealed class BlockedUserConfiguration : IEntityTypeConfiguration<Blocke
         builder.ToTable("BlockedUsers", table => table.HasCheckConstraint(
             "CK_BlockedUsers_DifferentUsers",
             "\"BlockerUserId\" <> \"BlockedUserId\""));
-        builder.HasKey(block => new { block.BlockerUserId, block.BlockedUserId });
-        builder.Property(block => block.CreatedAtUtc).IsRequired();
-        builder.HasIndex(block => block.BlockedUserId);
     }
 }

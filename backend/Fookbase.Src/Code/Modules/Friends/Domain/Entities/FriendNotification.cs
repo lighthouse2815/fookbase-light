@@ -1,6 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
+using Microsoft.EntityFrameworkCore;
 using Fookbase.Api.Modules.Friends.Domain.Enums;
+
 namespace Fookbase.Api.Modules.Friends.Entities;
 
+[Table("FriendNotifications")]
+[Index(nameof(RecipientUserId), nameof(ReadAtUtc), nameof(CreatedAtUtc))]
 public sealed class FriendNotification
 {
     private FriendNotification()
@@ -23,6 +30,7 @@ public sealed class FriendNotification
         CreatedAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
 
     public Guid RecipientUserId { get; private set; }
@@ -36,6 +44,19 @@ public sealed class FriendNotification
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? ReadAtUtc { get; private set; }
+
+    [ForeignKey(nameof(RecipientUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User RecipientUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(ActorUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User ActorUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(FriendRequestId))]
+    [InverseProperty(nameof(FriendRequest.Notifications))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public FriendRequest FriendRequest { get; private set; } = null!;
 
     public static FriendNotification Create(
         Guid id,

@@ -1,6 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
+using Microsoft.EntityFrameworkCore;
 using Fookbase.Api.Modules.Friends.Domain.ValueObjects;
+
 namespace Fookbase.Api.Modules.Friends.Entities;
 
+[Table("Friendships")]
+[Index(nameof(UserId1), nameof(UserId2), IsUnique = true)]
+[Index(nameof(UserId1))]
+[Index(nameof(UserId2))]
 public sealed class Friendship
 {
     private Friendship()
@@ -15,6 +24,7 @@ public sealed class Friendship
         CreatedAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
 
     public Guid UserId1 { get; private set; }
@@ -22,6 +32,14 @@ public sealed class Friendship
     public Guid UserId2 { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(UserId1))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User User1 { get; private set; } = null!;
+
+    [ForeignKey(nameof(UserId2))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User User2 { get; private set; } = null!;
 
     public static Friendship Create(
         Guid id,

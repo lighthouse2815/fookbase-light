@@ -1,5 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Friends.Entities;
 
+[Table("UserFollows")]
+[PrimaryKey(nameof(FollowerUserId), nameof(FollowingUserId))]
+[Index(nameof(FollowingUserId), nameof(FollowerUserId))]
+[Index(nameof(FollowerUserId), nameof(FollowedAtUtc), nameof(FollowingUserId))]
+[Index(nameof(FollowingUserId), nameof(FollowedAtUtc), nameof(FollowerUserId))]
 public sealed class UserFollow
 {
     private UserFollow()
@@ -18,6 +28,14 @@ public sealed class UserFollow
     public Guid FollowingUserId { get; private set; }
 
     public DateTimeOffset FollowedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(FollowerUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User FollowerUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(FollowingUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User FollowingUser { get; private set; } = null!;
 
     public static UserFollow Create(
         Guid followerUserId,

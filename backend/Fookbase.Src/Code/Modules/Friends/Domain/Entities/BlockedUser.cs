@@ -1,5 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Friends.Entities;
 
+[Table("BlockedUsers")]
+[PrimaryKey(nameof(BlockerUserId), nameof(BlockedUserId))]
+[Index(nameof(BlockedUserId))]
 public sealed class BlockedUser
 {
     private BlockedUser()
@@ -18,6 +26,14 @@ public sealed class BlockedUser
     public Guid BlockedUserId { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(BlockerUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User BlockerUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(BlockedUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User BlockedAccount { get; private set; } = null!;
 
     public static BlockedUser Create(
         Guid blockerUserId,

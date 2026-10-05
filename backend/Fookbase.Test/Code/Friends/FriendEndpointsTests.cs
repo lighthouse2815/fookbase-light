@@ -36,6 +36,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
     {
         var userA = Guid.NewGuid();
         var userB = Guid.NewGuid();
+        await EnsureEligibleUsersAsync(userA, userB);
         var followedAtUtc = new DateTimeOffset(2026, 9, 13, 13, 45, 30, 123, TimeSpan.Zero)
             .AddTicks(4_560);
         using var scope = factory.Services.CreateScope();

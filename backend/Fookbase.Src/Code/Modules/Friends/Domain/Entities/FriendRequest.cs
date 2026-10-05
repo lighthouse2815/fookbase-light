@@ -1,7 +1,18 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
+using Microsoft.EntityFrameworkCore;
+using Fookbase.Api.Persistence.Annotations;
 using Fookbase.Api.Modules.Friends.Domain.Enums;
 using Fookbase.Api.Modules.Friends.Domain.ValueObjects;
+
 namespace Fookbase.Api.Modules.Friends.Entities;
 
+[Table("FriendRequests")]
+[Index(nameof(UserId1), nameof(UserId2), IsUnique = true, Name = "UX_FriendRequests_PendingPair")]
+[IndexFilter("\"Status\" = 0", nameof(UserId1), nameof(UserId2))]
+[Index(nameof(ReceiverUserId), nameof(Status), nameof(CreatedAtUtc))]
+[Index(nameof(SenderUserId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class FriendRequest
 {
     private FriendRequest()
@@ -24,6 +35,7 @@ public sealed class FriendRequest
         CreatedAtUtc = createdAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
 
     public Guid SenderUserId { get; private set; }
@@ -39,6 +51,25 @@ public sealed class FriendRequest
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? RespondedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(SenderUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User SenderUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(ReceiverUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User ReceiverUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(UserId1))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User User1 { get; private set; } = null!;
+
+    [ForeignKey(nameof(UserId2))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User User2 { get; private set; } = null!;
+
+    [InverseProperty(nameof(FriendNotification.FriendRequest))]
+    public ICollection<FriendNotification> Notifications { get; } = [];
 
     public static FriendRequest Create(
         Guid id,
