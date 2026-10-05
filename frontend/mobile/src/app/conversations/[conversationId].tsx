@@ -1,27 +1,64 @@
-import { FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
+import { AppState, FlatList, KeyboardAvoidingView, Platform, View, type ViewToken } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useIsFocused } from 'expo-router/react-navigation';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { messengerApi } from '../../api/messages';
+import { messengerApi, type Message } from '../../api/messages';
 import { pickMedia, uploadMedia, type PickedMedia } from '../../api/media';
 import { useAuth } from '../../auth/AuthProvider';
 import { Button, Card, ErrorNotice, Field, Label, Loading, Screen, styles, useTheme } from '../../components/ui';
 import { MediaView } from '../../components/MediaView';
 export default function ConversationScreen() {
+  const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
+  const { session } = useAuth();
+  return <ConversationContent key={`${session?.user.id}:${conversationId}`} />;
+}
+function ConversationContent() {
   const theme = useTheme();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>(); const { session } = useAuth(); const cache = useQueryClient();
   const [text, setText] = useState(''); const [file, setFile] = useState<PickedMedia | null>(null); const [error, setError] = useState<unknown>(null);
   const conversation = useQuery({ queryKey: ['conversation', session?.user.id, conversationId], queryFn: () => messengerApi.conversation(conversationId) });
   const query = useInfiniteQuery({ queryKey: ['messages', session?.user.id, conversationId], initialPageParam: undefined as string | undefined, queryFn: ({ pageParam }) => messengerApi.messages(conversationId, pageParam), getNextPageParam: p => p.hasMore ? p.nextCursor ?? undefined : undefined });
-  const messages = Array.from(new Map(query.data?.pages.flatMap(p => p.items).map(m => [m.id, m])).values()).sort((a,b) => a.createdAtUtc.localeCompare(b.createdAtUtc));
-  const latest = messages.at(-1);
-  useEffect(() => { if (latest && latest.senderUserId !== session?.user.id) void messengerApi.read(conversationId, latest.id).then(() => cache.invalidateQueries({ queryKey: ['conversations'] })).catch(setError); }, [latest?.id, conversationId, session?.user.id, cache]);
+  const messages = Array.from(new Map(query.data?.pages.flatMap(p => p.items).map(m => [m.id, m])).values()).sort((a,b) => a.createdAtUtc.localeCompare(b.createdAtUtc) || a.id.localeCompare(b.id));
+  const focused = useIsFocused();
+  const [appState, setAppState] = useState(AppState.currentState);
+  const [visibleIds, setVisibleIds] = useState<string[]>([]);
+  const [readError, setReadError] = useState<unknown>(null);
+  const [reading, setReading] = useState(false);
+  const [confirmed, setConfirmed] = useState<Message | null>(null);
+  const readLock = useRef(false);
+  const mounted = useRef(true);
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60, minimumViewTime: 500 }).current;
+  const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken<Message>[] }) => {
+    setVisibleIds(viewableItems.filter(token => token.isViewable).map(token => token.item.id));
+  }, []);
+  useEffect(() => {
+    mounted.current = true;
+    const listener = AppState.addEventListener('change', setAppState);
+    return () => { mounted.current = false; listener.remove(); };
+  }, []);
+  const candidate = messages.filter(message => visibleIds.includes(message.id) && message.senderUserId !== session?.user.id).at(-1);
+  useEffect(() => {
+    if (!focused || appState !== 'active' || !session || !candidate || (confirmed && (candidate.createdAtUtc < confirmed.createdAtUtc || (candidate.createdAtUtc === confirmed.createdAtUtc && candidate.id <= confirmed.id))) || readLock.current || readError) return;
+    readLock.current = true;
+    setReading(true);
+    void messengerApi.read(conversationId, candidate.id).then(() => {
+      if (!mounted.current) return;
+      setConfirmed(candidate);
+      void cache.invalidateQueries({ queryKey: ['conversations'] });
+    }).catch(value => { if (mounted.current) setReadError(value); }).finally(() => {
+      readLock.current = false;
+      if (mounted.current) setReading(false);
+    });
+  }, [focused, appState, session, candidate?.id, candidate?.createdAtUtc, confirmed, reading, readError, conversationId, cache]);
   const send = useMutation({ mutationFn: async () => messengerApi.send(conversationId, text, file ? [await uploadMedia(file)] : []), onSuccess: async () => { setText(''); setFile(null); await cache.invalidateQueries(); }, onError: () => { void query.refetch(); } });
-  if (conversation.error || query.error) return <Screen><ErrorNotice error={conversation.error || query.error} retry={() => { void conversation.refetch(); void query.refetch(); }} /></Screen>;
+  if ((conversation.error && !conversation.data) || (query.error && !query.data)) return <Screen><ErrorNotice error={conversation.error || query.error} retry={() => { void conversation.refetch(); void query.refetch(); }} /></Screen>;
   return <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: theme.bg }}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
     <View style={{ padding: 12, gap: 8 }}><Label title>{conversation.data?.title ?? 'Trò chuyện'}</Label><Button secondary title="Thành viên và cài đặt nhóm" onPress={() => router.push({ pathname: '/conversations/members', params: { id: conversationId } })} /></View>
-    <FlatList inverted style={{ flex: 1 }} contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled" data={[...messages].reverse()} keyExtractor={m => m.id}
+    {(conversation.error || query.error) ? <ErrorNotice error={conversation.error || query.error} retry={() => { if (conversation.error) void conversation.refetch(); if (query.isFetchNextPageError) void query.fetchNextPage(); else if (query.error) void query.refetch(); }} /> : null}
+    {readError ? <ErrorNotice error={readError} retry={() => setReadError(null)} /> : null}
+    <FlatList inverted maintainVisibleContentPosition={{ minIndexForVisible: 0 }} onViewableItemsChanged={onViewableItemsChanged} viewabilityConfig={viewabilityConfig} style={{ flex: 1 }} contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled" data={[...messages].reverse()} keyExtractor={m => m.id}
       ListEmptyComponent={query.isPending ? <Loading /> : <Label muted>Chưa có tin nhắn.</Label>}
       ListFooterComponent={query.hasNextPage ? <Button secondary title="Tin nhắn trước" disabled={query.isFetchingNextPage} onPress={() => void query.fetchNextPage()} /> : null}
       refreshing={query.isRefetching} onRefresh={() => void query.refetch()}

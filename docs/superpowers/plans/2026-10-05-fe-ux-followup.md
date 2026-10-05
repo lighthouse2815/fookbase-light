@@ -31,11 +31,11 @@
 **Files:** `frontend/mobile/src/app/conversations/[conversationId].tsx`, bản tương ứng trong `frontend/zola-mobile`, tests ngoài thư mục app.
 **Interfaces:** Dùng `messengerApi.read(conversationId, messageId)` và `FlatList.onViewableItemsChanged`, AppState, focus có sẵn. Không thay API.
 
-- [ ] Viết và chạy test thất bại cho tin ngoài viewport, màn hình unfocus/background, đọc thành công/thất bại và retry.
-- [ ] Chỉ ghi read khi incoming message đang nhìn thấy, màn hình focus, AppState active; khóa request đồng thời và giữ unread khi lỗi.
-- [ ] Giữ vùng đọc khi tải lịch sử hoặc tin mới; cung cấp retry không làm mất lịch sử.
-- [ ] Chạy Jest liên quan, typecheck/lint cả mobile và Zola mobile; tự rà diff và gửi report cho root.
-- [ ] Root review, commit riêng và tích hợp/push main.
+- [x] Viết và chạy test thất bại cho tin ngoài viewport, màn hình unfocus/background, đọc thành công/thất bại và retry.
+- [x] Chỉ ghi read khi incoming message đang nhìn thấy, màn hình focus, AppState active; khóa request đồng thời và giữ unread khi lỗi.
+- [x] Giữ vùng đọc khi tải lịch sử hoặc tin mới; cung cấp retry không làm mất lịch sử.
+- [x] Chạy Jest liên quan, typecheck/lint cả mobile và Zola mobile; tự rà diff và gửi report cho root.
+- [x] Root review, commit riêng và tích hợp/push main.
 
 ### Task 2: Bản nháp mobile và picker
 
