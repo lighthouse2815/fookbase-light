@@ -1,5 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Admin.Entities;
 
+[Table("UserModerationStates")]
 public sealed class UserModerationState
 {
     private UserModerationState() { }
@@ -10,11 +16,18 @@ public sealed class UserModerationState
         UpdatedAtUtc = now;
     }
 
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid UserId { get; private set; }
     public int WarningCount { get; private set; }
     public DateTimeOffset? SuspendedUntilUtc { get; private set; }
     public DateTimeOffset? DisabledAtUtc { get; private set; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
+
+    [ForeignKey(nameof(UserId))]
+    [InverseProperty(nameof(User.ModerationState))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public User User { get; private set; } = null!;
 
     public static UserModerationState Create(Guid userId, DateTimeOffset now) => new(userId, now);
     public bool IsSuspendedAt(DateTimeOffset now) => SuspendedUntilUtc is { } until && until > now;

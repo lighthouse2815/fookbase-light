@@ -1,20 +1,16 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Admin.Domain.Enums;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Fookbase.Api.Modules.Posts.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Admin.Entities;
 
-public enum ModerationActionType
-{
-    DISMISS_REPORT,
-    REMOVE_POST,
-    REMOVE_COMMENT,
-    REMOVE_STORY,
-    WARN_USER,
-    SUSPEND_USER,
-    DISABLE_USER,
-    UNSUSPEND_USER,
-    ENABLE_USER
-}
-
+[Table("ModerationActions")]
+[Index(nameof(TargetType), nameof(TargetId), nameof(CreatedAtUtc))]
+[Index(nameof(SubjectUserId), nameof(CreatedAtUtc))]
 public sealed class ModerationAction
 {
     public const int MaximumReasonLength = 500;
@@ -39,6 +35,7 @@ public sealed class ModerationAction
         ExpiresAtUtc = expiresAtUtc;
     }
 
+    [Key]
     public Guid Id { get; private set; }
     public Guid? ReportId { get; private set; }
     public Guid ModeratorUserId { get; private set; }
@@ -46,10 +43,26 @@ public sealed class ModerationAction
     public ReportTargetType TargetType { get; private set; }
     public Guid TargetId { get; private set; }
     public ModerationActionType ActionType { get; private set; }
+    [Required]
+    [MaxLength(MaximumReasonLength)]
     public string Reason { get; private set; } = string.Empty;
+
+    [MaxLength(MaximumInternalNoteLength)]
     public string? InternalNote { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? ExpiresAtUtc { get; private set; }
+
+    [ForeignKey(nameof(ReportId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public ContentReport? Report { get; private set; }
+
+    [ForeignKey(nameof(ModeratorUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User ModeratorUser { get; private set; } = null!;
+
+    [ForeignKey(nameof(SubjectUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User SubjectUser { get; private set; } = null!;
 
     public static ModerationAction Create(Guid? reportId, Guid moderatorUserId, Guid subjectUserId,
         ReportTargetType targetType, Guid targetId, ModerationActionType actionType,

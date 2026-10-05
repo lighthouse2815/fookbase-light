@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Admin.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -21,6 +22,8 @@ public sealed class User : IdentityUser<Guid>
     public bool IsActive { get; private set; }
 
     public UserProfile? Profile { get; private set; }
+
+    public UserModerationState? ModerationState { get; private set; }
 
     public void Disable() => IsActive = false;
 
