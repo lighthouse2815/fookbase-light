@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Identity.DTOs.Responses;
+namespace Fookbase.Api.Modules.Admin.DTOs.Responses;
 
 public sealed record AdminUserResponse(
     Guid Id,

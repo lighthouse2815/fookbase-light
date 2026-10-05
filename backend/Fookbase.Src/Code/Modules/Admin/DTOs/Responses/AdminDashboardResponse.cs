@@ -9,7 +9,3 @@ public sealed record AdminDashboardResponse(
     public IReadOnlyList<AdminDailyActivity> Activity { get; init; } = [];
     public IReadOnlyList<AdminReportStatusCount> ReportStatuses { get; init; } = [];
 }
-
-public sealed record AdminDailyActivity(DateOnly Date, int NewUsers, int NewPosts, int NewReports);
-
-public sealed record AdminReportStatusCount(string Status, int Count);

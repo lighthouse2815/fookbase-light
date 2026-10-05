@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Fookbase.Api.Modules.Identity.DTOs.Requests;
+namespace Fookbase.Api.Modules.Admin.DTOs.Requests;
 
 public sealed record UpdateUserStatusRequest(
 

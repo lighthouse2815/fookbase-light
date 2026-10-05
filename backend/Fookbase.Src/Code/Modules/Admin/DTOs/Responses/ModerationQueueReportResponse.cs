@@ -11,7 +11,3 @@ public sealed record ModerationQueueReportResponse(
     string? TargetPreview,
     Guid? SubjectUserId,
     int ReportCount);
-
-public sealed record ModerationQueuePageResponse(
-    IReadOnlyList<ModerationQueueReportResponse> Items,
-    string? NextCursor);
