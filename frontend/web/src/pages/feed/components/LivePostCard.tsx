@@ -9,6 +9,7 @@ import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
 import AppDialog from '../../../shared/components/AppDialog'
+import AnimatedDeleteButton from '../../../shared/components/AnimatedDeleteButton'
 import { formatPostTimestamp } from '../../../shared/formatPostTimestamp'
 import TextWithReferences from '../../../shared/components/TextWithReferences'
 import { usePreferences } from '../../../preferences'
@@ -282,6 +283,7 @@ export default function LivePostCard({
   const [editingCommentContent, setEditingCommentContent] = useState('')
   const [commentPendingDeletion, setCommentPendingDeletion] = useState<Comment | null>(null)
   const [isPostPendingDeletion, setIsPostPendingDeletion] = useState(false)
+  const [isDeleteAnimating, setIsDeleteAnimating] = useState(false)
   const postCardRef = useRef<HTMLElement>(null)
   const textBackgroundContentRef = useRef<HTMLDivElement>(null)
   const commentsDialogRef = useRef<HTMLElement>(null)
@@ -471,24 +473,27 @@ export default function LivePostCard({
   }
 
   const deleteComment = async () => {
-    if (!commentPendingDeletion) return
+    if (!commentPendingDeletion) return false
     const removed = await discussion.deleteComment(commentPendingDeletion.id)
-    if (!removed || !mountedRef.current || currentDiscussionRef.current !== discussion) return
+    if (!removed || !mountedRef.current || currentDiscussionRef.current !== discussion) return false
     if (replyTarget?.id === commentPendingDeletion.id || replyTarget?.parentCommentId === commentPendingDeletion.id) chooseReplyTarget(null)
-    setCommentPendingDeletion(null)
+    return true
   }
 
   const updateCommentReaction = (comment: Comment, type?: ReactionType) => discussion.reactToComment(comment.id, type)
 
   async function runPostAction<T>(name: string, request: () => Promise<T>, onSuccess: (response: T) => void, fallback: string) {
-    if (pendingPostActionRef.current) return
+    if (pendingPostActionRef.current) return false
     pendingPostActionRef.current = name
     setPendingPostAction(name)
     try {
       const response = await request()
-      if (mountedRef.current && currentDiscussionRef.current === discussion) onSuccess(response)
+      if (!mountedRef.current || currentDiscussionRef.current !== discussion) return false
+      onSuccess(response)
+      return true
     } catch (requestError) {
       showToast(requestError instanceof ApiError ? requestError.message : fallback, 'error', `post-action:${post.id}`)
+      return false
     } finally {
       pendingPostActionRef.current = null
       if (mountedRef.current && currentDiscussionRef.current === discussion) setPendingPostAction(null)
@@ -513,10 +518,7 @@ export default function LivePostCard({
     }, t('unableEditPost'))
   }
 
-  const deletePost = () => runPostAction('delete', () => postsApi.delete(post.id), () => {
-    setIsPostPendingDeletion(false)
-    onPostDeleted(post.id)
-  }, t('unableDeletePost'))
+  const deletePost = () => runPostAction('delete', () => postsApi.delete(post.id), () => undefined, t('unableDeletePost'))
 
   const savePost = () => {
     const wasSaved = isSaved
@@ -717,13 +719,19 @@ export default function LivePostCard({
         <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={busyCommentIds.includes(editingComment.id)} onClick={() => { setEditingComment(null); setEditingCommentContent('') }} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingCommentContent.trim() || busyCommentIds.includes(editingComment.id)} aria-busy={busyCommentIds.includes(editingComment.id)} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Lưu</button></div>
       </form>
     </AppDialog>}
-    {isPostPendingDeletion && <AppDialog title="Xóa bài viết?" onClose={() => { if (!pendingPostActionRef.current) setIsPostPendingDeletion(false) }}>
+    {isPostPendingDeletion && <AppDialog title="Xóa bài viết?" onClose={() => { if (!isDeleteAnimating && !pendingPostActionRef.current) setIsPostPendingDeletion(false) }}>
       <p className="mt-3 text-sm text-text-muted">Bài viết này sẽ bị xóa khỏi Fookbase.</p>
-      <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={Boolean(pendingPostAction)} onClick={() => setIsPostPendingDeletion(false)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" disabled={Boolean(pendingPostAction)} aria-busy={pendingPostAction === 'delete'} onClick={() => void deletePost()} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Xóa</button></div>
+      <div className="mt-5 flex justify-end gap-2">
+        <button data-dialog-initial-focus type="button" disabled={isDeleteAnimating || Boolean(pendingPostAction)} onClick={() => setIsPostPendingDeletion(false)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button>
+        <AnimatedDeleteButton disabled={Boolean(pendingPostAction)} onBusyChange={setIsDeleteAnimating} onDelete={deletePost} onDeleted={() => { setIsPostPendingDeletion(false); onPostDeleted(post.id) }} />
+      </div>
     </AppDialog>}
-    {commentPendingDeletion && <AppDialog title="Xóa bình luận?" onClose={() => { if (!busyCommentIds.includes(commentPendingDeletion.id)) setCommentPendingDeletion(null) }}>
+    {commentPendingDeletion && <AppDialog title="Xóa bình luận?" onClose={() => { if (!isDeleteAnimating && !busyCommentIds.includes(commentPendingDeletion.id)) setCommentPendingDeletion(null) }}>
       <p className="mt-3 text-sm text-text-muted">Bình luận này sẽ bị xóa khỏi Fookbase.</p>
-      <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={busyCommentIds.includes(commentPendingDeletion.id)} onClick={() => setCommentPendingDeletion(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="button" disabled={busyCommentIds.includes(commentPendingDeletion.id)} aria-busy={busyCommentIds.includes(commentPendingDeletion.id)} onClick={() => void deleteComment()} className="rounded-lg border-0 bg-[#e41e3f] px-4 py-2 text-sm font-semibold text-white hover:brightness-110">Xóa</button></div>
+      <div className="mt-5 flex justify-end gap-2">
+        <button data-dialog-initial-focus type="button" disabled={isDeleteAnimating || busyCommentIds.includes(commentPendingDeletion.id)} onClick={() => setCommentPendingDeletion(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button>
+        <AnimatedDeleteButton disabled={busyCommentIds.includes(commentPendingDeletion.id)} onBusyChange={setIsDeleteAnimating} onDelete={deleteComment} onDeleted={() => setCommentPendingDeletion(null)} />
+      </div>
     </AppDialog>}
     </>
   )
