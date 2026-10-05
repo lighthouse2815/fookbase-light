@@ -3,7 +3,7 @@ import { postFixtures } from './postInteractionsFixture.mjs'
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright')
 const baseUrl = process.env.SEO_BASE_URL ?? 'http://127.0.0.1:5197'
-const siteUrl = process.env.SEO_SITE_URL ?? 'https://fookbase.io.vn/'
+const siteUrl = process.env.SEO_SITE_URL ?? 'https://www.fookbase.io.vn/'
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_EXECUTABLE, args: ['--no-sandbox'] })
 
 const escapeExpression = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

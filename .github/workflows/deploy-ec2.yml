@@ -32,7 +32,7 @@ jobs:
       - name: Build main web
         working-directory: frontend/web
         env:
-          VITE_SITE_URL: https://fookbase.io.vn
+          VITE_SITE_URL: https://www.fookbase.io.vn
         run: |
           npm ci
           npm run build
@@ -66,5 +66,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          curl --fail --silent --show-error https://fookbase.io.vn/health/ready
-          curl --fail --silent --show-error --output /dev/null https://fookbase.io.vn/
+          for host in www.fookbase.io.vn fookbase.io.vn fookbase-light.duckdns.org; do
+            curl --fail --silent --show-error "https://$host/health/ready"
+            curl --fail --silent --show-error --output /dev/null "https://$host/"
+          done
