@@ -16,6 +16,28 @@ const until = async (condition) => {
 async function setup(options = {}) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, ...options })
   const state = await postFixtures(context)
+  await context.addInitScript(() => {
+    // Observe real Web Audio voices without replacing their playback.
+    window.__deleteSoundTones = []
+    const prototype = window.AudioContext?.prototype
+    if (!prototype) return
+    const createOscillator = prototype.createOscillator
+    prototype.createOscillator = function () {
+      const voice = createOscillator.call(this)
+      let frequency = voice.frequency.value
+      const setFrequency = voice.frequency.setValueAtTime.bind(voice.frequency)
+      voice.frequency.setValueAtTime = (value, when) => {
+        frequency = value
+        return setFrequency(value, when)
+      }
+      const start = voice.start.bind(voice)
+      voice.start = when => {
+        window.__deleteSoundTones.push({ frequency, type: voice.type, state: this.state })
+        start(when)
+      }
+      return voice
+    }
+  })
   Object.assign(state, { deleteDelay: 900, failDelete: false, deleteWrites: [], deleted: false, deleteResponses: 0 })
   await context.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname
@@ -74,10 +96,12 @@ const tests = [
     assert.equal(state.deleteResponses, 1)
     assert.equal(await page.evaluate(() => document.body.style.overflow), '')
   }],
-  ['failed post deletion restores letters, preserves the post and allows explicit retry', async ({ page, state }) => {
+  ['failed post deletion restores letters and plays distinct API-driven error/success sounds', async ({ page, state }) => {
     state.failDelete = true
     const dialog = await openPostDelete(page)
     const button = dialog.getByRole('button', { name: 'Xóa', exact: true })
+    assert.equal(await page.evaluate(() => window.__lastSignalAudioContexts.length), 0)
+    assert.equal(await dialog.getByRole('button', { name: 'Tắt âm thanh hiệu ứng' }).getAttribute('aria-pressed'), 'true')
     await button.click()
     await until(async () => await button.isEnabled())
     assert.equal(state.deleted, false)
@@ -87,11 +111,19 @@ const tests = [
     assert.equal(await button.locator('.animated-delete__label').textContent(), 'Xóa')
     assert.equal(await button.locator('.animated-delete__label > span').evaluateAll(letters => letters.every(letter => getComputedStyle(letter).opacity === '1' && letter.getAnimations().length === 0)), true)
     assert.equal(await page.getByRole('status').filter({ hasText: 'Không thể xóa nội dung thử nghiệm.' }).count(), 1)
+    const failureTones = await page.evaluate(() => window.__deleteSoundTones)
+    assert.equal(failureTones.filter(tone => tone.type === 'triangle').length, 3)
+    assert.deepEqual(failureTones.filter(tone => tone.type === 'sawtooth').map(tone => tone.frequency), [150, 110])
+    assert.equal(failureTones.some(tone => tone.frequency === 523.25), false)
+    assert.equal(await page.evaluate(() => window.__lastSignalAudioContexts[0].state), 'running')
     state.failDelete = false
     await button.click()
     await until(async () => await dialog.count() === 0)
     assert.equal(state.deleteWrites.length, 2)
     assert.equal(state.deleted, true)
+    const successTones = await page.evaluate(() => window.__deleteSoundTones.slice(-2).map(tone => tone.frequency))
+    assert.deepEqual(successTones, [523.25, 659.25])
+    await until(() => page.evaluate(() => window.__lastSignalAudioContexts.every(context => context.state === 'closed')))
   }],
   ['cancel and Escape leave the post intact and restore focus to its menu trigger', async ({ page, state }) => {
     const dialog = await openPostDelete(page)
@@ -99,6 +131,7 @@ const tests = [
     assert.equal(await dialog.count(), 0)
     assert.equal(await page.getByRole('button', { name: 'Tùy chọn khác' }).evaluate(element => element === document.activeElement), true)
     assert.equal(state.deleteWrites.length, 0)
+    assert.equal(await page.evaluate(() => window.__lastSignalAudioContexts.length), 0)
     await page.getByRole('button', { name: 'Tùy chọn khác', exact: true }).click()
     await page.getByRole('menuitem', { name: 'Xóa', exact: true }).click()
     await dialog.getByRole('button', { name: 'Hủy', exact: true }).click()
@@ -140,9 +173,35 @@ const tests = [
     await page.locator('a[href="/feed"]').first().evaluate(element => element.click())
     await until(async () => await dialog.count() === 0)
     const destination = page.url()
+    const toneCount = await page.evaluate(() => window.__deleteSoundTones.length)
     await until(() => state.deleteResponses === 1)
     assert.equal(page.url(), destination)
+    assert.equal(await page.evaluate(() => window.__deleteSoundTones.length), toneCount)
+    assert.equal(await page.evaluate(() => window.__lastSignalAudioContexts.every(context => context.state === 'closed')), true)
     assert.equal(await page.evaluate(() => document.body.style.overflow), '')
+  }],
+  ['mute persists across confirmations and remains independent of game sound settings', async ({ page, state, context }) => {
+    await context.addInitScript(() => localStorage.setItem('fookbase.games.sound', 'off'))
+    let dialog = await openPostDelete(page)
+    await dialog.getByRole('button', { name: 'Tắt âm thanh hiệu ứng' }).click()
+    assert.equal(await page.evaluate(() => localStorage.getItem('fookbase.delete.sound')), 'off')
+    await dialog.getByRole('button', { name: 'Hủy', exact: true }).click()
+    dialog = await openPostDelete(page)
+    assert.equal(await dialog.getByRole('button', { name: 'Bật âm thanh hiệu ứng' }).getAttribute('aria-pressed'), 'false')
+    await dialog.getByRole('button', { name: 'Xóa', exact: true }).click()
+    await until(async () => await dialog.count() === 0)
+    assert.equal(state.deleted, true)
+    assert.deepEqual(await page.evaluate(() => window.__deleteSoundTones), [])
+    assert.equal(await page.evaluate(() => window.__lastSignalAudioContexts.length), 0)
+    assert.equal(await page.evaluate(() => localStorage.getItem('fookbase.games.sound')), 'off')
+  }],
+  ['deletion still works when Web Audio is unavailable', async ({ page, state, context }) => {
+    await context.addInitScript(() => { window.AudioContext = undefined })
+    const dialog = await openPostDelete(page)
+    await dialog.getByRole('button', { name: 'Xóa', exact: true }).click()
+    await until(async () => await dialog.count() === 0)
+    assert.equal(state.deleted, true)
+    assert.equal(state.deleteWrites.length, 1)
   }],
 ]
 
