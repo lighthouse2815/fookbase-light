@@ -82,34 +82,28 @@ public sealed class EventsController(EventsService service, MediaService mediaSe
             value => Created($"/api/posts/{value.Id}", value));
 
     [HttpGet("mine")]
-    public Task<IActionResult> GetMineAsync(CancellationToken cancellationToken,
-        string? cursor = null, int limit = EventsService.DefaultPageSize) =>
-        ExecuteAsync(actor => service.GetMineAsync(actor, cursor, limit, cancellationToken), value => Ok(value));
+    public Task<IActionResult> GetMineAsync([FromQuery] EventPageRequest request, CancellationToken cancellationToken) =>
+        ExecuteAsync(actor => service.GetMineAsync(actor, request.Cursor, request.Limit, cancellationToken), value => Ok(value));
 
     [HttpGet("upcoming")]
-    public Task<IActionResult> GetUpcomingAsync(CancellationToken cancellationToken,
-        string? cursor = null, int limit = EventsService.DefaultPageSize) =>
-        ExecuteAsync(actor => service.UpcomingAsync(actor, cursor, limit, cancellationToken), value => Ok(value));
+    public Task<IActionResult> GetUpcomingAsync([FromQuery] EventPageRequest request, CancellationToken cancellationToken) =>
+        ExecuteAsync(actor => service.UpcomingAsync(actor, request.Cursor, request.Limit, cancellationToken), value => Ok(value));
 
     [HttpGet("discover")]
-    public Task<IActionResult> DiscoverAsync(CancellationToken cancellationToken,
-        string? query = null, string? cursor = null, int limit = EventsService.DefaultPageSize) =>
-        ExecuteAsync(actor => service.DiscoverAsync(actor, query, cursor, limit, cancellationToken), value => Ok(value));
+    public Task<IActionResult> DiscoverAsync([FromQuery] EventDiscoveryRequest request, CancellationToken cancellationToken) =>
+        ExecuteAsync(actor => service.DiscoverAsync(actor, request.Query, request.Cursor, request.Limit, cancellationToken), value => Ok(value));
 
     [HttpGet("invitations/mine")]
-    public Task<IActionResult> GetInvitationsAsync(CancellationToken cancellationToken,
-        string? cursor = null, int limit = EventsService.DefaultPageSize) =>
-        ExecuteAsync(actor => service.InvitationsAsync(actor, cursor, limit, cancellationToken), value => Ok(value));
+    public Task<IActionResult> GetInvitationsAsync([FromQuery] EventPageRequest request, CancellationToken cancellationToken) =>
+        ExecuteAsync(actor => service.InvitationsAsync(actor, request.Cursor, request.Limit, cancellationToken), value => Ok(value));
 
     [HttpGet("{id:guid}/participants")]
-    public Task<IActionResult> GetParticipantsAsync(Guid id, CancellationToken cancellationToken,
-        string? cursor = null, int limit = EventsService.DefaultPageSize) =>
-        ExecuteAsync(actor => service.ParticipantsAsync(actor, id, cursor, limit, cancellationToken), value => Ok(value));
+    public Task<IActionResult> GetParticipantsAsync(Guid id, [FromQuery] EventPageRequest request, CancellationToken cancellationToken) =>
+        ExecuteAsync(actor => service.ParticipantsAsync(actor, id, request.Cursor, request.Limit, cancellationToken), value => Ok(value));
 
     [HttpGet("{id:guid}/posts")]
-    public Task<IActionResult> GetPostsAsync(Guid id, CancellationToken cancellationToken,
-        string? cursor = null, int limit = EventsService.DefaultPageSize) =>
-        ExecuteAsync(actor => service.PostsAsync(actor, id, cursor, limit, cancellationToken), value => Ok(value));
+    public Task<IActionResult> GetPostsAsync(Guid id, [FromQuery] EventPageRequest request, CancellationToken cancellationToken) =>
+        ExecuteAsync(actor => service.PostsAsync(actor, id, request.Cursor, request.Limit, cancellationToken), value => Ok(value));
 
     private Guid? GetActorUserId() =>
         Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out var id) ? id : null;

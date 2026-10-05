@@ -26,6 +26,85 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 
 public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
+    [Theory]
+    [InlineData("USER")]
+    [InlineData("0")]
+    public async Task Valid_annotations_preserve_normalized_text_online_urls_offsets_and_default_status(string hostType)
+    {
+        var userId = (await CreateUsersAsync(1))[0];
+        using var client = CreateAuthenticatedClient(userId);
+        var name = new string('a', 160);
+        var description = new string('b', 10_000);
+        var response = await client.PostAsJsonAsync("/api/events", new
+        {
+            hostType,
+            name = "  " + name + "  ",
+            description = "  " + description + "  ",
+            privacy = "PUBLIC",
+            locationType = "ONLINE",
+            onlineUrl = "  https://example.com/join  ",
+            startsAtUtc = "2027-01-01T07:00:00+07:00",
+            endsAtUtc = "2027-01-01T08:00:00+07:00"
+        });
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var item = await ReadAsync<EventResponse>(response);
+        Assert.Equal(name, item.Name);
+        Assert.Equal(description, item.Description);
+        Assert.Equal("https://example.com/join", item.OnlineUrl);
+        Assert.Equal(DateTimeOffset.Parse("2027-01-01T00:00:00+00:00"), item.StartsAtUtc);
+        Assert.Equal(DateTimeOffset.Parse("2027-01-01T01:00:00+00:00"), item.EndsAtUtc);
+        Assert.Equal("published", item.Status);
+        Assert.Equal(userId, item.DisplayHost.Id);
+    }
+
+    [Fact]
+    public async Task Event_cover_relationships_support_attaching_replacing_and_removing_ready_images()
+    {
+        var userId = (await CreateUsersAsync(1))[0];
+        var mediaIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            foreach (var mediaId in mediaIds)
+            {
+                var asset = new MediaAsset(mediaId, userId, MediaType.IMAGE, $"{userId:N}/{mediaId:N}.png",
+                    "cover.png", "image/png", 11, now, now.AddMinutes(5));
+                asset.MarkReady(11, now);
+                db.MediaAssets.Add(asset);
+            }
+            await db.SaveChangesAsync();
+        }
+        using var client = CreateAuthenticatedClient(userId);
+        var item = await ReadAsync<EventResponse>(await client.PostAsJsonAsync("/api/events", new
+        {
+            hostType = "user", name = "Event cover", privacy = "public", locationType = "physical",
+            startsAtUtc = DateTimeOffset.UtcNow.AddDays(7), coverMediaId = mediaIds[0]
+        }));
+        Assert.Equal($"/api/events/{item.Id}/cover", item.CoverUrl);
+        var replaced = await ReadAsync<EventResponse>(await client.PatchAsJsonAsync($"/api/events/{item.Id}", new
+        {
+            item.Name, item.Privacy, item.LocationType, item.StartsAtUtc, coverMediaId = mediaIds[1]
+        }));
+        Assert.Equal(item.CoverUrl, replaced.CoverUrl);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            Assert.Equal(mediaIds[1], (await db.Events.AsNoTracking().SingleAsync(row => row.Id == item.Id)).CoverMediaId);
+            Assert.Equal(mediaIds[1], (await db.EventCoverMediaReferences.AsNoTracking()
+                .SingleAsync(row => row.EventId == item.Id)).MediaId);
+        }
+        var removed = await ReadAsync<EventResponse>(await client.PatchAsJsonAsync($"/api/events/{item.Id}", new
+        {
+            item.Name, item.Privacy, item.LocationType, item.StartsAtUtc, removeCover = true
+        }));
+        Assert.Null(removed.CoverUrl);
+        using var verification = factory.Services.CreateScope();
+        var context = verification.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        Assert.False(await context.EventCoverMediaReferences.AnyAsync(row => row.EventId == item.Id));
+        Assert.Equal(2, await context.MediaAssets.CountAsync(row => mediaIds.Contains(row.Id)));
+    }
+
     [Fact]
     public async Task Private_event_and_its_discussion_post_are_hidden_from_an_unrelated_user()
     {

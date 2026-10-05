@@ -1,5 +1,35 @@
+using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Events.Common;
+
 namespace Fookbase.Api.Modules.Events.DTOs.Requests;
 
-public sealed record UpdateEventRequest(string Name, string? Description, string Privacy, string LocationType,
-    string? LocationName, string? Address, string? OnlineUrl, DateTimeOffset StartsAtUtc, DateTimeOffset? EndsAtUtc,
-    Guid? CoverMediaId = null, bool RemoveCover = false);
+public sealed record UpdateEventRequest(
+    [Required(ErrorMessage = "Tên sự kiện là bắt buộc.")]
+    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateName))]
+    string Name,
+
+    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateDescription))]
+    string? Description,
+
+    [Required(ErrorMessage = "Quyền riêng tư là bắt buộc.")]
+    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidatePrivacy))]
+    string Privacy,
+
+    [Required(ErrorMessage = "Loại địa điểm là bắt buộc.")]
+    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateLocationType))]
+    string LocationType,
+    string? LocationName,
+    string? Address,
+
+    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateOnlineUrl))]
+    string? OnlineUrl,
+
+    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateStartTime))]
+    DateTimeOffset StartsAtUtc,
+
+    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateEndTime))]
+    DateTimeOffset? EndsAtUtc,
+
+    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateOptionalId))]
+    Guid? CoverMediaId = null,
+    bool RemoveCover = false);
