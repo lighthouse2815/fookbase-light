@@ -7,6 +7,8 @@ services:
       Cors__AllowedOrigins__0: ${Cors__AllowedOrigins__0:?Set the main web HTTPS origin.}
       Cors__AllowedOrigins__1: ${Cors__AllowedOrigins__1:?Set the admin HTTPS origin.}
       Cors__AllowedOrigins__2: ${Cors__AllowedOrigins__2:?Set the Zola Light HTTPS origin.}
+      # Keep existing clients working while adding a new public web origin.
+      Cors__AllowedOrigins__3: ${Cors__AllowedOrigins__3:-${Cors__AllowedOrigins__0}}
       ForwardedHeaders__Enabled: ${ForwardedHeaders__Enabled:-false}
       ForwardedHeaders__KnownProxies__0: ${ForwardedHeaders__KnownProxies__0:-}
       ForwardedHeaders__ForwardLimit: ${ForwardedHeaders__ForwardLimit:-1}

@@ -3,6 +3,7 @@ import { postFixtures } from './postInteractionsFixture.mjs'
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright')
 const baseUrl = process.env.SEO_BASE_URL ?? 'http://127.0.0.1:5197'
+const siteUrl = process.env.SEO_SITE_URL ?? 'https://fookbase.io.vn/'
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_EXECUTABLE, args: ['--no-sandbox'] })
 
 const escapeExpression = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -36,6 +37,7 @@ try {
   assert.match(rawHtml, /<h1\b[^>]*>\s*Fookbase\s*[–-]\s*Mạng xã hội để kết nối, chia sẻ và trò chuyện\.?\s*<\/h1>/i)
   assert.equal(title, 'Fookbase Light | Mạng xã hội kết nối, chia sẻ và trò chuyện')
   assert.ok(canonical, 'Homepage needs a canonical URL')
+  assert.equal(canonical, new URL(siteUrl).href, 'Canonical must use the configured public domain')
   assert.equal(new URL(canonical).pathname, '/')
   assert.ok(description?.includes('Fookbase Light (fookbase-light)'), 'Homepage needs the intended Vietnamese description')
   assert.deepEqual(structuredData, {

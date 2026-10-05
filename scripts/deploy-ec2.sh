@@ -49,7 +49,7 @@ sudo docker run --rm --network fookbase-light_default --env-file "$migration_env
 
 compose up -d --no-deps --force-recreate api
 
-host="${AllowedHosts%%,*}"
+host="${AllowedHosts%%[;,]*}"
 if [[ -z "$host" ]]; then
   echo "AllowedHosts must contain the public host used for the health check." >&2
   exit 1
