@@ -53,11 +53,11 @@
 **Files:** `frontend/web/src/pages/photos/PhotosPage.tsx`, `AlbumDetailPage.tsx`, `PhotoViewer.tsx` nếu cần, tests/browser/albumRecovery.mjs.
 **Interfaces:** Tái dùng `photosApi` và `mediaApi.uploadFile`; reuse AppDialog và useDialogFocus.
 
-- [ ] Viết browser tests chứng minh gửi lặp, lỗi upload ảnh thứ hai, tải album lỗi, caption/delete lỗi và late photo detail responses.
-- [ ] Khóa submit ngay lập tức; giữ ID album đã tạo và ID media đã upload/added để retry chỉ phần lỗi, không tạo album khác.
-- [ ] Hiển thị tiến trình theo số ảnh/progress uploader; ảnh đã xong còn trong album khi phần sau lỗi. Chặn đổi input khi đang upload.
-- [ ] Có loading/empty/error/retry riêng; tải trang/cuộn thêm lỗi giữ dữ liệu cũ, bảo vệ request khi đổi album/ảnh và thao tác đồng thời.
-- [ ] Kiểm tra input, confirm delete, dialog focus theo components hiện có, browser tests + web build/lint; report, root commit/push.
+- [x] Viết browser tests chứng minh gửi lặp, lỗi upload ảnh thứ hai, tải album lỗi, caption/delete lỗi và late photo detail responses.
+- [x] Khóa submit ngay lập tức; giữ ID album đã tạo và ID media đã upload/added để retry chỉ phần lỗi, không tạo album khác.
+- [x] Hiển thị tiến trình theo số ảnh/progress uploader; ảnh đã xong còn trong album khi phần sau lỗi. Chặn đổi input khi đang upload.
+- [x] Có loading/empty/error/retry riêng; tải trang/cuộn thêm lỗi giữ dữ liệu cũ, bảo vệ request khi đổi album/ảnh và thao tác đồng thời.
+- [x] Kiểm tra input, confirm delete, dialog focus theo components hiện có, browser tests + web build/lint; report, root commit/push.
 
 ### Task 4: Tìm kiếm tổng hợp mobile
 
