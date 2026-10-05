@@ -4,6 +4,7 @@ using Fookbase.Api.Modules.Admin.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Shared.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Admin.Entities;
@@ -68,22 +69,5 @@ public sealed class ModerationAction
         ReportTargetType targetType, Guid targetId, ModerationActionType actionType,
         string reason, string? internalNote, DateTimeOffset createdAtUtc, DateTimeOffset? expiresAtUtc = null) =>
         new(reportId, moderatorUserId, subjectUserId, targetType, targetId, actionType,
-            NormalizeReason(reason), NormalizeNote(internalNote), createdAtUtc, expiresAtUtc);
-
-    private static string NormalizeReason(string value)
-    {
-        var normalized = value.Trim();
-        if (normalized.Length is 0 or > MaximumReasonLength)
-            throw new ArgumentException($"Reason must contain between 1 and {MaximumReasonLength} characters.");
-        return normalized;
-    }
-
-    private static string? NormalizeNote(string? value)
-    {
-        var normalized = value?.Trim();
-        if (string.IsNullOrEmpty(normalized)) return null;
-        if (normalized.Length > MaximumInternalNoteLength)
-            throw new ArgumentException($"Internal note cannot exceed {MaximumInternalNoteLength} characters.");
-        return normalized;
-    }
+            reason.Trim(), TextNormalization.NormalizeOptionalText(internalNote), createdAtUtc, expiresAtUtc);
 }

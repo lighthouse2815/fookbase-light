@@ -18,8 +18,6 @@ public sealed class ReportsService(
     PagePostAccessService pagePostAccessService,
     TimeProvider timeProvider)
 {
-    private const int MaximumPageSize = 100;
-
     public async Task<ApplicationResult<ContentReportResponse>> ReportUserAsync(
         Guid reporterUserId,
         Guid reportedUserId,
@@ -99,23 +97,8 @@ public sealed class ReportsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (offset < 0 || limit is < 1 or > MaximumPageSize)
-        {
-            return ApplicationResult<PagedResponse<ModerationReportResponse>>.Failure(Validation(
-                $"Offset must be non-negative and limit must be between 1 and {MaximumPageSize}."));
-        }
-
-        ContentReportStatus? parsedStatus = null;
-        if (!string.IsNullOrWhiteSpace(status))
-        {
-            if (!TryParseStatus(status, out var parsedValue))
-            {
-                return ApplicationResult<PagedResponse<ModerationReportResponse>>.Failure(Validation(
-                    "Report status must be one of: pending, reviewed, resolved, dismissed."));
-            }
-
-            parsedStatus = parsedValue;
-        }
+        ContentReportStatus? parsedStatus = string.IsNullOrWhiteSpace(status)
+            ? null : Enum.Parse<ContentReportStatus>(status, true);
 
         var reports = dbContext.ContentReports.AsNoTracking();
         if (parsedStatus is not null)
@@ -141,11 +124,7 @@ public sealed class ReportsService(
         string? status,
         CancellationToken cancellationToken = default)
     {
-        if (!TryParseStatus(status, out var parsedStatus) || parsedStatus == ContentReportStatus.PENDING)
-        {
-            return ApplicationResult<ModerationReportResponse>.Failure(Validation(
-                "Report status must be one of: reviewed, resolved, dismissed."));
-        }
+        var parsedStatus = Enum.Parse<ContentReportStatus>(status!, true);
 
         var report = await dbContext.ContentReports.SingleOrDefaultAsync(
             item => item.Id == reportId,
@@ -213,9 +192,6 @@ public sealed class ReportsService(
 
     private static bool TryParseReason(string? value, out ReportReason reason) =>
         EnumText.TryParse(value, true, out reason) && Enum.IsDefined(reason);
-
-    private static bool TryParseStatus(string? value, out ContentReportStatus status) =>
-        Enum.TryParse(value, true, out status) && Enum.IsDefined(status);
 
     private static ContentReportResponse ToResponse(ContentReport report) =>
         new(

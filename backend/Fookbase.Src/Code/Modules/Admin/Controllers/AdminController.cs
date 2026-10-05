@@ -24,12 +24,10 @@ public sealed class AdminController(
 
     [HttpGet("users")]
     public async Task<IResult> GetUsersAsync(
-        [FromQuery] string? query,
-        CancellationToken cancellationToken,
-        [FromQuery] int offset = 0,
-        [FromQuery] int limit = 20)
+        [FromQuery] AdminUserPageRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await administrationService.SearchUsersAsync(query, offset, limit, cancellationToken);
+        var result = await administrationService.SearchUsersAsync(request.Query, request.Offset, request.Limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
@@ -46,20 +44,16 @@ public sealed class AdminController(
 
     [HttpGet("reports")]
     public async Task<IResult> GetReportsAsync(
-        [FromQuery] string? status,
-        [FromQuery] string? targetType,
-        [FromQuery] string? cursor,
-        CancellationToken cancellationToken,
-        [FromQuery] int offset = 0,
-        [FromQuery] int limit = 20)
+        [FromQuery] AdminReportPageRequest request,
+        CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(cursor) || !string.IsNullOrWhiteSpace(targetType))
+        if (!string.IsNullOrWhiteSpace(request.Cursor) || !string.IsNullOrWhiteSpace(request.TargetType))
         {
-            var queue = await moderationService.GetQueueAsync(status, targetType, cursor, limit, cancellationToken);
+            var queue = await moderationService.GetQueueAsync(request.Status, request.TargetType, request.Cursor, request.Limit, cancellationToken);
             return queue.Succeeded ? Results.Ok(queue.Value) : queue.Error!.ToHttpResult();
         }
 
-        var result = await reportsService.GetReportsAsync(status, offset, limit, cancellationToken);
+        var result = await reportsService.GetReportsAsync(request.Status, request.Offset, request.Limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 
@@ -138,11 +132,10 @@ public sealed class AdminController(
     [HttpGet("users/{userId:guid}/moderation-history")]
     public async Task<IResult> GetModerationHistoryAsync(
         [FromRoute] Guid userId,
-        CancellationToken cancellationToken,
-        [FromQuery] string? cursor = null,
-        [FromQuery] int limit = 20)
+        [FromQuery] ModerationHistoryRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await moderationService.GetHistoryAsync(userId, cursor, limit, cancellationToken);
+        var result = await moderationService.GetHistoryAsync(userId, request.Cursor, request.Limit, cancellationToken);
         return result.Succeeded ? Results.Ok(result.Value) : result.Error!.ToHttpResult();
     }
 

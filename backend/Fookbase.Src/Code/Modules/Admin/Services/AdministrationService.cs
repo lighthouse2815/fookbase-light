@@ -3,7 +3,6 @@ using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Identity.DTOs.Responses;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,14 +24,6 @@ public sealed class AdministrationService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (offset < 0 || limit is < 1 or > IdentityModuleConstants.Administration.MaximumPageSize)
-        {
-            return ApplicationResult<PagedResponse<AdminUserResponse>>.Failure(new ApplicationError(
-                ErrorCode.InvalidPagination,
-                $"Offset must be non-negative and limit must be between 1 and {IdentityModuleConstants.Administration.MaximumPageSize}.",
-                ApplicationErrorType.VALIDATION));
-        }
-
         var normalizedQuery = query?.Trim().ToLowerInvariant();
         var users = dbContext.Users.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(normalizedQuery))

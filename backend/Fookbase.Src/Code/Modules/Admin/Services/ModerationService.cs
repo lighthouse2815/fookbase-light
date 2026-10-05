@@ -1,7 +1,6 @@
 using Fookbase.Api.Modules.Admin.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
-using System.Globalization;
-using System.Text;
+using Fookbase.Api.Modules.Admin.Common;
 using Fookbase.Api.Modules.Admin.DTOs.Responses;
 using Fookbase.Api.Modules.Admin.Entities;
 using Fookbase.Api.Shared.Common;
@@ -23,8 +22,7 @@ public sealed class ModerationService(
     NotificationService notificationService,
     TimeProvider timeProvider)
 {
-    private const int MaximumHistoryPageSize = 100;
-    private const int MaximumSuspensionHours = 24 * 365;
+    public const int MaximumPageSize = 100;
 
     public async Task<ApplicationResult<ReportDetailResponse>> GetReportAsync(Guid reportId, CancellationToken cancellationToken = default)
     {
@@ -45,20 +43,13 @@ public sealed class ModerationService(
     public async Task<ApplicationResult<ModerationQueuePageResponse>> GetQueueAsync(string? status, string? targetType,
         string? cursorValue, int limit, CancellationToken cancellationToken = default)
     {
-        if (limit is < 1 or > MaximumHistoryPageSize) return ApplicationResult<ModerationQueuePageResponse>.Failure(Validation("Limit must be between 1 and 100."));
-        if (!TryDecodeCursor(cursorValue, out var cursor)) return ApplicationResult<ModerationQueuePageResponse>.Failure(Validation("The moderation queue cursor is invalid."));
-        ContentReportStatus? parsedStatus = null;
-        if (!string.IsNullOrWhiteSpace(status) && (!Enum.TryParse<ContentReportStatus>(status, true, out var value) || !Enum.IsDefined(value)))
-            return ApplicationResult<ModerationQueuePageResponse>.Failure(Validation("The report status is invalid."));
-        if (!string.IsNullOrWhiteSpace(status)) parsedStatus = Enum.Parse<ContentReportStatus>(status, true);
-        ReportTargetType? parsedTarget = null;
-        if (!string.IsNullOrWhiteSpace(targetType) && (!Enum.TryParse<ReportTargetType>(targetType, true, out var target) || !Enum.IsDefined(target)))
-            return ApplicationResult<ModerationQueuePageResponse>.Failure(Validation("The report target type is invalid."));
-        if (!string.IsNullOrWhiteSpace(targetType)) parsedTarget = Enum.Parse<ReportTargetType>(targetType, true);
+        var cursor = ModerationCursor.DecodeOrNull(cursorValue);
+        ContentReportStatus? parsedStatus = string.IsNullOrWhiteSpace(status) ? null : Enum.Parse<ContentReportStatus>(status, true);
+        ReportTargetType? parsedTarget = string.IsNullOrWhiteSpace(targetType) ? null : Enum.Parse<ReportTargetType>(targetType, true);
         var query = dbContext.ContentReports.AsNoTracking();
         if (parsedStatus is not null) query = query.Where(report => report.Status == parsedStatus);
         if (parsedTarget is not null) query = query.Where(report => report.TargetType == parsedTarget);
-        if (cursor is not null) query = query.Where(report => report.CreatedAtUtc > cursor.Value.CreatedAtUtc || (report.CreatedAtUtc == cursor.Value.CreatedAtUtc && report.Id.CompareTo(cursor.Value.Id) > 0));
+        if (cursor is not null) query = query.Where(report => report.CreatedAtUtc > cursor.CreatedAtUtc || (report.CreatedAtUtc == cursor.CreatedAtUtc && report.Id.CompareTo(cursor.Id) > 0));
         var reports = await query.OrderBy(report => report.CreatedAtUtc).ThenBy(report => report.Id).Take(limit + 1).ToListAsync(cancellationToken);
         var page = reports.Take(limit).ToArray();
         var reportCounts = page.Length == 0 ? new Dictionary<(ReportTargetType, Guid), int>() : await dbContext.ContentReports.AsNoTracking()
@@ -83,7 +74,7 @@ public sealed class ModerationService(
                 report.Status.ToString().ToLowerInvariant(), report.CreatedAtUtc, preview, subjectUserId,
                 reportCounts.GetValueOrDefault((report.TargetType, report.TargetId))));
         }
-        return ApplicationResult<ModerationQueuePageResponse>.Success(new(items, reports.Count > limit ? EncodeCursor(page[^1].CreatedAtUtc, page[^1].Id) : null));
+        return ApplicationResult<ModerationQueuePageResponse>.Success(new(items, reports.Count > limit ? new ModerationCursor(page[^1].CreatedAtUtc, page[^1].Id).Encode() : null));
     }
 
     public async Task<ApplicationResult<ModerationActionResponse>> DismissReportAsync(Guid moderatorUserId, Guid reportId,
@@ -96,17 +87,13 @@ public sealed class ModerationService(
         if (existing is not null) return ApplicationResult<ModerationActionResponse>.Success(ToResponse(existing));
         var subjectUserId = await GetSubjectUserIdAsync(report, cancellationToken);
         if (subjectUserId is null) return ApplicationResult<ModerationActionResponse>.Failure(NotFound("The reported target was not found."));
-        try
-        {
-            var now = timeProvider.GetUtcNow();
-            report.UpdateStatus(ContentReportStatus.DISMISSED, now);
-            var action = ModerationAction.Create(report.Id, moderatorUserId, subjectUserId.Value, report.TargetType, report.TargetId,
-                ModerationActionType.DISMISS_REPORT, reason ?? "No violation found.", internalNote, now);
-            dbContext.ModerationActions.Add(action);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
-        }
-        catch (ArgumentException exception) { return ApplicationResult<ModerationActionResponse>.Failure(Validation(exception.Message)); }
+        var now = timeProvider.GetUtcNow();
+        report.UpdateStatus(ContentReportStatus.DISMISSED, now);
+        var action = ModerationAction.Create(report.Id, moderatorUserId, subjectUserId.Value, report.TargetType, report.TargetId,
+            ModerationActionType.DISMISS_REPORT, reason ?? "No violation found.", internalNote, now);
+        dbContext.ModerationActions.Add(action);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
     }
 
     public async Task<ApplicationResult<ModerationActionResponse>> RemoveReportedContentAsync(Guid moderatorUserId, Guid reportId,
@@ -117,25 +104,21 @@ public sealed class ModerationService(
         if (report.TargetType != ReportTargetType.POST) return ApplicationResult<ModerationActionResponse>.Failure(Validation("Only reported posts can be removed in Moderation V1."));
         var post = await dbContext.Posts.SingleOrDefaultAsync(item => item.Id == report.TargetId, cancellationToken);
         if (post is null) return ApplicationResult<ModerationActionResponse>.Failure(NotFound("The reported post was not found."));
-        try
+        var now = timeProvider.GetUtcNow();
+        if (post.DeletedAtUtc is null)
         {
-            var now = timeProvider.GetUtcNow();
-            if (post.DeletedAtUtc is null)
-            {
-                var removed = await postsService.DeletePostForModerationAsync(post.Id, cancellationToken);
-                if (!removed.Succeeded) return ApplicationResult<ModerationActionResponse>.Failure(Validation(
-                    "The reported post could not be removed."));
-            }
-            report.UpdateStatus(ContentReportStatus.REVIEWED, now);
-            var action = ModerationAction.Create(report.Id, moderatorUserId, post.AuthorUserId, report.TargetType, report.TargetId,
-                ModerationActionType.REMOVE_POST, reason ?? "Content violated community rules.", internalNote, now);
-            dbContext.ModerationActions.Add(action);
-            var notification = await notificationService.QueueAsync(post.AuthorUserId, null, NotificationType.ACCOUNT_WARNING, null, null, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            if (notification is not null) await notificationService.PublishAsync(notification, cancellationToken);
-            return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
+            var removed = await postsService.DeletePostForModerationAsync(post.Id, cancellationToken);
+            if (!removed.Succeeded) return ApplicationResult<ModerationActionResponse>.Failure(Validation(
+                "The reported post could not be removed."));
         }
-        catch (ArgumentException exception) { return ApplicationResult<ModerationActionResponse>.Failure(Validation(exception.Message)); }
+        report.UpdateStatus(ContentReportStatus.REVIEWED, now);
+        var action = ModerationAction.Create(report.Id, moderatorUserId, post.AuthorUserId, report.TargetType, report.TargetId,
+            ModerationActionType.REMOVE_POST, reason ?? "Content violated community rules.", internalNote, now);
+        dbContext.ModerationActions.Add(action);
+        var notification = await notificationService.QueueAsync(post.AuthorUserId, null, NotificationType.ACCOUNT_WARNING, null, null, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        if (notification is not null) await notificationService.PublishAsync(notification, cancellationToken);
+        return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
     }
 
     public async Task<ApplicationResult<ModerationActionResponse>> WarnReportedUserAsync(Guid moderatorUserId, Guid reportId,
@@ -159,21 +142,15 @@ public sealed class ModerationService(
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user is null) return ApplicationResult<ModerationActionResponse>.Failure(NotFound("The user was not found."));
         var now = timeProvider.GetUtcNow();
-        var until = suspendedUntilUtc ?? (durationHours is { } hours ? now.AddHours(hours) : (DateTimeOffset?)null);
-        if (until is null || until <= now || until > now.AddHours(MaximumSuspensionHours))
-            return ApplicationResult<ModerationActionResponse>.Failure(Validation($"Suspension must end within {MaximumSuspensionHours} hours."));
-        try
-        {
-            var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
-            state.Suspend(until.Value, now);
-            var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
-                ModerationActionType.SUSPEND_USER, reason ?? "Account temporarily suspended.", internalNote, now, until);
-            dbContext.ModerationActions.Add(action);
-            await RevokeAllSessionsAsync(userId, now, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
-        }
-        catch (ArgumentException exception) { return ApplicationResult<ModerationActionResponse>.Failure(Validation(exception.Message)); }
+        var until = suspendedUntilUtc ?? now.AddHours(durationHours!.Value);
+        var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
+        state.Suspend(until, now);
+        var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
+            ModerationActionType.SUSPEND_USER, reason ?? "Account temporarily suspended.", internalNote, now, until);
+        dbContext.ModerationActions.Add(action);
+        await RevokeAllSessionsAsync(userId, now, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
     }
 
     public async Task<ApplicationResult<ModerationActionResponse>> DisableUserAsync(Guid moderatorUserId, Guid userId,
@@ -182,19 +159,15 @@ public sealed class ModerationService(
         if (moderatorUserId == userId) return ApplicationResult<ModerationActionResponse>.Failure(Forbidden("Administrators cannot disable themselves."));
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user is null) return ApplicationResult<ModerationActionResponse>.Failure(NotFound("The user was not found."));
-        try
-        {
-            var now = timeProvider.GetUtcNow();
-            var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
-            state.Disable(now);
-            var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
-                ModerationActionType.DISABLE_USER, reason ?? "Account disabled.", internalNote, now);
-            dbContext.ModerationActions.Add(action);
-            await RevokeAllSessionsAsync(userId, now, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
-        }
-        catch (ArgumentException exception) { return ApplicationResult<ModerationActionResponse>.Failure(Validation(exception.Message)); }
+        var now = timeProvider.GetUtcNow();
+        var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
+        state.Disable(now);
+        var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
+            ModerationActionType.DISABLE_USER, reason ?? "Account disabled.", internalNote, now);
+        dbContext.ModerationActions.Add(action);
+        await RevokeAllSessionsAsync(userId, now, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
     }
 
     public async Task<ApplicationResult<ModerationActionResponse>> UnsuspendUserAsync(Guid moderatorUserId, Guid userId,
@@ -213,36 +186,31 @@ public sealed class ModerationService(
 
     public async Task<ApplicationResult<ModerationActionPageResponse>> GetHistoryAsync(Guid userId, string? cursorValue, int limit, CancellationToken cancellationToken = default)
     {
-        if (limit is < 1 or > MaximumHistoryPageSize) return ApplicationResult<ModerationActionPageResponse>.Failure(Validation("Limit must be between 1 and 100."));
-        if (!TryDecodeCursor(cursorValue, out var cursor)) return ApplicationResult<ModerationActionPageResponse>.Failure(Validation("The moderation history cursor is invalid."));
+        var cursor = ModerationCursor.DecodeOrNull(cursorValue);
         var query = dbContext.ModerationActions.AsNoTracking().Where(action => action.SubjectUserId == userId);
-        if (cursor is not null) query = query.Where(action => action.CreatedAtUtc < cursor.Value.CreatedAtUtc || (action.CreatedAtUtc == cursor.Value.CreatedAtUtc && action.Id.CompareTo(cursor.Value.Id) < 0));
+        if (cursor is not null) query = query.Where(action => action.CreatedAtUtc < cursor.CreatedAtUtc || (action.CreatedAtUtc == cursor.CreatedAtUtc && action.Id.CompareTo(cursor.Id) < 0));
         var candidates = await query.OrderByDescending(action => action.CreatedAtUtc).ThenByDescending(action => action.Id).Take(limit + 1).ToListAsync(cancellationToken);
         var items = candidates.Take(limit).Select(ToResponse).ToArray();
-        return ApplicationResult<ModerationActionPageResponse>.Success(new(items, candidates.Count > limit ? EncodeCursor(candidates[limit - 1]) : null));
+        return ApplicationResult<ModerationActionPageResponse>.Success(new(items, candidates.Count > limit ? new ModerationCursor(candidates[limit - 1].CreatedAtUtc, candidates[limit - 1].Id).Encode() : null));
     }
 
     private async Task<ApplicationResult<ModerationActionResponse>> WarnUserAsync(Guid moderatorUserId, Guid userId, ContentReport? report,
         string? reason, string? internalNote, CancellationToken cancellationToken)
     {
         if (await userManager.FindByIdAsync(userId.ToString()) is null) return ApplicationResult<ModerationActionResponse>.Failure(NotFound("The user was not found."));
-        try
-        {
-            var now = timeProvider.GetUtcNow();
-            var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
-            state.Warn(now);
-            report?.UpdateStatus(ContentReportStatus.REVIEWED, now);
-            var targetType = report?.TargetType ?? ReportTargetType.USER;
-            var targetId = report?.TargetId ?? userId;
-            var action = ModerationAction.Create(report?.Id, moderatorUserId, userId, targetType, targetId,
-                ModerationActionType.WARN_USER, reason ?? "Account warning.", internalNote, now);
-            dbContext.ModerationActions.Add(action);
-            var notification = await notificationService.QueueAsync(userId, null, NotificationType.ACCOUNT_WARNING, null, null, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            if (notification is not null) await notificationService.PublishAsync(notification, cancellationToken);
-            return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
-        }
-        catch (ArgumentException exception) { return ApplicationResult<ModerationActionResponse>.Failure(Validation(exception.Message)); }
+        var now = timeProvider.GetUtcNow();
+        var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
+        state.Warn(now);
+        report?.UpdateStatus(ContentReportStatus.REVIEWED, now);
+        var targetType = report?.TargetType ?? ReportTargetType.USER;
+        var targetId = report?.TargetId ?? userId;
+        var action = ModerationAction.Create(report?.Id, moderatorUserId, userId, targetType, targetId,
+            ModerationActionType.WARN_USER, reason ?? "Account warning.", internalNote, now);
+        dbContext.ModerationActions.Add(action);
+        var notification = await notificationService.QueueAsync(userId, null, NotificationType.ACCOUNT_WARNING, null, null, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        if (notification is not null) await notificationService.PublishAsync(notification, cancellationToken);
+        return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
     }
 
     private async Task<ApplicationResult<ModerationActionResponse>> ReverseAccountActionAsync(Guid moderatorUserId, Guid userId, bool enable,
@@ -250,19 +218,15 @@ public sealed class ModerationService(
     {
         if (moderatorUserId == userId) return ApplicationResult<ModerationActionResponse>.Failure(Forbidden("Administrators cannot change their own moderation state."));
         if (await userManager.FindByIdAsync(userId.ToString()) is null) return ApplicationResult<ModerationActionResponse>.Failure(NotFound("The user was not found."));
-        try
-        {
-            var now = timeProvider.GetUtcNow();
-            var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
-            if (enable) state.Enable(now); else state.Unsuspend(now);
-            var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
-                enable ? ModerationActionType.ENABLE_USER : ModerationActionType.UNSUSPEND_USER,
-                reason ?? (enable ? "Account enabled." : "Account suspension cleared."), internalNote, now);
-            dbContext.ModerationActions.Add(action);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
-        }
-        catch (ArgumentException exception) { return ApplicationResult<ModerationActionResponse>.Failure(Validation(exception.Message)); }
+        var now = timeProvider.GetUtcNow();
+        var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
+        if (enable) state.Enable(now); else state.Unsuspend(now);
+        var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
+            enable ? ModerationActionType.ENABLE_USER : ModerationActionType.UNSUSPEND_USER,
+            reason ?? (enable ? "Account enabled." : "Account suspension cleared."), internalNote, now);
+        dbContext.ModerationActions.Add(action);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ApplicationResult<ModerationActionResponse>.Success(ToResponse(action));
     }
 
     private async Task<UserModerationState> GetOrCreateStateAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
@@ -304,12 +268,4 @@ public sealed class ModerationService(
     private static ApplicationError Validation(string message) => new("moderation_validation_failed", message, ApplicationErrorType.VALIDATION);
     private static ApplicationError NotFound(string message) => new("moderation_target_not_found", message, ApplicationErrorType.NOT_FOUND);
     private static ApplicationError Forbidden(string message) => new("moderation_action_forbidden", message, ApplicationErrorType.FORBIDDEN);
-    private readonly record struct ActionCursor(DateTimeOffset CreatedAtUtc, Guid Id);
-    private static bool TryDecodeCursor(string? value, out ActionCursor? cursor)
-    {
-        cursor = null; if (string.IsNullOrWhiteSpace(value)) return true;
-        try { var parts = Encoding.UTF8.GetString(Convert.FromBase64String(value.Replace('-', '+').Replace('_', '/').PadRight(value.Length + (4 - value.Length % 4) % 4, '='))).Split(':'); if (parts.Length != 2 || !long.TryParse(parts[0], out var ticks) || !Guid.TryParseExact(parts[1], "N", out var id)) return false; cursor = new(new DateTimeOffset(ticks, TimeSpan.Zero), id); return true; } catch (FormatException) { return false; }
-    }
-    private static string EncodeCursor(ModerationAction action) => EncodeCursor(action.CreatedAtUtc, action.Id);
-    private static string EncodeCursor(DateTimeOffset createdAtUtc, Guid id) => Convert.ToBase64String(Encoding.UTF8.GetBytes($"{createdAtUtc.UtcDateTime.Ticks.ToString(CultureInfo.InvariantCulture)}:{id:N}")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }
