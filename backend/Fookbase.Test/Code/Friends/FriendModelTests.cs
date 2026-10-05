@@ -3,6 +3,7 @@ using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Fookbase.Friends.Api.IntegrationTests;
 
@@ -13,6 +14,19 @@ public sealed class FriendModelTests
     {
         using var db = CreateDbContext();
         Assert.False(db.Database.HasPendingModelChanges());
+    }
+
+    [Fact]
+    public void Latest_migration_target_model_matches_the_cumulative_snapshot()
+    {
+        using var db = CreateDbContext();
+        var assembly = db.GetService<IMigrationsAssembly>();
+        var migration = assembly.CreateMigration(assembly.Migrations.Last().Value, db.Database.ProviderName!);
+        var initializer = db.GetService<IModelRuntimeInitializer>();
+        var targetModel = initializer.Initialize(migration.TargetModel, designTime: true);
+        var snapshotModel = initializer.Initialize(assembly.ModelSnapshot!.Model, designTime: true);
+        Assert.Empty(db.GetService<IMigrationsModelDiffer>().GetDifferences(
+            targetModel.GetRelationalModel(), snapshotModel.GetRelationalModel()));
     }
 
     [Fact]
