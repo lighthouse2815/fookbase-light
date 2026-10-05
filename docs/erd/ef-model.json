@@ -1,0 +1,5405 @@
+[
+  {
+    "Entity": "AlbumMedia",
+    "ClrName": "Fookbase.Api.Modules.Photos.Entities.AlbumMedia",
+    "Table": "AlbumMedia",
+    "PrimaryKey": [
+      "AlbumId",
+      "MediaId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "AlbumId",
+        "Column": "AlbumId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AddedAtUtc",
+        "Column": "AddedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Caption",
+        "Column": "Caption",
+        "Type": "character varying(1000)",
+        "Nullable": true
+      },
+      {
+        "Name": "SortOrder",
+        "Column": "SortOrder",
+        "Type": "bigint",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "IdentityRoleClaim`1",
+    "ClrName": "Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>",
+    "Table": "AspNetRoleClaims",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "ClaimType",
+        "Column": "ClaimType",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "ClaimValue",
+        "Column": "ClaimValue",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "RoleId",
+        "Column": "RoleId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "RoleId"
+        ],
+        "PrincipalTable": "AspNetRoles",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "IdentityRole`1",
+    "ClrName": "Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>",
+    "Table": "AspNetRoles",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "NormalizedName"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ConcurrencyStamp",
+        "Column": "ConcurrencyStamp",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "Name",
+        "Column": "Name",
+        "Type": "character varying(256)",
+        "Nullable": true
+      },
+      {
+        "Name": "NormalizedName",
+        "Column": "NormalizedName",
+        "Type": "character varying(256)",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "IdentityUserClaim`1",
+    "ClrName": "Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>",
+    "Table": "AspNetUserClaims",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "ClaimType",
+        "Column": "ClaimType",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "ClaimValue",
+        "Column": "ClaimValue",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "IdentityUserLogin`1",
+    "ClrName": "Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>",
+    "Table": "AspNetUserLogins",
+    "PrimaryKey": [
+      "LoginProvider",
+      "ProviderKey"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "LoginProvider",
+        "Column": "LoginProvider",
+        "Type": "text",
+        "Nullable": false
+      },
+      {
+        "Name": "ProviderKey",
+        "Column": "ProviderKey",
+        "Type": "text",
+        "Nullable": false
+      },
+      {
+        "Name": "ProviderDisplayName",
+        "Column": "ProviderDisplayName",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "IdentityUserRole`1",
+    "ClrName": "Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>",
+    "Table": "AspNetUserRoles",
+    "PrimaryKey": [
+      "UserId",
+      "RoleId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "RoleId",
+        "Column": "RoleId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "RoleId"
+        ],
+        "PrincipalTable": "AspNetRoles",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "User",
+    "ClrName": "Fookbase.Api.Modules.Identity.Entities.User",
+    "Table": "AspNetUsers",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "NormalizedEmail"
+        ],
+        "Filter": null
+      },
+      {
+        "Columns": [
+          "NormalizedUserName"
+        ],
+        "Filter": null
+      },
+      {
+        "Columns": [
+          "PhoneNumber"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AccessFailedCount",
+        "Column": "AccessFailedCount",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "ConcurrencyStamp",
+        "Column": "ConcurrencyStamp",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAt",
+        "Column": "CreatedAt",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Email",
+        "Column": "Email",
+        "Type": "character varying(256)",
+        "Nullable": true
+      },
+      {
+        "Name": "EmailConfirmed",
+        "Column": "EmailConfirmed",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "IsActive",
+        "Column": "IsActive",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "LockoutEnabled",
+        "Column": "LockoutEnabled",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "LockoutEnd",
+        "Column": "LockoutEnd",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "NormalizedEmail",
+        "Column": "NormalizedEmail",
+        "Type": "character varying(256)",
+        "Nullable": true
+      },
+      {
+        "Name": "NormalizedUserName",
+        "Column": "NormalizedUserName",
+        "Type": "character varying(256)",
+        "Nullable": true
+      },
+      {
+        "Name": "PasswordHash",
+        "Column": "PasswordHash",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "PhoneNumber",
+        "Column": "PhoneNumber",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "PhoneNumberConfirmed",
+        "Column": "PhoneNumberConfirmed",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "SecurityStamp",
+        "Column": "SecurityStamp",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "TwoFactorEnabled",
+        "Column": "TwoFactorEnabled",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "UserName",
+        "Column": "UserName",
+        "Type": "character varying(256)",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "IdentityUserToken`1",
+    "ClrName": "Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>",
+    "Table": "AspNetUserTokens",
+    "PrimaryKey": [
+      "UserId",
+      "LoginProvider",
+      "Name"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "LoginProvider",
+        "Column": "LoginProvider",
+        "Type": "text",
+        "Nullable": false
+      },
+      {
+        "Name": "Name",
+        "Column": "Name",
+        "Type": "text",
+        "Nullable": false
+      },
+      {
+        "Name": "Value",
+        "Column": "Value",
+        "Type": "text",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "AuthSession",
+    "ClrName": "Fookbase.Api.Modules.Identity.Entities.AuthSession",
+    "Table": "AuthSessions",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ExpiresAtUtc",
+        "Column": "ExpiresAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "LastSeenAtUtc",
+        "Column": "LastSeenAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "RevokedAtUtc",
+        "Column": "RevokedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "UserAgent",
+        "Column": "UserAgent",
+        "Type": "character varying(256)",
+        "Nullable": true
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "BlockedUser",
+    "ClrName": "Fookbase.Api.Modules.Friends.Entities.BlockedUser",
+    "Table": "BlockedUsers",
+    "PrimaryKey": [
+      "BlockerUserId",
+      "BlockedUserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "BlockerUserId",
+        "Column": "BlockerUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "BlockedUserId",
+        "Column": "BlockedUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "BlockedUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "BlockerUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "CommentReaction",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.CommentReaction",
+    "Table": "CommentReactions",
+    "PrimaryKey": [
+      "CommentId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "CommentId",
+        "Column": "CommentId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Type",
+        "Column": "Type",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "CommentId"
+        ],
+        "PrincipalTable": "Comments",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "Comment",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.Comment",
+    "Table": "Comments",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AuthorUserId",
+        "Column": "AuthorUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Content",
+        "Column": "Content",
+        "Type": "character varying(5000)",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "ParentCommentId",
+        "Column": "ParentCommentId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "PostId",
+        "Column": "PostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ParentCommentId"
+        ],
+        "PrincipalTable": "Comments",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "PostId"
+        ],
+        "PrincipalTable": "Posts",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "ContentMention",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.ContentMention",
+    "Table": "ContentMentions",
+    "PrimaryKey": [
+      "SourceType",
+      "SourceId",
+      "StartIndex"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "SourceType",
+        "Column": "SourceType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "SourceId",
+        "Column": "SourceId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "StartIndex",
+        "Column": "StartIndex",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "Length",
+        "Column": "Length",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "MentionedUserId",
+        "Column": "MentionedUserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MentionedUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "ContentReport",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.ContentReport",
+    "Table": "ContentReports",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "ReporterUserId",
+          "TargetType",
+          "TargetId"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Details",
+        "Column": "Details",
+        "Type": "character varying(500)",
+        "Nullable": true
+      },
+      {
+        "Name": "Reason",
+        "Column": "Reason",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "ReporterUserId",
+        "Column": "ReporterUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ResolvedAtUtc",
+        "Column": "ResolvedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "TargetId",
+        "Column": "TargetId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "TargetType",
+        "Column": "TargetType",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "ConversationParticipant",
+    "ClrName": "Fookbase.Api.Modules.Messages.Entities.ConversationParticipant",
+    "Table": "ConversationParticipants",
+    "PrimaryKey": [
+      "ConversationId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "ConversationId",
+        "Column": "ConversationId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ArchivedAtUtc",
+        "Column": "ArchivedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "JoinedAtUtc",
+        "Column": "JoinedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "LastDeliveredMessageId",
+        "Column": "LastDeliveredMessageId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "LastReadAtUtc",
+        "Column": "LastReadAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "LastReadMessageCreatedAtUtc",
+        "Column": "LastReadMessageCreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "LastReadMessageId",
+        "Column": "LastReadMessageId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "LeftAtUtc",
+        "Column": "LeftAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "MutedUntilUtc",
+        "Column": "MutedUntilUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Nickname",
+        "Column": "Nickname",
+        "Type": "character varying(80)",
+        "Nullable": true
+      },
+      {
+        "Name": "Role",
+        "Column": "Role",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ConversationId"
+        ],
+        "PrincipalTable": "Conversations",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "LastDeliveredMessageId"
+        ],
+        "PrincipalTable": "Messages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "LastReadMessageId"
+        ],
+        "PrincipalTable": "Messages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "ConversationReadCursor",
+    "ClrName": "Fookbase.Api.Modules.Messages.Entities.ConversationReadCursor",
+    "Table": "ConversationReadCursors",
+    "PrimaryKey": [
+      "ConversationId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "ConversationId",
+        "Column": "ConversationId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "LastReadAtUtc",
+        "Column": "LastReadAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "LastReadMessageCreatedAtUtc",
+        "Column": "LastReadMessageCreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "LastReadMessageId",
+        "Column": "LastReadMessageId",
+        "Type": "uuid",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ConversationId"
+        ],
+        "PrincipalTable": "Conversations",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "LastReadMessageId"
+        ],
+        "PrincipalTable": "Messages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "Conversation",
+    "ClrName": "Fookbase.Api.Modules.Messages.Entities.Conversation",
+    "Table": "Conversations",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "UserId1",
+          "UserId2"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "LastMessageAtUtc",
+        "Column": "LastMessageAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "PhotoMediaId",
+        "Column": "PhotoMediaId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "Title",
+        "Column": "Title",
+        "Type": "character varying(120)",
+        "Nullable": true
+      },
+      {
+        "Name": "Type",
+        "Column": "Type",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId1",
+        "Column": "UserId1",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "UserId2",
+        "Column": "UserId2",
+        "Type": "uuid",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "PhotoMediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId1"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId2"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "EventCoverMediaReference",
+    "ClrName": "Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference",
+    "Table": "EventCoverMediaReferences",
+    "PrimaryKey": [
+      "EventId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "EventId",
+        "Column": "EventId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AttachedAtUtc",
+        "Column": "AttachedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "EventId"
+        ],
+        "PrincipalTable": "Events",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": true,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "EventInvitation",
+    "ClrName": "Fookbase.Api.Modules.Events.Entities.EventInvitation",
+    "Table": "EventInvitations",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "EventId",
+        "Column": "EventId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "InviteeUserId",
+        "Column": "InviteeUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "InviterUserId",
+        "Column": "InviterUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "RespondedAtUtc",
+        "Column": "RespondedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "EventId"
+        ],
+        "PrincipalTable": "Events",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "InviteeUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "InviterUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "EventParticipant",
+    "ClrName": "Fookbase.Api.Modules.Events.Entities.EventParticipant",
+    "Table": "EventParticipants",
+    "PrimaryKey": [
+      "EventId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "EventId",
+        "Column": "EventId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "RespondedAtUtc",
+        "Column": "RespondedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "EventId"
+        ],
+        "PrincipalTable": "Events",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "Event",
+    "ClrName": "Fookbase.Api.Modules.Events.Entities.Event",
+    "Table": "Events",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Address",
+        "Column": "Address",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "CoverMediaId",
+        "Column": "CoverMediaId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedByUserId",
+        "Column": "CreatedByUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Description",
+        "Column": "Description",
+        "Type": "character varying(10000)",
+        "Nullable": true
+      },
+      {
+        "Name": "EndsAtUtc",
+        "Column": "EndsAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "HostId",
+        "Column": "HostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "HostType",
+        "Column": "HostType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "LocationName",
+        "Column": "LocationName",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "LocationType",
+        "Column": "LocationType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "Name",
+        "Column": "Name",
+        "Type": "character varying(160)",
+        "Nullable": false
+      },
+      {
+        "Name": "OnlineUrl",
+        "Column": "OnlineUrl",
+        "Type": "text",
+        "Nullable": true
+      },
+      {
+        "Name": "Privacy",
+        "Column": "Privacy",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "StartsAtUtc",
+        "Column": "StartsAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "CoverMediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "CreatedByUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "ExternalLoginTicket",
+    "ClrName": "Fookbase.Api.Modules.Identity.Entities.ExternalLoginTicket",
+    "Table": "ExternalLoginTickets",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "CodeHash",
+          "ExpiresAtUtc"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Client",
+        "Column": "Client",
+        "Type": "character varying(32)",
+        "Nullable": false
+      },
+      {
+        "Name": "CodeHash",
+        "Column": "CodeHash",
+        "Type": "character varying(64)",
+        "Nullable": false
+      },
+      {
+        "Name": "ConsumedAtUtc",
+        "Column": "ConsumedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Email",
+        "Column": "Email",
+        "Type": "character varying(256)",
+        "Nullable": false
+      },
+      {
+        "Name": "ExpiresAtUtc",
+        "Column": "ExpiresAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Provider",
+        "Column": "Provider",
+        "Type": "character varying(32)",
+        "Nullable": false
+      },
+      {
+        "Name": "ProviderKey",
+        "Column": "ProviderKey",
+        "Type": "character varying(256)",
+        "Nullable": false
+      },
+      {
+        "Name": "Purpose",
+        "Column": "Purpose",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "FriendNotification",
+    "ClrName": "Fookbase.Api.Modules.Friends.Entities.FriendNotification",
+    "Table": "FriendNotifications",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ActorUserId",
+        "Column": "ActorUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "FriendRequestId",
+        "Column": "FriendRequestId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ReadAtUtc",
+        "Column": "ReadAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "RecipientUserId",
+        "Column": "RecipientUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Type",
+        "Column": "Type",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ActorUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "FriendRequestId"
+        ],
+        "PrincipalTable": "FriendRequests",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "RecipientUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "FriendRequest",
+    "ClrName": "Fookbase.Api.Modules.Friends.Entities.FriendRequest",
+    "Table": "FriendRequests",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "UserId1",
+          "UserId2"
+        ],
+        "Filter": "\"Status\" = 0"
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ReceiverUserId",
+        "Column": "ReceiverUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "RespondedAtUtc",
+        "Column": "RespondedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "SenderUserId",
+        "Column": "SenderUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId1",
+        "Column": "UserId1",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId2",
+        "Column": "UserId2",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ReceiverUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "SenderUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId1"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId2"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "Friendship",
+    "ClrName": "Fookbase.Api.Modules.Friends.Entities.Friendship",
+    "Table": "Friendships",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "UserId1",
+          "UserId2"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId1",
+        "Column": "UserId1",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId2",
+        "Column": "UserId2",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId1"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId2"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "GroupCoverMediaReference",
+    "ClrName": "Fookbase.Api.Modules.Groups.Entities.GroupCoverMediaReference",
+    "Table": "GroupCoverMediaReferences",
+    "PrimaryKey": [
+      "GroupId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "GroupId",
+        "Column": "GroupId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AttachedAtUtc",
+        "Column": "AttachedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "GroupId"
+        ],
+        "PrincipalTable": "Groups",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": true,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "GroupInvite",
+    "ClrName": "Fookbase.Api.Modules.Groups.Entities.GroupInvite",
+    "Table": "GroupInvites",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "GroupId",
+          "InviteeUserId"
+        ],
+        "Filter": "\"Status\" = 0"
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "GroupId",
+        "Column": "GroupId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "InviteeUserId",
+        "Column": "InviteeUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "InviterUserId",
+        "Column": "InviterUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "RespondedAtUtc",
+        "Column": "RespondedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "GroupId"
+        ],
+        "PrincipalTable": "Groups",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "InviteeUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "InviterUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "GroupJoinRequest",
+    "ClrName": "Fookbase.Api.Modules.Groups.Entities.GroupJoinRequest",
+    "Table": "GroupJoinRequests",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "GroupId",
+          "RequesterUserId"
+        ],
+        "Filter": "\"Status\" = 0"
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "GroupId",
+        "Column": "GroupId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "RequesterUserId",
+        "Column": "RequesterUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "RespondedAtUtc",
+        "Column": "RespondedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "RespondedByUserId",
+        "Column": "RespondedByUserId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "GroupId"
+        ],
+        "PrincipalTable": "Groups",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "RequesterUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "RespondedByUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "GroupMember",
+    "ClrName": "Fookbase.Api.Modules.Groups.Entities.GroupMember",
+    "Table": "GroupMembers",
+    "PrimaryKey": [
+      "GroupId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "GroupId",
+        "Column": "GroupId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "JoinedAtUtc",
+        "Column": "JoinedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Role",
+        "Column": "Role",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "GroupId"
+        ],
+        "PrincipalTable": "Groups",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "GroupRule",
+    "ClrName": "Fookbase.Api.Modules.Groups.Entities.GroupRule",
+    "Table": "GroupRules",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Description",
+        "Column": "Description",
+        "Type": "character varying(2000)",
+        "Nullable": true
+      },
+      {
+        "Name": "GroupId",
+        "Column": "GroupId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "SortOrder",
+        "Column": "SortOrder",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "Title",
+        "Column": "Title",
+        "Type": "character varying(200)",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "GroupId"
+        ],
+        "PrincipalTable": "Groups",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "Group",
+    "ClrName": "Fookbase.Api.Modules.Groups.Entities.Group",
+    "Table": "Groups",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CoverMediaId",
+        "Column": "CoverMediaId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Description",
+        "Column": "Description",
+        "Type": "character varying(2000)",
+        "Nullable": true
+      },
+      {
+        "Name": "Name",
+        "Column": "Name",
+        "Type": "character varying(120)",
+        "Nullable": false
+      },
+      {
+        "Name": "OwnerUserId",
+        "Column": "OwnerUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Privacy",
+        "Column": "Privacy",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "CoverMediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "OwnerUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "Hashtag",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.Hashtag",
+    "Table": "Hashtags",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "NormalizedName"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DisplayName",
+        "Column": "DisplayName",
+        "Type": "character varying(50)",
+        "Nullable": false
+      },
+      {
+        "Name": "NormalizedName",
+        "Column": "NormalizedName",
+        "Type": "character varying(50)",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "MediaAsset",
+    "ClrName": "Fookbase.Api.Modules.Media.Entities.MediaAsset",
+    "Table": "MediaAssets",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "ObjectKey"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ActualSizeBytes",
+        "Column": "ActualSizeBytes",
+        "Type": "bigint",
+        "Nullable": true
+      },
+      {
+        "Name": "ContentType",
+        "Column": "ContentType",
+        "Type": "character varying(100)",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DeclaredSizeBytes",
+        "Column": "DeclaredSizeBytes",
+        "Type": "bigint",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "DurationMs",
+        "Column": "DurationMs",
+        "Type": "bigint",
+        "Nullable": true
+      },
+      {
+        "Name": "Height",
+        "Column": "Height",
+        "Type": "integer",
+        "Nullable": true
+      },
+      {
+        "Name": "MediaType",
+        "Column": "MediaType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "ObjectKey",
+        "Column": "ObjectKey",
+        "Type": "character varying(256)",
+        "Nullable": false
+      },
+      {
+        "Name": "OriginalFileName",
+        "Column": "OriginalFileName",
+        "Type": "character varying(255)",
+        "Nullable": false
+      },
+      {
+        "Name": "OwnerUserId",
+        "Column": "OwnerUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "PosterObjectKey",
+        "Column": "PosterObjectKey",
+        "Type": "character varying(256)",
+        "Nullable": true
+      },
+      {
+        "Name": "ProcessedAtUtc",
+        "Column": "ProcessedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "ProcessedObjectKey",
+        "Column": "ProcessedObjectKey",
+        "Type": "character varying(256)",
+        "Nullable": true
+      },
+      {
+        "Name": "ProcessingError",
+        "Column": "ProcessingError",
+        "Type": "character varying(1000)",
+        "Nullable": true
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UploadExpiresAtUtc",
+        "Column": "UploadExpiresAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "UploadedAtUtc",
+        "Column": "UploadedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Width",
+        "Column": "Width",
+        "Type": "integer",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "MediaProcessingJob",
+    "ClrName": "Fookbase.Api.Modules.Media.Entities.MediaProcessingJob",
+    "Table": "MediaProcessingJobs",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AttemptCount",
+        "Column": "AttemptCount",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "CompletedAtUtc",
+        "Column": "CompletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "LastError",
+        "Column": "LastError",
+        "Type": "character varying(2000)",
+        "Nullable": true
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "NextAttemptAtUtc",
+        "Column": "NextAttemptAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "StartedAtUtc",
+        "Column": "StartedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": true,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "MediaReference",
+    "ClrName": "Fookbase.Api.Modules.Media.Entities.MediaReference",
+    "Table": "MediaReferences",
+    "PrimaryKey": [
+      "MediaId",
+      "PostId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "PostId",
+        "Column": "PostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AttachedAtUtc",
+        "Column": "AttachedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "PostId"
+        ],
+        "PrincipalTable": "Posts",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "MessageAttachment",
+    "ClrName": "Fookbase.Api.Modules.Messages.Entities.MessageAttachment",
+    "Table": "MessageAttachments",
+    "PrimaryKey": [
+      "MessageId",
+      "MediaId"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "MessageId",
+          "SortOrder"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "MessageId",
+        "Column": "MessageId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "SortOrder",
+        "Column": "SortOrder",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "MessageId"
+        ],
+        "PrincipalTable": "Messages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "MessageNotification",
+    "ClrName": "Fookbase.Api.Modules.Messages.Entities.MessageNotification",
+    "Table": "MessageNotifications",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "RecipientUserId",
+          "MessageId"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ConversationId",
+        "Column": "ConversationId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "MessageId",
+        "Column": "MessageId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ReadAtUtc",
+        "Column": "ReadAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "RecipientUserId",
+        "Column": "RecipientUserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ConversationId"
+        ],
+        "PrincipalTable": "Conversations",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "MessageId"
+        ],
+        "PrincipalTable": "Messages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "RecipientUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "MessageReaction",
+    "ClrName": "Fookbase.Api.Modules.Messages.Entities.MessageReaction",
+    "Table": "MessageReactions",
+    "PrimaryKey": [
+      "MessageId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "MessageId",
+        "Column": "MessageId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Type",
+        "Column": "Type",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MessageId"
+        ],
+        "PrincipalTable": "Messages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "Message",
+    "ClrName": "Fookbase.Api.Modules.Messages.Entities.Message",
+    "Table": "Messages",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Content",
+        "Column": "Content",
+        "Type": "character varying(5000)",
+        "Nullable": true
+      },
+      {
+        "Name": "ConversationId",
+        "Column": "ConversationId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "EditedAtUtc",
+        "Column": "EditedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "ReadAtUtc",
+        "Column": "ReadAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "ReplyToMessageId",
+        "Column": "ReplyToMessageId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "SenderUserId",
+        "Column": "SenderUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "StoryId",
+        "Column": "StoryId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "Type",
+        "Column": "Type",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ConversationId"
+        ],
+        "PrincipalTable": "Conversations",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "ReplyToMessageId"
+        ],
+        "PrincipalTable": "Messages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "SenderUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "StoryId"
+        ],
+        "PrincipalTable": "Stories",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "ModerationAction",
+    "ClrName": "Fookbase.Api.Modules.Admin.Entities.ModerationAction",
+    "Table": "ModerationActions",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ActionType",
+        "Column": "ActionType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ExpiresAtUtc",
+        "Column": "ExpiresAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "InternalNote",
+        "Column": "InternalNote",
+        "Type": "character varying(2000)",
+        "Nullable": true
+      },
+      {
+        "Name": "ModeratorUserId",
+        "Column": "ModeratorUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Reason",
+        "Column": "Reason",
+        "Type": "character varying(500)",
+        "Nullable": false
+      },
+      {
+        "Name": "ReportId",
+        "Column": "ReportId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "SubjectUserId",
+        "Column": "SubjectUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "TargetId",
+        "Column": "TargetId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "TargetType",
+        "Column": "TargetType",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ModeratorUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "ReportId"
+        ],
+        "PrincipalTable": "ContentReports",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "SubjectUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "Notification",
+    "ClrName": "Fookbase.Api.Modules.Notifications.Entities.Notification",
+    "Table": "Notifications",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ActorUserId",
+        "Column": "ActorUserId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "EntityId",
+        "Column": "EntityId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "EntityType",
+        "Column": "EntityType",
+        "Type": "integer",
+        "Nullable": true
+      },
+      {
+        "Name": "IsRead",
+        "Column": "IsRead",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "ReadAtUtc",
+        "Column": "ReadAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "RecipientUserId",
+        "Column": "RecipientUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Type",
+        "Column": "Type",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ActorUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "RecipientUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "ObjectDeletion",
+    "ClrName": "Fookbase.Api.Modules.Media.Entities.ObjectDeletion",
+    "Table": "ObjectDeletions",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "FailedAtUtc",
+        "Column": "FailedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "LastError",
+        "Column": "LastError",
+        "Type": "character varying(2000)",
+        "Nullable": true
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "NextAttemptAtUtc",
+        "Column": "NextAttemptAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ObjectKey",
+        "Column": "ObjectKey",
+        "Type": "character varying(256)",
+        "Nullable": false
+      },
+      {
+        "Name": "ProcessedAtUtc",
+        "Column": "ProcessedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "RetryCount",
+        "Column": "RetryCount",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "PageFollower",
+    "ClrName": "Fookbase.Api.Modules.Pages.Entities.PageFollower",
+    "Table": "PageFollowers",
+    "PrimaryKey": [
+      "PageId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "PageId",
+        "Column": "PageId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "FollowedAtUtc",
+        "Column": "FollowedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "PageId"
+        ],
+        "PrincipalTable": "Pages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "PageMediaReference",
+    "ClrName": "Fookbase.Api.Modules.Pages.Entities.PageMediaReference",
+    "Table": "PageMediaReferences",
+    "PrimaryKey": [
+      "PageId",
+      "Slot"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "PageId",
+        "Column": "PageId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Slot",
+        "Column": "Slot",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "AttachedAtUtc",
+        "Column": "AttachedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "PageId"
+        ],
+        "PrincipalTable": "Pages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "PageMember",
+    "ClrName": "Fookbase.Api.Modules.Pages.Entities.PageMember",
+    "Table": "PageMembers",
+    "PrimaryKey": [
+      "PageId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "PageId",
+        "Column": "PageId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "JoinedAtUtc",
+        "Column": "JoinedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Role",
+        "Column": "Role",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "PageId"
+        ],
+        "PrincipalTable": "Pages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "PageRoleInvitation",
+    "ClrName": "Fookbase.Api.Modules.Pages.Entities.PageRoleInvitation",
+    "Table": "PageRoleInvitations",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "PageId",
+          "InviteeUserId"
+        ],
+        "Filter": "\"Status\" = 0"
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "InviteeUserId",
+        "Column": "InviteeUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "InviterUserId",
+        "Column": "InviterUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "PageId",
+        "Column": "PageId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "RespondedAtUtc",
+        "Column": "RespondedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Role",
+        "Column": "Role",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "InviteeUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "InviterUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "PageId"
+        ],
+        "PrincipalTable": "Pages",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "Page",
+    "ClrName": "Fookbase.Api.Modules.Pages.Entities.Page",
+    "Table": "Pages",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "Username"
+        ],
+        "Filter": "\"DeletedAtUtc\" IS NULL"
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AvatarMediaId",
+        "Column": "AvatarMediaId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "Bio",
+        "Column": "Bio",
+        "Type": "character varying(2000)",
+        "Nullable": true
+      },
+      {
+        "Name": "Category",
+        "Column": "Category",
+        "Type": "character varying(80)",
+        "Nullable": false
+      },
+      {
+        "Name": "CoverMediaId",
+        "Column": "CoverMediaId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedByUserId",
+        "Column": "CreatedByUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Name",
+        "Column": "Name",
+        "Type": "character varying(120)",
+        "Nullable": false
+      },
+      {
+        "Name": "Status",
+        "Column": "Status",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Username",
+        "Column": "Username",
+        "Type": "citext",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "AvatarMediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "CoverMediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "CreatedByUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "PasswordResetOtp",
+    "ClrName": "Fookbase.Api.Modules.Identity.Entities.PasswordResetOtp",
+    "Table": "PasswordResetOtps",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CodeHash",
+        "Column": "CodeHash",
+        "Type": "character varying(64)",
+        "Nullable": false
+      },
+      {
+        "Name": "ConsumedAtUtc",
+        "Column": "ConsumedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ExpiresAtUtc",
+        "Column": "ExpiresAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "FailedAttemptCount",
+        "Column": "FailedAttemptCount",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "NextResendAllowedAtUtc",
+        "Column": "NextResendAllowedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "PhoneNumber",
+        "Column": "PhoneNumber",
+        "Type": "character varying(32)",
+        "Nullable": false
+      },
+      {
+        "Name": "SendCount",
+        "Column": "SendCount",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "SendLimitWindowStartedAtUtc",
+        "Column": "SendLimitWindowStartedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": true,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "PhotoAlbum",
+    "ClrName": "Fookbase.Api.Modules.Photos.Entities.PhotoAlbum",
+    "Table": "PhotoAlbums",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "OwnerUserId",
+          "AlbumType"
+        ],
+        "Filter": "\"DeletedAtUtc\" IS NULL AND \"AlbumType\" <> 0"
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AlbumType",
+        "Column": "AlbumType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Description",
+        "Column": "Description",
+        "Type": "character varying(2000)",
+        "Nullable": true
+      },
+      {
+        "Name": "Name",
+        "Column": "Name",
+        "Type": "character varying(160)",
+        "Nullable": false
+      },
+      {
+        "Name": "OwnerUserId",
+        "Column": "OwnerUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Privacy",
+        "Column": "Privacy",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "PostHashtag",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.PostHashtag",
+    "Table": "PostHashtags",
+    "PrimaryKey": [
+      "PostId",
+      "HashtagId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "PostId",
+        "Column": "PostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "HashtagId",
+        "Column": "HashtagId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "HashtagId"
+        ],
+        "PrincipalTable": "Hashtags",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "PostId"
+        ],
+        "PrincipalTable": "Posts",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "PostMedia",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.PostMedia",
+    "Table": "PostMedia",
+    "PrimaryKey": [
+      "PostId",
+      "MediaId"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "PostId",
+          "SortOrder"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "PostId",
+        "Column": "PostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "SortOrder",
+        "Column": "SortOrder",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "PostId"
+        ],
+        "PrincipalTable": "Posts",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "PostReaction",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.PostReaction",
+    "Table": "PostReactions",
+    "PrimaryKey": [
+      "PostId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "PostId",
+        "Column": "PostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Type",
+        "Column": "Type",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "PostId"
+        ],
+        "PrincipalTable": "Posts",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "Post",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.Post",
+    "Table": "Posts",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AuthorUserId",
+        "Column": "AuthorUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ContainerId",
+        "Column": "ContainerId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ContainerType",
+        "Column": "ContainerType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "Content",
+        "Column": "Content",
+        "Type": "character varying(10000)",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "IsPinned",
+        "Column": "IsPinned",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "PostType",
+        "Column": "PostType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "Privacy",
+        "Column": "Privacy",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "TextBackground",
+        "Column": "TextBackground",
+        "Type": "character varying(32)",
+        "Nullable": true
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "PostSave",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.PostSave",
+    "Table": "PostSaves",
+    "PrimaryKey": [
+      "UserId",
+      "PostId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "PostId",
+        "Column": "PostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "SavedAtUtc",
+        "Column": "SavedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "PostId"
+        ],
+        "PrincipalTable": "Posts",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "PostShare",
+    "ClrName": "Fookbase.Api.Modules.Posts.Entities.PostShare",
+    "Table": "PostShares",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Caption",
+        "Column": "Caption",
+        "Type": "character varying(10000)",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "DestinationId",
+        "Column": "DestinationId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "DestinationType",
+        "Column": "DestinationType",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "OriginalPostId",
+        "Column": "OriginalPostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "SharingUserId",
+        "Column": "SharingUserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "OriginalPostId"
+        ],
+        "PrincipalTable": "Posts",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "ProfileMediaReference",
+    "ClrName": "Fookbase.Api.Modules.Media.Entities.ProfileMediaReference",
+    "Table": "ProfileMediaReferences",
+    "PrimaryKey": [
+      "UserId",
+      "Slot"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Slot",
+        "Column": "Slot",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "AttachedAtUtc",
+        "Column": "AttachedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "PushDeliveryReceipt",
+    "ClrName": "Fookbase.Api.Modules.Notifications.Entities.PushDeliveryReceipt",
+    "Table": "PushDeliveryReceipts",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "ExpoReceiptId"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AvailableAtUtc",
+        "Column": "AvailableAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "CheckAttempts",
+        "Column": "CheckAttempts",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "CheckedAtUtc",
+        "Column": "CheckedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "ExpoReceiptId",
+        "Column": "ExpoReceiptId",
+        "Type": "character varying(64)",
+        "Nullable": false
+      },
+      {
+        "Name": "PushDeviceId",
+        "Column": "PushDeviceId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "PushDeviceId"
+        ],
+        "PrincipalTable": "PushDevices",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "PushDevice",
+    "ClrName": "Fookbase.Api.Modules.Notifications.Entities.PushDevice",
+    "Table": "PushDevices",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "ExpoPushToken"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "DisabledAtUtc",
+        "Column": "DisabledAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "ExpoPushToken",
+        "Column": "ExpoPushToken",
+        "Type": "character varying(255)",
+        "Nullable": false
+      },
+      {
+        "Name": "RegisteredAtUtc",
+        "Column": "RegisteredAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "ReelView",
+    "ClrName": "Fookbase.Api.Modules.Reels.Entities.ReelView",
+    "Table": "ReelViews",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Completed",
+        "Column": "Completed",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "ReelPostId",
+        "Column": "ReelPostId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Replayed",
+        "Column": "Replayed",
+        "Type": "boolean",
+        "Nullable": false
+      },
+      {
+        "Name": "ViewedAtUtc",
+        "Column": "ViewedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ViewerUserId",
+        "Column": "ViewerUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "WatchDurationMs",
+        "Column": "WatchDurationMs",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "RefreshToken",
+    "ClrName": "Fookbase.Api.Modules.Identity.Entities.RefreshToken",
+    "Table": "RefreshTokens",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "TokenHash"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAt",
+        "Column": "CreatedAt",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ExpiresAt",
+        "Column": "ExpiresAt",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ReplacedByTokenId",
+        "Column": "ReplacedByTokenId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "RevokedAt",
+        "Column": "RevokedAt",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "SessionId",
+        "Column": "SessionId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "TokenHash",
+        "Column": "TokenHash",
+        "Type": "character varying(64)",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "ReplacedByTokenId"
+        ],
+        "PrincipalTable": "RefreshTokens",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "ClientSetNull"
+      },
+      {
+        "Columns": [
+          "SessionId"
+        ],
+        "PrincipalTable": "AuthSessions",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "RegistrationChallenge",
+    "ClrName": "Fookbase.Api.Modules.Identity.Entities.RegistrationChallenge",
+    "Table": "RegistrationChallenges",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "Contact"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CodeHash",
+        "Column": "CodeHash",
+        "Type": "character varying(64)",
+        "Nullable": false
+      },
+      {
+        "Name": "ConsumedAtUtc",
+        "Column": "ConsumedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "Contact",
+        "Column": "Contact",
+        "Type": "character varying(256)",
+        "Nullable": false
+      },
+      {
+        "Name": "ContactKind",
+        "Column": "ContactKind",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DateOfBirth",
+        "Column": "DateOfBirth",
+        "Type": "date",
+        "Nullable": false
+      },
+      {
+        "Name": "ExpiresAtUtc",
+        "Column": "ExpiresAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "FailedAttemptCount",
+        "Column": "FailedAttemptCount",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "FirstName",
+        "Column": "FirstName",
+        "Type": "character varying(50)",
+        "Nullable": false
+      },
+      {
+        "Name": "Gender",
+        "Column": "Gender",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "LastName",
+        "Column": "LastName",
+        "Type": "character varying(50)",
+        "Nullable": false
+      },
+      {
+        "Name": "NextResendAllowedAtUtc",
+        "Column": "NextResendAllowedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "PasswordHash",
+        "Column": "PasswordHash",
+        "Type": "character varying(512)",
+        "Nullable": false
+      },
+      {
+        "Name": "SendCount",
+        "Column": "SendCount",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "SendLimitWindowStartedAtUtc",
+        "Column": "SendLimitWindowStartedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Story",
+    "ClrName": "Fookbase.Api.Modules.Stories.Entities.Story",
+    "Table": "Stories",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AuthorUserId",
+        "Column": "AuthorUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Caption",
+        "Column": "Caption",
+        "Type": "character varying(2200)",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Column": "DeletedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "ExpiresAtUtc",
+        "Column": "ExpiresAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "Privacy",
+        "Column": "Privacy",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "AuthorUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "StoryMediaReference",
+    "ClrName": "Fookbase.Api.Modules.Stories.Entities.StoryMediaReference",
+    "Table": "StoryMediaReferences",
+    "PrimaryKey": [
+      "StoryId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "StoryId",
+        "Column": "StoryId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AttachedAtUtc",
+        "Column": "AttachedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "MediaId",
+        "Column": "MediaId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "MediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "StoryId"
+        ],
+        "PrincipalTable": "Stories",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": true,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "StoryReaction",
+    "ClrName": "Fookbase.Api.Modules.Stories.Entities.StoryReaction",
+    "Table": "StoryReactions",
+    "PrimaryKey": [
+      "StoryId",
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "StoryId",
+        "Column": "StoryId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Type",
+        "Column": "Type",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "StoryId"
+        ],
+        "PrincipalTable": "Stories",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "StoryView",
+    "ClrName": "Fookbase.Api.Modules.Stories.Entities.StoryView",
+    "Table": "StoryViews",
+    "PrimaryKey": [
+      "StoryId",
+      "ViewerUserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "StoryId",
+        "Column": "StoryId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ViewerUserId",
+        "Column": "ViewerUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ViewedAtUtc",
+        "Column": "ViewedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "StoryId"
+        ],
+        "PrincipalTable": "Stories",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      },
+      {
+        "Columns": [
+          "ViewerUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "TwoFactorLoginChallenge",
+    "ClrName": "Fookbase.Api.Modules.Identity.Entities.TwoFactorLoginChallenge",
+    "Table": "TwoFactorLoginChallenges",
+    "PrimaryKey": [
+      "Id"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "Id",
+        "Column": "Id",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "ConsumedAtUtc",
+        "Column": "ConsumedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "ExpiresAtUtc",
+        "Column": "ExpiresAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "PendingExternalProvider",
+        "Column": "PendingExternalProvider",
+        "Type": "character varying(32)",
+        "Nullable": true
+      },
+      {
+        "Name": "PendingExternalProviderKey",
+        "Column": "PendingExternalProviderKey",
+        "Type": "character varying(256)",
+        "Nullable": true
+      },
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "UserFollow",
+    "ClrName": "Fookbase.Api.Modules.Friends.Entities.UserFollow",
+    "Table": "UserFollows",
+    "PrimaryKey": [
+      "FollowerUserId",
+      "FollowingUserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "FollowerUserId",
+        "Column": "FollowerUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "FollowingUserId",
+        "Column": "FollowingUserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "FollowedAtUtc",
+        "Column": "FollowedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "FollowerUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "FollowingUserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      }
+    ]
+  },
+  {
+    "Entity": "UserModerationState",
+    "ClrName": "Fookbase.Api.Modules.Admin.Entities.UserModerationState",
+    "Table": "UserModerationStates",
+    "PrimaryKey": [
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "DisabledAtUtc",
+        "Column": "DisabledAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "SuspendedUntilUtc",
+        "Column": "SuspendedUntilUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": true
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "WarningCount",
+        "Column": "WarningCount",
+        "Type": "integer",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": true,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  },
+  {
+    "Entity": "UserPrivacySettings",
+    "ClrName": "Fookbase.Api.Modules.Users.Entities.UserPrivacySettings",
+    "Table": "UserPrivacySettings",
+    "PrimaryKey": [
+      "UserId"
+    ],
+    "UniqueIndexes": [],
+    "Properties": [
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Column": "CreatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "DefaultPostPrivacy",
+        "Column": "DefaultPostPrivacy",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "FollowListVisibility",
+        "Column": "FollowListVisibility",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "FriendListVisibility",
+        "Column": "FriendListVisibility",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "FriendRequestPolicy",
+        "Column": "FriendRequestPolicy",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "UpdatedAtUtc",
+        "Column": "UpdatedAtUtc",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      }
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "UserProfile",
+    "ClrName": "Fookbase.Api.Modules.Users.Entities.UserProfile",
+    "Table": "UserProfiles",
+    "PrimaryKey": [
+      "UserId"
+    ],
+    "UniqueIndexes": [
+      {
+        "Columns": [
+          "Username"
+        ],
+        "Filter": null
+      }
+    ],
+    "Properties": [
+      {
+        "Name": "UserId",
+        "Column": "UserId",
+        "Type": "uuid",
+        "Nullable": false
+      },
+      {
+        "Name": "AvatarMediaId",
+        "Column": "AvatarMediaId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "AvatarUrl",
+        "Column": "AvatarUrl",
+        "Type": "character varying(2048)",
+        "Nullable": true
+      },
+      {
+        "Name": "Bio",
+        "Column": "Bio",
+        "Type": "character varying(500)",
+        "Nullable": true
+      },
+      {
+        "Name": "BirthdayVisibility",
+        "Column": "BirthdayVisibility",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "CoverMediaId",
+        "Column": "CoverMediaId",
+        "Type": "uuid",
+        "Nullable": true
+      },
+      {
+        "Name": "CoverUrl",
+        "Column": "CoverUrl",
+        "Type": "character varying(2048)",
+        "Nullable": true
+      },
+      {
+        "Name": "CreatedAt",
+        "Column": "CreatedAt",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "CurrentCity",
+        "Column": "CurrentCity",
+        "Type": "character varying(100)",
+        "Nullable": true
+      },
+      {
+        "Name": "DateOfBirth",
+        "Column": "DateOfBirth",
+        "Type": "date",
+        "Nullable": true
+      },
+      {
+        "Name": "DisplayName",
+        "Column": "DisplayName",
+        "Type": "character varying(100)",
+        "Nullable": false
+      },
+      {
+        "Name": "Education",
+        "Column": "Education",
+        "Type": "character varying(150)",
+        "Nullable": true
+      },
+      {
+        "Name": "Gender",
+        "Column": "Gender",
+        "Type": "integer",
+        "Nullable": false
+      },
+      {
+        "Name": "Hometown",
+        "Column": "Hometown",
+        "Type": "character varying(100)",
+        "Nullable": true
+      },
+      {
+        "Name": "UpdatedAt",
+        "Column": "UpdatedAt",
+        "Type": "timestamp with time zone",
+        "Nullable": false
+      },
+      {
+        "Name": "Username",
+        "Column": "Username",
+        "Type": "character varying(32)",
+        "Nullable": false
+      },
+      {
+        "Name": "Website",
+        "Column": "Website",
+        "Type": "character varying(2048)",
+        "Nullable": true
+      },
+      {
+        "Name": "Workplace",
+        "Column": "Workplace",
+        "Type": "character varying(150)",
+        "Nullable": true
+      }
+    ],
+    "ForeignKeys": [
+      {
+        "Columns": [
+          "AvatarMediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "CoverMediaId"
+        ],
+        "PrincipalTable": "MediaAssets",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": false,
+        "Unique": false,
+        "DeleteBehavior": "Restrict"
+      },
+      {
+        "Columns": [
+          "UserId"
+        ],
+        "PrincipalTable": "AspNetUsers",
+        "PrincipalColumns": [
+          "Id"
+        ],
+        "Required": true,
+        "Unique": true,
+        "DeleteBehavior": "Cascade"
+      }
+    ]
+  }
+]
