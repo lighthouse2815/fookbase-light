@@ -10,6 +10,7 @@ using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,49 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 
 public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
+    [Theory]
+    [InlineData("/api/feed?limit=20", true)]
+    [InlineData("/api/feed/following?limit=20", true)]
+    [InlineData("/api/feed?limit=20", false)]
+    [InlineData("/api/feed/following?limit=20", false)]
+    public async Task Feed_keeps_multiple_shares_of_the_same_post_without_duplicate_summaries(
+        string endpoint, bool includeOriginal)
+    {
+        var users = await CreateUsersAsync(2);
+        var viewer = users[0];
+        var author = users[1];
+        if (includeOriginal)
+        {
+            await CreateFriendshipAsync(viewer, author);
+        }
+
+        var original = await CreatePostAsync(author, PostPrivacy.PUBLIC, DateTimeOffset.UtcNow.AddMinutes(-1));
+        using var client = CreateAuthenticatedClient(viewer);
+        var shares = new List<PostShareResponse>();
+        foreach (var caption in new[] { "Chia sẻ lần đầu", "Chia sẻ lần nữa" })
+        {
+            shares.Add(await ReadAsync<PostShareResponse>(await client.PostAsJsonAsync(
+                $"/api/posts/{original.Id}/shares",
+                new { destinationType = "profile", destinationId = viewer, caption })));
+        }
+
+        var feed = await ReadAsync<FeedPageResponse>(await client.GetAsync(endpoint));
+
+        foreach (var share in shares)
+        {
+            var item = Assert.Single(feed.Items, item => item.Id == share.Id);
+            Assert.Equal("share", item.ContentType);
+            Assert.NotNull(item.Share);
+            Assert.Equal(original.Id, item.Share.OriginalPostId);
+            Assert.Equal(original.Id, item.Share.OriginalPost.Id);
+            Assert.Equal(share.Caption, item.Share.Caption);
+            Assert.Equal(2, item.Share.OriginalPost.ShareCount);
+        }
+
+        Assert.Equal(includeOriginal, feed.Items.Any(item => item.Id == original.Id));
+        Assert.Equal(feed.Items.Count, feed.Items.Select(item => item.Id).Distinct().Count());
+    }
+
     [Fact]
     public async Task Home_feed_respects_privacy_for_organic_and_suggested_posts()
     {

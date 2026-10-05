@@ -533,7 +533,7 @@ public sealed class FeedService(
             return [];
         }
 
-        var posts = candidates.Select(candidate => candidate.Post).ToList();
+        var posts = candidates.Select(candidate => candidate.Post).DistinctBy(post => post.Id).ToList();
         var summaries = (await postsService.LoadResponsesAsync(posts, viewerUserId, cancellationToken))
             .ToDictionary(post => post.Id);
         var postIds = posts.Select(post => post.Id).ToArray();
