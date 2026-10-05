@@ -42,11 +42,11 @@
 **Files:** `frontend/mobile/src/app/posts/create.tsx`, `media/create.tsx`, chat ở cả hai ứng dụng; helpers nhỏ gần features nếu thật sự dùng chung, tests ngoài app.
 **Interfaces:** Dùng `usePreventRemove` theo màn security; tận dụng state/storage đang có. Tài khoản + route/group/conversation phải tạo context độc lập.
 
-- [ ] Viết và chạy test thất bại cho back khi có bản nháp, giữ/khôi phục theo context, hủy đổi media, gửi lỗi và xóa bản nháp khi thành công.
-- [ ] Giữ bản nháp trong session hoặc cảnh báo rời màn soạn theo phạm vi đã duyệt; không ghi file nhị phân/secret vào storage.
-- [ ] Nếu người dùng chọn rời, giữ draft để mở lại; chỉ thao tác bỏ draft hoặc gửi thành công mới xóa. Đính kèm cần được giữ hoặc báo rõ cần chọn lại.
-- [ ] Hủy picker giữ tệp cũ; khóa trường và hành động lúc gửi, hiển thị file preview và tiến trình có thể biết từ uploader hiện tại.
-- [ ] Kiểm tra account switch/signout, Jest, typecheck/lint; report, root review và commit/push riêng.
+- [x] Viết và chạy test thất bại cho back khi có bản nháp, giữ/khôi phục theo context, hủy đổi media, gửi lỗi và xóa bản nháp khi thành công.
+- [x] Giữ bản nháp trong session hoặc cảnh báo rời màn soạn theo phạm vi đã duyệt; không ghi file nhị phân/secret vào storage.
+- [x] Nếu người dùng chọn rời, giữ draft để mở lại; chỉ thao tác bỏ draft hoặc gửi thành công mới xóa. Đính kèm cần được giữ hoặc báo rõ cần chọn lại.
+- [x] Hủy picker giữ tệp cũ; khóa trường và hành động lúc gửi, hiển thị file preview và tiến trình có thể biết từ uploader hiện tại.
+- [x] Kiểm tra account switch/signout, Jest, typecheck/lint; report, root review và commit/push riêng.
 
 ### Task 3: Album ảnh web đáng tin cậy
 
@@ -78,4 +78,12 @@
 - [x] Thêm error boundary cho login/root và child route để phục hồi cả chunk load/render, giữ shell khi có thể.
 - [x] Retry đúng URL bằng tải lại thật để React.lazy không giữ rejected promise; route fallback không lặp lỗi, người chưa login mở login hợp lý.
 - [x] Tôn trọng language/theme, semantic alert/status và keyboard focus; browser tests + web build/lint.
-- [ ] Root review, commit/push riêng; chạy checks chung và export Android, xác nhận main và frontend sạch.
+- [x] Root review, commit/push riêng; chạy checks chung và export Android, xác nhận main và frontend sạch.
+
+## Kết quả kiểm tra cuối
+
+- Web: 196 unit tests; album 16, route recovery 4, feed navigation 3 và auth verification 6 browser checks đạt. Build/lint đạt; cảnh báo kích thước Game chunk có sẵn.
+- Mobile: 93 tests đạt; Zola mobile: 50 tests đạt. Typecheck/lint cả hai đạt; export Android cả hai đạt.
+- Review độc lập không còn lỗi Critical/Important. Race pagination Reels khi đổi tab đã có regression test và được sửa.
+- Bản nháp mobile giữ trong bộ nhớ phiên đăng nhập, không tồn tại sau khi tiến trình ứng dụng bị tắt. Native back gesture, viewport và video cần kiểm tra thêm trên thiết bị thật.
+- Không thêm dependency hoặc thay backend trong đợt FE này.
