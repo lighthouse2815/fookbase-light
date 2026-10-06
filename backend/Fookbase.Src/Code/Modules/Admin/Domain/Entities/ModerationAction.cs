@@ -12,9 +12,6 @@ namespace Fookbase.Api.Modules.Admin.Entities;
 [Index(nameof(SubjectUserId), nameof(CreatedAtUtc))]
 public sealed class ModerationAction
 {
-    public const int MaximumReasonLength = 500;
-    public const int MaximumInternalNoteLength = 2_000;
-
     private ModerationAction()
     {
     }
@@ -69,10 +66,10 @@ public sealed class ModerationAction
     public ModerationActionType ActionType { get; private set; }
 
     [Required]
-    [MaxLength(MaximumReasonLength)]
+    [MaxLength(500)]
     public string Reason { get; private set; } = string.Empty;
 
-    [MaxLength(MaximumInternalNoteLength)]
+    [MaxLength(2_000)]
     public string? InternalNote { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
