@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Events.Common;
 using Fookbase.Api.Modules.Events.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Persistence.Annotations;
+using Fookbase.Api.Shared.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Events.Entities;
@@ -36,8 +38,8 @@ public sealed class Event
         DateTimeOffset now)
     {
         Id = id;
-        Name = NormalizeName(name);
-        Description = NormalizeDescription(description);
+        Name = EventNormalization.NormalizeName(name);
+        Description = EventNormalization.NormalizeDescription(description);
         HostType = hostType;
         HostId = hostId;
         CreatedByUserId = createdByUserId;
@@ -45,7 +47,7 @@ public sealed class Event
         LocationType = locationType;
         SetLocation(locationName, address, onlineUrl);
         StartsAtUtc = startsAtUtc.ToUniversalTime();
-        EndsAtUtc = NormalizeEnd(endsAtUtc, StartsAtUtc);
+        EndsAtUtc = EventNormalization.NormalizeEnd(endsAtUtc, StartsAtUtc);
         Status = status;
         CreatedAtUtc = now;
     }
@@ -108,13 +110,13 @@ public sealed class Event
         DateTimeOffset now)
     {
         EnsureActive();
-        Name = NormalizeName(name);
-        Description = NormalizeDescription(description);
+        Name = EventNormalization.NormalizeName(name);
+        Description = EventNormalization.NormalizeDescription(description);
         Privacy = privacy;
         LocationType = locationType;
         SetLocation(locationName, address, onlineUrl);
         StartsAtUtc = startsAtUtc.ToUniversalTime();
-        EndsAtUtc = NormalizeEnd(endsAtUtc, StartsAtUtc);
+        EndsAtUtc = EventNormalization.NormalizeEnd(endsAtUtc, StartsAtUtc);
         UpdatedAtUtc = now;
     }
 
@@ -159,9 +161,9 @@ public sealed class Event
 
     private void SetLocation(string? locationName, string? address, string? onlineUrl)
     {
-        LocationName = Clean(locationName);
-        Address = Clean(address);
-        OnlineUrl = Clean(onlineUrl);
+        LocationName = TextNormalization.NormalizeOptionalText(locationName);
+        Address = TextNormalization.NormalizeOptionalText(address);
+        OnlineUrl = TextNormalization.NormalizeOptionalText(onlineUrl);
         if (LocationType == EventLocationType.ONLINE)
         {
             if (!Uri.TryCreate(OnlineUrl, UriKind.Absolute, out var uri) || uri.Scheme is not ("https" or "http"))
@@ -172,32 +174,4 @@ public sealed class Event
         else
             OnlineUrl = null;
     }
-
-    private static string NormalizeName(string? value)
-    {
-        var text = Clean(value) ?? string.Empty;
-        if (text.Length is < 1 or > MaximumNameLength)
-            throw new ArgumentException($"Event name must contain 1-{MaximumNameLength} characters.");
-        return text;
-    }
-
-    private static string? NormalizeDescription(string? value)
-    {
-        var text = Clean(value);
-        if (text?.Length > MaximumDescriptionLength)
-            throw new ArgumentException($"Event description cannot exceed {MaximumDescriptionLength} characters.");
-        return text;
-    }
-
-    private static DateTimeOffset? NormalizeEnd(DateTimeOffset? end, DateTimeOffset start)
-    {
-        if (end is null)
-            return null;
-        var utc = end.Value.ToUniversalTime();
-        if (utc <= start)
-            throw new ArgumentException("Event end time must be after start time.");
-        return utc;
-    }
-
-    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
