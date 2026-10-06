@@ -14,7 +14,12 @@ public sealed class EventInvitation
 {
     private EventInvitation() { }
 
-    private EventInvitation(Guid id, Guid eventId, Guid inviterUserId, Guid inviteeUserId, DateTimeOffset now)
+    private EventInvitation(
+        Guid id,
+        Guid eventId,
+        Guid inviterUserId,
+        Guid inviteeUserId,
+        DateTimeOffset now)
     {
         Id = id;
         EventId = eventId;
@@ -26,25 +31,31 @@ public sealed class EventInvitation
 
     [Key]
     public Guid Id { get; private set; }
+
     public Guid EventId { get; private set; }
-    public Guid InviterUserId { get; private set; }
-    public Guid InviteeUserId { get; private set; }
-    public EventInvitationStatus Status { get; private set; }
-    public DateTimeOffset CreatedAtUtc { get; private set; }
-    public DateTimeOffset? RespondedAtUtc { get; private set; }
 
     [ForeignKey(nameof(EventId))]
     [InverseProperty(nameof(Event.Invitations))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Event Event { get; private set; } = null!;
 
+    public Guid InviterUserId { get; private set; }
+
     [ForeignKey(nameof(InviterUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviterUser { get; private set; } = null!;
 
+    public Guid InviteeUserId { get; private set; }
+
     [ForeignKey(nameof(InviteeUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviteeUser { get; private set; } = null!;
+
+    public EventInvitationStatus Status { get; private set; }
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset? RespondedAtUtc { get; private set; }
 
     public static EventInvitation Create(Guid id, Guid eventId, Guid inviterUserId, Guid inviteeUserId, DateTimeOffset now) =>
         new(id, eventId, inviterUserId, inviteeUserId, now);

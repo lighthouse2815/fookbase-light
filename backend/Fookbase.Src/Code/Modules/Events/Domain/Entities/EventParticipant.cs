@@ -11,7 +11,11 @@ public sealed class EventParticipant
 {
     private EventParticipant() { }
 
-    private EventParticipant(Guid eventId, Guid userId, EventParticipantStatus status, DateTimeOffset now)
+    private EventParticipant(
+        Guid eventId,
+        Guid userId,
+        EventParticipantStatus status,
+        DateTimeOffset now)
     {
         EventId = eventId;
         UserId = userId;
@@ -20,18 +24,21 @@ public sealed class EventParticipant
     }
 
     public Guid EventId { get; private set; }
-    public Guid UserId { get; private set; }
-    public EventParticipantStatus Status { get; private set; }
-    public DateTimeOffset RespondedAtUtc { get; private set; }
 
     [ForeignKey(nameof(EventId))]
     [InverseProperty(nameof(Event.Participants))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Event Event { get; private set; } = null!;
 
+    public Guid UserId { get; private set; }
+
     [ForeignKey(nameof(UserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User User { get; private set; } = null!;
+
+    public EventParticipantStatus Status { get; private set; }
+
+    public DateTimeOffset RespondedAtUtc { get; private set; }
 
     public static EventParticipant Create(Guid eventId, Guid userId, EventParticipantStatus status, DateTimeOffset now) =>
         new(eventId, userId, status, now);
