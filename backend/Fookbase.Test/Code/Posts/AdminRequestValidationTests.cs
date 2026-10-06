@@ -60,7 +60,9 @@ public sealed class AdminRequestValidationTests(PostsApiFactory factory) : IClas
     [InlineData("/api/admin/reports?limit=0", "Limit")]
     [InlineData("/api/admin/reports?limit=101", "Limit")]
     [InlineData("/api/admin/reports?status=unknown", "Status")]
+    [InlineData("/api/admin/reports?status=42", "Status")]
     [InlineData("/api/admin/reports?targetType=unknown", "TargetType")]
+    [InlineData("/api/admin/reports?targetType=42", "TargetType")]
     [InlineData("/api/admin/reports?cursor=invalid", "Cursor")]
     [InlineData("/api/admin/users/{id}/moderation-history?limit=0", "Limit")]
     [InlineData("/api/admin/users/{id}/moderation-history?limit=101", "Limit")]
@@ -121,6 +123,9 @@ public sealed class AdminRequestValidationTests(PostsApiFactory factory) : IClas
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("pending")]
+    [InlineData("PENDING")]
+    [InlineData("0")]
+    [InlineData("42")]
     [InlineData("unknown")]
     public async Task Report_status_must_be_a_supported_non_pending_value(string? status)
     {
@@ -129,6 +134,59 @@ public sealed class AdminRequestValidationTests(PostsApiFactory factory) : IClas
         using (var response = await client.PatchAsJsonAsync($"/api/admin/reports/{Guid.NewGuid()}/status", new { status }))
         {
             await AssertValidationAsync(response, "Status");
+        }
+    }
+
+    [Theory]
+    [InlineData("reviewed", ContentReportStatus.REVIEWED)]
+    [InlineData("ReSoLvEd", ContentReportStatus.RESOLVED)]
+    [InlineData("DISMISSED", ContentReportStatus.DISMISSED)]
+    [InlineData("1", ContentReportStatus.REVIEWED)]
+    [InlineData("2", ContentReportStatus.RESOLVED)]
+    [InlineData("3", ContentReportStatus.DISMISSED)]
+    public async Task Report_status_updates_preserve_supported_enum_formats(string status, ContentReportStatus expected)
+    {
+        var (client, moderatorId, userId) = await CreateAdminClientAsync();
+        using (client)
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            var report = new ContentReport(moderatorId, ReportTargetType.USER, userId,
+                ReportReason.SPAM, null, DateTimeOffset.UtcNow);
+            db.ContentReports.Add(report);
+            await db.SaveChangesAsync();
+
+            using var response = await client.PatchAsJsonAsync($"/api/admin/reports/{report.Id}/status", new { status });
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal(expected.ToString().ToLowerInvariant(), document.RootElement.GetProperty("status").GetString());
+            var updated = await db.ContentReports.AsNoTracking().SingleAsync(item => item.Id == report.Id);
+            Assert.Equal(expected, updated.Status);
+            Assert.NotNull(updated.ResolvedAtUtc);
+        }
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", "")]
+    [InlineData(" ", " ")]
+    [InlineData("pEnDiNg", "UsEr")]
+    [InlineData("0", "0")]
+    public async Task Report_filters_preserve_optional_values_and_supported_enum_formats(string? status, string? targetType)
+    {
+        var (client, _, userId) = await CreateAdminClientAsync();
+        using (client)
+        {
+            var path = "/api/admin/reports";
+            if (status is not null || targetType is not null)
+            {
+                path += "?status=" + Uri.EscapeDataString(status ?? "") +
+                    "&targetType=" + Uri.EscapeDataString(targetType ?? "") + "&cursor=%20";
+            }
+            using var reports = await client.GetAsync(path);
+            Assert.Equal(HttpStatusCode.OK, reports.StatusCode);
+            using var history = await client.GetAsync($"/api/admin/users/{userId}/moderation-history?cursor=%20");
+            Assert.Equal(HttpStatusCode.OK, history.StatusCode);
         }
     }
 
