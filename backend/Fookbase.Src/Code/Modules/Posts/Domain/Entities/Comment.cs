@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
@@ -46,11 +45,9 @@ public sealed class Comment
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
 
-    [ForeignKey(nameof(PostId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
-    [ForeignKey(nameof(ParentCommentId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public Comment? ParentComment { get; private set; }
 
