@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Notifications.Entities;
 
-[Table("PushDevices")]
 [Index(nameof(ExpoPushToken), IsUnique = true)]
 [Index(nameof(UserId), nameof(DisabledAtUtc))]
 public sealed class PushDevice
@@ -37,7 +35,6 @@ public sealed class PushDevice
 
     public DateTimeOffset? DisabledAtUtc { get; private set; }
 
-    [ForeignKey(nameof(UserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User User { get; private set; } = null!;
 

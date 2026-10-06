@@ -1,12 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Notifications.Entities;
 
-[Table("Notifications")]
 [Index(nameof(RecipientUserId), nameof(CreatedAtUtc), nameof(Id))]
 [Index(nameof(RecipientUserId), nameof(IsRead), nameof(CreatedAtUtc))]
 [Index(nameof(RecipientUserId), nameof(ActorUserId), nameof(Type), nameof(EntityType), nameof(EntityId))]
@@ -53,11 +51,9 @@ public sealed class Notification
 
     public DateTimeOffset? ReadAtUtc { get; private set; }
 
-    [ForeignKey(nameof(RecipientUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User RecipientUser { get; private set; } = null!;
 
-    [ForeignKey(nameof(ActorUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User? ActorUser { get; private set; }
 

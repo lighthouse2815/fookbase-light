@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Notifications.Entities;
 
-[Table("PushDeliveryReceipts")]
 [Index(nameof(ExpoReceiptId), IsUnique = true)]
 [Index(nameof(CheckedAtUtc), nameof(AvailableAtUtc))]
 public sealed class PushDeliveryReceipt
@@ -38,7 +37,6 @@ public sealed class PushDeliveryReceipt
 
     public int CheckAttempts { get; private set; }
 
-    [ForeignKey(nameof(PushDeviceId))]
     [InverseProperty(nameof(PushDevice.DeliveryReceipts))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public PushDevice PushDevice { get; private set; } = null!;
