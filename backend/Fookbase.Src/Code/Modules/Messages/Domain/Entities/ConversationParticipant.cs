@@ -11,8 +11,6 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 [Index(nameof(ConversationId), nameof(UserId))]
 public sealed class ConversationParticipant
 {
-    public const int MaximumNicknameLength = 80;
-
     private ConversationParticipant() { }
 
     public ConversationParticipant(
@@ -39,7 +37,7 @@ public sealed class ConversationParticipant
     public DateTimeOffset? MutedUntilUtc { get; private set; }
     public DateTimeOffset? ArchivedAtUtc { get; private set; }
 
-    [MaxLength(MaximumNicknameLength)]
+    [MaxLength(80)]
     public string? Nickname { get; private set; }
 
     [NotMapped]
@@ -96,7 +94,7 @@ public sealed class ConversationParticipant
     public void SetNickname(string? nickname)
     {
         var normalized = string.IsNullOrWhiteSpace(nickname) ? null : nickname.Trim();
-        if (normalized?.Length > MaximumNicknameLength)
+        if (normalized?.Length > 80)
         {
             throw new ArgumentException("A participant nickname cannot exceed 80 characters.");
         }

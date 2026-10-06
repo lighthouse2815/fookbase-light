@@ -12,8 +12,6 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 [Index(nameof(StoryId))]
 public sealed class Message
 {
-    public const int MaximumContentLength = 5_000;
-
     private Message() { }
 
     public Message(
@@ -45,7 +43,7 @@ public sealed class Message
 
     public MessageType Type { get; private set; }
 
-    [MaxLength(MaximumContentLength)]
+    [MaxLength(5_000)]
     public string? Content { get; private set; }
 
     public Guid? ReplyToMessageId { get; private set; }

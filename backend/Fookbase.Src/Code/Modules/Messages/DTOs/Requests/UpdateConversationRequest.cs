@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Identity.Common;
-using Fookbase.Api.Modules.Messages.Entities;
 
 namespace Fookbase.Api.Modules.Messages.DTOs.Requests;
 
@@ -13,5 +12,5 @@ public sealed record UpdateConversationRequest(
     DateTimeOffset? MutedUntilUtc = null,
     bool? Archived = null,
 
-    [TrimmedStringLength(ConversationParticipant.MaximumNicknameLength)]
+    [TrimmedStringLength(80)]
     string? Nickname = null);

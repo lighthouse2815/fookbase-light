@@ -27,7 +27,7 @@ public sealed class MessagesService(
     PushNotificationService pushNotifications)
 {
     public const int MaximumLimit = 100;
-    public const int MaximumContentLength = Message.MaximumContentLength;
+    public const int MaximumContentLength = 5_000;
     public const int MaximumGroupSize = 50;
 
     public Task<ApplicationResult<ConversationResponse>> GetOrCreateConversationAsync(Guid actorUserId, Guid participantUserId, CancellationToken cancellationToken = default) =>
