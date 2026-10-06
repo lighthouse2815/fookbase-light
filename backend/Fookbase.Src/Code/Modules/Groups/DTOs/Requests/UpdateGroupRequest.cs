@@ -1,6 +1,8 @@
+using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Modules.Identity.Common;
-using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Shared.Common;
 
 namespace Fookbase.Api.Modules.Groups.DTOs.Requests;
 
@@ -13,7 +15,7 @@ public sealed record UpdateGroupRequest(
     string? Description,
 
     [Required(ErrorMessage = "Quyền riêng tư của nhóm là bắt buộc.")]
-    [CustomValidation(typeof(CreateGroupRequest), nameof(CreateGroupRequest.ValidatePrivacy))]
+    [OptionalEnumValue<GroupPrivacy>(ErrorMessage = "Quyền riêng tư phải là public hoặc private.")]
     string Privacy,
     Guid? CoverMediaId,
     bool RemoveCover = false);
