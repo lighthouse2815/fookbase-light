@@ -205,9 +205,14 @@ public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixt
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         await using var transaction = await db.Database.BeginTransactionAsync();
         var service = scope.ServiceProvider.GetRequiredService<AdministrationUseCase>();
-        var before = await service.GetDashboardAsync();
         var today = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
         var firstDay = today.AddDays(-29);
+        var reporters = Enum.GetValues<ContentReportStatus>().ToDictionary(
+            status => status,
+            status => new User(Guid.NewGuid(), null, $"dashboard-reporter-{status}", firstDay.AddTicks(-1)));
+        db.Users.AddRange(reporters.Values);
+        await db.SaveChangesAsync();
+        var before = await service.GetDashboardAsync();
         var user = new User(Guid.NewGuid(), "dashboard@example.test", "dashboard-test", firstDay);
         db.Users.Add(user);
         db.Users.Add(new User(Guid.NewGuid(), "old-dashboard@example.test", "old-dashboard", firstDay.AddTicks(-1)));
@@ -217,7 +222,7 @@ public sealed class AdminDashboardTests(IdentityApiFactory factory) : IClassFixt
         db.Posts.AddRange(post, deleted);
         foreach (var status in Enum.GetValues<ContentReportStatus>())
         {
-            var report = new ContentReport(Guid.NewGuid(), ReportTargetType.POST, post.Id,
+            var report = new ContentReport(reporters[status].Id, ReportTargetType.POST, post.Id,
                 ReportReason.SPAM, null, today.AddTicks(-1));
             if (status != ContentReportStatus.PENDING) report.UpdateStatus(status, today);
             db.ContentReports.Add(report);

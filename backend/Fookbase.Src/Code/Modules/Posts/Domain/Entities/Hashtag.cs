@@ -31,4 +31,6 @@ public sealed class Hashtag
     public string DisplayName { get; private set; } = string.Empty;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public ICollection<PostHashtag> Posts { get; private set; } = new List<PostHashtag>();
 }

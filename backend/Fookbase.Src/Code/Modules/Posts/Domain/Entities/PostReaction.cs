@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,10 +27,14 @@ public sealed class PostReaction
     public Guid PostId { get; private set; }
 
     [ForeignKey(nameof(PostId))]
+    [InverseProperty(nameof(Post.Reactions))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
     public Guid UserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User User { get; private set; } = null!;
 
     public ReactionType Type { get; private set; }
 

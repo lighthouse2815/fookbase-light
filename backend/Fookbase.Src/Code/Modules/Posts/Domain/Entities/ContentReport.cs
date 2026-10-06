@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,6 +35,9 @@ public sealed class ContentReport
     public Guid Id { get; private set; }
 
     public Guid ReporterUserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User ReporterUser { get; private set; } = null!;
 
     public ReportTargetType TargetType { get; private set; }
 

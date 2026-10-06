@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Media.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
@@ -22,10 +23,14 @@ public sealed class PostMedia
     public Guid PostId { get; private set; }
 
     [ForeignKey(nameof(PostId))]
+    [InverseProperty(nameof(Post.MediaItems))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
     public Guid MediaId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset Media { get; private set; } = null!;
 
     public int SortOrder { get; private set; }
 

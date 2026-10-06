@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,10 +26,14 @@ public sealed class CommentReaction
     public Guid CommentId { get; private set; }
 
     [ForeignKey(nameof(CommentId))]
+    [InverseProperty(nameof(Comment.Reactions))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Comment Comment { get; private set; } = null!;
 
     public Guid UserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User User { get; private set; } = null!;
 
     public ReactionType Type { get; private set; }
 

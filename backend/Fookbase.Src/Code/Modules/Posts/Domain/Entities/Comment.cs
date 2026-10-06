@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,13 +32,18 @@ public sealed class Comment
 
     public Guid PostId { get; private set; }
 
+    [InverseProperty(nameof(Post.Comments))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
     public Guid AuthorUserId { get; private set; }
 
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User AuthorUser { get; private set; } = null!;
+
     public Guid? ParentCommentId { get; private set; }
 
+    [InverseProperty(nameof(Replies))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public Comment? ParentComment { get; private set; }
 
@@ -49,6 +56,10 @@ public sealed class Comment
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
+
+    public ICollection<Comment> Replies { get; private set; } = new List<Comment>();
+
+    public ICollection<CommentReaction> Reactions { get; private set; } = new List<CommentReaction>();
 
     public void Update(string content, DateTimeOffset updatedAtUtc)
     {

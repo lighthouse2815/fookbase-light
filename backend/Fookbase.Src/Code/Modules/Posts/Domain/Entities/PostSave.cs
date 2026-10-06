@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
@@ -21,9 +22,13 @@ public sealed class PostSave
 
     public Guid UserId { get; private set; }
 
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User User { get; private set; } = null!;
+
     public Guid PostId { get; private set; }
 
     [ForeignKey(nameof(PostId))]
+    [InverseProperty(nameof(Post.Saves))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 

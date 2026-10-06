@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,6 +58,9 @@ public sealed class Post
 
     public Guid AuthorUserId { get; private set; }
 
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User AuthorUser { get; private set; } = null!;
+
     [Required]
     [MaxLength(MaximumContentLength)]
     public string Content { get; private set; } = string.Empty;
@@ -80,6 +84,18 @@ public sealed class Post
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
+
+    public ICollection<Comment> Comments { get; private set; } = new List<Comment>();
+
+    public ICollection<PostHashtag> Hashtags { get; private set; } = new List<PostHashtag>();
+
+    public ICollection<PostMedia> MediaItems { get; private set; } = new List<PostMedia>();
+
+    public ICollection<PostReaction> Reactions { get; private set; } = new List<PostReaction>();
+
+    public ICollection<PostSave> Saves { get; private set; } = new List<PostSave>();
+
+    public ICollection<PostShare> Shares { get; private set; } = new List<PostShare>();
 
     public void Update(string content, PostPrivacy privacy, DateTimeOffset updatedAtUtc)
     {

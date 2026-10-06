@@ -256,7 +256,9 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var post = new Post(Guid.NewGuid(), ownerId, "Media reference", PostPrivacy.PUBLIC, DateTimeOffset.UtcNow);
+            var now = DateTimeOffset.UtcNow;
+            db.Users.Add(new User(ownerId, $"media-{ownerId:N}@example.com", $"media_{ownerId:N}"[..32], now));
+            var post = new Post(Guid.NewGuid(), ownerId, "Media reference", PostPrivacy.PUBLIC, now);
             db.Posts.Add(post);
             db.MediaReferences.Add(new MediaReference(referenced, post.Id, DateTimeOffset.UtcNow));
             await db.SaveChangesAsync();

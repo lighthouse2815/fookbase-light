@@ -76,12 +76,16 @@ public sealed class PostMediaAtomicityTests
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         var authorUserId = Guid.NewGuid();
         var actorUserId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        dbContext.Users.AddRange(
+            new User(authorUserId, $"atomic-{authorUserId:N}@example.com", $"atomic_{authorUserId:N}", now),
+            new User(actorUserId, $"atomic-{actorUserId:N}@example.com", $"atomic_{actorUserId:N}", now));
         var post = new Post(
             Guid.NewGuid(),
             authorUserId,
             "atomic notification",
             PostPrivacy.PUBLIC,
-            DateTimeOffset.UtcNow);
+            now);
         dbContext.Posts.Add(post);
         await dbContext.SaveChangesAsync();
         await dbContext.Database.ExecuteSqlRawAsync(
@@ -99,8 +103,10 @@ public sealed class PostMediaAtomicityTests
 
         var posts = scope.ServiceProvider.GetRequiredService<PostsUseCase>();
 
-        await Assert.ThrowsAsync<DbUpdateException>(() =>
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() =>
             posts.SetReactionAsync(actorUserId, post.Id, "like"));
+        Assert.Equal("notification insert intentionally rejected",
+            Assert.IsType<PostgresException>(exception.InnerException).MessageText);
 
         dbContext.ChangeTracker.Clear();
         Assert.False(await dbContext.PostReactions.AnyAsync(reaction =>

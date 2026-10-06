@@ -18,12 +18,14 @@ public sealed class PostHashtag
     public Guid PostId { get; private set; }
 
     [ForeignKey(nameof(PostId))]
+    [InverseProperty(nameof(Post.Hashtags))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
     public Guid HashtagId { get; private set; }
 
     [ForeignKey(nameof(HashtagId))]
+    [InverseProperty(nameof(Hashtag.Posts))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Hashtag Hashtag { get; private set; } = null!;
 }

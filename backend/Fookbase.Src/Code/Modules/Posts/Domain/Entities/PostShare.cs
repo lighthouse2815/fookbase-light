@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,10 +38,14 @@ public sealed class PostShare
     public Guid OriginalPostId { get; private set; }
 
     [ForeignKey(nameof(OriginalPostId))]
+    [InverseProperty(nameof(Post.Shares))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post OriginalPost { get; private set; } = null!;
 
     public Guid SharingUserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User SharingUser { get; private set; } = null!;
 
     public PostShareDestinationType DestinationType { get; private set; }
 
