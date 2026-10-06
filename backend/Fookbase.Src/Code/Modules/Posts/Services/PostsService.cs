@@ -992,8 +992,8 @@ public sealed class PostsService(
 
         var query = dbContext.PostReactions.AsNoTracking().Where(reaction => reaction.PostId == postId)
             .Where(reaction => !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                (block.BlockerUserId == viewer.UserId && block.BlockedUserId == reaction.UserId) ||
-                (block.BlockedUserId == viewer.UserId && block.BlockerUserId == reaction.UserId)));
+                (block.BlockerUserId == viewer.UserId && block.BlockedAccountId == reaction.UserId) ||
+                (block.BlockedAccountId == viewer.UserId && block.BlockerUserId == reaction.UserId)));
         if (reactionType is not null)
         {
             query = query.Where(reaction => reaction.Type == reactionType.Value);

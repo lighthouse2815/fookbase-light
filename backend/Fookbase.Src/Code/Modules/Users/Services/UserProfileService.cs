@@ -295,16 +295,16 @@ public sealed class UserProfileService(
     private async Task<IReadOnlyList<BirthdayCandidate>> GetBirthdayCandidatesAsync(Guid actorUserId, CancellationToken cancellationToken)
     {
         var friendUserIds = dbContext.Friendships.AsNoTracking()
-            .Where(friendship => friendship.UserId1 == actorUserId || friendship.UserId2 == actorUserId)
-            .Select(friendship => friendship.UserId1 == actorUserId ? friendship.UserId2 : friendship.UserId1);
+            .Where(friendship => friendship.User1Id == actorUserId || friendship.User2Id == actorUserId)
+            .Select(friendship => friendship.User1Id == actorUserId ? friendship.User2Id : friendship.User1Id);
 
         return await (from profile in dbContext.UserProfiles.AsNoTracking()
                       join user in dbContext.Users.AsNoTracking() on profile.UserId equals user.Id
                       where friendUserIds.Contains(profile.UserId) && user.IsActive && profile.DateOfBirth != null &&
                             profile.BirthdayVisibility != BirthdayVisibility.ONLY_ME &&
                             !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                                (block.BlockerUserId == actorUserId && block.BlockedUserId == profile.UserId) ||
-                                (block.BlockerUserId == profile.UserId && block.BlockedUserId == actorUserId))
+                                (block.BlockerUserId == actorUserId && block.BlockedAccountId == profile.UserId) ||
+                                (block.BlockerUserId == profile.UserId && block.BlockedAccountId == actorUserId))
                       select new BirthdayCandidate(profile.UserId, profile.Username, profile.DisplayName,
                           profile.AvatarMediaId == null ? profile.AvatarUrl : $"/api/users/{profile.UserId}/avatar",
                           profile.DateOfBirth!.Value)).ToListAsync(cancellationToken);
@@ -366,8 +366,8 @@ public sealed class UserProfileService(
         return dbContext.UserProfiles.AsNoTracking()
             .Where(profile => viewerUserId == null ||
                 !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                    (block.BlockerUserId == viewerUserId && block.BlockedUserId == profile.UserId) ||
-                    (block.BlockerUserId == profile.UserId && block.BlockedUserId == viewerUserId)))
+                    (block.BlockerUserId == viewerUserId && block.BlockedAccountId == profile.UserId) ||
+                    (block.BlockerUserId == profile.UserId && block.BlockedAccountId == viewerUserId)))
             .Select(profile => new UserProfileProjection
             {
                 UserId = profile.UserId,
@@ -392,21 +392,21 @@ public sealed class UserProfileService(
                     dbContext.Users.Any(user => user.Id == follow.FollowerUserId && user.IsActive) &&
                     dbContext.UserProfiles.Any(other => other.UserId == follow.FollowerUserId) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == profile.UserId) ||
-                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowerUserId)) &&
+                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedAccountId == profile.UserId) ||
+                        (block.BlockerUserId == profile.UserId && block.BlockedAccountId == follow.FollowerUserId)) &&
                     (viewerUserId == null || !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                        (block.BlockerUserId == viewerUserId && block.BlockedUserId == follow.FollowerUserId) ||
-                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == viewerUserId)))),
+                        (block.BlockerUserId == viewerUserId && block.BlockedAccountId == follow.FollowerUserId) ||
+                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedAccountId == viewerUserId)))),
                 FollowingCount = dbContext.UserFollows.AsNoTracking().Count(follow =>
                     follow.FollowerUserId == profile.UserId &&
                     dbContext.Users.Any(user => user.Id == follow.FollowingUserId && user.IsActive) &&
                     dbContext.UserProfiles.Any(other => other.UserId == follow.FollowingUserId) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowingUserId) ||
-                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == profile.UserId)) &&
+                        (block.BlockerUserId == profile.UserId && block.BlockedAccountId == follow.FollowingUserId) ||
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedAccountId == profile.UserId)) &&
                     (viewerUserId == null || !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                        (block.BlockerUserId == viewerUserId && block.BlockedUserId == follow.FollowingUserId) ||
-                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == viewerUserId)))),
+                        (block.BlockerUserId == viewerUserId && block.BlockedAccountId == follow.FollowingUserId) ||
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedAccountId == viewerUserId)))),
                 IsFollowing = viewerUserId == null ? null : dbContext.UserFollows.AsNoTracking().Any(follow =>
                     follow.FollowerUserId == viewerUserId && follow.FollowingUserId == profile.UserId),
                 IsFollowedBy = viewerUserId == null ? null : dbContext.UserFollows.AsNoTracking().Any(follow =>
@@ -414,8 +414,8 @@ public sealed class UserProfileService(
                 FriendshipState = viewerUserId == null ? null :
                     profile.UserId == viewerUserId ? "self" :
                     dbContext.Friendships.AsNoTracking().Any(friendship =>
-                        (friendship.UserId1 == viewerUserId && friendship.UserId2 == profile.UserId) ||
-                        (friendship.UserId1 == profile.UserId && friendship.UserId2 == viewerUserId)) ? "friends" :
+                        (friendship.User1Id == viewerUserId && friendship.User2Id == profile.UserId) ||
+                        (friendship.User1Id == profile.UserId && friendship.User2Id == viewerUserId)) ? "friends" :
                     dbContext.FriendRequests.AsNoTracking().Any(request =>
                         request.SenderUserId == viewerUserId && request.ReceiverUserId == profile.UserId &&
                         request.Status == FriendRequestStatus.PENDING) ? "request_sent" :

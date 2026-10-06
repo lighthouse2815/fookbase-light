@@ -35,8 +35,10 @@ public sealed class FriendModelTests
         using var db = CreateDbContext();
         var model = db.GetService<IDesignTimeModel>().Model;
         var request = model.FindEntityType(typeof(FriendRequest))!;
+        Assert.Equal("UserId1", request.FindProperty(nameof(FriendRequest.User1Id))!.GetColumnName());
+        Assert.Equal("UserId2", request.FindProperty(nameof(FriendRequest.User2Id))!.GetColumnName());
         var pendingPair = Assert.Single(request.GetIndexes(), index => index.IsUnique);
-        Assert.Equal(new[] { "UserId1", "UserId2" }, pendingPair.Properties.Select(property => property.Name));
+        Assert.Equal(new[] { "User1Id", "User2Id" }, pendingPair.Properties.Select(property => property.Name));
         Assert.Equal("UX_FriendRequests_PendingPair", pendingPair.GetDatabaseName());
         Assert.Equal("\"Status\" = 0", pendingPair.GetFilter());
         Assert.Equal("\"SenderUserId\" <> \"ReceiverUserId\"",
@@ -45,13 +47,16 @@ public sealed class FriendModelTests
             request.FindCheckConstraint("CK_FriendRequests_CanonicalPair")!.Sql);
 
         var friendship = model.FindEntityType(typeof(Friendship))!;
-        Assert.Equal(new[] { "UserId1", "UserId2" },
+        Assert.Equal("UserId1", friendship.FindProperty(nameof(Friendship.User1Id))!.GetColumnName());
+        Assert.Equal("UserId2", friendship.FindProperty(nameof(Friendship.User2Id))!.GetColumnName());
+        Assert.Equal(new[] { "User1Id", "User2Id" },
             Assert.Single(friendship.GetIndexes(), index => index.IsUnique).Properties.Select(property => property.Name));
         Assert.Equal("\"UserId1\" < \"UserId2\"",
             friendship.FindCheckConstraint("CK_Friendships_CanonicalPair")!.Sql);
 
         var block = model.FindEntityType(typeof(BlockedUser))!;
-        Assert.Equal(new[] { "BlockerUserId", "BlockedUserId" },
+        Assert.Equal("BlockedUserId", block.FindProperty(nameof(BlockedUser.BlockedAccountId))!.GetColumnName());
+        Assert.Equal(new[] { "BlockerUserId", "BlockedAccountId" },
             block.FindPrimaryKey()!.Properties.Select(property => property.Name));
         Assert.Equal("\"BlockerUserId\" <> \"BlockedUserId\"",
             block.FindCheckConstraint("CK_BlockedUsers_DifferentUsers")!.Sql);
@@ -70,12 +75,12 @@ public sealed class FriendModelTests
     [Theory]
     [InlineData(typeof(FriendRequest), "SenderUser", "SenderUserId", typeof(User))]
     [InlineData(typeof(FriendRequest), "ReceiverUser", "ReceiverUserId", typeof(User))]
-    [InlineData(typeof(FriendRequest), "User1", "UserId1", typeof(User))]
-    [InlineData(typeof(FriendRequest), "User2", "UserId2", typeof(User))]
-    [InlineData(typeof(Friendship), "User1", "UserId1", typeof(User))]
-    [InlineData(typeof(Friendship), "User2", "UserId2", typeof(User))]
+    [InlineData(typeof(FriendRequest), "User1", "User1Id", typeof(User))]
+    [InlineData(typeof(FriendRequest), "User2", "User2Id", typeof(User))]
+    [InlineData(typeof(Friendship), "User1", "User1Id", typeof(User))]
+    [InlineData(typeof(Friendship), "User2", "User2Id", typeof(User))]
     [InlineData(typeof(BlockedUser), "BlockerUser", "BlockerUserId", typeof(User))]
-    [InlineData(typeof(BlockedUser), "BlockedAccount", "BlockedUserId", typeof(User))]
+    [InlineData(typeof(BlockedUser), "BlockedAccount", "BlockedAccountId", typeof(User))]
     [InlineData(typeof(UserFollow), "FollowerUser", "FollowerUserId", typeof(User))]
     [InlineData(typeof(UserFollow), "FollowingUser", "FollowingUserId", typeof(User))]
     [InlineData(typeof(FriendNotification), "RecipientUser", "RecipientUserId", typeof(User))]

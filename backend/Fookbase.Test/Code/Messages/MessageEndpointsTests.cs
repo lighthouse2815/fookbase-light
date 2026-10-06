@@ -653,8 +653,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
             id, $"messenger-{id:N}@example.com", $"messenger_{id:N}"[..32], now)).ToArray();
         dbContext.Users.AddRange(missingUsers);
         dbContext.UserProfiles.AddRange(missingUsers.Select(user => new UserProfile(user.Id, user.UserName!, now)));
-        dbContext.Friendships.Add(Friendship.Create(
-            Guid.NewGuid(),
+        dbContext.Friendships.Add(new Friendship(
             firstUserId,
             secondUserId,
             DateTimeOffset.UtcNow));
@@ -665,7 +664,7 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
     {
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        dbContext.BlockedUsers.Add(BlockedUser.Create(blockerUserId, blockedUserId, DateTimeOffset.UtcNow));
+        dbContext.BlockedUsers.Add(new BlockedUser(blockerUserId, blockedUserId, DateTimeOffset.UtcNow));
         await dbContext.SaveChangesAsync();
     }
 

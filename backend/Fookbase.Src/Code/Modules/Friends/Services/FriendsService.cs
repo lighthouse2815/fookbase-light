@@ -268,11 +268,11 @@ public sealed class FriendsService(
 
         var friendUserIds = await dbContext.Friendships.AsNoTracking()
             .Where(friendship =>
-                (friendship.UserId1 == actorUserId && relationshipUserIds.Contains(friendship.UserId2)) ||
-                (friendship.UserId2 == actorUserId && relationshipUserIds.Contains(friendship.UserId1)))
-            .Select(friendship => friendship.UserId1 == actorUserId
-                ? friendship.UserId2
-                : friendship.UserId1)
+                (friendship.User1Id == actorUserId && relationshipUserIds.Contains(friendship.User2Id)) ||
+                (friendship.User2Id == actorUserId && relationshipUserIds.Contains(friendship.User1Id)))
+            .Select(friendship => friendship.User1Id == actorUserId
+                ? friendship.User2Id
+                : friendship.User1Id)
             .ToListAsync(cancellationToken);
         foreach (var friendUserId in friendUserIds)
         {
@@ -281,10 +281,10 @@ public sealed class FriendsService(
 
         var blockedUserIds = await dbContext.BlockedUsers.AsNoTracking()
             .Where(block =>
-                (block.BlockerUserId == actorUserId && relationshipUserIds.Contains(block.BlockedUserId)) ||
-                (block.BlockedUserId == actorUserId && relationshipUserIds.Contains(block.BlockerUserId)))
+                (block.BlockerUserId == actorUserId && relationshipUserIds.Contains(block.BlockedAccountId)) ||
+                (block.BlockedAccountId == actorUserId && relationshipUserIds.Contains(block.BlockerUserId)))
             .Select(block => block.BlockerUserId == actorUserId
-                ? block.BlockedUserId
+                ? block.BlockedAccountId
                 : block.BlockerUserId)
             .ToListAsync(cancellationToken);
         foreach (var blockedUserId in blockedUserIds)
@@ -300,22 +300,22 @@ public sealed class FriendsService(
         CancellationToken cancellationToken = default)
     {
         var friendUserIds = await dbContext.Friendships.AsNoTracking()
-            .Where(friendship => friendship.UserId1 == userId || friendship.UserId2 == userId)
-            .Select(friendship => friendship.UserId1 == userId
-                ? friendship.UserId2
-                : friendship.UserId1)
+            .Where(friendship => friendship.User1Id == userId || friendship.User2Id == userId)
+            .Select(friendship => friendship.User1Id == userId
+                ? friendship.User2Id
+                : friendship.User1Id)
             .ToHashSetAsync(cancellationToken);
         var blockedUserIds = await dbContext.BlockedUsers.AsNoTracking()
-            .Where(block => block.BlockerUserId == userId || block.BlockedUserId == userId)
+            .Where(block => block.BlockerUserId == userId || block.BlockedAccountId == userId)
             .Select(block => block.BlockerUserId == userId
-                ? block.BlockedUserId
+                ? block.BlockedAccountId
                 : block.BlockerUserId)
             .ToHashSetAsync(cancellationToken);
         var followedUserIds = await dbContext.UserFollows.AsNoTracking()
             .Where(follow => follow.FollowerUserId == userId &&
                 !dbContext.BlockedUsers.Any(block =>
-                    (block.BlockerUserId == userId && block.BlockedUserId == follow.FollowingUserId) ||
-                    (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == userId)))
+                    (block.BlockerUserId == userId && block.BlockedAccountId == follow.FollowingUserId) ||
+                    (block.BlockerUserId == follow.FollowingUserId && block.BlockedAccountId == userId)))
             .Select(follow => follow.FollowingUserId)
             .ToHashSetAsync(cancellationToken);
 
@@ -384,9 +384,8 @@ public sealed class FriendsService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var request = FriendRequest.Create(Guid.NewGuid(), senderUserId, receiverUserId, now);
-        var notification = FriendNotification.Create(
-            Guid.NewGuid(),
+        var request = new FriendRequest(senderUserId, receiverUserId, now);
+        var notification = new FriendNotification(
             receiverUserId,
             senderUserId,
             request.Id,
@@ -424,7 +423,7 @@ public sealed class FriendsService(
             return ApplicationResult<FriendResponse>.Failure(ToApplicationError(FriendsOperationError.REQUEST_NOT_FOUND));
         }
 
-        var pair = UserPair.Create(snapshot.UserId1, snapshot.UserId2);
+        var pair = UserPair.Create(snapshot.User1Id, snapshot.User2Id);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await AcquirePairLockAsync(pair, cancellationToken);
         var request = await dbContext.FriendRequests.SingleAsync(
@@ -465,9 +464,8 @@ public sealed class FriendsService(
 
         var now = timeProvider.GetUtcNow();
         request.Accept(actorUserId, now);
-        var friendship = Friendship.Create(Guid.NewGuid(), pair.UserId1, pair.UserId2, now);
-        var notification = FriendNotification.Create(
-            Guid.NewGuid(),
+        var friendship = new Friendship(pair.UserId1, pair.UserId2, now);
+        var notification = new FriendNotification(
             request.SenderUserId,
             actorUserId,
             request.Id,
@@ -484,7 +482,7 @@ public sealed class FriendsService(
                 follow.FollowerUserId == request.SenderUserId &&
                 follow.FollowingUserId == request.ReceiverUserId))
         {
-            dbContext.UserFollows.Add(UserFollow.Create(
+            dbContext.UserFollows.Add(new UserFollow(
                 request.SenderUserId,
                 request.ReceiverUserId,
                 now));
@@ -494,7 +492,7 @@ public sealed class FriendsService(
                 follow.FollowerUserId == request.ReceiverUserId &&
                 follow.FollowingUserId == request.SenderUserId))
         {
-            dbContext.UserFollows.Add(UserFollow.Create(
+            dbContext.UserFollows.Add(new UserFollow(
                 request.ReceiverUserId,
                 request.SenderUserId,
                 now));
@@ -550,7 +548,7 @@ public sealed class FriendsService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await AcquirePairLockAsync(pair, cancellationToken);
         var friendship = await dbContext.Friendships.SingleOrDefaultAsync(
-            item => item.UserId1 == pair.UserId1 && item.UserId2 == pair.UserId2,
+            item => item.User1Id == pair.UserId1 && item.User2Id == pair.UserId2,
             cancellationToken);
         if (friendship is null)
         {
@@ -612,7 +610,7 @@ public sealed class FriendsService(
             return FriendsOperationError.NONE;
         }
 
-        dbContext.UserFollows.Add(UserFollow.Create(actorUserId, targetUserId, timeProvider.GetUtcNow()));
+        dbContext.UserFollows.Add(new UserFollow(actorUserId, targetUserId, timeProvider.GetUtcNow()));
         Notification? generalNotification = null;
         if (!await FriendshipExistsAsync(pair, cancellationToken))
         {
@@ -666,7 +664,7 @@ public sealed class FriendsService(
         await AcquirePairLockAsync(pair, cancellationToken);
 
         if (await dbContext.BlockedUsers.AnyAsync(
-                block => block.BlockerUserId == actorUserId && block.BlockedUserId == blockedUserId,
+                block => block.BlockerUserId == actorUserId && block.BlockedAccountId == blockedUserId,
                 cancellationToken))
         {
             await transaction.CommitAsync(cancellationToken);
@@ -674,10 +672,10 @@ public sealed class FriendsService(
         }
 
         var now = timeProvider.GetUtcNow();
-        dbContext.BlockedUsers.Add(BlockedUser.Create(actorUserId, blockedUserId, now));
+        dbContext.BlockedUsers.Add(new BlockedUser(actorUserId, blockedUserId, now));
 
         var friendship = await dbContext.Friendships.SingleOrDefaultAsync(
-            item => item.UserId1 == pair.UserId1 && item.UserId2 == pair.UserId2,
+            item => item.User1Id == pair.UserId1 && item.User2Id == pair.UserId2,
             cancellationToken);
         if (friendship is not null)
         {
@@ -692,8 +690,8 @@ public sealed class FriendsService(
 
         var pendingRequests = await dbContext.FriendRequests
             .Where(request =>
-                request.UserId1 == pair.UserId1 &&
-                request.UserId2 == pair.UserId2 &&
+                request.User1Id == pair.UserId1 &&
+                request.User2Id == pair.UserId2 &&
                 request.Status == FriendRequestStatus.PENDING)
             .ToListAsync(cancellationToken);
         foreach (var pendingRequest in pendingRequests)
@@ -715,7 +713,7 @@ public sealed class FriendsService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await AcquirePairLockAsync(pair, cancellationToken);
         var block = await dbContext.BlockedUsers.SingleOrDefaultAsync(
-            item => item.BlockerUserId == actorUserId && item.BlockedUserId == blockedUserId,
+            item => item.BlockerUserId == actorUserId && item.BlockedAccountId == blockedUserId,
             cancellationToken);
         if (block is not null)
         {
@@ -734,16 +732,16 @@ public sealed class FriendsService(
         CancellationToken cancellationToken = default)
     {
         var query = dbContext.Friendships.AsNoTracking()
-            .Where(friendship => friendship.UserId1 == userId || friendship.UserId2 == userId);
+            .Where(friendship => friendship.User1Id == userId || friendship.User2Id == userId);
         var total = await query.CountAsync(cancellationToken);
         var items = await query
-            .OrderBy(friendship => friendship.UserId1 == userId
-                ? friendship.UserId2
-                : friendship.UserId1)
+            .OrderBy(friendship => friendship.User1Id == userId
+                ? friendship.User2Id
+                : friendship.User1Id)
             .Skip(offset)
             .Take(limit)
             .Select(friendship => new FriendResponse(
-                friendship.UserId1 == userId ? friendship.UserId2 : friendship.UserId1,
+                friendship.User1Id == userId ? friendship.User2Id : friendship.User1Id,
                 friendship.CreatedAtUtc))
             .ToListAsync(cancellationToken);
         return new PagedResponse<FriendResponse>(items, offset, limit, total);
@@ -776,8 +774,8 @@ public sealed class FriendsService(
             where (isFollowers ? follow.FollowingUserId : follow.FollowerUserId) == targetUserId &&
                   user.IsActive &&
                   !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                      (block.BlockerUserId == viewerUserId && block.BlockedUserId == profile.UserId) ||
-                      (block.BlockerUserId == profile.UserId && block.BlockedUserId == viewerUserId))
+                      (block.BlockerUserId == viewerUserId && block.BlockedAccountId == profile.UserId) ||
+                      (block.BlockerUserId == profile.UserId && block.BlockedAccountId == viewerUserId))
             select new
             {
                 profile.UserId,
@@ -861,10 +859,10 @@ public sealed class FriendsService(
             .Where(block => block.BlockerUserId == userId);
         var total = await query.CountAsync(cancellationToken);
         var items = await query.OrderByDescending(block => block.CreatedAtUtc)
-            .ThenBy(block => block.BlockedUserId)
+            .ThenBy(block => block.BlockedAccountId)
             .Skip(offset)
             .Take(limit)
-            .Select(block => new BlockedUserResponse(block.BlockedUserId, block.CreatedAtUtc))
+            .Select(block => new BlockedUserResponse(block.BlockedAccountId, block.CreatedAtUtc))
             .ToListAsync(cancellationToken);
         return new PagedResponse<BlockedUserResponse>(items, offset, limit, total);
     }
@@ -912,8 +910,8 @@ public sealed class FriendsService(
         var pendingRequest = await dbContext.FriendRequests.AsNoTracking()
             .SingleOrDefaultAsync(
                 request =>
-                    request.UserId1 == pair.UserId1 &&
-                    request.UserId2 == pair.UserId2 &&
+                    request.User1Id == pair.UserId1 &&
+                    request.User2Id == pair.UserId2 &&
                     request.Status == FriendRequestStatus.PENDING,
                 cancellationToken);
         if (pendingRequest is null)
@@ -962,7 +960,7 @@ public sealed class FriendsService(
             return FriendsOperationError.REQUEST_NOT_FOUND;
         }
 
-        var pair = UserPair.Create(snapshot.UserId1, snapshot.UserId2);
+        var pair = UserPair.Create(snapshot.User1Id, snapshot.User2Id);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await AcquirePairLockAsync(pair, cancellationToken);
         var request = await dbContext.FriendRequests.SingleAsync(
@@ -1015,10 +1013,10 @@ public sealed class FriendsService(
 
     private IQueryable<Guid> FriendIds(Guid userId) =>
         dbContext.Friendships.AsNoTracking()
-            .Where(friendship => friendship.UserId1 == userId || friendship.UserId2 == userId)
-            .Select(friendship => friendship.UserId1 == userId
-                ? friendship.UserId2
-                : friendship.UserId1);
+            .Where(friendship => friendship.User1Id == userId || friendship.User2Id == userId)
+            .Select(friendship => friendship.User1Id == userId
+                ? friendship.User2Id
+                : friendship.User1Id);
 
     private Task<bool> IsBlockedAsync(
         Guid firstUserId,
@@ -1026,21 +1024,21 @@ public sealed class FriendsService(
         CancellationToken cancellationToken) =>
         dbContext.BlockedUsers.AnyAsync(
             block =>
-                (block.BlockerUserId == firstUserId && block.BlockedUserId == secondUserId) ||
-                (block.BlockerUserId == secondUserId && block.BlockedUserId == firstUserId),
+                (block.BlockerUserId == firstUserId && block.BlockedAccountId == secondUserId) ||
+                (block.BlockerUserId == secondUserId && block.BlockedAccountId == firstUserId),
             cancellationToken);
 
     private Task<bool> FriendshipExistsAsync(UserPair pair, CancellationToken cancellationToken) =>
         dbContext.Friendships.AnyAsync(
             friendship =>
-                friendship.UserId1 == pair.UserId1 && friendship.UserId2 == pair.UserId2,
+                friendship.User1Id == pair.UserId1 && friendship.User2Id == pair.UserId2,
             cancellationToken);
 
     private Task<bool> PendingRequestExistsAsync(UserPair pair, CancellationToken cancellationToken) =>
         dbContext.FriendRequests.AnyAsync(
             request =>
-                request.UserId1 == pair.UserId1 &&
-                request.UserId2 == pair.UserId2 &&
+                request.User1Id == pair.UserId1 &&
+                request.User2Id == pair.UserId2 &&
                 request.Status == FriendRequestStatus.PENDING,
             cancellationToken);
 
@@ -1054,8 +1052,8 @@ public sealed class FriendsService(
                                  join profile in dbContext.UserProfiles.AsNoTracking() on user.Id equals profile.UserId
                                  where user.Id == ownerUserId && user.IsActive &&
                                        !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                                           (block.BlockerUserId == viewerUserId && block.BlockedUserId == ownerUserId) ||
-                                           (block.BlockerUserId == ownerUserId && block.BlockedUserId == viewerUserId))
+                                           (block.BlockerUserId == viewerUserId && block.BlockedAccountId == ownerUserId) ||
+                                           (block.BlockerUserId == ownerUserId && block.BlockedAccountId == viewerUserId))
                                  select user.Id).AnyAsync(cancellationToken);
         if (!ownerExists || viewerUserId == ownerUserId)
         {

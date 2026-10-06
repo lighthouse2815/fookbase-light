@@ -137,7 +137,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        db.Friendships.Add(Friendship.Create(Guid.NewGuid(), firstUserId, secondUserId, DateTimeOffset.UtcNow));
+        db.Friendships.Add(new Friendship(firstUserId, secondUserId, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
     }
 
@@ -145,7 +145,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        db.BlockedUsers.Add(BlockedUser.Create(blockerUserId, blockedUserId, DateTimeOffset.UtcNow));
+        db.BlockedUsers.Add(new BlockedUser(blockerUserId, blockedUserId, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
     }
 

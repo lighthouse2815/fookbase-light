@@ -51,7 +51,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var migrator = dbContext.Database.GetService<IMigrator>();
 
         await migrator.MigrateAsync(previousMigration);
-        dbContext.Friendships.Add(Friendship.Create(Guid.NewGuid(), userA, userB, followedAtUtc));
+        dbContext.Friendships.Add(new Friendship(userA, userB, followedAtUtc));
         await dbContext.SaveChangesAsync();
 
         await migrator.MigrateAsync(latestMigration);
@@ -85,7 +85,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var userId = Guid.NewGuid();
 
         Assert.Throws<ArgumentException>(() =>
-            UserFollow.Create(userId, userId, DateTimeOffset.UtcNow));
+            new UserFollow(userId, userId, DateTimeOffset.UtcNow));
     }
 
     [Fact]
@@ -364,8 +364,8 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(1, await dbContext.FriendRequests.CountAsync(
-            item => item.UserId1 == Min(userA, userB) &&
-                    item.UserId2 == Max(userA, userB) &&
+            item => item.User1Id == Min(userA, userB) &&
+                    item.User2Id == Max(userA, userB) &&
                     item.Status == FriendRequestStatus.PENDING));
     }
 
@@ -388,8 +388,8 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(1, await dbContext.FriendRequests.CountAsync(
-            item => item.UserId1 == Min(userA, userB) &&
-                    item.UserId2 == Max(userA, userB) &&
+            item => item.User1Id == Min(userA, userB) &&
+                    item.User2Id == Max(userA, userB) &&
                     item.Status == FriendRequestStatus.PENDING));
     }
 
@@ -425,7 +425,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.Equal(1, await dbContext.Friendships.CountAsync(
-            item => item.UserId1 == Min(userA, userB) && item.UserId2 == Max(userA, userB)));
+            item => item.User1Id == Min(userA, userB) && item.User2Id == Max(userA, userB)));
     }
 
     [Fact]
@@ -545,7 +545,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         Assert.False(await dbContext.Friendships.AnyAsync(
-            item => item.UserId1 == Min(userA, userB) && item.UserId2 == Max(userA, userB)));
+            item => item.User1Id == Min(userA, userB) && item.User2Id == Max(userA, userB)));
         Assert.Equal(FriendRequestStatus.CANCELLED,
             (await dbContext.FriendRequests.FindAsync(pending.Id))!.Status);
     }
@@ -898,7 +898,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var dbContext = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         foreach (var follow in follows)
         {
-            dbContext.UserFollows.Add(UserFollow.Create(
+            dbContext.UserFollows.Add(new UserFollow(
                 follow.FollowerUserId,
                 follow.FollowingUserId,
                 follow.FollowedAtUtc));
@@ -933,8 +933,8 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         sharedPage.Publish(now);
 
         dbContext.Friendships.AddRange(
-            Friendship.Create(Guid.NewGuid(), viewerUserId, mutualUserId, now),
-            Friendship.Create(Guid.NewGuid(), mutualUserId, mutualCandidateUserId, now));
+            new Friendship(viewerUserId, mutualUserId, now),
+            new Friendship(mutualUserId, mutualCandidateUserId, now));
         dbContext.Groups.Add(sharedGroup);
         dbContext.GroupMembers.AddRange(
             new GroupMember(sharedGroup.Id, viewerUserId, GroupMemberRole.OWNER, now),
@@ -1003,11 +1003,11 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             viewerUserId,
             now);
 
-        dbContext.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewerUserId, existingFriendUserId, now));
+        dbContext.Friendships.Add(new Friendship(viewerUserId, existingFriendUserId, now));
         dbContext.FriendRequests.AddRange(
-            FriendRequest.Create(Guid.NewGuid(), viewerUserId, outgoingPendingUserId, now),
-            FriendRequest.Create(Guid.NewGuid(), incomingPendingUserId, viewerUserId, now));
-        dbContext.BlockedUsers.Add(BlockedUser.Create(incomingBlockerUserId, viewerUserId, now));
+            new FriendRequest(viewerUserId, outgoingPendingUserId, now),
+            new FriendRequest(incomingPendingUserId, viewerUserId, now));
+        dbContext.BlockedUsers.Add(new BlockedUser(incomingBlockerUserId, viewerUserId, now));
         dbContext.Groups.AddRange(activeGroup, deletedGroup);
         dbContext.GroupMembers.AddRange(
             new GroupMember(activeGroup.Id, viewerUserId, GroupMemberRole.OWNER, now),

@@ -15,11 +15,11 @@ public sealed class PhotoAccessService(FookbaseDbContext db)
 
     public Task<bool> IsBlockedAsync(Guid firstId, Guid secondId, CancellationToken ct = default) =>
         db.BlockedUsers.AsNoTracking().AnyAsync(item =>
-            (item.BlockerUserId == firstId && item.BlockedUserId == secondId) ||
-            (item.BlockerUserId == secondId && item.BlockedUserId == firstId), ct);
+            (item.BlockerUserId == firstId && item.BlockedAccountId == secondId) ||
+            (item.BlockerUserId == secondId && item.BlockedAccountId == firstId), ct);
 
     private Task<bool> AreFriendsAsync(Guid firstId, Guid secondId, CancellationToken ct) =>
         db.Friendships.AsNoTracking().AnyAsync(item =>
-            (item.UserId1 == firstId && item.UserId2 == secondId) ||
-            (item.UserId1 == secondId && item.UserId2 == firstId), ct);
+            (item.User1Id == firstId && item.User2Id == secondId) ||
+            (item.User1Id == secondId && item.User2Id == firstId), ct);
 }

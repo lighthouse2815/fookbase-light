@@ -63,8 +63,8 @@ public sealed class MessagesPresenceService(
         }
 
         var blockedUserIds = await dbContext.BlockedUsers.AsNoTracking()
-            .Where(block => block.BlockerUserId == viewerUserId || block.BlockedUserId == viewerUserId)
-            .Select(block => block.BlockerUserId == viewerUserId ? block.BlockedUserId : block.BlockerUserId)
+            .Where(block => block.BlockerUserId == viewerUserId || block.BlockedAccountId == viewerUserId)
+            .Select(block => block.BlockerUserId == viewerUserId ? block.BlockedAccountId : block.BlockerUserId)
             .ToArrayAsync(cancellationToken);
         return await dbContext.ConversationParticipants.AsNoTracking()
             .Where(participant => conversationIds.Contains(participant.ConversationId) &&
@@ -90,8 +90,8 @@ public sealed class MessagesPresenceService(
         }
 
         var blockedUserIds = await dbContext.BlockedUsers.AsNoTracking()
-            .Where(block => block.BlockerUserId == subjectUserId || block.BlockedUserId == subjectUserId)
-            .Select(block => block.BlockerUserId == subjectUserId ? block.BlockedUserId : block.BlockerUserId)
+            .Where(block => block.BlockerUserId == subjectUserId || block.BlockedAccountId == subjectUserId)
+            .Select(block => block.BlockerUserId == subjectUserId ? block.BlockedAccountId : block.BlockerUserId)
             .ToArrayAsync(cancellationToken);
         var recipients = await dbContext.ConversationParticipants.AsNoTracking()
             .Where(participant => conversationIds.Contains(participant.ConversationId) &&

@@ -144,6 +144,7 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
         configurationBuilder.Conventions.Add(services => new DefaultValueAttributeConvention(
             services.GetRequiredService<ProviderConventionSetBuilderDependencies>()));
         configurationBuilder.Conventions.Add(_ => new IndexFilterAttributeConvention());
+        configurationBuilder.Conventions.Add(_ => new CheckConstraintAttributeConvention());
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

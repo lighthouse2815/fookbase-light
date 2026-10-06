@@ -33,18 +33,18 @@ public sealed class FriendSuggestionService(
             join user in dbContext.Users.AsNoTracking() on candidateUserId equals user.Id
             where candidateUserId != viewerUserId && user.IsActive &&
                   !dbContext.Friendships.AsNoTracking().Any(friendship =>
-                      (friendship.UserId1 == viewerUserId && friendship.UserId2 == candidateUserId) ||
-                      (friendship.UserId2 == viewerUserId && friendship.UserId1 == candidateUserId)) &&
+                      (friendship.User1Id == viewerUserId && friendship.User2Id == candidateUserId) ||
+                      (friendship.User2Id == viewerUserId && friendship.User1Id == candidateUserId)) &&
                   !dbContext.FriendRequests.AsNoTracking().Any(request =>
                       request.Status == FriendRequestStatus.PENDING &&
                       ((request.SenderUserId == viewerUserId && request.ReceiverUserId == candidateUserId) ||
                        (request.SenderUserId == candidateUserId && request.ReceiverUserId == viewerUserId))) &&
                   !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                      (block.BlockerUserId == viewerUserId && block.BlockedUserId == candidateUserId) ||
-                      (block.BlockerUserId == candidateUserId && block.BlockedUserId == viewerUserId))
+                      (block.BlockerUserId == viewerUserId && block.BlockedAccountId == candidateUserId) ||
+                      (block.BlockerUserId == candidateUserId && block.BlockedAccountId == viewerUserId))
             let mutualFriendCount = dbContext.Friendships.AsNoTracking().Count(candidateFriendship =>
-                (candidateFriendship.UserId1 == candidateUserId && viewerFriendIds.Contains(candidateFriendship.UserId2)) ||
-                (candidateFriendship.UserId2 == candidateUserId && viewerFriendIds.Contains(candidateFriendship.UserId1)))
+                (candidateFriendship.User1Id == candidateUserId && viewerFriendIds.Contains(candidateFriendship.User2Id)) ||
+                (candidateFriendship.User2Id == candidateUserId && viewerFriendIds.Contains(candidateFriendship.User1Id)))
             let sharedGroupCount = (
                 from viewerMembership in dbContext.GroupMembers.AsNoTracking()
                 join candidateMembership in dbContext.GroupMembers.AsNoTracking()
@@ -117,11 +117,11 @@ public sealed class FriendSuggestionService(
     private IQueryable<Guid> CandidateIds(Guid viewerUserId, IQueryable<Guid> viewerFriendIds)
     {
         var mutualFriendCandidates = dbContext.Friendships.AsNoTracking()
-            .Where(friendship => viewerFriendIds.Contains(friendship.UserId1))
-            .Select(friendship => friendship.UserId2)
+            .Where(friendship => viewerFriendIds.Contains(friendship.User1Id))
+            .Select(friendship => friendship.User2Id)
             .Concat(dbContext.Friendships.AsNoTracking()
-                .Where(friendship => viewerFriendIds.Contains(friendship.UserId2))
-                .Select(friendship => friendship.UserId1));
+                .Where(friendship => viewerFriendIds.Contains(friendship.User2Id))
+                .Select(friendship => friendship.User1Id));
 
         var sharedGroupCandidates =
             from viewerMembership in dbContext.GroupMembers.AsNoTracking()
@@ -151,8 +151,8 @@ public sealed class FriendSuggestionService(
 
     private IQueryable<Guid> FriendIds(Guid viewerUserId) =>
         dbContext.Friendships.AsNoTracking()
-            .Where(friendship => friendship.UserId1 == viewerUserId || friendship.UserId2 == viewerUserId)
-            .Select(friendship => friendship.UserId1 == viewerUserId
-                ? friendship.UserId2
-                : friendship.UserId1);
+            .Where(friendship => friendship.User1Id == viewerUserId || friendship.User2Id == viewerUserId)
+            .Select(friendship => friendship.User1Id == viewerUserId
+                ? friendship.User2Id
+                : friendship.User1Id);
 }

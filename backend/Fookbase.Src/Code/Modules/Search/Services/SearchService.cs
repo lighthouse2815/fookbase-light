@@ -168,29 +168,29 @@ public sealed class SearchService(
                     dbContext.Users.Any(user => user.Id == follow.FollowerUserId && user.IsActive) &&
                     dbContext.UserProfiles.Any(other => other.UserId == follow.FollowerUserId) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == profile.UserId) ||
-                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowerUserId)) &&
+                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedAccountId == profile.UserId) ||
+                        (block.BlockerUserId == profile.UserId && block.BlockedAccountId == follow.FollowerUserId)) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                        (block.BlockerUserId == context.Viewer.UserId && block.BlockedUserId == follow.FollowerUserId) ||
-                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedUserId == context.Viewer.UserId))),
+                        (block.BlockerUserId == context.Viewer.UserId && block.BlockedAccountId == follow.FollowerUserId) ||
+                        (block.BlockerUserId == follow.FollowerUserId && block.BlockedAccountId == context.Viewer.UserId))),
                 FollowingCount = dbContext.UserFollows.AsNoTracking().Count(follow =>
                     follow.FollowerUserId == profile.UserId &&
                     dbContext.Users.Any(user => user.Id == follow.FollowingUserId && user.IsActive) &&
                     dbContext.UserProfiles.Any(other => other.UserId == follow.FollowingUserId) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                        (block.BlockerUserId == profile.UserId && block.BlockedUserId == follow.FollowingUserId) ||
-                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == profile.UserId)) &&
+                        (block.BlockerUserId == profile.UserId && block.BlockedAccountId == follow.FollowingUserId) ||
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedAccountId == profile.UserId)) &&
                     !dbContext.BlockedUsers.AsNoTracking().Any(block =>
-                        (block.BlockerUserId == context.Viewer.UserId && block.BlockedUserId == follow.FollowingUserId) ||
-                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedUserId == context.Viewer.UserId))),
+                        (block.BlockerUserId == context.Viewer.UserId && block.BlockedAccountId == follow.FollowingUserId) ||
+                        (block.BlockerUserId == follow.FollowingUserId && block.BlockedAccountId == context.Viewer.UserId))),
                 IsFollowing = dbContext.UserFollows.AsNoTracking().Any(follow =>
                     follow.FollowerUserId == context.Viewer.UserId && follow.FollowingUserId == profile.UserId),
                 IsFollowedBy = dbContext.UserFollows.AsNoTracking().Any(follow =>
                     follow.FollowerUserId == profile.UserId && follow.FollowingUserId == context.Viewer.UserId),
                 FriendshipState = profile.UserId == context.Viewer.UserId ? "self" :
                     dbContext.Friendships.AsNoTracking().Any(friendship =>
-                        (friendship.UserId1 == context.Viewer.UserId && friendship.UserId2 == profile.UserId) ||
-                        (friendship.UserId1 == profile.UserId && friendship.UserId2 == context.Viewer.UserId)) ? "friends" :
+                        (friendship.User1Id == context.Viewer.UserId && friendship.User2Id == profile.UserId) ||
+                        (friendship.User1Id == profile.UserId && friendship.User2Id == context.Viewer.UserId)) ? "friends" :
                     dbContext.FriendRequests.AsNoTracking().Any(request =>
                         request.SenderUserId == context.Viewer.UserId && request.ReceiverUserId == profile.UserId &&
                         request.Status == FriendRequestStatus.PENDING) ? "request_sent" :

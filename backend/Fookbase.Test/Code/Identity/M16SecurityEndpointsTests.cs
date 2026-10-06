@@ -68,8 +68,8 @@ public sealed class M16SecurityEndpointsTests(IdentityApiFactory factory) : ICla
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             var now = DateTimeOffset.UtcNow;
             db.Friendships.AddRange(
-                Friendship.Create(Guid.NewGuid(), sender.User.Id, mutual.User.Id, now),
-                Friendship.Create(Guid.NewGuid(), receiver.User.Id, mutual.User.Id, now));
+                new Friendship(sender.User.Id, mutual.User.Id, now),
+                new Friendship(receiver.User.Id, mutual.User.Id, now));
             await db.SaveChangesAsync();
         }
 

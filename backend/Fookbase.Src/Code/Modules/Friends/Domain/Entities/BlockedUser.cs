@@ -1,40 +1,18 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Persistence.Annotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Friends.Entities;
 
-[PrimaryKey(nameof(BlockerUserId), nameof(BlockedUserId))]
-[Index(nameof(BlockedUserId))]
+[PrimaryKey(nameof(BlockerUserId), nameof(BlockedAccountId))]
+[Index(nameof(BlockedAccountId))]
+[CheckConstraint("CK_BlockedUsers_DifferentUsers", "\"BlockerUserId\" <> \"BlockedUserId\"")]
 public sealed class BlockedUser
 {
-    private BlockedUser()
-    {
-    }
+    private BlockedUser() { }
 
-    private BlockedUser(Guid blockerUserId, Guid blockedUserId, DateTimeOffset createdAtUtc)
-    {
-        BlockerUserId = blockerUserId;
-        BlockedUserId = blockedUserId;
-        CreatedAtUtc = createdAtUtc;
-    }
-
-    public Guid BlockerUserId { get; private set; }
-
-    public Guid BlockedUserId { get; private set; }
-
-    public DateTimeOffset CreatedAtUtc { get; private set; }
-
-    [ForeignKey(nameof(BlockerUserId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User BlockerUser { get; private set; } = null!;
-
-    [ForeignKey(nameof(BlockedUserId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User BlockedAccount { get; private set; } = null!;
-
-    public static BlockedUser Create(
+    public BlockedUser(
         Guid blockerUserId,
         Guid blockedUserId,
         DateTimeOffset createdAtUtc)
@@ -44,6 +22,21 @@ public sealed class BlockedUser
             throw new ArgumentException("A user cannot block themselves.");
         }
 
-        return new BlockedUser(blockerUserId, blockedUserId, createdAtUtc);
+        BlockerUserId = blockerUserId;
+        BlockedAccountId = blockedUserId;
+        CreatedAtUtc = createdAtUtc;
     }
+
+    public Guid BlockerUserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User BlockerUser { get; private set; } = null!;
+
+    [Column("BlockedUserId")]
+    public Guid BlockedAccountId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User BlockedAccount { get; private set; } = null!;
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
 }

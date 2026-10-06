@@ -195,9 +195,9 @@ public sealed class NotificationService(
             await dbContext.BlockedUsers.AsNoTracking().AnyAsync(
                 block =>
                     (block.BlockerUserId == recipientUserId &&
-                     block.BlockedUserId == notification.ActorUserId.Value) ||
+                     block.BlockedAccountId == notification.ActorUserId.Value) ||
                     (block.BlockerUserId == notification.ActorUserId.Value &&
-                     block.BlockedUserId == recipientUserId),
+                     block.BlockedAccountId == recipientUserId),
                 cancellationToken))
         {
             return false;
@@ -278,8 +278,8 @@ public sealed class NotificationService(
         if (story.ExpiresAtUtc <= timeProvider.GetUtcNow() ||
             await dbContext.BlockedUsers.AsNoTracking().AnyAsync(
                 block =>
-                    (block.BlockerUserId == recipientUserId && block.BlockedUserId == story.AuthorUserId) ||
-                    (block.BlockerUserId == story.AuthorUserId && block.BlockedUserId == recipientUserId),
+                    (block.BlockerUserId == recipientUserId && block.BlockedAccountId == story.AuthorUserId) ||
+                    (block.BlockerUserId == story.AuthorUserId && block.BlockedAccountId == recipientUserId),
                 cancellationToken))
         {
             return false;
@@ -293,8 +293,8 @@ public sealed class NotificationService(
         return story.Privacy == PostPrivacy.FRIENDS &&
             await dbContext.Friendships.AsNoTracking().AnyAsync(
                 friendship =>
-                    (friendship.UserId1 == recipientUserId && friendship.UserId2 == story.AuthorUserId) ||
-                    (friendship.UserId1 == story.AuthorUserId && friendship.UserId2 == recipientUserId),
+                    (friendship.User1Id == recipientUserId && friendship.User2Id == story.AuthorUserId) ||
+                    (friendship.User1Id == story.AuthorUserId && friendship.User2Id == recipientUserId),
                 cancellationToken);
     }
 
@@ -341,8 +341,8 @@ public sealed class NotificationService(
 
         if (await dbContext.BlockedUsers.AsNoTracking().AnyAsync(
                 block =>
-                    (block.BlockerUserId == recipientUserId && block.BlockedUserId == post.AuthorUserId) ||
-                    (block.BlockerUserId == post.AuthorUserId && block.BlockedUserId == recipientUserId),
+                    (block.BlockerUserId == recipientUserId && block.BlockedAccountId == post.AuthorUserId) ||
+                    (block.BlockerUserId == post.AuthorUserId && block.BlockedAccountId == recipientUserId),
                 cancellationToken))
         {
             return false;
@@ -356,8 +356,8 @@ public sealed class NotificationService(
         return post.Privacy == PostPrivacy.FRIENDS &&
             await dbContext.Friendships.AsNoTracking().AnyAsync(
                 friendship =>
-                    (friendship.UserId1 == recipientUserId && friendship.UserId2 == post.AuthorUserId) ||
-                    (friendship.UserId1 == post.AuthorUserId && friendship.UserId2 == recipientUserId),
+                    (friendship.User1Id == recipientUserId && friendship.User2Id == post.AuthorUserId) ||
+                    (friendship.User1Id == post.AuthorUserId && friendship.User2Id == recipientUserId),
                 cancellationToken);
     }
 

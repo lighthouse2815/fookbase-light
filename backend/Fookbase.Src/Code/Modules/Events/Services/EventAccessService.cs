@@ -50,5 +50,5 @@ public sealed class EventAccessService(FookbaseDbContext dbContext)
         (item.Privacy==EventPrivacy.PUBLIC || dbContext.EventParticipants.Any(p=>p.EventId==item.Id && p.UserId==userId) || dbContext.EventInvitations.Any(i=>i.EventId==item.Id && i.InviteeUserId==userId && i.Status==EventInvitationStatus.PENDING) ||
          (item.HostType==EventHostType.USER && item.HostId==userId) || (item.HostType==EventHostType.GROUP && dbContext.GroupMembers.Any(m=>m.GroupId==item.HostId && m.UserId==userId && (m.Role==GroupMemberRole.OWNER || m.Role==GroupMemberRole.ADMIN || m.Role==GroupMemberRole.MODERATOR))) ||
          (item.HostType==EventHostType.PAGE && dbContext.PageMembers.Any(m=>m.PageId==item.HostId && m.UserId==userId && (m.Role==PageRole.OWNER || m.Role==PageRole.ADMIN || m.Role==PageRole.EDITOR)))))); }
-    private Task<bool> IsBlockedAsync(Guid a, Guid b, CancellationToken ct) => dbContext.BlockedUsers.AsNoTracking().AnyAsync(x => (x.BlockerUserId==a && x.BlockedUserId==b) || (x.BlockerUserId==b && x.BlockedUserId==a),ct);
+    private Task<bool> IsBlockedAsync(Guid a, Guid b, CancellationToken ct) => dbContext.BlockedUsers.AsNoTracking().AnyAsync(x => (x.BlockerUserId==a && x.BlockedAccountId==b) || (x.BlockerUserId==b && x.BlockedAccountId==a),ct);
 }

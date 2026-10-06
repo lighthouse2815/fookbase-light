@@ -211,9 +211,9 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.UserFollows.AddRange(
-                UserFollow.Create(viewerId, secondTargetId, now),
-                UserFollow.Create(viewerBlockedRelationId, secondTargetId, now),
-                UserFollow.Create(secondTargetId, viewerBlockedRelationId, now));
+                new UserFollow(viewerId, secondTargetId, now),
+                new UserFollow(viewerBlockedRelationId, secondTargetId, now),
+                new UserFollow(secondTargetId, viewerBlockedRelationId, now));
             await db.SaveChangesAsync();
         }
         await BlockAsync(viewerId, viewerBlockedRelationId);
@@ -283,7 +283,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.GroupMembers.Add(new GroupMember(privateGroup.Id, viewerId, GroupMemberRole.MEMBER, now));
-            db.BlockedUsers.Add(BlockedUser.Create(viewerId, ownerId, now));
+            db.BlockedUsers.Add(new BlockedUser(viewerId, ownerId, now));
             await db.SaveChangesAsync();
         }
         var groupsAfterMembership = await ReadAsync<GlobalSearchResponse>(
@@ -394,7 +394,7 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        db.BlockedUsers.Add(BlockedUser.Create(blockerId, blockedId, DateTimeOffset.UtcNow));
+        db.BlockedUsers.Add(new BlockedUser(blockerId, blockedId, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
     }
 

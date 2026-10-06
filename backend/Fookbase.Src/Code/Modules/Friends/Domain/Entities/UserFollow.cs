@@ -1,6 +1,5 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Persistence.Annotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Friends.Entities;
@@ -9,34 +8,12 @@ namespace Fookbase.Api.Modules.Friends.Entities;
 [Index(nameof(FollowingUserId), nameof(FollowerUserId))]
 [Index(nameof(FollowerUserId), nameof(FollowedAtUtc), nameof(FollowingUserId))]
 [Index(nameof(FollowingUserId), nameof(FollowedAtUtc), nameof(FollowerUserId))]
+[CheckConstraint("CK_UserFollows_DifferentUsers", "\"FollowerUserId\" <> \"FollowingUserId\"")]
 public sealed class UserFollow
 {
-    private UserFollow()
-    {
-    }
+    private UserFollow() { }
 
-    private UserFollow(Guid followerUserId, Guid followingUserId, DateTimeOffset followedAtUtc)
-    {
-        FollowerUserId = followerUserId;
-        FollowingUserId = followingUserId;
-        FollowedAtUtc = followedAtUtc;
-    }
-
-    public Guid FollowerUserId { get; private set; }
-
-    public Guid FollowingUserId { get; private set; }
-
-    public DateTimeOffset FollowedAtUtc { get; private set; }
-
-    [ForeignKey(nameof(FollowerUserId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User FollowerUser { get; private set; } = null!;
-
-    [ForeignKey(nameof(FollowingUserId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User FollowingUser { get; private set; } = null!;
-
-    public static UserFollow Create(
+    public UserFollow(
         Guid followerUserId,
         Guid followingUserId,
         DateTimeOffset followedAtUtc)
@@ -46,6 +23,20 @@ public sealed class UserFollow
             throw new ArgumentException("A user cannot follow themselves.");
         }
 
-        return new UserFollow(followerUserId, followingUserId, followedAtUtc);
+        FollowerUserId = followerUserId;
+        FollowingUserId = followingUserId;
+        FollowedAtUtc = followedAtUtc;
     }
+
+    public Guid FollowerUserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User FollowerUser { get; private set; } = null!;
+
+    public Guid FollowingUserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User FollowingUser { get; private set; } = null!;
+
+    public DateTimeOffset FollowedAtUtc { get; private set; }
 }

@@ -219,8 +219,8 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
                 {
                     case "unfriend":
                         db.Friendships.Remove(db.Friendships.Single(item =>
-                            (item.UserId1 == viewer && item.UserId2 == friend) ||
-                            (item.UserId1 == friend && item.UserId2 == viewer)));
+                            (item.User1Id == viewer && item.User2Id == friend) ||
+                            (item.User1Id == friend && item.User2Id == viewer)));
                         break;
                     case "unfollow":
                         db.PageFollowers.Remove(db.PageFollowers.Single(item => item.PageId == page.Id && item.UserId == viewer));
@@ -752,14 +752,14 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     private Task BefriendAsync(Guid viewer, Guid friend) => SaveAsync(db =>
     {
         var now = DateTimeOffset.UtcNow;
-        db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewer, friend, now));
+        db.Friendships.Add(new Friendship(viewer, friend, now));
         db.UserFollows.AddRange(
-            UserFollow.Create(viewer, friend, now),
-            UserFollow.Create(friend, viewer, now));
+            new UserFollow(viewer, friend, now),
+            new UserFollow(friend, viewer, now));
     });
 
     private Task FollowAsync(Guid follower, Guid following) => SaveAsync(db =>
-        db.UserFollows.Add(UserFollow.Create(follower, following, DateTimeOffset.UtcNow)));
+        db.UserFollows.Add(new UserFollow(follower, following, DateTimeOffset.UtcNow)));
 
     private async Task BlockAsync(Guid viewer, Guid other)
     {

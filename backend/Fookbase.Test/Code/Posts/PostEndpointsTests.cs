@@ -382,8 +382,8 @@ public sealed class PostEndpointsTests(PostsApiFactory factory) : IClassFixture<
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             Assert.Equal(1, await db.PostSaves.CountAsync(save => save.UserId == users[1] && save.PostId == post.Id));
             var friendship = await db.Friendships.SingleAsync(item =>
-                (item.UserId1 == users[0] && item.UserId2 == users[1]) ||
-                (item.UserId1 == users[1] && item.UserId2 == users[0]));
+                (item.User1Id == users[0] && item.User2Id == users[1]) ||
+                (item.User1Id == users[1] && item.User2Id == users[0]));
             db.Friendships.Remove(friendship);
             await db.SaveChangesAsync();
         }

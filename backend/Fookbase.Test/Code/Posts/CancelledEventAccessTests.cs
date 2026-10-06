@@ -70,7 +70,7 @@ public sealed class CancelledEventAccessTests(PostsApiFactory factory) : IClassF
         var seeded = await SeedAsync();
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        db.BlockedUsers.Add(BlockedUser.Create(
+        db.BlockedUsers.Add(new BlockedUser(
             hostBlocks ? seeded.OwnerId : seeded.ParticipantId,
             hostBlocks ? seeded.ParticipantId : seeded.OwnerId, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();

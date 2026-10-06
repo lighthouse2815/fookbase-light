@@ -259,7 +259,7 @@ public sealed class EventsService(
         var item = await Active().SingleOrDefaultAsync(x => x.Id == id, ct);
         if (item is null || !await access.CanViewAsync(item, actor, ct))
             return NotFound<EventCursorPageResponse<EventParticipantResponse>>();
-        var rows = await (from p in db.EventParticipants.AsNoTracking() join u in db.UserProfiles.AsNoTracking() on p.UserId equals u.UserId where p.EventId == id && !db.BlockedUsers.Any(b => (b.BlockerUserId == actor && b.BlockedUserId == p.UserId) || (b.BlockerUserId == p.UserId && b.BlockedUserId == actor)) orderby p.RespondedAtUtc descending, p.UserId descending select new { p, u }).Take(limit + 1).ToListAsync(ct);
+        var rows = await (from p in db.EventParticipants.AsNoTracking() join u in db.UserProfiles.AsNoTracking() on p.UserId equals u.UserId where p.EventId == id && !db.BlockedUsers.Any(b => (b.BlockerUserId == actor && b.BlockedAccountId == p.UserId) || (b.BlockerUserId == p.UserId && b.BlockedAccountId == actor)) orderby p.RespondedAtUtc descending, p.UserId descending select new { p, u }).Take(limit + 1).ToListAsync(ct);
         var items = rows.Take(limit).Select(x => new EventParticipantResponse(
             x.p.UserId,
             x.u.Username,
@@ -475,7 +475,7 @@ public sealed class EventsService(
             invitation.RespondedAtUtc,
             item is null ? null : await ToResponseAsync(item, viewer, ct));
     }
-    private Task<bool> IsBlockedAsync(Guid a, Guid b, CancellationToken ct) => db.BlockedUsers.AsNoTracking().AnyAsync(x => (x.BlockerUserId == a && x.BlockedUserId == b) || (x.BlockerUserId == b && x.BlockedUserId == a), ct);
+    private Task<bool> IsBlockedAsync(Guid a, Guid b, CancellationToken ct) => db.BlockedUsers.AsNoTracking().AnyAsync(x => (x.BlockerUserId == a && x.BlockedAccountId == b) || (x.BlockerUserId == b && x.BlockedAccountId == a), ct);
     private static string? Encode(DateTimeOffset at, Guid id) => System.Convert.ToBase64String(Encoding.UTF8.GetBytes($"{at.UtcTicks}|{id}"));
     private static ApplicationResult<T> Bad<T>(
         string code,

@@ -187,16 +187,16 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.UserFollows.AddRange(
-                UserFollow.Create(viewer.Id, target.Id, now),
-                UserFollow.Create(target.Id, viewer.Id, now),
-                UserFollow.Create(blockedRelation.Id, target.Id, now),
-                UserFollow.Create(target.Id, blockedRelation.Id, now),
-                UserFollow.Create(viewerBlockedRelation.Id, target.Id, now),
-                UserFollow.Create(target.Id, viewerBlockedRelation.Id, now));
-            db.Friendships.Add(Friendship.Create(Guid.NewGuid(), viewer.Id, target.Id, now));
+                new UserFollow(viewer.Id, target.Id, now),
+                new UserFollow(target.Id, viewer.Id, now),
+                new UserFollow(blockedRelation.Id, target.Id, now),
+                new UserFollow(target.Id, blockedRelation.Id, now),
+                new UserFollow(viewerBlockedRelation.Id, target.Id, now),
+                new UserFollow(target.Id, viewerBlockedRelation.Id, now));
+            db.Friendships.Add(new Friendship(viewer.Id, target.Id, now));
             db.BlockedUsers.AddRange(
-                BlockedUser.Create(target.Id, blockedRelation.Id, now),
-                BlockedUser.Create(viewer.Id, viewerBlockedRelation.Id, now));
+                new BlockedUser(target.Id, blockedRelation.Id, now),
+                new BlockedUser(viewer.Id, viewerBlockedRelation.Id, now));
             await db.SaveChangesAsync();
         }
 
@@ -246,7 +246,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.BlockedUsers.Add(BlockedUser.Create(target.Id, viewer.Id, now));
+            db.BlockedUsers.Add(new BlockedUser(target.Id, viewer.Id, now));
             await db.SaveChangesAsync();
         }
 
@@ -489,7 +489,7 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.Friendships.Add(Friendship.Create(Guid.NewGuid(), owner.Id, friend.Id, now));
+            db.Friendships.Add(new Friendship(owner.Id, friend.Id, now));
             await db.SaveChangesAsync();
         }
 
@@ -523,9 +523,9 @@ public sealed class UserProfileEndpointsTests(UsersApiFactory factory)
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
             db.Friendships.AddRange(
-                Friendship.Create(Guid.NewGuid(), actor.Id, visibleFriend.Id, now),
-                Friendship.Create(Guid.NewGuid(), actor.Id, blockedFriend.Id, now));
-            db.BlockedUsers.Add(BlockedUser.Create(actor.Id, blockedFriend.Id, now));
+                new Friendship(actor.Id, visibleFriend.Id, now),
+                new Friendship(actor.Id, blockedFriend.Id, now));
+            db.BlockedUsers.Add(new BlockedUser(actor.Id, blockedFriend.Id, now));
             await db.SaveChangesAsync();
         }
 
