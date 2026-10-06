@@ -582,7 +582,7 @@ public sealed class SocialInteractionsService(
     private static bool TryNormalizeHashtag(string value, out string normalizedName)
     {
         normalizedName = value.Trim().TrimStart('#').ToLowerInvariant();
-        return normalizedName.Length is > 0 and <= Hashtag.MaximumLength &&
+        return normalizedName.Length is > 0 and <= 50 &&
             normalizedName.All(character => char.IsLetterOrDigit(character) || character == '_');
     }
 

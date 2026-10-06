@@ -6,8 +6,6 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(NormalizedName), IsUnique = true)]
 public sealed class Hashtag
 {
-    public const int MaximumLength = 50;
-
     private Hashtag() { }
 
     public Hashtag(
@@ -25,11 +23,11 @@ public sealed class Hashtag
     public Guid Id { get; private set; }
 
     [Required]
-    [MaxLength(MaximumLength)]
+    [MaxLength(50)]
     public string NormalizedName { get; private set; } = string.Empty;
 
     [Required]
-    [MaxLength(MaximumLength)]
+    [MaxLength(50)]
     public string DisplayName { get; private set; } = string.Empty;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
