@@ -5,6 +5,7 @@ using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Photos.DTOs.Requests;
 using Fookbase.Api.Modules.Photos.DTOs.Responses;
+using Fookbase.Api.Modules.Photos.Domain.Enums;
 using Fookbase.Api.Modules.Photos.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +21,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         if (!TryPrivacy(request.Privacy, out var privacy)) return Bad<PhotoAlbumResponse>("invalid_album_privacy", "Album privacy is invalid.");
         try
         {
-            var album = PhotoAlbum.CreateCustom(Guid.NewGuid(), actorId, request.Name, request.Description, privacy, time.GetUtcNow());
+            var album = new PhotoAlbum(Guid.NewGuid(), actorId, request.Name, request.Description, privacy, time.GetUtcNow());
             db.PhotoAlbums.Add(album);
             await db.SaveChangesAsync(ct);
             return ApplicationResult<PhotoAlbumResponse>.Success(await ToAlbumAsync(album, actorId, ct));
@@ -109,7 +110,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
                                    select item).AnyAsync(ct);
         if (anotherCustom) return Bad<AlbumMediaResponse>("custom_album_membership_exists", "An image can belong to only one custom album.", ApplicationErrorType.CONFLICT);
         var max = await db.AlbumMedia.Where(item => item.AlbumId == albumId).Select(item => (long?)item.SortOrder).MaxAsync(ct) ?? -1;
-        var row = AlbumMedia.Create(albumId, mediaId, max + 1, time.GetUtcNow());
+        var row = new AlbumMedia(albumId, mediaId, max + 1, time.GetUtcNow());
         db.AlbumMedia.Add(row);
         await db.SaveChangesAsync(ct);
         return ApplicationResult<AlbumMediaResponse>.Success(new(mediaId, null, row.SortOrder, row.AddedAtUtc, AccessPath(albumId, mediaId)));
@@ -146,7 +147,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         var album = await GetOrCreateSystemAlbumAsync(ownerId, type, ct);
         if (await db.AlbumMedia.AnyAsync(item => item.AlbumId == album.Id && item.MediaId == mediaId, ct)) return;
         var max = await db.AlbumMedia.Where(item => item.AlbumId == album.Id).Select(item => (long?)item.SortOrder).MaxAsync(ct) ?? -1;
-        db.AlbumMedia.Add(AlbumMedia.Create(album.Id, mediaId, max + 1, time.GetUtcNow()));
+        db.AlbumMedia.Add(new AlbumMedia(album.Id, mediaId, max + 1, time.GetUtcNow()));
         await db.SaveChangesAsync(ct);
     }
 
@@ -154,7 +155,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
     {
         var album = await Active().SingleOrDefaultAsync(item => item.OwnerUserId == ownerId && item.AlbumType == type, ct);
         if (album is not null) return album;
-        album = PhotoAlbum.CreateSystem(Guid.NewGuid(), ownerId, type, time.GetUtcNow());
+        album = new PhotoAlbum(Guid.NewGuid(), ownerId, type, time.GetUtcNow());
         db.PhotoAlbums.Add(album);
         try { await db.SaveChangesAsync(ct); return album; }
         catch (DbUpdateException)

@@ -5,7 +5,7 @@ using Fookbase.Api.Modules.Posts.Config;
 using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Pages.Services;
 using Fookbase.Api.Modules.Events.Services;
-using Fookbase.Api.Modules.Photos.Entities;
+using Fookbase.Api.Modules.Photos.Domain.Enums;
 using Fookbase.Api.Modules.Photos.Services;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.Domain.Enums;

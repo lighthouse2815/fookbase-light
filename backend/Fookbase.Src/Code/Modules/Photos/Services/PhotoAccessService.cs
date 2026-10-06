@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Photos.Domain.Enums;
 using Fookbase.Api.Modules.Photos.Entities;
 using Microsoft.EntityFrameworkCore;
 

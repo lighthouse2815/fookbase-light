@@ -1,20 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Photos.Domain.Enums;
+using Fookbase.Api.Persistence.Annotations;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Photos.Entities;
 
-public enum PhotoAlbumType
-{
-    CUSTOM,
-    PROFILE_PICTURES,
-    COVER_PHOTOS,
-    TIMELINE_PHOTOS
-}
-
-public enum PhotoAlbumPrivacy
-{
-    PUBLIC,
-    FRIENDS,
-    ONLY_ME
-}
-
+[Index(nameof(OwnerUserId), nameof(AlbumType), IsUnique = true)]
+[IndexFilter("\"DeletedAtUtc\" IS NULL AND \"AlbumType\" <> 0", nameof(OwnerUserId), nameof(AlbumType))]
+[Index(nameof(OwnerUserId), nameof(CreatedAtUtc), nameof(Id))]
+[IndexFilter("\"DeletedAtUtc\" IS NULL", nameof(OwnerUserId), nameof(CreatedAtUtc), nameof(Id))]
 public sealed class PhotoAlbum
 {
     public const int MaximumNameLength = 160;
@@ -43,9 +37,13 @@ public sealed class PhotoAlbum
         UpdatedAtUtc = now;
     }
 
+    [Key]
     public Guid Id { get; private set; }
     public Guid OwnerUserId { get; private set; }
+    [Required]
+    [MaxLength(MaximumNameLength)]
     public string Name { get; private set; } = string.Empty;
+    [MaxLength(MaximumDescriptionLength)]
     public string? Description { get; private set; }
     public PhotoAlbumPrivacy Privacy { get; private set; }
     public PhotoAlbumType AlbumType { get; private set; }
@@ -53,27 +51,24 @@ public sealed class PhotoAlbum
     public DateTimeOffset UpdatedAtUtc { get; private set; }
     public DateTimeOffset? DeletedAtUtc { get; private set; }
 
-    public static PhotoAlbum CreateCustom(
+    public PhotoAlbum(
         Guid id,
         Guid ownerUserId,
         string name,
         string? description,
         PhotoAlbumPrivacy privacy,
-        DateTimeOffset now) =>
-        new(id, ownerUserId, name, description, privacy, PhotoAlbumType.CUSTOM, now);
+        DateTimeOffset now)
+        : this(id, ownerUserId, name, description, privacy, PhotoAlbumType.CUSTOM, now)
+    {
+    }
 
-    public static PhotoAlbum CreateSystem(
+    public PhotoAlbum(
         Guid id,
         Guid ownerUserId,
         PhotoAlbumType albumType,
         DateTimeOffset now)
+        : this(id, ownerUserId, SystemName(albumType), null, PhotoAlbumPrivacy.PUBLIC, albumType, now)
     {
-        if (albumType == PhotoAlbumType.CUSTOM)
-        {
-            throw new ArgumentException("Custom albums must be created explicitly.", nameof(albumType));
-        }
-
-        return new PhotoAlbum(id, ownerUserId, SystemName(albumType), null, PhotoAlbumPrivacy.PUBLIC, albumType, now);
     }
 
     public void UpdateCustom(string name, string? description, PhotoAlbumPrivacy privacy, DateTimeOffset now)
@@ -107,6 +102,7 @@ public sealed class PhotoAlbum
 
     private static string SystemName(PhotoAlbumType albumType) => albumType switch
     {
+        PhotoAlbumType.CUSTOM => throw new ArgumentException("Custom albums must be created explicitly.", nameof(albumType)),
         PhotoAlbumType.PROFILE_PICTURES => "Profile pictures",
         PhotoAlbumType.COVER_PHOTOS => "Cover photos",
         PhotoAlbumType.TIMELINE_PHOTOS => "Timeline photos",

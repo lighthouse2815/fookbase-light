@@ -7,6 +7,7 @@ using System.Text;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Photos.Domain.Enums;
 using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -128,7 +129,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
         var id = Guid.NewGuid();
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-        db.PhotoAlbums.Add(PhotoAlbum.CreateCustom(id, ownerId, "Private photos", null, privacy, DateTimeOffset.UtcNow));
+        db.PhotoAlbums.Add(new PhotoAlbum(id, ownerId, "Private photos", null, privacy, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
         return id;
     }

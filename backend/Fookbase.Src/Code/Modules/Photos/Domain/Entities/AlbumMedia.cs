@@ -1,5 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+
 namespace Fookbase.Api.Modules.Photos.Entities;
 
+[PrimaryKey(nameof(AlbumId), nameof(MediaId))]
+[Index(nameof(AlbumId), nameof(SortOrder), nameof(MediaId))]
+[Index(nameof(MediaId))]
 public sealed class AlbumMedia
 {
     public const int MaximumCaptionLength = 1_000;
@@ -8,23 +14,20 @@ public sealed class AlbumMedia
     {
     }
 
-    private AlbumMedia(Guid albumId, Guid mediaId, string? caption, long sortOrder, DateTimeOffset addedAtUtc)
+    public AlbumMedia(Guid albumId, Guid mediaId, long sortOrder, DateTimeOffset addedAtUtc)
     {
         AlbumId = albumId;
         MediaId = mediaId;
-        Caption = NormalizeCaption(caption);
         SortOrder = sortOrder;
         AddedAtUtc = addedAtUtc;
     }
 
     public Guid AlbumId { get; private set; }
     public Guid MediaId { get; private set; }
+    [MaxLength(MaximumCaptionLength)]
     public string? Caption { get; private set; }
     public long SortOrder { get; private set; }
     public DateTimeOffset AddedAtUtc { get; private set; }
-
-    public static AlbumMedia Create(Guid albumId, Guid mediaId, long sortOrder, DateTimeOffset addedAtUtc) =>
-        new(albumId, mediaId, null, sortOrder, addedAtUtc);
 
     public void UpdateCaption(string? caption)
     {

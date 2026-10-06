@@ -7,7 +7,7 @@ using Fookbase.Api.Modules.Users.DTOs.Responses;
 using Fookbase.Api.Modules.Users.Entities;
 using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Media.Services;
-using Fookbase.Api.Modules.Photos.Entities;
+using Fookbase.Api.Modules.Photos.Domain.Enums;
 using Fookbase.Api.Modules.Photos.Services;
 using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Modules.Posts.Services;
