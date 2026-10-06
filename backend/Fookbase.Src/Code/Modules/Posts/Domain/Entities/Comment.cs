@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Posts.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
@@ -23,7 +24,7 @@ public sealed class Comment
         PostId = postId;
         AuthorUserId = authorUserId;
         ParentCommentId = parentCommentId;
-        Content = NormalizeContent(content);
+        Content = CommentNormalization.NormalizeContent(content);
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -54,7 +55,7 @@ public sealed class Comment
     public void Update(string content, DateTimeOffset updatedAtUtc)
     {
         EnsureActive();
-        Content = NormalizeContent(content);
+        Content = CommentNormalization.NormalizeContent(content);
         UpdatedAtUtc = updatedAtUtc;
     }
 
@@ -70,17 +71,5 @@ public sealed class Comment
         {
             throw new InvalidOperationException("A deleted comment cannot be changed.");
         }
-    }
-
-    private static string NormalizeContent(string content)
-    {
-        var normalized = content.Trim();
-        if (normalized.Length is 0 or > 5_000)
-        {
-            throw new ArgumentException(
-                "Comment content must contain between 1 and 5000 characters.");
-        }
-
-        return normalized;
     }
 }
