@@ -14,7 +14,7 @@ public sealed class PageRoleInvitation
     {
     }
 
-    private PageRoleInvitation(Guid id, Guid pageId, Guid inviterUserId, Guid inviteeUserId, PageRole role,
+    public PageRoleInvitation(Guid id, Guid pageId, Guid inviterUserId, Guid inviteeUserId, PageRole role,
         DateTimeOffset createdAtUtc)
     {
         Id = id;
@@ -45,9 +45,6 @@ public sealed class PageRoleInvitation
 
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviteeUser { get; private set; } = null!;
-
-    public static PageRoleInvitation Create(Guid id, Guid pageId, Guid inviterUserId, Guid inviteeUserId,
-        PageRole role, DateTimeOffset createdAtUtc) => new(id, pageId, inviterUserId, inviteeUserId, role, createdAtUtc);
 
     public void Accept(DateTimeOffset respondedAtUtc) => Respond(PageRoleInvitationStatus.ACCEPTED, respondedAtUtc);
     public void Decline(DateTimeOffset respondedAtUtc) => Respond(PageRoleInvitationStatus.DECLINED, respondedAtUtc);

@@ -784,15 +784,15 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
     private async Task<Page> CreatePageAsync(Guid owner, Guid? viewer, bool published = true)
     {
         var now = DateTimeOffset.UtcNow;
-        var page = Page.Create(Guid.NewGuid(), "Mixed Page", "mixed_" + Guid.NewGuid().ToString("N"), "Community", null, owner, now);
+        var page = new Page(Guid.NewGuid(), "Mixed Page", "mixed_" + Guid.NewGuid().ToString("N"), "Community", null, owner, now);
         if (published)
             page.Publish(now);
         await SaveAsync(db =>
         {
             db.Pages.Add(page);
-            db.PageMembers.Add(PageMember.Create(page.Id, owner, PageRole.OWNER, now));
+            db.PageMembers.Add(new PageMember(page.Id, owner, PageRole.OWNER, now));
             if (viewer is not null)
-                db.PageFollowers.Add(PageFollower.Create(page.Id, viewer.Value, now));
+                db.PageFollowers.Add(new PageFollower(page.Id, viewer.Value, now));
         });
         return page;
     }

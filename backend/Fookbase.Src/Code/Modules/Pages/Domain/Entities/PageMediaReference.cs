@@ -13,7 +13,7 @@ public sealed class PageMediaReference
     {
     }
 
-    private PageMediaReference(Guid pageId, PageMediaSlot slot, Guid mediaId, DateTimeOffset attachedAtUtc)
+    public PageMediaReference(Guid pageId, PageMediaSlot slot, Guid mediaId, DateTimeOffset attachedAtUtc)
     {
         PageId = pageId;
         Slot = slot;
@@ -32,7 +32,4 @@ public sealed class PageMediaReference
 
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset Media { get; private set; } = null!;
-
-    public static PageMediaReference Create(Guid pageId, PageMediaSlot slot, Guid mediaId, DateTimeOffset attachedAtUtc) =>
-        new(pageId, slot, mediaId, attachedAtUtc);
 }

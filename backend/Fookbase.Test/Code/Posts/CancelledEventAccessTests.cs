@@ -118,7 +118,7 @@ public sealed class CancelledEventAccessTests(PostsApiFactory factory) : IClassF
         await db.SaveChangesAsync();
         Assert.False((await events.GetAsync(seeded.Event.Id, seeded.ParticipantId)).Succeeded);
 
-        db.PageMembers.Add(PageMember.Create(page.Id, seeded.ParticipantId, PageRole.MODERATOR, DateTimeOffset.UtcNow));
+        db.PageMembers.Add(new PageMember(page.Id, seeded.ParticipantId, PageRole.MODERATOR, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
         Assert.True((await events.GetAsync(seeded.Event.Id, seeded.ParticipantId)).Succeeded);
         Assert.False((await events.GetAsync(seeded.Event.Id, seeded.InviteeId)).Succeeded);
@@ -152,11 +152,11 @@ public sealed class CancelledEventAccessTests(PostsApiFactory factory) : IClassF
         }
         if (pageHost)
         {
-            var page = Page.Create(hostId, "Cancelled event page", "cancel_event_" + Guid.NewGuid().ToString("N")[..12],
+            var page = new Page(hostId, "Cancelled event page", "cancel_event_" + Guid.NewGuid().ToString("N")[..12],
                 "Community", null, users[0].Id, now);
             page.Publish(now);
             db.Pages.Add(page);
-            db.PageMembers.Add(PageMember.Create(hostId, users[0].Id, PageRole.OWNER, now));
+            db.PageMembers.Add(new PageMember(hostId, users[0].Id, PageRole.OWNER, now));
         }
         db.Events.Add(item);
         db.EventParticipants.Add(new EventParticipant(item.Id, users[1].Id, EventParticipantStatus.GOING, now));

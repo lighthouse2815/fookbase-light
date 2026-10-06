@@ -14,7 +14,7 @@ public sealed class PageMember
     {
     }
 
-    private PageMember(Guid pageId, Guid userId, PageRole role, DateTimeOffset joinedAtUtc)
+    public PageMember(Guid pageId, Guid userId, PageRole role, DateTimeOffset joinedAtUtc)
     {
         PageId = pageId;
         UserId = userId;
@@ -34,9 +34,6 @@ public sealed class PageMember
 
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User User { get; private set; } = null!;
-
-    public static PageMember Create(Guid pageId, Guid userId, PageRole role, DateTimeOffset joinedAtUtc) =>
-        new(pageId, userId, role, joinedAtUtc);
 
     public void ChangeRole(PageRole role, DateTimeOffset updatedAtUtc)
     {

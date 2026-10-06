@@ -23,7 +23,7 @@ public sealed partial class Page
     {
     }
 
-    private Page(Guid id, string name, string username, string category, string? bio, Guid createdByUserId,
+    public Page(Guid id, string name, string username, string category, string? bio, Guid createdByUserId,
         DateTimeOffset createdAtUtc)
     {
         Id = id;
@@ -71,10 +71,6 @@ public sealed partial class Page
     public ICollection<PageFollower> Followers { get; private set; } = new List<PageFollower>();
     public ICollection<PageRoleInvitation> RoleInvitations { get; private set; } = new List<PageRoleInvitation>();
     public ICollection<PageMediaReference> MediaReferences { get; private set; } = new List<PageMediaReference>();
-
-    public static Page Create(Guid id, string name, string username, string category, string? bio,
-        Guid createdByUserId, DateTimeOffset createdAtUtc) =>
-        new(id, name, username, category, bio, createdByUserId, createdAtUtc);
 
     public void Update(string name, string username, string category, string? bio, DateTimeOffset updatedAtUtc)
     {

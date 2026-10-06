@@ -240,9 +240,9 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.Pages.Add(Page.Create(pageId, "Event Page", "event_page_" + Guid.NewGuid().ToString("N")[..8], "Community", null,
+            db.Pages.Add(new Page(pageId, "Event Page", "event_page_" + Guid.NewGuid().ToString("N")[..8], "Community", null,
                 manager, DateTimeOffset.UtcNow));
-            db.PageMembers.Add(PageMember.Create(pageId, manager, PageRole.EDITOR, DateTimeOffset.UtcNow));
+            db.PageMembers.Add(new PageMember(pageId, manager, PageRole.EDITOR, DateTimeOffset.UtcNow));
             await db.SaveChangesAsync();
         }
         using var client = CreateAuthenticatedClient(manager);

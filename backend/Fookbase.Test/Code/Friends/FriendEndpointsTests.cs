@@ -922,7 +922,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var sharedPageName = $"private-page-{Guid.NewGuid():N}";
         var sharedGroup = new Group(
             Guid.NewGuid(), sharedGroupName, null, GroupPrivacy.PRIVATE, viewerUserId, now);
-        var sharedPage = Page.Create(
+        var sharedPage = new Page(
             Guid.NewGuid(),
             sharedPageName,
             $"suggestion_{Guid.NewGuid():N}",
@@ -942,8 +942,8 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             new GroupMember(sharedGroup.Id, secondGroupCandidateUserId, GroupMemberRole.MEMBER, now));
         dbContext.Pages.Add(sharedPage);
         dbContext.PageFollowers.AddRange(
-            PageFollower.Create(sharedPage.Id, viewerUserId, now),
-            PageFollower.Create(sharedPage.Id, pageCandidateUserId, now));
+            new PageFollower(sharedPage.Id, viewerUserId, now),
+            new PageFollower(sharedPage.Id, pageCandidateUserId, now));
         await dbContext.SaveChangesAsync();
 
         return new SuggestionGraphSecrets(sharedGroupName, sharedPageName);
@@ -994,7 +994,7 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
         var deletedGroup = new Group(
             Guid.NewGuid(), deletedGroupName, null, GroupPrivacy.PRIVATE, viewerUserId, now);
         deletedGroup.Delete(now);
-        var unpublishedPage = Page.Create(
+        var unpublishedPage = new Page(
             Guid.NewGuid(),
             unpublishedPageName,
             $"unpublished_{Guid.NewGuid():N}",
@@ -1022,8 +1022,8 @@ public sealed class FriendEndpointsTests(FriendsApiFactory factory)
             new GroupMember(deletedGroup.Id, deletedGroupCandidateUserId, GroupMemberRole.MEMBER, now));
         dbContext.Pages.Add(unpublishedPage);
         dbContext.PageFollowers.AddRange(
-            PageFollower.Create(unpublishedPage.Id, viewerUserId, now),
-            PageFollower.Create(unpublishedPage.Id, unpublishedPageCandidateUserId, now));
+            new PageFollower(unpublishedPage.Id, viewerUserId, now),
+            new PageFollower(unpublishedPage.Id, unpublishedPageCandidateUserId, now));
         await dbContext.SaveChangesAsync();
 
         return new ExcludedSuggestionGraphSecrets(activeGroupName, deletedGroupName, unpublishedPageName);

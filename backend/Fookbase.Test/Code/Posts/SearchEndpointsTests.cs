@@ -244,9 +244,9 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
         var now = DateTimeOffset.UtcNow;
         var publicGroup = new Group(Guid.NewGuid(), "Needle public group", "search description", GroupPrivacy.PUBLIC, ownerId, now);
         var privateGroup = new Group(Guid.NewGuid(), "Needle private group", "member only", GroupPrivacy.PRIVATE, ownerId, now);
-        var publishedPage = Page.Create(Guid.NewGuid(), "Needle public Page", "needle.public.page", "Community", "search bio", ownerId, now);
+        var publishedPage = new Page(Guid.NewGuid(), "Needle public Page", "needle.public.page", "Community", "search bio", ownerId, now);
         publishedPage.Publish(now);
-        var unpublishedPage = Page.Create(Guid.NewGuid(), "Needle hidden Page", "needle.hidden.page", "Community", null, ownerId, now);
+        var unpublishedPage = new Page(Guid.NewGuid(), "Needle hidden Page", "needle.hidden.page", "Community", null, ownerId, now);
         var pagePost = new Post(Guid.NewGuid(), ownerId, "needle page post", PostPrivacy.PUBLIC,
             PostContainerType.PAGE, publishedPage.Id, now, PostType.STANDARD);
         using (var scope = factory.Services.CreateScope())
@@ -258,8 +258,8 @@ public sealed class SearchEndpointsTests(PostsApiFactory factory) : IClassFixtur
                 new GroupMember(privateGroup.Id, ownerId, GroupMemberRole.OWNER, now));
             db.Pages.AddRange(publishedPage, unpublishedPage);
             db.PageMembers.AddRange(
-                PageMember.Create(publishedPage.Id, ownerId, PageRole.OWNER, now),
-                PageMember.Create(unpublishedPage.Id, ownerId, PageRole.OWNER, now));
+                new PageMember(publishedPage.Id, ownerId, PageRole.OWNER, now),
+                new PageMember(unpublishedPage.Id, ownerId, PageRole.OWNER, now));
             db.Posts.Add(pagePost);
             await db.SaveChangesAsync();
         }

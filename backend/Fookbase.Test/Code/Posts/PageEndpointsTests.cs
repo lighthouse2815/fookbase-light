@@ -453,14 +453,14 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            var page = Page.Create(pageId, "Mapping Page", "mapping." + pageId.ToString("N"), "Integration", null, users[0], now);
+            var page = new Page(pageId, "Mapping Page", "mapping." + pageId.ToString("N"), "Integration", null, users[0], now);
             page.SetMedia(avatar, cover, now);
             db.Pages.Add(page);
-            db.PageMembers.Add(PageMember.Create(pageId, users[0], PageRole.OWNER, now));
-            db.PageFollowers.Add(PageFollower.Create(pageId, users[1], now));
-            db.PageRoleInvitations.Add(PageRoleInvitation.Create(Guid.NewGuid(), pageId, users[0], users[1], PageRole.EDITOR, now));
-            db.PageMediaReferences.AddRange(PageMediaReference.Create(pageId, PageMediaSlot.AVATAR, avatar, now),
-                PageMediaReference.Create(pageId, PageMediaSlot.COVER, cover, now));
+            db.PageMembers.Add(new PageMember(pageId, users[0], PageRole.OWNER, now));
+            db.PageFollowers.Add(new PageFollower(pageId, users[1], now));
+            db.PageRoleInvitations.Add(new PageRoleInvitation(Guid.NewGuid(), pageId, users[0], users[1], PageRole.EDITOR, now));
+            db.PageMediaReferences.AddRange(new PageMediaReference(pageId, PageMediaSlot.AVATAR, avatar, now),
+                new PageMediaReference(pageId, PageMediaSlot.COVER, cover, now));
             await db.SaveChangesAsync();
         }
         using (var scope = factory.Services.CreateScope())

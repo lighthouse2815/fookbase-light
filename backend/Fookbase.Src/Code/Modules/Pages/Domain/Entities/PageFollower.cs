@@ -12,7 +12,7 @@ public sealed class PageFollower
     {
     }
 
-    private PageFollower(Guid pageId, Guid userId, DateTimeOffset followedAtUtc)
+    public PageFollower(Guid pageId, Guid userId, DateTimeOffset followedAtUtc)
     {
         PageId = pageId;
         UserId = userId;
@@ -29,7 +29,4 @@ public sealed class PageFollower
 
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User User { get; private set; } = null!;
-
-    public static PageFollower Create(Guid pageId, Guid userId, DateTimeOffset followedAtUtc) =>
-        new(pageId, userId, followedAtUtc);
 }

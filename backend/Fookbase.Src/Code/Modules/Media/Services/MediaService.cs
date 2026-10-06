@@ -542,7 +542,7 @@ public sealed class MediaService(
                 continue;
             }
 
-            dbContext.PageMediaReferences.Add(PageMediaReference.Create(pageId, slot, mediaId, timeProvider.GetUtcNow()));
+            dbContext.PageMediaReferences.Add(new PageMediaReference(pageId, slot, mediaId, timeProvider.GetUtcNow()));
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

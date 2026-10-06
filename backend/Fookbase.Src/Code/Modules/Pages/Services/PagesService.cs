@@ -47,9 +47,9 @@ public sealed class PagesService(
         try
         {
             var now = timeProvider.GetUtcNow();
-            var page = Page.Create(Guid.NewGuid(), request.Name, username, request.Category, request.Bio, actorUserId, now);
+            var page = new Page(Guid.NewGuid(), request.Name, username, request.Category, request.Bio, actorUserId, now);
             dbContext.Pages.Add(page);
-            dbContext.PageMembers.Add(PageMember.Create(page.Id, actorUserId, PageRole.OWNER, now));
+            dbContext.PageMembers.Add(new PageMember(page.Id, actorUserId, PageRole.OWNER, now));
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult<PageResponse>.Success(await ToResponseAsync(page, actorUserId, PageRole.OWNER, cancellationToken));
@@ -211,7 +211,7 @@ public sealed class PagesService(
 
         if (!await dbContext.PageFollowers.AnyAsync(follower => follower.PageId == pageId && follower.UserId == actorUserId, cancellationToken))
         {
-            dbContext.PageFollowers.Add(PageFollower.Create(pageId, actorUserId, timeProvider.GetUtcNow()));
+            dbContext.PageFollowers.Add(new PageFollower(pageId, actorUserId, timeProvider.GetUtcNow()));
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -374,7 +374,7 @@ public sealed class PagesService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var invitation = PageRoleInvitation.Create(Guid.NewGuid(), pageId, actorUserId, request.UserId, requestedRole, now);
+        var invitation = new PageRoleInvitation(Guid.NewGuid(), pageId, actorUserId, request.UserId, requestedRole, now);
         dbContext.PageRoleInvitations.Add(invitation);
         var notification = await notificationService.QueueAsync(request.UserId, actorUserId, NotificationType.PAGE_ROLE_INVITE,
             NotificationEntityType.PAGE_ROLE_INVITATION, invitation.Id, cancellationToken);
@@ -610,7 +610,7 @@ public sealed class PagesService(
                     return Conflict<PageRoleInvitationResponse>("already_page_member", "You already manage this Page.");
                 }
 
-                dbContext.PageMembers.Add(PageMember.Create(invitation.PageId, actorUserId, invitation.Role, now));
+                dbContext.PageMembers.Add(new PageMember(invitation.PageId, actorUserId, invitation.Role, now));
                 invitation.Accept(now);
             }
             else
@@ -700,7 +700,7 @@ public sealed class PagesService(
         try
         {
             normalizedUsername = Page.NormalizeUsername(username);
-            _ = Page.Create(Guid.Empty, name, normalizedUsername, category, bio, Guid.Empty, DateTimeOffset.UnixEpoch);
+            _ = new Page(Guid.Empty, name, normalizedUsername, category, bio, Guid.Empty, DateTimeOffset.UnixEpoch);
             if (ReservedUsernames.Contains(normalizedUsername))
             {
                 error = new ApplicationError("reserved_page_username", "This Page username is reserved.", ApplicationErrorType.VALIDATION);
