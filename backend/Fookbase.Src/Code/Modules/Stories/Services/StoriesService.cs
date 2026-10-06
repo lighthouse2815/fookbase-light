@@ -59,14 +59,14 @@ public sealed class StoriesService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var story = Story.Create(
+        var story = new Story(
             Guid.NewGuid(), actorUserId, mediaId, caption, parsedPrivacy, now,
             now.AddHours(options.LifetimeHours));
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
             dbContext.Stories.Add(story);
-            dbContext.StoryMediaReferences.Add(StoryMediaReference.Create(story.Id, mediaId, now));
+            dbContext.StoryMediaReferences.Add(new StoryMediaReference(story.Id, mediaId, now));
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult<StoryResponse>.Success(
@@ -159,7 +159,7 @@ public sealed class StoriesService(
             cancellationToken);
         if (view is null)
         {
-            dbContext.StoryViews.Add(StoryView.Create(storyId, viewerUserId, now));
+            dbContext.StoryViews.Add(new StoryView(storyId, viewerUserId, now));
         }
         else
         {
@@ -275,7 +275,7 @@ public sealed class StoriesService(
             cancellationToken);
         if (reaction is null)
         {
-            dbContext.StoryReactions.Add(StoryReaction.Create(storyId, actorUserId, parsedReaction, now));
+            dbContext.StoryReactions.Add(new StoryReaction(storyId, actorUserId, parsedReaction, now));
         }
         else
         {

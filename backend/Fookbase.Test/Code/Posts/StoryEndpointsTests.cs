@@ -345,11 +345,11 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            db.Stories.Add(Story.Create(storyId, users[0], mediaId, "mapped story", PostPrivacy.PUBLIC,
+            db.Stories.Add(new Story(storyId, users[0], mediaId, "mapped story", PostPrivacy.PUBLIC,
                 now, now.AddHours(24)));
-            db.StoryMediaReferences.Add(StoryMediaReference.Create(storyId, mediaId, now));
-            db.StoryViews.Add(StoryView.Create(storyId, users[1], now));
-            db.StoryReactions.Add(StoryReaction.Create(storyId, users[1], StoryReactionType.LOVE, now));
+            db.StoryMediaReferences.Add(new StoryMediaReference(storyId, mediaId, now));
+            db.StoryViews.Add(new StoryView(storyId, users[1], now));
+            db.StoryReactions.Add(new StoryReaction(storyId, users[1], StoryReactionType.LOVE, now));
             await db.SaveChangesAsync();
         }
 
@@ -409,12 +409,12 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
     {
         var mediaId = await CreateReadyMediaAsync(ownerUserId, MediaType.IMAGE);
         var now = DateTimeOffset.UtcNow;
-        var story = Story.Create(Guid.NewGuid(), ownerUserId, mediaId, "expired", PostPrivacy.PUBLIC,
+        var story = new Story(Guid.NewGuid(), ownerUserId, mediaId, "expired", PostPrivacy.PUBLIC,
             now.AddDays(-2), now.AddHours(-1));
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
         db.Stories.Add(story);
-        db.StoryMediaReferences.Add(StoryMediaReference.Create(story.Id, mediaId, now.AddDays(-2)));
+        db.StoryMediaReferences.Add(new StoryMediaReference(story.Id, mediaId, now.AddDays(-2)));
         await db.SaveChangesAsync();
         return story.Id;
     }
