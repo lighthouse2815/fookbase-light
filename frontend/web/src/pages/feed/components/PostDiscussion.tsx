@@ -88,9 +88,9 @@ export function DiscussionList({
         <div className="min-w-0 flex-1">
           <div className="inline-block max-w-full rounded-2xl bg-surface-2 px-3 py-2">
             <p className="text-[13px] font-bold text-text">{commentAuthorName}</p>
-            <TextWithReferences content={comment.content} mentions={comment.mentions} className="mt-0.5 text-sm leading-5 text-text whitespace-pre-wrap" />
+            <TextWithReferences content={comment.content} mentions={comment.mentions} className="mt-0.5 text-sm leading-5 text-text whitespace-pre-wrap break-words" />
           </div>
-          <div className="flex items-center gap-3 px-2 pt-1 text-xs font-semibold text-text-muted">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-2 pt-1 text-xs font-semibold text-text-muted">
             <time dateTime={comment.createdAtUtc} title={formatPostTimestamp(comment.createdAtUtc).absolute}>{formatPostTimestamp(comment.createdAtUtc).compact}</time>
             <PostReactionPicker compact disabled={disabled} viewerReaction={comment.viewerReaction} onToggleDefault={() => onRemoveReaction(comment)} onSelect={(type) => onReact(comment, type)} />
             {reactionTotal > 0 && <span key={reactionTotal} className="post-count text-xs font-medium text-text-muted">{reactionTotal}</span>}

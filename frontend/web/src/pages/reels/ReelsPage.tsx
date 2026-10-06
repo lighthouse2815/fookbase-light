@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { mediaApi, type Media } from '../../api/media'
-import { postsApi, type Comment } from '../../api/posts'
+import { postsApi, type Comment, type CommentAuthor } from '../../api/posts'
 import { reelsApi, type Reel, type ReelFeedMode } from '../../api/reels'
 import { resolveProfileImageUrl, usersApi, type UserProfile } from '../../api/users'
 import { useAuth } from '../../auth/useAuth'
 import { usePreferences } from '../../preferences'
+import AnimatedDeleteButton from '../../shared/components/AnimatedDeleteButton'
+import AppDialog from '../../shared/components/AppDialog'
 import TextWithReferences from '../../shared/components/TextWithReferences'
-import { formatPostTimestamp } from '../../shared/formatPostTimestamp'
-import { CommentComposer } from '../feed/components/PostDiscussion'
+import { CommentComposer, DiscussionList } from '../feed/components/PostDiscussion'
 import ShareDialog from '../feed/components/ShareDialog'
+import { usePostInteractions } from '../feed/components/usePostInteractions'
 import { Mascot } from 'page-mascot'
 import './reels.css'
 
@@ -177,21 +179,29 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, volume, isM
 }) {
   const { session } = useAuth()
   const { t } = usePreferences()
+  const currentUserId = session?.user.id ?? ''
+  const post = useMemo(() => ({ ...reel, authorUserId: reel.author.userId, content: reel.caption, mediaIds: [reel.video.mediaId] }), [reel])
+  const {
+    discussion, comments, commentCount, commentsLoaded, commentsLoading: isLoadingComments,
+    commentsLoadingMore, commentsError, commentsHasMore, commentSubmitting, busyCommentIds,
+  } = usePostInteractions(post, currentUserId)
   const cardRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const commentButtonRef = useRef<HTMLButtonElement>(null)
+  const draftVersionRef = useRef(0)
+  const replyVersionRef = useRef(0)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [posterUrl, setPosterUrl] = useState<string | null>(null)
   const [isPaused, setIsPaused] = useState(false)
   const [isCommentsOpen, setIsCommentsOpen] = useState(false)
-  const [comments, setComments] = useState<Comment[]>([])
-  const [isLoadingComments, setIsLoadingComments] = useState(false)
-  const [commentsError, setCommentsError] = useState<string | null>(null)
-  const [commentSaveError, setCommentSaveError] = useState<string | null>(null)
   const [commentText, setCommentText] = useState('')
+  const [replyTarget, setReplyTarget] = useState<Comment | null>(null)
+  const [editingComment, setEditingComment] = useState<Comment | null>(null)
+  const [editingCommentContent, setEditingCommentContent] = useState('')
+  const [commentPendingDeletion, setCommentPendingDeletion] = useState<Comment | null>(null)
+  const [isDeleteAnimating, setIsDeleteAnimating] = useState(false)
   const [hasRecordedThreshold, setHasRecordedThreshold] = useState(false)
   const [hasRecordedCompletion, setHasRecordedCompletion] = useState(false)
-  const [isSavingComment, setIsSavingComment] = useState(false)
   const [currentMs, setCurrentMs] = useState(0)
   const [isSaved, setIsSaved] = useState(reel.viewerHasSaved)
   const [isShareOpen, setIsShareOpen] = useState(false)
@@ -199,11 +209,19 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, volume, isM
   const [isFollowingAuthor, setIsFollowingAuthor] = useState(reel.viewerFollowsAuthor)
   const commentsOpen = active && isCommentsOpen
   const commentsId = `reel-comments-${reel.id}`
+  const commentAuthors = useMemo(() => {
+    const authors: Record<string, CommentAuthor> = {}
+    comments.forEach((comment) => { if (comment.author) authors[comment.author.userId] = comment.author })
+    return authors
+  }, [comments])
+  const currentUserName = currentUserProfile?.displayName ?? commentAuthors[currentUserId]?.displayName ?? session?.user.username ?? t('user')
+  const composerProfile = currentUserProfile ?? commentAuthors[currentUserId]
+  const replyTargetName = replyTarget ? commentAuthors[replyTarget.authorUserId]?.displayName ?? t('user') : undefined
 
   useEffect(() => {
     if (!commentsOpen) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !event.defaultPrevented) {
         setIsCommentsOpen(false)
         commentButtonRef.current?.focus()
       }
@@ -263,22 +281,9 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, volume, isM
     }
   }
 
-  const loadComments = async () => {
-    setIsLoadingComments(true)
-    setCommentsError(null)
-    try {
-      const page = await reelsApi.getComments(reel.id)
-      setComments(page.items)
-    } catch (requestError) {
-      setCommentsError(requestError instanceof ApiError ? requestError.message : t('unableLoadComments'))
-    } finally {
-      setIsLoadingComments(false)
-    }
-  }
-
   const openComments = () => {
     setIsCommentsOpen((current) => !current)
-    if (!isCommentsOpen && !isLoadingComments) void loadComments()
+    if (!isCommentsOpen) void discussion.loadComments()
   }
 
   const saveReel = async () => {
@@ -301,21 +306,37 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, volume, isM
     }
   }
 
+  const chooseReplyTarget = (comment: Comment | null) => {
+    replyVersionRef.current += 1
+    setReplyTarget(comment)
+  }
+
   const submitComment = async () => {
-    const content = commentText.trim()
-    if (!content || isSavingComment) return
-    setIsSavingComment(true)
-    setCommentSaveError(null)
-    try {
-      const created = await postsApi.createComment(reel.id, content)
-      setComments((current) => [...current, created])
-      setCommentText('')
-      onUpdated({ ...reel, commentCount: reel.commentCount + 1 })
-    } catch (requestError) {
-      setCommentSaveError(requestError instanceof ApiError ? requestError.message : t('unableCreateComment'))
-    } finally {
-      setIsSavingComment(false)
+    if (!commentText.trim() || discussion.getSnapshot().commentSubmitting) return
+    const draftVersion = draftVersionRef.current
+    const replyVersion = replyVersionRef.current
+    const created = await discussion.createComment(commentText, {
+      userId: currentUserId, username: session?.user.username ?? currentUserId,
+      displayName: currentUserName, avatarUrl: composerProfile?.avatarUrl ?? null,
+    }, replyTarget?.parentCommentId ?? replyTarget?.id)
+    if (!created) return
+    if (draftVersionRef.current === draftVersion) setCommentText('')
+    if (replyVersionRef.current === replyVersion) chooseReplyTarget(null)
+  }
+
+  const saveCommentEdit = async () => {
+    if (!editingComment || !editingCommentContent.trim()) return
+    if (await discussion.updateComment(editingComment.id, editingCommentContent)) {
+      setEditingComment(null)
+      setEditingCommentContent('')
     }
+  }
+
+  const deleteComment = async () => {
+    if (!commentPendingDeletion) return false
+    const removed = await discussion.deleteComment(commentPendingDeletion.id)
+    if (removed && (replyTarget?.id === commentPendingDeletion.id || replyTarget?.parentCommentId === commentPendingDeletion.id)) chooseReplyTarget(null)
+    return removed
   }
 
   const recordThreshold = (completed: boolean) => {
@@ -357,7 +378,7 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, volume, isM
       </div>
       <div className="reel-actions z-10 flex flex-col items-center gap-3">
         <ReelAction label="Thích Reel" count={reel.reactionCount} active={Boolean(reel.viewerReaction)} onClick={() => void toggleReaction()}>♡</ReelAction>
-        <ReelAction label="Xem bình luận" count={reel.commentCount} active={commentsOpen} expanded={commentsOpen} controls={commentsId} buttonRef={commentButtonRef} onClick={openComments}><svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-2 2V11.5a8.5 8.5 0 0 1 8.5-8.5h2a8.5 8.5 0 0 1 8.5 8.5Z" /><path d="M7 9h10M7 13h7" /></svg></ReelAction>
+        <ReelAction label="Xem bình luận" count={commentCount} active={commentsOpen} expanded={commentsOpen} controls={commentsId} buttonRef={commentButtonRef} onClick={openComments}><svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-2 2V11.5a8.5 8.5 0 0 1 8.5-8.5h2a8.5 8.5 0 0 1 8.5 8.5Z" /><path d="M7 9h10M7 13h7" /></svg></ReelAction>
         <ReelAction label="Chia sẻ Reel" onClick={() => setIsShareOpen(true)}>↗</ReelAction>
         <div className="relative"><ReelAction label="Tùy chọn khác" onClick={() => setIsMoreOpen((current) => !current)}>•••</ReelAction>{isMoreOpen && <button type="button" onClick={() => void saveReel()} className="absolute bottom-0 right-12 whitespace-nowrap rounded-md border-0 bg-surface px-3 py-2 text-xs font-bold text-text shadow-lg cursor-pointer">{isSaved ? 'Bỏ lưu Reel' : 'Lưu Reel'}</button>}</div>
       </div>
@@ -366,31 +387,44 @@ function ReelCard({ reel, currentUserProfile, active, shouldPreload, volume, isM
       <div className="reel-comments-shell" aria-hidden={!commentsOpen} inert={!commentsOpen}>
         <aside id={commentsId} aria-labelledby={`${commentsId}-title`} className="reel-comments flex flex-col overflow-hidden rounded-xl border border-border bg-surface text-text shadow-2xl">
           <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-            <div className="flex items-center gap-2"><h2 id={`${commentsId}-title`} className="text-lg font-bold">{t('reelComments')}</h2><span className="text-sm text-text-muted">{reel.commentCount.toLocaleString()}</span></div>
+            <div className="flex items-center gap-2"><h2 id={`${commentsId}-title`} className="text-lg font-bold">{t('reelComments')}</h2><span className="text-sm text-text-muted">{commentCount.toLocaleString()}</span></div>
             <button type="button" onClick={() => { setIsCommentsOpen(false); commentButtonRef.current?.focus() }} aria-label={t('closeComments')} className="grid h-9 w-9 place-items-center rounded-full text-2xl text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-primary">×</button>
           </header>
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-4" aria-busy={isLoadingComments}>
-            {isLoadingComments && <p className="py-5 text-center text-sm text-text-muted" role="status">{t('loading')}</p>}
-            {commentsError && <div className="text-center text-sm text-danger" role="alert"><p>{commentsError}</p><button type="button" onClick={() => void loadComments()} className="mt-2 rounded-lg border border-border px-3 py-1.5 text-text hover:bg-surface-2">{t('retry')}</button></div>}
-            {comments.map((comment) => {
-              const authorName = comment.author?.displayName ?? t('user')
-              const timestamp = formatPostTimestamp(comment.createdAtUtc)
-              return <article key={comment.id} className="flex items-start gap-3">
-                <Link to={`/profile/${comment.authorUserId}`} aria-label={authorName} className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white no-underline">{comment.author?.avatarUrl ? <img src={resolveProfileImageUrl(comment.author.avatarUrl)} alt="" loading="lazy" className="h-full w-full object-cover" /> : authorName.slice(0, 2).toUpperCase()}</Link>
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5"><Link to={`/profile/${comment.authorUserId}`} className="text-xs font-semibold text-text no-underline hover:underline">{authorName}</Link><time dateTime={comment.createdAtUtc} title={timestamp.absolute} className="text-[11px] text-text-muted">{timestamp.compact}</time></div>
-                  <TextWithReferences content={comment.content} mentions={comment.mentions} className="whitespace-pre-wrap break-words text-sm leading-relaxed text-text" />
-                </div>
-              </article>
-            })}
-            {!isLoadingComments && !commentsError && comments.length === 0 && <p className="py-8 text-center text-sm text-text-muted">{t('noCommentsYet')}</p>}
+            <DiscussionList
+              comments={comments} commentAuthors={commentAuthors} currentUserId={currentUserId}
+              isLoading={isLoadingComments} isLoadingMore={commentsLoadingMore}
+              error={!commentsLoaded ? commentsError : null} paginationError={commentsLoaded ? commentsError : null}
+              hasMore={commentsHasMore} loadingLabel={t('loading')} loadMoreLabel={t('loadMoreComments')}
+              editLabel={t('edit')} deleteLabel={t('delete')}
+              onLoadMore={() => void discussion.loadComments(true)} onRetryLoad={() => void discussion.loadComments()}
+              onReply={chooseReplyTarget} onEdit={(comment) => { setEditingComment(comment); setEditingCommentContent(comment.content) }}
+              onDelete={setCommentPendingDeletion}
+              onReact={(comment, type) => void discussion.reactToComment(comment.id, type)}
+              onRemoveReaction={(comment) => void discussion.reactToComment(comment.id)}
+              reactingCommentId={null} busyCommentIds={busyCommentIds}
+            />
           </div>
-          {commentSaveError && <p role="alert" className="px-4 pb-2 text-sm text-danger">{commentSaveError}</p>}
-          <CommentComposer currentUserProfile={currentUserProfile} currentUserName={currentUserProfile?.displayName ?? session?.user.username ?? t('user')} value={commentText} placeholder={t('writeComment')} sendLabel={isSavingComment ? t('sending') : t('send')} isSubmitting={isSavingComment} onChange={(event) => setCommentText(event.target.value)} onSubmit={(event) => { event.preventDefault(); void submitComment() }} />
+          <CommentComposer currentUserProfile={composerProfile} currentUserName={currentUserName} value={commentText} placeholder={replyTargetName ? `Trả lời ${replyTargetName}` : t('writeComment')} sendLabel={t('send')} isSubmitting={commentSubmitting} replyingToName={replyTargetName} onCancelReply={() => chooseReplyTarget(null)} onChange={(event) => { draftVersionRef.current += 1; setCommentText(event.target.value) }} onSubmit={(event) => { event.preventDefault(); void submitComment() }} />
         </aside>
       </div>
       </div>
       {isShareOpen && <ShareDialog postId={reel.id} onClose={() => setIsShareOpen(false)} />}
+      {editingComment && <AppDialog title="Chỉnh sửa bình luận" onClose={() => { if (!busyCommentIds.includes(editingComment.id)) setEditingComment(null) }}>
+        <form onSubmit={(event) => { event.preventDefault(); void saveCommentEdit() }}>
+          <label className="mt-4 block text-sm font-semibold text-text">Nội dung bình luận
+            <textarea data-dialog-initial-focus disabled={busyCommentIds.includes(editingComment.id)} value={editingCommentContent} onChange={(event) => setEditingCommentContent(event.target.value)} maxLength={5_000} rows={4} className="mt-1.5 w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm text-text outline-none focus:border-primary" />
+          </label>
+          <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={busyCommentIds.includes(editingComment.id)} onClick={() => setEditingComment(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button><button type="submit" disabled={!editingCommentContent.trim() || busyCommentIds.includes(editingComment.id)} aria-busy={busyCommentIds.includes(editingComment.id)} className="rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Lưu</button></div>
+        </form>
+      </AppDialog>}
+      {commentPendingDeletion && <AppDialog title="Xóa bình luận?" onClose={() => { if (!isDeleteAnimating && !busyCommentIds.includes(commentPendingDeletion.id)) setCommentPendingDeletion(null) }}>
+        <p className="mt-3 text-sm text-text-muted">Bình luận này sẽ bị xóa khỏi Fookbase.</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button data-dialog-initial-focus type="button" disabled={isDeleteAnimating || busyCommentIds.includes(commentPendingDeletion.id)} onClick={() => setCommentPendingDeletion(null)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button>
+          <AnimatedDeleteButton disabled={busyCommentIds.includes(commentPendingDeletion.id)} onBusyChange={setIsDeleteAnimating} onDelete={deleteComment} onDeleted={() => setCommentPendingDeletion(null)} />
+        </div>
+      </AppDialog>}
     </section>
   )
 }
