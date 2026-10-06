@@ -181,7 +181,7 @@ public sealed class ModerationService(
     public async Task<ApplicationResult<UserModerationStateResponse>> GetStateAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var state = await dbContext.UserModerationStates.AsNoTracking().SingleOrDefaultAsync(item => item.UserId == userId, cancellationToken);
-        return ApplicationResult<UserModerationStateResponse>.Success(ToResponse(state ?? UserModerationState.Create(userId, timeProvider.GetUtcNow())));
+        return ApplicationResult<UserModerationStateResponse>.Success(ToResponse(state ?? new UserModerationState(userId, timeProvider.GetUtcNow())));
     }
 
     public async Task<ApplicationResult<ModerationActionPageResponse>> GetHistoryAsync(Guid userId, string? cursorValue, int limit, CancellationToken cancellationToken = default)
@@ -233,7 +233,7 @@ public sealed class ModerationService(
     {
         var state = await dbContext.UserModerationStates.SingleOrDefaultAsync(item => item.UserId == userId, cancellationToken);
         if (state is not null) return state;
-        state = UserModerationState.Create(userId, now);
+        state = new UserModerationState(userId, now);
         dbContext.UserModerationStates.Add(state);
         return state;
     }
