@@ -25,12 +25,12 @@
   top: 7px;
   width: 22px;
   height: 22px;
-  transition: transform 180ms ease, opacity 140ms ease;
+  transition: transform 240ms ease, opacity 180ms ease;
 }
 
-.animated-delete__can { transform-origin: 12px 20px; transition: transform 180ms ease; }
-.animated-delete__lid { transform-origin: 4px 5px; transition: transform 180ms ease; }
-.animated-delete__fill { opacity: .3; transform: translateY(14px); transition: transform 400ms ease; }
+.animated-delete__can { transform-origin: 12px 20px; transition: transform 240ms ease; }
+.animated-delete__lid { transform-origin: 4px 5px; transition: transform 240ms ease; }
+.animated-delete__fill { opacity: .3; transform: translateY(14px); transition: transform 760ms ease; }
 .animated-delete[data-state='eat'] .animated-delete__can { transform: rotate(10deg); }
 .animated-delete[data-state='eat'] .animated-delete__lid { transform: rotate(-45deg); }
 .animated-delete:is([data-state='eat'], [data-state='pending']) .animated-delete__fill { transform: translateY(0); }
@@ -59,7 +59,7 @@
   stroke-linecap: round;
   stroke-dasharray: 60 28;
 }
-.animated-delete[data-state='pending'] .animated-delete__spinner { opacity: .8; animation: animated-delete-spin 700ms linear infinite; }
+.animated-delete[data-state='pending'] .animated-delete__spinner { opacity: .8; animation: animated-delete-spin 900ms linear infinite; }
 
 .animated-delete__check {
   position: absolute;
@@ -69,11 +69,11 @@
   top: 6px;
   opacity: 0;
   transform: scale(.75);
-  transition: opacity 120ms ease, transform 180ms ease;
+  transition: opacity 180ms ease, transform 240ms ease;
 }
 .animated-delete[data-state='done'] .animated-delete__icon { opacity: 0; }
 .animated-delete[data-state='done'] .animated-delete__check { opacity: 1; transform: scale(1); }
-.animated-delete[data-state='error'] .animated-delete__can { animation: animated-delete-shake 280ms ease; }
+.animated-delete[data-state='error'] .animated-delete__can { animation: animated-delete-shake 360ms ease; }
 
 @keyframes animated-delete-spin { to { transform: rotate(360deg); } }
 @keyframes animated-delete-shake { 25%, 75% { transform: translateX(-2px); } 50% { transform: translateX(2px); } }

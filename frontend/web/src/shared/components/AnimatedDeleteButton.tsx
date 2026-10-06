@@ -48,7 +48,7 @@ export default function AnimatedDeleteButton({ disabled = false, onDelete, onDel
           { transform: 'translate(0, 0) scale(1)', opacity: 1 },
           { transform: `translate(${dx * .5}px, ${dy - 10}px) rotate(${rotation}deg) scale(.8)`, opacity: 1, offset: .55 },
           { transform: `translate(${dx}px, ${dy}px) rotate(${rotation * 2}deg) scale(.2)`, opacity: 0 },
-        ], { duration: 320, delay: index * 60, fill: 'forwards', easing: 'cubic-bezier(.3, 0, .5, 1)' })
+        ], { duration: 560, delay: 80 + index * 120, fill: 'forwards', easing: 'cubic-bezier(.3, 0, .5, 1)' })
       }) : []
       animationsRef.current = animations
       await Promise.all(animations.map((animation, index) => animation.finished.then(() => {
@@ -63,7 +63,7 @@ export default function AnimatedDeleteButton({ disabled = false, onDelete, onDel
         setState('done')
         play(523.25, .2, 'sine', .08)
         play(659.25, .12, 'sine', .07, .06)
-        if (!reducedMotion || soundEnabled) await new Promise((resolve) => window.setTimeout(resolve, 240))
+        if (!reducedMotion || soundEnabled) await new Promise((resolve) => window.setTimeout(resolve, reducedMotion ? 240 : 360))
         if (mountedRef.current) onDeleted()
       } else {
         setState('error')
