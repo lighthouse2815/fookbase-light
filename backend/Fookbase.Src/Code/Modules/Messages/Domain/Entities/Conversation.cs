@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Messages.Common;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,7 +43,7 @@ public sealed class Conversation
     {
         Id = id;
         Type = ConversationType.GROUP;
-        Title = NormalizeTitle(title);
+        Title = ConversationNormalization.NormalizeTitle(title);
         CreatedAtUtc = createdAtUtc;
         LastMessageAtUtc = createdAtUtc;
     }
@@ -109,18 +110,7 @@ public sealed class Conversation
             throw new InvalidOperationException("Only group conversations can be updated.");
         }
 
-        Title = NormalizeTitle(title);
+        Title = ConversationNormalization.NormalizeTitle(title);
         PhotoMediaId = photoMediaId;
-    }
-
-    private static string NormalizeTitle(string? value)
-    {
-        var normalized = value?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > MaximumTitleLength)
-        {
-            throw new ArgumentException("Group conversation title must contain between 1 and 120 characters.");
-        }
-
-        return normalized;
     }
 }
