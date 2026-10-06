@@ -1,19 +1,17 @@
-using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Shared.Common;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Groups.Entities;
 
-[Table("GroupRules")]
 [Index(nameof(GroupId), nameof(SortOrder), nameof(Id))]
 public sealed class GroupRule
 {
     public const int MaximumTitleLength = 200;
     public const int MaximumDescriptionLength = 2_000;
 
-    private GroupRule()
-    {
-    }
+    private GroupRule() { }
 
     public GroupRule(Guid id, Guid groupId, string title, string? description, int sortOrder)
     {
@@ -26,18 +24,21 @@ public sealed class GroupRule
 
     [Key]
     public Guid Id { get; private set; }
-    public Guid GroupId { get; private set; }
-    [Required]
-    [MaxLength(MaximumTitleLength)]
-    public string Title { get; private set; } = string.Empty;
-    [MaxLength(MaximumDescriptionLength)]
-    public string? Description { get; private set; }
-    public int SortOrder { get; private set; }
 
-    [ForeignKey(nameof(GroupId))]
+    public Guid GroupId { get; private set; }
+
     [InverseProperty(nameof(Group.Rules))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Group Group { get; private set; } = null!;
+
+    [Required]
+    [MaxLength(MaximumTitleLength)]
+    public string Title { get; private set; } = string.Empty;
+
+    [MaxLength(MaximumDescriptionLength)]
+    public string? Description { get; private set; }
+
+    public int SortOrder { get; private set; }
 
     public void Update(string title, string? description, int sortOrder)
     {
@@ -60,7 +61,7 @@ public sealed class GroupRule
 
     private static string? NormalizeDescription(string? value)
     {
-        var normalized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        var normalized = TextNormalization.NormalizeOptionalText(value);
         if (normalized?.Length > MaximumDescriptionLength)
         {
             throw new ArgumentException(

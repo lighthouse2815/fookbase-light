@@ -1,21 +1,18 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Groups.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Persistence.Annotations;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
 
 namespace Fookbase.Api.Modules.Groups.Entities;
 
-[Table("GroupInvites")]
 [Index(nameof(GroupId), nameof(InviteeUserId), IsUnique = true)]
 [IndexFilter("\"Status\" = 0", nameof(GroupId), nameof(InviteeUserId))]
 [Index(nameof(InviteeUserId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class GroupInvite
 {
-    private GroupInvite()
-    {
-    }
+    private GroupInvite() { }
 
     public GroupInvite(
         Guid id,
@@ -34,25 +31,28 @@ public sealed class GroupInvite
 
     [Key]
     public Guid Id { get; private set; }
-    public Guid GroupId { get; private set; }
-    public Guid InviterUserId { get; private set; }
-    public Guid InviteeUserId { get; private set; }
-    public GroupInviteStatus Status { get; private set; }
-    public DateTimeOffset CreatedAtUtc { get; private set; }
-    public DateTimeOffset? RespondedAtUtc { get; private set; }
 
-    [ForeignKey(nameof(GroupId))]
+    public Guid GroupId { get; private set; }
+
     [InverseProperty(nameof(Group.Invites))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Group Group { get; private set; } = null!;
 
-    [ForeignKey(nameof(InviterUserId))]
+    public Guid InviterUserId { get; private set; }
+
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviterUser { get; private set; } = null!;
 
-    [ForeignKey(nameof(InviteeUserId))]
+    public Guid InviteeUserId { get; private set; }
+
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviteeUser { get; private set; } = null!;
+
+    public GroupInviteStatus Status { get; private set; }
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset? RespondedAtUtc { get; private set; }
 
     public void Accept(DateTimeOffset respondedAtUtc)
     {
