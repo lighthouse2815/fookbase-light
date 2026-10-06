@@ -8,9 +8,7 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(CommentId), nameof(Type))]
 public sealed class CommentReaction
 {
-    private CommentReaction()
-    {
-    }
+    private CommentReaction() { }
 
     public CommentReaction(
         Guid commentId,
@@ -26,6 +24,10 @@ public sealed class CommentReaction
 
     public Guid CommentId { get; private set; }
 
+    [ForeignKey(nameof(CommentId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Comment Comment { get; private set; } = null!;
+
     public Guid UserId { get; private set; }
 
     public ReactionType Type { get; private set; }
@@ -33,10 +35,6 @@ public sealed class CommentReaction
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
-
-    [ForeignKey(nameof(CommentId))]
-    [DeleteBehavior(DeleteBehavior.Cascade)]
-    public Comment Comment { get; private set; } = null!;
 
     public void ChangeTo(ReactionType type, DateTimeOffset updatedAtUtc)
     {

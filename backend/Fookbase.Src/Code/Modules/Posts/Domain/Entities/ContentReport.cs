@@ -11,9 +11,7 @@ public sealed class ContentReport
 {
     public const int MaximumDetailsLength = 500;
 
-    private ContentReport()
-    {
-    }
+    private ContentReport() { }
 
     public ContentReport(
         Guid reporterUserId,
@@ -49,6 +47,7 @@ public sealed class ContentReport
     public ContentReportStatus Status { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
+
     public DateTimeOffset? ResolvedAtUtc { get; private set; }
 
     public void UpdateStatus(ContentReportStatus status, DateTimeOffset resolvedAtUtc)

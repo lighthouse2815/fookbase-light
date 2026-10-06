@@ -19,9 +19,7 @@ public sealed class Post
     public const string AvatarUpdatedPostContent = "đã cập nhật ảnh đại diện.";
     public const string CoverUpdatedPostContent = "đã cập nhật ảnh bìa.";
 
-    private Post()
-    {
-    }
+    private Post() { }
 
     public Post(
         Guid id,

@@ -10,9 +10,7 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(MentionedUserId))]
 public sealed class ContentMention
 {
-    private ContentMention()
-    {
-    }
+    private ContentMention() { }
 
     public ContentMention(
         MentionSourceType sourceType,
@@ -34,12 +32,11 @@ public sealed class ContentMention
 
     public Guid MentionedUserId { get; private set; }
 
-    public int StartIndex { get; private set; }
-
-    public int Length { get; private set; }
-
     [ForeignKey(nameof(MentionedUserId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public User MentionedUser { get; private set; } = null!;
 
+    public int StartIndex { get; private set; }
+
+    public int Length { get; private set; }
 }

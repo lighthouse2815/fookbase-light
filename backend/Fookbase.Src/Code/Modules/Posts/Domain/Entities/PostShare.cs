@@ -12,9 +12,7 @@ public sealed class PostShare
 {
     public const int MaximumCaptionLength = Post.MaximumContentLength;
 
-    private PostShare()
-    {
-    }
+    private PostShare() { }
 
     public PostShare(
         Guid id,
@@ -38,6 +36,10 @@ public sealed class PostShare
 
     public Guid OriginalPostId { get; private set; }
 
+    [ForeignKey(nameof(OriginalPostId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Post OriginalPost { get; private set; } = null!;
+
     public Guid SharingUserId { get; private set; }
 
     public PostShareDestinationType DestinationType { get; private set; }
@@ -50,10 +52,6 @@ public sealed class PostShare
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
-
-    [ForeignKey(nameof(OriginalPostId))]
-    [DeleteBehavior(DeleteBehavior.Cascade)]
-    public Post OriginalPost { get; private set; } = null!;
 
     public void Delete(DateTimeOffset deletedAtUtc)
     {

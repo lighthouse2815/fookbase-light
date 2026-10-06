@@ -7,9 +7,7 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(HashtagId), nameof(PostId))]
 public sealed class PostHashtag
 {
-    private PostHashtag()
-    {
-    }
+    private PostHashtag() { }
 
     public PostHashtag(Guid postId, Guid hashtagId)
     {
@@ -19,14 +17,13 @@ public sealed class PostHashtag
 
     public Guid PostId { get; private set; }
 
-    public Guid HashtagId { get; private set; }
-
     [ForeignKey(nameof(PostId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
+    public Guid HashtagId { get; private set; }
+
     [ForeignKey(nameof(HashtagId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Hashtag Hashtag { get; private set; } = null!;
-
 }

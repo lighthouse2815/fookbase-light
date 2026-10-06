@@ -7,11 +7,12 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(UserId), nameof(SavedAtUtc), nameof(PostId))]
 public sealed class PostSave
 {
-    private PostSave()
-    {
-    }
+    private PostSave() { }
 
-    public PostSave(Guid userId, Guid postId, DateTimeOffset savedAtUtc)
+    public PostSave(
+        Guid userId,
+        Guid postId,
+        DateTimeOffset savedAtUtc)
     {
         UserId = userId;
         PostId = postId;
@@ -22,10 +23,9 @@ public sealed class PostSave
 
     public Guid PostId { get; private set; }
 
-    public DateTimeOffset SavedAtUtc { get; private set; }
-
     [ForeignKey(nameof(PostId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;
 
+    public DateTimeOffset SavedAtUtc { get; private set; }
 }

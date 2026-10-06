@@ -8,9 +8,7 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(AuthorUserId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(PostId))]
 public sealed class Comment
 {
-    private Comment()
-    {
-    }
+    private Comment() { }
 
     public Comment(
         Guid id,
@@ -32,9 +30,15 @@ public sealed class Comment
 
     public Guid PostId { get; private set; }
 
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Post Post { get; private set; } = null!;
+
     public Guid AuthorUserId { get; private set; }
 
     public Guid? ParentCommentId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public Comment? ParentComment { get; private set; }
 
     [Required]
     [MaxLength(5_000)]
@@ -45,12 +49,6 @@ public sealed class Comment
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
-
-    [DeleteBehavior(DeleteBehavior.Cascade)]
-    public Post Post { get; private set; } = null!;
-
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public Comment? ParentComment { get; private set; }
 
     public void Update(string content, DateTimeOffset updatedAtUtc)
     {

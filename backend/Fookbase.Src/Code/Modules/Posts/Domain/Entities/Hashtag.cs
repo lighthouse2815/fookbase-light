@@ -8,11 +8,13 @@ public sealed class Hashtag
 {
     public const int MaximumLength = 50;
 
-    private Hashtag()
-    {
-    }
+    private Hashtag() { }
 
-    public Hashtag(Guid id, string normalizedName, string displayName, DateTimeOffset createdAtUtc)
+    public Hashtag(
+        Guid id,
+        string normalizedName,
+        string displayName,
+        DateTimeOffset createdAtUtc)
     {
         Id = id;
         NormalizedName = normalizedName;
@@ -31,5 +33,4 @@ public sealed class Hashtag
     public string DisplayName { get; private set; } = string.Empty;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
-
 }

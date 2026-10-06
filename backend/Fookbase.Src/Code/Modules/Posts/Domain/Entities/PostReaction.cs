@@ -9,9 +9,7 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(UserId), nameof(CreatedAtUtc), nameof(PostId))]
 public sealed class PostReaction
 {
-    private PostReaction()
-    {
-    }
+    private PostReaction() { }
 
     public PostReaction(
         Guid postId,
@@ -27,6 +25,10 @@ public sealed class PostReaction
 
     public Guid PostId { get; private set; }
 
+    [ForeignKey(nameof(PostId))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public Post Post { get; private set; } = null!;
+
     public Guid UserId { get; private set; }
 
     public ReactionType Type { get; private set; }
@@ -34,10 +36,6 @@ public sealed class PostReaction
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
-
-    [ForeignKey(nameof(PostId))]
-    [DeleteBehavior(DeleteBehavior.Cascade)]
-    public Post Post { get; private set; } = null!;
 
     public void ChangeTo(ReactionType type, DateTimeOffset updatedAtUtc)
     {
