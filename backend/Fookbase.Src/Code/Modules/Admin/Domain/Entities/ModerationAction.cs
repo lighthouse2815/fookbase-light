@@ -12,9 +12,7 @@ namespace Fookbase.Api.Modules.Admin.Entities;
 [Index(nameof(SubjectUserId), nameof(CreatedAtUtc))]
 public sealed class ModerationAction
 {
-    private ModerationAction()
-    {
-    }
+    private ModerationAction(){ }
 
     public ModerationAction(
         Guid? reportId,
