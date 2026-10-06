@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Events.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
@@ -68,7 +67,6 @@ public sealed class Event
 
     public Guid CreatedByUserId { get; private set; }
 
-    [ForeignKey(nameof(CreatedByUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User CreatedByUser { get; private set; } = null!;
 
@@ -88,7 +86,6 @@ public sealed class Event
 
     public Guid? CoverMediaId { get; private set; }
 
-    [ForeignKey(nameof(CoverMediaId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset? CoverMedia { get; private set; }
 

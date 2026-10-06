@@ -23,14 +23,12 @@ public sealed class EventCoverMediaReference
     [Key]
     public Guid EventId { get; private set; }
 
-    [ForeignKey(nameof(EventId))]
     [InverseProperty(nameof(Event.CoverMediaReference))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Event Event { get; private set; } = null!;
 
     public Guid MediaId { get; private set; }
 
-    [ForeignKey(nameof(MediaId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset Media { get; private set; } = null!;
 

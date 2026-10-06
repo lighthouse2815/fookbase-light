@@ -25,14 +25,12 @@ public sealed class EventParticipant
 
     public Guid EventId { get; private set; }
 
-    [ForeignKey(nameof(EventId))]
     [InverseProperty(nameof(Event.Participants))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Event Event { get; private set; } = null!;
 
     public Guid UserId { get; private set; }
 
-    [ForeignKey(nameof(UserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User User { get; private set; } = null!;
 

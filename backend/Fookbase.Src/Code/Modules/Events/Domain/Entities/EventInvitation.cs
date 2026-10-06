@@ -34,20 +34,17 @@ public sealed class EventInvitation
 
     public Guid EventId { get; private set; }
 
-    [ForeignKey(nameof(EventId))]
     [InverseProperty(nameof(Event.Invitations))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Event Event { get; private set; } = null!;
 
     public Guid InviterUserId { get; private set; }
 
-    [ForeignKey(nameof(InviterUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviterUser { get; private set; } = null!;
 
     public Guid InviteeUserId { get; private set; }
 
-    [ForeignKey(nameof(InviteeUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviteeUser { get; private set; } = null!;
 
