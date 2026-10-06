@@ -10,11 +10,14 @@ namespace Fookbase.Api.Modules.Pages.Entities;
 [Index(nameof(InviteeUserId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class PageRoleInvitation
 {
-    private PageRoleInvitation()
-    {
-    }
+    private PageRoleInvitation() { }
 
-    public PageRoleInvitation(Guid id, Guid pageId, Guid inviterUserId, Guid inviteeUserId, PageRole role,
+    public PageRoleInvitation(
+        Guid id,
+        Guid pageId,
+        Guid inviterUserId,
+        Guid inviteeUserId,
+        PageRole role,
         DateTimeOffset createdAtUtc)
     {
         Id = id;
@@ -28,25 +31,33 @@ public sealed class PageRoleInvitation
 
     [Key]
     public Guid Id { get; private set; }
+
     public Guid PageId { get; private set; }
-    public Guid InviterUserId { get; private set; }
-    public Guid InviteeUserId { get; private set; }
-    public PageRole Role { get; private set; }
-    public PageRoleInvitationStatus Status { get; private set; }
-    public DateTimeOffset CreatedAtUtc { get; private set; }
-    public DateTimeOffset? RespondedAtUtc { get; private set; }
 
     [InverseProperty(nameof(Page.RoleInvitations))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Page Page { get; private set; } = null!;
 
+    public Guid InviterUserId { get; private set; }
+
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviterUser { get; private set; } = null!;
+
+    public Guid InviteeUserId { get; private set; }
 
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviteeUser { get; private set; } = null!;
 
+    public PageRole Role { get; private set; }
+
+    public PageRoleInvitationStatus Status { get; private set; }
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset? RespondedAtUtc { get; private set; }
+
     public void Accept(DateTimeOffset respondedAtUtc) => Respond(PageRoleInvitationStatus.ACCEPTED, respondedAtUtc);
+
     public void Decline(DateTimeOffset respondedAtUtc) => Respond(PageRoleInvitationStatus.DECLINED, respondedAtUtc);
 
     private void Respond(PageRoleInvitationStatus status, DateTimeOffset respondedAtUtc)

@@ -10,11 +10,13 @@ namespace Fookbase.Api.Modules.Pages.Entities;
 [Index(nameof(PageId), nameof(Role))]
 public sealed class PageMember
 {
-    private PageMember()
-    {
-    }
+    private PageMember() { }
 
-    public PageMember(Guid pageId, Guid userId, PageRole role, DateTimeOffset joinedAtUtc)
+    public PageMember(
+        Guid pageId,
+        Guid userId,
+        PageRole role,
+        DateTimeOffset joinedAtUtc)
     {
         PageId = pageId;
         UserId = userId;
@@ -23,17 +25,21 @@ public sealed class PageMember
     }
 
     public Guid PageId { get; private set; }
-    public Guid UserId { get; private set; }
-    public PageRole Role { get; private set; }
-    public DateTimeOffset JoinedAtUtc { get; private set; }
-    public DateTimeOffset? UpdatedAtUtc { get; private set; }
 
     [InverseProperty(nameof(Page.Members))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Page Page { get; private set; } = null!;
 
+    public Guid UserId { get; private set; }
+
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User User { get; private set; } = null!;
+
+    public PageRole Role { get; private set; }
+
+    public DateTimeOffset JoinedAtUtc { get; private set; }
+
+    public DateTimeOffset? UpdatedAtUtc { get; private set; }
 
     public void ChangeRole(PageRole role, DateTimeOffset updatedAtUtc)
     {

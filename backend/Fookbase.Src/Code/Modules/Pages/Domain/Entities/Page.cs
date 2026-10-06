@@ -19,11 +19,15 @@ public sealed class Page
     public const int MaximumCategoryLength = 80;
     public const int MaximumBioLength = 2_000;
 
-    private Page()
-    {
-    }
+    private Page() { }
 
-    public Page(Guid id, string name, string username, string category, string? bio, Guid createdByUserId,
+    public Page(
+        Guid id,
+        string name,
+        string username,
+        string category,
+        string? bio,
+        Guid createdByUserId,
         DateTimeOffset createdAtUtc)
     {
         Id = id;
@@ -38,38 +42,52 @@ public sealed class Page
 
     [Key]
     public Guid Id { get; private set; }
+
     [Required]
     [MaxLength(MaximumNameLength)]
     public string Name { get; private set; } = string.Empty;
+
     [Required]
     [MaxLength(MaximumUsernameLength)]
     [Column(TypeName = "citext")]
     public string Username { get; private set; } = string.Empty;
+
     [Required]
     [MaxLength(MaximumCategoryLength)]
     public string Category { get; private set; } = string.Empty;
+
     [MaxLength(MaximumBioLength)]
     public string? Bio { get; private set; }
-    public Guid? AvatarMediaId { get; private set; }
-    public Guid? CoverMediaId { get; private set; }
-    public PageStatus Status { get; private set; }
-    public Guid CreatedByUserId { get; private set; }
-    public DateTimeOffset CreatedAtUtc { get; private set; }
-    public DateTimeOffset? UpdatedAtUtc { get; private set; }
-    public DateTimeOffset? DeletedAtUtc { get; private set; }
 
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User CreatedByUser { get; private set; } = null!;
+    public Guid? AvatarMediaId { get; private set; }
 
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset? AvatarMedia { get; private set; }
 
+    public Guid? CoverMediaId { get; private set; }
+
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset? CoverMedia { get; private set; }
 
+    public PageStatus Status { get; private set; }
+
+    public Guid CreatedByUserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User CreatedByUser { get; private set; } = null!;
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset? UpdatedAtUtc { get; private set; }
+
+    public DateTimeOffset? DeletedAtUtc { get; private set; }
+
     public ICollection<PageMember> Members { get; private set; } = new List<PageMember>();
+
     public ICollection<PageFollower> Followers { get; private set; } = new List<PageFollower>();
+
     public ICollection<PageRoleInvitation> RoleInvitations { get; private set; } = new List<PageRoleInvitation>();
+
     public ICollection<PageMediaReference> MediaReferences { get; private set; } = new List<PageMediaReference>();
 
     public void Update(string name, string username, string category, string? bio, DateTimeOffset updatedAtUtc)
