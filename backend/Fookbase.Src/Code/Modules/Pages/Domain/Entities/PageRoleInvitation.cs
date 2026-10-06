@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Pages.Entities;
 
-[Table("PageRoleInvitations")]
 [Index(nameof(PageId), nameof(InviteeUserId), IsUnique = true)]
 [Index(nameof(InviteeUserId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class PageRoleInvitation
@@ -37,16 +36,13 @@ public sealed class PageRoleInvitation
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? RespondedAtUtc { get; private set; }
 
-    [ForeignKey(nameof(PageId))]
     [InverseProperty(nameof(Page.RoleInvitations))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Page Page { get; private set; } = null!;
 
-    [ForeignKey(nameof(InviterUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviterUser { get; private set; } = null!;
 
-    [ForeignKey(nameof(InviteeUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User InviteeUser { get; private set; } = null!;
 

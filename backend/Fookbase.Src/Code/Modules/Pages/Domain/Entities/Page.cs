@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Pages.Entities;
 
-[Table("Pages")]
 [Index(nameof(Username), IsUnique = true)]
 [Index(nameof(Status), nameof(Name), nameof(Id))]
 [Index(nameof(CreatedByUserId), nameof(CreatedAtUtc))]
@@ -59,15 +58,12 @@ public sealed partial class Page
     public DateTimeOffset? UpdatedAtUtc { get; private set; }
     public DateTimeOffset? DeletedAtUtc { get; private set; }
 
-    [ForeignKey(nameof(CreatedByUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User CreatedByUser { get; private set; } = null!;
 
-    [ForeignKey(nameof(AvatarMediaId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset? AvatarMedia { get; private set; }
 
-    [ForeignKey(nameof(CoverMediaId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset? CoverMedia { get; private set; }
 
