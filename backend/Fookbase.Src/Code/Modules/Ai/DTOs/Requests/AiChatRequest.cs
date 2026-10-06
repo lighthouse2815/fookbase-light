@@ -5,7 +5,7 @@ using Microsoft.Extensions.Validation;
 namespace Fookbase.Api.Modules.Ai.DTOs.Requests;
 
 public sealed record AiChatRequest(
-    [property: Required(ErrorMessage = "Message is required.")]
+    [property: Required(ErrorMessage = "Nội dung tin nhắn là bắt buộc.")]
     [property: AiInputLength]
     string? Message,
 

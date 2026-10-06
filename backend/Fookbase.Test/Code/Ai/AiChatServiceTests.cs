@@ -16,11 +16,11 @@ namespace Fookbase.Ai.Api.IntegrationTests;
 public sealed class AiChatServiceTests
 {
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData("123456")]
-    public async Task Invalid_message_is_rejected_before_calling_a_provider(string? message)
+    [InlineData(null, "Nội dung tin nhắn là bắt buộc.")]
+    [InlineData("", "Nội dung tin nhắn là bắt buộc.")]
+    [InlineData("   ", "Nội dung tin nhắn là bắt buộc.")]
+    [InlineData("123456", "Nội dung tin nhắn không được vượt quá 5 ký tự.")]
+    public async Task Invalid_message_is_rejected_before_calling_a_provider(string? message, string expectedError)
     {
         var provider = new RecordingHandler(HttpStatusCode.OK,
             """{"choices":[{"message":{"content":"Reply"}}]}""");
@@ -32,8 +32,9 @@ public sealed class AiChatServiceTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Contains(body.RootElement.GetProperty("errors").EnumerateObject(),
+        var error = Assert.Single(body.RootElement.GetProperty("errors").EnumerateObject(),
             error => error.Name.EndsWith("Message", StringComparison.Ordinal));
+        Assert.Contains(error.Value.EnumerateArray(), item => item.GetString() == expectedError);
         Assert.Empty(provider.Requests);
     }
 
@@ -178,6 +179,7 @@ public sealed class AiChatServiceTests
 
         Assert.False(result.Succeeded);
         Assert.Equal(StatusCodes.Status502BadGateway, result.StatusCode);
+        Assert.Equal("Dịch vụ AI không thể hoàn thành yêu cầu.", result.Error);
         Assert.Empty(gemini.Requests);
     }
 

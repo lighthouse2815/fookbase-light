@@ -29,6 +29,6 @@ public static class AiChatEndpoints
         var result = await service.ChatAsync(request, cancellationToken);
         return result.Succeeded
             ? Results.Ok(result.Response)
-            : Results.Problem(statusCode: result.StatusCode, title: "AI chat request failed.", detail: result.Error);
+            : Results.Problem(statusCode: result.StatusCode, title: "Yêu cầu trò chuyện AI thất bại.", detail: result.Error);
     }
 }

@@ -293,10 +293,13 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
 {
-    if (context.ProblemDetails is HttpValidationProblemDetails)
+    if (context.ProblemDetails is HttpValidationProblemDetails validationProblem)
     {
-        context.ProblemDetails.Title = "Validation";
-        context.ProblemDetails.Detail = ErrorCode.ValidationFailed.Message;
+        var isAiRequest = context.HttpContext.Request.Path.StartsWithSegments("/api/ai");
+        context.ProblemDetails.Title = isAiRequest ? "Dữ liệu không hợp lệ" : "Validation";
+        context.ProblemDetails.Detail = isAiRequest
+            ? string.Join(" ", validationProblem.Errors.Values.SelectMany(errors => errors).Distinct())
+            : ErrorCode.ValidationFailed.Message;
         context.ProblemDetails.Extensions["code"] = ErrorCode.ValidationFailed.Code;
     }
 });

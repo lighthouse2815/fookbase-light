@@ -17,7 +17,7 @@ public sealed class AiChatService(
         if (!options.Enabled)
         {
             return AiChatServiceResult.Failure(StatusCodes.Status503ServiceUnavailable,
-                "AI chat is not enabled.");
+                "Tính năng trò chuyện AI chưa được bật.");
         }
 
         var input = BuildInput(request.History, request.Message!.Trim());
@@ -25,7 +25,7 @@ public sealed class AiChatService(
         if (providers.Count == 0)
         {
             return AiChatServiceResult.Failure(StatusCodes.Status503ServiceUnavailable,
-                "No AI provider is configured.");
+                "Chưa cấu hình nhà cung cấp AI.");
         }
 
         foreach (var provider in providers)
@@ -39,14 +39,14 @@ public sealed class AiChatService(
             if (!attempt.CanFallback)
             {
                 return AiChatServiceResult.Failure(StatusCodes.Status502BadGateway,
-                    "The AI service could not complete the request.");
+                    "Dịch vụ AI không thể hoàn thành yêu cầu.");
             }
 
             logger.LogWarning("AI provider {Provider} was unavailable; trying the next configured provider.", provider.Name);
         }
 
         return AiChatServiceResult.Failure(StatusCodes.Status503ServiceUnavailable,
-            "All configured AI services are temporarily unavailable.");
+            "Các dịch vụ AI hiện tạm thời không khả dụng.");
     }
 
     private async Task<ProviderAttempt> SendAsync(

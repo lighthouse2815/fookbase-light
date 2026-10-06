@@ -12,10 +12,10 @@ public sealed class AiInputLengthAttribute : ValidationAttribute
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         var options = (AiChatOptions?)validationContext.GetService(typeof(AiChatOptions))
-            ?? throw new InvalidOperationException("AI chat options are not registered.");
+            ?? throw new InvalidOperationException("Cấu hình trò chuyện AI chưa được đăng ký.");
         return new TrimmedStringLengthAttribute(options.MaximumInputCharacters).IsValid(value)
             ? ValidationResult.Success
-            : new ValidationResult($"Message must not exceed {options.MaximumInputCharacters} characters.",
+            : new ValidationResult($"Nội dung tin nhắn không được vượt quá {options.MaximumInputCharacters} ký tự.",
                 validationContext.MemberName is null ? null : [validationContext.MemberName]);
     }
 }

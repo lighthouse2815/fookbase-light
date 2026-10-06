@@ -46,14 +46,14 @@ public sealed class AiChatOptions
             MaximumInputCharacters is < 1 or > 20_000 ||
             MaximumHistoryMessages is < 0 or > 30)
         {
-            throw new InvalidOperationException("AI chat options are outside the supported bounds.");
+            throw new InvalidOperationException("Cấu hình trò chuyện AI nằm ngoài giới hạn được hỗ trợ.");
         }
 
         var providers = GetConfiguredProviders();
         if (providers.Count == 0)
         {
             throw new InvalidOperationException(
-                "Configure at least one API key: AiChat:Groq:ApiKey, AiChat:Gemini:ApiKey, or AiChat:OpenRouter:ApiKey.");
+                "Cần cấu hình ít nhất một khóa API: AiChat:Groq:ApiKey, AiChat:Gemini:ApiKey hoặc AiChat:OpenRouter:ApiKey.");
         }
 
         foreach (var provider in providers)
@@ -104,7 +104,7 @@ public sealed class AiChatProviderOptions
             !Uri.TryCreate(ApiBaseUrl, UriKind.Absolute, out var baseUri) ||
             baseUri.Scheme != Uri.UriSchemeHttps || string.IsNullOrWhiteSpace(baseUri.Host))
         {
-            throw new InvalidOperationException("Configured AI providers require an API key, model, and absolute HTTPS base URL.");
+            throw new InvalidOperationException("Nhà cung cấp AI cần có khóa API, mô hình và URL gốc HTTPS tuyệt đối hợp lệ.");
         }
     }
 }
