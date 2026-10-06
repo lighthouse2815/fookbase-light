@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +31,6 @@ public sealed class ContentMention
 
     public Guid MentionedUserId { get; private set; }
 
-    [ForeignKey(nameof(MentionedUserId))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public User MentionedUser { get; private set; } = null!;
 

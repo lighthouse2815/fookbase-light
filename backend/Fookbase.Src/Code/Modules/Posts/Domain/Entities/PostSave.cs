@@ -27,7 +27,6 @@ public sealed class PostSave
 
     public Guid PostId { get; private set; }
 
-    [ForeignKey(nameof(PostId))]
     [InverseProperty(nameof(Post.Saves))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;

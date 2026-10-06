@@ -26,7 +26,6 @@ public sealed class PostReaction
 
     public Guid PostId { get; private set; }
 
-    [ForeignKey(nameof(PostId))]
     [InverseProperty(nameof(Post.Reactions))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;

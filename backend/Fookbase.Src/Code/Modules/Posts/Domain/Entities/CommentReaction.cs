@@ -25,7 +25,6 @@ public sealed class CommentReaction
 
     public Guid CommentId { get; private set; }
 
-    [ForeignKey(nameof(CommentId))]
     [InverseProperty(nameof(Comment.Reactions))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Comment Comment { get; private set; } = null!;

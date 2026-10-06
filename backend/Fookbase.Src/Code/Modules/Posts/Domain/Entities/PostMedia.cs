@@ -22,7 +22,6 @@ public sealed class PostMedia
 
     public Guid PostId { get; private set; }
 
-    [ForeignKey(nameof(PostId))]
     [InverseProperty(nameof(Post.MediaItems))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post Post { get; private set; } = null!;

@@ -37,7 +37,6 @@ public sealed class PostShare
 
     public Guid OriginalPostId { get; private set; }
 
-    [ForeignKey(nameof(OriginalPostId))]
     [InverseProperty(nameof(Post.Shares))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Post OriginalPost { get; private set; } = null!;
