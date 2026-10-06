@@ -1,44 +1,49 @@
 using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Events.Common;
+using Fookbase.Api.Modules.Events.Domain.Enums;
+using Fookbase.Api.Modules.Events.Entities;
+using Fookbase.Api.Modules.Identity.Common;
+using Fookbase.Api.Shared.Common;
 
 namespace Fookbase.Api.Modules.Events.DTOs.Requests;
 
 public sealed record CreateEventRequest(
     [Required(ErrorMessage = "Loại chủ sự kiện là bắt buộc.")]
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateHostType))]
+    [OptionalEnumValue<EventHostType>(ErrorMessage = "Loại chủ sự kiện phải là user, group hoặc page.")]
     string HostType,
 
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateHostId))]
+    [RequiredEventHostId(ErrorMessage = "Mã nhóm hoặc trang tổ chức sự kiện là bắt buộc.")]
+    [OptionalNonEmptyGuid(ErrorMessage = "Mã định danh không được để trống.")]
     Guid? HostId,
 
     [Required(ErrorMessage = "Tên sự kiện là bắt buộc.")]
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateName))]
+    [TrimmedStringLength(Event.MaximumNameLength, ErrorMessage = "Tên sự kiện không được vượt quá {1} ký tự.")]
     string Name,
 
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateDescription))]
+    [TrimmedStringLength(Event.MaximumDescriptionLength, ErrorMessage = "Mô tả không được vượt quá {1} ký tự.")]
     string? Description,
 
     [Required(ErrorMessage = "Quyền riêng tư là bắt buộc.")]
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidatePrivacy))]
+    [OptionalEnumValue<EventPrivacy>(ErrorMessage = "Quyền riêng tư phải là public hoặc private.")]
     string Privacy,
 
     [Required(ErrorMessage = "Loại địa điểm là bắt buộc.")]
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateLocationType))]
+    [OptionalEnumValue<EventLocationType>(ErrorMessage = "Địa điểm phải là physical hoặc online.")]
     string LocationType,
     string? LocationName,
     string? Address,
 
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateOnlineUrl))]
+    [EventOnlineUrl(ErrorMessage = "Sự kiện trực tuyến cần URL http hoặc https hợp lệ.")]
     string? OnlineUrl,
 
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateStartTime))]
+    [EventStartTime(ErrorMessage = "Thời gian bắt đầu là bắt buộc.")]
     DateTimeOffset StartsAtUtc,
 
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateEndTime))]
+    [EventEndTime(ErrorMessage = "Thời gian kết thúc phải sau thời gian bắt đầu.")]
     DateTimeOffset? EndsAtUtc,
 
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateOptionalId))]
+    [OptionalNonEmptyGuid(ErrorMessage = "Mã định danh không được để trống.")]
     Guid? CoverMediaId,
 
-    [CustomValidation(typeof(EventRequestValidation), nameof(EventRequestValidation.ValidateInitialStatus))]
+    [InitialEventStatus(ErrorMessage = "Trạng thái ban đầu phải là draft hoặc published.")]
     string? Status = null);

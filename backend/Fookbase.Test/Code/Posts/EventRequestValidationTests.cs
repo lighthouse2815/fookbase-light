@@ -4,8 +4,12 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Fookbase.Api.Modules.Posts.Config;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Fookbase.Posts.Api.IntegrationTests;
@@ -145,6 +149,62 @@ public sealed class EventRequestValidationTests(PostsApiFactory factory) : IClas
             new { content = "", mediaIds = new[] { mediaId } })).StatusCode);
     }
 
+    [Fact]
+    public async Task Cross_field_validation_keeps_errors_on_their_own_fields()
+    {
+        using var client = CreateClient();
+        var body = EventBody();
+        body["hostType"] = "group";
+        body["locationType"] = "online";
+        body["endsAtUtc"] = body["startsAtUtc"];
+        using var response = await client.PostAsJsonAsync("/api/events", body);
+        await AssertValidationAsync(response, "HostId");
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors");
+        Assert.Equal("Mã nhóm hoặc trang tổ chức sự kiện là bắt buộc.", errors.GetProperty("HostId")[0].GetString());
+        Assert.Equal("Sự kiện trực tuyến cần URL http hoặc https hợp lệ.", errors.GetProperty("OnlineUrl")[0].GetString());
+        Assert.Equal("Thời gian kết thúc phải sau thời gian bắt đầu.", errors.GetProperty("EndsAtUtc")[0].GetString());
+    }
+
+    [Fact]
+    public async Task Event_post_attachment_limit_comes_from_configuration()
+    {
+        using var configuredFactory = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<PostsOptions>();
+                services.AddSingleton(new PostsOptions { MaximumAttachments = 2 });
+            }));
+        using var client = CreateClient(configuredFactory);
+        Assert.Equal(2, configuredFactory.Services.GetRequiredService<PostsOptions>().MaximumAttachments);
+        var path = $"/api/events/{Guid.NewGuid()}/posts";
+        var mediaIds = Enumerable.Range(0, 3).Select(_ => Guid.NewGuid()).ToArray();
+        using var response = await client.PostAsJsonAsync(path, new { mediaIds });
+        await AssertValidationAsync(response, "MediaIds");
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("Bài viết chỉ được có tối đa 2 tệp đính kèm.",
+            document.RootElement.GetProperty("errors").GetProperty("MediaIds")[0].GetString());
+        using var accepted = await client.PostAsJsonAsync(path, new { mediaIds = mediaIds.Take(2).ToArray() });
+        Assert.Equal(HttpStatusCode.NotFound, accepted.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("00000000-0000-0000-0000-000000000001")]
+    public async Task Physical_event_updates_preserve_trimmed_limits_optional_ids_and_time_offsets(string? coverMediaId)
+    {
+        using var client = CreateClient();
+        var body = EventBody();
+        body["name"] = " " + new string('a', 160) + " ";
+        body["description"] = " " + new string('b', 10_000) + " ";
+        body["onlineUrl"] = "ignored-for-physical-events";
+        body["startsAtUtc"] = "2027-01-01T07:00:00+07:00";
+        body["endsAtUtc"] = "2027-01-01T01:00:00+00:00";
+        body["coverMediaId"] = coverMediaId;
+        using var response = await client.PatchAsJsonAsync($"/api/events/{Guid.NewGuid()}", body);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private static Dictionary<string, object?> EventBody() => new()
     {
         ["hostType"] = "user",
@@ -155,16 +215,18 @@ public sealed class EventRequestValidationTests(PostsApiFactory factory) : IClas
         ["status"] = "published"
     };
 
-    private HttpClient CreateClient()
+    private HttpClient CreateClient() => CreateClient(factory);
+
+    private static HttpClient CreateClient(WebApplicationFactory<Program> app)
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = app.Services.CreateScope();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var now = DateTime.UtcNow;
         var token = new JwtSecurityToken(configuration["Jwt:Issuer"], configuration["Jwt:Audience"],
             [new(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString())], now.AddSeconds(-1), now.AddMinutes(5),
             new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SigningKey"]!)),
                 SecurityAlgorithms.HmacSha256));
-        var client = factory.CreateClient();
+        var client = app.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
             new JwtSecurityTokenHandler().WriteToken(token));
         return client;
