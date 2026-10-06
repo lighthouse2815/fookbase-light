@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +28,7 @@ public sealed class PostShare
         SharingUserId = sharingUserId;
         DestinationType = destinationType;
         DestinationId = destinationId;
-        Caption = NormalizeCaption(caption);
+        Caption = PostShareNormalization.NormalizeCaption(caption);
         CreatedAtUtc = createdAtUtc;
     }
 
@@ -63,21 +64,5 @@ public sealed class PostShare
         }
 
         DeletedAtUtc = deletedAtUtc;
-    }
-
-    private static string? NormalizeCaption(string? caption)
-    {
-        if (string.IsNullOrWhiteSpace(caption))
-        {
-            return null;
-        }
-
-        var normalized = caption.Trim();
-        if (normalized.Length > 10_000)
-        {
-            throw new ArgumentException("Share caption cannot exceed 10000 characters.");
-        }
-
-        return normalized;
     }
 }
