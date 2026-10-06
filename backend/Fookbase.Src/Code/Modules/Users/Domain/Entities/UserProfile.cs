@@ -12,7 +12,7 @@ namespace Fookbase.Api.Modules.Users.Entities;
 [Index(nameof(Username), IsUnique = true)]
 public sealed class UserProfile
 {
-    private UserProfile(){}
+    private UserProfile() { }
 
     public UserProfile(
         Guid userId,
@@ -44,6 +44,10 @@ public sealed class UserProfile
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid UserId { get; private set; }
 
+    [InverseProperty(nameof(User.Profile))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public User User { get; private set; } = null!;
+
     [Required]
     [MaxLength(32)]
     public string Username { get; private set; } = string.Empty;
@@ -58,12 +62,18 @@ public sealed class UserProfile
     [MaxLength(2048)]
     public string? AvatarUrl { get; private set; }
 
+    public Guid? AvatarMediaId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset? AvatarMedia { get; private set; }
+
     [MaxLength(2048)]
     public string? CoverUrl { get; private set; }
 
-    public Guid? AvatarMediaId { get; private set; }
-
     public Guid? CoverMediaId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset? CoverMedia { get; private set; }
 
     public DateOnly? DateOfBirth { get; private set; }
 
@@ -92,19 +102,6 @@ public sealed class UserProfile
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
-
-    [ForeignKey(nameof(UserId))]
-    [InverseProperty(nameof(User.Profile))]
-    [DeleteBehavior(DeleteBehavior.Cascade)]
-    public User User { get; private set; } = null!;
-
-    [ForeignKey(nameof(AvatarMediaId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public MediaAsset? AvatarMedia { get; private set; }
-
-    [ForeignKey(nameof(CoverMediaId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public MediaAsset? CoverMedia { get; private set; }
 
     public void Update(
         string? displayName,

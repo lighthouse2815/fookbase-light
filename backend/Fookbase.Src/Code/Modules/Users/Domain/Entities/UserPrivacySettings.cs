@@ -6,7 +6,7 @@ namespace Fookbase.Api.Modules.Users.Entities;
 
 public sealed class UserPrivacySettings
 {
-    private UserPrivacySettings(){}
+    private UserPrivacySettings() { }
 
     public UserPrivacySettings(Guid userId, DateTimeOffset now)
     {
