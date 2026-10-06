@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Admin.Entities;
 
-[Table("ModerationActions")]
 [Index(nameof(TargetType), nameof(TargetId), nameof(CreatedAtUtc))]
 [Index(nameof(SubjectUserId), nameof(CreatedAtUtc))]
 public sealed class ModerationAction

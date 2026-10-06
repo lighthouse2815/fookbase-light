@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Admin.Entities;
 
-[Table("UserModerationStates")]
 public sealed class UserModerationState
 {
     private UserModerationState() { }
