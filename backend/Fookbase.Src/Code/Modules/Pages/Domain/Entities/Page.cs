@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.RegularExpressions;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
+using Fookbase.Api.Modules.Pages.Common;
 using Fookbase.Api.Modules.Pages.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +11,7 @@ namespace Fookbase.Api.Modules.Pages.Entities;
 [Index(nameof(Username), IsUnique = true)]
 [Index(nameof(Status), nameof(Name), nameof(Id))]
 [Index(nameof(CreatedByUserId), nameof(CreatedAtUtc))]
-public sealed partial class Page
+public sealed class Page
 {
     public const int MinimumUsernameLength = 3;
     public const int MaximumUsernameLength = 50;
@@ -27,10 +27,10 @@ public sealed partial class Page
         DateTimeOffset createdAtUtc)
     {
         Id = id;
-        Name = NormalizeName(name);
-        Username = NormalizeUsername(username);
-        Category = NormalizeCategory(category);
-        Bio = NormalizeBio(bio);
+        Name = PageNormalization.NormalizeName(name);
+        Username = PageNormalization.NormalizeUsername(username);
+        Category = PageNormalization.NormalizeCategory(category);
+        Bio = PageNormalization.NormalizeBio(bio);
         CreatedByUserId = createdByUserId;
         Status = PageStatus.UNPUBLISHED;
         CreatedAtUtc = createdAtUtc;
@@ -75,10 +75,10 @@ public sealed partial class Page
     public void Update(string name, string username, string category, string? bio, DateTimeOffset updatedAtUtc)
     {
         EnsureActive();
-        Name = NormalizeName(name);
-        Username = NormalizeUsername(username);
-        Category = NormalizeCategory(category);
-        Bio = NormalizeBio(bio);
+        Name = PageNormalization.NormalizeName(name);
+        Username = PageNormalization.NormalizeUsername(username);
+        Category = PageNormalization.NormalizeCategory(category);
+        Bio = PageNormalization.NormalizeBio(bio);
         UpdatedAtUtc = updatedAtUtc;
     }
 
@@ -113,18 +113,6 @@ public sealed partial class Page
         UpdatedAtUtc = deletedAtUtc;
     }
 
-    public static string NormalizeUsername(string? username)
-    {
-        var normalized = username?.Trim().ToLowerInvariant() ?? string.Empty;
-        if (normalized.Length is < MinimumUsernameLength or > MaximumUsernameLength ||
-            !UsernamePattern().IsMatch(normalized))
-        {
-            throw new ArgumentException($"Page username must contain {MinimumUsernameLength}-{MaximumUsernameLength} lowercase letters, digits, dots, or underscores.");
-        }
-
-        return normalized;
-    }
-
     private void EnsureActive()
     {
         if (DeletedAtUtc is not null)
@@ -132,40 +120,4 @@ public sealed partial class Page
             throw new InvalidOperationException("A deleted page cannot be changed.");
         }
     }
-
-    private static string NormalizeName(string? value)
-    {
-        var normalized = value?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > MaximumNameLength)
-        {
-            throw new ArgumentException($"Page name must contain between 1 and {MaximumNameLength} characters.");
-        }
-
-        return normalized;
-    }
-
-    private static string NormalizeCategory(string? value)
-    {
-        var normalized = value?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > MaximumCategoryLength)
-        {
-            throw new ArgumentException($"Page category must contain between 1 and {MaximumCategoryLength} characters.");
-        }
-
-        return normalized;
-    }
-
-    private static string? NormalizeBio(string? value)
-    {
-        var normalized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-        if (normalized?.Length > MaximumBioLength)
-        {
-            throw new ArgumentException($"Page bio cannot exceed {MaximumBioLength} characters.");
-        }
-
-        return normalized;
-    }
-
-    [GeneratedRegex("^[a-z0-9._]+$", RegexOptions.CultureInvariant)]
-    private static partial Regex UsernamePattern();
 }

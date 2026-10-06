@@ -3,6 +3,7 @@ using System.Text;
 using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Modules.Notifications.Entities;
 using Fookbase.Api.Modules.Notifications.Services;
+using Fookbase.Api.Modules.Pages.Common;
 using Fookbase.Api.Modules.Pages.DTOs.Requests;
 using Fookbase.Api.Modules.Pages.DTOs.Responses;
 using Fookbase.Api.Modules.Pages.Domain.Enums;
@@ -699,8 +700,10 @@ public sealed class PagesService(
     {
         try
         {
-            normalizedUsername = Page.NormalizeUsername(username);
-            _ = new Page(Guid.Empty, name, normalizedUsername, category, bio, Guid.Empty, DateTimeOffset.UnixEpoch);
+            normalizedUsername = PageNormalization.NormalizeUsername(username);
+            _ = PageNormalization.NormalizeName(name);
+            _ = PageNormalization.NormalizeCategory(category);
+            _ = PageNormalization.NormalizeBio(bio);
             if (ReservedUsernames.Contains(normalizedUsername))
             {
                 error = new ApplicationError("reserved_page_username", "This Page username is reserved.", ApplicationErrorType.VALIDATION);
