@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Media.Domain.Enums;
+using Fookbase.Api.Persistence.Annotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
@@ -10,6 +11,7 @@ namespace Fookbase.Api.Modules.Media.Entities;
 [Index(nameof(OwnerUserId), nameof(CreatedAtUtc))]
 [Index(nameof(Status), nameof(UploadExpiresAtUtc))]
 [Index(nameof(Status), nameof(CreatedAtUtc))]
+[IndexFilter("\"Status\" = 4", nameof(Status), nameof(CreatedAtUtc))]
 public sealed class MediaAsset
 {
     public const int MaximumObjectKeyLength = 256;
