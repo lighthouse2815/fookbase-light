@@ -89,7 +89,7 @@ public sealed class ModerationService(
         if (subjectUserId is null) return ApplicationResult<ModerationActionResponse>.Failure(NotFound("The reported target was not found."));
         var now = timeProvider.GetUtcNow();
         report.UpdateStatus(ContentReportStatus.DISMISSED, now);
-        var action = ModerationAction.Create(report.Id, moderatorUserId, subjectUserId.Value, report.TargetType, report.TargetId,
+        var action = new ModerationAction(report.Id, moderatorUserId, subjectUserId.Value, report.TargetType, report.TargetId,
             ModerationActionType.DISMISS_REPORT, reason ?? "No violation found.", internalNote, now);
         dbContext.ModerationActions.Add(action);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -112,7 +112,7 @@ public sealed class ModerationService(
                 "The reported post could not be removed."));
         }
         report.UpdateStatus(ContentReportStatus.REVIEWED, now);
-        var action = ModerationAction.Create(report.Id, moderatorUserId, post.AuthorUserId, report.TargetType, report.TargetId,
+        var action = new ModerationAction(report.Id, moderatorUserId, post.AuthorUserId, report.TargetType, report.TargetId,
             ModerationActionType.REMOVE_POST, reason ?? "Content violated community rules.", internalNote, now);
         dbContext.ModerationActions.Add(action);
         var notification = await notificationService.QueueAsync(post.AuthorUserId, null, NotificationType.ACCOUNT_WARNING, null, null, cancellationToken);
@@ -145,7 +145,7 @@ public sealed class ModerationService(
         var until = suspendedUntilUtc ?? now.AddHours(durationHours!.Value);
         var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
         state.Suspend(until, now);
-        var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
+        var action = new ModerationAction(null, moderatorUserId, userId, ReportTargetType.USER, userId,
             ModerationActionType.SUSPEND_USER, reason ?? "Account temporarily suspended.", internalNote, now, until);
         dbContext.ModerationActions.Add(action);
         await RevokeAllSessionsAsync(userId, now, cancellationToken);
@@ -162,7 +162,7 @@ public sealed class ModerationService(
         var now = timeProvider.GetUtcNow();
         var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
         state.Disable(now);
-        var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
+        var action = new ModerationAction(null, moderatorUserId, userId, ReportTargetType.USER, userId,
             ModerationActionType.DISABLE_USER, reason ?? "Account disabled.", internalNote, now);
         dbContext.ModerationActions.Add(action);
         await RevokeAllSessionsAsync(userId, now, cancellationToken);
@@ -204,7 +204,7 @@ public sealed class ModerationService(
         report?.UpdateStatus(ContentReportStatus.REVIEWED, now);
         var targetType = report?.TargetType ?? ReportTargetType.USER;
         var targetId = report?.TargetId ?? userId;
-        var action = ModerationAction.Create(report?.Id, moderatorUserId, userId, targetType, targetId,
+        var action = new ModerationAction(report?.Id, moderatorUserId, userId, targetType, targetId,
             ModerationActionType.WARN_USER, reason ?? "Account warning.", internalNote, now);
         dbContext.ModerationActions.Add(action);
         var notification = await notificationService.QueueAsync(userId, null, NotificationType.ACCOUNT_WARNING, null, null, cancellationToken);
@@ -221,7 +221,7 @@ public sealed class ModerationService(
         var now = timeProvider.GetUtcNow();
         var state = await GetOrCreateStateAsync(userId, now, cancellationToken);
         if (enable) state.Enable(now); else state.Unsuspend(now);
-        var action = ModerationAction.Create(null, moderatorUserId, userId, ReportTargetType.USER, userId,
+        var action = new ModerationAction(null, moderatorUserId, userId, ReportTargetType.USER, userId,
             enable ? ModerationActionType.ENABLE_USER : ModerationActionType.UNSUSPEND_USER,
             reason ?? (enable ? "Account enabled." : "Account suspension cleared."), internalNote, now);
         dbContext.ModerationActions.Add(action);

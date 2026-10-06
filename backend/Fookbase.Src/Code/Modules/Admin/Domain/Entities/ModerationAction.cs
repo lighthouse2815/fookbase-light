@@ -18,9 +18,9 @@ public sealed class ModerationAction
 
     private ModerationAction() { }
 
-    private ModerationAction(Guid? reportId, Guid moderatorUserId, Guid subjectUserId,
+    public ModerationAction(Guid? reportId, Guid moderatorUserId, Guid subjectUserId,
         ReportTargetType targetType, Guid targetId, ModerationActionType actionType,
-        string reason, string? internalNote, DateTimeOffset createdAtUtc, DateTimeOffset? expiresAtUtc)
+        string reason, string? internalNote, DateTimeOffset createdAtUtc, DateTimeOffset? expiresAtUtc = null)
     {
         Id = Guid.NewGuid();
         ReportId = reportId;
@@ -29,8 +29,8 @@ public sealed class ModerationAction
         TargetType = targetType;
         TargetId = targetId;
         ActionType = actionType;
-        Reason = reason;
-        InternalNote = internalNote;
+        Reason = reason.Trim();
+        InternalNote = TextNormalization.NormalizeOptionalText(internalNote);
         CreatedAtUtc = createdAtUtc;
         ExpiresAtUtc = expiresAtUtc;
     }
@@ -63,10 +63,4 @@ public sealed class ModerationAction
     [ForeignKey(nameof(SubjectUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User SubjectUser { get; private set; } = null!;
-
-    public static ModerationAction Create(Guid? reportId, Guid moderatorUserId, Guid subjectUserId,
-        ReportTargetType targetType, Guid targetId, ModerationActionType actionType,
-        string reason, string? internalNote, DateTimeOffset createdAtUtc, DateTimeOffset? expiresAtUtc = null) =>
-        new(reportId, moderatorUserId, subjectUserId, targetType, targetId, actionType,
-            reason.Trim(), TextNormalization.NormalizeOptionalText(internalNote), createdAtUtc, expiresAtUtc);
 }
