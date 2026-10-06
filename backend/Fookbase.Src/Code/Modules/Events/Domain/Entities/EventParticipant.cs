@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Events.Entities;
 
-[Table("EventParticipants")]
 [PrimaryKey(nameof(EventId), nameof(UserId))]
 [Index(nameof(UserId), nameof(Status))]
 public sealed class EventParticipant

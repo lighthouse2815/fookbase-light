@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Events.Entities;
 
-[Table("Events")]
 [Index(nameof(Status), nameof(Privacy), nameof(StartsAtUtc))]
 [IndexFilter("\"DeletedAtUtc\" IS NULL", nameof(Status), nameof(Privacy), nameof(StartsAtUtc))]
 [Index(nameof(HostType), nameof(HostId), nameof(StartsAtUtc))]

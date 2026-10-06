@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Events.Entities;
 
-[Table("EventInvitations")]
 [Index(nameof(EventId), nameof(InviteeUserId))]
 [IndexFilter("\"Status\" = 0", nameof(EventId), nameof(InviteeUserId))]
 [Index(nameof(InviteeUserId), nameof(Status), nameof(CreatedAtUtc))]

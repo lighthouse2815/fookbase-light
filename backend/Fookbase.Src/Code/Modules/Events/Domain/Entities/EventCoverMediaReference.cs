@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Events.Entities;
 
-[Table("EventCoverMediaReferences")]
 [Index(nameof(MediaId))]
 public sealed class EventCoverMediaReference
 {
