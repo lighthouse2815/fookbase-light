@@ -1,14 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Messages.Common;
-using Fookbase.Api.Modules.Messages.Entities;
 using Fookbase.Api.Modules.Messages.Services;
 
 namespace Fookbase.Api.Modules.Messages.DTOs.Requests;
 
 public sealed record CreateGroupConversationRequest(
     [Required]
-    [TrimmedStringLength(Conversation.MaximumTitleLength, MinimumLength = 1)]
+    [TrimmedStringLength(120, MinimumLength = 1)]
     string Title,
 
     [Required]

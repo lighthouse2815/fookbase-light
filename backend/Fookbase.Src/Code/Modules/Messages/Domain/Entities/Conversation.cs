@@ -12,8 +12,6 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 [Index(nameof(LastMessageAtUtc), nameof(Id))]
 public sealed class Conversation
 {
-    public const int MaximumTitleLength = 120;
-
     private Conversation() { }
 
     public Conversation(
@@ -62,7 +60,7 @@ public sealed class Conversation
 
     public ConversationType Type { get; private set; }
 
-    [MaxLength(MaximumTitleLength)]
+    [MaxLength(120)]
     public string? Title { get; private set; }
 
     public Guid? PhotoMediaId { get; private set; }

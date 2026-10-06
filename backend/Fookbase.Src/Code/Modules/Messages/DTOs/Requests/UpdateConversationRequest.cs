@@ -5,7 +5,7 @@ using Fookbase.Api.Modules.Messages.Entities;
 namespace Fookbase.Api.Modules.Messages.DTOs.Requests;
 
 public sealed record UpdateConversationRequest(
-    [TrimmedStringLength(Conversation.MaximumTitleLength, MinimumLength = 1)]
+    [TrimmedStringLength(120, MinimumLength = 1)]
     string? Title = null,
 
     Guid? PhotoMediaId = null,
