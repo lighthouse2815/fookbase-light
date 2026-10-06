@@ -27,8 +27,8 @@ public sealed class Group
         DateTimeOffset createdAtUtc)
     {
         Id = id;
-        Name = NormalizeName(name);
-        Description = NormalizeDescription(description);
+        Name = name.Trim();
+        Description = TextNormalization.NormalizeOptionalText(description);
         Privacy = privacy;
         OwnerUserId = ownerUserId;
         CreatedAtUtc = createdAtUtc;
@@ -75,8 +75,8 @@ public sealed class Group
     public void Update(string name, string? description, GroupPrivacy privacy, DateTimeOffset updatedAtUtc)
     {
         EnsureActive();
-        Name = NormalizeName(name);
-        Description = NormalizeDescription(description);
+        Name = name.Trim();
+        Description = TextNormalization.NormalizeOptionalText(description);
         Privacy = privacy;
         UpdatedAtUtc = updatedAtUtc;
     }
@@ -109,29 +109,5 @@ public sealed class Group
         {
             throw new InvalidOperationException("A deleted group cannot be changed.");
         }
-    }
-
-    private static string NormalizeName(string? value)
-    {
-        var normalized = value?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > 120)
-        {
-            throw new ArgumentException(
-                "Group name must contain between 1 and 120 characters.");
-        }
-
-        return normalized;
-    }
-
-    private static string? NormalizeDescription(string? value)
-    {
-        var normalized = TextNormalization.NormalizeOptionalText(value);
-        if (normalized?.Length > MaximumDescriptionLength)
-        {
-            throw new ArgumentException(
-                $"Group description cannot exceed {MaximumDescriptionLength} characters.");
-        }
-
-        return normalized;
     }
 }

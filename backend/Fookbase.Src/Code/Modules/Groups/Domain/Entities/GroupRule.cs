@@ -17,8 +17,8 @@ public sealed class GroupRule
     {
         Id = id;
         GroupId = groupId;
-        Title = NormalizeTitle(title);
-        Description = NormalizeDescription(description);
+        Title = title.Trim();
+        Description = TextNormalization.NormalizeOptionalText(description);
         SortOrder = sortOrder;
     }
 
@@ -42,32 +42,8 @@ public sealed class GroupRule
 
     public void Update(string title, string? description, int sortOrder)
     {
-        Title = NormalizeTitle(title);
-        Description = NormalizeDescription(description);
+        Title = title.Trim();
+        Description = TextNormalization.NormalizeOptionalText(description);
         SortOrder = sortOrder;
-    }
-
-    private static string NormalizeTitle(string? value)
-    {
-        var normalized = value?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > MaximumTitleLength)
-        {
-            throw new ArgumentException(
-                $"Group rule title must contain between 1 and {MaximumTitleLength} characters.");
-        }
-
-        return normalized;
-    }
-
-    private static string? NormalizeDescription(string? value)
-    {
-        var normalized = TextNormalization.NormalizeOptionalText(value);
-        if (normalized?.Length > MaximumDescriptionLength)
-        {
-            throw new ArgumentException(
-                $"Group rule description cannot exceed {MaximumDescriptionLength} characters.");
-        }
-
-        return normalized;
     }
 }
