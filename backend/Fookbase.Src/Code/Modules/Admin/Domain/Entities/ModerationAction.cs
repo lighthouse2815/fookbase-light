@@ -50,9 +50,21 @@ public sealed class ModerationAction
 
     public Guid ModeratorUserId { get; private set; }
 
+    [ForeignKey(nameof(ModeratorUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User ModeratorUser { get; private set; } = null!;
+
     public Guid SubjectUserId { get; private set; }
 
+    [ForeignKey(nameof(SubjectUserId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User SubjectUser { get; private set; } = null!;
+
     public Guid? ReportId { get; private set; }
+
+    [ForeignKey(nameof(ReportId))]
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public ContentReport? Report { get; private set; }
 
     public ReportTargetType TargetType { get; private set; }
 
@@ -70,16 +82,4 @@ public sealed class ModerationAction
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? ExpiresAtUtc { get; private set; }
-
-    [ForeignKey(nameof(ModeratorUserId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User ModeratorUser { get; private set; } = null!;
-
-    [ForeignKey(nameof(SubjectUserId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User SubjectUser { get; private set; } = null!;
-
-    [ForeignKey(nameof(ReportId))]
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public ContentReport? Report { get; private set; }
 }
