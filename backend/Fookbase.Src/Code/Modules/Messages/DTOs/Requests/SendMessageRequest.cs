@@ -5,24 +5,16 @@ using Fookbase.Api.Modules.Messages.Entities;
 
 namespace Fookbase.Api.Modules.Messages.DTOs.Requests;
 
+[MessageContent(ErrorMessage = "Tin nhắn cần nội dung hoặc tệp đính kèm.")]
 public sealed record SendMessageRequest(
     [TrimmedStringLength(Message.MaximumContentLength)]
     string? Content,
 
     [MaxLength(SendMessageRequest.MaximumAttachmentCount)]
-    [CustomValidation(typeof(MessageRequestValidation), nameof(MessageRequestValidation.ValidateDistinctIds))]
+    [DistinctMessageIds(ErrorMessage = "Danh sách ID phải khác rỗng và không được trùng nhau.")]
     IReadOnlyList<Guid>? MediaIds = null,
 
-    Guid? ReplyToMessageId = null) : IValidatableObject
+    Guid? ReplyToMessageId = null)
 {
     public const int MaximumAttachmentCount = 10;
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (string.IsNullOrWhiteSpace(Content) && (MediaIds is null || MediaIds.Count == 0))
-        {
-            yield return new ValidationResult("Tin nhắn cần nội dung hoặc tệp đính kèm.",
-                [nameof(Content), nameof(MediaIds)]);
-        }
-    }
 }

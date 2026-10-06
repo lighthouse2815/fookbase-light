@@ -517,6 +517,29 @@ public sealed class MessageEndpointsTests(MessagesApiFactory factory)
         Assert.True(problem.RootElement.GetProperty("errors").TryGetProperty(field, out _));
     }
 
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    [InlineData("   ", false)]
+    [InlineData(null, true)]
+    [InlineData("", true)]
+    [InlineData("   ", true)]
+    public async Task Empty_messages_return_validation_errors_on_content_and_media_ids(
+        string? content, bool emptyMediaIds)
+    {
+        using var client = CreateAuthenticatedClient(Guid.NewGuid());
+        using var response = await client.PostAsJsonAsync(
+            $"/api/messages/conversations/{Guid.NewGuid()}/messages",
+            new { content, mediaIds = emptyMediaIds ? Array.Empty<Guid>() : null });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", problem.RootElement.GetProperty("code").GetString());
+        var errors = problem.RootElement.GetProperty("errors");
+        Assert.Equal("Tin nhắn cần nội dung hoặc tệp đính kèm.", errors.GetProperty("Content")[0].GetString());
+        Assert.Equal("Tin nhắn cần nội dung hoặc tệp đính kèm.", errors.GetProperty("MediaIds")[0].GetString());
+    }
+
     [Fact]
     public async Task Valid_message_boundaries_are_normalized_and_keep_business_checks()
     {

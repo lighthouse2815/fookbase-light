@@ -14,7 +14,7 @@ public sealed record CreateGroupConversationRequest(
     [Required]
     [MinLength(1)]
     [MaxLength(MessagesService.MaximumGroupSize - 1)]
-    [CustomValidation(typeof(MessageRequestValidation), nameof(MessageRequestValidation.ValidateDistinctIds))]
+    [DistinctMessageIds(ErrorMessage = "Danh sách ID phải khác rỗng và không được trùng nhau.")]
     IReadOnlyList<Guid> ParticipantUserIds,
 
     Guid? PhotoMediaId = null);

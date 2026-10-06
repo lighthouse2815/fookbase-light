@@ -8,5 +8,5 @@ public sealed record AddConversationParticipantsRequest(
     [Required]
     [MinLength(1)]
     [MaxLength(MessagesService.MaximumGroupSize)]
-    [CustomValidation(typeof(MessageRequestValidation), nameof(MessageRequestValidation.ValidateDistinctIds))]
+    [DistinctMessageIds(ErrorMessage = "Danh sách ID phải khác rỗng và không được trùng nhau.")]
     IReadOnlyList<Guid> UserIds);
