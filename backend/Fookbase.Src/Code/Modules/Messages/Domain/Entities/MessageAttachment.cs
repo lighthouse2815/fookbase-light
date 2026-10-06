@@ -10,9 +10,7 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 [Index(nameof(MessageId), nameof(SortOrder), IsUnique = true)]
 public sealed class MessageAttachment
 {
-    private MessageAttachment()
-    {
-    }
+    private MessageAttachment() { }
 
     public MessageAttachment(Guid messageId, Guid mediaId, int sortOrder)
     {
@@ -33,5 +31,4 @@ public sealed class MessageAttachment
     [ForeignKey(nameof(MediaId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset Media { get; private set; } = null!;
-
 }

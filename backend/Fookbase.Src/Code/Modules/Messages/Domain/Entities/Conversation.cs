@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
@@ -14,9 +14,7 @@ public sealed class Conversation
 {
     public const int MaximumTitleLength = 120;
 
-    private Conversation()
-    {
-    }
+    private Conversation() { }
 
     public Conversation(
         Guid id,

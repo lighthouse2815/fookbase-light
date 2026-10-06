@@ -9,9 +9,7 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 [Index(nameof(UserId), nameof(ConversationId))]
 public sealed class ConversationReadCursor
 {
-    private ConversationReadCursor()
-    {
-    }
+    private ConversationReadCursor() { }
 
     public ConversationReadCursor(Guid conversationId, Guid userId)
     {

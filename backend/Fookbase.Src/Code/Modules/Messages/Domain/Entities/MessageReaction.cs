@@ -10,9 +10,7 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 [Index(nameof(MessageId), nameof(Type))]
 public sealed class MessageReaction
 {
-    private MessageReaction()
-    {
-    }
+    private MessageReaction() { }
 
     public MessageReaction(Guid messageId, Guid userId, MessageReactionType type, DateTimeOffset createdAtUtc)
     {

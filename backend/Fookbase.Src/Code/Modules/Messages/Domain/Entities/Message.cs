@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
 using Fookbase.Api.Modules.Stories.Entities;
@@ -15,9 +15,7 @@ public sealed class Message
 {
     public const int MaximumContentLength = 5_000;
 
-    private Message()
-    {
-    }
+    private Message() { }
 
     public Message(
         Guid id,

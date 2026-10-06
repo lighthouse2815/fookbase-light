@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Messages.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -14,9 +14,7 @@ public sealed class ConversationParticipant
 {
     public const int MaximumNicknameLength = 80;
 
-    private ConversationParticipant()
-    {
-    }
+    private ConversationParticipant() { }
 
     public ConversationParticipant(
         Guid conversationId,

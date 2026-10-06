@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,9 +10,7 @@ namespace Fookbase.Api.Modules.Messages.Entities;
 [Index(nameof(RecipientUserId), nameof(ReadAtUtc), nameof(CreatedAtUtc))]
 public sealed class MessageNotification
 {
-    private MessageNotification()
-    {
-    }
+    private MessageNotification() { }
 
     public MessageNotification(
         Guid id,
