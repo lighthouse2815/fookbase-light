@@ -19,7 +19,6 @@ using Fookbase.Api.Modules.Notifications.Hubs;
 using Fookbase.Api.Modules.Photos;
 using Fookbase.Api.Modules.Photos.Endpoints;
 using Fookbase.Api.Modules.Reels.Endpoints;
-using Fookbase.Api.Modules.Memories.Endpoints;
 using Fookbase.Api.Modules.Games.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication;
@@ -380,7 +379,6 @@ app.MapHub<MessagesHub>("/hubs/messages");
 app.MapHub<NotificationsHub>("/hubs/notifications");
 app.MapReelEndpoints();
 app.MapPhotoAlbumEndpoints();
-app.MapMemoryEndpoints();
 app.MapHub<FlappyBirdHub>("/hubs/flappy-bird");
 app.MapHub<JumpingHub>("/hubs/jumping");
 
