@@ -8,8 +8,6 @@ namespace Fookbase.Api.Modules.Photos.Entities;
 [Index(nameof(MediaId))]
 public sealed class AlbumMedia
 {
-    public const int MaximumCaptionLength = 1_000;
-
     private AlbumMedia()
     {
     }
@@ -24,7 +22,7 @@ public sealed class AlbumMedia
 
     public Guid AlbumId { get; private set; }
     public Guid MediaId { get; private set; }
-    [MaxLength(MaximumCaptionLength)]
+    [MaxLength(1_000)]
     public string? Caption { get; private set; }
     public long SortOrder { get; private set; }
     public DateTimeOffset AddedAtUtc { get; private set; }
@@ -37,9 +35,9 @@ public sealed class AlbumMedia
     private static string? NormalizeCaption(string? value)
     {
         var caption = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-        if (caption?.Length > MaximumCaptionLength)
+        if (caption?.Length > 1_000)
         {
-            throw new ArgumentException($"Photo caption cannot exceed {MaximumCaptionLength} characters.", nameof(value));
+            throw new ArgumentException("Photo caption cannot exceed 1000 characters.", nameof(value));
         }
 
         return caption;
