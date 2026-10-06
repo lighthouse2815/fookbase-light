@@ -30,8 +30,8 @@ public sealed class PhotoAlbum
     {
         Id = id;
         OwnerUserId = ownerUserId;
-        Name = NormalizeName(name);
-        Description = NormalizeDescription(description);
+        Name = name.Trim();
+        Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         Privacy = privacy;
         AlbumType = albumType;
         CreatedAtUtc = now;
@@ -81,8 +81,8 @@ public sealed class PhotoAlbum
     public void UpdateCustom(string name, string? description, PhotoAlbumPrivacy privacy, DateTimeOffset now)
     {
         EnsureActiveCustom();
-        Name = NormalizeName(name);
-        Description = NormalizeDescription(description);
+        Name = name.Trim();
+        Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         Privacy = privacy;
         UpdatedAtUtc = now;
     }
@@ -115,26 +115,4 @@ public sealed class PhotoAlbum
         PhotoAlbumType.TIMELINE_PHOTOS => "Timeline photos",
         _ => throw new ArgumentOutOfRangeException(nameof(albumType), albumType, null)
     };
-
-    private static string NormalizeName(string? value)
-    {
-        var name = value?.Trim() ?? string.Empty;
-        if (name.Length is < 1 or > MaximumNameLength)
-        {
-            throw new ArgumentException($"Album name must contain 1-{MaximumNameLength} characters.", nameof(value));
-        }
-
-        return name;
-    }
-
-    private static string? NormalizeDescription(string? value)
-    {
-        var description = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-        if (description?.Length > MaximumDescriptionLength)
-        {
-            throw new ArgumentException($"Album description cannot exceed {MaximumDescriptionLength} characters.", nameof(value));
-        }
-
-        return description;
-    }
 }

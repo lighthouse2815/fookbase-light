@@ -40,17 +40,6 @@ public sealed class AlbumMedia
 
     public void UpdateCaption(string? caption)
     {
-        Caption = NormalizeCaption(caption);
-    }
-
-    private static string? NormalizeCaption(string? value)
-    {
-        var caption = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-        if (caption?.Length > 1_000)
-        {
-            throw new ArgumentException("Photo caption cannot exceed 1000 characters.", nameof(value));
-        }
-
-        return caption;
+        Caption = string.IsNullOrWhiteSpace(caption) ? null : caption.Trim();
     }
 }

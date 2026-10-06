@@ -20,14 +20,10 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
     public async Task<ApplicationResult<PhotoAlbumResponse>> CreateAsync(Guid actorId, CreatePhotoAlbumRequest request, CancellationToken ct = default)
     {
         if (!TryPrivacy(request.Privacy, out var privacy)) return Bad<PhotoAlbumResponse>("invalid_album_privacy", "Album privacy is invalid.");
-        try
-        {
-            var album = new PhotoAlbum(Guid.NewGuid(), actorId, request.Name, request.Description, privacy, time.GetUtcNow());
-            db.PhotoAlbums.Add(album);
-            await db.SaveChangesAsync(ct);
-            return ApplicationResult<PhotoAlbumResponse>.Success(await ToAlbumAsync(album, actorId, ct));
-        }
-        catch (ArgumentException exception) { return Bad<PhotoAlbumResponse>("invalid_album", exception.Message); }
+        var album = new PhotoAlbum(Guid.NewGuid(), actorId, request.Name, request.Description, privacy, time.GetUtcNow());
+        db.PhotoAlbums.Add(album);
+        await db.SaveChangesAsync(ct);
+        return ApplicationResult<PhotoAlbumResponse>.Success(await ToAlbumAsync(album, actorId, ct));
     }
 
     public async Task<ApplicationResult<PhotoAlbumResponse>> GetAsync(Guid albumId, Guid? viewerId, CancellationToken ct = default)
@@ -45,7 +41,6 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         if (album is null) return NotFound<PhotoAlbumResponse>();
         try { album.UpdateCustom(request.Name, request.Description, privacy, time.GetUtcNow()); await db.SaveChangesAsync(ct); return ApplicationResult<PhotoAlbumResponse>.Success(await ToAlbumAsync(album, actorId, ct)); }
         catch (InvalidOperationException exception) { return Bad<PhotoAlbumResponse>("system_album_restricted", exception.Message, ApplicationErrorType.CONFLICT); }
-        catch (ArgumentException exception) { return Bad<PhotoAlbumResponse>("invalid_album", exception.Message); }
     }
 
     public async Task<ApplicationResult> DeleteAsync(Guid actorId, Guid albumId, CancellationToken ct = default)
@@ -123,8 +118,9 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         if (album is null) return NotFound<AlbumMediaResponse>();
         var row = await db.AlbumMedia.SingleOrDefaultAsync(item => item.AlbumId == albumId && item.MediaId == mediaId, ct);
         if (row is null) return NotFound<AlbumMediaResponse>();
-        try { row.UpdateCaption(request.Caption); await db.SaveChangesAsync(ct); return ApplicationResult<AlbumMediaResponse>.Success(new(mediaId, row.Caption, row.SortOrder, row.AddedAtUtc, AccessPath(albumId, mediaId))); }
-        catch (ArgumentException exception) { return Bad<AlbumMediaResponse>("invalid_caption", exception.Message); }
+        row.UpdateCaption(request.Caption);
+        await db.SaveChangesAsync(ct);
+        return ApplicationResult<AlbumMediaResponse>.Success(new(mediaId, row.Caption, row.SortOrder, row.AddedAtUtc, AccessPath(albumId, mediaId)));
     }
 
     public async Task<ApplicationResult> RemoveMediaAsync(Guid actorId, Guid albumId, Guid mediaId, CancellationToken ct = default)
