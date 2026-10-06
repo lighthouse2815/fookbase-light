@@ -1,17 +1,74 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Fookbase.Api.Modules.Ai;
 using Fookbase.Api.Modules.Ai.Config;
 using Fookbase.Api.Modules.Ai.DTOs.Requests;
 using Fookbase.Api.Modules.Ai.Services;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fookbase.Ai.Api.IntegrationTests;
 
 public sealed class AiChatServiceTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("123456")]
+    public async Task Invalid_message_is_rejected_before_calling_a_provider(string? message)
+    {
+        var provider = new RecordingHandler(HttpStatusCode.OK,
+            """{"choices":[{"message":{"content":"Reply"}}]}""");
+        await using var app = CreateApp(provider);
+        await app.StartAsync();
+        using var client = app.GetTestClient();
+
+        using var response = await client.PostAsJsonAsync("/api/ai/chat", new AiChatRequest(message, null));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Contains(body.RootElement.GetProperty("errors").EnumerateObject(),
+            error => error.Name.EndsWith("Message", StringComparison.Ordinal));
+        Assert.Empty(provider.Requests);
+    }
+
+    [Fact]
+    public async Task Annotations_preserve_trimmed_lengths_history_filtering_and_history_limit()
+    {
+        var provider = new RecordingHandler(HttpStatusCode.OK,
+            """{"choices":[{"message":{"content":"Reply"}}]}""");
+        await using var app = CreateApp(provider, maximumHistoryMessages: 7);
+        await app.StartAsync();
+        using var client = app.GetTestClient();
+
+        using var response = await client.PostAsJsonAsync("/api/ai/chat", new AiChatRequest(" 12345 ", [
+            new AiChatHistoryMessage("user", "old"),
+            new AiChatHistoryMessage("assistant", " 12345 "),
+            new AiChatHistoryMessage("system", "text"),
+            new AiChatHistoryMessage(null, "text"),
+            new AiChatHistoryMessage("user", null),
+            new AiChatHistoryMessage("user", "   "),
+            new AiChatHistoryMessage("user", "123456"),
+            new AiChatHistoryMessage("user", "new")
+        ]));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(Assert.Single(provider.Requests).Body);
+        var messages = body.RootElement.GetProperty("messages").EnumerateArray().ToArray();
+        Assert.Equal(4, messages.Length);
+        Assert.Equal("system", messages[0].GetProperty("role").GetString());
+        Assert.Equal("assistant", messages[1].GetProperty("role").GetString());
+        Assert.Equal("12345", messages[1].GetProperty("content").GetString());
+        Assert.Equal("new", messages[2].GetProperty("content").GetString());
+        Assert.Equal("user", messages[3].GetProperty("role").GetString());
+        Assert.Equal("12345", messages[3].GetProperty("content").GetString());
+    }
+
     [Fact]
     public async Task Uses_groq_first_with_openai_compatible_request()
     {
@@ -145,6 +202,26 @@ public sealed class AiChatServiceTests
         var request = Assert.Single(openAi.Requests);
         Assert.Equal("Bearer legacy-key", request.Authorization);
         Assert.Equal("/v1/responses", request.Path);
+    }
+
+    private static WebApplication CreateApp(RecordingHandler provider, int maximumHistoryMessages = 10)
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Services.AddValidation();
+        builder.Services.AddProblemDetails();
+        builder.Services.AddAiInfrastructure(new AiChatOptions
+        {
+            Enabled = true,
+            MaximumInputCharacters = 5,
+            MaximumHistoryMessages = maximumHistoryMessages,
+            Groq = Provider("test-key", "test-model")
+        });
+        builder.Services.AddHttpClient("ai-chat-groq").ConfigurePrimaryHttpMessageHandler(() => provider);
+        var app = builder.Build();
+        app.MapPost("/api/ai/chat", (AiChatRequest request, AiChatService service, CancellationToken cancellationToken) =>
+            service.ChatAsync(request, cancellationToken));
+        return app;
     }
 
     private static ServiceProvider CreateServices(

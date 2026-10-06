@@ -1,5 +1,16 @@
+using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Ai.Common;
+using Microsoft.Extensions.Validation;
+
 namespace Fookbase.Api.Modules.Ai.DTOs.Requests;
 
-public sealed record AiChatRequest(string? Message, IReadOnlyList<AiChatHistoryMessage>? History);
+public sealed record AiChatRequest(
+    [property: Required(ErrorMessage = "Message is required.")]
+    [property: AiInputLength]
+    string? Message,
 
-public sealed record AiChatHistoryMessage(string? Role, string? Content);
+    // History is filtered by the service so invalid entries do not reject the current message.
+#pragma warning disable ASP0029 // .NET 10 marks SkipValidation as experimental.
+    [SkipValidation]
+#pragma warning restore ASP0029
+    IReadOnlyList<AiChatHistoryMessage>? History);

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
 using Fookbase.Api.Modules.Ai.Config;
@@ -19,19 +20,7 @@ public sealed class AiChatService(
                 "AI chat is not enabled.");
         }
 
-        var message = request.Message?.Trim();
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            return AiChatServiceResult.Failure(StatusCodes.Status400BadRequest, "Message is required.");
-        }
-
-        if (message.Length > options.MaximumInputCharacters)
-        {
-            return AiChatServiceResult.Failure(StatusCodes.Status400BadRequest,
-                $"Message must not exceed {options.MaximumInputCharacters} characters.");
-        }
-
-        var input = BuildInput(request.History, message);
+        var input = BuildInput(request.History, request.Message!.Trim());
         var providers = options.GetConfiguredProviders();
         if (providers.Count == 0)
         {
@@ -165,14 +154,14 @@ public sealed class AiChatService(
         var input = new List<AiInputMessage>();
         foreach (var item in (history ?? []).TakeLast(options.MaximumHistoryMessages))
         {
-            var content = item.Content?.Trim();
-            if (string.IsNullOrWhiteSpace(content) || content.Length > options.MaximumInputCharacters ||
-                item.Role is not ("user" or "assistant"))
+            var validationContext = new ValidationContext(item);
+            validationContext.InitializeServiceProvider(type => type == typeof(AiChatOptions) ? options : null);
+            if (!Validator.TryValidateObject(item, validationContext, null, validateAllProperties: true))
             {
                 continue;
             }
 
-            input.Add(new AiInputMessage(item.Role, content));
+            input.Add(new AiInputMessage(item.Role!, item.Content!.Trim()));
         }
 
         input.Add(new AiInputMessage("user", message));
