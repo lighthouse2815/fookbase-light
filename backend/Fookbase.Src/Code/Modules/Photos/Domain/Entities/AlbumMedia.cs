@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Media.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Photos.Entities;
@@ -21,7 +23,16 @@ public sealed class AlbumMedia
     }
 
     public Guid AlbumId { get; private set; }
+
+    [InverseProperty(nameof(PhotoAlbum.MediaItems))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public PhotoAlbum Album { get; private set; } = null!;
+
     public Guid MediaId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public MediaAsset Media { get; private set; } = null!;
+
     [MaxLength(1_000)]
     public string? Caption { get; private set; }
     public long SortOrder { get; private set; }

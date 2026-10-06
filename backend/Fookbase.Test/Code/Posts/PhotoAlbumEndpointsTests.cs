@@ -10,17 +10,86 @@ using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Photos.Domain.Enums;
 using Fookbase.Api.Modules.Photos.DTOs.Responses;
 using Fookbase.Api.Modules.Photos.Entities;
+using Fookbase.Api.Modules.Photos.Services;
 using Fookbase.Api.Modules.Users.Entities;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 
 namespace Fookbase.Posts.Api.IntegrationTests;
 
 public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
+    [Fact]
+    public async Task System_album_creation_preserves_owner_foreign_key_failure()
+    {
+        var missingOwnerId = Guid.NewGuid();
+        var mediaId = await SeedReadyImageAsync(missingOwnerId);
+        using var scope = factory.Services.CreateScope();
+        var photos = scope.ServiceProvider.GetRequiredService<PhotosService>();
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() =>
+            photos.AddSystemMediaAsync(missingOwnerId, PhotoAlbumType.TIMELINE_PHOTOS, mediaId));
+
+        var postgresException = Assert.IsType<PostgresException>(exception.InnerException);
+        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, postgresException.SqlState);
+        Assert.Equal("FK_PhotoAlbums_AspNetUsers_OwnerUserId", postgresException.ConstraintName);
+    }
+
+    [Theory]
+    [InlineData("owner")]
+    [InlineData("album")]
+    [InlineData("media")]
+    public async Task Photo_foreign_keys_reject_missing_principals(string missingPrincipal)
+    {
+        var ownerId = await CreateUserAsync();
+        var mediaId = await SeedReadyImageAsync(ownerId);
+        var albumId = await SeedAlbumAsync(ownerId, PhotoAlbumPrivacy.ONLY_ME);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        if (missingPrincipal == "owner")
+        {
+            db.PhotoAlbums.Add(new PhotoAlbum(Guid.NewGuid(), Guid.NewGuid(), "Orphan album", null,
+                PhotoAlbumPrivacy.ONLY_ME, DateTimeOffset.UtcNow));
+        }
+        else
+        {
+            db.AlbumMedia.Add(new AlbumMedia(
+                missingPrincipal == "album" ? Guid.NewGuid() : albumId,
+                missingPrincipal == "media" ? Guid.NewGuid() : mediaId,
+                0, DateTimeOffset.UtcNow));
+        }
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task Deleting_an_album_cascades_link_rows_and_preserves_media_assets()
+    {
+        var ownerId = await CreateUserAsync();
+        var mediaId = await SeedReadyImageAsync(ownerId);
+        var albumId = await SeedAlbumAsync(ownerId, PhotoAlbumPrivacy.ONLY_ME);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        db.AlbumMedia.Add(new AlbumMedia(albumId, mediaId, 0, DateTimeOffset.UtcNow));
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+
+        var album = await db.PhotoAlbums.Include(item => item.OwnerUser)
+            .Include(item => item.MediaItems).ThenInclude(item => item.Media)
+            .SingleAsync(item => item.Id == albumId);
+        Assert.Equal(ownerId, album.OwnerUser.Id);
+        Assert.Equal(mediaId, Assert.Single(album.MediaItems).Media.Id);
+        db.ChangeTracker.Clear();
+
+        Assert.Equal(1, await db.PhotoAlbums.Where(item => item.Id == albumId).ExecuteDeleteAsync());
+        Assert.False(await db.AlbumMedia.AnyAsync(item => item.AlbumId == albumId));
+        Assert.True(await db.MediaAssets.AnyAsync(item => item.Id == mediaId && item.DeletedAtUtc == null));
+    }
+
     [Fact]
     public async Task Custom_album_and_caption_can_be_created_updated_and_deleted()
     {

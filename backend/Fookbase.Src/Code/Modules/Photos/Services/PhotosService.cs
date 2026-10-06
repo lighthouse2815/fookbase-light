@@ -8,6 +8,7 @@ using Fookbase.Api.Modules.Photos.DTOs.Responses;
 using Fookbase.Api.Modules.Photos.Domain.Enums;
 using Fookbase.Api.Modules.Photos.Entities;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Fookbase.Api.Modules.Photos.Services;
 
@@ -158,7 +159,11 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         album = new PhotoAlbum(Guid.NewGuid(), ownerId, type, time.GetUtcNow());
         db.PhotoAlbums.Add(album);
         try { await db.SaveChangesAsync(ct); return album; }
-        catch (DbUpdateException)
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "IX_PhotoAlbums_OwnerUserId_AlbumType"
+        })
         {
             db.ChangeTracker.Clear();
             return await Active().SingleAsync(item => item.OwnerUserId == ownerId && item.AlbumType == type, ct);

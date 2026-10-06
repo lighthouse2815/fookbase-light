@@ -3,6 +3,7 @@ using System;
 using Fookbase.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fookbase.Api.Persistence.Migrations
 {
     [DbContext(typeof(FookbaseDbContext))]
-    partial class FookbaseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006165542_AddPhotoRelationships")]
+    partial class AddPhotoRelationships
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -252,17 +255,18 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<Guid>("BlockerUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("BlockedUserId")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("BlockedAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("BlockedUserId");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("BlockerUserId", "BlockedUserId");
+                    b.HasKey("BlockerUserId", "BlockedAccountId");
 
-                    b.HasIndex("BlockedUserId");
+                    b.HasIndex("BlockedAccountId");
 
-                    b.ToTable("BlockedUsers", null, t =>
+                    b.ToTable("BlockedUsers", t =>
                         {
                             t.HasCheckConstraint("CK_BlockedUsers_DifferentUsers", "\"BlockerUserId\" <> \"BlockedUserId\"");
                         });
@@ -324,25 +328,27 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("UserId1")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("User1Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId1");
 
-                    b.Property<Guid>("UserId2")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("User2Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId2");
+                    b.HasIndex("User2Id");
 
                     b.HasIndex("ReceiverUserId", "Status", "CreatedAtUtc");
 
                     b.HasIndex("SenderUserId", "Status", "CreatedAtUtc");
 
-                    b.HasIndex(new[] { "UserId1", "UserId2" }, "UX_FriendRequests_PendingPair")
+                    b.HasIndex(new[] { "User1Id", "User2Id" }, "UX_FriendRequests_PendingPair")
                         .IsUnique()
                         .HasFilter("\"Status\" = 0");
 
-                    b.ToTable("FriendRequests", null, t =>
+                    b.ToTable("FriendRequests", t =>
                         {
                             t.HasCheckConstraint("CK_FriendRequests_CanonicalPair", "\"UserId1\" < \"UserId2\"");
 
@@ -359,22 +365,24 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId1")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("User1Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId1");
 
-                    b.Property<Guid>("UserId2")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("User2Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId1");
+                    b.HasIndex("User1Id");
 
-                    b.HasIndex("UserId2");
+                    b.HasIndex("User2Id");
 
-                    b.HasIndex("UserId1", "UserId2")
+                    b.HasIndex("User1Id", "User2Id")
                         .IsUnique();
 
-                    b.ToTable("Friendships", null, t =>
+                    b.ToTable("Friendships", t =>
                         {
                             t.HasCheckConstraint("CK_Friendships_CanonicalPair", "\"UserId1\" < \"UserId2\"");
                         });
@@ -399,7 +407,7 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasIndex("FollowingUserId", "FollowedAtUtc", "FollowerUserId");
 
-                    b.ToTable("UserFollows", null, t =>
+                    b.ToTable("UserFollows", t =>
                         {
                             t.HasCheckConstraint("CK_UserFollows_DifferentUsers", "\"FollowerUserId\" <> \"FollowingUserId\"");
                         });
@@ -1184,21 +1192,23 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("UserId1")
-                        .HasColumnType("uuid");
+                    b.Property<Guid?>("User1Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId1");
 
-                    b.Property<Guid?>("UserId2")
-                        .HasColumnType("uuid");
+                    b.Property<Guid?>("User2Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId2");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PhotoMediaId");
 
-                    b.HasIndex("UserId2");
+                    b.HasIndex("User2Id");
 
                     b.HasIndex("LastMessageAtUtc", "Id");
 
-                    b.HasIndex("UserId1", "UserId2")
+                    b.HasIndex("User1Id", "User2Id")
                         .IsUnique();
 
                     b.ToTable("Conversations");
@@ -1716,7 +1726,7 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasIndex("AlbumId", "SortOrder", "MediaId");
 
-                    b.ToTable("AlbumMedia", (string)null);
+                    b.ToTable("AlbumMedia");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", b =>
@@ -1761,7 +1771,7 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasIndex("OwnerUserId", "CreatedAtUtc", "Id")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
-                    b.ToTable("PhotoAlbums", (string)null);
+                    b.ToTable("PhotoAlbums");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>
@@ -2612,7 +2622,7 @@ namespace Fookbase.Api.Persistence.Migrations
                 {
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "BlockedAccount")
                         .WithMany()
-                        .HasForeignKey("BlockedUserId")
+                        .HasForeignKey("BlockedAccountId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2670,13 +2680,13 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User1")
                         .WithMany()
-                        .HasForeignKey("UserId1")
+                        .HasForeignKey("User1Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User2")
                         .WithMany()
-                        .HasForeignKey("UserId2")
+                        .HasForeignKey("User2Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2693,13 +2703,13 @@ namespace Fookbase.Api.Persistence.Migrations
                 {
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User1")
                         .WithMany()
-                        .HasForeignKey("UserId1")
+                        .HasForeignKey("User1Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User2")
                         .WithMany()
-                        .HasForeignKey("UserId2")
+                        .HasForeignKey("User2Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2985,12 +2995,12 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User1")
                         .WithMany()
-                        .HasForeignKey("UserId1")
+                        .HasForeignKey("User1Id")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User2")
                         .WithMany()
-                        .HasForeignKey("UserId2")
+                        .HasForeignKey("User2Id")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("PhotoMedia");
@@ -3304,6 +3314,36 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("InviterUser");
 
                     b.Navigation("Page");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.AlbumMedia", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", "Album")
+                        .WithMany("MediaItems")
+                        .HasForeignKey("AlbumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Album");
+
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "OwnerUser")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OwnerUser");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>
@@ -3642,6 +3682,11 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("RoleInvitations");
                 });
 
+            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", b =>
+                {
+                    b.Navigation("MediaItems");
+                });
+
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.Story", b =>
                 {
                     b.Navigation("MediaReference");
@@ -3650,42 +3695,6 @@ namespace Fookbase.Api.Persistence.Migrations
 
                     b.Navigation("Views");
                 });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.AlbumMedia", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", "Album")
-                        .WithMany("MediaItems")
-                        .HasForeignKey("AlbumId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Album");
-
-                    b.Navigation("Media");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "OwnerUser")
-                        .WithMany()
-                        .HasForeignKey("OwnerUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("OwnerUser");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", b =>
-                {
-                    b.Navigation("MediaItems");
-                });
-
 #pragma warning restore 612, 618
         }
     }

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Photos.Domain.Enums;
 using Fookbase.Api.Persistence.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,10 @@ public sealed class PhotoAlbum
     [Key]
     public Guid Id { get; private set; }
     public Guid OwnerUserId { get; private set; }
+
+    [DeleteBehavior(DeleteBehavior.Restrict)]
+    public User OwnerUser { get; private set; } = null!;
+
     [Required]
     [MaxLength(MaximumNameLength)]
     public string Name { get; private set; } = string.Empty;
@@ -50,6 +55,8 @@ public sealed class PhotoAlbum
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
     public DateTimeOffset? DeletedAtUtc { get; private set; }
+
+    public ICollection<AlbumMedia> MediaItems { get; private set; } = new List<AlbumMedia>();
 
     public PhotoAlbum(
         Guid id,

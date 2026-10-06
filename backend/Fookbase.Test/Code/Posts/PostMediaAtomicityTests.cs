@@ -1,3 +1,4 @@
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using Fookbase.Api.Modules.Media.Entities;
@@ -24,6 +25,8 @@ public sealed class PostMediaAtomicityTests
         var authorUserId = Guid.NewGuid();
         var mediaId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
+        var username = $"atomic_{authorUserId:N}";
+        dbContext.Users.Add(new User(authorUserId, $"{username}@example.com", username, now));
         var media = new MediaAsset(
             mediaId,
             authorUserId,
@@ -52,8 +55,10 @@ public sealed class PostMediaAtomicityTests
 
         var posts = scope.ServiceProvider.GetRequiredService<PostsUseCase>();
 
-        await Assert.ThrowsAsync<DbUpdateException>(() =>
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() =>
             posts.CreatePostAsync(authorUserId, "atomic post", "public", [mediaId]));
+        Assert.Equal("media reference insert intentionally rejected",
+            Assert.IsType<PostgresException>(exception.InnerException).MessageText);
 
         dbContext.ChangeTracker.Clear();
         Assert.False(await dbContext.Posts.AnyAsync(post => post.AuthorUserId == authorUserId));
