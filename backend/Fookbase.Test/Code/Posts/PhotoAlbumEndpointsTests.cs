@@ -8,8 +8,10 @@ using Fookbase.Api.Modules.Friends.Entities;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Photos.Domain.Enums;
+using Fookbase.Api.Modules.Photos.DTOs.Responses;
 using Fookbase.Api.Modules.Photos.Entities;
 using Fookbase.Api.Modules.Users.Entities;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +21,75 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 
 public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
+    [Fact]
+    public async Task Custom_album_and_caption_can_be_created_updated_and_deleted()
+    {
+        var ownerId = await CreateUserAsync();
+        var mediaId = await SeedReadyImageAsync(ownerId);
+        using var owner = CreateAuthenticatedClient(ownerId, allowAutoRedirect: false);
+        using var create = await owner.PostAsJsonAsync("/api/albums", new
+        {
+            name = " Travel photos ", description = " First trip ", privacy = "only_me"
+        });
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        var album = (await create.Content.ReadFromJsonAsync<PhotoAlbumResponse>())!;
+        Assert.Equal($"/api/albums/{album.Id}", create.Headers.Location!.OriginalString);
+        Assert.Equal("Travel photos", album.Name);
+        Assert.Equal("First trip", album.Description);
+        Assert.Equal("custom", album.AlbumType);
+        Assert.Equal("onlyme", album.Privacy);
+        Assert.Equal(ownerId, album.OwnerUserId);
+        Assert.True(album.CanManage);
+
+        var mediaPath = $"/api/albums/{album.Id}/media/{mediaId}";
+        using var add = await owner.PostAsJsonAsync($"/api/albums/{album.Id}/media", new { mediaId });
+        Assert.Equal(HttpStatusCode.Created, add.StatusCode);
+        Assert.Equal(mediaPath, add.Headers.Location!.OriginalString);
+        using var caption = await owner.PatchAsJsonAsync(mediaPath, new { caption = " First photo " });
+        Assert.Equal(HttpStatusCode.OK, caption.StatusCode);
+        Assert.Equal("First photo", (await caption.Content.ReadFromJsonAsync<AlbumMediaResponse>())!.Caption);
+        using var detail = await owner.GetAsync(mediaPath);
+        Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
+        var photo = (await detail.Content.ReadFromJsonAsync<PhotoDetailResponse>())!;
+        Assert.Equal(mediaId, photo.MediaId);
+        Assert.Equal(album.Id, photo.AlbumId);
+        Assert.Equal(ownerId, photo.OwnerUserId);
+        Assert.Equal("First photo", photo.Caption);
+        using var access = await owner.GetAsync($"{mediaPath}/access");
+        Assert.Equal(HttpStatusCode.Redirect, access.StatusCode);
+        Assert.Equal(photo.Url, access.Headers.Location!.OriginalString);
+        using var anonymous = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        using var hiddenPhoto = await anonymous.GetAsync(mediaPath);
+        using var hiddenAccess = await anonymous.GetAsync($"{mediaPath}/access");
+        Assert.Equal(HttpStatusCode.NotFound, hiddenPhoto.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, hiddenAccess.StatusCode);
+        using var clearCaption = await owner.PatchAsJsonAsync(mediaPath, new { caption = (string?)null });
+        Assert.Equal(HttpStatusCode.OK, clearCaption.StatusCode);
+        Assert.Null((await clearCaption.Content.ReadFromJsonAsync<AlbumMediaResponse>())!.Caption);
+
+        using var update = await owner.PatchAsJsonAsync($"/api/albums/{album.Id}", new
+        {
+            name = " New name ", description = (string?)null, privacy = "friends"
+        });
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var updated = (await update.Content.ReadFromJsonAsync<PhotoAlbumResponse>())!;
+        Assert.Equal("New name", updated.Name);
+        Assert.Null(updated.Description);
+        Assert.Equal("friends", updated.Privacy);
+        Assert.Equal(1, updated.PhotoCount);
+
+        using var list = await owner.GetAsync($"/api/albums/{album.Id}/media?limit=1");
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var page = (await list.Content.ReadFromJsonAsync<PhotoCursorPageResponse<AlbumMediaResponse>>())!;
+        Assert.Equal(mediaId, Assert.Single(page.Items).MediaId);
+        using var remove = await owner.DeleteAsync(mediaPath);
+        Assert.Equal(HttpStatusCode.NoContent, remove.StatusCode);
+        using var delete = await owner.DeleteAsync($"/api/albums/{album.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
+        using var missing = await owner.GetAsync($"/api/albums/{album.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
     [Fact]
     public async Task Avatar_change_makes_profile_pictures_album_available()
     {
@@ -150,7 +221,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
         await db.SaveChangesAsync();
     }
 
-    private HttpClient CreateAuthenticatedClient(Guid userId)
+    private HttpClient CreateAuthenticatedClient(Guid userId, bool allowAutoRedirect = true)
     {
         using var scope = factory.Services.CreateScope();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
@@ -164,7 +235,7 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
             new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SigningKey"]!)),
                 SecurityAlgorithms.HmacSha256));
-        var client = factory.CreateClient();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = allowAutoRedirect });
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
             new JwtSecurityTokenHandler().WriteToken(token));
