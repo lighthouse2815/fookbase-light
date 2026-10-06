@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Identity.Entities;
+using Fookbase.Api.Modules.Posts.Common;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,7 +47,7 @@ public sealed class Post
     {
         Id = id;
         AuthorUserId = authorUserId;
-        Content = NormalizeContent(content);
+        Content = PostNormalization.NormalizeContent(content);
         Privacy = privacy;
         ContainerType = containerType;
         ContainerId = containerId;
@@ -100,7 +101,7 @@ public sealed class Post
     public void Update(string content, PostPrivacy privacy, DateTimeOffset updatedAtUtc)
     {
         EnsureActive();
-        Content = NormalizeContent(content);
+        Content = PostNormalization.NormalizeContent(content);
         Privacy = privacy;
         UpdatedAtUtc = updatedAtUtc;
     }
@@ -132,17 +133,5 @@ public sealed class Post
         {
             throw new InvalidOperationException("A deleted post cannot be changed.");
         }
-    }
-
-    private static string NormalizeContent(string content)
-    {
-        var normalized = content.Trim();
-        if (normalized.Length > MaximumContentLength)
-        {
-            throw new ArgumentException(
-                $"Post content cannot exceed {MaximumContentLength} characters.");
-        }
-
-        return normalized;
     }
 }
