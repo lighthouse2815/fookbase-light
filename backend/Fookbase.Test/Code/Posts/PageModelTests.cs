@@ -23,7 +23,7 @@ public sealed class PageModelTests
         var model = db.GetService<IDesignTimeModel>().Model;
         var page = model.FindEntityType(typeof(Page))!;
         Assert.Equal("citext", page.FindProperty(nameof(Page.Username))!.GetColumnType());
-        Assert.Equal(Page.MaximumUsernameLength, page.FindProperty(nameof(Page.Username))!.GetMaxLength());
+        Assert.Equal(50, page.FindProperty(nameof(Page.Username))!.GetMaxLength());
         var usernameIndex = Assert.Single(page.GetIndexes(), index =>
             index.Properties.Select(property => property.Name).SequenceEqual([nameof(Page.Username)]));
         Assert.True(usernameIndex.IsUnique);

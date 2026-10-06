@@ -427,7 +427,7 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         var username = "limits." + Guid.NewGuid().ToString("N");
         using var invalid = await owner.PostAsJsonAsync("/api/pages", new
         {
-            name = new string('a', Page.MaximumNameLength + 1), username, category = "Integration"
+            name = new string('a', 121), username, category = "Integration"
         });
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         using (var body = JsonDocument.Parse(await invalid.Content.ReadAsStringAsync()))
@@ -436,9 +436,9 @@ public sealed class PageEndpointsTests(PostsApiFactory factory) : IClassFixture<
         }
         var page = await ReadAsync<PageResponse>(await owner.PostAsJsonAsync("/api/pages", new
         {
-            name = " " + new string('a', Page.MaximumNameLength) + " ", username, category = " Integration "
+            name = " " + new string('a', 120) + " ", username, category = " Integration "
         }));
-        Assert.Equal(new string('a', Page.MaximumNameLength), page.Name);
+        Assert.Equal(new string('a', 120), page.Name);
         Assert.Equal("Integration", page.Category);
     }
 

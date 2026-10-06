@@ -13,12 +13,6 @@ namespace Fookbase.Api.Modules.Pages.Entities;
 [Index(nameof(CreatedByUserId), nameof(CreatedAtUtc))]
 public sealed class Page
 {
-    public const int MinimumUsernameLength = 3;
-    public const int MaximumUsernameLength = 50;
-    public const int MaximumNameLength = 120;
-    public const int MaximumCategoryLength = 80;
-    public const int MaximumBioLength = 2_000;
-
     private Page() { }
 
     public Page(
@@ -44,19 +38,19 @@ public sealed class Page
     public Guid Id { get; private set; }
 
     [Required]
-    [MaxLength(MaximumNameLength)]
+    [MaxLength(120)]
     public string Name { get; private set; } = string.Empty;
 
     [Required]
-    [MaxLength(MaximumUsernameLength)]
+    [MaxLength(50)]
     [Column(TypeName = "citext")]
     public string Username { get; private set; } = string.Empty;
 
     [Required]
-    [MaxLength(MaximumCategoryLength)]
+    [MaxLength(80)]
     public string Category { get; private set; } = string.Empty;
 
-    [MaxLength(MaximumBioLength)]
+    [MaxLength(2_000)]
     public string? Bio { get; private set; }
 
     public Guid? AvatarMediaId { get; private set; }
