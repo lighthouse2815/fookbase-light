@@ -354,6 +354,8 @@ public sealed class MediaEndpointsTests(MediaApiFactory factory) : IClassFixture
             yield return [new { fileName, contentType = "image/png", sizeBytes = 1 }, "FileName"];
         foreach (var contentType in new string?[] { null, "", " ", "text/plain", "image/gif", "video/quicktime" })
             yield return [new { fileName = "file", contentType, sizeBytes = 1 }, "ContentType"];
+        foreach (var contentType in new string?[] { null, " ", "text/plain" })
+            yield return [new { fileName = "file", contentType, sizeBytes = long.MaxValue }, "ContentType"];
         foreach (var sizeBytes in new[] { 0L, -1L, long.MinValue, 20L * 1024 * 1024 + 1 })
             yield return [new { fileName = "photo.png", contentType = "image/png", sizeBytes }, "SizeBytes"];
         yield return [new { fileName = "video.mp4", contentType = "video/mp4", sizeBytes = 500L * 1024 * 1024 + 1 }, "SizeBytes"];
