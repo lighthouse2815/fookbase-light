@@ -105,8 +105,16 @@ public sealed class Event
 
     public EventCoverMediaReference? CoverMediaReference { get; private set; }
 
-    public void Update(string name, string? description, EventPrivacy privacy, EventLocationType locationType,
-        string? locationName, string? address, string? onlineUrl, DateTimeOffset startsAtUtc, DateTimeOffset? endsAtUtc,
+    public void Update(
+        string name,
+        string? description,
+        EventPrivacy privacy,
+        EventLocationType locationType,
+        string? locationName,
+        string? address,
+        string? onlineUrl,
+        DateTimeOffset startsAtUtc,
+        DateTimeOffset? endsAtUtc,
         DateTimeOffset now)
     {
         EnsureActive();

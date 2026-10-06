@@ -15,8 +15,14 @@ using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
 namespace Fookbase.Api.Modules.Events.Services;
 
-public sealed class EventsService(FookbaseDbContext db, EventAccessService access, NotificationService notifications,
-    PostsService posts, Fookbase.Api.Modules.Media.Services.MediaService media, SocialInteractionsService interactions, TimeProvider time)
+public sealed class EventsService(
+    FookbaseDbContext db,
+    EventAccessService access,
+    NotificationService notifications,
+    PostsService posts,
+    Fookbase.Api.Modules.Media.Services.MediaService media,
+    SocialInteractionsService interactions,
+    TimeProvider time)
 {
     public const int DefaultPageSize = 20, MaximumPageSize = 100;
     public async Task<ApplicationResult<EventResponse>> CreateAsync(Guid actor, CreateEventRequest request, CancellationToken ct = default)
@@ -37,7 +43,22 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         try
         {
             await using var tx = await db.Database.BeginTransactionAsync(ct);
-            var item = new Event(Guid.NewGuid(), request.Name, request.Description, hostType, hostId, actor, privacy, locationType, request.LocationName, request.Address, request.OnlineUrl, request.StartsAtUtc, request.EndsAtUtc, status, time.GetUtcNow());
+            var item = new Event(
+                Guid.NewGuid(),
+                request.Name,
+                request.Description,
+                hostType,
+                hostId,
+                actor,
+                privacy,
+                locationType,
+                request.LocationName,
+                request.Address,
+                request.OnlineUrl,
+                request.StartsAtUtc,
+                request.EndsAtUtc,
+                status,
+                time.GetUtcNow());
             db.Events.Add(item);
             await SyncCoverAsync(item.Id, request.CoverMediaId, ct);
             item.SetCover(request.CoverMediaId, time.GetUtcNow());
@@ -81,7 +102,17 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         {
             var previousDetails = (item.StartsAtUtc, item.EndsAtUtc, item.LocationType, item.LocationName, item.Address, item.OnlineUrl);
             await using var tx = await db.Database.BeginTransactionAsync(ct);
-            item.Update(request.Name, request.Description, privacy, location, request.LocationName, request.Address, request.OnlineUrl, request.StartsAtUtc, request.EndsAtUtc, time.GetUtcNow());
+            item.Update(
+                request.Name,
+                request.Description,
+                privacy,
+                location,
+                request.LocationName,
+                request.Address,
+                request.OnlineUrl,
+                request.StartsAtUtc,
+                request.EndsAtUtc,
+                time.GetUtcNow());
             var changed = previousDetails != (item.StartsAtUtc, item.EndsAtUtc, item.LocationType, item.LocationName, item.Address, item.OnlineUrl);
             item.SetCover(desired, time.GetUtcNow());
             await SyncCoverAsync(id, desired, ct);
@@ -118,7 +149,11 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
             return NotFound<EventResponse>();
         var existing = await db.EventParticipants.SingleOrDefaultAsync(x => x.EventId == id && x.UserId == actor, ct);
         if (existing is null)
-            db.EventParticipants.Add(new EventParticipant(id, actor, parsed, time.GetUtcNow()));
+            db.EventParticipants.Add(new EventParticipant(
+                id,
+                actor,
+                parsed,
+                time.GetUtcNow()));
         else
             existing.SetStatus(parsed, time.GetUtcNow());
         await db.SaveChangesAsync(ct);
@@ -152,9 +187,20 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
             return Bad<EventInvitationResponse>("relationship_unavailable", "This invitation is unavailable.", ApplicationErrorType.CONFLICT);
         if (await db.EventInvitations.AnyAsync(x => x.EventId == id && x.InviteeUserId == invitee && x.Status == EventInvitationStatus.PENDING, ct))
             return Bad<EventInvitationResponse>("event_invitation_pending", "An invitation is already pending.", ApplicationErrorType.CONFLICT);
-        var invitation = new EventInvitation(Guid.NewGuid(), id, actor, invitee, time.GetUtcNow());
+        var invitation = new EventInvitation(
+            Guid.NewGuid(),
+            id,
+            actor,
+            invitee,
+            time.GetUtcNow());
         db.EventInvitations.Add(invitation);
-        var notification = await notifications.QueueAsync(invitee, actor, NotificationType.EVENT_INVITE, NotificationEntityType.EVENT, invitation.Id, ct);
+        var notification = await notifications.QueueAsync(
+            invitee,
+            actor,
+            NotificationType.EVENT_INVITE,
+            NotificationEntityType.EVENT,
+            invitation.Id,
+            ct);
         await db.SaveChangesAsync(ct);
         if (notification is not null)
             await notifications.PublishAsync(notification, ct);
@@ -174,7 +220,11 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
             invitation.Accept(time.GetUtcNow());
             var participant = await db.EventParticipants.SingleOrDefaultAsync(x => x.EventId == item.Id && x.UserId == actor, ct);
             if (participant is null)
-                db.EventParticipants.Add(new EventParticipant(item.Id, actor, EventParticipantStatus.GOING, time.GetUtcNow()));
+                db.EventParticipants.Add(new EventParticipant(
+                    item.Id,
+                    actor,
+                    EventParticipantStatus.GOING,
+                    time.GetUtcNow()));
             else
                 participant.SetStatus(EventParticipantStatus.GOING, time.GetUtcNow());
         }
@@ -200,7 +250,9 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
     public async Task<ApplicationResult<EventCursorPageResponse<EventInvitationResponse>>> InvitationsAsync(Guid actor, string? cursor, int limit, CancellationToken ct = default)
     {
         var rows = await db.EventInvitations.AsNoTracking().Where(x => x.InviteeUserId == actor && x.Status == EventInvitationStatus.PENDING).OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).Take(limit + 1).ToListAsync(ct);
-        return ApplicationResult<EventCursorPageResponse<EventInvitationResponse>>.Success(new(await Task.WhenAll(rows.Take(limit).Select(x => ToInvitationAsync(x, actor, ct))), rows.Count > limit ? Encode(rows[limit].CreatedAtUtc, rows[limit].Id) : null));
+        return ApplicationResult<EventCursorPageResponse<EventInvitationResponse>>.Success(new(
+            await Task.WhenAll(rows.Take(limit).Select(x => ToInvitationAsync(x, actor, ct))),
+            rows.Count > limit ? Encode(rows[limit].CreatedAtUtc, rows[limit].Id) : null));
     }
     public async Task<ApplicationResult<EventCursorPageResponse<EventParticipantResponse>>> ParticipantsAsync(Guid actor, Guid id, string? cursor, int limit, CancellationToken ct = default)
     {
@@ -208,8 +260,16 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         if (item is null || !await access.CanViewAsync(item, actor, ct))
             return NotFound<EventCursorPageResponse<EventParticipantResponse>>();
         var rows = await (from p in db.EventParticipants.AsNoTracking() join u in db.UserProfiles.AsNoTracking() on p.UserId equals u.UserId where p.EventId == id && !db.BlockedUsers.Any(b => (b.BlockerUserId == actor && b.BlockedUserId == p.UserId) || (b.BlockerUserId == p.UserId && b.BlockedUserId == actor)) orderby p.RespondedAtUtc descending, p.UserId descending select new { p, u }).Take(limit + 1).ToListAsync(ct);
-        var items = rows.Take(limit).Select(x => new EventParticipantResponse(x.p.UserId, x.u.Username, x.u.DisplayName, x.u.AvatarMediaId is null ? x.u.AvatarUrl : $"/api/users/{x.p.UserId}/avatar", x.p.Status.ToString().ToLowerInvariant(), x.p.RespondedAtUtc)).ToList();
-        return ApplicationResult<EventCursorPageResponse<EventParticipantResponse>>.Success(new(items, rows.Count > limit ? Encode(rows[limit].p.RespondedAtUtc, rows[limit].p.UserId) : null));
+        var items = rows.Take(limit).Select(x => new EventParticipantResponse(
+            x.p.UserId,
+            x.u.Username,
+            x.u.DisplayName,
+            x.u.AvatarMediaId is null ? x.u.AvatarUrl : $"/api/users/{x.p.UserId}/avatar",
+            x.p.Status.ToString().ToLowerInvariant(),
+            x.p.RespondedAtUtc)).ToList();
+        return ApplicationResult<EventCursorPageResponse<EventParticipantResponse>>.Success(new(
+            items,
+            rows.Count > limit ? Encode(rows[limit].p.RespondedAtUtc, rows[limit].p.UserId) : null));
     }
     public async Task<ApplicationResult<EventCursorPageResponse<PostResponse>>> PostsAsync(Guid actor, Guid id, string? cursor, int limit, CancellationToken ct = default)
     {
@@ -217,7 +277,9 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         if (item is null || !await access.CanViewAsync(item, actor, ct))
             return NotFound<EventCursorPageResponse<PostResponse>>();
         var rows = await db.Posts.AsNoTracking().Where(x => x.ContainerType == PostContainerType.EVENT && x.ContainerId == id && x.DeletedAtUtc == null).OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).Take(limit + 1).ToListAsync(ct);
-        return ApplicationResult<EventCursorPageResponse<PostResponse>>.Success(new(await posts.LoadResponsesAsync(rows.Take(limit).ToList(), actor, ct), rows.Count > limit ? Encode(rows[limit].CreatedAtUtc, rows[limit].Id) : null));
+        return ApplicationResult<EventCursorPageResponse<PostResponse>>.Success(new(
+            await posts.LoadResponsesAsync(rows.Take(limit).ToList(), actor, ct),
+            rows.Count > limit ? Encode(rows[limit].CreatedAtUtc, rows[limit].Id) : null));
     }
     public async Task<ApplicationResult<PostResponse>> CreatePostAsync(Guid actor, Guid id, CreateEventPostRequest request, CancellationToken ct = default)
     {
@@ -231,7 +293,14 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         if (!mediaValidation.Succeeded)
             return ApplicationResult<PostResponse>.Failure(mediaValidation.Error!);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
-        var created = await posts.CreatePostInContainerCoreAsync(actor, request.Content ?? string.Empty, PostPrivacy.PUBLIC, PostContainerType.EVENT, id, ids, ct);
+        var created = await posts.CreatePostInContainerCoreAsync(
+            actor,
+            request.Content ?? string.Empty,
+            PostPrivacy.PUBLIC,
+            PostContainerType.EVENT,
+            id,
+            ids,
+            ct);
         if (!created.Succeeded)
         {
             await tx.RollbackAsync(ct);
@@ -245,7 +314,10 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         }
         await interactions.SynchronizePostMetadataAsync(created.Value.Id, actor, ct);
         await tx.CommitAsync(ct);
-        return ApplicationResult<PostResponse>.Success((await posts.LoadResponsesAsync([await db.Posts.AsNoTracking().SingleAsync(x => x.Id == created.Value.Id, ct)], actor, ct))[0]);
+        return ApplicationResult<PostResponse>.Success((await posts.LoadResponsesAsync(
+            [await db.Posts.AsNoTracking().SingleAsync(x => x.Id == created.Value.Id, ct)],
+            actor,
+            ct))[0]);
     }
     private IQueryable<Event> Active() => db.Events.Where(x => x.DeletedAtUtc == null);
     private async Task<ApplicationResult<EventResponse>> TransitionAsync(Guid actor, Guid id, bool cancel, CancellationToken ct)
@@ -274,7 +346,22 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
     }
     private async Task<bool> CanCreateForHostAsync(Guid actor, EventHostType type, Guid hostId, CancellationToken ct)
     {
-        var probe = new Event(Guid.NewGuid(), "probe", null, type, hostId, actor, EventPrivacy.PUBLIC, EventLocationType.PHYSICAL, null, null, null, time.GetUtcNow(), null, EventStatus.DRAFT, time.GetUtcNow());
+        var probe = new Event(
+            Guid.NewGuid(),
+            "probe",
+            null,
+            type,
+            hostId,
+            actor,
+            EventPrivacy.PUBLIC,
+            EventLocationType.PHYSICAL,
+            null,
+            null,
+            null,
+            time.GetUtcNow(),
+            null,
+            EventStatus.DRAFT,
+            time.GetUtcNow());
         return await access.CanManageAsync(probe, actor, ct);
     }
     private async Task<ApplicationError?> ValidateCoverAsync(Guid actor, Guid mediaId, CancellationToken ct)
@@ -288,7 +375,10 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         if (old is not null)
             db.EventCoverMediaReferences.Remove(old);
         if (mediaId is not null)
-            db.EventCoverMediaReferences.Add(new EventCoverMediaReference(eventId, mediaId.Value, time.GetUtcNow()));
+            db.EventCoverMediaReferences.Add(new EventCoverMediaReference(
+                eventId,
+                mediaId.Value,
+                time.GetUtcNow()));
     }
     private async Task<List<Notification>> QueueParticipantNotificationsAsync(Event item, NotificationType type, CancellationToken ct)
     {
@@ -296,7 +386,13 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         var queuedNotifications = new List<Notification>();
         foreach (var userId in userIds)
         {
-            var notification = await notifications.QueueAsync(userId, item.CreatedByUserId, type, NotificationEntityType.EVENT, item.Id, ct);
+            var notification = await notifications.QueueAsync(
+                userId,
+                item.CreatedByUserId,
+                type,
+                NotificationEntityType.EVENT,
+                item.Id,
+                ct);
             if (notification is not null)
                 queuedNotifications.Add(notification);
         }
@@ -305,7 +401,9 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
     private async Task<ApplicationResult<EventCursorPageResponse<EventResponse>>> ListAsync(IQueryable<Event> query, Guid actor, string? cursor, int limit, bool desc, CancellationToken ct)
     {
         var rows = await query.OrderBy(x => x.StartsAtUtc).ThenBy(x => x.Id).Take(limit + 1).ToListAsync(ct);
-        return ApplicationResult<EventCursorPageResponse<EventResponse>>.Success(new(await Task.WhenAll(rows.Take(limit).Select(x => ToResponseAsync(x, actor, ct))), rows.Count > limit ? Encode(rows[limit].StartsAtUtc, rows[limit].Id) : null));
+        return ApplicationResult<EventCursorPageResponse<EventResponse>>.Success(new(
+            await Task.WhenAll(rows.Take(limit).Select(x => ToResponseAsync(x, actor, ct))),
+            rows.Count > limit ? Encode(rows[limit].StartsAtUtc, rows[limit].Id) : null));
     }
     private async Task<EventResponse> ToResponseAsync(Event item, Guid? viewer, CancellationToken ct)
     {
@@ -314,29 +412,97 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         var participant = viewer is null ? null : await db.EventParticipants.AsNoTracking().SingleOrDefaultAsync(x => x.EventId == item.Id && x.UserId == viewer, ct);
         var manage = viewer is not null && await access.CanManageAsync(item, viewer.Value, ct);
         var post = viewer is not null && await access.CanPostAsync(item, viewer.Value, ct);
-        return new(item.Id, item.Name, item.Description, host, item.Privacy.ToString().ToLowerInvariant(), item.LocationType.ToString().ToLowerInvariant(), item.LocationName, item.Address, item.OnlineUrl, item.StartsAtUtc, item.EndsAtUtc, item.Status.ToString().ToLowerInvariant(), item.CoverMediaId is null ? null : $"/api/events/{item.Id}/cover", counts.Where(x => x.Key == EventParticipantStatus.GOING).Select(x => x.Count).FirstOrDefault(), counts.Where(x => x.Key == EventParticipantStatus.INTERESTED).Select(x => x.Count).FirstOrDefault(), participant?.Status.ToString().ToLowerInvariant(), manage, post, item.CreatedAtUtc, item.UpdatedAtUtc);
+        return new(
+            item.Id,
+            item.Name,
+            item.Description,
+            host,
+            item.Privacy.ToString().ToLowerInvariant(),
+            item.LocationType.ToString().ToLowerInvariant(),
+            item.LocationName,
+            item.Address,
+            item.OnlineUrl,
+            item.StartsAtUtc,
+            item.EndsAtUtc,
+            item.Status.ToString().ToLowerInvariant(),
+            item.CoverMediaId is null ? null : $"/api/events/{item.Id}/cover",
+            counts.Where(x => x.Key == EventParticipantStatus.GOING).Select(x => x.Count).FirstOrDefault(),
+            counts.Where(x => x.Key == EventParticipantStatus.INTERESTED).Select(x => x.Count).FirstOrDefault(),
+            participant?.Status.ToString().ToLowerInvariant(),
+            manage,
+            post,
+            item.CreatedAtUtc,
+            item.UpdatedAtUtc);
     }
     private async Task<EventHostResponse> HostAsync(Event item, CancellationToken ct)
     {
         if (item.HostType == EventHostType.GROUP)
         {
             var x = await db.Groups.AsNoTracking().Where(x => x.Id == item.HostId).Select(x => new { x.Name }).SingleOrDefaultAsync(ct);
-            return new("group", item.HostId, x?.Name ?? "Group");
+            return new(
+                "group",
+                item.HostId,
+                x?.Name ?? "Group");
         }
         if (item.HostType == EventHostType.PAGE)
         {
             var x = await db.Pages.AsNoTracking().Where(x => x.Id == item.HostId).Select(x => new { x.Name, x.Username, x.AvatarMediaId }).SingleOrDefaultAsync(ct);
-            return new("page", item.HostId, x?.Name ?? "Page", x?.Username, x?.AvatarMediaId is null ? null : $"/api/pages/{item.HostId}/avatar");
+            return new(
+                "page",
+                item.HostId,
+                x?.Name ?? "Page",
+                x?.Username,
+                x?.AvatarMediaId is null ? null : $"/api/pages/{item.HostId}/avatar");
         }
         var u = await db.UserProfiles.AsNoTracking().Where(x => x.UserId == item.HostId).Select(x => new { x.DisplayName, x.Username, x.AvatarUrl, x.AvatarMediaId }).SingleOrDefaultAsync(ct);
-        return new("user", item.HostId, u?.DisplayName ?? "User", u?.Username, u?.AvatarMediaId is null ? u?.AvatarUrl : $"/api/users/{item.HostId}/avatar");
+        return new(
+            "user",
+            item.HostId,
+            u?.DisplayName ?? "User",
+            u?.Username,
+            u?.AvatarMediaId is null ? u?.AvatarUrl : $"/api/users/{item.HostId}/avatar");
     }
     private async Task<EventInvitationResponse> ToInvitationAsync(EventInvitation invitation, Guid viewer, CancellationToken ct)
     {
         var item = await Active().SingleOrDefaultAsync(x => x.Id == invitation.EventId, ct);
-        return new(invitation.Id, invitation.EventId, invitation.InviterUserId, invitation.InviteeUserId, invitation.Status.ToString().ToLowerInvariant(), invitation.CreatedAtUtc, invitation.RespondedAtUtc, item is null ? null : await ToResponseAsync(item, viewer, ct));
+        return new(
+            invitation.Id,
+            invitation.EventId,
+            invitation.InviterUserId,
+            invitation.InviteeUserId,
+            invitation.Status.ToString().ToLowerInvariant(),
+            invitation.CreatedAtUtc,
+            invitation.RespondedAtUtc,
+            item is null ? null : await ToResponseAsync(item, viewer, ct));
     }
     private Task<bool> IsBlockedAsync(Guid a, Guid b, CancellationToken ct) => db.BlockedUsers.AsNoTracking().AnyAsync(x => (x.BlockerUserId == a && x.BlockedUserId == b) || (x.BlockerUserId == b && x.BlockedUserId == a), ct);
     private static string? Encode(DateTimeOffset at, Guid id) => System.Convert.ToBase64String(Encoding.UTF8.GetBytes($"{at.UtcTicks}|{id}"));
-    private static ApplicationResult<T> Bad<T>(string code, string message, ApplicationErrorType type = ApplicationErrorType.VALIDATION) => ApplicationResult<T>.Failure(new(code, message, type)); private static ApplicationResult<T> NotFound<T>() => Bad<T>("event_not_found", "The event was not found.", ApplicationErrorType.NOT_FOUND); private static ApplicationResult NotFound() => ApplicationResult.Failure(new("event_not_found", "The event was not found.", ApplicationErrorType.NOT_FOUND)); private static ApplicationResult<T> Forbidden<T>() => Bad<T>("event_forbidden", "You are not allowed to manage this event.", ApplicationErrorType.FORBIDDEN); private static ApplicationResult Forbidden() => ApplicationResult.Failure(new("event_forbidden", "You are not allowed to manage this event.", ApplicationErrorType.FORBIDDEN));
+    private static ApplicationResult<T> Bad<T>(
+        string code,
+        string message,
+        ApplicationErrorType type = ApplicationErrorType.VALIDATION) =>
+        ApplicationResult<T>.Failure(new(
+            code,
+            message,
+            type));
+
+    private static ApplicationResult<T> NotFound<T>() => Bad<T>(
+        "event_not_found",
+        "The event was not found.",
+        ApplicationErrorType.NOT_FOUND);
+
+    private static ApplicationResult NotFound() => ApplicationResult.Failure(new(
+        "event_not_found",
+        "The event was not found.",
+        ApplicationErrorType.NOT_FOUND));
+
+    private static ApplicationResult<T> Forbidden<T>() => Bad<T>(
+        "event_forbidden",
+        "You are not allowed to manage this event.",
+        ApplicationErrorType.FORBIDDEN);
+
+    private static ApplicationResult Forbidden() => ApplicationResult.Failure(new(
+        "event_forbidden",
+        "You are not allowed to manage this event.",
+        ApplicationErrorType.FORBIDDEN));
 }
