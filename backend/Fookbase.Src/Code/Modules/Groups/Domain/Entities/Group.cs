@@ -14,7 +14,6 @@ namespace Fookbase.Api.Modules.Groups.Entities;
 [IndexFilter("\"DeletedAtUtc\" IS NULL", nameof(OwnerUserId), nameof(CreatedAtUtc))]
 public sealed class Group
 {
-    public const int MaximumNameLength = 120;
     public const int MaximumDescriptionLength = 2_000;
 
     private Group() { }
@@ -39,7 +38,7 @@ public sealed class Group
     public Guid Id { get; private set; }
 
     [Required]
-    [MaxLength(MaximumNameLength)]
+    [MaxLength(120)]
     public string Name { get; private set; } = string.Empty;
 
     [MaxLength(MaximumDescriptionLength)]
@@ -115,10 +114,10 @@ public sealed class Group
     private static string NormalizeName(string? value)
     {
         var normalized = value?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > MaximumNameLength)
+        if (normalized.Length is < 1 or > 120)
         {
             throw new ArgumentException(
-                $"Group name must contain between 1 and {MaximumNameLength} characters.");
+                "Group name must contain between 1 and 120 characters.");
         }
 
         return normalized;

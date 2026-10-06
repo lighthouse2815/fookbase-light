@@ -6,7 +6,7 @@ namespace Fookbase.Api.Modules.Groups.DTOs.Requests;
 
 public sealed record UpdateGroupRequest(
     [Required(ErrorMessage = "Tên nhóm là bắt buộc.")]
-    [TrimmedStringLength(Group.MaximumNameLength)]
+    [TrimmedStringLength(120)]
     string Name,
 
     [TrimmedStringLength(Group.MaximumDescriptionLength)]
