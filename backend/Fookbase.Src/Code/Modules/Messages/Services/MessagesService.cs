@@ -48,12 +48,12 @@ public sealed class MessagesService(
             conversation = new Conversation(Guid.NewGuid(), actorUserId, participantUserId, now);
             dbContext.Conversations.Add(conversation);
             dbContext.ConversationParticipants.AddRange(
-                new ConversationParticipant(conversation.Id, conversation.UserId1!.Value, ConversationParticipantRole.MEMBER, now),
-                new ConversationParticipant(conversation.Id, conversation.UserId2!.Value, ConversationParticipantRole.MEMBER, now));
+                new ConversationParticipant(conversation.Id, conversation.User1Id!.Value, ConversationParticipantRole.MEMBER, now),
+                new ConversationParticipant(conversation.Id, conversation.User2Id!.Value, ConversationParticipantRole.MEMBER, now));
             // Kept as a compatibility projection for existing direct chat clients/imports.
             dbContext.ConversationReadCursors.AddRange(
-                new ConversationReadCursor(conversation.Id, conversation.UserId1.Value),
-                new ConversationReadCursor(conversation.Id, conversation.UserId2.Value));
+                new ConversationReadCursor(conversation.Id, conversation.User1Id.Value),
+                new ConversationReadCursor(conversation.Id, conversation.User2Id.Value));
             try
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -539,7 +539,7 @@ public sealed class MessagesService(
     private async Task<Conversation?> FindDirectConversationAsync(Guid firstUserId, Guid secondUserId, CancellationToken cancellationToken)
     {
         var (userId1, userId2) = firstUserId.CompareTo(secondUserId) < 0 ? (firstUserId, secondUserId) : (secondUserId, firstUserId);
-        return await dbContext.Conversations.SingleOrDefaultAsync(conversation => conversation.Type == ConversationType.DIRECT && conversation.UserId1 == userId1 && conversation.UserId2 == userId2, cancellationToken);
+        return await dbContext.Conversations.SingleOrDefaultAsync(conversation => conversation.Type == ConversationType.DIRECT && conversation.User1Id == userId1 && conversation.User2Id == userId2, cancellationToken);
     }
 
     private async Task<ApplicationError?> ValidateConversationRelationshipAsync(Conversation conversation, Guid actorUserId, CancellationToken cancellationToken)

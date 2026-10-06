@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Messages.Entities;
 
-[Table("Conversations")]
-[Index(nameof(UserId1), nameof(UserId2), IsUnique = true)]
+[Index(nameof(User1Id), nameof(User2Id), IsUnique = true)]
 [Index(nameof(LastMessageAtUtc), nameof(Id))]
 public sealed class Conversation
 {
@@ -29,7 +28,7 @@ public sealed class Conversation
             throw new ArgumentException("A conversation requires two different users.");
         }
 
-        (UserId1, UserId2) = userId1.CompareTo(userId2) < 0
+        (User1Id, User2Id) = userId1.CompareTo(userId2) < 0
             ? (userId1, userId2)
             : (userId2, userId1);
         CreatedAtUtc = createdAtUtc;
@@ -54,9 +53,11 @@ public sealed class Conversation
     // Direct conversations retain this canonical pair to preserve existing IDs and
     // enforce a database-safe uniqueness constraint. Group conversations use rows
     // in ConversationParticipants instead.
-    public Guid? UserId1 { get; private set; }
+    [Column("UserId1")]
+    public Guid? User1Id { get; private set; }
 
-    public Guid? UserId2 { get; private set; }
+    [Column("UserId2")]
+    public Guid? User2Id { get; private set; }
 
     public ConversationType Type { get; private set; }
 
@@ -69,15 +70,12 @@ public sealed class Conversation
 
     public DateTimeOffset LastMessageAtUtc { get; private set; }
 
-    [ForeignKey(nameof(UserId1))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User? User1 { get; private set; }
 
-    [ForeignKey(nameof(UserId2))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User? User2 { get; private set; }
 
-    [ForeignKey(nameof(PhotoMediaId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset? PhotoMedia { get; private set; }
 
@@ -93,13 +91,13 @@ public sealed class Conversation
     [InverseProperty(nameof(MessageNotification.Conversation))]
     public ICollection<MessageNotification> Notifications { get; private set; } = new List<MessageNotification>();
 
-    public bool Contains(Guid userId) => UserId1 == userId || UserId2 == userId;
+    public bool Contains(Guid userId) => User1Id == userId || User2Id == userId;
 
     public Guid OtherUserId(Guid userId) =>
-        UserId1 == userId
-            ? UserId2!.Value
-            : UserId2 == userId
-                ? UserId1!.Value
+        User1Id == userId
+            ? User2Id!.Value
+            : User2Id == userId
+                ? User1Id!.Value
                 : throw new UnauthorizedAccessException("The user is not part of this conversation.");
 
     public void RecordMessage(DateTimeOffset createdAtUtc) => LastMessageAtUtc = createdAtUtc;

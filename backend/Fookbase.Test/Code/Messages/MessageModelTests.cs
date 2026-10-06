@@ -26,10 +26,13 @@ public sealed class MessageModelTests
         Assert.Equal("Conversations", conversation.GetTableName());
         Assert.Equal(120, conversation.FindProperty(nameof(Conversation.Title))!.GetMaxLength());
         Assert.Equal("integer", conversation.FindProperty(nameof(Conversation.Type))!.GetColumnType());
-        AssertIndex(conversation, ["UserId1", "UserId2"], unique: true);
+        Assert.Equal("UserId1", conversation.FindProperty(nameof(Conversation.User1Id))!.GetColumnName());
+        Assert.Equal("UserId2", conversation.FindProperty(nameof(Conversation.User2Id))!.GetColumnName());
+        AssertIndex(conversation, ["User1Id", "User2Id"], unique: true);
         AssertIndex(conversation, ["LastMessageAtUtc", "Id"]);
 
         var participant = model.FindEntityType(typeof(ConversationParticipant))!;
+        Assert.Equal("ConversationParticipants", participant.GetTableName());
         Assert.Equal(new[] { "ConversationId", "UserId" }, participant.FindPrimaryKey()!.Properties.Select(p => p.Name));
         Assert.Equal(80, participant.FindProperty(nameof(ConversationParticipant.Nickname))!.GetMaxLength());
         Assert.Equal("integer", participant.FindProperty(nameof(ConversationParticipant.Role))!.GetColumnType());
@@ -38,10 +41,12 @@ public sealed class MessageModelTests
         AssertIndex(participant, ["ConversationId", "UserId"]);
 
         var cursor = model.FindEntityType(typeof(ConversationReadCursor))!;
+        Assert.Equal("ConversationReadCursors", cursor.GetTableName());
         Assert.Equal(new[] { "ConversationId", "UserId" }, cursor.FindPrimaryKey()!.Properties.Select(p => p.Name));
         AssertIndex(cursor, ["UserId", "ConversationId"]);
 
         var message = model.FindEntityType(typeof(Message))!;
+        Assert.Equal("Messages", message.GetTableName());
         Assert.Equal(5000, message.FindProperty(nameof(Message.Content))!.GetMaxLength());
         Assert.Equal("integer", message.FindProperty(nameof(Message.Type))!.GetColumnType());
         AssertIndex(message, ["ConversationId", "CreatedAtUtc", "Id"]);
@@ -49,23 +54,26 @@ public sealed class MessageModelTests
         AssertIndex(message, ["StoryId"]);
 
         var attachment = model.FindEntityType(typeof(MessageAttachment))!;
+        Assert.Equal("MessageAttachments", attachment.GetTableName());
         Assert.Equal(new[] { "MessageId", "MediaId" }, attachment.FindPrimaryKey()!.Properties.Select(p => p.Name));
         AssertIndex(attachment, ["MediaId"]);
         AssertIndex(attachment, ["MessageId", "SortOrder"], unique: true);
 
         var reaction = model.FindEntityType(typeof(MessageReaction))!;
+        Assert.Equal("MessageReactions", reaction.GetTableName());
         Assert.Equal(new[] { "MessageId", "UserId" }, reaction.FindPrimaryKey()!.Properties.Select(p => p.Name));
         Assert.Equal("integer", reaction.FindProperty(nameof(MessageReaction.Type))!.GetColumnType());
         AssertIndex(reaction, ["MessageId", "Type"]);
 
         var notification = model.FindEntityType(typeof(MessageNotification))!;
+        Assert.Equal("MessageNotifications", notification.GetTableName());
         AssertIndex(notification, ["RecipientUserId", "MessageId"], unique: true);
         AssertIndex(notification, ["RecipientUserId", "ReadAtUtc", "CreatedAtUtc"]);
     }
 
     [Theory]
-    [InlineData(typeof(Conversation), "User1", "UserId1", typeof(User), DeleteBehavior.Restrict, false, null)]
-    [InlineData(typeof(Conversation), "User2", "UserId2", typeof(User), DeleteBehavior.Restrict, false, null)]
+    [InlineData(typeof(Conversation), "User1", "User1Id", typeof(User), DeleteBehavior.Restrict, false, null)]
+    [InlineData(typeof(Conversation), "User2", "User2Id", typeof(User), DeleteBehavior.Restrict, false, null)]
     [InlineData(typeof(Conversation), "PhotoMedia", "PhotoMediaId", typeof(MediaAsset), DeleteBehavior.Restrict, false, null)]
     [InlineData(typeof(ConversationParticipant), "Conversation", "ConversationId", typeof(Conversation), DeleteBehavior.Cascade, true, "Participants")]
     [InlineData(typeof(ConversationParticipant), "User", "UserId", typeof(User), DeleteBehavior.Restrict, true, null)]

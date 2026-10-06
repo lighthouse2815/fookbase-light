@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Messages.Entities;
 
-[Table("MessageNotifications")]
 [Index(nameof(RecipientUserId), nameof(MessageId), IsUnique = true)]
 [Index(nameof(RecipientUserId), nameof(ReadAtUtc), nameof(CreatedAtUtc))]
 public sealed class MessageNotification
@@ -39,16 +38,13 @@ public sealed class MessageNotification
 
     public DateTimeOffset? ReadAtUtc { get; private set; }
 
-    [ForeignKey(nameof(RecipientUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User RecipientUser { get; private set; } = null!;
 
-    [ForeignKey(nameof(ConversationId))]
     [InverseProperty(nameof(Conversation.Notifications))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Conversation Conversation { get; private set; } = null!;
 
-    [ForeignKey(nameof(MessageId))]
     [InverseProperty(nameof(Message.Notifications))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Message Message { get; private set; } = null!;

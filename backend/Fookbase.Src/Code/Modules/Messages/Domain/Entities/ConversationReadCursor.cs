@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Messages.Entities;
 
-[Table("ConversationReadCursors")]
 [PrimaryKey(nameof(ConversationId), nameof(UserId))]
 [Index(nameof(UserId), nameof(ConversationId))]
 public sealed class ConversationReadCursor
@@ -27,16 +26,13 @@ public sealed class ConversationReadCursor
 
     public DateTimeOffset? LastReadAtUtc { get; private set; }
 
-    [ForeignKey(nameof(ConversationId))]
     [InverseProperty(nameof(Conversation.ReadCursors))]
     [DeleteBehavior(DeleteBehavior.Cascade)]
     public Conversation Conversation { get; private set; } = null!;
 
-    [ForeignKey(nameof(UserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User User { get; private set; } = null!;
 
-    [ForeignKey(nameof(LastReadMessageId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public Message? LastReadMessage { get; private set; }
 
