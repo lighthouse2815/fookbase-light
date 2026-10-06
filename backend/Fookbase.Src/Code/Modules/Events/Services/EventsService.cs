@@ -37,7 +37,7 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         try
         {
             await using var tx = await db.Database.BeginTransactionAsync(ct);
-            var item = Event.Create(Guid.NewGuid(), request.Name, request.Description, hostType, hostId, actor, privacy, locationType, request.LocationName, request.Address, request.OnlineUrl, request.StartsAtUtc, request.EndsAtUtc, status, time.GetUtcNow());
+            var item = new Event(Guid.NewGuid(), request.Name, request.Description, hostType, hostId, actor, privacy, locationType, request.LocationName, request.Address, request.OnlineUrl, request.StartsAtUtc, request.EndsAtUtc, status, time.GetUtcNow());
             db.Events.Add(item);
             await SyncCoverAsync(item.Id, request.CoverMediaId, ct);
             item.SetCover(request.CoverMediaId, time.GetUtcNow());
@@ -118,7 +118,7 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
             return NotFound<EventResponse>();
         var existing = await db.EventParticipants.SingleOrDefaultAsync(x => x.EventId == id && x.UserId == actor, ct);
         if (existing is null)
-            db.EventParticipants.Add(EventParticipant.Create(id, actor, parsed, time.GetUtcNow()));
+            db.EventParticipants.Add(new EventParticipant(id, actor, parsed, time.GetUtcNow()));
         else
             existing.SetStatus(parsed, time.GetUtcNow());
         await db.SaveChangesAsync(ct);
@@ -152,7 +152,7 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
             return Bad<EventInvitationResponse>("relationship_unavailable", "This invitation is unavailable.", ApplicationErrorType.CONFLICT);
         if (await db.EventInvitations.AnyAsync(x => x.EventId == id && x.InviteeUserId == invitee && x.Status == EventInvitationStatus.PENDING, ct))
             return Bad<EventInvitationResponse>("event_invitation_pending", "An invitation is already pending.", ApplicationErrorType.CONFLICT);
-        var invitation = EventInvitation.Create(Guid.NewGuid(), id, actor, invitee, time.GetUtcNow());
+        var invitation = new EventInvitation(Guid.NewGuid(), id, actor, invitee, time.GetUtcNow());
         db.EventInvitations.Add(invitation);
         var notification = await notifications.QueueAsync(invitee, actor, NotificationType.EVENT_INVITE, NotificationEntityType.EVENT, invitation.Id, ct);
         await db.SaveChangesAsync(ct);
@@ -174,7 +174,7 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
             invitation.Accept(time.GetUtcNow());
             var participant = await db.EventParticipants.SingleOrDefaultAsync(x => x.EventId == item.Id && x.UserId == actor, ct);
             if (participant is null)
-                db.EventParticipants.Add(EventParticipant.Create(item.Id, actor, EventParticipantStatus.GOING, time.GetUtcNow()));
+                db.EventParticipants.Add(new EventParticipant(item.Id, actor, EventParticipantStatus.GOING, time.GetUtcNow()));
             else
                 participant.SetStatus(EventParticipantStatus.GOING, time.GetUtcNow());
         }
@@ -274,7 +274,7 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
     }
     private async Task<bool> CanCreateForHostAsync(Guid actor, EventHostType type, Guid hostId, CancellationToken ct)
     {
-        var probe = Event.Create(Guid.NewGuid(), "probe", null, type, hostId, actor, EventPrivacy.PUBLIC, EventLocationType.PHYSICAL, null, null, null, time.GetUtcNow(), null, EventStatus.DRAFT, time.GetUtcNow());
+        var probe = new Event(Guid.NewGuid(), "probe", null, type, hostId, actor, EventPrivacy.PUBLIC, EventLocationType.PHYSICAL, null, null, null, time.GetUtcNow(), null, EventStatus.DRAFT, time.GetUtcNow());
         return await access.CanManageAsync(probe, actor, ct);
     }
     private async Task<ApplicationError?> ValidateCoverAsync(Guid actor, Guid mediaId, CancellationToken ct)
@@ -288,7 +288,7 @@ public sealed class EventsService(FookbaseDbContext db, EventAccessService acces
         if (old is not null)
             db.EventCoverMediaReferences.Remove(old);
         if (mediaId is not null)
-            db.EventCoverMediaReferences.Add(EventCoverMediaReference.Create(eventId, mediaId.Value, time.GetUtcNow()));
+            db.EventCoverMediaReferences.Add(new EventCoverMediaReference(eventId, mediaId.Value, time.GetUtcNow()));
     }
     private async Task<List<Notification>> QueueParticipantNotificationsAsync(Event item, NotificationType type, CancellationToken ct)
     {

@@ -10,7 +10,7 @@ public sealed class EventCoverMediaReference
 {
     private EventCoverMediaReference() { }
 
-    private EventCoverMediaReference(
+    public EventCoverMediaReference(
         Guid eventId,
         Guid mediaId,
         DateTimeOffset now)
@@ -33,7 +33,4 @@ public sealed class EventCoverMediaReference
     public MediaAsset Media { get; private set; } = null!;
 
     public DateTimeOffset AttachedAtUtc { get; private set; }
-
-    public static EventCoverMediaReference Create(Guid eventId, Guid mediaId, DateTimeOffset now) =>
-        new(eventId, mediaId, now);
 }

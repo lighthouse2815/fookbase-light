@@ -14,7 +14,7 @@ public sealed class EventInvitation
 {
     private EventInvitation() { }
 
-    private EventInvitation(
+    public EventInvitation(
         Guid id,
         Guid eventId,
         Guid inviterUserId,
@@ -53,9 +53,6 @@ public sealed class EventInvitation
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public DateTimeOffset? RespondedAtUtc { get; private set; }
-
-    public static EventInvitation Create(Guid id, Guid eventId, Guid inviterUserId, Guid inviteeUserId, DateTimeOffset now) =>
-        new(id, eventId, inviterUserId, inviteeUserId, now);
 
     public void Accept(DateTimeOffset now)
     {

@@ -152,7 +152,7 @@ public sealed class EventNotificationPublicationTests(EventNotificationApiFactor
         var now = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         var users = Enumerable.Range(0, 4).Select(index => new User(Guid.NewGuid(),
             $"event-publication-{Guid.NewGuid():N}@example.com", $"event_notify_{Guid.NewGuid():N}"[..32], now.AddTicks(index))).ToArray();
-        var item = Event.Create(Guid.NewGuid(), "Notification event", null, EventHostType.USER, users[0].Id,
+        var item = new Event(Guid.NewGuid(), "Notification event", null, EventHostType.USER, users[0].Id,
             users[0].Id, EventPrivacy.PUBLIC, EventLocationType.PHYSICAL, "Hanoi", null, null,
             now.AddDays(7), null, EventStatus.PUBLISHED, now);
         using var scope = factory.Services.CreateScope();
@@ -161,9 +161,9 @@ public sealed class EventNotificationPublicationTests(EventNotificationApiFactor
         db.UserProfiles.AddRange(users.Select(user => new UserProfile(user.Id, user.UserName!, now)));
         db.Events.Add(item);
         db.EventParticipants.AddRange(
-            EventParticipant.Create(item.Id, users[0].Id, EventParticipantStatus.GOING, now),
-            EventParticipant.Create(item.Id, users[1].Id, EventParticipantStatus.GOING, now),
-            EventParticipant.Create(item.Id, users[2].Id, EventParticipantStatus.INTERESTED, now));
+            new EventParticipant(item.Id, users[0].Id, EventParticipantStatus.GOING, now),
+            new EventParticipant(item.Id, users[1].Id, EventParticipantStatus.GOING, now),
+            new EventParticipant(item.Id, users[2].Id, EventParticipantStatus.INTERESTED, now));
         await db.SaveChangesAsync();
         return new(item, users[0].Id, users[1].Id, users[2].Id, users[3].Id);
     }

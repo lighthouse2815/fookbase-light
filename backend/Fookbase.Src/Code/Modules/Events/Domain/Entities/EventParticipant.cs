@@ -11,7 +11,7 @@ public sealed class EventParticipant
 {
     private EventParticipant() { }
 
-    private EventParticipant(
+    public EventParticipant(
         Guid eventId,
         Guid userId,
         EventParticipantStatus status,
@@ -37,9 +37,6 @@ public sealed class EventParticipant
     public EventParticipantStatus Status { get; private set; }
 
     public DateTimeOffset RespondedAtUtc { get; private set; }
-
-    public static EventParticipant Create(Guid eventId, Guid userId, EventParticipantStatus status, DateTimeOffset now) =>
-        new(eventId, userId, status, now);
 
     public void SetStatus(EventParticipantStatus status, DateTimeOffset now)
     {

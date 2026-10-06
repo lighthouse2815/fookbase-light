@@ -18,7 +18,7 @@ public sealed class Event
 
     private Event() { }
 
-    private Event(
+    public Event(
         Guid id,
         string name,
         string? description,
@@ -102,12 +102,6 @@ public sealed class Event
     public ICollection<EventInvitation> Invitations { get; private set; } = new List<EventInvitation>();
 
     public EventCoverMediaReference? CoverMediaReference { get; private set; }
-
-    public static Event Create(Guid id, string name, string? description, EventHostType hostType, Guid hostId,
-        Guid createdByUserId, EventPrivacy privacy, EventLocationType locationType, string? locationName,
-        string? address, string? onlineUrl, DateTimeOffset startsAtUtc, DateTimeOffset? endsAtUtc,
-        EventStatus status, DateTimeOffset now) => new(id, name, description, hostType, hostId, createdByUserId,
-        privacy, locationType, locationName, address, onlineUrl, startsAtUtc, endsAtUtc, status, now);
 
     public void Update(string name, string? description, EventPrivacy privacy, EventLocationType locationType,
         string? locationName, string? address, string? onlineUrl, DateTimeOffset startsAtUtc, DateTimeOffset? endsAtUtc,

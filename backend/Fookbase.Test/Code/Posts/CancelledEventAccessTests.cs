@@ -88,7 +88,7 @@ public sealed class CancelledEventAccessTests(PostsApiFactory factory) : IClassF
         db.GroupMembers.AddRange(
             new GroupMember(seeded.Event.HostId, seeded.ParticipantId, GroupMemberRole.MEMBER, DateTimeOffset.UtcNow),
             new GroupMember(seeded.Event.HostId, seeded.StrangerId, GroupMemberRole.MEMBER, DateTimeOffset.UtcNow));
-        db.EventParticipants.Add(EventParticipant.Create(seeded.Event.Id, seeded.DeclinedId,
+        db.EventParticipants.Add(new EventParticipant(seeded.Event.Id, seeded.DeclinedId,
             EventParticipantStatus.INTERESTED, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
         var events = scope.ServiceProvider.GetRequiredService<EventsService>();
@@ -138,7 +138,7 @@ public sealed class CancelledEventAccessTests(PostsApiFactory factory) : IClassF
         var users = Enumerable.Range(0, 5).Select(index => new User(Guid.NewGuid(),
             $"cancel-access-{Guid.NewGuid():N}@example.com", $"cancel_access_{Guid.NewGuid():N}"[..32], now.AddTicks(index))).ToArray();
         var hostId = privateGroup || pageHost ? Guid.NewGuid() : users[0].Id;
-        var item = Event.Create(Guid.NewGuid(), "Cancelled event access", null,
+        var item = new Event(Guid.NewGuid(), "Cancelled event access", null,
             privateGroup ? EventHostType.GROUP : pageHost ? EventHostType.PAGE : EventHostType.USER, hostId, users[0].Id, privacy,
             EventLocationType.PHYSICAL, "Hanoi", null, null, now.AddDays(7), null, status, now);
         using var scope = factory.Services.CreateScope();
@@ -159,9 +159,9 @@ public sealed class CancelledEventAccessTests(PostsApiFactory factory) : IClassF
             db.PageMembers.Add(PageMember.Create(hostId, users[0].Id, PageRole.OWNER, now));
         }
         db.Events.Add(item);
-        db.EventParticipants.Add(EventParticipant.Create(item.Id, users[1].Id, EventParticipantStatus.GOING, now));
-        db.EventInvitations.Add(EventInvitation.Create(Guid.NewGuid(), item.Id, users[0].Id, users[2].Id, now));
-        var declined = EventInvitation.Create(Guid.NewGuid(), item.Id, users[0].Id, users[3].Id, now);
+        db.EventParticipants.Add(new EventParticipant(item.Id, users[1].Id, EventParticipantStatus.GOING, now));
+        db.EventInvitations.Add(new EventInvitation(Guid.NewGuid(), item.Id, users[0].Id, users[2].Id, now));
+        var declined = new EventInvitation(Guid.NewGuid(), item.Id, users[0].Id, users[3].Id, now);
         declined.Decline(now);
         db.EventInvitations.Add(declined);
         await db.SaveChangesAsync();
