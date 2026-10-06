@@ -162,7 +162,12 @@ public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
-            Assert.Single(await db.ReelViews.Where(item => item.ReelPostId == publicReel.Id).ToListAsync());
+            var recordedView = Assert.Single(await db.ReelViews
+                .Include(item => item.ReelPost)
+                .Include(item => item.ViewerUser)
+                .Where(item => item.ReelPostId == publicReel.Id).ToListAsync());
+            Assert.Equal(publicReel.Id, recordedView.ReelPost.Id);
+            Assert.Equal(strangerId, recordedView.ViewerUser.Id);
             Assert.True(await db.PostReactions.AnyAsync(item => item.PostId == publicReel.Id && item.UserId == strangerId));
             Assert.True(await db.Comments.AnyAsync(item => item.PostId == publicReel.Id && item.AuthorUserId == strangerId));
         }

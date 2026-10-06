@@ -549,7 +549,7 @@ public sealed class MixedFeedEndpointsTests(MixedFeedApiFactory factory) : IClas
         var now = DateTimeOffset.UtcNow.AddMinutes(-1);
         var bobReel = await CreateReelAsync(bob, now);
         var carolReel = await CreateReelAsync(carol, now);
-        await SaveAsync(db => db.ReelViews.Add(ReelView.Create(bobReel.Id, viewer, 2_000, true, false, now)));
+        await SaveAsync(db => db.ReelViews.Add(new ReelView(Guid.NewGuid(), bobReel.Id, viewer, 2_000, true, false, now)));
         using var client = CreateClient(viewer);
 
         var feed = await ReadAsync(await client.GetAsync("/api/feed?limit=10"));

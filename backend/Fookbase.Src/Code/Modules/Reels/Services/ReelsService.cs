@@ -261,7 +261,8 @@ public sealed class ReelsService(
                 "Watch duration cannot exceed the reel duration.");
         }
 
-        dbContext.ReelViews.Add(ReelView.Create(
+        dbContext.ReelViews.Add(new ReelView(
+            Guid.NewGuid(),
             reelId,
             viewerUserId,
             watchDurationMs,
