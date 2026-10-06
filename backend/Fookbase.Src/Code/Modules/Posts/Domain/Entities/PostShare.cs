@@ -11,8 +11,6 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(DestinationType), nameof(DestinationId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(Id))]
 public sealed class PostShare
 {
-    public const int MaximumCaptionLength = Post.MaximumContentLength;
-
     private PostShare() { }
 
     public PostShare(
@@ -50,7 +48,7 @@ public sealed class PostShare
 
     public Guid DestinationId { get; private set; }
 
-    [MaxLength(MaximumCaptionLength)]
+    [MaxLength(10_000)]
     public string? Caption { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
@@ -75,9 +73,9 @@ public sealed class PostShare
         }
 
         var normalized = caption.Trim();
-        if (normalized.Length > MaximumCaptionLength)
+        if (normalized.Length > 10_000)
         {
-            throw new ArgumentException($"Share caption cannot exceed {MaximumCaptionLength} characters.");
+            throw new ArgumentException("Share caption cannot exceed 10000 characters.");
         }
 
         return normalized;

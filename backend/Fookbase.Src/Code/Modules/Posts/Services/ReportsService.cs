@@ -159,10 +159,10 @@ public sealed class ReportsService(
         }
 
         var details = request.Details?.Trim();
-        if (details?.Length > ContentReport.MaximumDetailsLength)
+        if (details?.Length > 500)
         {
             return ApplicationResult<ContentReportResponse>.Failure(Validation(
-                $"Report details cannot exceed {ContentReport.MaximumDetailsLength} characters."));
+                "Report details cannot exceed 500 characters."));
         }
 
         var alreadyReported = await dbContext.ContentReports.AnyAsync(

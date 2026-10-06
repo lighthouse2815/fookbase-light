@@ -34,10 +34,10 @@ public sealed class ReelsService(
         CancellationToken cancellationToken = default)
     {
         var normalizedCaption = caption?.Trim() ?? string.Empty;
-        if (normalizedCaption.Length > Post.MaximumContentLength)
+        if (normalizedCaption.Length > 10_000)
         {
             return Validation<ReelResponse>("invalid_reel_caption",
-                $"Reel caption cannot exceed {Post.MaximumContentLength} characters.");
+                "Reel caption cannot exceed 10000 characters.");
         }
 
         if (!TryParsePrivacy(privacy, out var parsedPrivacy))

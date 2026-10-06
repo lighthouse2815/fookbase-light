@@ -515,9 +515,9 @@ public sealed class PostsService(
     {
         if (string.IsNullOrWhiteSpace(content) && mediaIds.Count == 0)
             return new ApplicationError("empty_post", "A post requires content or media.", ApplicationErrorType.VALIDATION);
-        if ((content?.Trim().Length ?? 0) > Post.MaximumContentLength)
+        if ((content?.Trim().Length ?? 0) > 10_000)
             return new ApplicationError("invalid_post_content",
-                $"Post content cannot exceed {Post.MaximumContentLength} characters.", ApplicationErrorType.VALIDATION);
+                "Post content cannot exceed 10000 characters.", ApplicationErrorType.VALIDATION);
         if (mediaIds.Count > options.MaximumAttachments)
             return new ApplicationError("too_many_attachments",
                 $"A post can contain at most {options.MaximumAttachments} media attachments.", ApplicationErrorType.VALIDATION);

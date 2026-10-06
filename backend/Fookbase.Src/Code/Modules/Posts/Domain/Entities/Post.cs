@@ -16,8 +16,6 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(PostType), nameof(AuthorUserId), nameof(CreatedAtUtc), nameof(Id))]
 public sealed class Post
 {
-    public const int MaximumContentLength = 10_000;
-    public const int MaximumTextBackgroundLength = 32;
     public const string AvatarUpdatedPostContent = "đã cập nhật ảnh đại diện.";
     public const string CoverUpdatedPostContent = "đã cập nhật ảnh bìa.";
 
@@ -63,7 +61,7 @@ public sealed class Post
     public User AuthorUser { get; private set; } = null!;
 
     [Required]
-    [MaxLength(MaximumContentLength)]
+    [MaxLength(10_000)]
     public string Content { get; private set; } = string.Empty;
 
     public PostPrivacy Privacy { get; private set; }
@@ -74,7 +72,7 @@ public sealed class Post
 
     public PostType PostType { get; private set; }
 
-    [MaxLength(MaximumTextBackgroundLength)]
+    [MaxLength(32)]
     public string? TextBackground { get; private set; }
 
     [DefaultValue(false)]

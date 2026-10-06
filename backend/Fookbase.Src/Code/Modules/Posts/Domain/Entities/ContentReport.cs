@@ -10,8 +10,6 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(TargetType), nameof(TargetId), nameof(Status), nameof(CreatedAtUtc))]
 public sealed class ContentReport
 {
-    public const int MaximumDetailsLength = 500;
-
     private ContentReport() { }
 
     public ContentReport(
@@ -45,7 +43,7 @@ public sealed class ContentReport
 
     public ReportReason Reason { get; private set; }
 
-    [MaxLength(MaximumDetailsLength)]
+    [MaxLength(500)]
     public string? Details { get; private set; }
 
     public ContentReportStatus Status { get; private set; }

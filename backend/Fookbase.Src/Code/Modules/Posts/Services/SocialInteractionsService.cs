@@ -176,10 +176,10 @@ public sealed class SocialInteractionsService(
                 "invalid_share_destination", "A valid profile, group, or page destination is required.");
         }
 
-        if (caption?.Trim().Length > PostShare.MaximumCaptionLength)
+        if (caption?.Trim().Length > 10_000)
         {
             return Validation<CreatedPostShare>(
-                "invalid_share_caption", $"Share caption cannot exceed {PostShare.MaximumCaptionLength} characters.");
+                "invalid_share_caption", "Share caption cannot exceed 10000 characters.");
         }
 
         var viewer = await CreateViewerContextAsync(actorUserId, cancellationToken);
