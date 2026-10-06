@@ -1,5 +1,5 @@
 using System.Net;
-using Fookbase.Api.Modules.Admin;
+using Fookbase.Api.Modules.Admin.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;

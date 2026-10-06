@@ -11,7 +11,7 @@ using AppForwardedHeadersOptions = Fookbase.Api.Shared.Config.ForwardedHeadersOp
 using Fookbase.Api.Shared.Config;
 using Fookbase.Api.Shared.HealthChecks;
 using Fookbase.Api.Modules.Feed.Endpoints;
-using Fookbase.Api.Modules.Admin;
+using Fookbase.Api.Modules.Admin.Common;
 using Fookbase.Api.Modules.Identity.Common;
 using Fookbase.Api.Modules.Identity.Middleware;
 using Fookbase.Api.Modules.Media.HealthChecks;

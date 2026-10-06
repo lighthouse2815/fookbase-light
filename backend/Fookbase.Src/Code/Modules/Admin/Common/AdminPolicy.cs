@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Admin;
+namespace Fookbase.Api.Modules.Admin.Common;
 
 public static class AdminPolicy
 {
