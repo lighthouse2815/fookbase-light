@@ -23,6 +23,46 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 public sealed class FeedEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
     [Theory]
+    [InlineData("/api/feed")]
+    [InlineData("/api/feed/following")]
+    public async Task Feed_without_query_parameters_uses_default_page_size(string endpoint)
+    {
+        var viewer = (await CreateUsersAsync(1))[0];
+        var now = DateTimeOffset.UtcNow.AddMinutes(-1);
+        for (var index = 0; index < 21; index++)
+        {
+            await CreatePostAsync(viewer, PostPrivacy.ONLY_ME, now.AddSeconds(-index));
+        }
+
+        using var client = CreateAuthenticatedClient(viewer);
+        var feed = await ReadAsync<FeedPageResponse>(await client.GetAsync(endpoint));
+
+        Assert.Equal(20, feed.Items.Count);
+        Assert.NotNull(feed.NextCursor);
+    }
+
+    [Theory]
+    [InlineData("/api/feed?cursor=invalid")]
+    [InlineData("/api/feed/following?cursor=invalid")]
+    [InlineData("/api/feed?limit=0")]
+    [InlineData("/api/feed/following?limit=0")]
+    [InlineData("/api/feed?limit=51")]
+    [InlineData("/api/feed/following?limit=51")]
+    public async Task Feed_preserves_error_response_for_invalid_cursor_or_limit(string endpoint)
+    {
+        var viewer = (await CreateUsersAsync(1))[0];
+        using var client = CreateAuthenticatedClient(viewer);
+
+        using var response = await client.GetAsync(endpoint);
+        var error = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.NotNull(error);
+        Assert.Equal("invalid_feed_cursor", error["code"]);
+        Assert.Equal("The feed cursor or limit is invalid.", error["message"]);
+    }
+
+    [Theory]
     [InlineData("/api/feed?limit=20", true)]
     [InlineData("/api/feed/following?limit=20", true)]
     [InlineData("/api/feed?limit=20", false)]
