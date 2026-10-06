@@ -21,7 +21,6 @@ using Fookbase.Api.Modules.Photos;
 using Fookbase.Api.Modules.Photos.Endpoints;
 using Fookbase.Api.Modules.Reels.Endpoints;
 using Fookbase.Api.Modules.Memories.Endpoints;
-using Fookbase.Api.Modules.Ai.Endpoints;
 using Fookbase.Api.Modules.Games.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication;
@@ -282,6 +281,13 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
         problem.Status = StatusCodes.Status400BadRequest;
         problem.Title = invalidBody ? "Bad request" : "Validation";
         problem.Detail = error.Message;
+        if (context.HttpContext.Request.Path.StartsWithSegments("/api/ai"))
+        {
+            problem.Title = invalidBody ? "Yêu cầu không hợp lệ" : "Dữ liệu không hợp lệ";
+            problem.Detail = problem is ValidationProblemDetails validationProblem
+                ? string.Join(" ", validationProblem.Errors.Values.SelectMany(errors => errors).Distinct())
+                : "Nội dung yêu cầu không hợp lệ.";
+        }
         problem.Extensions["code"] = error.Code;
         problem.Extensions["requestId"] = RequestCorrelation.GetId(context.HttpContext);
         return new BadRequestObjectResult(problem)
@@ -293,13 +299,10 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
 {
-    if (context.ProblemDetails is HttpValidationProblemDetails validationProblem)
+    if (context.ProblemDetails is HttpValidationProblemDetails)
     {
-        var isAiRequest = context.HttpContext.Request.Path.StartsWithSegments("/api/ai");
-        context.ProblemDetails.Title = isAiRequest ? "Dữ liệu không hợp lệ" : "Validation";
-        context.ProblemDetails.Detail = isAiRequest
-            ? string.Join(" ", validationProblem.Errors.Values.SelectMany(errors => errors).Distinct())
-            : ErrorCode.ValidationFailed.Message;
+        context.ProblemDetails.Title = "Validation";
+        context.ProblemDetails.Detail = ErrorCode.ValidationFailed.Message;
         context.ProblemDetails.Extensions["code"] = ErrorCode.ValidationFailed.Code;
     }
 });
@@ -380,7 +383,6 @@ app.MapHub<NotificationsHub>("/hubs/notifications");
 app.MapReelEndpoints();
 app.MapPhotoAlbumEndpoints();
 app.MapMemoryEndpoints();
-app.MapAiChatEndpoints();
 app.MapHub<FlappyBirdHub>("/hubs/flappy-bird");
 app.MapHub<JumpingHub>("/hubs/jumping");
 

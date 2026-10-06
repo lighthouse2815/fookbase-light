@@ -1,13 +1,22 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Fookbase.Api.Modules.Ai;
 using Fookbase.Api.Modules.Ai.Config;
+using Fookbase.Api.Modules.Ai.Controllers;
 using Fookbase.Api.Modules.Ai.DTOs.Requests;
+using Fookbase.Api.Modules.Ai.DTOs.Responses;
 using Fookbase.Api.Modules.Ai.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -59,6 +68,8 @@ public sealed class AiChatServiceTests
         ]));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var reply = await response.Content.ReadFromJsonAsync<AiChatResponse>();
+        Assert.Equal(new AiChatResponse("Reply", "test-model"), reply);
         using var body = JsonDocument.Parse(Assert.Single(provider.Requests).Body);
         var messages = body.RootElement.GetProperty("messages").EnumerateArray().ToArray();
         Assert.Equal(4, messages.Length);
@@ -68,6 +79,42 @@ public sealed class AiChatServiceTests
         Assert.Equal("new", messages[2].GetProperty("content").GetString());
         Assert.Equal("user", messages[3].GetProperty("role").GetString());
         Assert.Equal("12345", messages[3].GetProperty("content").GetString());
+    }
+
+    [Fact]
+    public async Task Chat_route_uses_a_controller_and_requires_authentication_and_rate_limiting()
+    {
+        var provider = new RecordingHandler(HttpStatusCode.OK, "{}");
+        await using var app = CreateApp(provider, authenticated: false);
+        await app.StartAsync();
+        var endpoint = Assert.Single(app.Services.GetRequiredService<EndpointDataSource>().Endpoints
+            .OfType<RouteEndpoint>(), item => item.RoutePattern.RawText?.Trim('/') == "api/ai/chat");
+
+        Assert.Equal(typeof(AiChatController), endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()!.ControllerTypeInfo);
+        Assert.NotNull(endpoint.Metadata.GetMetadata<IAuthorizeData>());
+        Assert.Equal("ai-chat", endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>()!.PolicyName);
+        Assert.Equal(["POST"], endpoint.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods);
+        using var client = app.GetTestClient();
+        using var response = await client.PostAsJsonAsync("/api/ai/chat", new AiChatRequest("12345", null));
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Empty(provider.Requests);
+    }
+
+    [Fact]
+    public async Task Chat_controller_rejects_requests_after_the_rate_limit_is_reached()
+    {
+        var provider = new RecordingHandler(HttpStatusCode.OK,
+            """{"choices":[{"message":{"content":"Reply"}}]}""");
+        await using var app = CreateApp(provider, permitLimit: 1);
+        await app.StartAsync();
+        using var client = app.GetTestClient();
+
+        using var first = await client.PostAsJsonAsync("/api/ai/chat", new AiChatRequest("12345", null));
+        using var second = await client.PostAsJsonAsync("/api/ai/chat", new AiChatRequest("12345", null));
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, second.StatusCode);
+        Assert.Single(provider.Requests);
     }
 
     [Fact]
@@ -206,12 +253,27 @@ public sealed class AiChatServiceTests
         Assert.Equal("/v1/responses", request.Path);
     }
 
-    private static WebApplication CreateApp(RecordingHandler provider, int maximumHistoryMessages = 10)
+    private static WebApplication CreateApp(
+        RecordingHandler provider,
+        int maximumHistoryMessages = 10,
+        bool authenticated = true,
+        int permitLimit = 100)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Services.AddValidation();
+        builder.Services.AddControllers().AddApplicationPart(typeof(AiChatController).Assembly);
         builder.Services.AddProblemDetails();
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+        builder.Services.AddAuthorization();
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddFixedWindowLimiter("ai-chat", limiter =>
+            {
+                limiter.PermitLimit = permitLimit;
+                limiter.Window = TimeSpan.FromMinutes(1);
+            });
+        });
         builder.Services.AddAiInfrastructure(new AiChatOptions
         {
             Enabled = true,
@@ -221,8 +283,20 @@ public sealed class AiChatServiceTests
         });
         builder.Services.AddHttpClient("ai-chat-groq").ConfigurePrimaryHttpMessageHandler(() => provider);
         var app = builder.Build();
-        app.MapPost("/api/ai/chat", (AiChatRequest request, AiChatService service, CancellationToken cancellationToken) =>
-            service.ChatAsync(request, cancellationToken));
+        app.UseAuthentication();
+        if (authenticated)
+        {
+            var userId = Guid.NewGuid().ToString();
+            app.Use((context, next) =>
+            {
+                context.User = new ClaimsPrincipal(new ClaimsIdentity(
+                    [new Claim(JwtRegisteredClaimNames.Sub, userId)], "ai-test"));
+                return next(context);
+            });
+        }
+        app.UseAuthorization();
+        app.UseRateLimiter();
+        app.MapControllers();
         return app;
     }
 
