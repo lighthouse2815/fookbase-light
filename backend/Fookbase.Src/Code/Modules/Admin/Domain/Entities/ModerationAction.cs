@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Admin.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
@@ -50,19 +49,16 @@ public sealed class ModerationAction
 
     public Guid ModeratorUserId { get; private set; }
 
-    [ForeignKey(nameof(ModeratorUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User ModeratorUser { get; private set; } = null!;
 
     public Guid SubjectUserId { get; private set; }
 
-    [ForeignKey(nameof(SubjectUserId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public User SubjectUser { get; private set; } = null!;
 
     public Guid? ReportId { get; private set; }
 
-    [ForeignKey(nameof(ReportId))]
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public ContentReport? Report { get; private set; }
 
