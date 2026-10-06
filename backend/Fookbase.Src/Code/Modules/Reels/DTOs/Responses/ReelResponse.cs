@@ -2,21 +2,6 @@ using Fookbase.Api.Modules.Posts.DTOs.Responses;
 
 namespace Fookbase.Api.Modules.Reels.DTOs.Responses;
 
-public sealed record ReelAuthorResponse(
-    Guid UserId,
-    string Username,
-    string DisplayName,
-    string? AvatarUrl);
-
-public sealed record ReelVideoResponse(
-    Guid MediaId,
-    long DurationMs,
-    int Width,
-    int Height,
-    string ContentType,
-    string VideoAccessPath,
-    string PosterAccessPath);
-
 public sealed record ReelResponse(
     Guid Id,
     ReelAuthorResponse Author,

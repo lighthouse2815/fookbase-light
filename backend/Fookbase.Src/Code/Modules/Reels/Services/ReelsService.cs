@@ -34,17 +34,7 @@ public sealed class ReelsService(
         CancellationToken cancellationToken = default)
     {
         var normalizedCaption = caption?.Trim() ?? string.Empty;
-        if (normalizedCaption.Length > 10_000)
-        {
-            return Validation<ReelResponse>("invalid_reel_caption",
-                "Reel caption cannot exceed 10000 characters.");
-        }
-
-        if (!TryParsePrivacy(privacy, out var parsedPrivacy))
-        {
-            return Validation<ReelResponse>("invalid_post_privacy",
-                "Post privacy must be one of: public, friends, onlyMe.");
-        }
+        EnumText.TryParse(privacy, true, out PostPrivacy parsedPrivacy);
 
         var mediaValidation = await mediaService.ValidateReelVideoAsync(
             actorUserId, videoMediaId, cancellationToken);
@@ -109,17 +99,7 @@ public sealed class ReelsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (limit < 1 || limit > MaximumPageSize)
-        {
-            return Validation<ReelPageResponse>(ErrorCode.InvalidPagination,
-                $"Limit must be between 1 and {MaximumPageSize}.");
-        }
-
-        if (!TryParseFeedMode(mode, out var feedMode))
-        {
-            return Validation<ReelPageResponse>("invalid_reel_feed_mode",
-                "Reel feed mode must be forYou or following.");
-        }
+        var following = string.Equals(mode, "following", StringComparison.OrdinalIgnoreCase);
 
         ReelCursor? cursor;
         try
@@ -135,7 +115,7 @@ public sealed class ReelsService(
         var query = ReelMediaQuery.ApplyReadyMedia(
             PostVisibility.ApplyDirectAccess(dbContext.Posts.AsNoTracking(), viewer), dbContext)
             .Where(post => post.PostType == PostType.REEL);
-        if (feedMode == ReelFeedMode.FOLLOWING)
+        if (following)
         {
             var followingUserIds = dbContext.UserFollows.AsNoTracking()
                 .Where(follow => follow.FollowerUserId == viewerUserId)
@@ -144,7 +124,7 @@ public sealed class ReelsService(
         }
         List<Post> reels;
         string? nextCursor;
-        if (feedMode == ReelFeedMode.FOR_YOU)
+        if (!following)
         {
             var followedAuthorIds = dbContext.UserFollows.AsNoTracking()
                 .Where(follow => follow.FollowerUserId == viewerUserId)
@@ -259,11 +239,6 @@ public sealed class ReelsService(
         bool replayed,
         CancellationToken cancellationToken = default)
     {
-        if (watchDurationMs <= 0)
-        {
-            return Validation("invalid_watch_duration", "Watch duration must be positive.");
-        }
-
         var viewer = await CreateRequiredViewerContextAsync(viewerUserId, cancellationToken);
         var reel = await dbContext.Posts.AsNoTracking().SingleOrDefaultAsync(
             post => post.Id == reelId && post.PostType == PostType.REEL &&
@@ -476,22 +451,6 @@ public sealed class ReelsService(
             relationships.BlockedUserIds);
     }
 
-    private static bool TryParsePrivacy(string privacy, out PostPrivacy parsedPrivacy) =>
-        EnumText.TryParse(privacy, true, out parsedPrivacy) && Enum.IsDefined(parsedPrivacy);
-
-    private static bool TryParseFeedMode(string? value, out ReelFeedMode mode)
-    {
-        mode = value?.ToLowerInvariant() switch
-        {
-            null or "" or "foryou" => ReelFeedMode.FOR_YOU,
-            "following" => ReelFeedMode.FOLLOWING,
-            _ => default,
-        };
-        return string.IsNullOrWhiteSpace(value) ||
-            string.Equals(value, "forYou", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "following", StringComparison.OrdinalIgnoreCase);
-    }
-
     private static string PrivacyName(PostPrivacy privacy) => privacy switch
     {
         PostPrivacy.PUBLIC => "public",
@@ -557,5 +516,4 @@ public sealed class ReelsService(
     private sealed record ReactionRow(Guid PostId, ReactionType Type, int Count);
     private sealed record ViewCountRow(Guid ReelPostId, long ViewCount, long CompletionCount);
     private sealed record MentionRow(Guid SourceId, Guid UserId, int StartIndex, int Length);
-    private enum ReelFeedMode { FOR_YOU, FOLLOWING }
 }

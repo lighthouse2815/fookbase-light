@@ -20,6 +20,53 @@ namespace Fookbase.Posts.Api.IntegrationTests;
 
 public sealed class ReelEndpointsTests(PostsApiFactory factory) : IClassFixture<PostsApiFactory>
 {
+    [Theory]
+    [InlineData("/api/reels", "{\"privacy\":\"invalid\",\"videoMediaId\":\"00000000-0000-0000-0000-000000000001\"}", "Privacy")]
+    [InlineData("/api/reels", "{\"privacy\":\"\",\"videoMediaId\":\"00000000-0000-0000-0000-000000000001\"}", "Privacy")]
+    [InlineData("/api/reels", "{\"privacy\":\"public\"}", "VideoMediaId")]
+    [InlineData("/api/reels/{id}/views", "{\"watchDurationMs\":0}", "WatchDurationMs")]
+    [InlineData("/api/reels/{id}/views", "{\"watchDurationMs\":-1}", "WatchDurationMs")]
+    public async Task Invalid_requests_are_rejected_before_reaching_the_service(string path, string body, string member)
+    {
+        using var client = CreateAuthenticatedClient(Guid.NewGuid());
+        using var content = new StringContent(body, Encoding.UTF8, "application/json");
+        using var response = await client.PostAsync(path.Replace("{id}", Guid.NewGuid().ToString()), content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", document.RootElement.GetProperty("code").GetString());
+        Assert.NotEmpty(document.RootElement.GetProperty("errors").GetProperty(member).EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Caption_length_is_validated_after_trimming()
+    {
+        using var client = CreateAuthenticatedClient(Guid.NewGuid());
+        using var invalid = await client.PostAsJsonAsync("/api/reels",
+            new { caption = new string('x', 10_001), privacy = "public", videoMediaId = Guid.NewGuid() });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        using var document = System.Text.Json.JsonDocument.Parse(await invalid.Content.ReadAsStringAsync());
+        Assert.NotEmpty(document.RootElement.GetProperty("errors").GetProperty("Caption").EnumerateArray());
+
+        using var valid = await client.PostAsJsonAsync("/api/reels",
+            new { caption = " " + new string('x', 10_000) + " ", privacy = "public", videoMediaId = Guid.NewGuid() });
+        Assert.Equal(HttpStatusCode.Conflict, valid.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("limit=0", "Limit")]
+    [InlineData("limit=51", "Limit")]
+    [InlineData("mode=invalid", "Mode")]
+    public async Task Invalid_feed_queries_use_request_validation(string query, string member)
+    {
+        using var client = CreateAuthenticatedClient(Guid.NewGuid());
+        using var response = await client.GetAsync("/api/reels?" + query);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("validation_failed", document.RootElement.GetProperty("code").GetString());
+        Assert.NotEmpty(document.RootElement.GetProperty("errors").GetProperty(member).EnumerateArray());
+    }
+
     [Fact]
     public async Task Reel_creation_requires_processed_owned_video_and_keeps_legacy_posts_standard()
     {
