@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Media.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Fookbase.Api.Modules.Stories.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Stories.Entities;
@@ -27,7 +28,7 @@ public sealed class Story
         Id = id;
         AuthorUserId = authorUserId;
         MediaId = mediaId;
-        Caption = NormalizeCaption(caption);
+        Caption = StoryNormalization.NormalizeCaption(caption);
         Privacy = privacy;
         CreatedAtUtc = createdAtUtc;
         ExpiresAtUtc = expiresAtUtc;
@@ -69,21 +70,5 @@ public sealed class Story
         {
             DeletedAtUtc = deletedAtUtc;
         }
-    }
-
-    private static string? NormalizeCaption(string? caption)
-    {
-        var normalized = caption?.Trim();
-        if (string.IsNullOrEmpty(normalized))
-        {
-            return null;
-        }
-
-        if (normalized.Length > MaximumCaptionLength)
-        {
-            throw new ArgumentException($"Story caption cannot exceed {MaximumCaptionLength} characters.");
-        }
-
-        return normalized;
     }
 }
