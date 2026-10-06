@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("CommentReactions")]
 [PrimaryKey(nameof(CommentId), nameof(UserId))]
 [Index(nameof(CommentId), nameof(Type))]
 public sealed class CommentReaction

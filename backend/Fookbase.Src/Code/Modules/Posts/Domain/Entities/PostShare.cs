@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("PostShares")]
 [Index(nameof(OriginalPostId), nameof(DeletedAtUtc))]
 [Index(nameof(SharingUserId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(OriginalPostId))]
 [Index(nameof(DestinationType), nameof(DestinationId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(Id))]

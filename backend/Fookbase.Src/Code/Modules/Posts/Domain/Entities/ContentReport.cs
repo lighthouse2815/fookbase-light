@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("ContentReports")]
 [Index(nameof(Status), nameof(CreatedAtUtc), nameof(Id))]
 [Index(nameof(ReporterUserId), nameof(TargetType), nameof(TargetId), IsUnique = true)]
 [Index(nameof(TargetType), nameof(TargetId), nameof(Status), nameof(CreatedAtUtc))]

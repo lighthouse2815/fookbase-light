@@ -1,12 +1,10 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("Posts")]
 [Index(nameof(AuthorUserId), nameof(CreatedAtUtc))]
 [Index(nameof(DeletedAtUtc), nameof(CreatedAtUtc))]
 [Index(nameof(AuthorUserId), nameof(CreatedAtUtc), nameof(Id))]

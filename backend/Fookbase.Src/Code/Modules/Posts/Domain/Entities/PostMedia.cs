@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("PostMedia")]
 [PrimaryKey(nameof(PostId), nameof(MediaId))]
 [Index(nameof(PostId), nameof(SortOrder), IsUnique = true)]
 public sealed class PostMedia

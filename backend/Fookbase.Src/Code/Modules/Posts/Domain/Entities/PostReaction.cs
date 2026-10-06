@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("PostReactions")]
 [PrimaryKey(nameof(PostId), nameof(UserId))]
 [Index(nameof(PostId), nameof(Type))]
 [Index(nameof(UserId), nameof(CreatedAtUtc), nameof(PostId))]

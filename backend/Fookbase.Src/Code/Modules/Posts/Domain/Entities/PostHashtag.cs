@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("PostHashtags")]
 [PrimaryKey(nameof(PostId), nameof(HashtagId))]
 [Index(nameof(HashtagId), nameof(PostId))]
 public sealed class PostHashtag

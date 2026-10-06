@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("ContentMentions")]
 [PrimaryKey(nameof(SourceType), nameof(SourceId), nameof(StartIndex))]
 [Index(nameof(SourceType), nameof(SourceId), nameof(MentionedUserId))]
 [Index(nameof(MentionedUserId))]

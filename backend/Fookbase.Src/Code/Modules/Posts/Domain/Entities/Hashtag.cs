@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("Hashtags")]
 [Index(nameof(NormalizedName), IsUnique = true)]
 public sealed class Hashtag
 {

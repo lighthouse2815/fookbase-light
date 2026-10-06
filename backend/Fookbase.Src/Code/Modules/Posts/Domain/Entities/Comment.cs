@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("Comments")]
 [Index(nameof(PostId), nameof(DeletedAtUtc), nameof(CreatedAtUtc))]
 [Index(nameof(AuthorUserId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(PostId))]
 public sealed class Comment

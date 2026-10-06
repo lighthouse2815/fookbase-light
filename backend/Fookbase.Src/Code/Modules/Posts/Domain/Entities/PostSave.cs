@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Posts.Entities;
 
-[Table("PostSaves")]
 [PrimaryKey(nameof(UserId), nameof(PostId))]
 [Index(nameof(UserId), nameof(SavedAtUtc), nameof(PostId))]
 public sealed class PostSave
