@@ -301,7 +301,7 @@ public sealed class PostsService(
         string content,
         CancellationToken cancellationToken = default)
     {
-        var error = ValidateContent(content, Comment.MaximumContentLength, "comment");
+        var error = ValidateContent(content, 5_000, "comment");
         if (error is not null)
         {
             return ApplicationResult<CommentResponse>.Failure(error);
@@ -322,7 +322,7 @@ public sealed class PostsService(
         string content,
         CancellationToken cancellationToken = default)
     {
-        var error = ValidateContent(content, Comment.MaximumContentLength, "comment");
+        var error = ValidateContent(content, 5_000, "comment");
         if (error is not null)
         {
             return ApplicationResult<CommentResponse>.Failure(error);

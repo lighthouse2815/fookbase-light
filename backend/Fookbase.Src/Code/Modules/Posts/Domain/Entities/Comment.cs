@@ -8,8 +8,6 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(AuthorUserId), nameof(DeletedAtUtc), nameof(CreatedAtUtc), nameof(PostId))]
 public sealed class Comment
 {
-    public const int MaximumContentLength = 5_000;
-
     private Comment()
     {
     }
@@ -39,7 +37,7 @@ public sealed class Comment
     public Guid? ParentCommentId { get; private set; }
 
     [Required]
-    [MaxLength(MaximumContentLength)]
+    [MaxLength(5_000)]
     public string Content { get; private set; } = string.Empty;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
@@ -80,10 +78,10 @@ public sealed class Comment
     private static string NormalizeContent(string content)
     {
         var normalized = content.Trim();
-        if (normalized.Length is 0 or > MaximumContentLength)
+        if (normalized.Length is 0 or > 5_000)
         {
             throw new ArgumentException(
-                $"Comment content must contain between 1 and {MaximumContentLength} characters.");
+                "Comment content must contain between 1 and 5000 characters.");
         }
 
         return normalized;
