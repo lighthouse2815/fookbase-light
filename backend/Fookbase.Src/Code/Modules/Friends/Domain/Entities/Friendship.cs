@@ -6,7 +6,6 @@ using Fookbase.Api.Modules.Friends.Domain.ValueObjects;
 
 namespace Fookbase.Api.Modules.Friends.Entities;
 
-[Table("Friendships")]
 [Index(nameof(UserId1), nameof(UserId2), IsUnique = true)]
 [Index(nameof(UserId1))]
 [Index(nameof(UserId2))]

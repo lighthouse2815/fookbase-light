@@ -6,7 +6,6 @@ using Fookbase.Api.Modules.Friends.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Friends.Entities;
 
-[Table("FriendNotifications")]
 [Index(nameof(RecipientUserId), nameof(ReadAtUtc), nameof(CreatedAtUtc))]
 public sealed class FriendNotification
 {

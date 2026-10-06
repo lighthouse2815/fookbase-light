@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Friends.Entities;
 
-[Table("UserFollows")]
 [PrimaryKey(nameof(FollowerUserId), nameof(FollowingUserId))]
 [Index(nameof(FollowingUserId), nameof(FollowerUserId))]
 [Index(nameof(FollowerUserId), nameof(FollowedAtUtc), nameof(FollowingUserId))]

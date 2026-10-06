@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Friends.Entities;
 
-[Table("BlockedUsers")]
 [PrimaryKey(nameof(BlockerUserId), nameof(BlockedUserId))]
 [Index(nameof(BlockedUserId))]
 public sealed class BlockedUser

@@ -8,7 +8,6 @@ using Fookbase.Api.Modules.Friends.Domain.ValueObjects;
 
 namespace Fookbase.Api.Modules.Friends.Entities;
 
-[Table("FriendRequests")]
 [Index(nameof(UserId1), nameof(UserId2), IsUnique = true, Name = "UX_FriendRequests_PendingPair")]
 [IndexFilter("\"Status\" = 0", nameof(UserId1), nameof(UserId2))]
 [Index(nameof(ReceiverUserId), nameof(Status), nameof(CreatedAtUtc))]
