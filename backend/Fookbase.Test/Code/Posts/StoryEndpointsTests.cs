@@ -123,7 +123,7 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         using var invalidCaption = await owner.PostAsJsonAsync("/api/stories", new
         {
             mediaId,
-            caption = " " + new string('a', Story.MaximumCaptionLength + 1) + " ",
+            caption = " " + new string('a', 2_201) + " ",
             privacy = "public"
         });
         Assert.Equal(HttpStatusCode.BadRequest, invalidCaption.StatusCode);
@@ -138,8 +138,8 @@ public sealed class StoryEndpointsTests(PostsApiFactory factory) : IClassFixture
         }
 
         var story = await CreateStoryAsync(owner, mediaId,
-            " " + new string('a', Story.MaximumCaptionLength) + " ", " PUBLIC ");
-        Assert.Equal(new string('a', Story.MaximumCaptionLength), story.Caption);
+            " " + new string('a', 2_200) + " ", " PUBLIC ");
+        Assert.Equal(new string('a', 2_200), story.Caption);
         using var invalidReply = await friend.PostAsJsonAsync($"/api/stories/{story.Id}/reply", new
         {
             content = " " + new string('a', MessagesService.MaximumContentLength + 1) + " "

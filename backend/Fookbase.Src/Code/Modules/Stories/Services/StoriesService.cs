@@ -39,10 +39,10 @@ public sealed class StoriesService(
         string? privacy,
         CancellationToken cancellationToken = default)
     {
-        if (caption?.Trim().Length > Story.MaximumCaptionLength)
+        if (caption?.Trim().Length > 2_200)
         {
             return Validation<StoryResponse>("invalid_story_caption",
-                $"Story caption cannot exceed {Story.MaximumCaptionLength} characters.");
+                "Story caption cannot exceed 2200 characters.");
         }
 
         if (!TryParsePrivacy(privacy, out var parsedPrivacy))

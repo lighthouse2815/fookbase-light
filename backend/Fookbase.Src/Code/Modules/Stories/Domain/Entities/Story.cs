@@ -12,8 +12,6 @@ namespace Fookbase.Api.Modules.Stories.Entities;
 [Index(nameof(MediaId))]
 public sealed class Story
 {
-    public const int MaximumCaptionLength = 2_200;
-
     private Story() { }
 
     public Story(
@@ -47,7 +45,7 @@ public sealed class Story
     [DeleteBehavior(DeleteBehavior.Restrict)]
     public MediaAsset Media { get; private set; } = null!;
 
-    [MaxLength(MaximumCaptionLength)]
+    [MaxLength(2_200)]
     public string? Caption { get; private set; }
 
     public PostPrivacy Privacy { get; private set; }

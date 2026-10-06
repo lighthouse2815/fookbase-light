@@ -23,7 +23,7 @@ public sealed class StoryNormalizationTests
     [Fact]
     public void Caption_length_is_checked_after_trimming()
     {
-        var caption = new string('a', Story.MaximumCaptionLength);
+        var caption = new string('a', 2_200);
         Assert.Equal(caption, CreateStory($" {caption} ").Caption);
         var error = Assert.Throws<ArgumentException>(() => CreateStory(caption + "a"));
         Assert.Equal("Story caption cannot exceed 2200 characters.", error.Message);
