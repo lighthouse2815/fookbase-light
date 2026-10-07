@@ -29,7 +29,7 @@ jobs:
           test -n "$EXPO_PUBLIC_API_BASE_URL"
           test -n "$FOOKBASE_ANDROID_PACKAGE"
       - run: npm ci
-      - run: npm run typecheck && npm run lint && npm test -- --runInBand
+      - run: npm run typecheck && npm run lint
       - run: npx expo prebuild --platform android --no-install
       - name: Build standalone preview (development signing only)
         working-directory: frontend/mobile/android

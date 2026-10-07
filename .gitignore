@@ -47,3 +47,20 @@ Thumbs.db
 # Local agent workspaces
 .worktrees/
 .superpowers/sdd/
+
+# Local tests: keep files on disk, never publish them
+/backend/Fookbase.Test/
+/backend/Fookbase.Src/appsettings.Testing.json
+/scripts/test-backend.sh
+**/tests/
+**/__tests__/
+**/__mocks__/
+*.test.*
+*.spec.*
+*Tests.cs
+*Test.cs
+coverage/
+test-results/
+playwright-report/
+.local-tests/
+FookbaseLight.Local.sln

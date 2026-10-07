@@ -1,5 +1,11 @@
 # Fookbase Light
 
+Bộ test chỉ được giữ ở máy local, được `.gitignore` và không đưa lên GitHub.
+CI chạy build, lint và typecheck; bản clone mới không chứa file test.
+Trên máy còn bộ test, dùng các lệnh test npm hiện có hoặc
+`bash scripts/test-backend.sh`; `FookbaseLight.Local.sln` giữ project test
+để mở trong IDE. `FookbaseLight.sln` chỉ chứa API để bản clone mới build được.
+
 Fookbase Light V1 là một modular monolith cho mạng xã hội. Toàn bộ domain chạy trong một ASP.NET Core process tại cổng `5000`, với một PostgreSQL database (`fookbase_db`), Cloudinary và SignalR.
 
 Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`.
@@ -183,7 +189,6 @@ cp .env.example .env.local
 npm ci
 npm run typecheck
 npm run lint
-npm test -- --runInBand
 npm run android
 ```
 
@@ -195,10 +200,9 @@ package/bundle ID, Google App Link và build Android nằm trong [docs/zola-mobi
 ```bash
 dotnet restore FookbaseLight.sln
 dotnet build FookbaseLight.sln --no-restore
-bash scripts/test-backend.sh
 ```
 
-`scripts/test-backend.sh` là regression backend đầy đủ chuẩn: một project integration test chứa source trong `Code`, chia tiếp thành sáu thư mục `Identity`, `Users`, `Friends`, `Messages`, `Media` và `Posts`. Script lọc các nhóm theo namespace và chạy tuần tự trên PostgreSQL database riêng. Không dùng `dotnet test FookbaseLight.sln` làm full integration regression vì các nhóm dùng chung database có thể ảnh hưởng nhau khi chạy đồng thời. Direct solution test vẫn phù hợp cho kiểm tra không-integration có phạm vi rõ ràng.
+`scripts/test-backend.sh` là regression backend đầy đủ chuẩn: một project integration test chứa source trong `Code`, chia tiếp thành sáu thư mục `Identity`, `Users`, `Friends`, `Messages`, `Media` và `Posts`. Script lọc các nhóm theo namespace và chạy tuần tự trên PostgreSQL database riêng. Không dùng `dotnet test FookbaseLight.sln` làm full integration regression vì các nhóm dùng chung database có thể ảnh hưởng nhau khi chạy đồng thời. Dùng `FookbaseLight.Local.sln` nếu cần chạy test không-integration qua solution local.
 
 Mỗi frontend dùng npm và package-lock riêng. Kiểm tra đầy đủ frontend:
 
