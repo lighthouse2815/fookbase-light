@@ -229,6 +229,72 @@ public sealed class PhotoAlbumEndpointsTests(PostsApiFactory factory) : IClassFi
         Assert.True(await db.AlbumMedia.AnyAsync(item => item.AlbumId == album.Id && item.MediaId == mediaId));
     }
 
+    [Fact]
+    public async Task Multiple_album_summaries_load_and_paginate_with_equal_timestamps()
+    {
+        var ownerId = await CreateUserAsync();
+        var now = DateTimeOffset.UtcNow;
+        var albums = Enumerable.Range(0, 3).Select(index =>
+            new PhotoAlbum(Guid.NewGuid(), ownerId, $"Album {index}", null, PhotoAlbumPrivacy.PUBLIC, now)).ToArray();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.PhotoAlbums.AddRange(albums);
+            await db.SaveChangesAsync();
+        }
+        var mediaId = await SeedReadyImageAsync(ownerId);
+        using var client = CreateAuthenticatedClient(ownerId);
+        (await client.PostAsJsonAsync($"/api/albums/{albums[0].Id}/media", new { mediaId })).EnsureSuccessStatusCode();
+
+        var firstResponse = await client.GetAsync($"/api/users/{ownerId}/albums?limit=2");
+        firstResponse.EnsureSuccessStatusCode();
+        var first = (await firstResponse.Content.ReadFromJsonAsync<PhotoCursorPageResponse<PhotoAlbumSummaryResponse>>())!;
+        Assert.Equal(2, first.Items.Count);
+        Assert.NotNull(first.NextCursor);
+        var secondResponse = await client.GetAsync($"/api/users/{ownerId}/albums?limit=2&cursor={Uri.EscapeDataString(first.NextCursor)}");
+        secondResponse.EnsureSuccessStatusCode();
+        var second = (await secondResponse.Content.ReadFromJsonAsync<PhotoCursorPageResponse<PhotoAlbumSummaryResponse>>())!;
+        Assert.Single(second.Items);
+        Assert.Null(second.NextCursor);
+        var items = first.Items.Concat(second.Items).ToList();
+        Assert.Equal(albums.Select(album => album.Id).OrderDescending(), items.Select(album => album.Id));
+        var populated = Assert.Single(items, album => album.Id == albums[0].Id);
+        Assert.Equal(1, populated.PhotoCount);
+        Assert.Equal($"/api/albums/{albums[0].Id}/media/{mediaId}/access", populated.PreviewUrl);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task Album_media_pages_return_every_photo_once(int limit)
+    {
+        var ownerId = await CreateUserAsync();
+        var albumId = await SeedAlbumAsync(ownerId, PhotoAlbumPrivacy.PUBLIC);
+        var mediaIds = new List<Guid>();
+        using var client = CreateAuthenticatedClient(ownerId);
+        for (var index = 0; index < 4; index++)
+        {
+            var mediaId = await SeedReadyImageAsync(ownerId);
+            mediaIds.Add(mediaId);
+            (await client.PostAsJsonAsync($"/api/albums/{albumId}/media", new { mediaId })).EnsureSuccessStatusCode();
+        }
+
+        var seen = new List<Guid>();
+        string? cursor = null;
+        for (var pageIndex = 0; pageIndex < mediaIds.Count; pageIndex++)
+        {
+            using var response = await client.GetAsync($"/api/albums/{albumId}/media?limit={limit}" +
+                (cursor is null ? "" : $"&cursor={Uri.EscapeDataString(cursor)}"));
+            response.EnsureSuccessStatusCode();
+            var page = (await response.Content.ReadFromJsonAsync<PhotoCursorPageResponse<AlbumMediaResponse>>())!;
+            seen.AddRange(page.Items.Select(item => item.MediaId));
+            cursor = page.NextCursor;
+            if (cursor is null) break;
+        }
+        Assert.Null(cursor);
+        Assert.Equal(mediaIds, seen);
+    }
+
     private async Task<Guid> CreateUserAsync()
     {
         var id = Guid.NewGuid();
