@@ -1,6 +1,0 @@
-digraph ERD {
-graph [rankdir=LR, bgcolor="white", pad="0.25", nodesep="0.55", ranksep="1.1", splines=spline, fontname="Arial", fontsize=17, label="Hạ tầng EF Core: lịch sử migration", labelloc=t];
-node [shape=plain, fontname="Arial"];
-edge [fontname="Arial", fontsize=9, color="#167D8D", fontcolor="#35556B", arrowsize=0.7, penwidth=1.4];
-"__EFMigrationsHistory" [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8" COLOR="#BDD1DC"><TR><TD COLSPAN="3" BGCOLOR="#183B56"><FONT COLOR="white"><B>__EFMigrationsHistory</B></FONT></TD></TR><TR><TD>PK</TD><TD>MigrationId</TD><TD>varchar(150)</TD></TR><TR><TD></TD><TD>ProductVersion</TD><TD>varchar(32)</TD></TR></TABLE>>];
-}
