@@ -1,7 +1,7 @@
 using Fookbase.Api.Modules.Events.Domain.Enums;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
-using System.Text;
+using Fookbase.Api.Modules.Events.Common;
 using Fookbase.Api.Modules.Events.DTOs.Requests;
 using Fookbase.Api.Modules.Events.DTOs.Responses;
 using Fookbase.Api.Modules.Events.Entities;
@@ -234,8 +234,8 @@ public sealed class EventsService(
         await tx.CommitAsync(ct);
         return ApplicationResult<EventInvitationResponse>.Success(await ToInvitationAsync(invitation, actor, ct));
     }
-    public async Task<ApplicationResult<EventCursorPageResponse<EventResponse>>> GetMineAsync(Guid actor, string? cursor, int limit, CancellationToken ct = default) => await ListAsync(Active().Where(x => x.CreatedByUserId == actor || (x.HostType == EventHostType.GROUP && db.GroupMembers.Any(m => m.GroupId == x.HostId && m.UserId == actor && (m.Role == Fookbase.Api.Modules.Groups.Domain.Enums.GroupMemberRole.OWNER || m.Role == Fookbase.Api.Modules.Groups.Domain.Enums.GroupMemberRole.ADMIN || m.Role == Fookbase.Api.Modules.Groups.Domain.Enums.GroupMemberRole.MODERATOR))) || (x.HostType == EventHostType.PAGE && db.PageMembers.Any(m => m.PageId == x.HostId && m.UserId == actor && (m.Role == Fookbase.Api.Modules.Pages.Domain.Enums.PageRole.OWNER || m.Role == Fookbase.Api.Modules.Pages.Domain.Enums.PageRole.ADMIN || m.Role == Fookbase.Api.Modules.Pages.Domain.Enums.PageRole.EDITOR)))), actor, cursor, limit, false, ct);
-    public async Task<ApplicationResult<EventCursorPageResponse<EventResponse>>> UpcomingAsync(Guid actor, string? cursor, int limit, CancellationToken ct = default) => await ListAsync(Active().Where(x => x.StartsAtUtc >= time.GetUtcNow() && (db.EventParticipants.Any(p => p.EventId == x.Id && p.UserId == actor) || x.CreatedByUserId == actor)), actor, cursor, limit, false, ct);
+    public async Task<ApplicationResult<EventCursorPageResponse<EventResponse>>> GetMineAsync(Guid actor, string? cursor, int limit, CancellationToken ct = default) => await ListAsync(Active().Where(x => x.CreatedByUserId == actor || (x.HostType == EventHostType.GROUP && db.GroupMembers.Any(m => m.GroupId == x.HostId && m.UserId == actor && (m.Role == Fookbase.Api.Modules.Groups.Domain.Enums.GroupMemberRole.OWNER || m.Role == Fookbase.Api.Modules.Groups.Domain.Enums.GroupMemberRole.ADMIN || m.Role == Fookbase.Api.Modules.Groups.Domain.Enums.GroupMemberRole.MODERATOR))) || (x.HostType == EventHostType.PAGE && db.PageMembers.Any(m => m.PageId == x.HostId && m.UserId == actor && (m.Role == Fookbase.Api.Modules.Pages.Domain.Enums.PageRole.OWNER || m.Role == Fookbase.Api.Modules.Pages.Domain.Enums.PageRole.ADMIN || m.Role == Fookbase.Api.Modules.Pages.Domain.Enums.PageRole.EDITOR)))), actor, cursor, limit, ct);
+    public async Task<ApplicationResult<EventCursorPageResponse<EventResponse>>> UpcomingAsync(Guid actor, string? cursor, int limit, CancellationToken ct = default) => await ListAsync(Active().Where(x => x.StartsAtUtc >= time.GetUtcNow() && (db.EventParticipants.Any(p => p.EventId == x.Id && p.UserId == actor) || x.CreatedByUserId == actor)), actor, cursor, limit, ct);
     public async Task<ApplicationResult<EventCursorPageResponse<EventResponse>>> DiscoverAsync(Guid actor, string? query, string? cursor, int limit, CancellationToken ct = default)
     {
         var now = time.GetUtcNow();
@@ -245,21 +245,31 @@ public sealed class EventsService(
             var term = query.Trim().ToLower();
             q = q.Where(x => x.Name.ToLower().Contains(term) || (x.Description ?? "").ToLower().Contains(term) || (x.LocationName ?? "").ToLower().Contains(term));
         }
-        return await ListAsync(q, actor, cursor, limit, false, ct);
+        return await ListAsync(q, actor, cursor, limit, ct);
     }
     public async Task<ApplicationResult<EventCursorPageResponse<EventInvitationResponse>>> InvitationsAsync(Guid actor, string? cursor, int limit, CancellationToken ct = default)
     {
-        var rows = await db.EventInvitations.AsNoTracking().Where(x => x.InviteeUserId == actor && x.Status == EventInvitationStatus.PENDING).OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).Take(limit + 1).ToListAsync(ct);
+        var after = EventCursor.DecodeOrNull(cursor);
+        var query = db.EventInvitations.AsNoTracking().Where(x => x.InviteeUserId == actor && x.Status == EventInvitationStatus.PENDING);
+        if (after is not null)
+            query = query.Where(x => x.CreatedAtUtc < after.Timestamp || x.CreatedAtUtc == after.Timestamp && x.Id.CompareTo(after.Id) < 0);
+        var rows = await query.OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).Take(limit + 1).ToListAsync(ct);
+        var items = new List<EventInvitationResponse>();
+        foreach (var row in rows.Take(limit)) items.Add(await ToInvitationAsync(row, actor, ct));
         return ApplicationResult<EventCursorPageResponse<EventInvitationResponse>>.Success(new(
-            await Task.WhenAll(rows.Take(limit).Select(x => ToInvitationAsync(x, actor, ct))),
-            rows.Count > limit ? Encode(rows[limit].CreatedAtUtc, rows[limit].Id) : null));
+            items,
+            rows.Count > limit ? Encode(rows[limit - 1].CreatedAtUtc, rows[limit - 1].Id) : null));
     }
     public async Task<ApplicationResult<EventCursorPageResponse<EventParticipantResponse>>> ParticipantsAsync(Guid actor, Guid id, string? cursor, int limit, CancellationToken ct = default)
     {
         var item = await Active().SingleOrDefaultAsync(x => x.Id == id, ct);
         if (item is null || !await access.CanViewAsync(item, actor, ct))
             return NotFound<EventCursorPageResponse<EventParticipantResponse>>();
-        var rows = await (from p in db.EventParticipants.AsNoTracking() join u in db.UserProfiles.AsNoTracking() on p.UserId equals u.UserId where p.EventId == id && !db.BlockedUsers.Any(b => (b.BlockerUserId == actor && b.BlockedAccountId == p.UserId) || (b.BlockerUserId == p.UserId && b.BlockedAccountId == actor)) orderby p.RespondedAtUtc descending, p.UserId descending select new { p, u }).Take(limit + 1).ToListAsync(ct);
+        var after = EventCursor.DecodeOrNull(cursor);
+        var query = from p in db.EventParticipants.AsNoTracking() join u in db.UserProfiles.AsNoTracking() on p.UserId equals u.UserId where p.EventId == id && !db.BlockedUsers.Any(b => (b.BlockerUserId == actor && b.BlockedAccountId == p.UserId) || (b.BlockerUserId == p.UserId && b.BlockedAccountId == actor)) select new { p, u };
+        if (after is not null)
+            query = query.Where(x => x.p.RespondedAtUtc < after.Timestamp || x.p.RespondedAtUtc == after.Timestamp && x.p.UserId.CompareTo(after.Id) < 0);
+        var rows = await query.OrderByDescending(x => x.p.RespondedAtUtc).ThenByDescending(x => x.p.UserId).Take(limit + 1).ToListAsync(ct);
         var items = rows.Take(limit).Select(x => new EventParticipantResponse(
             x.p.UserId,
             x.u.Username,
@@ -269,17 +279,21 @@ public sealed class EventsService(
             x.p.RespondedAtUtc)).ToList();
         return ApplicationResult<EventCursorPageResponse<EventParticipantResponse>>.Success(new(
             items,
-            rows.Count > limit ? Encode(rows[limit].p.RespondedAtUtc, rows[limit].p.UserId) : null));
+            rows.Count > limit ? Encode(rows[limit - 1].p.RespondedAtUtc, rows[limit - 1].p.UserId) : null));
     }
     public async Task<ApplicationResult<EventCursorPageResponse<PostResponse>>> PostsAsync(Guid actor, Guid id, string? cursor, int limit, CancellationToken ct = default)
     {
         var item = await Active().SingleOrDefaultAsync(x => x.Id == id, ct);
         if (item is null || !await access.CanViewAsync(item, actor, ct))
             return NotFound<EventCursorPageResponse<PostResponse>>();
-        var rows = await db.Posts.AsNoTracking().Where(x => x.ContainerType == PostContainerType.EVENT && x.ContainerId == id && x.DeletedAtUtc == null).OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).Take(limit + 1).ToListAsync(ct);
+        var after = EventCursor.DecodeOrNull(cursor);
+        var query = db.Posts.AsNoTracking().Where(x => x.ContainerType == PostContainerType.EVENT && x.ContainerId == id && x.DeletedAtUtc == null);
+        if (after is not null)
+            query = query.Where(x => x.CreatedAtUtc < after.Timestamp || x.CreatedAtUtc == after.Timestamp && x.Id.CompareTo(after.Id) < 0);
+        var rows = await query.OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).Take(limit + 1).ToListAsync(ct);
         return ApplicationResult<EventCursorPageResponse<PostResponse>>.Success(new(
             await posts.LoadResponsesAsync(rows.Take(limit).ToList(), actor, ct),
-            rows.Count > limit ? Encode(rows[limit].CreatedAtUtc, rows[limit].Id) : null));
+            rows.Count > limit ? Encode(rows[limit - 1].CreatedAtUtc, rows[limit - 1].Id) : null));
     }
     public async Task<ApplicationResult<PostResponse>> CreatePostAsync(Guid actor, Guid id, CreateEventPostRequest request, CancellationToken ct = default)
     {
@@ -398,12 +412,17 @@ public sealed class EventsService(
         }
         return queuedNotifications;
     }
-    private async Task<ApplicationResult<EventCursorPageResponse<EventResponse>>> ListAsync(IQueryable<Event> query, Guid actor, string? cursor, int limit, bool desc, CancellationToken ct)
+    private async Task<ApplicationResult<EventCursorPageResponse<EventResponse>>> ListAsync(IQueryable<Event> query, Guid actor, string? cursor, int limit, CancellationToken ct)
     {
+        var after = EventCursor.DecodeOrNull(cursor);
+        if (after is not null)
+            query = query.Where(x => x.StartsAtUtc > after.Timestamp || x.StartsAtUtc == after.Timestamp && x.Id.CompareTo(after.Id) > 0);
         var rows = await query.OrderBy(x => x.StartsAtUtc).ThenBy(x => x.Id).Take(limit + 1).ToListAsync(ct);
+        var items = new List<EventResponse>();
+        foreach (var row in rows.Take(limit)) items.Add(await ToResponseAsync(row, actor, ct));
         return ApplicationResult<EventCursorPageResponse<EventResponse>>.Success(new(
-            await Task.WhenAll(rows.Take(limit).Select(x => ToResponseAsync(x, actor, ct))),
-            rows.Count > limit ? Encode(rows[limit].StartsAtUtc, rows[limit].Id) : null));
+            items,
+            rows.Count > limit ? Encode(rows[limit - 1].StartsAtUtc, rows[limit - 1].Id) : null));
     }
     private async Task<EventResponse> ToResponseAsync(Event item, Guid? viewer, CancellationToken ct)
     {
@@ -476,7 +495,7 @@ public sealed class EventsService(
             item is null ? null : await ToResponseAsync(item, viewer, ct));
     }
     private Task<bool> IsBlockedAsync(Guid a, Guid b, CancellationToken ct) => db.BlockedUsers.AsNoTracking().AnyAsync(x => (x.BlockerUserId == a && x.BlockedAccountId == b) || (x.BlockerUserId == b && x.BlockedAccountId == a), ct);
-    private static string? Encode(DateTimeOffset at, Guid id) => System.Convert.ToBase64String(Encoding.UTF8.GetBytes($"{at.UtcTicks}|{id}"));
+    private static string Encode(DateTimeOffset at, Guid id) => new EventCursor(at, id).Encode();
     private static ApplicationResult<T> Bad<T>(
         string code,
         string message,

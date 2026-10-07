@@ -257,6 +257,130 @@ public sealed class EventEndpointsTests(PostsApiFactory factory) : IClassFixture
         Assert.False(document.RootElement.TryGetProperty("createdByUserId", out _));
     }
 
+    [Theory]
+    [InlineData("mine")]
+    [InlineData("upcoming")]
+    [InlineData("discover")]
+    public async Task Event_lists_advance_with_equal_start_times(string endpoint)
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var prefix = $"pagination-{Guid.NewGuid():N}";
+        var events = await SeedEventsAsync(owner, prefix);
+        using var client = CreateAuthenticatedClient(owner);
+        var path = $"/api/events/{endpoint}" + (endpoint == "discover" ? $"?query={prefix}" : "");
+
+        var items = await ReadPagesAsync<EventResponse>(client, path, events.Length, 2);
+
+        Assert.Equal(events.Select(item => item.Id).Order(), items.Select(item => item.Id));
+        Assert.All(items, item => Assert.Equal(owner, item.DisplayHost.Id));
+    }
+
+    [Fact]
+    public async Task Invitation_pages_load_multiple_event_responses_and_advance()
+    {
+        var users = await CreateUsersAsync(2);
+        var events = await SeedEventsAsync(users[0], $"invitations-{Guid.NewGuid():N}");
+        var now = DateTimeOffset.UtcNow;
+        var invitations = events.Select(item =>
+            new EventInvitation(Guid.NewGuid(), item.Id, users[0], users[1], now)).ToArray();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.EventInvitations.AddRange(invitations);
+            await db.SaveChangesAsync();
+        }
+        using var client = CreateAuthenticatedClient(users[1]);
+
+        var items = await ReadPagesAsync<EventInvitationResponse>(client, "/api/events/invitations/mine", 3, 2);
+
+        Assert.Equal(invitations.Select(item => item.Id).OrderDescending(), items.Select(item => item.Id));
+        Assert.All(items, item => Assert.NotNull(item.Event));
+    }
+
+    [Theory]
+    [InlineData("participants")]
+    [InlineData("posts")]
+    public async Task Event_content_pages_advance_with_equal_timestamps(string endpoint)
+    {
+        var users = await CreateUsersAsync(4);
+        var item = (await SeedEventsAsync(users[0], $"content-{Guid.NewGuid():N}"))[0];
+        var now = DateTimeOffset.UtcNow;
+        using var client = CreateAuthenticatedClient(users[0]);
+        if (endpoint == "participants")
+        {
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+            db.EventParticipants.AddRange(users.Skip(1).Select(user =>
+                new EventParticipant(item.Id, user, EventParticipantStatus.GOING, now)));
+            await db.SaveChangesAsync();
+            var participants = await ReadPagesAsync<EventParticipantResponse>(client, $"/api/events/{item.Id}/participants", 3, 1);
+            Assert.Equal(users.Skip(1).OrderDescending(), participants.Select(participant => participant.UserId));
+        }
+        else
+        {
+            var ids = new List<Guid>();
+            for (var index = 0; index < 3; index++)
+            {
+                var post = await ReadAsync<PostResponse>(await client.PostAsJsonAsync(
+                    $"/api/events/{item.Id}/posts", new { content = $"Pagination post {index}" }));
+                ids.Add(post.Id);
+            }
+            using (var scope = factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+                await db.Posts.Where(post => ids.Contains(post.Id)).ExecuteUpdateAsync(
+                    setters => setters.SetProperty(post => post.CreatedAtUtc, now));
+            }
+            var posts = await ReadPagesAsync<PostResponse>(client, $"/api/events/{item.Id}/posts", 3, 1);
+            Assert.Equal(ids.OrderDescending(), posts.Select(post => post.Id));
+        }
+    }
+
+    [Fact]
+    public async Task Event_list_endpoints_reject_invalid_cursors()
+    {
+        var owner = (await CreateUsersAsync(1))[0];
+        var item = (await SeedEventsAsync(owner, $"invalid-{Guid.NewGuid():N}"))[0];
+        using var client = CreateAuthenticatedClient(owner);
+        foreach (var path in new[] { "mine", "upcoming", "discover", "invitations/mine", $"{item.Id}/participants", $"{item.Id}/posts" })
+        {
+            using var response = await client.GetAsync($"/api/events/{path}?cursor=invalid-cursor");
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+    }
+
+    private async Task<Event[]> SeedEventsAsync(Guid owner, string prefix)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var events = Enumerable.Range(0, 3).Select(index => new Event(
+            Guid.NewGuid(), $"{prefix}-{index}", null, EventHostType.USER, owner, owner,
+            EventPrivacy.PUBLIC, EventLocationType.PHYSICAL, "Hanoi", null, null,
+            now.AddDays(7), null, EventStatus.PUBLISHED, now)).ToArray();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FookbaseDbContext>();
+        db.Events.AddRange(events);
+        await db.SaveChangesAsync();
+        return events;
+    }
+
+    private static async Task<List<T>> ReadPagesAsync<T>(HttpClient client, string path, int count, int limit)
+    {
+        var items = new List<T>();
+        string? cursor = null;
+        for (var index = 0; index < count; index++)
+        {
+            var url = path + (path.Contains('?') ? "&" : "?") + $"limit={limit}" +
+                (cursor is null ? "" : $"&cursor={Uri.EscapeDataString(cursor)}");
+            var page = await ReadAsync<EventCursorPageResponse<T>>(await client.GetAsync(url));
+            items.AddRange(page.Items);
+            cursor = page.NextCursor;
+            if (cursor is null) break;
+        }
+        Assert.Null(cursor);
+        Assert.Equal(count, items.Count);
+        return items;
+    }
+
     private static object EventBody(string hostType, Guid? hostId = null) => new
     {
         hostType,
