@@ -177,6 +177,27 @@ Không dùng volume prune hoặc xóa dữ liệu PostgreSQL để giải phóng
 04/10/2026 đã làm ổ root 19GB đầy 100%, PostgreSQL không ghi được checkpoint và
 đăng nhập trả HTTP 500. Dọn image/cache đã phục hồi PostgreSQL và readiness HTTP 200.
 
+Nếu ổ vẫn gần đầy sau lệnh giới hạn cache 1GB, kiểm tra `sudo docker buildx du`.
+Khi không có build đang chạy, có thể dọn cache không được dùng trong 12 giờ qua:
+
+```bash
+sudo docker buildx prune --all --force --filter until=12h
+df -h /
+sudo docker system df
+```
+
+Theo [Docker Buildx](https://docs.docker.com/reference/cli/docker/buildx/prune/),
+filter `until` giữ các record được dùng trong khoảng thời gian đã chọn.
+Sau khi dọn, xác nhận PostgreSQL healthy, `/health/ready` trả HTTP 200 và web public
+vẫn truy cập được. Không chạy lại deployment chỉ để dọn cache.
+
+Ngày 07/10/2026, ổ root 19GiB lại đầy 100%, PostgreSQL unhealthy và API readiness
+trả HTTP 503; RAM vẫn còn khoảng 1GiB khả dụng. Build cache chiếm 10,46GB.
+Lệnh `--max-used-space 1GB` chỉ giải phóng khoảng 74MB và ổ vẫn dùng 99%; thêm
+filter `until=12h` đã giải phóng gần 9GB cache, đưa ổ về 56% với 8,1GiB trống.
+Cache còn 1,40GB đang được sử dụng. PostgreSQL tự trở lại healthy và readiness HTTP
+200 mà không cần restart; giữ nguyên database, volume và image production/rollback.
+
 ## Jobs, shutdown và capacity
 
 Video jobs có claim PostgreSQL điều kiện, lease timeout, retry giới hạn và output key deterministic. `Media__MaxConcurrentJobs=1` là default production an toàn; chỉ tăng cùng giới hạn CPU/RAM thực tế và `Media__VideoProcessingBatchSize`. Object deletion chạy durable, retry có delay và chuyển sang `FailedAtUtc` sau giới hạn để dễ chẩn đoán, không busy-loop.
