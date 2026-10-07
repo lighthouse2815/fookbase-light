@@ -22,6 +22,12 @@ Development proxy `/api` và `/hubs` tới `http://localhost:5000`. Đặt `VITE
 
 Web lưu access token và thông tin người dùng trong local storage; refresh token dùng cookie HttpOnly. API client tự làm mới phiên khi access token hết hạn và giữ phiên khi gặp lỗi mạng hoặc lỗi máy chủ tạm thời.
 
+## Cache và phân trang
+
+Saved và Search dùng TanStack Query để quản lý dữ liệu, lỗi và cursor. Cache nằm trong bộ nhớ, riêng cho từng tài khoản, có stale time 30 giây và được xóa khi đổi tài khoản/đăng xuất. Thao tác lưu, bỏ lưu, sửa và xóa bài viết cập nhật hoặc đánh dấu cache Saved cần tải lại. Retry giữ nút điều khiển trên giao diện; request bị hủy khi trang hoặc phiên thay đổi.
+
+Sau khi chạy web, kiểm tra Saved bằng `SAVED_BASE_URL=http://127.0.0.1:5173 node tests/browser/savedQueries.mjs`. Script dùng Playwright/Chromium như các browser check hiện có; có thể đặt `PLAYWRIGHT_MODULE` để dùng bản Playwright đã cài ngoài repository.
+
 ## SEO và Google Search
 
 Trang gốc công khai được React/Vite pre-render sẵn vào HTML khi build để giới thiệu nhất quán các tên thương hiệu **Fookbase**, **Fookbase Light** và `fookbase-light`. Người dùng đã đăng nhập vẫn đi theo luồng ứng dụng tại `/feed`; các trang ứng dụng không phải trang đích tìm kiếm sẽ dùng `noindex`.

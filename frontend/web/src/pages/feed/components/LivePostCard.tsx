@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { ApiError } from '../../../api/client'
 import { friendsApi } from '../../../api/friends'
 import { postsApi } from '../../../api/posts'
-import type { Comment, CommentAuthor, MediaAccess, Post, PostReaction } from '../../../api/posts'
+import type { Comment, CommentAuthor, MediaAccess, Post, PostReaction, SavedPostsPage } from '../../../api/posts'
 import { resolveProfileImageUrl } from '../../../api/users'
 import type { UserProfile } from '../../../api/users'
 import ReportButton from '../../../shared/components/ReportButton'
@@ -32,8 +33,8 @@ interface LivePostCardProps {
   author?: UserProfile
   group?: { id: string; name: string }
   currentUserId: string
-  onPostUpdated: (post: Post) => void
-  onPostDeleted: (postId: string) => void
+  onPostUpdated?: (post: Post) => void
+  onPostDeleted?: (postId: string) => void
   initialCommentId?: string
   allowProfilePin?: boolean
 }
@@ -255,6 +256,7 @@ export default function LivePostCard({
 }: LivePostCardProps) {
   const { t } = usePreferences()
   const { session } = useAuth()
+  const cache = useQueryClient()
   const {
     state: interactionState, discussion, viewerReaction, reactionCounts, reactionVersion,
     comments, commentCount, commentsLoaded, commentsLoading: isLoadingComments,
@@ -401,10 +403,20 @@ export default function LivePostCard({
   }
   const loadMoreComments = () => discussion.loadComments(true)
 
+  const syncSavedPost = (updated: Post) => {
+    cache.setQueryData<InfiniteData<SavedPostsPage>>(['saved-posts', currentUserId], (data) => data && ({
+      ...data,
+      pages: data.pages.map((page) => ({ ...page, items: page.items
+        .filter((item) => item.id !== updated.id || updated.viewerHasSaved)
+        .map((item) => item.id === updated.id ? updated : item) })),
+    }))
+  }
   const publishPostUpdate = (updated: Post) => {
     if (!mountedRef.current) return
     const reaction = interactionState.getSnapshot()
-    onPostUpdated({ ...updated, viewerReaction: reaction.viewerReaction, reactionCounts: reaction.reactionCounts, commentCount: discussion.getSnapshot().commentCount })
+    const next = { ...updated, viewerReaction: reaction.viewerReaction, reactionCounts: reaction.reactionCounts, commentCount: discussion.getSnapshot().commentCount }
+    syncSavedPost(next)
+    onPostUpdated?.(next)
   }
 
   const openCommentsDialog = () => {
@@ -518,13 +530,15 @@ export default function LivePostCard({
     }, t('unableEditPost'))
   }
 
-  const deletePost = () => runPostAction('delete', () => postsApi.delete(post.id), () => undefined, t('unableDeletePost'))
+  const deletePost = () => runPostAction('delete', () => postsApi.delete(post.id),
+    () => { void cache.invalidateQueries({ queryKey: ['saved-posts', currentUserId], refetchType: 'none' }) }, t('unableDeletePost'))
 
   const savePost = () => {
     const wasSaved = isSaved
     return runPostAction('save', () => wasSaved ? postsApi.removeSaved(post.id) : postsApi.save(post.id), () => {
       setIsSaved(!wasSaved)
       publishPostUpdate({ ...post, viewerHasSaved: !wasSaved })
+      if (!wasSaved) void cache.invalidateQueries({ queryKey: ['saved-posts', currentUserId], refetchType: 'none' })
       showToast(wasSaved ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết.', 'success')
     }, 'Không thể cập nhật bài viết đã lưu.')
   }
@@ -723,7 +737,7 @@ export default function LivePostCard({
       <p className="mt-3 text-sm text-text-muted">Bài viết này sẽ bị xóa khỏi Fookbase.</p>
       <div className="mt-5 flex justify-end gap-2">
         <button data-dialog-initial-focus type="button" disabled={isDeleteAnimating || Boolean(pendingPostAction)} onClick={() => setIsPostPendingDeletion(false)} className="rounded-lg border-0 bg-surface-2 px-4 py-2 text-sm font-semibold text-text hover:bg-surface-3">Hủy</button>
-        <AnimatedDeleteButton disabled={Boolean(pendingPostAction)} onBusyChange={setIsDeleteAnimating} onDelete={deletePost} onDeleted={() => { setIsPostPendingDeletion(false); onPostDeleted(post.id) }} />
+        <AnimatedDeleteButton disabled={Boolean(pendingPostAction)} onBusyChange={setIsDeleteAnimating} onDelete={deletePost} onDeleted={() => { setIsPostPendingDeletion(false); syncSavedPost({ ...post, viewerHasSaved: false }); onPostDeleted?.(post.id) }} />
       </div>
     </AppDialog>}
     {commentPendingDeletion && <AppDialog title="Xóa bình luận?" onClose={() => { if (!isDeleteAnimating && !busyCommentIds.includes(commentPendingDeletion.id)) setCommentPendingDeletion(null) }}>

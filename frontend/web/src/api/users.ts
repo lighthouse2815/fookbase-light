@@ -49,7 +49,7 @@ export interface UserFollow {
 }
 
 export const usersApi = {
-  getById: (userId: string) => apiRequest<UserProfile>(`/api/users/${userId}`),
+  getById: (userId: string, init?: RequestInit) => apiRequest<UserProfile>(`/api/users/${userId}`, init),
   search: (query = '', offset = 0, limit = 20) => {
     const params = new URLSearchParams({ offset: String(offset), limit: String(limit) })
     if (query.trim()) params.set('query', query.trim())
