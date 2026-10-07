@@ -1,5 +1,8 @@
 # Fookbase Web
 
+Các file trong `tests/` chỉ có ở máy local và được Git bỏ qua.
+Lệnh test và hướng dẫn kiểm tra bằng trình duyệt bên dưới cần bộ test local.
+
 Client mạng xã hội Fookbase Light, dùng React, TypeScript, React Router, Vite và Tailwind CSS.
 
 ## Chạy và kiểm tra
@@ -9,7 +12,6 @@ npm ci
 npm run dev
 npm run lint
 npm run build
-npm test
 ```
 
 `test:games` chạy các test Node ở `tests/*.test.mjs`, gồm cả feed, tìm kiếm, thông báo và tương tác bài viết. `test:auth` kiểm tra hợp đồng Identity của web, admin và Zola Light.
