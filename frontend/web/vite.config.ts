@@ -23,8 +23,21 @@ function seo(siteUrl: string): Plugin {
     transformIndexHtml(html, context) {
       const isHome = !context.server || new URL(context.originalUrl ?? context.path, 'http://localhost').pathname === '/'
       return {
-        html: isHome ? html.replace('<div id="root"></div>', `<div id="root">${renderToStaticMarkup(createElement(LandingContent))}</div>`) : html,
+        html: isHome ? html.replace('<div id="root"></div>', `<div id="root"><div data-seo-landing>${renderToStaticMarkup(createElement(LandingContent))}</div></div>`) : html,
         tags: [
+          // Static hosting serves this entry for every route. Run before paint,
+          // without waiting for the app bundle, and hide only the static landing.
+          { tag: 'script', children: `(() => {
+            let isAppPage = window.location.pathname !== '/';
+            try {
+              isAppPage ||= Boolean(JSON.parse(localStorage.getItem('fookbase.session') ?? 'null'));
+            } catch {}
+            if (isAppPage) {
+              const style = document.createElement('style');
+              style.textContent = '#root > [data-seo-landing] { display: none; }';
+              document.head.appendChild(style);
+            }
+          })();` },
           { tag: 'title', children: isHome ? site.title : 'Fookbase' },
           meta('description', site.description),
           meta('robots', isHome ? 'index, follow, max-image-preview:large' : 'noindex, follow'),
