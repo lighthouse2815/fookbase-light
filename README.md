@@ -1,5 +1,10 @@
 # Fookbase Light
 
+Bộ test chỉ được giữ ở máy local, được `.gitignore` và không đưa lên GitHub.
+CI chạy build, lint và typecheck; bản clone mới không chứa file test.
+Để chạy test, dùng worktree local còn bộ test và các lệnh test tương ứng.
+`FookbaseLight.sln` chỉ chứa API để bản clone mới build được.
+
 Fookbase Light V1 là một modular monolith cho mạng xã hội. Toàn bộ domain chạy trong một ASP.NET Core process tại cổng `5000`, với một PostgreSQL database (`fookbase_db`), Cloudinary và SignalR.
 
 Code nghiệp vụ được chia theo feature module trong một project backend duy nhất. Mỗi luồng giữ đơn giản theo `Endpoint -> module coordinator (khi cần phối hợp) -> Service -> DbContext`.

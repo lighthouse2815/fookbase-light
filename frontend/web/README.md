@@ -1,5 +1,8 @@
 # React + TypeScript + Vite
 
+Các file trong `tests/` chỉ có ở máy local và được Git bỏ qua.
+Lệnh test và hướng dẫn kiểm tra bằng trình duyệt bên dưới cần bộ test local.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 ## API during development
