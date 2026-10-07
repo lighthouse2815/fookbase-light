@@ -63,7 +63,7 @@ jobs:
         run: |
           npm ci
           npm run lint
-          if [ "${{ matrix.app }}" = "web" ]; then npm run test:group-header; fi
+          npm test --if-present
           npm run build
 
   container:

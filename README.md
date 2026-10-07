@@ -204,7 +204,7 @@ Mỗi frontend dùng npm và package-lock riêng. Kiểm tra đầy đủ fronte
 
 ```bash
 for app in web zola-light admin; do
-  (cd "frontend/$app" && npm ci && npm run lint && npm run build)
+  (cd "frontend/$app" && npm ci && npm run lint && npm test --if-present && npm run build)
 done
 ```
 

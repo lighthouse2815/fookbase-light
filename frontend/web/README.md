@@ -9,9 +9,7 @@ npm ci
 npm run dev
 npm run lint
 npm run build
-npm run test:games
-npm run test:group-header
-npm run test:auth
+npm test
 ```
 
 `test:games` chạy các test Node ở `tests/*.test.mjs`, gồm cả feed, tìm kiếm, thông báo và tương tác bài viết. `test:auth` kiểm tra hợp đồng Identity của web, admin và Zola Light.
