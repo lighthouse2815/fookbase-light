@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.WebUtilities;
 using System.Globalization;
 using System.Text;
 using Fookbase.Api.Modules.Friends.Services;
@@ -465,19 +466,14 @@ public sealed class ReelsService(
         var payload = score.ToString(CultureInfo.InvariantCulture) + ":" +
             reel.CreatedAtUtc.UtcDateTime.Ticks.ToString(CultureInfo.InvariantCulture) + ":" +
             reel.Id.ToString("N");
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes(payload))
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
+        return WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(payload));
     }
 
     private static ReelCursor DecodeCursor(string value)
     {
         try
         {
-            var encoded = value.Replace('-', '+').Replace('_', '/');
-            encoded = encoded.PadRight(encoded.Length + (4 - encoded.Length % 4) % 4, '=');
-            var parts = Encoding.UTF8.GetString(Convert.FromBase64String(encoded)).Split(':', 3);
+            var parts = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(value)).Split(':', 3);
             var isLegacyCursor = parts.Length == 2;
             if ((!isLegacyCursor && parts.Length != 3) ||
                 !int.TryParse(isLegacyCursor ? "0" : parts[0], CultureInfo.InvariantCulture, out var score) ||
