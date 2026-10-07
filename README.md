@@ -30,7 +30,7 @@ Backend chỉ có một entry point: `backend/Fookbase.Src`. Các route cũ dư�
 
 Toàn bộ persistence runtime dùng duy nhất `FookbaseDbContext` và PostgreSQL database `fookbase_db`. Module vẫn giữ entity, configuration và service trong folder riêng; chỉ DbContext và migration history được hợp nhất.
 
-Bốn client được triển khai độc lập: `frontend/web`, `frontend/zola-light`, `frontend/admin` và `frontend/zola-mobile`. V1 chỉ hỗ trợ **một API instance**; không có SignalR/presence horizontal scaling. Xem chi tiết tại [kiến trúc](docs/modular-monolith.md), [vận hành production](docs/production-deployment.md), [Zola Light](docs/zola-light-v1.md), [Zola Mobile](docs/zola-mobile.md), [Feed Ranking V2](docs/feed-ranking-v2.md), [privacy/security](docs/privacy-security-v1.md) và [moderation](docs/moderation-v1.md).
+Năm client được triển khai độc lập: `frontend/web`, `frontend/zola-light`, `frontend/admin`, `frontend/mobile` và `frontend/zola-mobile`. V1 chỉ hỗ trợ **một API instance**; không có SignalR/presence horizontal scaling. Xem chi tiết tại [kiến trúc](docs/modular-monolith.md), [vận hành production](docs/production-deployment.md), [Fookbase Mobile](docs/mobile-android.md), [Zola Light](docs/zola-light-v1.md), [Zola Mobile](docs/zola-mobile.md), [Feed Ranking V2](docs/feed-ranking-v2.md), [privacy/security](docs/privacy-security-v1.md) và [moderation](docs/moderation-v1.md).
 
 ## Yêu cầu
 

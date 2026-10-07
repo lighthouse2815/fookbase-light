@@ -17,9 +17,6 @@ public sealed class MessagesApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:Audience", "Fookbase.Tests.Clients");
         builder.UseSetting("Jwt:SigningKey", "messages-integration-tests-signing-key-12345");
         builder.UseSetting("ConnectionStrings:FookbaseDatabase", connectionString);
-        builder.UseSetting("Minio:AccessKey", "integration-tests");
-        builder.UseSetting("Minio:SecretKey", "integration-tests");
-        builder.UseSetting("Minio:BucketInitializationEnabled", "false");
         builder.UseSetting("Cloudinary:CloudName", "integration-tests");
         builder.UseSetting("Cloudinary:ApiKey", "test-api-key");
         builder.UseSetting("Cloudinary:ApiSecret", "test-api-secret");

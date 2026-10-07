@@ -21,9 +21,6 @@ public sealed class MediaApiFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:FookbaseDatabase", mediaConnectionString);
         builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-must-have-32-characters");
-        builder.UseSetting("Minio:AccessKey", "integration-tests");
-        builder.UseSetting("Minio:SecretKey", "integration-tests");
-        builder.UseSetting("Minio:BucketInitializationEnabled", "false");
         builder.UseSetting("Cloudinary:CloudName", "integration-tests");
         builder.UseSetting("Cloudinary:ApiKey", "test-api-key");
         builder.UseSetting("Cloudinary:ApiSecret", "test-api-secret");

@@ -10,7 +10,7 @@ public sealed class HealthEndpointsTests
     [Fact]
     public async Task Liveness_is_available_without_dependency_checks()
     {
-        using var factory = new UnreadyMinioIdentityApiFactory();
+        using var factory = new CloudinaryStatusIdentityApiFactory(false);
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/health/live");
@@ -27,9 +27,9 @@ public sealed class HealthEndpointsTests
     }
 
     [Fact]
-    public async Task Readiness_fails_when_required_minio_bucket_is_unavailable()
+    public async Task Readiness_fails_when_cloudinary_is_unavailable()
     {
-        using var factory = new UnreadyMinioIdentityApiFactory();
+        using var factory = new CloudinaryStatusIdentityApiFactory(false);
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/health/ready");
@@ -37,12 +37,34 @@ public sealed class HealthEndpointsTests
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
-    private sealed class UnreadyMinioIdentityApiFactory : IdentityApiFactory
+    [Fact]
+    public async Task Readiness_succeeds_when_database_and_cloudinary_are_available()
+    {
+        using var factory = new CloudinaryStatusIdentityApiFactory(true);
+        using var client = factory.CreateClient();
+
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health/ready")).StatusCode);
+    }
+
+    private sealed class CloudinaryStatusIdentityApiFactory(bool healthy) : IdentityApiFactory
     {
         protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
         {
             base.ConfigureWebHost(builder);
-            builder.UseSetting("Minio:Endpoint", "127.0.0.1:1");
+            builder.ConfigureServices(services => services.PostConfigure<HealthCheckServiceOptions>(options =>
+            {
+                var registration = options.Registrations.Single(item => item.Name == "cloudinary");
+                options.Registrations.Remove(registration);
+                options.Registrations.Add(new HealthCheckRegistration(
+                    registration.Name, _ => new StubCloudinaryHealthCheck(healthy),
+                    registration.FailureStatus, registration.Tags, registration.Timeout));
+            }));
         }
+    }
+
+    private sealed class StubCloudinaryHealthCheck(bool healthy) : IHealthCheck
+    {
+        public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default) =>
+            Task.FromResult(healthy ? HealthCheckResult.Healthy() : HealthCheckResult.Unhealthy("Cloudinary unavailable for this test."));
     }
 }
