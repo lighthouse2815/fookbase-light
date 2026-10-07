@@ -1,46 +1,32 @@
-# React + TypeScript + Vite
+# Fookbase Web
 
 Các file trong `tests/` chỉ có ở máy local và được Git bỏ qua.
 Lệnh test và hướng dẫn kiểm tra bằng trình duyệt bên dưới cần bộ test local.
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Client mạng xã hội Fookbase Light, dùng React, TypeScript, React Router, Vite và Tailwind CSS.
 
-## API during development
+## Chạy và kiểm tra
 
-`npm run dev` proxies `/api` requests to `http://localhost:5000`, the default backend URL.
-Set `VITE_API_PROXY_TARGET` to use another backend URL. For a separately deployed frontend,
-set `VITE_API_BASE_URL` to the API origin instead.
-
-The sign-in flow stores the JWT session in local storage and refreshes an expired access token automatically.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm ci
+npm run dev
+npm run lint
+npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+`test:games` chạy các test Node ở `tests/*.test.mjs`, gồm cả feed, tìm kiếm, thông báo và tương tác bài viết. `test:auth` kiểm tra hợp đồng Identity của web, admin và Zola Light.
+
+## Kết nối API
+
+Development proxy `/api` và `/hubs` tới `http://localhost:5000`. Đặt `VITE_API_PROXY_TARGET` nếu backend dùng origin khác; đặt `VITE_API_BASE_URL` khi frontend và API triển khai riêng.
+
+Web lưu access token và thông tin người dùng trong local storage; refresh token dùng cookie HttpOnly. API client tự làm mới phiên khi access token hết hạn và giữ phiên khi gặp lỗi mạng hoặc lỗi máy chủ tạm thời.
+
+## Cache và phân trang
+
+Saved và Search dùng TanStack Query để quản lý dữ liệu, lỗi và cursor. Cache nằm trong bộ nhớ, riêng cho từng tài khoản, có stale time 30 giây và được xóa khi đổi tài khoản/đăng xuất. Thao tác lưu, bỏ lưu, sửa và xóa bài viết cập nhật hoặc đánh dấu cache Saved cần tải lại. Retry giữ nút điều khiển trên giao diện; request bị hủy khi trang hoặc phiên thay đổi.
+
+Sau khi chạy web, kiểm tra Saved bằng `SAVED_BASE_URL=http://127.0.0.1:5173 node tests/browser/savedQueries.mjs`. Script dùng Playwright/Chromium như các browser check hiện có; có thể đặt `PLAYWRIGHT_MODULE` để dùng bản Playwright đã cài ngoài repository.
 
 ## SEO và Google Search
 

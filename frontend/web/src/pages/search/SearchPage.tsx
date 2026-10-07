@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { useAuth } from '../../auth/useAuth'
 import { Link, useSearchParams } from 'react-router-dom'
 import { searchApi, type GlobalSearchResponse, type SearchEvent, type SearchGroup, type SearchHashtag, type SearchPage as SearchPageResult, type SearchPerson, type SearchPost, type SearchReel, type SearchType } from '../../api/search'
 import { resolveProfileImageUrl } from '../../api/users'
@@ -88,57 +89,27 @@ function ResultSkeleton({ type }: { type: SearchType }) {
   </div>)}</div>
 }
 
-interface SearchState {
-  key: string
-  result: GlobalSearchResponse
-  status: 'loading' | 'ready' | 'error'
-  moreLoading: boolean
-  moreError: boolean
-}
-
 export default function SearchPage() {
+  const { session } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q')?.trim() ?? ''
   const type = typeFrom(searchParams.get('type'))
-  const key = JSON.stringify([query, type])
   const eligible = query.length >= 2 && query.length <= 100
-  const [state, setState] = useState<SearchState>({ key: '', result: emptyResult, status: 'loading', moreLoading: false, moreError: false })
-  const generationRef = useRef(0)
-  const controllerRef = useRef<AbortController | null>(null)
-  const requestBusyRef = useRef(false)
-  const current = state.key === key
-  const result = current ? state.result : emptyResult
-  const isLoading = eligible && (!current || state.status === 'loading')
-  const hasError = current && state.status === 'error'
-
-  const load = useCallback(async (cursor?: string, append = false) => {
-    if (!eligible || append && requestBusyRef.current) return
-    controllerRef.current?.abort()
-    const controller = new AbortController()
-    controllerRef.current = controller
-    const generation = ++generationRef.current
-    requestBusyRef.current = true
-    setState((previous) => append && previous.key === key
-      ? { ...previous, moreLoading: true, moreError: false }
-      : { key, result: emptyResult, status: 'loading', moreLoading: false, moreError: false })
-    try {
-      const next = await searchApi.search(query, type, cursor, 20, { signal: controller.signal })
-      if (controller.signal.aborted || generation !== generationRef.current) return
-      setState((previous) => ({ key, result: mergeSearchResults(append && previous.key === key ? previous.result : emptyResult, next), status: 'ready', moreLoading: false, moreError: false }))
-    } catch {
-      if (controller.signal.aborted || generation !== generationRef.current) return
-      setState((previous) => append && previous.key === key
-        ? { ...previous, moreLoading: false, moreError: true }
-        : { key, result: emptyResult, status: 'error', moreLoading: false, moreError: false })
-    } finally {
-      if (generation === generationRef.current) requestBusyRef.current = false
-    }
-  }, [eligible, key, query, type])
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void load() }, 0)
-    return () => { window.clearTimeout(timer); controllerRef.current?.abort(); generationRef.current += 1; requestBusyRef.current = false }
-  }, [load])
+  const resultsQuery = useInfiniteQuery({
+    queryKey: ['search', session?.user.id, query, type],
+    enabled: eligible && Boolean(session),
+    initialPageParam: undefined as string | undefined,
+    queryFn: async ({ pageParam, signal }) => {
+      // Keep the existing deferred dispatch so StrictMode can cancel its trial mount.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      signal.throwIfAborted()
+      return searchApi.search(query, type, pageParam, 20, { signal })
+    },
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+  })
+  const result = resultsQuery.data?.pages.reduce(mergeSearchResults, emptyResult) ?? emptyResult
+  const isLoading = eligible && resultsQuery.isPending
+  const hasError = resultsQuery.isError && !resultsQuery.data
 
   const chooseTab = (next: SearchType) => {
     const params = new URLSearchParams()
@@ -163,12 +134,12 @@ export default function SearchPage() {
     <nav className="mt-5 flex flex-wrap gap-2 border-b border-border pb-3" aria-label="Danh mục tìm kiếm">{tabs.map((tab) => <button key={tab.type} type="button" aria-current={type === tab.type ? 'page' : undefined} onClick={() => chooseTab(tab.type)} className={`min-h-11 rounded-full border-0 px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-safe:transition-colors ${type === tab.type ? 'bg-primary text-white' : 'bg-surface-2 text-text-muted hover:bg-surface-3'}`}>{tab.label}</button>)}</nav>
     {!eligible ? <p className="mt-6 rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">{query.length > 100 ? 'Từ khóa tìm kiếm không được quá 100 ký tự.' : 'Nhập ít nhất 2 ký tự để tìm kiếm.'}</p> : <div className="mt-5 space-y-7">
       {isLoading && <ResultSkeleton type={type} />}
-      {!isLoading && hasError && <div role="alert" className="rounded-xl border border-border bg-surface p-5"><p className="font-semibold text-text">Không thể tải kết quả tìm kiếm</p><p className="mt-1 text-sm text-text-muted">Hãy thử lại sau ít phút.</p><button type="button" onClick={() => void load()} className="mt-3 min-h-11 rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white focus-visible:ring-2 focus-visible:ring-primary">Thử lại</button></div>}
+      {!isLoading && hasError && <div role="alert" className="rounded-xl border border-border bg-surface p-5"><p className="font-semibold text-text">Không thể tải kết quả tìm kiếm</p><p className="mt-1 text-sm text-text-muted">Hãy thử lại sau ít phút.</p><button type="button" onClick={() => void resultsQuery.refetch()} className="mt-3 min-h-11 rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white focus-visible:ring-2 focus-visible:ring-primary">Thử lại</button></div>}
       {!isLoading && !hasError && allEmpty && <div role="status" className="rounded-2xl border border-border bg-surface px-5 py-7 text-center"><span aria-hidden="true" className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-surface-2 text-3xl text-text-muted">⌕</span><h2 className="break-words text-lg font-semibold text-text">Không tìm thấy {emptyLabel[type]} cho “{query}”</h2><p className="mt-2 text-sm leading-6 text-text-muted">Kiểm tra chính tả, dùng từ khóa ngắn hơn hoặc tìm loại nội dung khác.</p></div>}
       {!isLoading && !hasError && !allEmpty && <>
         {type === 'all' && (result.hashtags?.length ?? 0) > 0 && <ResultSection title="Hashtag">{result.hashtags?.map((item) => <HashtagCard key={item.tag} item={item} query={query} />)}</ResultSection>}
         {categories.filter((category) => category.cards.length > 0 && (type === 'all' || type === category.type)).map((category) => <ResultSection key={category.type} title={category.title} seeAll={type === 'all' ? `/search?q=${encodeURIComponent(query)}&type=${category.type}` : undefined}>{category.cards}</ResultSection>)}
-        {type !== 'all' && result.nextCursor && <div>{state.moreError && <p role="status" className="mb-2 text-sm text-text-muted">Không thể tải thêm kết quả. Danh sách hiện tại được giữ lại.</p>}<button type="button" disabled={state.moreLoading} onClick={() => void load(result.nextCursor ?? undefined, true)} className="min-h-11 rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50">{state.moreLoading ? 'Đang tải…' : state.moreError ? 'Thử lại tải thêm' : 'Xem thêm'}</button></div>}
+        {type !== 'all' && result.nextCursor && <div>{resultsQuery.isFetchNextPageError && <p role="status" className="mb-2 text-sm text-text-muted">Không thể tải thêm kết quả. Danh sách hiện tại được giữ lại.</p>}<button type="button" disabled={resultsQuery.isFetching} onClick={() => { if (!resultsQuery.isFetching) void resultsQuery.fetchNextPage() }} className="min-h-11 rounded-lg border-0 bg-primary px-4 py-2 text-sm font-semibold text-white focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50">{resultsQuery.isFetchingNextPage ? 'Đang tải…' : resultsQuery.isFetchNextPageError ? 'Thử lại tải thêm' : 'Xem thêm'}</button></div>}
       </>}
     </div>}
   </main>

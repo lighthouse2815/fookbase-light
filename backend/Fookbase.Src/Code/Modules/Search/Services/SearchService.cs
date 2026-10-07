@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.WebUtilities;
 using Fookbase.Api.Modules.Events.Domain.Enums;
 using Fookbase.Api.Modules.Friends.Domain.Enums;
 using Fookbase.Api.Modules.Groups.Domain.Enums;
@@ -736,9 +737,7 @@ public sealed class SearchService(
 
         try
         {
-            var encoded = value.Replace('-', '+').Replace('_', '/');
-            encoded = encoded.PadRight(encoded.Length + (4 - encoded.Length % 4) % 4, '=');
-            var payload = JsonSerializer.Deserialize<SearchCursor>(Convert.FromBase64String(encoded));
+            var payload = JsonSerializer.Deserialize<SearchCursor>(WebEncoders.Base64UrlDecode(value));
             if (payload is null ||
                 payload.Version != CursorVersion ||
                 payload.Type != TypeName(type) ||
@@ -768,10 +767,7 @@ public sealed class SearchService(
         long? ticks = null)
     {
         var payload = new SearchCursor(CursorVersion, TypeName(type), QueryHash(type, query), rank, id, name, count, ticks);
-        return Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(payload))
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
+        return WebEncoders.Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(payload));
     }
 
     private static string QueryHash(SearchType type, string query) =>

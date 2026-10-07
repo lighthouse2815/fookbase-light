@@ -37,17 +37,16 @@ internal static class ModuleServiceCollectionExtensions
         IConfiguration configuration)
     {
         var connectionString = RequiredConnectionString(configuration, "FookbaseDatabase");
-        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-        var dataSource = dataSourceBuilder.Build();
         var commandTimeoutSeconds = configuration.GetValue("Database:CommandTimeoutSeconds", 30);
         if (commandTimeoutSeconds <= 0)
         {
             throw new InvalidOperationException("Database:CommandTimeoutSeconds must be positive.");
         }
 
-        services.AddSingleton(dataSource);
-        services.AddDbContext<FookbaseDbContext>(options =>
-            options.UseNpgsql(dataSource, npgsql => npgsql.CommandTimeout(commandTimeoutSeconds)));
+        services.AddSingleton(_ => new NpgsqlDataSourceBuilder(connectionString).Build());
+        services.AddDbContext<FookbaseDbContext>((provider, options) =>
+            options.UseNpgsql(provider.GetRequiredService<NpgsqlDataSource>(),
+                npgsql => npgsql.CommandTimeout(commandTimeoutSeconds)));
         return services;
     }
 

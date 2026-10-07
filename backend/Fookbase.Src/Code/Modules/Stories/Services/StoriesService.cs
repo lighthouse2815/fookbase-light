@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.WebUtilities;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Notifications.Domain.Enums;
 using System.Text;
@@ -648,9 +649,7 @@ public sealed class StoriesService(
 
         try
         {
-            var base64 = value.Replace('-', '+').Replace('_', '/');
-            base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=');
-            cursor = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(Convert.FromBase64String(base64)));
+            cursor = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(value)));
             return cursor is not null;
         }
         catch (ArgumentException) { return false; }
@@ -658,11 +657,7 @@ public sealed class StoriesService(
         catch (JsonException) { return false; }
     }
 
-    private static string EncodeCursor<T>(T cursor) => Convert
-        .ToBase64String(JsonSerializer.SerializeToUtf8Bytes(cursor))
-        .TrimEnd('=')
-        .Replace('+', '-')
-        .Replace('/', '_');
+    private static string EncodeCursor<T>(T cursor) => WebEncoders.Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(cursor));
 
     private static ApplicationResult NotFound() => ApplicationResult.Failure(new ApplicationError(
         "story_not_found", "The story was not found.", ApplicationErrorType.NOT_FOUND));

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.WebUtilities;
 using System.Text.Json;
 
 namespace Fookbase.Api.Modules.Messages.Common;
@@ -7,14 +8,11 @@ internal static class MessageCursorCodec
     public const int MaximumLength = 256;
 
     public static string Encode<T>(T cursor) =>
-        Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(cursor))
-            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        WebEncoders.Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(cursor));
 
     public static T Decode<T>(string value) where T : class
     {
-        var base64 = value.Replace('-', '+').Replace('_', '/');
-        base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=');
-        return JsonSerializer.Deserialize<T>(Convert.FromBase64String(base64))
+        return JsonSerializer.Deserialize<T>(WebEncoders.Base64UrlDecode(value))
             ?? throw new JsonException("The message cursor is invalid.");
     }
 

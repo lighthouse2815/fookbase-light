@@ -7,6 +7,22 @@ using Fookbase.Api.Shared.Common;
 namespace Fookbase.Api.Modules.Events.Common;
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
+public sealed class ValidEventCursorAttribute : ValidationAttribute
+{
+    public override bool IsValid(object? value)
+    {
+        if (value is null) return true;
+        if (value is not string text) return false;
+        try
+        {
+            _ = EventCursor.DecodeOrNull(text);
+            return true;
+        }
+        catch (FormatException) { return false; }
+    }
+}
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
 public sealed class OptionalNonEmptyGuidAttribute : ValidationAttribute
 {
     public override bool IsValid(object? value) => value is null || value is Guid id && id != Guid.Empty;

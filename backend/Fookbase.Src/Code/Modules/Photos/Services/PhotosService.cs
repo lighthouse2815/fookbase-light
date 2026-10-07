@@ -61,7 +61,16 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         var allowed = new List<PhotoAlbum>();
         foreach (var album in all) if (await access.CanViewAsync(album, viewerId, ct)) allowed.Add(album);
         var page = allowed.Take(limit).ToList();
-        var items = await Task.WhenAll(page.Select(item => ToSummaryAsync(item, ct)));
+        var albumIds = page.Select(album => album.Id).ToList();
+        var summaries = await db.PhotoAlbums.AsNoTracking().Where(album => albumIds.Contains(album.Id))
+            .Select(album => new
+            {
+                album.Id,
+                Count = album.MediaItems.Count,
+                PreviewId = album.MediaItems.OrderBy(item => item.SortOrder).ThenBy(item => item.MediaId)
+                    .Select(item => (Guid?)item.MediaId).FirstOrDefault()
+            }).ToDictionaryAsync(item => item.Id, ct);
+        var items = page.Select(album => ToSummary(album, summaries[album.Id].Count, summaries[album.Id].PreviewId)).ToList();
         return ApplicationResult<PhotoCursorPageResponse<PhotoAlbumSummaryResponse>>.Success(new(items, allowed.Count > limit ? Encode(page[^1].CreatedAtUtc, page[^1].Id) : null));
     }
 
@@ -78,7 +87,7 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
         if (TryDecode(cursor, out var sortAfter, out var mediaAfter)) query = query.Where(item => item.SortOrder > sortAfter.UtcTicks || item.SortOrder == sortAfter.UtcTicks && item.MediaId.CompareTo(mediaAfter) > 0);
         var rows = await query.Take(limit + 1).ToListAsync(ct);
         var visible = rows.Take(limit).Select(item => new AlbumMediaResponse(item.MediaId, item.Caption, item.SortOrder, item.AddedAtUtc, AccessPath(albumId, item.MediaId))).ToList();
-        return ApplicationResult<PhotoCursorPageResponse<AlbumMediaResponse>>.Success(new(visible, rows.Count > limit ? Encode(new DateTimeOffset(rows[limit].SortOrder, TimeSpan.Zero), rows[limit].MediaId) : null));
+        return ApplicationResult<PhotoCursorPageResponse<AlbumMediaResponse>>.Success(new(visible, rows.Count > limit ? Encode(new DateTimeOffset(rows[limit - 1].SortOrder, TimeSpan.Zero), rows[limit - 1].MediaId) : null));
     }
 
     public async Task<ApplicationResult<PhotoDetailResponse>> GetPhotoAsync(Guid albumId, Guid mediaId, Guid? viewerId, CancellationToken ct = default)
@@ -168,12 +177,27 @@ public sealed class PhotosService(FookbaseDbContext db, PhotoAccessService acces
 
     private IQueryable<PhotoAlbum> Active() => db.PhotoAlbums.Where(item => item.DeletedAtUtc == null);
     private async Task<PhotoAlbumResponse> ToAlbumAsync(PhotoAlbum album, Guid? viewerId, CancellationToken ct) { var summary = await ToSummaryAsync(album, ct); return new(album.Id, album.OwnerUserId, album.Name, album.Description, summary.AlbumType, summary.Privacy, summary.PhotoCount, summary.PreviewUrl, album.CreatedAtUtc, album.UpdatedAtUtc, viewerId == album.OwnerUserId && album.AlbumType == PhotoAlbumType.CUSTOM); }
-    private async Task<PhotoAlbumSummaryResponse> ToSummaryAsync(PhotoAlbum album, CancellationToken ct) { var rows = db.AlbumMedia.AsNoTracking().Where(item => item.AlbumId == album.Id); var count = await rows.CountAsync(ct); var preview = await rows.OrderBy(item => item.SortOrder).ThenBy(item => item.MediaId).Select(item => (Guid?)item.MediaId).FirstOrDefaultAsync(ct); return new(album.Id, album.Name, album.AlbumType.ToApiName().ToLowerInvariant(), album.Privacy.ToApiName().ToLowerInvariant(), count, preview is null ? null : AccessPath(album.Id, preview.Value), album.CreatedAtUtc); }
+    private async Task<PhotoAlbumSummaryResponse> ToSummaryAsync(PhotoAlbum album, CancellationToken ct) { var rows = db.AlbumMedia.AsNoTracking().Where(item => item.AlbumId == album.Id); var count = await rows.CountAsync(ct); var preview = await rows.OrderBy(item => item.SortOrder).ThenBy(item => item.MediaId).Select(item => (Guid?)item.MediaId).FirstOrDefaultAsync(ct); return ToSummary(album, count, preview); }
+    private static PhotoAlbumSummaryResponse ToSummary(PhotoAlbum album, int count, Guid? preview) =>
+        new(album.Id, album.Name, album.AlbumType.ToApiName().ToLowerInvariant(), album.Privacy.ToApiName().ToLowerInvariant(), count, preview is null ? null : AccessPath(album.Id, preview.Value), album.CreatedAtUtc);
     private static string AccessPath(Guid albumId, Guid mediaId) => $"/api/albums/{albumId}/media/{mediaId}/access";
     private static bool TryPrivacy(string? value, out PhotoAlbumPrivacy privacy) => EnumText.TryParse(value, true, out privacy) && Enum.IsDefined(privacy);
     private static bool ValidLimit(int value) => value is >= 1 and <= MaximumPageSize;
     private static string Encode(DateTimeOffset value, Guid id) => Convert.ToBase64String(Encoding.UTF8.GetBytes($"{value.UtcTicks}|{id}"));
-    private static bool TryDecode(string? value, out DateTimeOffset at, out Guid id) { at=default;id=default; try { var parts=Encoding.UTF8.GetString(Convert.FromBase64String(value??string.Empty)).Split('|'); return parts.Length==2 && long.TryParse(parts[0],out var ticks) && Guid.TryParse(parts[1],out id) && (at=new DateTimeOffset(ticks,TimeSpan.Zero))!=default; } catch { return false; } }
+    private static bool TryDecode(string? value, out DateTimeOffset at, out Guid id)
+    {
+        at = default;
+        id = default;
+        try
+        {
+            var parts = Encoding.UTF8.GetString(Convert.FromBase64String(value ?? string.Empty)).Split('|');
+            if (parts.Length != 2 || !long.TryParse(parts[0], out var ticks) || !Guid.TryParse(parts[1], out id)) return false;
+            at = new DateTimeOffset(ticks, TimeSpan.Zero);
+            return true;
+        }
+        catch (FormatException) { return false; }
+        catch (ArgumentException) { return false; }
+    }
     private static ApplicationResult<T> Bad<T>(string code, string message, ApplicationErrorType type = ApplicationErrorType.VALIDATION) => ApplicationResult<T>.Failure(new(code, message, type));
     private static ApplicationResult Bad(string code = "album_not_found", string message = "The album was not found.", ApplicationErrorType type = ApplicationErrorType.NOT_FOUND) => ApplicationResult.Failure(new(code, message, type));
     private static ApplicationResult<T> NotFound<T>() => Bad<T>("album_not_found", "The album was not found.", ApplicationErrorType.NOT_FOUND);
