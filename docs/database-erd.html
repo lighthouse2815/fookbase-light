@@ -75,6 +75,9 @@
     .close { border: 0; background: #f3f6f3; width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; font-size: 20px; color: #67766b; }
     .detail-body { padding: 22px 24px 30px; font-size: 12px; }
     .detail-body h3 { margin: 24px 0 10px; font-size: 12px; font-weight: 700; }
+    .detail-body .table-purpose { margin-bottom: 16px; }
+    .detail-body .table-purpose h3 { margin-top: 0; }
+    .detail-body .table-purpose p { margin: 0; }
     .detail-body .table-note { margin: 0; padding: 12px; border-radius: 7px; background: #f1f6ef; color: #567149; }
     .detail-body ul { padding-left: 18px; margin: 0; }
     .detail-body li { margin: 7px 0; overflow-wrap: anywhere; }
@@ -173,6 +176,10 @@
       <button class="close" type="button" data-close="table-dialog" aria-label="Đóng chi tiết bảng">×</button>
     </div>
     <div class="detail-body">
+      <section class="table-purpose" aria-labelledby="purpose-heading">
+        <h3 id="purpose-heading">Mục đích của bảng</h3>
+        <p id="table-purpose"></p>
+      </section>
       <p id="table-note" class="table-note" hidden></p>
       <h3>Khóa chính</h3><code id="primary-key"></code>
       <h3 id="column-heading">Các cột</h3>
@@ -330,6 +337,7 @@
         }
       ],
       "label": "Phiên đăng nhập",
+      "purpose": "Lưu từng phiên đăng nhập của tài khoản, kèm thông tin trình duyệt hoặc thiết bị, lần hoạt động gần nhất và thời hạn phiên. Dùng để xem các phiên đang hoạt động và đăng xuất một phiên hoặc các phiên khác của cùng tài khoản.",
       "module": "identity",
       "note": ""
     },
@@ -435,6 +443,7 @@
         }
       ],
       "label": "Vé đăng nhập bên ngoài",
+      "purpose": "Lưu mã hoàn tất dùng một lần sau khi xác thực với nhà cung cấp bên ngoài, hiện là Google. Client dùng mã này để nhận phiên đăng nhập hoặc xác nhận liên kết danh tính Google với tài khoản có sẵn; bảng theo dõi thời hạn và việc mã đã được sử dụng.",
       "module": "identity",
       "note": ""
     },
@@ -534,6 +543,7 @@
         }
       ],
       "label": "OTP đặt lại mật khẩu",
+      "purpose": "Lưu yêu cầu xác minh bằng OTP để đặt lại mật khẩu qua số điện thoại. Bảng giữ mã OTP đã băm, thời hạn, số lần nhập sai và giới hạn gửi lại để kiểm soát quá trình xác minh trước khi đổi mật khẩu.",
       "module": "identity",
       "note": "UserId có unique index: mỗi tài khoản có tối đa một dòng OTP trong bảng này."
     },
@@ -654,6 +664,7 @@
         }
       ],
       "label": "Token làm mới và chuỗi thay thế",
+      "purpose": "Lưu mã băm của refresh token để cấp access token mới khi người dùng tiếp tục sử dụng ứng dụng. Mỗi token gắn với tài khoản và phiên đăng nhập; trạng thái thu hồi cùng token thay thế giúp kiểm soát vòng đời token và xử lý việc dùng lại token cũ.",
       "module": "identity",
       "note": "ReplacedByTokenId nullable, tham chiếu lại RefreshTokens.Id. Đây không phải quan hệ 1–1 vì cột không có unique index."
     },
@@ -774,6 +785,7 @@
       ],
       "relations": [],
       "label": "Xác minh đăng ký trước khi tạo tài khoản",
+      "purpose": "Lưu tạm thông tin đăng ký và mã OTP đã băm trong lúc xác minh email hoặc số điện thoại. Tài khoản chỉ được tạo sau khi xác minh thành công; bảng đồng thời theo dõi thời hạn, số lần nhập sai và giới hạn gửi lại mã.",
       "module": "identity",
       "note": "Bảng độc lập: chưa có UserId hoặc FK. Lưu thông tin xác minh trước khi tài khoản được tạo."
     },
@@ -849,6 +861,7 @@
         }
       ],
       "label": "Thử thách đăng nhập hai bước",
+      "purpose": "Lưu bước xác minh còn chờ khi tài khoản bật xác thực hai yếu tố. Sau khi mật khẩu hoặc danh tính bên ngoài hợp lệ, người dùng phải nhập mã authenticator hoặc mã khôi phục để hoàn tất đăng nhập và được cấp phiên.",
       "module": "identity",
       "note": ""
     },
@@ -991,6 +1004,7 @@
       ],
       "relations": [],
       "label": "Tài khoản trung tâm",
+      "purpose": "Lưu tài khoản và dữ liệu xác thực do ASP.NET Core Identity quản lý: tên đăng nhập, email, số điện thoại, mật khẩu đã băm, trạng thái xác minh, khóa tài khoản và xác thực hai yếu tố. Đây là định danh người dùng chung để các module liên kết dữ liệu qua UserId.",
       "module": "identity",
       "note": ""
     },
@@ -1048,6 +1062,7 @@
       "indexes": [],
       "relations": [],
       "label": "Quyền riêng tư",
+      "purpose": "Lưu lựa chọn quyền riêng tư của từng người dùng: mức hiển thị mặc định của bài viết, ai được gửi lời mời kết bạn và ai được xem danh sách bạn bè hoặc theo dõi. Các chức năng liên quan đọc những thiết lập này để áp dụng lựa chọn của người dùng.",
       "module": "users",
       "note": "UserId là PK. Hiện chưa có FK tới AspNetUsers trong EF model; service liên kết theo UserId. Đường nét đứt biểu diễn liên kết nghiệp vụ."
     },
@@ -1219,6 +1234,7 @@
         }
       ],
       "label": "Hồ sơ công khai",
+      "purpose": "Lưu thông tin hồ sơ hiển thị của người dùng như tên hiển thị, giới thiệu, ngày sinh, nơi ở, công việc và học vấn. AvatarMediaId và CoverMediaId liên kết ảnh đại diện, ảnh bìa với MediaAssets; dữ liệu này dùng để hiển thị và cập nhật trang cá nhân.",
       "module": "users",
       "note": "UserId vừa là PK vừa là FK: mỗi tài khoản có tối đa một hồ sơ. AvatarMediaId và CoverMediaId nullable, tham chiếu module Media."
     },
@@ -1267,6 +1283,7 @@
       ],
       "relations": [],
       "label": "Vai trò",
+      "purpose": "Lưu danh sách vai trò do ASP.NET Core Identity quản lý để tổ chức phân quyền theo nhóm. Tài khoản được gán vào các vai trò thông qua bảng AspNetUserRoles.",
       "module": "identity",
       "note": ""
     },
@@ -1323,6 +1340,7 @@
         }
       ],
       "label": "Claim của vai trò",
+      "purpose": "Bảng chuẩn của ASP.NET Core Identity để lưu claim gắn với một vai trò. Mỗi claim là một cặp loại và giá trị, dùng để biểu diễn thông tin hoặc quyền chung của vai trò khi áp dụng cơ chế phân quyền theo claim.",
       "module": "identity",
       "note": ""
     },
@@ -1379,6 +1397,7 @@
         }
       ],
       "label": "Claim của tài khoản",
+      "purpose": "Bảng chuẩn của ASP.NET Core Identity để lưu claim gắn trực tiếp với từng tài khoản. Mỗi claim là một cặp loại và giá trị, cho phép biểu diễn thông tin hoặc quyền riêng của người dùng ngoài các vai trò được gán.",
       "module": "identity",
       "note": ""
     },
@@ -1438,6 +1457,7 @@
         }
       ],
       "label": "Danh tính đăng nhập bên ngoài",
+      "purpose": "Liên kết tài khoản nội bộ với danh tính tại nhà cung cấp đăng nhập bên ngoài, hiện là Google. Cặp LoginProvider và ProviderKey giúp tìm đúng tài khoản khi người dùng đăng nhập lại qua nhà cung cấp đó.",
       "module": "identity",
       "note": ""
     },
@@ -1492,6 +1512,7 @@
         }
       ],
       "label": "Gán vai trò cho tài khoản",
+      "purpose": "Lưu việc gán vai trò cho từng tài khoản, nối AspNetUsers với AspNetRoles theo quan hệ nhiều–nhiều. Identity đọc các vai trò được gán khi đăng nhập để đưa chúng vào thông tin xác thực phục vụ phân quyền.",
       "module": "identity",
       "note": "PK ghép (UserId, RoleId) triển khai quan hệ nhiều–nhiều giữa tài khoản và vai trò."
     },
@@ -1546,12 +1567,14 @@
         }
       ],
       "label": "Token do Identity quản lý",
+      "purpose": "Lưu token và dữ liệu bảo mật mà ASP.NET Core Identity quản lý cho từng tài khoản, theo nhà cung cấp và tên token. Luồng xác thực hai yếu tố dùng cơ chế này để lưu khóa authenticator và mã khôi phục.",
       "module": "identity",
       "note": ""
     },
     "MediaAssets": {
       "name": "MediaAssets",
       "label": "Tài nguyên ảnh / video",
+      "purpose": "Lưu thông tin quản lý ảnh và video được tải lên: chủ sở hữu, khóa file trên hệ thống lưu trữ, loại và kích thước file, trạng thái tải lên hoặc xử lý. UserProfiles tham chiếu bảng này để lấy ảnh đại diện và ảnh bìa; nội dung file được lưu qua dịch vụ lưu trữ của module Media.",
       "module": "media",
       "reference": true,
       "note": "Bảng tham chiếu từ module Media. Hiển thị đầy đủ cột trong EF model. AvatarMediaId và CoverMediaId của UserProfiles đều nullable.",
@@ -1792,6 +1815,7 @@
       const owner = catalog.modules.find(module => module.id === table.module);
       document.getElementById('table-name').textContent = name;
       document.getElementById('table-label').textContent = table.label;
+      document.getElementById('table-purpose').textContent = table.purpose;
       document.getElementById('table-module').textContent = (owner?.name || table.module) + (table.module !== activeModule.id ? ' · bảng tham chiếu' : ' · bảng trong module');
       document.getElementById('table-note').textContent = table.note;
       document.getElementById('table-note').hidden = !table.note;
