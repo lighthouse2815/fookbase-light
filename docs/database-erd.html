@@ -550,6 +550,37 @@
         "source": "flowchart LR\n    Events[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Events</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='CreatedByUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CreatedByUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='CoverMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CoverMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Name'><td class='identity-keys' /><td><code class='' title=''>Name</code></td><td class='column-type'>varchar(160)</td></tr><tr data-column='Description'><td class='identity-keys' /><td><code class='' title=''>Description</code></td><td class='column-type'>varchar(10000)?</td></tr><tr data-column='HostType'><td class='identity-keys' /><td><code class='' title=''>HostType</code></td><td class='column-type'>integer</td></tr><tr data-column='HostId'><td class='identity-keys' /><td><code class='' title=''>HostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='LocationType'><td class='identity-keys' /><td><code class='' title=''>LocationType</code></td><td class='column-type'>integer</td></tr><tr data-column='LocationName'><td class='identity-keys' /><td><code class='' title=''>LocationName</code></td><td class='column-type'>text?</td></tr><tr data-column='Address'><td class='identity-keys' /><td><code class='' title=''>Address</code></td><td class='column-type'>text?</td></tr><tr data-column='OnlineUrl'><td class='identity-keys' /><td><code class='' title=''>OnlineUrl</code></td><td class='column-type'>text?</td></tr><tr data-column='StartsAtUtc'><td class='identity-keys' /><td><code class='' title=''>StartsAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='EndsAtUtc'><td class='identity-keys' /><td><code class='' title=''>EndsAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    EventParticipants[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>EventParticipants</th></tr></thead><tbody><tr data-column='EventId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>EventId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    EventInvitations[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>EventInvitations</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='EventId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>EventId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviteeUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviteeUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    EventCoverMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>EventCoverMediaReferences</th></tr></thead><tbody><tr data-column='EventId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>EventId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"CreatedByUserId · 1 → 0..N\"| Events\n    MediaAssets -->|\"CoverMediaId · 0..1 → 0..N\"| Events\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| EventParticipants\n    Events -->|\"EventId · 1 → 0..N\"| EventParticipants\n    AspNetUsers -->|\"InviteeUserId · 1 → 0..N\"| EventInvitations\n    AspNetUsers -->|\"InviterUserId · 1 → 0..N\"| EventInvitations\n    Events -->|\"EventId · 1 → 0..N\"| EventInvitations\n    Events -->|\"EventId · 1 → 0..1\"| EventCoverMediaReferences\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| EventCoverMediaReferences",
         "note": "4 bảng Events, 2 bảng tham chiếu, 69 cột và 9 FK. HostId và Posts.ContainerId chỉ là liên kết nghiệp vụ. EventCoverMediaReferences dùng PK chung (1 → 0..1); CoverMediaId nullable. Index lời mời PENDING không UNIQUE."
       }
+    },
+    {
+      "id": "messages",
+      "name": "Messages",
+      "description": "Chat trực tiếp/nhóm, thành viên, lịch sử, reply, reaction, media, trạng thái đọc và presence.",
+      "tables": [
+        "Conversations",
+        "ConversationParticipants",
+        "ConversationReadCursors",
+        "Messages",
+        "MessageAttachments",
+        "MessageReactions",
+        "MessageNotifications"
+      ],
+      "diagram": {
+        "template": "overview-messages",
+        "tables": [
+          "Conversations",
+          "ConversationParticipants",
+          "ConversationReadCursors",
+          "Messages",
+          "MessageAttachments",
+          "MessageReactions",
+          "MessageNotifications",
+          "AspNetUsers",
+          "MediaAssets",
+          "Stories"
+        ],
+        "source": "flowchart LR\n    Conversations[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Conversations</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId1'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>UserId1</code></td><td class='column-type'>uuid?</td></tr><tr data-column='UserId2'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>UserId2</code></td><td class='column-type'>uuid?</td></tr><tr data-column='PhotoMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>PhotoMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='Title'><td class='identity-keys' /><td><code class='' title=''>Title</code></td><td class='column-type'>varchar(120)?</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='LastMessageAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastMessageAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    ConversationParticipants[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>ConversationParticipants</th></tr></thead><tbody><tr data-column='ConversationId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>ConversationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='LastReadMessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>LastReadMessageId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='LastDeliveredMessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>LastDeliveredMessageId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Role'><td class='identity-keys' /><td><code class='' title=''>Role</code></td><td class='column-type'>integer</td></tr><tr data-column='JoinedAtUtc'><td class='identity-keys' /><td><code class='' title=''>JoinedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='LeftAtUtc'><td class='identity-keys' /><td><code class='' title=''>LeftAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='LastReadMessageCreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastReadMessageCreatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='LastReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='MutedUntilUtc'><td class='identity-keys' /><td><code class='' title=''>MutedUntilUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ArchivedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ArchivedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Nickname'><td class='identity-keys' /><td><code class='' title=''>Nickname</code></td><td class='column-type'>varchar(80)?</td></tr></tbody></table>\"]\n    ConversationReadCursors[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>ConversationReadCursors</th></tr></thead><tbody><tr data-column='ConversationId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>ConversationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='LastReadMessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>LastReadMessageId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='LastReadMessageCreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastReadMessageCreatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='LastReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    Messages[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>Messages</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ConversationId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ConversationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SenderUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>SenderUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReplyToMessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReplyToMessageId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='StoryId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>StoryId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='Content'><td class='identity-keys' /><td><code class='' title=''>Content</code></td><td class='column-type'>varchar(5000)?</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='EditedAtUtc'><td class='identity-keys' /><td><code class='' title=''>EditedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>ReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    MessageAttachments[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>MessageAttachments</th></tr></thead><tbody><tr data-column='MessageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MessageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    MessageReactions[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>MessageReactions</th></tr></thead><tbody><tr data-column='MessageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MessageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    MessageNotifications[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>MessageNotifications</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='RecipientUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>RecipientUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ConversationId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ConversationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MessageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>ReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    Stories[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>Stories</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Caption'><td class='identity-keys' /><td><code class='' title=''>Caption</code></td><td class='column-type'>varchar(2200)?</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>ExpiresAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"UserId1 · 0..1 → 0..N\"| Conversations\n    AspNetUsers -->|\"UserId2 · 0..1 → 0..N\"| Conversations\n    MediaAssets -->|\"PhotoMediaId · 0..1 → 0..N\"| Conversations\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| ConversationParticipants\n    Conversations -->|\"ConversationId · 1 → 0..N\"| ConversationParticipants\n    Messages -->|\"LastDeliveredMessageId · 0..1 → 0..N\"| ConversationParticipants\n    Messages -->|\"LastReadMessageId · 0..1 → 0..N\"| ConversationParticipants\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| ConversationReadCursors\n    Conversations -->|\"ConversationId · 1 → 0..N\"| ConversationReadCursors\n    Messages -->|\"LastReadMessageId · 0..1 → 0..N\"| ConversationReadCursors\n    AspNetUsers -->|\"SenderUserId · 1 → 0..N\"| Messages\n    Conversations -->|\"ConversationId · 1 → 0..N\"| Messages\n    Messages -->|\"ReplyToMessageId · 0..1 → 0..N\"| Messages\n    Stories -->|\"StoryId · 0..1 → 0..N\"| Messages\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| MessageAttachments\n    Messages -->|\"MessageId · 1 → 0..N\"| MessageAttachments\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| MessageReactions\n    Messages -->|\"MessageId · 1 → 0..N\"| MessageReactions\n    AspNetUsers -->|\"RecipientUserId · 1 → 0..N\"| MessageNotifications\n    Conversations -->|\"ConversationId · 1 → 0..N\"| MessageNotifications\n    Messages -->|\"MessageId · 1 → 0..N\"| MessageNotifications",
+        "note": "7 bảng Messages, 3 bảng tham chiếu, 95 cột và 21 FK. Cặp direct, ảnh, reply, story và cursor nullable được ghi rõ. ReplyToMessageId tự tham chiếu Messages; cursor trỏ Messages bằng FK RESTRICT. Mỗi bảng principal/tham chiếu chỉ xuất hiện một lần."
+      }
     }
   ],
   "tables": {
@@ -5756,6 +5787,769 @@
       "purpose": "Bảo vệ cover đang dùng và đồng bộ với Events.CoverMediaId.",
       "module": "events",
       "note": "EventId là PK/FK CASCADE: một event có 0..1 reference. MediaId FK RESTRICT không unique. Xóa mềm/gỡ cover bỏ hàng reference; không xóa object ảnh."
+    },
+    "Conversations": {
+      "name": "Conversations",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "UserId1",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId2",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Type",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Title",
+          "type": "character varying(120)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "PhotoMediaId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "LastMessageAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "LastMessageAtUtc",
+            "Id"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "PhotoMediaId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "UserId1",
+            "UserId2"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "UserId2"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId1"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId2"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "PhotoMediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Hội thoại",
+      "purpose": "Thông tin DIRECT/GROUP, cặp direct, ảnh và thời gian tin cuối.",
+      "module": "messages",
+      "note": "DIRECT=0, GROUP=1; UserId1/UserId2 là tên cột của User1Id/User2Id, nullable FK RESTRICT, UNIQUE cặp direct. PhotoMediaId nullable FK RESTRICT; không có cột xóa mềm conversation."
+    },
+    "ConversationParticipants": {
+      "name": "ConversationParticipants",
+      "columns": [
+        {
+          "name": "ConversationId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Role",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "JoinedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "LeftAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "LastReadMessageId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "LastReadMessageCreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "LastReadAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "LastDeliveredMessageId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "MutedUntilUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "ArchivedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "Nickname",
+          "type": "character varying(80)",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "ConversationId",
+        "UserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "ConversationId",
+            "UserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "LastDeliveredMessageId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "LastReadMessageId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "UserId",
+            "ConversationId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Conversations",
+          "fields": [
+            "ConversationId"
+          ],
+          "delete": "Cascade"
+        },
+        {
+          "target": "Messages",
+          "fields": [
+            "LastDeliveredMessageId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Messages",
+          "fields": [
+            "LastReadMessageId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Thành viên hội thoại",
+      "purpose": "Vai trò, active/leave, archive/mute/nickname và cursor theo mỗi người.",
+      "module": "messages",
+      "note": "PK (ConversationId, UserId); OWNER=0, ADMIN=1, MEMBER=2. Conversation CASCADE, User/LastReadMessage/LastDeliveredMessage RESTRICT. LeftAtUtc null là active; xóa/rời không xóa hàng. Delivered ghi trước phát realtime, không phải ACK."
+    },
+    "ConversationReadCursors": {
+      "name": "ConversationReadCursors",
+      "columns": [
+        {
+          "name": "ConversationId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "LastReadMessageId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "LastReadMessageCreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "LastReadAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "ConversationId",
+        "UserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "LastReadMessageId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "UserId",
+            "ConversationId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Conversations",
+          "fields": [
+            "ConversationId"
+          ],
+          "delete": "Cascade"
+        },
+        {
+          "target": "Messages",
+          "fields": [
+            "LastReadMessageId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Cursor đọc direct tương thích",
+      "purpose": "Projection trạng thái đọc dành cho client direct cũ.",
+      "module": "messages",
+      "note": "PK (ConversationId, UserId); Conversation CASCADE; User và LastReadMessageId RESTRICT. Chỉ advance, không lùi. Group dùng cursor trên ConversationParticipants."
+    },
+    "Messages": {
+      "name": "Messages",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "ConversationId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "SenderUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Type",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Content",
+          "type": "character varying(5000)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "ReplyToMessageId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "StoryId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "EditedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "DeletedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "ReadAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "ConversationId",
+            "CreatedAtUtc",
+            "Id"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "ReplyToMessageId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "SenderUserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "StoryId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "SenderUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Conversations",
+          "fields": [
+            "ConversationId"
+          ],
+          "delete": "Cascade"
+        },
+        {
+          "target": "Messages",
+          "fields": [
+            "ReplyToMessageId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Stories",
+          "fields": [
+            "StoryId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Tin nhắn",
+      "purpose": "TEXT/MEDIA, reply, story tham chiếu và thời gian đọc/sửa/xóa.",
+      "module": "messages",
+      "note": "TEXT=0/MEDIA=1; ReplyToMessageId nullable FK tự tham chiếu RESTRICT; StoryId nullable FK Stories RESTRICT. Conversation CASCADE, sender RESTRICT. Xóa mềm đặt Content=null và giữ tombstone."
+    },
+    "MessageAttachments": {
+      "name": "MessageAttachments",
+      "columns": [
+        {
+          "name": "MessageId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "SortOrder",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "MessageId",
+        "MediaId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "MessageId",
+            "SortOrder"
+          ],
+          "unique": true
+        }
+      ],
+      "relations": [
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Messages",
+          "fields": [
+            "MessageId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Đính kèm tin nhắn",
+      "purpose": "Media và thứ tự đính kèm.",
+      "module": "messages",
+      "note": "PK (MessageId, MediaId); UNIQUE (MessageId, SortOrder). Message CASCADE, Media RESTRICT. Tin xóa thì hàng attachment xóa vật lý; không dùng MediaReferences của Posts."
+    },
+    "MessageReactions": {
+      "name": "MessageReactions",
+      "columns": [
+        {
+          "name": "MessageId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Type",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "UpdatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "MessageId",
+        "UserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MessageId",
+            "Type"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "UserId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Messages",
+          "fields": [
+            "MessageId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Cảm xúc tin nhắn",
+      "purpose": "Một reaction của mỗi tài khoản trên tin.",
+      "module": "messages",
+      "note": "PK (MessageId, UserId); LIKE/LOVE/HAHA/WOW/SAD/ANGRY=0..5. Message CASCADE, User RESTRICT; tin xóa thì reaction xóa vật lý."
+    },
+    "MessageNotifications": {
+      "name": "MessageNotifications",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "RecipientUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "ConversationId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "MessageId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "ReadAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "ConversationId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "MessageId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "RecipientUserId",
+            "MessageId"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "RecipientUserId",
+            "ReadAtUtc",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "RecipientUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Conversations",
+          "fields": [
+            "ConversationId"
+          ],
+          "delete": "Cascade"
+        },
+        {
+          "target": "Messages",
+          "fields": [
+            "MessageId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Thông báo tin mới",
+      "purpose": "Tin chưa đọc của recipient trong conversation.",
+      "module": "messages",
+      "note": "UNIQUE (RecipientUserId, MessageId); recipient RESTRICT, conversation/message CASCADE. Mark read đồng bộ ReadAtUtc; tách bảng Notifications tổng quát."
     }
   }
 }
@@ -12359,6 +13153,877 @@
         "Services/EventAccessService.cs",
         "DTOs/Requests/CreateEventPostRequest.cs",
         "../Posts/Services/PostsService.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <template id="overview-messages"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-messages" width="2349.2" height="1638.0" viewBox="0 0 2349.2 1638.0" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Messages" data-layout="messages"><title>Messages · 7 bảng chính, 3 bảng tham chiếu và 21 FK</title><desc>Cặp direct, ảnh, reply, story và cursor nullable được ghi rõ. ReplyToMessageId tự tham chiếu Messages; cursor trỏ Messages bằng FK RESTRICT. Mỗi bảng principal/tham chiếu chỉ xuất hiện một lần.</desc><style>
+#svg-overview-messages { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-messages .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-messages .node .label { color: #233044; }
+#svg-overview-messages .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-messages .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-messages .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-messages .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-messages .identity-table code { font: inherit; }
+#svg-overview-messages .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-messages .identity-keys { text-align: center; }
+#svg-overview-messages .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-messages .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-messages .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-messages .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-messages .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-messages .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-messages .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-messages .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+</style><defs><marker id="messages-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="messages-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M410.14,542.81 C458.29,556.89 497,568.2 497,568.2 C497,568.2 564.88,568.2 564.88,568.2 C564.88,568.2 599.76,567.79 644.48,567.26" id="L_AspNetUsers_Conversations_UserId1" data-id="L_AspNetUsers_Conversations_UserId1" data-principal="AspNetUsers" data-dependent="Conversations" data-fields="UserId1" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>AspNetUsers (0..1) → Conversations (0..N) · UserId1 · Restrict</title></path><path d="M410.23,511.96 C484.28,521.19 569.66,531.8299999999999 644.43,541.14" id="L_AspNetUsers_Conversations_UserId2" data-id="L_AspNetUsers_Conversations_UserId2" data-principal="AspNetUsers" data-dependent="Conversations" data-fields="UserId2" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>AspNetUsers (0..1) → Conversations (0..N) · UserId2 · Restrict</title></path><path d="M410.32,971 C525.4200000000001,852.36 651.88,722 651.88,722 C651.88,722 671.26,705.46 697.45,683.12" id="L_MediaAssets_Conversations_PhotoMediaId" data-id="L_MediaAssets_Conversations_PhotoMediaId" data-principal="MediaAssets" data-dependent="Conversations" data-fields="PhotoMediaId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>MediaAssets (0..1) → Conversations (0..N) · PhotoMediaId · Restrict</title></path><path d="M375.17,710.29 C438.07,803.59 497,891 497,891 C497,891 651.88,1120 651.88,1120 C651.88,1120 1021.88,1120 1021.88,1120 C1021.88,1120 1852.2,1096 1852.2,1096 C1852.2,1096 1887.65,1071.93 1932.91,1041.2" id="L_AspNetUsers_ConversationParticipants_UserId" data-id="L_AspNetUsers_ConversationParticipants_UserId" data-principal="AspNetUsers" data-dependent="ConversationParticipants" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>AspNetUsers (1) → ConversationParticipants (0..N) · UserId · Restrict</title></path><path d="M1022.15,585.35 C1314.59,617.64 1852.2,677 1852.2,677 C1852.2,677 1887.94,707.99 1933.47,747.47" id="L_Conversations_ConversationParticipants_ConversationId" data-id="L_Conversations_ConversationParticipants_ConversationId" data-principal="Conversations" data-dependent="ConversationParticipants" data-fields="ConversationId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Conversations (1) → ConversationParticipants (0..N) · ConversationId · Cascade</title></path><path d="M1644.4,906.22 C1733.85,907.3 1841.26,908.6 1931.66,909.69" id="L_Messages_ConversationParticipants_LastDeliveredMessageId" data-id="L_Messages_ConversationParticipants_LastDeliveredMessageId" data-principal="Messages" data-dependent="ConversationParticipants" data-fields="LastDeliveredMessageId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Messages (0..1) → ConversationParticipants (0..N) · LastDeliveredMessageId · Restrict</title></path><path d="M1644.27,925.88 C1692.43,931.6 1731.14,936.2 1731.14,936.2 C1731.14,936.2 1852.2,936.2 1852.2,936.2 C1852.2,936.2 1887.08,933.09 1931.81,929.09" id="L_Messages_ConversationParticipants_LastReadMessageId" data-id="L_Messages_ConversationParticipants_LastReadMessageId" data-principal="Messages" data-dependent="ConversationParticipants" data-fields="LastReadMessageId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Messages (0..1) → ConversationParticipants (0..N) · LastReadMessageId · Restrict</title></path><path d="M410.32,460.44 C525.4200000000001,442.6 651.88,423 651.88,423 C651.88,423 1021.88,423 1021.88,423 C1021.88,423 1852.2,517 1852.2,517 C1852.2,517 1887.08,523.1800000000001 1931.81,531.1" id="L_AspNetUsers_ConversationReadCursors_UserId" data-id="L_AspNetUsers_ConversationReadCursors_UserId" data-principal="AspNetUsers" data-dependent="ConversationReadCursors" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>AspNetUsers (1) → ConversationReadCursors (0..N) · UserId · Restrict</title></path><path d="M1022.02,564.32 C1070.17,564.14 1108.88,564 1108.88,564 C1108.88,564 1852.2,564 1852.2,564 C1852.2,564 1887.08,564.13 1931.81,564.29" id="L_Conversations_ConversationReadCursors_ConversationId" data-id="L_Conversations_ConversationReadCursors_ConversationId" data-principal="Conversations" data-dependent="ConversationReadCursors" data-fields="ConversationId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Conversations (1) → ConversationReadCursors (0..N) · ConversationId · Cascade</title></path><path d="M1644.4,809.79 C1745.17,758.27 1868.73,695.1 1965.08,645.84" id="L_Messages_ConversationReadCursors_LastReadMessageId" data-id="L_Messages_ConversationReadCursors_LastReadMessageId" data-principal="Messages" data-dependent="ConversationReadCursors" data-fields="LastReadMessageId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Messages (0..1) → ConversationReadCursors (0..N) · LastReadMessageId · Restrict</title></path><path d="M410.32,589.06 C525.4200000000001,651.55 651.88,720.2 651.88,720.2 C651.88,720.2 1028.21,805.99 1266.66,860.35" id="L_AspNetUsers_Messages_SenderUserId" data-id="L_AspNetUsers_Messages_SenderUserId" data-principal="AspNetUsers" data-dependent="Messages" data-fields="SenderUserId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>AspNetUsers (1) → Messages (0..N) · SenderUserId · Restrict</title></path><path d="M1022.22,645.76 C1106.18,682.54 1187.14,718 1187.14,718 C1187.14,718 1222.59,742.33 1267.85,773.4" id="L_Conversations_Messages_ConversationId" data-id="L_Conversations_Messages_ConversationId" data-principal="Conversations" data-dependent="Messages" data-fields="ConversationId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Conversations (1) → Messages (0..N) · ConversationId · Cascade</title></path><path d="M1402.3,754.67 C1407.53,721.33 1426.47,697 1459.14,697 C1489.37,697 1507.86,717.86 1514.59,747.41" id="L_Messages_Messages_ReplyToMessageId" data-id="L_Messages_Messages_ReplyToMessageId" data-principal="Messages" data-dependent="Messages" data-fields="ReplyToMessageId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Messages (0..1) → Messages (0..N) · ReplyToMessageId · Restrict</title></path><path d="M1022.3,956 C1099.42,946.8 1189.04,936.1 1266.88,926.82" id="L_Stories_Messages_StoryId" data-id="L_Stories_Messages_StoryId" data-principal="Stories" data-dependent="Messages" data-fields="StoryId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Stories (0..1) → Messages (0..N) · StoryId · Restrict</title></path><path d="M410.14,1203.13 C458.29,1214.14 497,1223 497,1223 C497,1223 1108.88,1264.2 1108.88,1264.2 C1108.88,1264.2 1187.14,1264.2 1187.14,1264.2 C1187.14,1264.2 1852.2,1223 1852.2,1223 C1852.2,1223 1887.08,1220.81 1931.81,1218.01" id="L_MediaAssets_MessageAttachments_MediaId" data-id="L_MediaAssets_MessageAttachments_MediaId" data-principal="MediaAssets" data-dependent="MessageAttachments" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>MediaAssets (1) → MessageAttachments (0..N) · MediaId · Restrict</title></path><path d="M1644.4,987.92 C1757.53,1039.45 1899.39,1104.06 1999.23,1149.53" id="L_Messages_MessageAttachments_MessageId" data-id="L_Messages_MessageAttachments_MessageId" data-principal="Messages" data-dependent="MessageAttachments" data-fields="MessageId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Messages (1) → MessageAttachments (0..N) · MessageId · Cascade</title></path><path d="M410.14,427.17 C458.29,411 497,398 497,398 C497,398 1274.14,202 1274.14,202 C1274.14,202 1644.14,202 1644.14,202 C1644.14,202 1798.41,250.63 1931.87,292.69" id="L_AspNetUsers_MessageReactions_UserId" data-id="L_AspNetUsers_MessageReactions_UserId" data-principal="AspNetUsers" data-dependent="MessageReactions" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>AspNetUsers (1) → MessageReactions (0..N) · UserId · Restrict</title></path><path d="M1620.99,754.58 C1760.16,625.31 1939.2,459 1939.2,459 C1939.2,459 1957.47,448.48 1982.49,434.06" id="L_Messages_MessageReactions_MessageId" data-id="L_Messages_MessageReactions_MessageId" data-principal="Messages" data-dependent="MessageReactions" data-fields="MessageId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Messages (1) → MessageReactions (0..N) · MessageId · Cascade</title></path><path d="M410.14,391.84 C458.29,366.42 497,346 497,346 C497,346 651.88,268 651.88,268 C651.88,268 1274.14,158 1274.14,158 C1274.14,158 1680.9,144.11 1931.34,135.55" id="L_AspNetUsers_MessageNotifications_RecipientUserId" data-id="L_AspNetUsers_MessageNotifications_RecipientUserId" data-principal="AspNetUsers" data-dependent="MessageNotifications" data-fields="RecipientUserId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>AspNetUsers (1) → MessageNotifications (0..N) · RecipientUserId · Restrict</title></path><path d="M972.59,451.67 C1040.6,394.45 1108.88,337 1108.88,337 C1108.88,337 1637.61,228.58 1931.59,168.29" id="L_Conversations_MessageNotifications_ConversationId" data-id="L_Conversations_MessageNotifications_ConversationId" data-principal="Conversations" data-dependent="MessageNotifications" data-fields="ConversationId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Conversations (1) → MessageNotifications (0..N) · ConversationId · Cascade</title></path><path d="M1582.87,754.59 C1616.62,713.5 1644.14,680 1644.14,680 C1644.14,680 1731.14,517 1731.14,517 C1731.14,517 1939.2,247 1939.2,247 C1939.2,247 1955.11,236.8 1977.57,222.39" id="L_Messages_MessageNotifications_MessageId" data-id="L_Messages_MessageNotifications_MessageId" data-principal="Messages" data-dependent="MessageNotifications" data-fields="MessageId" data-kind="fk" class="relation" marker-start="url(#messages-one)" marker-end="url(#messages-many)"><title>Messages (1) → MessageNotifications (0..N) · MessageId · Cascade</title></path></g><g class="edgeLabels"><text x="530.94" y="564.9" text-anchor="middle" class="relation-label">UserId1</text><text x="629.6795999999999" y="580.01" text-anchor="middle" class="cardinality">0..N</text><text x="432.1996" y="542.78" text-anchor="middle" class="cardinality">0..1</text><text x="530.94" y="521.4200000000001" text-anchor="middle" class="relation-label">UserId2</text><text x="629.6795999999999" y="552.1" text-anchor="middle" class="cardinality">0..N</text><text x="432.1996" y="508.5" text-anchor="middle" class="cardinality">0..1</text><text x="530.94" y="813.52" text-anchor="middle" class="relation-label">PhotoMediaId</text><text x="694" y="701.58" text-anchor="middle" class="cardinality">0..N</text><text x="432.1996" y="953.52" text-anchor="middle" class="cardinality">0..1</text><text x="1148.01" y="1111.97" text-anchor="middle" class="relation-label">UserId</text><text x="1916.9995999999999" y="1059.21" text-anchor="middle" class="cardinality">0..N</text><text x="394.03" y="729.9996" text-anchor="middle" class="cardinality">1</text><text x="1459.14" y="610.25" text-anchor="middle" class="relation-label">ConversationId</text><text x="1916.9995999999999" y="749.59" text-anchor="middle" class="cardinality">0..N</text><text x="1042.99" y="581.59" text-anchor="middle" class="cardinality">1</text><text x="1791.67" y="903.98" text-anchor="middle" class="relation-label">LastDeliveredMessageId</text><text x="1916.9995999999999" y="922.13" text-anchor="middle" class="cardinality">0..N</text><text x="1666.2996" y="900.47" text-anchor="middle" class="cardinality">0..1</text><text x="1791.67" y="932.9" text-anchor="middle" class="relation-label">LastReadMessageId</text><text x="1916.9995999999999" y="942.78" text-anchor="middle" class="cardinality">0..N</text><text x="1666.2996" y="922.3" text-anchor="middle" class="cardinality">0..1</text><text x="1148.01" y="430.18" text-anchor="middle" class="relation-label">UserId</text><text x="1916.9995999999999" y="541.36" text-anchor="middle" class="cardinality">0..N</text><text x="428.6" y="451.49" text-anchor="middle" class="cardinality">1</text><text x="1459.14" y="560.7" text-anchor="middle" class="relation-label">ConversationId</text><text x="1916.9995999999999" y="576.84" text-anchor="middle" class="cardinality">0..N</text><text x="1041.92" y="558.25" text-anchor="middle" class="cardinality">1</text><text x="1791.67" y="700.84" text-anchor="middle" class="relation-label">LastReadMessageId</text><text x="1958.16" y="663.12" text-anchor="middle" class="cardinality">0..N</text><text x="1666.2996" y="795.74" text-anchor="middle" class="cardinality">0..1</text><text x="836.88" y="716.9" text-anchor="middle" class="relation-label">SenderUserId</text><text x="1251.8996" y="869.88" text-anchor="middle" class="cardinality">0..N</text><text x="432.28" y="593.7" text-anchor="middle" class="cardinality">1</text><text x="1148.01" y="681.65" text-anchor="middle" class="relation-label">ConversationId</text><text x="1251.8996" y="777.3" text-anchor="middle" class="cardinality">0..N</text><text x="1044.22" y="648.54" text-anchor="middle" class="cardinality">1</text><text x="1459.14" y="693.7" text-anchor="middle" class="relation-label">ReplyToMessageId</text><text x="1503.1" y="740.14" text-anchor="middle" class="cardinality">0..N</text><text x="1397.17" y="736.58" text-anchor="middle" class="cardinality">0..1</text><text x="1148.01" y="933.27" text-anchor="middle" class="relation-label">StoryId</text><text x="1251.8996" y="940.88" text-anchor="middle" class="cardinality">0..N</text><text x="1044.0796" y="947.7" text-anchor="middle" class="cardinality">0..1</text><text x="1148.01" y="1260.9" text-anchor="middle" class="relation-label">MediaId</text><text x="1916.9995999999999" y="1231.38" text-anchor="middle" class="cardinality">0..N</text><text x="431.65" y="1201.81" text-anchor="middle" class="cardinality">1</text><text x="1791.67" y="1024.65" text-anchor="middle" class="relation-label">MessageId</text><text x="1984.04" y="1146.0008" text-anchor="middle" class="cardinality">0..N</text><text x="1666.4" y="991.03" text-anchor="middle" class="cardinality">1</text><text x="1148.01" y="222.06" text-anchor="middle" class="relation-label">UserId</text><text x="1916.9995999999999" y="301.12" text-anchor="middle" class="cardinality">0..N</text><text x="426.08" y="415.31" text-anchor="middle" class="cardinality">1</text><text x="1791.67" y="540.8299999999999" text-anchor="middle" class="relation-label">MessageId</text><text x="1976.36" y="451.62" text-anchor="middle" class="cardinality">0..N</text><text x="1629.27" y="737.5" text-anchor="middle" class="cardinality">1</text><text x="1148.01" y="170.48" text-anchor="middle" class="relation-label">RecipientUserId</text><text x="1916.9995999999999" y="148.57" text-anchor="middle" class="cardinality">0..N</text><text x="423.43" y="377.61" text-anchor="middle" class="cardinality">1</text><text x="1459.14" y="226.23" text-anchor="middle" class="relation-label">ConversationId</text><text x="1916.9995999999999" y="183.2" text-anchor="middle" class="cardinality">0..N</text><text x="981.86" y="435.02" text-anchor="middle" class="cardinality">1</text><text x="1791.67" y="362.53" text-anchor="middle" class="relation-label">MessageId</text><text x="1971.98" y="240.33" text-anchor="middle" class="cardinality">0..N</text><text x="1588.34" y="736.58" text-anchor="middle" class="cardinality">1</text></g><g class="nodes"><g class="node default" data-table="Conversations" role="button" tabindex="0" aria-label="Xem chi tiết bảng Conversations" transform="translate(836.8796, 564.9996)"><rect class="basic label-container" x="-185.0" y="-113.0" width="370" height="226" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-185.0, -113.0)"><foreignObject width="370" height="226"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:226px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">Conversations</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId1"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">UserId1</code></td><td class="column-type">uuid?</td></tr><tr data-column="UserId2"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">UserId2</code></td><td class="column-type">uuid?</td></tr><tr data-column="PhotoMediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">PhotoMediaId</code></td><td class="column-type">uuid?</td></tr><tr data-column="Type"><td class="identity-keys" /><td><code class="" title="">Type</code></td><td class="column-type">integer</td></tr><tr data-column="Title"><td class="identity-keys" /><td><code class="" title="">Title</code></td><td class="column-type">varchar(120)?</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="LastMessageAtUtc"><td class="identity-keys" /><td><code class="" title="">LastMessageAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="ConversationParticipants" role="button" tabindex="0" aria-label="Xem chi tiết bảng ConversationParticipants" transform="translate(2124.1996, 912.0008)"><rect class="basic label-container" x="-185.0" y="-161.0" width="370" height="322" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-185.0, -161.0)"><foreignObject width="370" height="322"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:322px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">ConversationParticipants</th></tr></thead><tbody><tr data-column="ConversationId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">ConversationId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="LastReadMessageId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">LastReadMessageId</code></td><td class="column-type">uuid?</td></tr><tr data-column="LastDeliveredMessageId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">LastDeliveredMessageId</code></td><td class="column-type">uuid?</td></tr><tr data-column="Role"><td class="identity-keys" /><td><code class="" title="">Role</code></td><td class="column-type">integer</td></tr><tr data-column="JoinedAtUtc"><td class="identity-keys" /><td><code class="" title="">JoinedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="LeftAtUtc"><td class="identity-keys" /><td><code class="" title="">LeftAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="LastReadMessageCreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">LastReadMessageCreatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="LastReadAtUtc"><td class="identity-keys" /><td><code class="" title="">LastReadAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="MutedUntilUtc"><td class="identity-keys" /><td><code class="" title="">MutedUntilUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ArchivedAtUtc"><td class="identity-keys" /><td><code class="" title="">ArchivedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Nickname"><td class="identity-keys" /><td><code class="" title="">Nickname</code></td><td class="column-type">varchar(80)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="ConversationReadCursors" role="button" tabindex="0" aria-label="Xem chi tiết bảng ConversationReadCursors" transform="translate(2124.1996, 564.9996)"><rect class="basic label-container" x="-185.0" y="-77.0" width="370" height="154" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-185.0, -77.0)"><foreignObject width="370" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">ConversationReadCursors</th></tr></thead><tbody><tr data-column="ConversationId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">ConversationId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="LastReadMessageId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">LastReadMessageId</code></td><td class="column-type">uuid?</td></tr><tr data-column="LastReadMessageCreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">LastReadMessageCreatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="LastReadAtUtc"><td class="identity-keys" /><td><code class="" title="">LastReadAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Messages" role="button" tabindex="0" aria-label="Xem chi tiết bảng Messages" transform="translate(1459.0996, 903.9996)"><rect class="basic label-container" x="-185.0" y="-149.0" width="370" height="298" rx="5" ry="5" style="stroke:#ed5998" /><g class="label" transform="translate(-185.0, -149.0)"><foreignObject width="370" height="298"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:298px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fbd7e7;color:#182437">Messages</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ConversationId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ConversationId</code></td><td class="column-type">uuid</td></tr><tr data-column="SenderUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">SenderUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="ReplyToMessageId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ReplyToMessageId</code></td><td class="column-type">uuid?</td></tr><tr data-column="StoryId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">StoryId</code></td><td class="column-type">uuid?</td></tr><tr data-column="Type"><td class="identity-keys" /><td><code class="" title="">Type</code></td><td class="column-type">integer</td></tr><tr data-column="Content"><td class="identity-keys" /><td><code class="" title="">Content</code></td><td class="column-type">varchar(5000)?</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="EditedAtUtc"><td class="identity-keys" /><td><code class="" title="">EditedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ReadAtUtc"><td class="identity-keys" /><td><code class="" title="">ReadAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MessageAttachments" role="button" tabindex="0" aria-label="Xem chi tiết bảng MessageAttachments" transform="translate(2124.1996, 1206.0008)"><rect class="basic label-container" x="-185.0" y="-53.0" width="370" height="106" rx="5" ry="5" style="stroke:#e5a11b" /><g class="label" transform="translate(-185.0, -53.0)"><foreignObject width="370" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fff0c2;color:#182437">MessageAttachments</th></tr></thead><tbody><tr data-column="MessageId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">MessageId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="SortOrder"><td class="identity-keys" /><td><code class="" title="">SortOrder</code></td><td class="column-type">integer</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MessageReactions" role="button" tabindex="0" aria-label="Xem chi tiết bảng MessageReactions" transform="translate(2124.1996, 352.9996)"><rect class="basic label-container" x="-185.0" y="-77.0" width="370" height="154" rx="5" ry="5" style="stroke:#f15362" /><g class="label" transform="translate(-185.0, -77.0)"><foreignObject width="370" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#ffd3d8;color:#182437">MessageReactions</th></tr></thead><tbody><tr data-column="MessageId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">MessageId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Type"><td class="identity-keys" /><td><code class="" title="">Type</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MessageNotifications" role="button" tabindex="0" aria-label="Xem chi tiết bảng MessageNotifications" transform="translate(2124.1996, 129.0008)"><rect class="basic label-container" x="-185.0" y="-89.0" width="370" height="178" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-185.0, -89.0)"><foreignObject width="370" height="178"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:178px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">MessageNotifications</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="RecipientUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">RecipientUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="ConversationId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ConversationId</code></td><td class="column-type">uuid</td></tr><tr data-column="MessageId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MessageId</code></td><td class="column-type">uuid</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="ReadAtUtc"><td class="identity-keys" /><td><code class="" title="">ReadAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(224.99960000000002, 488.9996)"><rect class="basic label-container" x="-185.0" y="-221.0" width="370" height="442" rx="5" ry="5" style="stroke:#94a3b8" /><g class="label" transform="translate(-185.0, -221.0)"><foreignObject width="370" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e6edf4;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(224.99960000000002, 1160.9996)"><rect class="basic label-container" x="-185.0" y="-257.0" width="370" height="514" rx="5" ry="5" style="stroke:#94a3b8" /><g class="label" transform="translate(-185.0, -257.0)"><foreignObject width="370" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e6edf4;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Stories" role="button" tabindex="0" aria-label="Xem chi tiết bảng Stories" transform="translate(836.8796, 977.9996)"><rect class="basic label-container" x="-185.0" y="-113.0" width="370" height="226" rx="5" ry="5" style="stroke:#94a3b8" /><g class="label" transform="translate(-185.0, -113.0)"><foreignObject width="370" height="226"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:226px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e6edf4;color:#182437">Stories</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AuthorUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">AuthorUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="Caption"><td class="identity-keys" /><td><code class="" title="">Caption</code></td><td class="column-type">varchar(2200)?</td></tr><tr data-column="Privacy"><td class="identity-keys" /><td><code class="" title="">Privacy</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="ExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">ExpiresAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(40, 1473.0)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="messages-specification" type="application/json">
+{
+  "title": "Hội thoại, tin nhắn và realtime",
+  "purpose": "Chat trực tiếp/nhóm, thành viên, lịch sử, reply, reaction, media, trạng thái đọc và presence.",
+  "scope": "Đối chiếu 7 entity Messages, toàn bộ MessagesController, MessagesHub, MessagesService và MessagesPresenceService. API/hub yêu cầu đăng nhập; truy cập bằng membership active. Chat trực tiếp còn yêu cầu quan hệ bạn bè và không chặn hai chiều. Presence chỉ lưu trong bộ nhớ của một API instance.",
+  "usecasesTitle": "Hội thoại, tin nhắn và realtime",
+  "groups": [
+    {
+      "id": "messages-conversations",
+      "name": "Hội thoại và thiết lập",
+      "actor": "user",
+      "description": "Tạo, đọc và cập nhật chat; thiết lập archive/mute/nickname theo người dùng."
+    },
+    {
+      "id": "messages-participants",
+      "name": "Thành viên nhóm chat",
+      "actor": "user",
+      "description": "Thêm/gỡ, đổi vai trò, rời và chuyển owner."
+    },
+    {
+      "id": "messages-messages",
+      "name": "Tin nhắn và trạng thái đọc",
+      "actor": "user",
+      "description": "Gửi/đọc/tìm/sửa/xóa và đánh dấu đọc."
+    },
+    {
+      "id": "messages-reactions",
+      "name": "Cảm xúc tin nhắn",
+      "actor": "user",
+      "description": "Đặt/gỡ một reaction của mình cho mỗi tin."
+    },
+    {
+      "id": "messages-media",
+      "name": "Media và thông báo",
+      "actor": "user",
+      "description": "Lấy URL media được phép và thông báo tin nhắn chưa đọc."
+    },
+    {
+      "id": "messages-realtime",
+      "name": "SignalR và presence",
+      "actor": "user",
+      "description": "Typing, snapshot người online và thay đổi presence."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Đối chiếu 7 entity Messages, toàn bộ MessagesController, MessagesHub, MessagesService và MessagesPresenceService. API/hub yêu cầu đăng nhập; truy cập bằng membership active. Chat trực tiếp còn yêu cầu quan hệ bạn bè và không chặn hai chiều. Presence chỉ lưu trong bộ nhớ của một API instance."
+    }
+  ],
+  "rules": [
+    {
+      "text": "Controller và MessagesHub đều Authorize; actor lấy từ claim sub GUID. GetActiveConversationAccessAsync yêu cầu ConversationParticipants.LeftAtUtc=null; conversation thiếu trả 404 conversation_not_found, không còn active trả 403 conversation_access_denied.",
+      "source": "Controllers/MessagesController.cs"
+    },
+    {
+      "text": "ConversationType DIRECT=0/GROUP=1. DIRECT lưu cặp user chuẩn hóa theo GUID trong cột UserId1/UserId2, UNIQUE cặp này; hai FK nullable RESTRICT. GROUP dùng membership, Title tối đa 120 và PhotoMediaId nullable FK RESTRICT.",
+      "source": "Domain/Entities/Conversation.cs"
+    },
+    {
+      "text": "Direct chỉ bạn bè không chặn hai chiều: 403 messaging_requires_friendship/messaging_blocked. Tạo lại dùng conversation có sẵn; DbUpdateException tải lại conversation, chưa tìm được trả 409 conversation_creation_conflict.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "Tạo group: tên bắt buộc 1..120, danh sách 1..49 người khác khác rỗng/không trùng, không chứa actor; người nhận tồn tại. Tạo owner và member trong transaction. Giới hạn tổng group active 50; group không yêu cầu tất cả thành viên là bạn bè.",
+      "source": "DTOs/Requests/CreateGroupConversationRequest.cs"
+    },
+    {
+      "text": "Role OWNER=0/ADMIN=1/MEMBER=2. Owner/admin đổi tên/ảnh và thêm người; owner gỡ người không phải owner, admin chỉ gỡ member khác mình. Chỉ owner đổi role admin/member hoặc chuyển sở hữu; owner phải chuyển trước khi rời.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "PATCH conversation: archive, mute và nickname thuộc membership của người gọi; Title/Photo chỉ OWNER/ADMIN của GROUP. Null là không cập nhật; muốn gỡ ảnh dùng RemovePhoto. MutedUntilUtc null hiện không xóa mute; response IsMuted so sánh DateTimeOffset.UtcNow.",
+      "source": "DTOs/Requests/UpdateConversationRequest.cs"
+    },
+    {
+      "text": "Leave/remove là đặt LeftAtUtc; giữ membership và lịch sử. Thêm lại Rejoin với MEMBER, JoinedAtUtc mới, advance cursor tới tin mới nhất. Transfer ownership đổi actor thành ADMIN, đích active khác actor thành OWNER và lưu trong một SaveChanges; không có transaction explicit riêng.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "Tin TEXT=0/MEDIA=1. Nội dung trim tối đa 5000 ký tự hoặc ít nhất một media; MediaIds tối đa 10, GUID không rỗng và không trùng. ReplyToMessageId phải thuộc cùng conversation, đủ quyền nhìn người gửi. Media gửi phải READY chưa xóa, thuộc actor.",
+      "source": "DTOs/Requests/SendMessageRequest.cs"
+    },
+    {
+      "text": "Send tạo Message/Post-independent MessageAttachments, cập nhật LastMessageAtUtc và MessageNotifications của recipients active không bị chặn, SaveChanges rồi phát MessageReceived/MessageCreated và gọi push. Không có ClientMessageId/idempotency key; LastDeliveredMessageId được ghi trước realtime, chưa phải ACK thiết bị.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "History before mặc định limit=50, 1..100; conversations mặc định 20, 1..100, IncludeArchived=false. Cursor qua MessageCursorCodec. Query lấy thời gian/Id giảm dần, response history đảo thứ tự cũ→mới; NextCursor trỏ tin cũ nhất trong trang. Tin xóa mềm vẫn được trả dạng tombstone, tác giả bị chặn được lọc.",
+      "source": "DTOs/Requests/MessageHistoryRequest.cs"
+    },
+    {
+      "text": "Read cursor chỉ tiến theo CreatedAtUtc/Id, không lùi. LastReadMessageId bỏ trống chọn tin mới nhất được nhìn thấy; không có tin trả 404. Với DIRECT đồng bộ ConversationReadCursors và Messages.ReadAtUtc; đồng bộ MessageNotifications.ReadAtUtc và phát ReadCursorAdvanced/MessagesRead.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "ConversationParticipants PK (ConversationId, UserId), giữ các FK LastReadMessageId/LastDeliveredMessageId tới Messages RESTRICT. ConversationReadCursors là projection tương thích direct; không phải nguồn membership GROUP.",
+      "source": "Domain/Entities/ConversationParticipant.cs"
+    },
+    {
+      "text": "Sửa chỉ người gửi, chỉ TEXT chưa xóa, không có giới hạn thời gian sửa; tin không sửa được trả 409 message_cannot_be_edited. Xóa chỉ người gửi, đặt Content=null/DeletedAtUtc và xóa vật lý attachments/reactions; notification/cursor/tin reply vẫn giữ. Luồng sửa/xóa chỉ kiểm tra active membership và tác giả, không gọi validate quan hệ direct lại.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "Reaction LIKE/LOVE/HAHA/WOW/SAD/ANGRY=0..5; PK (MessageId, UserId), mỗi người một reaction, upsert/gỡ. Cần tin chưa xóa, active membership, quan hệ direct và không bị chặn người gửi; phát MessageReactionChanged.",
+      "source": "Domain/Entities/MessageReaction.cs"
+    },
+    {
+      "text": "MessageAttachment PK (MessageId, MediaId), UNIQUE (MessageId, SortOrder), MediaId RESTRICT; service không dùng MediaReferences của Posts cho chat. MessageNotification UNIQUE (RecipientUserId, MessageId), FK tới conversation/message CASCADE và recipient RESTRICT.",
+      "source": "Domain/Entities/MessageAttachment.cs"
+    },
+    {
+      "text": "ReplyToMessageId là FK nullable RESTRICT tự tham chiếu Messages; StoryId FK nullable RESTRICT tới Stories. Reply story dùng SendStoryReplyAsync; StoryReference chỉ hiển thị caption/type nếu story còn hạn, chưa xóa, media READY và viewer đủ privacy, ngược lại Available=false.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "Search ILIKE Content trong conversation, loại tin xóa/người gửi bị chặn, trả tối đa 50 theo thời gian/Id giảm dần; không có cursor search. Media read-url cần active membership và ảnh hội thoại hoặc attachment tin còn hoạt động được nhìn thấy, rồi validate quan hệ direct.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "Thông báo Messages là bảng MessageNotifications, tách Notifications tổng quát. GET notifications dùng offset/limit và chỉ trả unread, tin chưa xóa, active membership và quan hệ direct còn hợp lệ.",
+      "source": "Services/MessagesService.cs"
+    },
+    {
+      "text": "Typing gửi TypingChanged(IsTyping=true) và TypingStarted tới người active không bị chặn, không lưu DB hoặc tự gửi stop. Hub /hubs/messages nhận kết nối có xác thực; server đẩy các event, việc gửi tin chính qua HTTP.",
+      "source": "Hubs/MessagesHub.cs"
+    },
+    {
+      "text": "Presence dùng ConcurrentDictionary theo user và connection. Kết nối đầu/cuối phát PresenceChanged; OnConnected trả PresenceSnapshot. Chỉ peers có conversation chung active không bị chặn được xem; không persist và không chia sẻ giữa nhiều API instance.",
+      "source": "Services/MessagesPresenceService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-MS-01",
+      "name": "Mở chat trực tiếp",
+      "group": "messages-conversations",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy hoặc tạo chat với bạn bè.",
+      "preconditions": "Hai tài khoản khác nhau, là bạn bè và không chặn.",
+      "steps": [
+        "Gửi UserId qua API direct hoặc route legacy.",
+        "Tìm cặp chuẩn hóa; nếu chưa có tạo conversation, hai participant MEMBER và hai cursor compatibility.",
+        "Lưu, xử lý trùng đồng thời bằng tải lại; phát ConversationCreated cho peer.",
+        "Trả 200 ConversationResponse."
+      ],
+      "alternatives": [
+        "Tự chat: 400 cannot_message_self; không là bạn/bị chặn: 403.",
+        "Tạo xung đột không tải lại được: 409 conversation_creation_conflict."
+      ],
+      "postconditions": "Giữ ID conversation direct có sẵn.",
+      "endpoints": [
+        "POST /api/messages/conversations/direct",
+        "POST /api/messages/conversations/{userId:guid}"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants",
+        "ConversationReadCursors",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/CreateDirectConversationRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-02",
+      "name": "Tạo nhóm chat",
+      "group": "messages-conversations",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tạo group với mình là owner.",
+      "preconditions": "Request title, danh sách và ảnh hợp lệ.",
+      "steps": [
+        "Validate người nhận và PhotoMediaId thuộc actor nếu có.",
+        "Transaction tạo GROUP, OWNER và các MEMBER.",
+        "Commit, phát ConversationCreated tới thành viên.",
+        "Trả 201 ConversationResponse."
+      ],
+      "alternatives": [
+        "Request sai: 400 validation_failed; chứa actor: 400 invalid_group_participants.",
+        "Người nhận thiếu: 404 group_participant_not_found; media sai: lỗi Media."
+      ],
+      "postconditions": "Có group tối đa 50 tài khoản.",
+      "endpoints": [
+        "POST /api/messages/conversations/group"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/CreateGroupConversationRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-03",
+      "name": "Xem danh sách hội thoại",
+      "group": "messages-conversations",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy sidebar conversation active.",
+      "preconditions": "ConversationPageRequest hợp lệ.",
+      "steps": [
+        "Lọc membership active, archive theo IncludeArchived; direct cần friend không chặn.",
+        "Sắp LastMessageAtUtc/Id giảm dần, lấy limit+1.",
+        "Nạp participant active, last message và unread count.",
+        "Trả 200 PagedResponse/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400 validation_failed.",
+        "Không có conversation được phép: Items rỗng."
+      ],
+      "postconditions": "Không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/messages/conversations"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants",
+        "Messages",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/ConversationPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-04",
+      "name": "Xem chi tiết hội thoại",
+      "group": "messages-conversations",
+      "actor": "Thành viên active",
+      "goal": "Đọc chi tiết và unread count.",
+      "preconditions": "Active membership; direct còn friend không chặn.",
+      "steps": [
+        "Kiểm tra conversation/membership và quan hệ direct.",
+        "Nạp participants, last message và unread count.",
+        "Trả 200 ConversationResponse."
+      ],
+      "alternatives": [
+        "Conversation thiếu: 404 conversation_not_found; không đủ quyền: 403 conversation_access_denied.",
+        "Quan hệ direct không hợp lệ: 403 messaging_blocked/messaging_requires_friendship."
+      ],
+      "postconditions": "Không thay đổi cursor.",
+      "endpoints": [
+        "GET /api/messages/conversations/{conversationId:guid}"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants",
+        "Messages",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-05",
+      "name": "Cập nhật hội thoại",
+      "group": "messages-conversations",
+      "actor": "Thành viên active; owner/admin khi sửa group",
+      "goal": "Sửa tên/ảnh hoặc thiết lập cá nhân.",
+      "preconditions": "Membership active; title/photo chỉ GROUP và owner/admin.",
+      "steps": [
+        "Gửi trường cần đổi, giữ các trường null.",
+        "Validate ảnh khi gửi; update group nếu yêu cầu.",
+        "Set archive/mute/nickname cho actor; SaveChanges.",
+        "Phát ConversationUpdated cho recipients, trả 200."
+      ],
+      "alternatives": [
+        "Không có quyền sửa group: 403 conversation_access_denied.",
+        "Ảnh không hợp lệ: lỗi Media; request sai: 400 validation_failed."
+      ],
+      "postconditions": "Thiết lập actor và thông tin group được cập nhật.",
+      "endpoints": [
+        "PATCH /api/messages/conversations/{conversationId:guid}"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/UpdateConversationRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-06",
+      "name": "Thêm thành viên nhóm chat",
+      "group": "messages-participants",
+      "actor": "Owner hoặc admin",
+      "goal": "Thêm mới hoặc cho người đã rời quay lại.",
+      "preconditions": "GROUP; actor active OWNER/ADMIN; tổng active không quá 50.",
+      "steps": [
+        "Lọc người đang active để bỏ trùng; kiểm tra người mới tồn tại.",
+        "Tạo MEMBER hoặc Rejoin; advance read cursor tới latest message nếu có.",
+        "Lưu, phát ParticipantAdded và ConversationUpdated.",
+        "Trả 200 ConversationResponse."
+      ],
+      "alternatives": [
+        "Vượt giới hạn: 400 group_size_limit; tài khoản thiếu: 404 group_participant_not_found.",
+        "Không đủ quyền: 403 conversation_access_denied."
+      ],
+      "postconditions": "Người mới là MEMBER active.",
+      "endpoints": [
+        "POST /api/messages/conversations/{conversationId:guid}/participants"
+      ],
+      "tables": [
+        "ConversationParticipants",
+        "Conversations",
+        "Messages",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/AddConversationParticipantsRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-07",
+      "name": "Gỡ thành viên nhóm chat",
+      "group": "messages-participants",
+      "actor": "Owner hoặc admin theo quyền",
+      "goal": "Đặt LeftAtUtc cho thành viên.",
+      "preconditions": "GROUP; target active không phải OWNER; admin chỉ gỡ MEMBER khác mình.",
+      "steps": [
+        "Kiểm tra actor và target.",
+        "Kiểm tra CanRemoveParticipant, gọi Leave.",
+        "Lưu, phát ParticipantRemoved tới target và thành viên còn lại.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Không phải GROUP: 400 invalid_conversation_type; target thiếu: 404 participant_not_found.",
+        "Sai quyền: 403 conversation_access_denied."
+      ],
+      "postconditions": "Membership/lịch sử giữ, target mất quyền active.",
+      "endpoints": [
+        "DELETE /api/messages/conversations/{conversationId:guid}/participants/{userId:guid}"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-08",
+      "name": "Đổi vai trò nhóm chat",
+      "group": "messages-participants",
+      "actor": "Owner",
+      "goal": "Gán ADMIN hoặc MEMBER.",
+      "preconditions": "GROUP, owner active; target active không phải OWNER.",
+      "steps": [
+        "Validate Role admin/member.",
+        "Kiểm tra owner, membership đích và bảo vệ role OWNER.",
+        "Đổi role, lưu, phát ConversationUpdated.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Role sai: 400 validation_failed; target thiếu: 404 participant_not_found.",
+        "Đích OWNER: 409 owner_role_protected; actor sai quyền: 403."
+      ],
+      "postconditions": "Role đích đổi.",
+      "endpoints": [
+        "PATCH /api/messages/conversations/{conversationId:guid}/participants/{userId:guid}/role"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/ChangeConversationParticipantRoleRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-09",
+      "name": "Rời nhóm chat",
+      "group": "messages-participants",
+      "actor": "Admin hoặc member active",
+      "goal": "Tự rời group.",
+      "preconditions": "GROUP; actor active không phải OWNER.",
+      "steps": [
+        "Kiểm tra conversation/type/role.",
+        "Đặt LeftAtUtc, lưu.",
+        "Phát ParticipantRemoved tới peers; trả 204."
+      ],
+      "alternatives": [
+        "DIRECT: 400 invalid_conversation_type; OWNER: 409 owner_must_transfer.",
+        "Không còn active: 403 conversation_access_denied."
+      ],
+      "postconditions": "Lịch sử giữ, mất quyền active.",
+      "endpoints": [
+        "POST /api/messages/conversations/{conversationId:guid}/leave"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-10",
+      "name": "Chuyển owner nhóm chat",
+      "group": "messages-participants",
+      "actor": "Owner active",
+      "goal": "Đổi owner sang thành viên khác.",
+      "preconditions": "GROUP, actor OWNER; target active khác actor.",
+      "steps": [
+        "Kiểm tra target.",
+        "Đổi owner cũ ADMIN, target OWNER.",
+        "SaveChanges và phát ConversationUpdated; trả 204."
+      ],
+      "alternatives": [
+        "Đích thiếu hoặc chính actor: 400 participant_not_found.",
+        "Không đủ quyền: 403 conversation_access_denied."
+      ],
+      "postconditions": "Owner mới được lưu; không tự rời group.",
+      "endpoints": [
+        "POST /api/messages/conversations/{conversationId:guid}/transfer-ownership"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/TransferConversationOwnershipRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-11",
+      "name": "Đọc lịch sử tin nhắn",
+      "group": "messages-messages",
+      "actor": "Thành viên active",
+      "goal": "Lấy trang tin cũ hơn cursor.",
+      "preconditions": "Membership active; quan hệ direct hợp lệ; MessageHistoryRequest hợp lệ.",
+      "steps": [
+        "Lọc tác giả bị chặn và cursor.",
+        "Lấy thời gian/Id giảm dần, limit+1.",
+        "Nạp reply, attachments, reaction và story reference; đảo trang cũ→mới.",
+        "Trả 200 Items/NextCursor/HasMore."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400 validation_failed; thiếu conversation hoặc quyền: 404/403.",
+        "Tin xóa mềm hiện dạng tombstone, không xóa khỏi lịch sử."
+      ],
+      "postconditions": "Không tự đánh dấu read.",
+      "endpoints": [
+        "GET /api/messages/conversations/{conversationId:guid}/messages"
+      ],
+      "tables": [
+        "Messages",
+        "ConversationParticipants",
+        "Conversations",
+        "MessageAttachments",
+        "MessageReactions",
+        "Stories"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/MessageHistoryRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-12",
+      "name": "Gửi tin nhắn",
+      "group": "messages-messages",
+      "actor": "Thành viên active",
+      "goal": "Gửi nội dung, media hoặc reply.",
+      "preconditions": "Request hợp lệ; quan hệ direct hợp lệ; reply/media đủ quyền.",
+      "steps": [
+        "Validate reply cùng conversation và media thuộc actor.",
+        "Tạo Message/attachments, cập nhật conversation, delivered cursor và notifications của recipients.",
+        "SaveChanges rồi phát MessageReceived/MessageCreated và push.",
+        "Trả 201 MessageResponse."
+      ],
+      "alternatives": [
+        "Reply thiếu/sai conversation: 400 invalid_reply; người gửi bị chặn: 403 message_access_denied.",
+        "Nội dung/media sai: 400 validation_failed hoặc lỗi Media; conversation/quyền sai: 404/403.",
+        "Retry không có idempotency key nên có thể tạo tin mới."
+      ],
+      "postconditions": "Tin được lưu; delivered cursor chưa phải ACK thiết bị.",
+      "endpoints": [
+        "POST /api/messages/conversations/{conversationId:guid}/messages"
+      ],
+      "tables": [
+        "Messages",
+        "Conversations",
+        "ConversationParticipants",
+        "MessageAttachments",
+        "MessageNotifications",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/SendMessageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-13",
+      "name": "Tìm tin nhắn",
+      "group": "messages-messages",
+      "actor": "Thành viên active",
+      "goal": "Tìm nội dung trong conversation.",
+      "preconditions": "Query hợp lệ, active membership và quan hệ direct hợp lệ.",
+      "steps": [
+        "Trim query.",
+        "Lọc tin chưa xóa, tác giả không bị chặn, ILIKE Content.",
+        "Sắp thời gian/Id giảm, tối đa 50; nạp response.",
+        "Trả 200 danh sách."
+      ],
+      "alternatives": [
+        "Request sai: 400 validation_failed; thiếu conversation/quyền: 404/403.",
+        "Không có kết quả: danh sách rỗng; không có cursor."
+      ],
+      "postconditions": "Không đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/messages/conversations/{conversationId:guid}/search"
+      ],
+      "tables": [
+        "Messages",
+        "ConversationParticipants",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/MessageSearchRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-14",
+      "name": "Đánh dấu đã đọc",
+      "group": "messages-messages",
+      "actor": "Thành viên active",
+      "goal": "Advance read cursor.",
+      "preconditions": "Quan hệ direct hợp lệ; tin đích thuộc conversation và được nhìn thấy.",
+      "steps": [
+        "Nếu LastReadMessageId null chọn latest visible.",
+        "AdvanceReadCursor; cursor không tiến trả thành công ngay.",
+        "DIRECT đồng bộ legacy cursor/ReadAtUtc; đánh dấu notifications đọc.",
+        "Lưu, phát ReadCursorAdvanced/MessagesRead, trả 204."
+      ],
+      "alternatives": [
+        "Không có tin đích: 404 message_not_found; thiếu quyền: 403.",
+        "Cursor cũ không làm lùi trạng thái."
+      ],
+      "postconditions": "Cursor actor tiến, unread giảm.",
+      "endpoints": [
+        "POST /api/messages/conversations/{conversationId:guid}/read"
+      ],
+      "tables": [
+        "ConversationParticipants",
+        "ConversationReadCursors",
+        "Messages",
+        "MessageNotifications"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/MarkConversationReadRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-15",
+      "name": "Sửa tin nhắn",
+      "group": "messages-messages",
+      "actor": "Người gửi còn active",
+      "goal": "Sửa nội dung TEXT.",
+      "preconditions": "Tin tồn tại; sender=actor; membership active; TEXT chưa xóa.",
+      "steps": [
+        "Trim Content, kiểm tra active/sender.",
+        "Message.Edit ghi Content/EditedAtUtc.",
+        "Lưu và phát MessageEdited tới recipients được nhìn thấy.",
+        "Trả 200 MessageResponse."
+      ],
+      "alternatives": [
+        "Tin thiếu: 404 message_not_found; không phải sender: 403.",
+        "MEDIA hoặc tin đã xóa: 409 message_cannot_be_edited."
+      ],
+      "postconditions": "Nội dung thay đổi; không có hạn thời gian sửa.",
+      "endpoints": [
+        "PATCH /api/messages/{messageId:guid}"
+      ],
+      "tables": [
+        "Messages",
+        "ConversationParticipants"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/EditMessageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-16",
+      "name": "Xóa tin nhắn",
+      "group": "messages-messages",
+      "actor": "Người gửi còn active",
+      "goal": "Xóa mềm tin và bỏ attachments/reactions.",
+      "preconditions": "Tin tồn tại, sender=actor, active membership.",
+      "steps": [
+        "Kiểm tra quyền sender.",
+        "Message.Delete đặt Content=null và DeletedAtUtc.",
+        "ExecuteDelete attachments/reactions, lưu tin.",
+        "Phát MessageDeleted, trả 204."
+      ],
+      "alternatives": [
+        "Tin thiếu: 404 message_not_found; không phải sender/active: 403.",
+        "Tin đã xóa: entity giữ thời gian xóa cũ."
+      ],
+      "postconditions": "Tombstone còn trong lịch sử; object media không xóa.",
+      "endpoints": [
+        "DELETE /api/messages/{messageId:guid}"
+      ],
+      "tables": [
+        "Messages",
+        "MessageAttachments",
+        "MessageReactions",
+        "ConversationParticipants"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "Domain/Entities/Message.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-17",
+      "name": "Đặt cảm xúc tin nhắn",
+      "group": "messages-reactions",
+      "actor": "Thành viên active",
+      "goal": "Đặt một reaction của mình.",
+      "preconditions": "Tin chưa xóa, đủ quyền và quan hệ direct hợp lệ.",
+      "steps": [
+        "Kiểm tra tin, membership, quan hệ direct và tác giả bị chặn.",
+        "Parse Type; tạo hoặc đổi MessageReaction theo PK.",
+        "Lưu, phát MessageReactionChanged.",
+        "Trả 200 MessageReactionResponse."
+      ],
+      "alternatives": [
+        "Tin thiếu/đã xóa: 404 message_not_found; quyền/quan hệ: 403.",
+        "Type sai: 400 validation_failed."
+      ],
+      "postconditions": "Chỉ reaction của actor thay đổi.",
+      "endpoints": [
+        "POST /api/messages/{messageId:guid}/reactions"
+      ],
+      "tables": [
+        "Messages",
+        "MessageReactions",
+        "ConversationParticipants"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/SetMessageReactionRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-18",
+      "name": "Gỡ cảm xúc tin nhắn",
+      "group": "messages-reactions",
+      "actor": "Thành viên active",
+      "goal": "Gỡ reaction của mình.",
+      "preconditions": "Tin chưa xóa, đủ quyền và quan hệ direct hợp lệ.",
+      "steps": [
+        "Kiểm tra tin, membership, quan hệ direct và tác giả bị chặn.",
+        "Xóa reaction nếu có.",
+        "Lưu, phát MessageReactionChanged.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Tin thiếu/đã xóa: 404 message_not_found; quyền/quan hệ: 403.",
+        "Chưa có reaction: vẫn thành công."
+      ],
+      "postconditions": "Chỉ reaction của actor thay đổi.",
+      "endpoints": [
+        "DELETE /api/messages/{messageId:guid}/reactions"
+      ],
+      "tables": [
+        "Messages",
+        "MessageReactions",
+        "ConversationParticipants"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/SetMessageReactionRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-19",
+      "name": "Lấy URL media chat",
+      "group": "messages-media",
+      "actor": "Thành viên active",
+      "goal": "Đọc ảnh conversation hoặc attachment.",
+      "preconditions": "Có conversation active chứa media và quan hệ direct hợp lệ.",
+      "steps": [
+        "Tìm conversation có PhotoMediaId hoặc attachment tin chưa xóa không bị chặn.",
+        "Validate quan hệ của từng candidate.",
+        "Gọi Media.CreateReadUrlAsync; trả 200 MediaReadUrlResponse."
+      ],
+      "alternatives": [
+        "Không có candidate được phép: 403 media_access_denied.",
+        "Media không cấp được URL: lỗi Media."
+      ],
+      "postconditions": "Không đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/messages/media/{mediaId:guid}/read-url"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants",
+        "Messages",
+        "MessageAttachments",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-20",
+      "name": "Xem thông báo tin chưa đọc",
+      "group": "messages-media",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy tin mới theo offset/limit.",
+      "preconditions": "MessageNotificationPageRequest hợp lệ.",
+      "steps": [
+        "Lọc recipient, unread, membership active, tin chưa xóa và tác giả không bị chặn.",
+        "Direct phải có peer là bạn không chặn.",
+        "Nạp conversation/message response, đếm total và trả 200."
+      ],
+      "alternatives": [
+        "Offset/limit sai: 400 validation_failed.",
+        "Không có tin hợp lệ: Items rỗng."
+      ],
+      "postconditions": "Không tự đánh dấu đã đọc.",
+      "endpoints": [
+        "GET /api/messages/notifications"
+      ],
+      "tables": [
+        "MessageNotifications",
+        "Messages",
+        "Conversations",
+        "ConversationParticipants",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "DTOs/Requests/MessageNotificationPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-21",
+      "name": "Thông báo đang nhập",
+      "group": "messages-realtime",
+      "actor": "Thành viên active",
+      "goal": "Phát trạng thái typing tới peers.",
+      "preconditions": "Kết nối /hubs/messages có xác thực, active conversation và quan hệ direct hợp lệ.",
+      "steps": [
+        "Gọi Typing(conversationId).",
+        "Kiểm tra actor, conversation và direct relationship.",
+        "Gửi TypingChanged(IsTyping=true) và TypingStarted tới active peers không bị chặn."
+      ],
+      "alternatives": [
+        "Claim không hợp lệ/không có quyền: bỏ qua, không phát event.",
+        "Không có cơ chế tự gửi typing stop trong hub hiện tại."
+      ],
+      "postconditions": "Không lưu DB.",
+      "endpoints": [
+        "SignalR /hubs/messages · Typing(conversationId)"
+      ],
+      "tables": [
+        "Conversations",
+        "ConversationParticipants",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "Hubs/MessagesHub.cs"
+      ]
+    },
+    {
+      "id": "UC-MS-22",
+      "name": "Kết nối và theo dõi presence",
+      "group": "messages-realtime",
+      "actor": "Người dùng có xác thực",
+      "goal": "Nhận online snapshot và thay đổi peers.",
+      "preconditions": "Kết nối MessagesHub được xác thực.",
+      "steps": [
+        "OnConnected đăng ký user/connection và trả PresenceSnapshot.",
+        "Kết nối đầu tiên hoặc ngắt connection cuối phát PresenceChanged.",
+        "Lọc người có conversation chung active, loại chặn hai chiều."
+      ],
+      "alternatives": [
+        "Không có peers hợp lệ: snapshot rỗng.",
+        "Presence chỉ cho một instance, restart mất trạng thái trong bộ nhớ."
+      ],
+      "postconditions": "Connection map cập nhật, không persist.",
+      "endpoints": [
+        "SignalR /hubs/messages · OnConnectedAsync / OnDisconnectedAsync"
+      ],
+      "tables": [
+        "ConversationParticipants",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/MessagesController.cs",
+        "Services/MessagesService.cs",
+        "Hubs/MessagesHub.cs",
+        "Services/MessagesPresenceService.cs"
       ]
     }
   ]
