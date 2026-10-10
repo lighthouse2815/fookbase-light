@@ -526,6 +526,30 @@
         "source": "flowchart LR\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Pages[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Pages</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AvatarMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AvatarMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='CoverMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CoverMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='CreatedByUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CreatedByUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Name'><td class='identity-keys' /><td><code class='' title=''>Name</code></td><td class='column-type'>varchar(120)</td></tr><tr data-column='Username'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>Username</code></td><td class='column-type'>citext</td></tr><tr data-column='Category'><td class='identity-keys' /><td><code class='' title=''>Category</code></td><td class='column-type'>varchar(80)</td></tr><tr data-column='Bio'><td class='identity-keys' /><td><code class='' title=''>Bio</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PageMembers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>PageMembers</th></tr></thead><tbody><tr data-column='PageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Role'><td class='identity-keys' /><td><code class='' title=''>Role</code></td><td class='column-type'>integer</td></tr><tr data-column='JoinedAtUtc'><td class='identity-keys' /><td><code class='' title=''>JoinedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PageRoleInvitations[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>PageRoleInvitations</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='PageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>PageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviteeUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviteeUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Role'><td class='identity-keys' /><td><code class='' title=''>Role</code></td><td class='column-type'>integer</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PageFollowers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>PageFollowers</th></tr></thead><tbody><tr data-column='PageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='FollowedAtUtc'><td class='identity-keys' /><td><code class='' title=''>FollowedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    PageMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>PageMediaReferences</th></tr></thead><tbody><tr data-column='PageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Slot'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Slot</code></td><td class='column-type'>integer</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"CreatedByUserId · 1 → 0..N\"| Pages\n    MediaAssets -->|\"AvatarMediaId · 0..1 → 0..N\"| Pages\n    MediaAssets -->|\"CoverMediaId · 0..1 → 0..N\"| Pages\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| PageMembers\n    Pages -->|\"PageId · 1 → 0..N\"| PageMembers\n    AspNetUsers -->|\"InviteeUserId · 1 → 0..N\"| PageRoleInvitations\n    AspNetUsers -->|\"InviterUserId · 1 → 0..N\"| PageRoleInvitations\n    Pages -->|\"PageId · 1 → 0..N\"| PageRoleInvitations\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| PageFollowers\n    Pages -->|\"PageId · 1 → 0..N\"| PageFollowers\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| PageMediaReferences\n    Pages -->|\"PageId · 1 → 0..N\"| PageMediaReferences\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
         "note": "5 bảng Pages và 2 bảng tham chiếu giữ đủ 69 cột, mỗi bảng một lần; 12 FK dùng đường thẳng. AvatarMediaId/CoverMediaId nullable (0..1 ở đầu MediaAssets); PK ghép của các bảng phụ không tạo quan hệ 1–1 với Pages. Username UNIQUE chỉ trên trang chưa xóa; lời mời UNIQUE chỉ khi PENDING. Owner nằm trong PageMembers.Role; CreatedByUserId giữ người tạo. Posts.ContainerId là liên kết nghiệp vụ, không có FK tới Pages."
       }
+    },
+    {
+      "id": "events",
+      "name": "Events",
+      "description": "Sự kiện do tài khoản, nhóm hoặc trang tổ chức; quản lý lịch, địa điểm, RSVP, lời mời và bài viết.",
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "EventInvitations",
+        "EventCoverMediaReferences"
+      ],
+      "diagram": {
+        "template": "overview-events",
+        "tables": [
+          "Events",
+          "EventParticipants",
+          "EventInvitations",
+          "EventCoverMediaReferences",
+          "AspNetUsers",
+          "MediaAssets"
+        ],
+        "source": "flowchart LR\n    Events[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Events</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='CreatedByUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CreatedByUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='CoverMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CoverMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Name'><td class='identity-keys' /><td><code class='' title=''>Name</code></td><td class='column-type'>varchar(160)</td></tr><tr data-column='Description'><td class='identity-keys' /><td><code class='' title=''>Description</code></td><td class='column-type'>varchar(10000)?</td></tr><tr data-column='HostType'><td class='identity-keys' /><td><code class='' title=''>HostType</code></td><td class='column-type'>integer</td></tr><tr data-column='HostId'><td class='identity-keys' /><td><code class='' title=''>HostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='LocationType'><td class='identity-keys' /><td><code class='' title=''>LocationType</code></td><td class='column-type'>integer</td></tr><tr data-column='LocationName'><td class='identity-keys' /><td><code class='' title=''>LocationName</code></td><td class='column-type'>text?</td></tr><tr data-column='Address'><td class='identity-keys' /><td><code class='' title=''>Address</code></td><td class='column-type'>text?</td></tr><tr data-column='OnlineUrl'><td class='identity-keys' /><td><code class='' title=''>OnlineUrl</code></td><td class='column-type'>text?</td></tr><tr data-column='StartsAtUtc'><td class='identity-keys' /><td><code class='' title=''>StartsAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='EndsAtUtc'><td class='identity-keys' /><td><code class='' title=''>EndsAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    EventParticipants[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>EventParticipants</th></tr></thead><tbody><tr data-column='EventId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>EventId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    EventInvitations[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>EventInvitations</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='EventId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>EventId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviteeUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviteeUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    EventCoverMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>EventCoverMediaReferences</th></tr></thead><tbody><tr data-column='EventId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>EventId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"CreatedByUserId · 1 → 0..N\"| Events\n    MediaAssets -->|\"CoverMediaId · 0..1 → 0..N\"| Events\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| EventParticipants\n    Events -->|\"EventId · 1 → 0..N\"| EventParticipants\n    AspNetUsers -->|\"InviteeUserId · 1 → 0..N\"| EventInvitations\n    AspNetUsers -->|\"InviterUserId · 1 → 0..N\"| EventInvitations\n    Events -->|\"EventId · 1 → 0..N\"| EventInvitations\n    Events -->|\"EventId · 1 → 0..1\"| EventCoverMediaReferences\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| EventCoverMediaReferences",
+        "note": "4 bảng Events, 2 bảng tham chiếu, 69 cột và 9 FK. HostId và Posts.ContainerId chỉ là liên kết nghiệp vụ. EventCoverMediaReferences dùng PK chung (1 → 0..1); CoverMediaId nullable. Index lời mời PENDING không UNIQUE."
+      }
     }
   ],
   "tables": {
@@ -5325,6 +5349,413 @@
       "purpose": "Hàng tham chiếu bảo vệ ảnh đại diện hoặc ảnh bìa của trang khi đang được sử dụng.",
       "module": "pages",
       "note": "PK ghép (PageId, Slot); Slot AVATAR=0, COVER=1. PageId → Pages CASCADE, MediaId → MediaAssets RESTRICT; MediaId không UNIQUE. Mỗi slot tối đa một hàng. Service đồng bộ với Pages.AvatarMediaId/CoverMediaId trong transaction, database không buộc hai nơi bằng nhau. Gỡ ảnh/xóa mềm trang xóa hàng tham chiếu, không xóa object media."
+    },
+    "Events": {
+      "name": "Events",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "Name",
+          "type": "character varying(160)",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Description",
+          "type": "character varying(10000)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "HostType",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "HostId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedByUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Privacy",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "LocationType",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "LocationName",
+          "type": "text",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "Address",
+          "type": "text",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "OnlineUrl",
+          "type": "text",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "StartsAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "EndsAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "CoverMediaId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Status",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "UpdatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "DeletedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "CoverMediaId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "CreatedByUserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "HostType",
+            "HostId",
+            "StartsAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "Status",
+            "Privacy",
+            "StartsAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "CreatedByUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "CoverMediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Sự kiện",
+      "purpose": "Thông tin host, lịch, địa điểm, privacy, cover và trạng thái sự kiện.",
+      "module": "events",
+      "note": "HostId đa hình không có FK. DRAFT=0, PUBLISHED=1, CANCELLED=2; USER/GROUP/PAGE=0/1/2. CreatedByUserId FK RESTRICT; CoverMediaId nullable FK RESTRICT. Hai index lọc DeletedAtUtc IS NULL. Xóa mềm bỏ cover, giữ bảng phụ và bài viết."
+    },
+    "EventParticipants": {
+      "name": "EventParticipants",
+      "columns": [
+        {
+          "name": "EventId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Status",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "RespondedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "EventId",
+        "UserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "UserId",
+            "Status"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Events",
+          "fields": [
+            "EventId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Người tham gia",
+      "purpose": "RSVP của mỗi tài khoản cho một event.",
+      "module": "events",
+      "note": "PK (EventId, UserId); GOING=0, INTERESTED=1. EventId CASCADE, UserId RESTRICT. RespondedAtUtc cập nhật khi đặt RSVP."
+    },
+    "EventInvitations": {
+      "name": "EventInvitations",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "EventId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "InviterUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "InviteeUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Status",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "RespondedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "EventId",
+            "InviteeUserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "InviteeUserId",
+            "Status",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "InviterUserId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "InviteeUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "InviterUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Events",
+          "fields": [
+            "EventId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Lời mời sự kiện",
+      "purpose": "Người mời, người nhận, trạng thái và thời gian phản hồi.",
+      "module": "events",
+      "note": "PENDING=0, ACCEPTED=1, DECLINED=2. Index (EventId, InviteeUserId) lọc Status=0 KHÔNG UNIQUE; kiểm tra trùng nằm ở service. EventId CASCADE, hai user FK RESTRICT; RespondedAtUtc nullable. Không có cột hết hạn."
+    },
+    "EventCoverMediaReferences": {
+      "name": "EventCoverMediaReferences",
+      "columns": [
+        {
+          "name": "EventId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "AttachedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "EventId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "Events",
+          "fields": [
+            "EventId"
+          ],
+          "delete": "Cascade"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Tham chiếu ảnh bìa sự kiện",
+      "purpose": "Bảo vệ cover đang dùng và đồng bộ với Events.CoverMediaId.",
+      "module": "events",
+      "note": "EventId là PK/FK CASCADE: một event có 0..1 reference. MediaId FK RESTRICT không unique. Xóa mềm/gỡ cover bỏ hàng reference; không xóa object ảnh."
     }
   }
 }
@@ -11151,6 +11582,783 @@
       ],
       "support": [
         "posts"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <template id="overview-events"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-events" width="1659.7" height="1397.0" viewBox="0 0 1659.7 1397.0" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Events" data-layout="events"><title>Events · 4 bảng chính, 2 bảng tham chiếu và 9 FK</title><desc>HostId và Posts.ContainerId chỉ là liên kết nghiệp vụ. EventCoverMediaReferences dùng PK chung (1 → 0..1); CoverMediaId nullable. Index lời mời PENDING không UNIQUE.</desc><style>
+#svg-overview-events { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-events .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-events .node .label { color: #233044; }
+#svg-overview-events .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-events .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-events .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-events .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-events .identity-table code { font: inherit; }
+#svg-overview-events .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-events .identity-keys { text-align: center; }
+#svg-overview-events .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-events .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-events .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-events .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-events .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-events .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-events .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-events .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+</style><defs><marker id="events-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="events-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M410.12,383.58 C489.36,436.33 581.95,497.97 661.88,551.1800000000001" id="L_AspNetUsers_Events_CreatedByUserId" data-id="L_AspNetUsers_Events_CreatedByUserId" data-principal="AspNetUsers" data-dependent="Events" data-fields="CreatedByUserId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>AspNetUsers (1) → Events (0..N) · CreatedByUserId · Restrict</title></path><path d="M410.12,848.86 C489.2,818.31 581.58,782.62 661.4,751.78" id="L_MediaAssets_Events_CoverMediaId" data-id="L_MediaAssets_Events_CoverMediaId" data-principal="MediaAssets" data-dependent="Events" data-fields="CoverMediaId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>MediaAssets (0..1) → Events (0..N) · CoverMediaId · Restrict</title></path><path d="M410.5,287.78999999999996 C683.38,327.41 1162.67,397 1162.67,397 C1162.67,397 1232.61,433.39 1301.43,469.2" id="L_AspNetUsers_EventParticipants_UserId" data-id="L_AspNetUsers_EventParticipants_UserId" data-principal="AspNetUsers" data-dependent="EventParticipants" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>AspNetUsers (1) → EventParticipants (0..N) · UserId · Restrict</title></path><path d="M1038.8600000000001,633.41 C1103.73,617.74 1176.75,600.09 1242.18,584.28" id="L_Events_EventParticipants_EventId" data-id="L_Events_EventParticipants_EventId" data-principal="Events" data-dependent="EventParticipants" data-fields="EventId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>Events (1) → EventParticipants (0..N) · EventId · Cascade</title></path><path d="M410.14,189.66 C458.29,171 497,156 497,156 C497,156 1162.67,156 1162.67,156 C1162.67,156 1197.55,161.66 1242.28,168.92" id="L_AspNetUsers_EventInvitations_InviteeUserId" data-id="L_AspNetUsers_EventInvitations_InviteeUserId" data-principal="AspNetUsers" data-dependent="EventInvitations" data-fields="InviteeUserId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>AspNetUsers (1) → EventInvitations (0..N) · InviteeUserId · Restrict</title></path><path d="M410.4,251.69 C635.35,240.32 1013.76,221.21 1241.97,209.68" id="L_AspNetUsers_EventInvitations_InviterUserId" data-id="L_AspNetUsers_EventInvitations_InviterUserId" data-principal="AspNetUsers" data-dependent="EventInvitations" data-fields="InviterUserId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>AspNetUsers (1) → EventInvitations (0..N) · InviterUserId · Restrict</title></path><path d="M1038.8600000000001,525.77 C1125.71,454.11 1227.15,370.41 1305.46,305.79" id="L_Events_EventInvitations_EventId" data-id="L_Events_EventInvitations_EventId" data-principal="Events" data-dependent="EventInvitations" data-fields="EventId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>Events (1) → EventInvitations (0..N) · EventId · Cascade</title></path><path d="M1038.8600000000001,709.85 C1103.73,721.05 1176.75,733.65 1242.18,744.95" id="L_Events_EventCoverMediaReferences_EventId" data-id="L_Events_EventCoverMediaReferences_EventId" data-principal="Events" data-dependent="EventCoverMediaReferences" data-fields="EventId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>Events (1) → EventCoverMediaReferences (0..1) · EventId · Cascade</title></path><path d="M410.4,933.84 C531.78,942.95 668.37,953.2 668.37,953.2 C668.37,953.2 1038.37,953.2 1038.37,953.2 C1038.37,953.2 1190.78,885.65 1306.33,834.44" id="L_MediaAssets_EventCoverMediaReferences_MediaId" data-id="L_MediaAssets_EventCoverMediaReferences_MediaId" data-principal="MediaAssets" data-dependent="EventCoverMediaReferences" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#events-one)" marker-end="url(#events-many)"><title>MediaAssets (1) → EventCoverMediaReferences (0..N) · MediaId · Restrict</title></path></g><g class="edgeLabels"><text x="539.1800000000001" y="441.23" text-anchor="middle" class="relation-label">CreatedByUserId</text><text x="646.1696" y="555.31" text-anchor="middle" class="cardinality">0..N</text><text x="431.87" y="390.19" text-anchor="middle" class="cardinality">1</text><text x="539.1800000000001" y="781.21" text-anchor="middle" class="relation-label">CoverMediaId</text><text x="646.1696" y="768.35" text-anchor="middle" class="cardinality">0..N</text><text x="432.1996" y="836.31" text-anchor="middle" class="cardinality">0..1</text><text x="853.37" y="323.43" text-anchor="middle" class="relation-label">UserId</text><text x="1286.11" y="465.99839999999995" text-anchor="middle" class="cardinality">0..N</text><text x="431.56" y="284.75" text-anchor="middle" class="cardinality">1</text><text x="1144.02" y="600.5" text-anchor="middle" class="relation-label">EventId</text><text x="1227.4996" y="599.58" text-anchor="middle" class="cardinality">0..N</text><text x="1056.06" y="622.99" text-anchor="middle" class="cardinality">1</text><text x="853.37" y="152.7" text-anchor="middle" class="relation-label">InviteeUserId</text><text x="1227.4996" y="179.39" text-anchor="middle" class="cardinality">0..N</text><text x="425.37" y="177.08" text-anchor="middle" class="cardinality">1</text><text x="853.37" y="217.2" text-anchor="middle" class="relation-label">InviterUserId</text><text x="1227.4996" y="222.9" text-anchor="middle" class="cardinality">0..N</text><text x="429.85" y="244.69" text-anchor="middle" class="cardinality">1</text><text x="1144.02" y="421.37" text-anchor="middle" class="relation-label">EventId</text><text x="1301.59" y="324.34" text-anchor="middle" class="cardinality">0..N</text><text x="1049.1696" y="509.21" text-anchor="middle" class="cardinality">1</text><text x="1144.02" y="721.7" text-anchor="middle" class="relation-label">EventId</text><text x="1227.4996" y="755.24" text-anchor="middle" class="cardinality">0..1</text><text x="1060.0900000000001" y="707.38" text-anchor="middle" class="cardinality">1</text><text x="853.37" y="949.9" text-anchor="middle" class="relation-label">MediaId</text><text x="1298.73" y="851.28" text-anchor="middle" class="cardinality">0..N</text><text x="430.98" y="929.36" text-anchor="middle" class="cardinality">1</text></g><g class="nodes"><g class="node default" data-table="Events" role="button" tabindex="0" aria-label="Xem chi tiết bảng Events" transform="translate(853.3696, 678.0008)"><rect class="basic label-container" x="-185.0" y="-233.0" width="370" height="466" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-185.0, -233.0)"><foreignObject width="370" height="466"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:466px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">Events</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="CreatedByUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">CreatedByUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="CoverMediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">CoverMediaId</code></td><td class="column-type">uuid?</td></tr><tr data-column="Name"><td class="identity-keys" /><td><code class="" title="">Name</code></td><td class="column-type">varchar(160)</td></tr><tr data-column="Description"><td class="identity-keys" /><td><code class="" title="">Description</code></td><td class="column-type">varchar(10000)?</td></tr><tr data-column="HostType"><td class="identity-keys" /><td><code class="" title="">HostType</code></td><td class="column-type">integer</td></tr><tr data-column="HostId"><td class="identity-keys" /><td><code class="" title="">HostId</code></td><td class="column-type">uuid</td></tr><tr data-column="Privacy"><td class="identity-keys" /><td><code class="" title="">Privacy</code></td><td class="column-type">integer</td></tr><tr data-column="LocationType"><td class="identity-keys" /><td><code class="" title="">LocationType</code></td><td class="column-type">integer</td></tr><tr data-column="LocationName"><td class="identity-keys" /><td><code class="" title="">LocationName</code></td><td class="column-type">text?</td></tr><tr data-column="Address"><td class="identity-keys" /><td><code class="" title="">Address</code></td><td class="column-type">text?</td></tr><tr data-column="OnlineUrl"><td class="identity-keys" /><td><code class="" title="">OnlineUrl</code></td><td class="column-type">text?</td></tr><tr data-column="StartsAtUtc"><td class="identity-keys" /><td><code class="" title="">StartsAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="EndsAtUtc"><td class="identity-keys" /><td><code class="" title="">EndsAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="EventParticipants" role="button" tabindex="0" aria-label="Xem chi tiết bảng EventParticipants" transform="translate(1434.6996000000001, 537.9984)"><rect class="basic label-container" x="-185.0" y="-65.0" width="370" height="130" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-185.0, -65.0)"><foreignObject width="370" height="130"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:130px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">EventParticipants</th></tr></thead><tbody><tr data-column="EventId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">EventId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="RespondedAtUtc"><td class="identity-keys" /><td><code class="" title="">RespondedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="EventInvitations" role="button" tabindex="0" aria-label="Xem chi tiết bảng EventInvitations" transform="translate(1434.6996000000001, 199.9984)"><rect class="basic label-container" x="-185.0" y="-101.0" width="370" height="202" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-185.0, -101.0)"><foreignObject width="370" height="202"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:202px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">EventInvitations</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="EventId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">EventId</code></td><td class="column-type">uuid</td></tr><tr data-column="InviterUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">InviterUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="InviteeUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">InviteeUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="RespondedAtUtc"><td class="identity-keys" /><td><code class="" title="">RespondedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="EventCoverMediaReferences" role="button" tabindex="0" aria-label="Xem chi tiết bảng EventCoverMediaReferences" transform="translate(1434.6996000000001, 778.0008)"><rect class="basic label-container" x="-185.0" y="-53.0" width="370" height="106" rx="5" ry="5" style="stroke:#ed5998" /><g class="label" transform="translate(-185.0, -53.0)"><foreignObject width="370" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fbd7e7;color:#182437">EventCoverMediaReferences</th></tr></thead><tbody><tr data-column="EventId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">EventId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="AttachedAtUtc"><td class="identity-keys" /><td><code class="" title="">AttachedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(224.99960000000002, 260.9996)"><rect class="basic label-container" x="-185.0" y="-221.0" width="370" height="442" rx="5" ry="5" style="stroke:#94a3b8" /><g class="label" transform="translate(-185.0, -221.0)"><foreignObject width="370" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e6edf4;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(224.99960000000002, 919.9996)"><rect class="basic label-container" x="-185.0" y="-257.0" width="370" height="514" rx="5" ry="5" style="stroke:#94a3b8" /><g class="label" transform="translate(-185.0, -257.0)"><foreignObject width="370" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e6edf4;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(40, 1232.0)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="events-specification" type="application/json">
+{
+  "title": "Sự kiện, tham gia và lời mời",
+  "purpose": "Sự kiện do tài khoản, nhóm hoặc trang tổ chức; quản lý lịch, địa điểm, RSVP, lời mời và bài viết.",
+  "scope": "Đối chiếu 4 entity, 19 endpoint EventsController, EventsService và EventAccessService. Tất cả API yêu cầu đăng nhập; quyền quản lý theo HostType/HostId và role của tài khoản trong Groups/Pages. HostId và Posts.ContainerId là liên kết nghiệp vụ, không có FK đa hình.",
+  "usecasesTitle": "Sự kiện, tham gia và lời mời",
+  "groups": [
+    {
+      "id": "events-general",
+      "name": "Thông tin và vòng đời",
+      "actor": "user",
+      "description": "Tạo, đọc, sửa, xuất bản, hủy và xóa mềm sự kiện."
+    },
+    {
+      "id": "events-media",
+      "name": "Ảnh bìa",
+      "actor": "user",
+      "description": "Đọc ảnh bìa đã được kiểm tra quyền xem sự kiện."
+    },
+    {
+      "id": "events-participation",
+      "name": "Tham gia sự kiện",
+      "actor": "user",
+      "description": "Đặt/gỡ RSVP và đọc người tham gia."
+    },
+    {
+      "id": "events-invitations",
+      "name": "Lời mời sự kiện",
+      "actor": "user",
+      "description": "Gửi, nhận, chấp nhận hoặc từ chối lời mời."
+    },
+    {
+      "id": "events-browse",
+      "name": "Danh sách và khám phá",
+      "actor": "user",
+      "description": "Sự kiện của tôi, sắp tới và khám phá công khai."
+    },
+    {
+      "id": "events-posts",
+      "name": "Nội dung sự kiện",
+      "actor": "user",
+      "description": "Đọc và đăng bài trong phạm vi sự kiện."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Đối chiếu 4 entity, 19 endpoint EventsController, EventsService và EventAccessService. Tất cả API yêu cầu đăng nhập; quyền quản lý theo HostType/HostId và role của tài khoản trong Groups/Pages. HostId và Posts.ContainerId là liên kết nghiệp vụ, không có FK đa hình."
+    }
+  ],
+  "rules": [
+    {
+      "text": "19 endpoint đều chịu Authorize ở controller; lấy actor từ claim sub GUID. Khách chưa đăng nhập không đọc được sự kiện dù Privacy=PUBLIC.",
+      "source": "Controllers/EventsController.cs"
+    },
+    {
+      "text": "HostType USER=0, GROUP=1, PAGE=2. USER luôn lấy HostId từ người gọi; GROUP/PAGE dùng HostId trong request. Quyền quản lý: host user; group OWNER/ADMIN/MODERATOR; page OWNER/ADMIN/EDITOR. CreatedByUserId giữ người tạo và có FK RESTRICT.",
+      "source": "Services/EventAccessService.cs"
+    },
+    {
+      "text": "HostId không có FK tới User/Group/Page. Kiểm tra quản lý host group/page chỉ dựa vào membership; không tự kiểm tra trạng thái xóa mềm của group/page trong CanManageAsync.",
+      "source": "Services/EventAccessService.cs"
+    },
+    {
+      "text": "Name bắt buộc tối đa 160 ký tự, Description tùy chọn tối đa 10000. StartsAtUtc bắt buộc; EndsAtUtc nếu có phải sau bắt đầu. Giờ được chuẩn hóa UTC. Location PHYSICAL=0 bỏ OnlineUrl; ONLINE=1 cần URL http/https và bỏ LocationName/Address.",
+      "source": "Domain/Entities/Event.cs"
+    },
+    {
+      "text": "Status DRAFT=0, PUBLISHED=1, CANCELLED=2. Tạo mặc định PUBLISHED; có thể chọn DRAFT. Publish chỉ DRAFT; Cancel chỉ PUBLISHED, trạng thái sai trả 409 invalid_event_status. Không có luồng phục hồi CANCELLED.",
+      "source": "Domain/Entities/Event.cs"
+    },
+    {
+      "text": "Người quản lý đọc DRAFT/CANCELLED. Người khác đọc PUBLISHED PUBLIC, host USER bị chặn hai chiều sẽ bị loại; PRIVATE cần EventParticipant hoặc invitation PENDING. CANCELLED cho participant/invitee PENDING đọc nếu còn quyền host group/page và không bị chặn host user.",
+      "source": "Services/EventAccessService.cs"
+    },
+    {
+      "text": "Ảnh bìa cần IMAGE READY chưa xóa thuộc người thao tác; sai trả 400 invalid_event_cover. CoverMediaId nullable, FK RESTRICT. EventCoverMediaReferences.EventId là PK/FK CASCADE nên mỗi event tối đa một hàng; MediaId FK RESTRICT không UNIQUE. Hai MediaId đồng bộ bởi service.",
+      "source": "Services/EventsService.cs"
+    },
+    {
+      "text": "Create/Update/Delete đồng bộ cover trong transaction; RemoveCover ưu tiên null nhưng CoverMediaId được gửi vẫn phải vượt validate. Gỡ ảnh/xóa sự kiện bỏ reference, không xóa object media.",
+      "source": "Domain/Entities/EventCoverMediaReference.cs"
+    },
+    {
+      "text": "Update chỉ thay đổi thời gian/địa điểm mới queue EVENT_UPDATED tới participants, commit rồi publish; đổi tên/mô tả/privacy/cover riêng không phát thông báo này. Cancel queue EVENT_CANCELLED tới participants rồi SaveChanges và publish.",
+      "source": "Services/EventsService.cs"
+    },
+    {
+      "text": "Xóa là xóa mềm: đặt DeletedAtUtc, UpdatedAtUtc và CoverMediaId=null, bỏ EventCoverMediaReferences; giữ participant, invitation và bài viết. CASCADE chỉ áp dụng khi xóa vật lý Events.",
+      "source": "Domain/Entities/Event.cs"
+    },
+    {
+      "text": "RSVP GOING=0, INTERESTED=1; PK (EventId, UserId). Đặt RSVP upsert và ghi RespondedAtUtc, cần PUBLISHED và đủ quyền xem. Gỡ RSVP cũng cần điều kiện đó; không có hàng vẫn trả 204.",
+      "source": "Domain/Entities/EventParticipant.cs"
+    },
+    {
+      "text": "Invitation PENDING=0, ACCEPTED=1, DECLINED=2. Index (EventId, InviteeUserId) lọc Status=0 nhưng KHÔNG UNIQUE trong snapshot; service tự kiểm tra lời mời PENDING trùng, không có ràng buộc unique chống race tại DB.",
+      "source": "Domain/Entities/EventInvitation.cs"
+    },
+    {
+      "text": "Mời chỉ người quản lý event PUBLISHED, không tự mời, người nhận phải tồn tại và không bị chặn hai chiều với người mời. Queue EVENT_INVITE dùng EntityType EVENT và EntityId=invitation.Id theo implementation hiện tại.",
+      "source": "Services/EventsService.cs"
+    },
+    {
+      "text": "RespondInvite tìm đúng người nhận nhưng không lọc PENDING. Entity chỉ đổi status khi PENDING; accept vẫn upsert GOING ngay cả lời mời đã xử lý. Không mô tả accept/decline là thao tác luôn bị từ chối sau lần đầu.",
+      "source": "Services/EventsService.cs"
+    },
+    {
+      "text": "Phân trang mặc định 20, limit 1..100, cursor được validate qua DTO/EventCursor. Danh sách event sắp StartsAtUtc/Id tăng dần; invitations sắp CreatedAtUtc/Id giảm; participants RespondedAtUtc/UserId giảm; posts CreatedAtUtc/Id giảm.",
+      "source": "DTOs/Requests/EventPageRequest.cs"
+    },
+    {
+      "text": "Mine lọc người tạo hoặc quản lý host group/page; Upcoming lọc StartsAtUtc >= now và người tạo/participant; Discover chỉ PUBLISHED PUBLIC sắp tới, tìm Name/Description/LocationName. ListAsync không gọi CanViewAsync cho từng kết quả, nên không suy diễn danh sách có cùng bộ lọc quyền/chặn như API chi tiết.",
+      "source": "Services/EventsService.cs"
+    },
+    {
+      "text": "Participants lọc tài khoản bị chặn hai chiều và join UserProfiles. Invitations/mine chỉ PENDING tới người gọi, không lọc sự kiện đã xóa trước; Event trong response có thể null.",
+      "source": "Services/EventsService.cs"
+    },
+    {
+      "text": "Đăng bài cần PUBLISHED, đủ quyền xem và là người quản lý hoặc participant (cả GOING/INTERESTED). Bài lưu PUBLIC, ContainerType EVENT=3, ContainerId=eventId, tác giả là actor; transaction gồm PostMedia/MediaReferences và metadata.",
+      "source": "Services/EventsService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-EV-01",
+      "name": "Tạo sự kiện",
+      "group": "events-general",
+      "actor": "Người tổ chức có quyền",
+      "goal": "Tạo lịch sự kiện theo host.",
+      "preconditions": "Đăng nhập; host, tên, thời gian, location và cover hợp lệ.",
+      "steps": [
+        "Gửi CreateEventRequest; USER dùng actor làm HostId.",
+        "Kiểm tra quyền host và ảnh; tạo Event theo trạng thái yêu cầu hoặc PUBLISHED mặc định.",
+        "Trong transaction đồng bộ cover, lưu event/reference, commit.",
+        "Trả 201 EventResponse và Location."
+      ],
+      "alternatives": [
+        "Sai request: 400 validation_failed; domain sai: 400 invalid_event.",
+        "Không được quản lý host: 403 event_forbidden; cover sai: 400 invalid_event_cover."
+      ],
+      "postconditions": "Có event mới; không tự tạo RSVP cho người tổ chức.",
+      "endpoints": [
+        "POST /api/events"
+      ],
+      "tables": [
+        "Events",
+        "EventCoverMediaReferences",
+        "MediaAssets",
+        "GroupMembers",
+        "PageMembers"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/CreateEventRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-02",
+      "name": "Xem chi tiết sự kiện",
+      "group": "events-general",
+      "actor": "Người xem đã đăng nhập",
+      "goal": "Đọc thông tin và quyền của mình.",
+      "preconditions": "Event chưa xóa và CanViewAsync cho phép.",
+      "steps": [
+        "Gửi eventId.",
+        "Kiểm tra status/privacy/host, participant, lời mời và chặn.",
+        "Nạp host, GoingCount/InterestedCount, ViewerRsvp, CanManage/CanPost.",
+        "Trả 200 EventResponse."
+      ],
+      "alternatives": [
+        "Thiếu event hoặc không đủ quyền: 404 event_not_found."
+      ],
+      "postconditions": "Không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/events/{id:guid}"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "EventInvitations",
+        "UserProfiles",
+        "Groups",
+        "Pages",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Responses/EventResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-03",
+      "name": "Sửa sự kiện",
+      "group": "events-general",
+      "actor": "Người quản lý host",
+      "goal": "Cập nhật lịch, địa điểm và cover.",
+      "preconditions": "Event chưa xóa; CanManageAsync; UpdateEventRequest hợp lệ.",
+      "steps": [
+        "Gửi thông tin mới và cover/remove tùy chọn.",
+        "Validate cover nếu gửi; so sánh thời gian/địa điểm cũ.",
+        "Transaction update event, cover/reference và queue EVENT_UPDATED nếu đổi thời gian/địa điểm.",
+        "Commit rồi publish, trả 200 EventResponse."
+      ],
+      "alternatives": [
+        "Không tìm thấy: 404 event_not_found; không có quyền: 403 event_forbidden.",
+        "Request/domain hoặc cover sai: 400; không hoàn tất transaction."
+      ],
+      "postconditions": "Thông tin thay đổi; HostType/HostId không đổi qua request.",
+      "endpoints": [
+        "PATCH /api/events/{id:guid}"
+      ],
+      "tables": [
+        "Events",
+        "EventCoverMediaReferences",
+        "MediaAssets",
+        "EventParticipants",
+        "Notifications"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/UpdateEventRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-04",
+      "name": "Xuất bản sự kiện",
+      "group": "events-general",
+      "actor": "Người quản lý host",
+      "goal": "Chuyển DRAFT thành PUBLISHED.",
+      "preconditions": "Event chưa xóa, có quyền quản lý và đang DRAFT.",
+      "steps": [
+        "Gửi publish.",
+        "Kiểm tra host role; Event.Publish đổi status và thời gian.",
+        "SaveChanges, trả 200 EventResponse."
+      ],
+      "alternatives": [
+        "Thiếu event: 404; sai quyền: 403 event_forbidden.",
+        "Không phải DRAFT: 409 invalid_event_status."
+      ],
+      "postconditions": "Event PUBLISHED theo Privacy đã chọn.",
+      "endpoints": [
+        "POST /api/events/{id:guid}/publish"
+      ],
+      "tables": [
+        "Events"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "Domain/Entities/Event.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-05",
+      "name": "Hủy sự kiện",
+      "group": "events-general",
+      "actor": "Người quản lý host",
+      "goal": "Hủy event đã xuất bản và thông báo participant.",
+      "preconditions": "Event chưa xóa, CanManageAsync, Status=PUBLISHED.",
+      "steps": [
+        "Gửi cancel.",
+        "Event.Cancel chuyển CANCELLED; queue EVENT_CANCELLED.",
+        "Lưu, publish các notification, trả 200 EventResponse."
+      ],
+      "alternatives": [
+        "Thiếu event: 404; sai quyền: 403 event_forbidden.",
+        "Không phải PUBLISHED: 409 invalid_event_status."
+      ],
+      "postconditions": "Event giữ dữ liệu nhưng không nhận RSVP/mời/đăng bài mới.",
+      "endpoints": [
+        "POST /api/events/{id:guid}/cancel"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "Notifications"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "Domain/Entities/Event.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-06",
+      "name": "Xóa sự kiện",
+      "group": "events-general",
+      "actor": "Người quản lý host",
+      "goal": "Xóa mềm sự kiện và bỏ ảnh bìa.",
+      "preconditions": "Đăng nhập; event chưa xóa và được quản lý.",
+      "steps": [
+        "Gửi DELETE eventId.",
+        "Transaction đặt DeletedAtUtc/UpdatedAtUtc, CoverMediaId=null, bỏ reference.",
+        "Commit và trả 204."
+      ],
+      "alternatives": [
+        "Thiếu/đã xóa: 404 event_not_found; sai quyền: 403 event_forbidden."
+      ],
+      "postconditions": "Ẩn event; giữ RSVP, lời mời, bài và object ảnh.",
+      "endpoints": [
+        "DELETE /api/events/{id:guid}"
+      ],
+      "tables": [
+        "Events",
+        "EventCoverMediaReferences"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "Domain/Entities/Event.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-07",
+      "name": "Mở ảnh bìa sự kiện",
+      "group": "events-media",
+      "actor": "Người xem đã đăng nhập",
+      "goal": "Đọc cover qua URL có kiểm tra quyền.",
+      "preconditions": "Event có cover và đủ quyền xem.",
+      "steps": [
+        "Kiểm tra EventAccess và CoverMediaId.",
+        "Media.CreateReadUrlAsync cấp URL.",
+        "Trả 302 Redirect."
+      ],
+      "alternatives": [
+        "Thiếu ảnh/event hoặc không có quyền: 404 event_not_found.",
+        "Media không cấp được URL: 404."
+      ],
+      "postconditions": "Không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/events/{id:guid}/cover"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "EventInvitations",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-08",
+      "name": "Đặt trạng thái tham gia",
+      "group": "events-participation",
+      "actor": "Người xem có quyền",
+      "goal": "Đặt GOING hoặc INTERESTED.",
+      "preconditions": "Đăng nhập; event PUBLISHED đủ quyền xem; status hợp lệ.",
+      "steps": [
+        "Gửi Status.",
+        "Tạo EventParticipant nếu chưa có, hoặc SetStatus nếu có.",
+        "Lưu RespondedAtUtc; trả 200 EventResponse với counts mới."
+      ],
+      "alternatives": [
+        "Status sai: 400 validation_failed; event thiếu/không PUBLISHED/không xem được: 404 event_not_found."
+      ],
+      "postconditions": "RSVP duy nhất theo PK (EventId, UserId).",
+      "endpoints": [
+        "POST /api/events/{id:guid}/rsvp"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/SetEventRsvpRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-09",
+      "name": "Gỡ trạng thái tham gia",
+      "group": "events-participation",
+      "actor": "Người xem có quyền",
+      "goal": "Bỏ RSVP của mình.",
+      "preconditions": "Event PUBLISHED và đủ quyền xem.",
+      "steps": [
+        "Tìm event và RSVP của actor.",
+        "Xóa RSVP nếu có, lưu.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Event không hợp lệ hoặc không có quyền: 404 event_not_found.",
+        "Chưa RSVP: vẫn trả 204."
+      ],
+      "postconditions": "Không còn RSVP; lời mời giữ nguyên.",
+      "endpoints": [
+        "DELETE /api/events/{id:guid}/rsvp"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-10",
+      "name": "Xem người tham gia",
+      "group": "events-participation",
+      "actor": "Người xem có quyền",
+      "goal": "Đọc participant theo trang kết quả.",
+      "preconditions": "Đăng nhập; CanViewAsync và EventPageRequest hợp lệ.",
+      "steps": [
+        "Kiểm tra quyền event.",
+        "Join participant/UserProfiles, loại chặn hai chiều.",
+        "Sắp RespondedAtUtc/UserId giảm dần, lấy limit+1.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Không xem được: 404 event_not_found; cursor/limit sai: 400 validation_failed."
+      ],
+      "postconditions": "Không đổi RSVP.",
+      "endpoints": [
+        "GET /api/events/{id:guid}/participants"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "UserProfiles",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/EventPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-11",
+      "name": "Gửi lời mời sự kiện",
+      "group": "events-invitations",
+      "actor": "Người quản lý host",
+      "goal": "Mời tài khoản tham gia.",
+      "preconditions": "Event PUBLISHED; quyền quản lý; người nhận tồn tại và không bị chặn.",
+      "steps": [
+        "Validate actor/invitee và lời mời PENDING trùng.",
+        "Tạo invitation PENDING, queue EVENT_INVITE.",
+        "SaveChanges rồi publish nếu có.",
+        "Trả 201 EventInvitationResponse."
+      ],
+      "alternatives": [
+        "Tự mời: 400 self_invite; chặn: 409 relationship_unavailable; PENDING trùng: 409 event_invitation_pending.",
+        "Event/người nhận thiếu: 404 event_not_found; sai status/quyền: 403 event_forbidden."
+      ],
+      "postconditions": "Lời mời PENDING có thể cấp quyền xem event PRIVATE đã xuất bản.",
+      "endpoints": [
+        "POST /api/events/{id:guid}/invites"
+      ],
+      "tables": [
+        "Events",
+        "EventInvitations",
+        "AspNetUsers",
+        "BlockedUsers",
+        "Notifications"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/CreateEventInvitationRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-12",
+      "name": "Chấp nhận lời mời",
+      "group": "events-invitations",
+      "actor": "Người nhận lời mời",
+      "goal": "Phản hồi lời mời đúng người nhận.",
+      "preconditions": "Đăng nhập; invitation tới actor; event PUBLISHED chưa xóa.",
+      "steps": [
+        "Tìm invitation và event.",
+        "Transaction gọi Accept và upsert RSVP GOING.",
+        "Lưu, commit, trả 200 EventInvitationResponse."
+      ],
+      "alternatives": [
+        "Invitation không thuộc actor hoặc event không PUBLISHED/đã xóa: 404 event_not_found.",
+        "Invitation đã xử lý: entity giữ status cũ; accept hiện vẫn upsert GOING."
+      ],
+      "postconditions": "Invitation chuyển ACCEPTED nếu đang PENDING và actor có RSVP GOING.",
+      "endpoints": [
+        "POST /api/events/invitations/{inviteId:guid}/accept"
+      ],
+      "tables": [
+        "Events",
+        "EventInvitations",
+        "EventParticipants"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "Domain/Entities/EventInvitation.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-13",
+      "name": "Từ chối lời mời",
+      "group": "events-invitations",
+      "actor": "Người nhận lời mời",
+      "goal": "Phản hồi lời mời đúng người nhận.",
+      "preconditions": "Đăng nhập; invitation tới actor; event PUBLISHED chưa xóa.",
+      "steps": [
+        "Tìm invitation và event.",
+        "Transaction gọi Decline, không tạo RSVP.",
+        "Lưu, commit, trả 200 EventInvitationResponse."
+      ],
+      "alternatives": [
+        "Invitation không thuộc actor hoặc event không PUBLISHED/đã xóa: 404 event_not_found.",
+        "Invitation đã xử lý: entity giữ status cũ; accept hiện vẫn upsert GOING."
+      ],
+      "postconditions": "Invitation chuyển DECLINED nếu đang PENDING; RSVP cũ giữ nguyên.",
+      "endpoints": [
+        "POST /api/events/invitations/{inviteId:guid}/decline"
+      ],
+      "tables": [
+        "Events",
+        "EventInvitations",
+        "EventParticipants"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "Domain/Entities/EventInvitation.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-14",
+      "name": "Xem lời mời của tôi",
+      "group": "events-invitations",
+      "actor": "Người nhận đã đăng nhập",
+      "goal": "Lấy lời mời PENDING.",
+      "preconditions": "EventPageRequest hợp lệ.",
+      "steps": [
+        "Lọc InviteeUserId=actor, Status=PENDING.",
+        "Sắp CreatedAtUtc/Id giảm dần.",
+        "Nạp EventResponse nếu event chưa xóa; trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400 validation_failed.",
+        "Event đã xóa: lời mời vẫn có thể xuất hiện, Event=null."
+      ],
+      "postconditions": "Không đổi status.",
+      "endpoints": [
+        "GET /api/events/invitations/mine"
+      ],
+      "tables": [
+        "EventInvitations",
+        "Events"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/EventPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-15",
+      "name": "Xem sự kiện của tôi",
+      "group": "events-browse",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy event do mình tạo hoặc quản lý host.",
+      "preconditions": "Cursor và limit hợp lệ.",
+      "steps": [
+        "Lọc CreatedByUserId hoặc membership quản lý group/page.",
+        "ListAsync sắp StartsAtUtc/Id tăng dần, lấy limit+1 và nạp response.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400 validation_failed.",
+        "Không có kết quả: Items rỗng; ListAsync không lọc CanViewAsync từng dòng."
+      ],
+      "postconditions": "Không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/events/mine"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "GroupMembers",
+        "PageMembers"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/EventPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-16",
+      "name": "Xem sự kiện sắp tới",
+      "group": "events-browse",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy event sắp tới mình tạo hoặc đã RSVP.",
+      "preconditions": "Cursor và limit hợp lệ.",
+      "steps": [
+        "Lọc StartsAtUtc >= now và creator/participant.",
+        "ListAsync sắp StartsAtUtc/Id tăng dần, lấy limit+1 và nạp response.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400 validation_failed.",
+        "Không có kết quả: Items rỗng; ListAsync không lọc CanViewAsync từng dòng."
+      ],
+      "postconditions": "Không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/events/upcoming"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "GroupMembers",
+        "PageMembers"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/EventPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-17",
+      "name": "Khám phá sự kiện",
+      "group": "events-browse",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tìm event PUBLIC PUBLISHED sắp tới.",
+      "preconditions": "Cursor và limit hợp lệ.",
+      "steps": [
+        "Lọc status/privacy và thời gian.",
+        "Nếu có query, tìm tên/mô tả/LocationName sau trim/lowercase.",
+        "ListAsync sắp StartsAtUtc/Id tăng dần, lấy limit+1 và nạp response.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400 validation_failed.",
+        "Không có kết quả: Items rỗng; ListAsync không lọc CanViewAsync từng dòng."
+      ],
+      "postconditions": "Không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/events/discover"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "GroupMembers",
+        "PageMembers"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/EventDiscoveryRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-18",
+      "name": "Đọc bài viết sự kiện",
+      "group": "events-posts",
+      "actor": "Người xem có quyền",
+      "goal": "Đọc bài trong container EVENT.",
+      "preconditions": "Event chưa xóa, đủ quyền xem và phân trang hợp lệ.",
+      "steps": [
+        "Kiểm tra CanViewAsync.",
+        "Lọc Posts EVENT, ContainerId=eventId, chưa xóa.",
+        "Sắp CreatedAtUtc/Id giảm dần, nạp PostResponse.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Không có quyền/event thiếu: 404 event_not_found; phân trang sai: 400 validation_failed."
+      ],
+      "postconditions": "Không tạo bài hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/events/{id:guid}/posts"
+      ],
+      "tables": [
+        "Events",
+        "Posts",
+        "PostMedia",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "../Posts/Services/PostsService.cs"
+      ]
+    },
+    {
+      "id": "UC-EV-19",
+      "name": "Đăng bài sự kiện",
+      "group": "events-posts",
+      "actor": "Người quản lý hoặc participant",
+      "goal": "Tạo bài trong EVENT.",
+      "preconditions": "Event PUBLISHED và đủ quyền xem; manager hoặc participant; nội dung/media hợp lệ.",
+      "steps": [
+        "Validate media thuộc actor.",
+        "Transaction tạo bài PUBLIC/EVENT, PostMedia và MediaReferences.",
+        "Đồng bộ metadata, commit và nạp response.",
+        "Trả 201 PostResponse."
+      ],
+      "alternatives": [
+        "Event thiếu: 404; sai quyền: 403 event_forbidden.",
+        "Tạo bài thất bại: 409 post_failed; lỗi media rollback."
+      ],
+      "postconditions": "Có bài EVENT; ContainerId không có FK tới Events.",
+      "endpoints": [
+        "POST /api/events/{id:guid}/posts"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "Posts",
+        "PostMedia",
+        "MediaReferences",
+        "MediaAssets",
+        "ContentMentions",
+        "PostHashtags"
+      ],
+      "sources": [
+        "Controllers/EventsController.cs",
+        "Services/EventsService.cs",
+        "Services/EventAccessService.cs",
+        "DTOs/Requests/CreateEventPostRequest.cs",
+        "../Posts/Services/PostsService.cs"
       ]
     }
   ]
