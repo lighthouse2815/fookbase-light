@@ -643,6 +643,13 @@
       "description": "Đọc bài profile của chính mình đăng cùng ngày/tháng trong các năm trước.",
       "tables": [],
       "diagram": null
+    },
+    {
+      "id": "ai",
+      "name": "Ai",
+      "description": "Gửi tin nhắn và lịch sử client tới nhà cung cấp AI được cấu hình, trả câu trả lời và model đã dùng.",
+      "tables": [],
+      "diagram": null
     }
   ],
   "tables": {
@@ -16336,6 +16343,173 @@
 }
   </script>
 
+  <script id="ai-specification" type="application/json">
+{
+  "title": "Trò chuyện AI và fallback",
+  "purpose": "Gửi tin nhắn và lịch sử client tới nhà cung cấp AI được cấu hình, trả câu trả lời và model đã dùng.",
+  "scope": "Ai không có entity, bảng conversation hoặc memory riêng. Đối chiếu POST /api/ai/chat, AiChatService, AiChatOptions, validation và DI HttpClient. API yêu cầu đăng nhập, claim sub GUID, rate-limit ai-chat. Không truy vấn dữ liệu mạng xã hội để tạo context trong service hiện tại.",
+  "usecasesTitle": "Trò chuyện AI và fallback",
+  "groups": [
+    {
+      "id": "ai-chat",
+      "name": "Trò chuyện",
+      "actor": "user",
+      "description": "Nhận câu trả lời cho message hiện tại."
+    },
+    {
+      "id": "ai-history",
+      "name": "Lịch sử client",
+      "actor": "user",
+      "description": "Lọc các entry lịch sử trước khi gửi provider."
+    },
+    {
+      "id": "ai-providers",
+      "name": "Nhà cung cấp và fallback",
+      "actor": "user",
+      "description": "Chọn provider có cấu hình và xử lý lỗi dự phòng."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Ai không có entity, bảng conversation hoặc memory riêng. Đối chiếu POST /api/ai/chat, AiChatService, AiChatOptions, validation và DI HttpClient. API yêu cầu đăng nhập, claim sub GUID, rate-limit ai-chat. Không truy vấn dữ liệu mạng xã hội để tạo context trong service hiện tại."
+    }
+  ],
+  "rules": [
+    {
+      "text": "Một API POST chat, Authorize và EnableRateLimiting(\"ai-chat\"); thiếu claim sub GUID trả 401. Response thành công 200 AiChatResponse(Content, Model); service thất bại trả ProblemDetails với StatusCode và mô tả lỗi.",
+      "source": "Controllers/AiChatController.cs"
+    },
+    {
+      "text": "Message Required, trim và giới hạn MaximumInputCharacters theo cấu hình (mặc định 4000, hợp lệ 1..20000). Sai validation trả 400 trước khi gọi provider. Không có endpoint streaming, upload file hoặc lịch sử lưu server trong controller.",
+      "source": "DTOs/Requests/AiChatRequest.cs"
+    },
+    {
+      "text": "History ValidateNever ở request; service lấy TakeLast(MaximumHistoryMessages), mặc định 10, hợp lệ 0..30, rồi validate từng entry user/assistant và content. Entry không hợp lệ được bỏ; message hiện tại được thêm sau cùng với role user. Role system do client gửi không nằm trong AllowedValues.",
+      "source": "DTOs/Requests/AiChatHistoryMessage.cs"
+    },
+    {
+      "text": "Enabled=false hoặc không có provider được cấu hình thì ChatAsync trả 503. Startup Validate khi Enabled=true yêu cầu provider có key/model/ApiBaseUrl HTTPS và Instructions, timeout/limits hợp lệ.",
+      "source": "Config/AiChatOptions.cs"
+    },
+    {
+      "text": "Chuỗi ưu tiên Groq → Gemini → OpenRouter, chỉ lấy provider có ApiKey. Nếu cả ba không cấu hình nhưng legacy ApiKey có, dùng OpenAI Responses. Legacy OpenAI không được thêm vào cuối khi chuỗi ưu tiên đã có provider.",
+      "source": "Config/AiChatOptions.cs"
+    },
+    {
+      "text": "Groq/OpenRouter dùng Chat Completions với system instructions + input; Gemini dùng systemInstruction, map assistant→model và generateContent; legacy OpenAI gửi v1/responses, instructions và store=false. Đây là mô tả payload trong source, không khẳng định chính sách lưu dữ liệu của mọi provider.",
+      "source": "Services/AiChatService.cs"
+    },
+    {
+      "text": "HttpClient named theo provider, BaseAddress từ cấu hình, timeout mặc định 45 giây mỗi request, hợp lệ 1..120. Gemini dùng header x-goog-api-key; provider khác Authorization Bearer. Credentials lấy configuration, không đưa vào response hoặc tài liệu.",
+      "source": "DependencyInjection.cs"
+    },
+    {
+      "text": "Fallback khi HTTP 429 hoặc >=500, timeout nội bộ, HttpRequestException, JsonException hoặc output text rỗng. HTTP lỗi khác kết thúc bằng 502; hết provider dự phòng trả 503. Cancellation do client yêu cầu không bị chuyển thành fallback timeout.",
+      "source": "Services/AiChatService.cs"
+    },
+    {
+      "text": "Provider đầu trả text không trắng kết thúc chuỗi, response Model là model của provider thành công. Output parser hỗ trợ các cấu trúc chat choices, Gemini candidates/parts và Responses output_text/message content.",
+      "source": "Services/AiChatService.cs"
+    },
+    {
+      "text": "Service chỉ gửi input/instructions đến provider rồi trả response; không SaveChanges, không persist history, không RAG/tool call đọc tài khoản/posts hoặc phân quyền dữ liệu theo actor ngoài xác thực controller.",
+      "source": "Services/AiChatService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-AI-01",
+      "name": "Trò chuyện với AI",
+      "group": "ai-chat",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Nhận câu trả lời cho message.",
+      "preconditions": "Request Message hợp lệ; AiChat Enabled và có provider cấu hình.",
+      "steps": [
+        "POST Message/History tới chat.",
+        "Controller kiểm tra claim, validation và rate-limit; service trim message, lọc history.",
+        "Gọi provider theo chuỗi cấu hình, đọc output text.",
+        "Trả 200 AiChatResponse với Content và Model."
+      ],
+      "alternatives": [
+        "Message sai: 400 validation_failed; thiếu xác thực: 401; vượt policy: 429.",
+        "Chưa bật/chưa cấu hình hoặc hết provider khả dụng: 503.",
+        "Provider lỗi không đủ điều kiện fallback: 502 ProblemDetails."
+      ],
+      "postconditions": "Không tạo conversation/history trong database.",
+      "endpoints": [
+        "POST /api/ai/chat"
+      ],
+      "tables": [],
+      "sources": [
+        "Controllers/AiChatController.cs",
+        "Services/AiChatService.cs",
+        "Config/AiChatOptions.cs",
+        "DTOs/Requests/AiChatRequest.cs",
+        "DTOs/Responses/AiChatResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-AI-02",
+      "name": "Lọc lịch sử client",
+      "group": "ai-history",
+      "actor": "AiChatService",
+      "goal": "Giữ context hợp lệ theo giới hạn.",
+      "preconditions": "Có message hiện tại; History có thể null hoặc chứa các entry request.",
+      "steps": [
+        "Lấy 10 entry cuối mặc định, theo MaximumHistoryMessages.",
+        "Validate từng entry role user/assistant, Required content và AiInputLength; bỏ entry không hợp lệ.",
+        "Trim content, thêm message hiện tại role user sau cùng."
+      ],
+      "alternatives": [
+        "History null/limit=0: chỉ gửi message hiện tại.",
+        "Role/content không hợp lệ không được dùng trong input."
+      ],
+      "postconditions": "Tạo input trong bộ nhớ, không lưu DB.",
+      "endpoints": [
+        "Service AiChatService.BuildInput"
+      ],
+      "tables": [],
+      "sources": [
+        "Services/AiChatService.cs",
+        "DTOs/Requests/AiChatHistoryMessage.cs",
+        "Common/AiInputLengthAttribute.cs",
+        "Config/AiChatOptions.cs"
+      ]
+    },
+    {
+      "id": "UC-AI-03",
+      "name": "Chọn provider dự phòng",
+      "group": "ai-providers",
+      "actor": "AiChatService",
+      "goal": "Hoàn thành request khi provider ưu tiên không khả dụng.",
+      "preconditions": "AiChat Enabled, có provider cấu hình; input đã được xây.",
+      "steps": [
+        "GetConfiguredProviders lấy chuỗi ưu tiên hoặc legacy nếu chuỗi rỗng.",
+        "Gửi bằng protocol/HttpClient tương ứng.",
+        "Có text hợp lệ trả ngay; lỗi có thể fallback chuyển provider kế tiếp.",
+        "Hết chuỗi trả 503; lỗi terminal trả 502."
+      ],
+      "alternatives": [
+        "HTTP 429/5xx, timeout nội bộ, mạng/JSON lỗi hoặc output rỗng cho phép fallback.",
+        "HTTP 4xx khác không tiếp tục; cancellation client truyền ra."
+      ],
+      "postconditions": "Trả model provider thành công hoặc lỗi; không lưu lịch sử.",
+      "endpoints": [
+        "Service AiChatService.ChatAsync / SendAsync"
+      ],
+      "tables": [],
+      "sources": [
+        "Services/AiChatService.cs",
+        "Config/AiChatOptions.cs",
+        "DependencyInjection.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
   <script>
     const catalog = JSON.parse(document.getElementById('catalog').textContent);
     const moduleNav = document.getElementById('module-nav');
@@ -16439,7 +16613,7 @@
             <h3>Luồng chính</h3><ol>${uc.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
             <h3>Luồng thay thế / ngoại lệ</h3><ul>${uc.alternatives.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ul>
             <h3>API liên quan</h3><ul>${uc.endpoints.length ? uc.endpoints.map(endpoint => `<li><code>${escapeHtml(endpoint)}</code></li>`).join('') : '<li>Không có API HTTP riêng; thực hiện bằng tác vụ nền.</li>'}</ul>
-            <h3>Bảng liên quan</h3><div class="usecase-index">${uc.tables.map(table => catalog.tables[table] ? `<button class="table-link" type="button" data-table="${escapeHtml(table)}">${escapeHtml(table)}</button>` : `<span class="usecase-id" title="Bảng của module liên quan chưa có trong ERD này">${escapeHtml(table)} · module liên quan</span>`).join('')}</div>
+            <h3>Bảng liên quan</h3><div class="usecase-index">${uc.tables.length ? uc.tables.map(table => catalog.tables[table] ? `<button class="table-link" type="button" data-table="${escapeHtml(table)}">${escapeHtml(table)}</button>` : `<span class="usecase-id" title="Bảng của module liên quan chưa có trong ERD này">${escapeHtml(table)} · module liên quan</span>`).join('') : '<span class="usecase-id">Không sử dụng bảng database trong luồng này.</span>'}</div>
             <h3>Nguồn implementation</h3><div class="source-links">${uc.sources.map(source => `<a href="${sourcePrefix}${escapeHtml(source)}">${escapeHtml(source.split('/').pop())}</a>`).join('')}</div>
           </div>
         </details>`).join('')}`;
