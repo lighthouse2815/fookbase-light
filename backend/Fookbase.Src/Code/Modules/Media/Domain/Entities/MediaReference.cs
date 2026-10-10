@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
 
-[Table("MediaReferences")]
 [PrimaryKey(nameof(MediaId), nameof(PostId))]
 [Index(nameof(PostId))]
 public sealed class MediaReference

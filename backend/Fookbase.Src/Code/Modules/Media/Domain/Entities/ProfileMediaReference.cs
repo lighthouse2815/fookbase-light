@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
 
-[Table("ProfileMediaReferences")]
 [PrimaryKey(nameof(UserId), nameof(Slot))]
 [Index(nameof(MediaId))]
 public sealed class ProfileMediaReference

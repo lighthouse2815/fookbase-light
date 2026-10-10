@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
 
-[Table("MediaAssets")]
 [Index(nameof(ObjectKey), IsUnique = true)]
 [Index(nameof(OwnerUserId), nameof(CreatedAtUtc))]
 [Index(nameof(Status), nameof(UploadExpiresAtUtc))]

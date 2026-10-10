@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
 
-[Table("MediaProcessingJobs")]
 [Index(nameof(MediaId), IsUnique = true)]
 [Index(nameof(Status), nameof(NextAttemptAtUtc), nameof(CreatedAtUtc))]
 public sealed class MediaProcessingJob

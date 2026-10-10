@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Media.Entities;
 
-[Table("ObjectDeletions")]
 [Index(nameof(ProcessedAtUtc), nameof(FailedAtUtc), nameof(NextAttemptAtUtc), nameof(CreatedAtUtc))]
 public sealed class ObjectDeletion
 {
