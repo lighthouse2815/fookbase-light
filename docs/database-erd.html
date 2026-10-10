@@ -629,6 +629,13 @@
       "description": "Tổng hợp bài viết, reel và chia sẻ theo quan hệ, container, quyền xem và xếp hạng.",
       "tables": [],
       "diagram": null
+    },
+    {
+      "id": "search",
+      "name": "Search",
+      "description": "Tìm người, nhóm, trang, bài viết, reel, sự kiện và gợi ý nhanh theo quyền của người xem.",
+      "tables": [],
+      "diagram": null
     }
   ],
   "tables": {
@@ -15855,6 +15862,378 @@
         "../Posts/Services/PostVisibility.cs",
         "../Groups/Services/GroupPostAccessService.cs",
         "../Pages/Services/PagePostAccessService.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <script id="search-specification" type="application/json">
+{
+  "title": "Tìm kiếm và gợi ý",
+  "purpose": "Tìm người, nhóm, trang, bài viết, reel, sự kiện và gợi ý nhanh theo quyền của người xem.",
+  "scope": "Search không có bảng/index tìm kiếm riêng. Đối chiếu 2 API SearchController, SearchService, các request/response và dữ liệu Users, Friends, Groups, Pages, Posts, Reels, Events. Yêu cầu đăng nhập, claim sub GUID và policy rate-limit search. Các loại kết quả dùng query PostgreSQL và bộ lọc quyền riêng.",
+  "usecasesTitle": "Tìm kiếm và gợi ý",
+  "groups": [
+    {
+      "id": "search-general",
+      "name": "Tìm kiếm tổng hợp",
+      "actor": "user",
+      "description": "Preview nhiều loại và hashtag trong một request."
+    },
+    {
+      "id": "search-types",
+      "name": "Tìm kiếm theo loại",
+      "actor": "user",
+      "description": "Phân trang riêng people/groups/pages/posts/reels/events."
+    },
+    {
+      "id": "search-suggestions",
+      "name": "Gợi ý nhanh",
+      "actor": "user",
+      "description": "Preview people, groups và pages cho ô tìm kiếm."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Search không có bảng/index tìm kiếm riêng. Đối chiếu 2 API SearchController, SearchService, các request/response và dữ liệu Users, Friends, Groups, Pages, Posts, Reels, Events. Yêu cầu đăng nhập, claim sub GUID và policy rate-limit search. Các loại kết quả dùng query PostgreSQL và bộ lọc quyền riêng."
+    }
+  ],
+  "rules": [
+    {
+      "text": "Hai API đều Authorize và EnableRateLimiting(\"search\"); actor lấy từ sub GUID. Query lấy từ tham số q, trim rồi dài 2..100; sai trả 400 invalid_search_query.",
+      "source": "Controllers/SearchController.cs"
+    },
+    {
+      "text": "Type null/trắng/all dùng ALL; chấp nhận people, groups, pages, posts, reels, events không phân biệt hoa/thường. Type khác trả 400 invalid_search_type. Search limit mặc định 20, 1..50; suggestions mặc định 5, 1..5; sai trả 400 invalid_search_limit.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "ALL không nhận cursor, nếu gửi trả 400 invalid_search_cursor; mỗi loại preview tối đa min(limit,5), gồm people/groups/pages/posts/reels/events và hashtags. NextCursor cấp tổng bằng null; không có type=hashtags riêng.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Cursor là JSON Base64Url version search-v1, gắn type và SHA-256 của type:q sau trim. Kiểm tra ID khác rỗng/rank>=0; không dùng Data Protection như Feed và không gắn viewer. Cursor type/query khác trả 400 invalid_search_cursor; quyền được nạp lại theo người xem hiện tại.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Người: chỉ tìm DisplayName ILIKE, không tìm Username trực tiếp trong SearchPeopleAsync. Loại tài khoản bị chặn hai chiều; ưu tiên exact→prefix→contains, rồi DisplayName và UserId tăng. Response gồm PublicProfileHandle, bio rút gọn, follow/friend trạng thái.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Nhóm: chưa xóa, PUBLIC hoặc người xem là thành viên PRIVATE; tìm Name/Description. Rank exact/prefix/contains tên, MemberCount giảm, Id tăng. Response MemberStatus member/pending/null; lời mời PENDING không tự cho phép tìm PRIVATE.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Trang: chỉ PUBLISHED chưa xóa, tìm Name/Username/Category/Bio. Ưu tiên username exact, name exact, username prefix, name prefix, rồi contains; FollowerCount giảm và Id tăng. Không trả UNPUBLISHED dù viewer là quản trị.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Bài: STANDARD chưa xóa; PROFILE theo PostVisibility, GROUP public hoặc đã tham gia và không bị chặn tác giả, PAGE PUBLISHED. Tìm Content ILIKE, exact/prefix/contains rồi CreatedAtUtc giảm/Id tăng. Không đưa EVENT posts vào VisibleStandardPosts hiện tại.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Reel: tìm caption Content, áp dụng profile privacy/chặn và media READY với dữ liệu video đã xử lý. Rank exact/prefix/contains, CreatedAtUtc giảm/Id tăng; response có author/video, counts và đường dẫn video/access/poster/access.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Sự kiện: chỉ chưa xóa, PUBLISHED, PUBLIC, StartsAtUtc>=DateTimeOffset.UtcNow; tìm Name/Description. Sắp StartsAtUtc/Id tăng, response host và GOING/INTERESTED counts. Luồng không gọi EventAccessService/chặn host user để lọc riêng.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Typed search lấy limit+1 và NextCursor theo dòng cuối trả ra; people dùng name, groups/pages count, posts/reels/events ticks. Không có kết quả trả danh sách rỗng. Một số cursor thiếu trường type-specific cho trang rỗng; không suy diễn mọi cursor giả đều được từ chối.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "ILIKE dùng pattern query với % ở prefix/contains; code không escape %/_ do người dùng nhập. Đây là ngữ nghĩa wildcard hiện tại, không phải tìm kiếm literal hoàn toàn.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Snippet/Bio tối đa 280 ký tự trước dấu …; API trả URL tương đối avatar/cover/media có kiểm tra quyền ở module đích. Search không tự ghi lượt xem, lịch sử query hoặc tăng tương tác.",
+      "source": "Services/SearchService.cs"
+    },
+    {
+      "text": "Suggestions chỉ people/groups/pages, không có posts/reels/events/hashtags hay cursor; áp dụng cùng quyền/ranking với từng hàm search, có tối đa limit mỗi loại.",
+      "source": "Services/SearchService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-SE-01",
+      "name": "Tìm kiếm tổng hợp",
+      "group": "search-general",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy preview nhiều loại cùng hashtag.",
+      "preconditions": "q hợp lệ; type all/null; không cursor; limit 1..50.",
+      "steps": [
+        "Normalize q/type/limit và nạp snapshot Friends.",
+        "Gọi các hàm people/groups/pages/posts/reels/events với preview min(limit,5).",
+        "Tìm hashtag qua SocialInteractionsService.",
+        "Trả 200 GlobalSearchResponse, NextCursor=null."
+      ],
+      "alternatives": [
+        "q/type/limit sai: 400 invalid_search_query/type/limit.",
+        "ALL có cursor: 400 invalid_search_cursor; thiếu xác thực: 401.",
+        "Không đủ quyền với nội dung thì loại khỏi loại kết quả tương ứng."
+      ],
+      "postconditions": "Không ghi dữ liệu hoặc query history.",
+      "endpoints": [
+        "GET /api/search"
+      ],
+      "tables": [
+        "UserProfiles",
+        "Groups",
+        "Pages",
+        "Posts",
+        "PostMedia",
+        "MediaAssets",
+        "Events",
+        "Hashtags",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/SearchController.cs",
+        "Services/SearchService.cs",
+        "DTOs/Requests/SearchRequest.cs",
+        "../Posts/Services/SocialInteractionsService.cs"
+      ]
+    },
+    {
+      "id": "UC-SE-02",
+      "name": "Tìm người",
+      "group": "search-types",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tìm theo DisplayName.",
+      "preconditions": "q 2..100 sau trim; type=people; limit 1..50; cursor đúng query/type.",
+      "steps": [
+        "Normalize và decode cursor theo loại.",
+        "Nạp viewer snapshot nếu cần; Loại tài khoản bị chặn hai chiều; tìm DisplayName ILIKE.",
+        "Rank, DisplayName, UserId tăng. Lấy limit+1.",
+        "Nạp response, trả 200 với trường people và NextCursor; loại khác rỗng."
+      ],
+      "alternatives": [
+        "Dữ liệu q/type/limit sai: 400; cursor sai: 400 invalid_search_cursor.",
+        "Không có kết quả/không có quyền: danh sách loại này rỗng."
+      ],
+      "postconditions": "Không tạo bản ghi tìm kiếm hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/search?type=people"
+      ],
+      "tables": [
+        "UserProfiles",
+        "UserFollows",
+        "Friendships",
+        "FriendRequests",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/SearchController.cs",
+        "Services/SearchService.cs",
+        "DTOs/Requests/SearchRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-SE-03",
+      "name": "Tìm nhóm",
+      "group": "search-types",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tìm nhóm đủ quyền.",
+      "preconditions": "q 2..100 sau trim; type=groups; limit 1..50; cursor đúng query/type.",
+      "steps": [
+        "Normalize và decode cursor theo loại.",
+        "Nạp viewer snapshot nếu cần; Chưa xóa, PUBLIC hoặc viewer member PRIVATE; tìm tên/mô tả.",
+        "Rank tăng, MemberCount giảm, Id tăng. Lấy limit+1.",
+        "Nạp response, trả 200 với trường groups và NextCursor; loại khác rỗng."
+      ],
+      "alternatives": [
+        "Dữ liệu q/type/limit sai: 400; cursor sai: 400 invalid_search_cursor.",
+        "Không có kết quả/không có quyền: danh sách loại này rỗng."
+      ],
+      "postconditions": "Không tạo bản ghi tìm kiếm hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/search?type=groups"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupJoinRequests"
+      ],
+      "sources": [
+        "Controllers/SearchController.cs",
+        "Services/SearchService.cs",
+        "DTOs/Requests/SearchRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-SE-04",
+      "name": "Tìm trang",
+      "group": "search-types",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tìm trang đã xuất bản.",
+      "preconditions": "q 2..100 sau trim; type=pages; limit 1..50; cursor đúng query/type.",
+      "steps": [
+        "Normalize và decode cursor theo loại.",
+        "Nạp viewer snapshot nếu cần; Chỉ PUBLISHED chưa xóa; tìm tên/username/category/bio.",
+        "Ưu tiên username/name exact/prefix; FollowerCount giảm, Id tăng. Lấy limit+1.",
+        "Nạp response, trả 200 với trường pages và NextCursor; loại khác rỗng."
+      ],
+      "alternatives": [
+        "Dữ liệu q/type/limit sai: 400; cursor sai: 400 invalid_search_cursor.",
+        "Không có kết quả/không có quyền: danh sách loại này rỗng."
+      ],
+      "postconditions": "Không tạo bản ghi tìm kiếm hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/search?type=pages"
+      ],
+      "tables": [
+        "Pages",
+        "PageFollowers"
+      ],
+      "sources": [
+        "Controllers/SearchController.cs",
+        "Services/SearchService.cs",
+        "DTOs/Requests/SearchRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-SE-05",
+      "name": "Tìm bài viết",
+      "group": "search-types",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tìm Content của STANDARD.",
+      "preconditions": "q 2..100 sau trim; type=posts; limit 1..50; cursor đúng query/type.",
+      "steps": [
+        "Normalize và decode cursor theo loại.",
+        "Nạp viewer snapshot nếu cần; Profile privacy, group public/member, page PUBLISHED; không EVENT.",
+        "Rank tăng, CreatedAtUtc giảm, Id tăng. Lấy limit+1.",
+        "Nạp response, trả 200 với trường posts và NextCursor; loại khác rỗng."
+      ],
+      "alternatives": [
+        "Dữ liệu q/type/limit sai: 400; cursor sai: 400 invalid_search_cursor.",
+        "Không có kết quả/không có quyền: danh sách loại này rỗng."
+      ],
+      "postconditions": "Không tạo bản ghi tìm kiếm hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/search?type=posts"
+      ],
+      "tables": [
+        "Posts",
+        "Groups",
+        "GroupMembers",
+        "Pages",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/SearchController.cs",
+        "Services/SearchService.cs",
+        "DTOs/Requests/SearchRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-SE-06",
+      "name": "Tìm reel",
+      "group": "search-types",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tìm caption reel hợp lệ.",
+      "preconditions": "q 2..100 sau trim; type=reels; limit 1..50; cursor đúng query/type.",
+      "steps": [
+        "Normalize và decode cursor theo loại.",
+        "Nạp viewer snapshot nếu cần; Profile privacy/chặn và video READY/processed hợp lệ.",
+        "Rank tăng, CreatedAtUtc giảm, Id tăng. Lấy limit+1.",
+        "Nạp response, trả 200 với trường reels và NextCursor; loại khác rỗng."
+      ],
+      "alternatives": [
+        "Dữ liệu q/type/limit sai: 400; cursor sai: 400 invalid_search_cursor.",
+        "Không có kết quả/không có quyền: danh sách loại này rỗng."
+      ],
+      "postconditions": "Không tạo bản ghi tìm kiếm hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/search?type=reels"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaAssets",
+        "ReelViews",
+        "PostReactions",
+        "Comments"
+      ],
+      "sources": [
+        "Controllers/SearchController.cs",
+        "Services/SearchService.cs",
+        "DTOs/Requests/SearchRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-SE-07",
+      "name": "Tìm sự kiện",
+      "group": "search-types",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tìm event PUBLIC PUBLISHED sắp tới.",
+      "preconditions": "q 2..100 sau trim; type=events; limit 1..50; cursor đúng query/type.",
+      "steps": [
+        "Normalize và decode cursor theo loại.",
+        "Nạp viewer snapshot nếu cần; Chưa xóa, PUBLIC/PUBLISHED, thời gian >=now; tìm tên/mô tả.",
+        "StartsAtUtc/Id tăng; không gọi EventAccessService. Lấy limit+1.",
+        "Nạp response, trả 200 với trường events và NextCursor; loại khác rỗng."
+      ],
+      "alternatives": [
+        "Dữ liệu q/type/limit sai: 400; cursor sai: 400 invalid_search_cursor.",
+        "Không có kết quả/không có quyền: danh sách loại này rỗng."
+      ],
+      "postconditions": "Không tạo bản ghi tìm kiếm hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/search?type=events"
+      ],
+      "tables": [
+        "Events",
+        "EventParticipants",
+        "UserProfiles",
+        "Groups",
+        "Pages"
+      ],
+      "sources": [
+        "Controllers/SearchController.cs",
+        "Services/SearchService.cs",
+        "DTOs/Requests/SearchRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-SE-08",
+      "name": "Lấy gợi ý tìm kiếm",
+      "group": "search-suggestions",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Gợi ý people/groups/pages khi nhập q.",
+      "preconditions": "q 2..100 sau trim; limit 1..5.",
+      "steps": [
+        "Normalize q/limit, nạp quan hệ người xem.",
+        "Tìm people/groups/pages với cùng quyền/ranking.",
+        "Trả 200 SearchSuggestionsResponse, không cursor."
+      ],
+      "alternatives": [
+        "q sai: 400 invalid_search_query; limit sai: 400 invalid_search_limit.",
+        "Không có kết quả: các danh sách rỗng; policy search có thể trả 429."
+      ],
+      "postconditions": "Không lưu query history.",
+      "endpoints": [
+        "GET /api/search/suggestions"
+      ],
+      "tables": [
+        "UserProfiles",
+        "Groups",
+        "GroupMembers",
+        "Pages",
+        "PageFollowers",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/SearchController.cs",
+        "Services/SearchService.cs",
+        "DTOs/Requests/SearchSuggestionsRequest.cs",
+        "DTOs/Responses/SearchSuggestionsResponse.cs"
       ]
     }
   ]
