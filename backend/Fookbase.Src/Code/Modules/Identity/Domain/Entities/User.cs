@@ -23,6 +23,8 @@ public sealed class User : IdentityUser<Guid>
 
     public UserProfile? Profile { get; private set; }
 
+    public UserPrivacySettings? PrivacySettings { get; private set; }
+
     public UserModerationState? ModerationState { get; private set; }
 
     public void Disable() => IsActive = false;

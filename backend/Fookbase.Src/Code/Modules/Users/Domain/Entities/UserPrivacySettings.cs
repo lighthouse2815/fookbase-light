@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Fookbase.Api.Modules.Identity.Entities;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
 using Fookbase.Api.Modules.Users.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fookbase.Api.Modules.Users.Entities;
 
@@ -16,7 +19,12 @@ public sealed class UserPrivacySettings
     }
 
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public Guid UserId { get; private set; }
+
+    [InverseProperty(nameof(User.PrivacySettings))]
+    [DeleteBehavior(DeleteBehavior.Cascade)]
+    public User User { get; private set; } = null!;
 
     [Required]
     public PostPrivacy DefaultPostPrivacy { get; private set; } = PostPrivacy.PUBLIC;
