@@ -381,6 +381,32 @@
         "source": "flowchart LR\n    PostReactions[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>PostReactions</th></tr></thead><tbody><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PostSaves[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>PostSaves</th></tr></thead><tbody><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SavedAtUtc'><td class='identity-keys' /><td><code class='' title=''>SavedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    PostShares[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>PostShares</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='OriginalPostId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>OriginalPostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SharingUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>SharingUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='DestinationType'><td class='identity-keys' /><td><code class='' title=''>DestinationType</code></td><td class='column-type'>integer</td></tr><tr data-column='DestinationId'><td class='identity-keys' /><td><code class='' title=''>DestinationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Caption'><td class='identity-keys' /><td><code class='' title=''>Caption</code></td><td class='column-type'>varchar(10000)?</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Posts[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>Posts</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Content'><td class='identity-keys' /><td><code class='' title=''>Content</code></td><td class='column-type'>varchar(10000)</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerType'><td class='identity-keys' /><td><code class='' title=''>ContainerType</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerId'><td class='identity-keys' /><td><code class='' title=''>ContainerId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostType'><td class='identity-keys' /><td><code class='' title=''>PostType</code></td><td class='column-type'>integer</td></tr><tr data-column='TextBackground'><td class='identity-keys' /><td><code class='' title=''>TextBackground</code></td><td class='column-type'>varchar(32)?</td></tr><tr data-column='IsPinned'><td class='identity-keys' /><td><code class='' title=''>IsPinned</code></td><td class='column-type'>boolean</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    ContentReports[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>ContentReports</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReporterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReporterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='TargetType'><td class='identity-keys' /><td><code class='' title=''>TargetType</code></td><td class='column-type'>integer</td></tr><tr data-column='TargetId'><td class='identity-keys' /><td><code class='' title=''>TargetId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Reason'><td class='identity-keys' /><td><code class='' title=''>Reason</code></td><td class='column-type'>integer</td></tr><tr data-column='Details'><td class='identity-keys' /><td><code class='' title=''>Details</code></td><td class='column-type'>varchar(500)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ResolvedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ResolvedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    ContentMentions[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>ContentMentions</th></tr></thead><tbody><tr data-column='SourceType'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>SourceType</code></td><td class='column-type'>integer</td></tr><tr data-column='SourceId'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>SourceId</code></td><td class='column-type'>uuid</td></tr><tr data-column='StartIndex'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>StartIndex</code></td><td class='column-type'>integer</td></tr><tr data-column='MentionedUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MentionedUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Length'><td class='identity-keys' /><td><code class='' title=''>Length</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    Comments[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Comments</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ParentCommentId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ParentCommentId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Content'><td class='identity-keys' /><td><code class='' title=''>Content</code></td><td class='column-type'>varchar(5000)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    CommentReactions[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>CommentReactions</th></tr></thead><tbody><tr data-column='CommentId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>CommentId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PostMedia[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>PostMedia</th></tr></thead><tbody><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    PostHashtags[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>PostHashtags</th></tr></thead><tbody><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='HashtagId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>HashtagId</code></td><td class='column-type'>uuid</td></tr></tbody></table>\"]\n    Hashtags[\"<table class='identity-table'><colgroup><col style='width:52px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>Hashtags</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='NormalizedName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedName</code></td><td class='column-type'>varchar(50)</td></tr><tr data-column='DisplayName'><td class='identity-keys' /><td><code class='' title=''>DisplayName</code></td><td class='column-type'>varchar(50)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"AuthorUserId · 1 → 0..N\"| Posts\n    AspNetUsers -->|\"AuthorUserId · 1 → 0..N\"| Comments\n    Comments -->|\"ParentCommentId · 0..1 → 0..N\"| Comments\n    Posts -->|\"PostId · 1 → 0..N\"| Comments\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| CommentReactions\n    Comments -->|\"CommentId · 1 → 0..N\"| CommentReactions\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| PostReactions\n    Posts -->|\"PostId · 1 → 0..N\"| PostReactions\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| PostMedia\n    Posts -->|\"PostId · 1 → 0..N\"| PostMedia\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| PostSaves\n    Posts -->|\"PostId · 1 → 0..N\"| PostSaves\n    AspNetUsers -->|\"SharingUserId · 1 → 0..N\"| PostShares\n    Posts -->|\"OriginalPostId · 1 → 0..N\"| PostShares\n    AspNetUsers -->|\"MentionedUserId · 1 → 0..N\"| ContentMentions\n    Hashtags -->|\"HashtagId · 1 → 0..N\"| PostHashtags\n    Posts -->|\"PostId · 1 → 0..N\"| PostHashtags\n    AspNetUsers -->|\"ReporterUserId · 1 → 0..N\"| ContentReports\n    Posts -.->|\"SourceId · POST · chưa có FK\"| ContentMentions\n    Comments -.->|\"SourceId · COMMENT · chưa có FK\"| ContentMentions\n    AspNetUsers -.->|\"TargetId · USER · chưa có FK\"| ContentReports\n    Posts -.->|\"TargetId · POST · chưa có FK\"| ContentReports\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
         "note": "11 bảng Posts và 2 bảng tham chiếu, mỗi bảng hiển thị một lần với đầy đủ cột. Các bảng tương tác nằm giữa AspNetUsers và Posts; bình luận, hashtag và media được đặt gần bảng liên quan. 18 FK dùng nét liền. SourceId, TargetId, ContainerId và DestinationId không có FK; xem ghi chú và chi tiết bảng."
       }
+    },
+    {
+      "id": "media",
+      "name": "Media",
+      "description": "Ảnh, video, tham chiếu nội dung và các công việc xử lý, dọn tệp.",
+      "tables": [
+        "MediaAssets",
+        "MediaReferences",
+        "ProfileMediaReferences",
+        "MediaProcessingJobs",
+        "ObjectDeletions"
+      ],
+      "diagram": {
+        "template": "overview-media",
+        "tables": [
+          "MediaAssets",
+          "MediaReferences",
+          "ProfileMediaReferences",
+          "MediaProcessingJobs",
+          "ObjectDeletions",
+          "AspNetUsers",
+          "Posts"
+        ],
+        "source": "flowchart LR\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    MediaProcessingJobs[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>MediaProcessingJobs</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span><span class='identity-key uk'>UK</span></td><td><code class='fk-column' title='FK, UK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='AttemptCount'><td class='identity-keys' /><td><code class='' title=''>AttemptCount</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='NextAttemptAtUtc'><td class='identity-keys' /><td><code class='' title=''>NextAttemptAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='StartedAtUtc'><td class='identity-keys' /><td><code class='' title=''>StartedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='CompletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CompletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='LastError'><td class='identity-keys' /><td><code class='' title=''>LastError</code></td><td class='column-type'>varchar(2000)?</td></tr></tbody></table>\"]\n    ObjectDeletions[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>ObjectDeletions</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ObjectKey'><td class='identity-keys' /><td><code class='' title=''>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NextAttemptAtUtc'><td class='identity-keys' /><td><code class='' title=''>NextAttemptAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='FailedAtUtc'><td class='identity-keys' /><td><code class='' title=''>FailedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='RetryCount'><td class='identity-keys' /><td><code class='' title=''>RetryCount</code></td><td class='column-type'>integer</td></tr><tr data-column='LastError'><td class='identity-keys' /><td><code class='' title=''>LastError</code></td><td class='column-type'>varchar(2000)?</td></tr></tbody></table>\"]\n    MediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>MediaReferences</th></tr></thead><tbody><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    ProfileMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>ProfileMediaReferences</th></tr></thead><tbody><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Slot'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Slot</code></td><td class='column-type'>integer</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Posts[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>Posts</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Content'><td class='identity-keys' /><td><code class='' title=''>Content</code></td><td class='column-type'>varchar(10000)</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerType'><td class='identity-keys' /><td><code class='' title=''>ContainerType</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerId'><td class='identity-keys' /><td><code class='' title=''>ContainerId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostType'><td class='identity-keys' /><td><code class='' title=''>PostType</code></td><td class='column-type'>integer</td></tr><tr data-column='TextBackground'><td class='identity-keys' /><td><code class='' title=''>TextBackground</code></td><td class='column-type'>varchar(32)?</td></tr><tr data-column='IsPinned'><td class='identity-keys' /><td><code class='' title=''>IsPinned</code></td><td class='column-type'>boolean</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| MediaReferences\n    Posts -->|\"PostId · 1 → 0..N\"| MediaReferences\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| ProfileMediaReferences\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| ProfileMediaReferences\n    MediaAssets -->|\"MediaId · 1 → 0..1\"| MediaProcessingJobs\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| ObjectDeletions\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,Posts ref",
+        "note": "5 bảng Media và 2 bảng tham chiếu, mỗi bảng hiển thị một lần với đầy đủ cột. MediaAssets ở trung tâm, 6 FK dùng nét liền. MediaProcessingJobs.MediaId có UNIQUE (1 → 0..1); MediaAssets.OwnerUserId không có FK. Các bảng sử dụng media ở module khác được nêu trong đặc tả."
+      }
     }
   ],
   "tables": {
@@ -1702,10 +1728,9 @@
     "MediaAssets": {
       "name": "MediaAssets",
       "label": "Tài nguyên ảnh / video",
-      "purpose": "Lưu thông tin quản lý ảnh và video được tải lên: chủ sở hữu, khóa file trên hệ thống lưu trữ, loại và kích thước file, trạng thái tải lên hoặc xử lý. UserProfiles tham chiếu bảng này để lấy ảnh đại diện và ảnh bìa; nội dung file được lưu qua dịch vụ lưu trữ của module Media.",
+      "purpose": "Lưu metadata của ảnh, video: chủ sở hữu, khóa object, định dạng, dung lượng, trạng thái upload/xử lý và thông tin video sau xử lý. Tệp nằm trên storage; các bảng tham chiếu ghi lại việc sử dụng media.",
       "module": "media",
-      "reference": true,
-      "note": "Bảng tham chiếu từ module Media. Hiển thị đầy đủ cột trong EF model. AvatarMediaId và CoverMediaId của UserProfiles đều nullable.",
+      "note": "OwnerUserId không có FK để giữ ID chủ sở hữu trên asset tồn tại sau khi tài khoản bị xóa. ObjectKey có UNIQUE. MediaType: IMAGE (0), VIDEO (1). Status: PENDING_UPLOAD (0), READY (1), FAILED (2), DELETED (3), PROCESSING (4). Index (Status, CreatedAtUtc) chỉ áp dụng khi Status = 4.",
       "columns": [
         {
           "name": "Id",
@@ -3266,6 +3291,327 @@
       "purpose": "Lưu báo cáo tài khoản hoặc bài viết, người báo cáo, lý do, mô tả và trạng thái xử lý.",
       "module": "posts",
       "note": "ReporterUserId là FK tới AspNetUsers, dùng Restrict. TargetId không có FK: TargetType chọn USER (0) hoặc POST (1), được vẽ nét đứt. UNIQUE (ReporterUserId, TargetType, TargetId) ngăn báo cáo trùng của cùng người. Status: PENDING (0), REVIEWED (1), RESOLVED (2), DISMISSED (3)."
+    },
+    "MediaReferences": {
+      "name": "MediaReferences",
+      "columns": [
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "PostId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "AttachedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "MediaId",
+        "PostId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "PostId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Posts",
+          "fields": [
+            "PostId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Media được bài viết sử dụng",
+      "purpose": "Ghi nhận những media đang gắn vào bài viết, cùng thời điểm AttachedAtUtc. PostsUseCase đồng bộ bảng này qua MediaService khi tạo, sửa hoặc xóa bài.",
+      "module": "media",
+      "note": "PK ghép (MediaId, PostId), cả hai cột là FK. MediaId dùng Restrict; PostId dùng Cascade. PostMedia của module Posts giữ thứ tự hiển thị SortOrder; MediaReferences phục vụ theo dõi tham chiếu."
+    },
+    "ProfileMediaReferences": {
+      "name": "ProfileMediaReferences",
+      "columns": [
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Slot",
+          "type": "integer",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "AttachedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "UserId",
+        "Slot"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Cascade"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Media của ảnh hồ sơ",
+      "purpose": "Ghi nhận ảnh đại diện và ảnh bìa của từng người dùng theo Slot. UserProfileService đồng bộ bảng này khi cập nhật hồ sơ.",
+      "module": "media",
+      "note": "PK ghép (UserId, Slot). UserId là FK tới AspNetUsers, dùng Cascade; MediaId là FK tới MediaAssets, dùng Restrict. Slot: AVATAR (0), COVER (1); mỗi người có tối đa một tham chiếu cho mỗi slot."
+    },
+    "MediaProcessingJobs": {
+      "name": "MediaProcessingJobs",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK",
+            "UK"
+          ]
+        },
+        {
+          "name": "Status",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "AttemptCount",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "NextAttemptAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "StartedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "CompletedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "LastError",
+          "type": "character varying(2000)",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "Status",
+            "NextAttemptAtUtc",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Công việc xử lý video",
+      "purpose": "Lưu trạng thái và lịch chạy job xử lý video, số lần thử, mốc claim/kết thúc và lỗi gần nhất. VideoProcessingWorker nhận job và ghi kết quả.",
+      "module": "media",
+      "note": "MediaId là FK + UNIQUE tới MediaAssets, dùng Cascade: mỗi asset có tối đa một job (1 → 0..1). Status: PENDING (0), PROCESSING (1), SUCCEEDED (2), FAILED (3). AttemptCount tăng khi claim; NextAttemptAtUtc điều khiển retry."
+    },
+    "ObjectDeletions": {
+      "name": "ObjectDeletions",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "ObjectKey",
+          "type": "character varying(256)",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "ProcessedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "NextAttemptAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "FailedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "RetryCount",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "LastError",
+          "type": "character varying(2000)",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "ProcessedAtUtc",
+            "FailedAtUtc",
+            "NextAttemptAtUtc",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Công việc xóa tệp",
+      "purpose": "Lưu yêu cầu xóa một object trên storage cho media bị xóa, upload hết hạn hoặc video xử lý thất bại. ObjectDeletionWorker thực thi và ghi kết quả.",
+      "module": "media",
+      "note": "MediaId là FK tới MediaAssets, dùng Restrict. Một asset có thể có nhiều công việc cho tệp gốc, processed hoặc poster. ProcessedAtUtc ghi thành công; FailedAtUtc ghi hết retry; RetryCount và NextAttemptAtUtc lưu lịch thử lại."
     }
   }
 }
@@ -4059,6 +4405,716 @@
 #svg-overview-posts .group-title { font: 700 13px Arial, sans-serif; letter-spacing: .6px; fill: #65786e; }
 </style><defs><marker id="posts-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="posts-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="group-guides"><text x="30" y="252" class="group-title">BÁO CÁO</text><line x1="30" y1="264" x2="380" y2="264" stroke="#e4ebe6" /><text x="30" y="700" class="group-title">NHẮC TÊN</text><line x1="30" y1="712" x2="380" y2="712" stroke="#e4ebe6" /><text x="900" y="26" class="group-title">TƯƠNG TÁC BÀI VIẾT</text><line x1="900" y1="38" x2="1250" y2="38" stroke="#e4ebe6" /><text x="1360" y="364" class="group-title">BÀI VIẾT</text><line x1="1360" y1="376" x2="1710" y2="376" stroke="#e4ebe6" /><text x="1810" y="26" class="group-title">HASHTAG</text><line x1="1810" y1="38" x2="2160" y2="38" stroke="#e4ebe6" /><text x="900" y="907" class="group-title">BÌNH LUẬN</text><line x1="900" y1="919" x2="1250" y2="919" stroke="#e4ebe6" /></g><g class="edgePaths"><path d="M780.00,500.00 L1360.00,500.00" id="L_AspNetUsers_Posts_AuthorUserId" data-id="L_AspNetUsers_Posts_AuthorUserId" data-principal="AspNetUsers" data-dependent="Posts" data-fields="AuthorUserId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>AspNetUsers (1) → Posts (0..N) · AuthorUserId · Restrict</title></path><path d="M720.00,802.00 L900.00,1020.00" id="L_AspNetUsers_Comments_AuthorUserId" data-id="L_AspNetUsers_Comments_AuthorUserId" data-principal="AspNetUsers" data-dependent="Comments" data-fields="AuthorUserId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>AspNetUsers (1) → Comments (0..N) · AuthorUserId · Restrict</title></path><path d="M1020.00,1171.00 L1020.00,1205.00 L1170.00,1205.00 L1170.00,1171.00" id="L_Comments_Comments_ParentCommentId" data-id="L_Comments_Comments_ParentCommentId" data-principal="Comments" data-dependent="Comments" data-fields="ParentCommentId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Comments (0..1) → Comments (0..N) · ParentCommentId · Restrict</title></path><path d="M1360.00,681.00 L1250.00,1020.00" id="L_Posts_Comments_PostId" data-id="L_Posts_Comments_PostId" data-principal="Posts" data-dependent="Comments" data-fields="PostId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Posts (1) → Comments (0..N) · PostId · Cascade</title></path><path d="M590.00,802.00 L590.00,1010.00" id="L_AspNetUsers_CommentReactions_UserId" data-id="L_AspNetUsers_CommentReactions_UserId" data-principal="AspNetUsers" data-dependent="CommentReactions" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>AspNetUsers (1) → CommentReactions (0..N) · UserId · Restrict</title></path><path d="M900.00,1100.00 L780.00,1100.00" id="L_Comments_CommentReactions_CommentId" data-id="L_Comments_CommentReactions_CommentId" data-principal="Comments" data-dependent="CommentReactions" data-fields="CommentId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Comments (1) → CommentReactions (0..N) · CommentId · Cascade</title></path><path d="M780.00,395.00 L900.00,150.00" id="L_AspNetUsers_PostReactions_UserId" data-id="L_AspNetUsers_PostReactions_UserId" data-principal="AspNetUsers" data-dependent="PostReactions" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>AspNetUsers (1) → PostReactions (0..N) · UserId · Restrict</title></path><path d="M1360.00,436.00 L1250.00,151.00" id="L_Posts_PostReactions_PostId" data-id="L_Posts_PostReactions_PostId" data-principal="Posts" data-dependent="PostReactions" data-fields="PostId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Posts (1) → PostReactions (0..N) · PostId · Cascade</title></path><path d="M1810.00,1072.00 L1710.00,1072.00" id="L_MediaAssets_PostMedia_MediaId" data-id="L_MediaAssets_PostMedia_MediaId" data-principal="MediaAssets" data-dependent="PostMedia" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>MediaAssets (1) → PostMedia (0..N) · MediaId · Restrict</title></path><path d="M1535.00,722.00 L1535.00,1020.00" id="L_Posts_PostMedia_PostId" data-id="L_Posts_PostMedia_PostId" data-principal="Posts" data-dependent="PostMedia" data-fields="PostId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Posts (1) → PostMedia (0..N) · PostId · Cascade</title></path><path d="M780.00,460.00 L900.00,396.00" id="L_AspNetUsers_PostSaves_UserId" data-id="L_AspNetUsers_PostSaves_UserId" data-principal="AspNetUsers" data-dependent="PostSaves" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>AspNetUsers (1) → PostSaves (0..N) · UserId · Restrict</title></path><path d="M1360.00,477.00 L1250.00,398.00" id="L_Posts_PostSaves_PostId" data-id="L_Posts_PostSaves_PostId" data-principal="Posts" data-dependent="PostSaves" data-fields="PostId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Posts (1) → PostSaves (0..N) · PostId · Cascade</title></path><path d="M780.00,660.00 L900.00,679.00" id="L_AspNetUsers_PostShares_SharingUserId" data-id="L_AspNetUsers_PostShares_SharingUserId" data-principal="AspNetUsers" data-dependent="PostShares" data-fields="SharingUserId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>AspNetUsers (1) → PostShares (0..N) · SharingUserId · Restrict</title></path><path d="M1360.00,627.00 L1250.00,679.00" id="L_Posts_PostShares_OriginalPostId" data-id="L_Posts_PostShares_OriginalPostId" data-principal="Posts" data-dependent="PostShares" data-fields="OriginalPostId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Posts (1) → PostShares (0..N) · OriginalPostId · Cascade</title></path><path d="M430.00,740.00 L380.00,829.00" id="L_AspNetUsers_ContentMentions_MentionedUserId" data-id="L_AspNetUsers_ContentMentions_MentionedUserId" data-principal="AspNetUsers" data-dependent="ContentMentions" data-fields="MentionedUserId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>AspNetUsers (1) → ContentMentions (0..N) · MentionedUserId · Cascade</title></path><path d="M1985.00,190.00 L1985.00,330.00" id="L_Hashtags_PostHashtags_HashtagId" data-id="L_Hashtags_PostHashtags_HashtagId" data-principal="Hashtags" data-dependent="PostHashtags" data-fields="HashtagId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Hashtags (1) → PostHashtags (0..N) · HashtagId · Cascade</title></path><path d="M1710.00,465.00 L1810.00,371.00" id="L_Posts_PostHashtags_PostId" data-id="L_Posts_PostHashtags_PostId" data-principal="Posts" data-dependent="PostHashtags" data-fields="PostId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>Posts (1) → PostHashtags (0..N) · PostId · Cascade</title></path><path d="M430.00,455.00 L380.00,433.00" id="L_AspNetUsers_ContentReports_ReporterUserId" data-id="L_AspNetUsers_ContentReports_ReporterUserId" data-principal="AspNetUsers" data-dependent="ContentReports" data-fields="ReporterUserId" data-kind="fk" class="relation" marker-start="url(#posts-one)" marker-end="url(#posts-many)"><title>AspNetUsers (1) → ContentReports (0..N) · ReporterUserId · Restrict</title></path></g><g class="edgeLabels"><text x="806.00" y="516.00" class="cardinality" text-anchor="middle">1</text><text x="1334.00" y="492.00" class="cardinality" text-anchor="middle">0..N</text><text x="1070.00" y="488.00" class="relation-label" text-anchor="middle">AuthorUserId</text><text x="727.30" y="833.69" class="cardinality" text-anchor="middle">1</text><text x="878.00" y="996.31" class="cardinality" text-anchor="middle">0..N</text><text x="1008.00" y="1201.00" class="cardinality" text-anchor="middle">0..1</text><text x="1158.00" y="1201.00" class="cardinality" text-anchor="middle">0..N</text><text x="1095.00" y="1197.00" class="relation-label" text-anchor="middle">ParentCommentId</text><text x="1340.56" y="706.03" class="cardinality" text-anchor="middle">1</text><text x="1272.00" y="1002.97" class="cardinality" text-anchor="middle">0..N</text><text x="578.00" y="832.00" class="cardinality" text-anchor="middle">1</text><text x="602.00" y="988.00" class="cardinality" text-anchor="middle">0..N</text><text x="874.00" y="1092.00" class="cardinality" text-anchor="middle">1</text><text x="806.00" y="1116.00" class="cardinality" text-anchor="middle">0..N</text><text x="802.21" y="380.93" class="cardinality" text-anchor="middle">1</text><text x="877.79" y="172.07" class="cardinality" text-anchor="middle">0..N</text><text x="1348.50" y="411.42" class="cardinality" text-anchor="middle">1</text><text x="1272.00" y="183.58" class="cardinality" text-anchor="middle">0..N</text><text x="1784.00" y="1064.00" class="cardinality" text-anchor="middle">1</text><text x="1736.00" y="1088.00" class="cardinality" text-anchor="middle">0..N</text><text x="1523.00" y="752.00" class="cardinality" text-anchor="middle">1</text><text x="1547.00" y="998.00" class="cardinality" text-anchor="middle">0..N</text><text x="808.59" y="462.35" class="cardinality" text-anchor="middle">1</text><text x="871.41" y="401.65" class="cardinality" text-anchor="middle">0..N</text><text x="1345.88" y="456.09" class="cardinality" text-anchor="middle">1</text><text x="1272.00" y="426.91" class="cardinality" text-anchor="middle">0..N</text><text x="803.80" y="679.92" class="cardinality" text-anchor="middle">1</text><text x="876.20" y="667.08" class="cardinality" text-anchor="middle">0..N</text><text x="1331.37" y="631.26" class="cardinality" text-anchor="middle">1</text><text x="1278.63" y="682.74" class="cardinality" text-anchor="middle">0..N</text><text x="406.80" y="760.79" class="cardinality" text-anchor="middle">1</text><text x="403.20" y="816.21" class="cardinality" text-anchor="middle">0..N</text><text x="1973.00" y="220.00" class="cardinality" text-anchor="middle">1</text><text x="1997.00" y="308.00" class="cardinality" text-anchor="middle">0..N</text><text x="1737.16" y="459.94" class="cardinality" text-anchor="middle">1</text><text x="1782.84" y="384.06" class="cardinality" text-anchor="middle">0..N</text><text x="411.03" y="437.55" class="cardinality" text-anchor="middle">1</text><text x="402.00" y="458.45" class="cardinality" text-anchor="middle">0..N</text><text x="430.00" y="343.00" class="reference-caption" text-anchor="start">Identity · bảng tham chiếu</text><text x="1810.00" y="633.00" class="reference-caption" text-anchor="start">Media · bảng tham chiếu</text><text x="30.00" y="566.00" class="reference-caption" text-anchor="start">TargetId: Users hoặc Posts · không có FK</text><text x="30.00" y="920.00" class="reference-caption" text-anchor="start">SourceId: Posts hoặc Comments · không có FK</text></g><g class="nodes"><g class="node default" data-table="ContentReports" role="button" tabindex="0" aria-label="Xem chi tiết bảng ContentReports" transform="translate(205.0, 415.0)"><rect class="basic label-container" x="-175.0" y="-125.0" width="350" height="250" rx="5" ry="5" style="stroke:#f15362" /><g class="label" transform="translate(-175.0, -125.0)"><foreignObject width="350" height="250"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:250px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#ffd3d8;color:#182437">ContentReports</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ReporterUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ReporterUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="TargetType"><td class="identity-keys" /><td><code class="" title="">TargetType</code></td><td class="column-type">integer</td></tr><tr data-column="TargetId"><td class="identity-keys" /><td><code class="" title="">TargetId</code></td><td class="column-type">uuid</td></tr><tr data-column="Reason"><td class="identity-keys" /><td><code class="" title="">Reason</code></td><td class="column-type">integer</td></tr><tr data-column="Details"><td class="identity-keys" /><td><code class="" title="">Details</code></td><td class="column-type">varchar(500)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="ResolvedAtUtc"><td class="identity-keys" /><td><code class="" title="">ResolvedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="ContentMentions" role="button" tabindex="0" aria-label="Xem chi tiết bảng ContentMentions" transform="translate(205.0, 817.0)"><rect class="basic label-container" x="-175.0" y="-77.0" width="350" height="154" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -77.0)"><foreignObject width="350" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">ContentMentions</th></tr></thead><tbody><tr data-column="SourceType"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">SourceType</code></td><td class="column-type">integer</td></tr><tr data-column="SourceId"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">SourceId</code></td><td class="column-type">uuid</td></tr><tr data-column="StartIndex"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">StartIndex</code></td><td class="column-type">integer</td></tr><tr data-column="MentionedUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MentionedUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Length"><td class="identity-keys" /><td><code class="" title="">Length</code></td><td class="column-type">integer</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(605.0, 581.0)"><rect class="basic label-container" x="-175.0" y="-221.0" width="350" height="442" rx="5" ry="5" style="stroke:#54a7eb" /><g class="label" transform="translate(-175.0, -221.0)"><foreignObject width="350" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#d6eaff;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PostReactions" role="button" tabindex="0" aria-label="Xem chi tiết bảng PostReactions" transform="translate(1075.0, 137.0)"><rect class="basic label-container" x="-175.0" y="-77.0" width="350" height="154" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-175.0, -77.0)"><foreignObject width="350" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">PostReactions</th></tr></thead><tbody><tr data-column="PostId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PostId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Type"><td class="identity-keys" /><td><code class="" title="">Type</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PostSaves" role="button" tabindex="0" aria-label="Xem chi tiết bảng PostSaves" transform="translate(1075.0, 388.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#e5a11b" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fff0c2;color:#182437">PostSaves</th></tr></thead><tbody><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PostId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PostId</code></td><td class="column-type">uuid</td></tr><tr data-column="SavedAtUtc"><td class="identity-keys" /><td><code class="" title="">SavedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PostShares" role="button" tabindex="0" aria-label="Xem chi tiết bảng PostShares" transform="translate(1075.0, 678.0)"><rect class="basic label-container" x="-175.0" y="-113.0" width="350" height="226" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -113.0)"><foreignObject width="350" height="226"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:226px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">PostShares</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="OriginalPostId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">OriginalPostId</code></td><td class="column-type">uuid</td></tr><tr data-column="SharingUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">SharingUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="DestinationType"><td class="identity-keys" /><td><code class="" title="">DestinationType</code></td><td class="column-type">integer</td></tr><tr data-column="DestinationId"><td class="identity-keys" /><td><code class="" title="">DestinationId</code></td><td class="column-type">uuid</td></tr><tr data-column="Caption"><td class="identity-keys" /><td><code class="" title="">Caption</code></td><td class="column-type">varchar(10000)?</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Posts" role="button" tabindex="0" aria-label="Xem chi tiết bảng Posts" transform="translate(1535.0, 561.0)"><rect class="basic label-container" x="-175.0" y="-161.0" width="350" height="322" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -161.0)"><foreignObject width="350" height="322"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:322px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">Posts</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AuthorUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">AuthorUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Content"><td class="identity-keys" /><td><code class="" title="">Content</code></td><td class="column-type">varchar(10000)</td></tr><tr data-column="Privacy"><td class="identity-keys" /><td><code class="" title="">Privacy</code></td><td class="column-type">integer</td></tr><tr data-column="ContainerType"><td class="identity-keys" /><td><code class="" title="">ContainerType</code></td><td class="column-type">integer</td></tr><tr data-column="ContainerId"><td class="identity-keys" /><td><code class="" title="">ContainerId</code></td><td class="column-type">uuid</td></tr><tr data-column="PostType"><td class="identity-keys" /><td><code class="" title="">PostType</code></td><td class="column-type">integer</td></tr><tr data-column="TextBackground"><td class="identity-keys" /><td><code class="" title="">TextBackground</code></td><td class="column-type">varchar(32)?</td></tr><tr data-column="IsPinned"><td class="identity-keys" /><td><code class="" title="">IsPinned</code></td><td class="column-type">boolean</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Comments" role="button" tabindex="0" aria-label="Xem chi tiết bảng Comments" transform="translate(1075.0, 1058.0)"><rect class="basic label-container" x="-175.0" y="-113.0" width="350" height="226" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -113.0)"><foreignObject width="350" height="226"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:226px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">Comments</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="PostId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">PostId</code></td><td class="column-type">uuid</td></tr><tr data-column="AuthorUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">AuthorUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="ParentCommentId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ParentCommentId</code></td><td class="column-type">uuid?</td></tr><tr data-column="Content"><td class="identity-keys" /><td><code class="" title="">Content</code></td><td class="column-type">varchar(5000)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="CommentReactions" role="button" tabindex="0" aria-label="Xem chi tiết bảng CommentReactions" transform="translate(605.0, 1087.0)"><rect class="basic label-container" x="-175.0" y="-77.0" width="350" height="154" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-175.0, -77.0)"><foreignObject width="350" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">CommentReactions</th></tr></thead><tbody><tr data-column="CommentId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">CommentId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Type"><td class="identity-keys" /><td><code class="" title="">Type</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PostMedia" role="button" tabindex="0" aria-label="Xem chi tiết bảng PostMedia" transform="translate(1535.0, 1073.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#e5a11b" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fff0c2;color:#182437">PostMedia</th></tr></thead><tbody><tr data-column="PostId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PostId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="SortOrder"><td class="identity-keys" /><td><code class="" title="">SortOrder</code></td><td class="column-type">integer</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(1985.0, 907.0)"><rect class="basic label-container" x="-175.0" y="-257.0" width="350" height="514" rx="5" ry="5" style="stroke:#e5a11b" /><g class="label" transform="translate(-175.0, -257.0)"><foreignObject width="350" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fff0c2;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PostHashtags" role="button" tabindex="0" aria-label="Xem chi tiết bảng PostHashtags" transform="translate(1985.0, 371.0)"><rect class="basic label-container" x="-175.0" y="-41.0" width="350" height="82" rx="5" ry="5" style="stroke:#ed5998" /><g class="label" transform="translate(-175.0, -41.0)"><foreignObject width="350" height="82"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:82px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fbd7e7;color:#182437">PostHashtags</th></tr></thead><tbody><tr data-column="PostId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PostId</code></td><td class="column-type">uuid</td></tr><tr data-column="HashtagId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">HashtagId</code></td><td class="column-type">uuid</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Hashtags" role="button" tabindex="0" aria-label="Xem chi tiết bảng Hashtags" transform="translate(1985.0, 125.0)"><rect class="basic label-container" x="-175.0" y="-65.0" width="350" height="130" rx="5" ry="5" style="stroke:#ed5998" /><g class="label" transform="translate(-175.0, -65.0)"><foreignObject width="350" height="130"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:130px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:52px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fbd7e7;color:#182437">Hashtags</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="NormalizedName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedName</code></td><td class="column-type">varchar(50)</td></tr><tr data-column="DisplayName"><td class="identity-keys" /><td><code class="" title="">DisplayName</code></td><td class="column-type">varchar(50)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(30, 1020)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
 
+  <template id="overview-media"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-media" width="1520" height="1200" viewBox="0 0 1520 1200" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Media" data-layout="media"><title>Media · 5 bảng chính, 2 bảng tham chiếu và 6 FK</title><desc>MediaAssets ở trung tâm, job xử lý video phía trên, công việc xóa tệp phía dưới bên phải. AspNetUsers và Posts kết nối qua các bảng tham chiếu ở hai bên. Mỗi bảng xuất hiện một lần với đầy đủ cột. OwnerUserId không có FK; MediaProcessingJobs.MediaId có UNIQUE nên quan hệ là 1 tới 0..1.</desc><style>
+#svg-overview-media { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-media .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-media .node .label { color: #233044; }
+#svg-overview-media .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-media .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-media .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-media .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-media .identity-table code { font: inherit; }
+#svg-overview-media .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-media .identity-keys { text-align: center; }
+#svg-overview-media .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-media .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-media .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-media .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-media .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-media .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-media .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-media .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+
+#svg-overview-media .reference-caption { font: 12px Arial, sans-serif; fill: #748079; }
+</style><defs><marker id="media-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="media-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M940.00,680.00 L1150.00,710.00" id="L_MediaAssets_MediaReferences_MediaId" data-id="L_MediaAssets_MediaReferences_MediaId" data-principal="MediaAssets" data-dependent="MediaReferences" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#media-one)" marker-end="url(#media-many)"><title>MediaAssets (1) → MediaReferences (0..N) · MediaId · Restrict</title></path><path d="M1325.00,432.00 L1325.00,660.00" id="L_Posts_MediaReferences_PostId" data-id="L_Posts_MediaReferences_PostId" data-principal="Posts" data-dependent="MediaReferences" data-fields="PostId" data-kind="fk" class="relation" marker-start="url(#media-one)" marker-end="url(#media-many)"><title>Posts (1) → MediaReferences (0..N) · PostId · Cascade</title></path><path d="M195.00,552.00 L195.00,750.00" id="L_AspNetUsers_ProfileMediaReferences_UserId" data-id="L_AspNetUsers_ProfileMediaReferences_UserId" data-principal="AspNetUsers" data-dependent="ProfileMediaReferences" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#media-one)" marker-end="url(#media-many)"><title>AspNetUsers (1) → ProfileMediaReferences (0..N) · UserId · Cascade</title></path><path d="M590.00,775.00 L370.00,805.00" id="L_MediaAssets_ProfileMediaReferences_MediaId" data-id="L_MediaAssets_ProfileMediaReferences_MediaId" data-principal="MediaAssets" data-dependent="ProfileMediaReferences" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#media-one)" marker-end="url(#media-many)"><title>MediaAssets (1) → ProfileMediaReferences (0..N) · MediaId · Restrict</title></path><path d="M765.00,360.00 L765.00,270.00" id="L_MediaAssets_MediaProcessingJobs_MediaId" data-id="L_MediaAssets_MediaProcessingJobs_MediaId" data-principal="MediaAssets" data-dependent="MediaProcessingJobs" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#media-one)" marker-end="url(#media-many)"><title>MediaAssets (1) → MediaProcessingJobs (0..1) · MediaId · Cascade</title></path><path d="M940.00,835.00 L1150.00,970.00" id="L_MediaAssets_ObjectDeletions_MediaId" data-id="L_MediaAssets_ObjectDeletions_MediaId" data-principal="MediaAssets" data-dependent="ObjectDeletions" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#media-one)" marker-end="url(#media-many)"><title>MediaAssets (1) → ObjectDeletions (0..N) · MediaId · Restrict</title></path></g><g class="edgeLabels"><text x="966.02" y="699.84" class="cardinality" text-anchor="middle">1</text><text x="1123.98" y="698.16" class="cardinality" text-anchor="middle">0..N</text><text x="1045.00" y="685.00" class="relation-label" text-anchor="middle">MediaId</text><text x="1313.00" y="464.00" class="cardinality" text-anchor="middle">1</text><text x="1337.00" y="636.00" class="cardinality" text-anchor="middle">0..N</text><text x="1341.00" y="536.00" class="relation-label" text-anchor="start">PostId</text><text x="183.00" y="584.00" class="cardinality" text-anchor="middle">1</text><text x="207.00" y="726.00" class="cardinality" text-anchor="middle">0..N</text><text x="211.00" y="641.00" class="relation-label" text-anchor="start">UserId</text><text x="560.64" y="770.89" class="cardinality" text-anchor="middle">1</text><text x="399.36" y="817.11" class="cardinality" text-anchor="middle">0..N</text><text x="480.00" y="780.00" class="relation-label" text-anchor="middle">MediaId</text><text x="777.00" y="336.00" class="cardinality" text-anchor="middle">1</text><text x="753.00" y="302.00" class="cardinality" text-anchor="middle">0..1</text><text x="781.00" y="305.00" class="relation-label" text-anchor="start">MediaId</text><text x="957.06" y="864.24" class="cardinality" text-anchor="middle">1</text><text x="1128.00" y="948.76" class="cardinality" text-anchor="middle">0..N</text><text x="1045.00" y="892.50" class="relation-label" text-anchor="middle">MediaId</text><text x="20.00" y="92.00" class="reference-caption" text-anchor="start">Identity · bảng tham chiếu</text><text x="1150.00" y="92.00" class="reference-caption" text-anchor="start">Posts · bảng tham chiếu</text><text x="590.00" y="897.00" class="reference-caption" text-anchor="start">OwnerUserId không có FK tới AspNetUsers</text><text x="590.00" y="286.00" class="reference-caption" text-anchor="start">MediaId là UNIQUE · mỗi asset có tối đa một job</text></g><g class="nodes"><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(765.0, 617.0)"><rect class="basic label-container" x="-175.0" y="-257.0" width="350" height="514" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -257.0)"><foreignObject width="350" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaProcessingJobs" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaProcessingJobs" transform="translate(765.0, 145.0)"><rect class="basic label-container" x="-175.0" y="-125.0" width="350" height="250" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-175.0, -125.0)"><foreignObject width="350" height="250"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:250px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">MediaProcessingJobs</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span><span class="identity-key uk">UK</span></td><td><code class="fk-column" title="FK, UK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="AttemptCount"><td class="identity-keys" /><td><code class="" title="">AttemptCount</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="NextAttemptAtUtc"><td class="identity-keys" /><td><code class="" title="">NextAttemptAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="StartedAtUtc"><td class="identity-keys" /><td><code class="" title="">StartedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="CompletedAtUtc"><td class="identity-keys" /><td><code class="" title="">CompletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="LastError"><td class="identity-keys" /><td><code class="" title="">LastError</code></td><td class="column-type">varchar(2000)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="ObjectDeletions" role="button" tabindex="0" aria-label="Xem chi tiết bảng ObjectDeletions" transform="translate(1325.0, 1025.0)"><rect class="basic label-container" x="-175.0" y="-125.0" width="350" height="250" rx="5" ry="5" style="stroke:#f15362" /><g class="label" transform="translate(-175.0, -125.0)"><foreignObject width="350" height="250"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:250px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#ffd3d8;color:#182437">ObjectDeletions</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="ObjectKey"><td class="identity-keys" /><td><code class="" title="">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NextAttemptAtUtc"><td class="identity-keys" /><td><code class="" title="">NextAttemptAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="FailedAtUtc"><td class="identity-keys" /><td><code class="" title="">FailedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="RetryCount"><td class="identity-keys" /><td><code class="" title="">RetryCount</code></td><td class="column-type">integer</td></tr><tr data-column="LastError"><td class="identity-keys" /><td><code class="" title="">LastError</code></td><td class="column-type">varchar(2000)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaReferences" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaReferences" transform="translate(1325.0, 713.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">MediaReferences</th></tr></thead><tbody><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="PostId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PostId</code></td><td class="column-type">uuid</td></tr><tr data-column="AttachedAtUtc"><td class="identity-keys" /><td><code class="" title="">AttachedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="ProfileMediaReferences" role="button" tabindex="0" aria-label="Xem chi tiết bảng ProfileMediaReferences" transform="translate(195.0, 815.0)"><rect class="basic label-container" x="-175.0" y="-65.0" width="350" height="130" rx="5" ry="5" style="stroke:#ed5998" /><g class="label" transform="translate(-175.0, -65.0)"><foreignObject width="350" height="130"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:130px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fbd7e7;color:#182437">ProfileMediaReferences</th></tr></thead><tbody><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Slot"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Slot</code></td><td class="column-type">integer</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="AttachedAtUtc"><td class="identity-keys" /><td><code class="" title="">AttachedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(195.0, 331.0)"><rect class="basic label-container" x="-175.0" y="-221.0" width="350" height="442" rx="5" ry="5" style="stroke:#54a7eb" /><g class="label" transform="translate(-175.0, -221.0)"><foreignObject width="350" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#d6eaff;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Posts" role="button" tabindex="0" aria-label="Xem chi tiết bảng Posts" transform="translate(1325.0, 271.0)"><rect class="basic label-container" x="-175.0" y="-161.0" width="350" height="322" rx="5" ry="5" style="stroke:#e5a11b" /><g class="label" transform="translate(-175.0, -161.0)"><foreignObject width="350" height="322"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:322px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fff0c2;color:#182437">Posts</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AuthorUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">AuthorUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Content"><td class="identity-keys" /><td><code class="" title="">Content</code></td><td class="column-type">varchar(10000)</td></tr><tr data-column="Privacy"><td class="identity-keys" /><td><code class="" title="">Privacy</code></td><td class="column-type">integer</td></tr><tr data-column="ContainerType"><td class="identity-keys" /><td><code class="" title="">ContainerType</code></td><td class="column-type">integer</td></tr><tr data-column="ContainerId"><td class="identity-keys" /><td><code class="" title="">ContainerId</code></td><td class="column-type">uuid</td></tr><tr data-column="PostType"><td class="identity-keys" /><td><code class="" title="">PostType</code></td><td class="column-type">integer</td></tr><tr data-column="TextBackground"><td class="identity-keys" /><td><code class="" title="">TextBackground</code></td><td class="column-type">varchar(32)?</td></tr><tr data-column="IsPinned"><td class="identity-keys" /><td><code class="" title="">IsPinned</code></td><td class="column-type">boolean</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(20, 990)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="media-specification" type="application/json">
+{
+  "title": "Quản lý ảnh, video và vòng đời tệp",
+  "purpose": "Media cấp yêu cầu upload trực tiếp, xác nhận và kiểm tra tệp, cung cấp metadata cùng URL đọc, duy trì tham chiếu nội dung và điều phối xử lý video, dọn upload hết hạn, xóa tệp.",
+  "scope": "Bao phủ 5 bảng Media, 6 endpoint của MediaController, các hàm tích hợp trong MediaService và 3 worker nền. Tệp nằm trên Cloudinary; database giữ metadata và công việc xử lý. Posts, Users, Groups và Pages gọi Media để kiểm tra hoặc đồng bộ liên kết. Stories, Reels, Messages, Events và Photos dùng các luồng tích hợp tương ứng; các bảng của module khác được nêu trong đặc tả khi liên quan, không tính là bảng Media.",
+  "groups": [
+    {
+      "id": "media-upload",
+      "name": "Upload và xác nhận",
+      "actor": "user",
+      "description": "Tạo upload intent, gửi tệp trực tiếp và xác nhận ảnh hoặc video."
+    },
+    {
+      "id": "media-read",
+      "name": "Metadata và quyền đọc",
+      "actor": "user",
+      "description": "Chủ sở hữu xem metadata, lấy URL đọc tệp hoặc poster video."
+    },
+    {
+      "id": "media-attach",
+      "name": "Gắn media vào nội dung",
+      "actor": "user",
+      "description": "Media hỗ trợ kiểm tra và đồng bộ tham chiếu qua API của các module liên quan.",
+      "caseSpacing": 132
+    },
+    {
+      "id": "media-delete",
+      "name": "Yêu cầu xóa media",
+      "actor": "user",
+      "description": "Đánh dấu xóa media READY thuộc người gọi khi không còn được sử dụng."
+    },
+    {
+      "id": "media-video-worker",
+      "name": "Xử lý video nền",
+      "actor": "video-worker",
+      "description": "Worker claim job, chuẩn hóa video, tạo poster và xử lý retry."
+    },
+    {
+      "id": "media-cleanup-worker",
+      "name": "Dọn upload hết hạn",
+      "actor": "cleanup-worker",
+      "description": "Worker đánh dấu upload hết hạn và đưa tệp vào hàng đợi xóa."
+    },
+    {
+      "id": "media-deletion-worker",
+      "name": "Xóa tệp vật lý",
+      "actor": "deletion-worker",
+      "description": "Worker thực hiện các ObjectDeletions đến hạn và ghi nhận kết quả."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Đã đăng nhập; tạo upload và quản lý media của mình. Các thao tác gắn media còn cần quyền trên nội dung đích."
+    },
+    {
+      "id": "storage",
+      "name": "Cloudinary",
+      "role": "Nhận upload trực tiếp; cung cấp thông tin, tệp, URL có chữ ký và thao tác xóa qua IObjectStorage."
+    },
+    {
+      "id": "posts",
+      "name": "Module Posts",
+      "role": "Kiểm tra quyền bài viết, tạo PostMedia và đồng bộ MediaReferences trong giao dịch của Posts."
+    },
+    {
+      "id": "users",
+      "name": "Module Users",
+      "role": "Kiểm tra ảnh hồ sơ, đồng bộ ProfileMediaReferences và cập nhật UserProfiles."
+    },
+    {
+      "id": "groups",
+      "name": "Module Groups",
+      "role": "Kiểm tra quyền cập nhật nhóm và đồng bộ GroupCoverMediaReferences."
+    },
+    {
+      "id": "pages",
+      "name": "Module Pages",
+      "role": "Kiểm tra quyền cập nhật ảnh trang và đồng bộ PageMediaReferences."
+    },
+    {
+      "id": "video-worker",
+      "name": "Worker video",
+      "role": "VideoProcessingWorker lấy job đủ điều kiện; dùng ffprobe/ffmpeg để tạo MP4 và poster, retry hoặc kết thúc job."
+    },
+    {
+      "id": "cleanup-worker",
+      "name": "Worker upload hết hạn",
+      "role": "PendingUploadCleanupWorker quét PENDING_UPLOAD đến hạn, đánh dấu FAILED và tạo ObjectDeletion."
+    },
+    {
+      "id": "deletion-worker",
+      "name": "Worker xóa tệp",
+      "role": "ObjectDeletionWorker lấy công việc xóa đến hạn, gọi storage và cập nhật trạng thái hoặc lịch retry."
+    }
+  ],
+  "rules": [
+    {
+      "text": "Cả 6 endpoint MediaController yêu cầu đăng nhập và claim sub là GUID. Metadata, complete, access, poster/access và delete kiểm tra OwnerUserId; không tìm thấy trả 404, sai chủ sở hữu trả 403.",
+      "source": "Controllers/MediaController.cs"
+    },
+    {
+      "text": "FileName lấy tên cuối từ đường dẫn, không trống và tối đa 255 ký tự. ContentType hỗ trợ JPEG, PNG, WebP, MP4, WebM; SizeBytes dương và nằm trong giới hạn cấu hình. Giá trị mặc định: ảnh 20 MiB, video 500 MiB; cấu hình runtime có thể thay đổi.",
+      "source": "Common/CustomValidationAttributes.cs"
+    },
+    {
+      "text": "Upload tạo MediaAsset PENDING_UPLOAD trước khi cấp UploadUrl và UploadParameters. Client gửi tệp trực tiếp tới Cloudinary bằng POST; UploadExpiresAtUtc được tính theo UploadUrlExpiryMinutes, mặc định 15 phút.",
+      "source": "Services/MediaService.cs"
+    },
+    {
+      "text": "Complete kiểm tra hạn upload, tồn tại object, loại media, authenticated storage, kích thước thực đúng khai báo và giới hạn, rồi kiểm tra chữ ký tệp từ tối đa 32 byte đầu. Sai hạn hoặc tệp không hợp lệ chuyển FAILED và tạo ObjectDeletion; object chưa tồn tại trả conflict để client có thể gọi lại.",
+      "source": "Services/MediaService.cs"
+    },
+    {
+      "text": "Ảnh hợp lệ chuyển READY ngay. Video hợp lệ chuyển PROCESSING và tạo MediaProcessingJob PENDING; gọi complete lại khi READY hoặc PROCESSING trả trạng thái hiện có. MediaStatus: PENDING_UPLOAD (0), READY (1), FAILED (2), DELETED (3), PROCESSING (4).",
+      "source": "Domain/Enums/MediaStatus.cs"
+    },
+    {
+      "text": "MediaAssets.OwnerUserId không có FK để giữ ID chủ sở hữu trên media còn tồn tại sau khi tài khoản bị xóa. MediaReferences có PK (MediaId, PostId); ProfileMediaReferences có PK (UserId, Slot), Slot AVATAR (0), COVER (1). MediaProcessingJobs.MediaId có UNIQUE nên mỗi asset có tối đa một job.",
+      "source": "Domain/Entities/MediaAsset.cs"
+    },
+    {
+      "text": "Lấy URL đọc yêu cầu READY và chưa bị xóa. Video dùng ProcessedObjectKey và content type video/mp4; poster yêu cầu video với PosterObjectKey, trả image/jpeg. ExpiresAt trong phản hồi lấy theo DownloadUrlExpiryMinutes, mặc định 5 phút; CloudinaryObjectStorage tạo URL authenticated có chữ ký.",
+      "source": "Services/MediaService.cs"
+    },
+    {
+      "text": "API đọc media trực tiếp chỉ dành cho chủ sở hữu. Người xem nội dung lấy quyền đọc qua module chứa nội dung, nơi kiểm tra quyền xem trước khi gọi CreateReadUrlAsync hoặc CreatePosterReadUrlAsync.",
+      "source": "Services/MediaService.cs"
+    },
+    {
+      "text": "Media gắn bài viết phải thuộc người thao tác, READY và chưa xóa. Ảnh hồ sơ, bìa nhóm và ảnh trang phải là IMAGE. Reel yêu cầu video đã xử lý đủ metadata, thời lượng trong cấu hình (mặc định 1–180 giây); video story tối đa cấu hình (mặc định 60 giây).",
+      "source": "Services/MediaService.cs"
+    },
+    {
+      "text": "Xóa chỉ áp dụng media READY của chủ sở hữu; đã DELETED trả thành công. Media còn được bài viết, hồ sơ, nhóm, trang, tin nhắn, ảnh hội thoại, story, sự kiện hoặc album tham chiếu sẽ bị từ chối. Delete đánh dấu DELETED và ghi ObjectDeletion cho tệp gốc, video đã xử lý và poster nếu có.",
+      "source": "Services/MediaService.cs"
+    },
+    {
+      "text": "VideoProcessingWorker chỉ được đăng ký khi VideoProcessingEnabled. Worker claim job PENDING đến hạn hoặc PROCESSING quá timeout bằng cập nhật có điều kiện, tăng AttemptCount. Thành công chuyển asset READY và job SUCCEEDED; lỗi retry theo cấu hình, hết số lần cho phép chuyển FAILED và tạo công việc xóa các tệp liên quan.",
+      "source": "Background/VideoProcessingWorker.cs"
+    },
+    {
+      "text": "Video được kiểm tra bằng ffprobe, chuẩn hóa MP4 H.264/AAC bằng ffmpeg và tạo poster JPEG; DurationMs, Width, Height phải dương. Các tiến trình có timeout và tệp tạm được dọn trong finally.",
+      "source": "Services/FfmpegVideoProcessor.cs"
+    },
+    {
+      "text": "Dọn upload chỉ chọn PENDING_UPLOAD có UploadExpiresAtUtc không null và đã đến hạn, theo batch cấu hình. Xóa vật lý chỉ chọn ObjectDeletion chưa ProcessedAtUtc, chưa FailedAtUtc và NextAttemptAtUtc đến hạn; khóa object phải thuộc asset đó. Lỗi được retry, quá giới hạn ghi FailedAtUtc.",
+      "source": "Background/ObjectDeletionWorker.cs"
+    },
+    {
+      "text": "Index (Status, CreatedAtUtc) trên MediaAssets có filter Status = 4 (PROCESSING); ObjectKey có UNIQUE. Job có index (Status, NextAttemptAtUtc, CreatedAtUtc); ObjectDeletions có index phục vụ quét các công việc chưa hoàn tất.",
+      "source": "Domain/Entities/MediaAsset.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-ME-01",
+      "name": "Tạo yêu cầu upload",
+      "group": "media-upload",
+      "actor": "Người dùng đã đăng nhập",
+      "support": [
+        "storage"
+      ],
+      "goal": "Nhận ID media cùng URL và tham số để gửi tệp trực tiếp.",
+      "preconditions": "JWT có sub là GUID; FileName, ContentType và SizeBytes hợp lệ; storage được cấu hình.",
+      "steps": [
+        "Gửi tên tệp, content type và kích thước đến POST /api/media/uploads.",
+        "Server tạo ObjectKey theo người dùng và ID media, lưu MediaAsset PENDING_UPLOAD cùng hạn upload.",
+        "Storage tạo direct upload intent; server trả 201 với MediaId, UploadUrl, Method POST, UploadParameters và ExpiresAt."
+      ],
+      "alternatives": [
+        "Tên tệp, loại hoặc dung lượng sai: API từ chối validation.",
+        "Thiếu hoặc sai sub: trả 401. Lỗi storage được truyền qua xử lý lỗi của ứng dụng; bản ghi asset đã được lưu trước lời gọi storage và sẽ được cleanup nếu hết hạn."
+      ],
+      "postconditions": "Có metadata PENDING_UPLOAD; client nhận dữ liệu upload khi storage cấp intent thành công.",
+      "endpoints": [
+        "POST /api/media/uploads"
+      ],
+      "tables": [
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/MediaController.cs",
+        "Services/MediaService.cs",
+        "DTOs/Requests/CreateUploadRequest.cs",
+        "Common/CustomValidationAttributes.cs",
+        "Services/CloudinaryObjectStorage.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-02",
+      "name": "Upload tệp trực tiếp",
+      "group": "media-upload",
+      "actor": "Người dùng đã đăng nhập",
+      "support": [
+        "storage"
+      ],
+      "goal": "Gửi nội dung tệp vào storage bằng upload intent vừa được cấp.",
+      "preconditions": "Có intent còn hạn; có tệp khớp loại và dung lượng đã khai báo.",
+      "steps": [
+        "Client dùng UploadUrl, Method và UploadParameters từ UC-ME-01.",
+        "Gửi multipart POST chứa tệp và các tham số có chữ ký tới Cloudinary.",
+        "Sau khi storage nhận tệp, client gọi complete tương ứng ở UC-ME-03 hoặc UC-ME-04."
+      ],
+      "alternatives": [
+        "Upload thiếu tham số hoặc chữ ký không hợp lệ: storage trả lỗi.",
+        "Upload thất bại hoặc không gọi complete trước hạn: asset vẫn PENDING_UPLOAD và được worker dọn khi hết hạn."
+      ],
+      "postconditions": "Tệp có thể được server kiểm tra trong bước complete; upload trực tiếp chưa tự chuyển asset thành READY.",
+      "endpoints": [
+        "POST UploadUrl được trả bởi POST /api/media/uploads (Cloudinary)"
+      ],
+      "tables": [
+        "MediaAssets"
+      ],
+      "sources": [
+        "Services/CloudinaryObjectStorage.cs",
+        "Services/MediaService.cs",
+        "DTOs/Responses/UploadIntentResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-03",
+      "name": "Xác nhận upload ảnh",
+      "group": "media-upload",
+      "actor": "Chủ sở hữu ảnh",
+      "support": [
+        "storage"
+      ],
+      "goal": "Chuyển ảnh vừa upload thành media sẵn sàng sử dụng.",
+      "preconditions": "Asset thuộc người gọi, loại IMAGE, trạng thái PENDING_UPLOAD và chưa hết hạn.",
+      "steps": [
+        "Gọi complete với MediaId.",
+        "Server kiểm tra owner, trạng thái, hạn upload và metadata object trên storage.",
+        "Đối chiếu dung lượng, authenticated object và chữ ký JPEG/PNG/WebP.",
+        "Ghi ActualSizeBytes, UploadedAtUtc, chuyển READY và trả MediaResponse."
+      ],
+      "alternatives": [
+        "Không có asset: 404; sai owner: 403; trạng thái không cho complete: 409.",
+        "Object chưa có: 409 upload_object_missing. Hết hạn, dung lượng hoặc chữ ký sai: ghi FAILED cùng ObjectDeletion, trả lỗi.",
+        "Đã READY: trả metadata hiện có."
+      ],
+      "postconditions": "Ảnh hợp lệ ở READY; ảnh bị từ chối theo kiểm tra tệp được đưa vào hàng đợi dọn.",
+      "endpoints": [
+        "POST /api/media/{mediaId:guid}/complete"
+      ],
+      "tables": [
+        "MediaAssets",
+        "ObjectDeletions"
+      ],
+      "sources": [
+        "Controllers/MediaController.cs",
+        "Services/MediaService.cs",
+        "Domain/Entities/MediaAsset.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-04",
+      "name": "Xác nhận upload video",
+      "group": "media-upload",
+      "actor": "Chủ sở hữu video",
+      "support": [
+        "storage"
+      ],
+      "goal": "Xác thực video và đưa vào hàng đợi xử lý nền.",
+      "preconditions": "Asset VIDEO thuộc người gọi, PENDING_UPLOAD, còn hạn; video đã được storage nhận.",
+      "steps": [
+        "Gọi complete và thực hiện các kiểm tra owner, hạn, object, loại, dung lượng, chữ ký MP4/WebM.",
+        "Ghi dung lượng thực và thời điểm upload, chuyển asset sang PROCESSING.",
+        "Tạo một MediaProcessingJob PENDING với NextAttemptAtUtc hiện tại rồi lưu và trả trạng thái processing.",
+        "Client theo dõi metadata; video sẽ sẵn sàng sau UC-ME-13."
+      ],
+      "alternatives": [
+        "Các lỗi owner, trạng thái hoặc tệp được xử lý như UC-ME-03.",
+        "Đã PROCESSING hoặc READY: trả metadata hiện có, không tạo thêm job.",
+        "VideoProcessingEnabled tắt: worker video không được đăng ký; complete vẫn có thể tạo job và video chờ PROCESSING."
+      ],
+      "postconditions": "Video hợp lệ ở PROCESSING và có job; kết quả complete chưa khẳng định xử lý video thành công.",
+      "endpoints": [
+        "POST /api/media/{mediaId:guid}/complete"
+      ],
+      "tables": [
+        "MediaAssets",
+        "MediaProcessingJobs",
+        "ObjectDeletions"
+      ],
+      "sources": [
+        "Controllers/MediaController.cs",
+        "Services/MediaService.cs",
+        "Domain/Entities/MediaProcessingJob.cs",
+        "DependencyInjection.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-05",
+      "name": "Xem trạng thái và metadata",
+      "group": "media-read",
+      "actor": "Chủ sở hữu media",
+      "goal": "Theo dõi trạng thái upload/xử lý và thông tin ảnh hoặc video của mình.",
+      "preconditions": "Đã đăng nhập; MediaId tồn tại và OwnerUserId là người gọi.",
+      "steps": [
+        "Gọi GET media/{mediaId}.",
+        "Server lấy asset và kiểm tra owner.",
+        "Trả loại, trạng thái, tên, dung lượng, các mốc thời gian, thời lượng, kích thước và HasPoster khi phù hợp."
+      ],
+      "alternatives": [
+        "Không tồn tại: 404; sai owner: 403.",
+        "Các metadata chưa có như ActualSizeBytes hoặc DurationMs được trả null; endpoint metadata vẫn có thể trả asset FAILED hoặc DELETED của chủ sở hữu."
+      ],
+      "postconditions": "Người gọi biết trạng thái hiện tại; không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/media/{mediaId:guid}"
+      ],
+      "tables": [
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/MediaController.cs",
+        "Services/MediaService.cs",
+        "DTOs/Responses/MediaResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-06",
+      "name": "Lấy URL đọc media",
+      "group": "media-read",
+      "actor": "Chủ sở hữu media",
+      "support": [
+        "storage"
+      ],
+      "goal": "Lấy URL có chữ ký để đọc ảnh hoặc video đã xử lý.",
+      "preconditions": "Đã đăng nhập, đúng owner; asset READY, chưa xóa, có ObjectKey phù hợp.",
+      "steps": [
+        "Gọi media/{mediaId}/access.",
+        "Server kiểm tra owner và trạng thái READY.",
+        "Ảnh dùng ObjectKey; video dùng ProcessedObjectKey.",
+        "Storage tạo URL có chữ ký; API trả URL, ExpiresAt, loại và content type."
+      ],
+      "alternatives": [
+        "Sai owner: 403. Không tồn tại, chưa READY, đã xóa hoặc thiếu key đọc: 404.",
+        "Người xem bài viết của người khác lấy quyền đọc qua API module chứa nội dung; MediaService.CreateReadUrlAsync được gọi sau kiểm tra quyền xem."
+      ],
+      "postconditions": "Có URL đọc theo contract MediaReadUrlResponse; không cập nhật asset.",
+      "endpoints": [
+        "GET /api/media/{mediaId:guid}/access"
+      ],
+      "tables": [
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/MediaController.cs",
+        "Services/MediaService.cs",
+        "Services/CloudinaryObjectStorage.cs",
+        "DTOs/Responses/MediaReadUrlResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-07",
+      "name": "Lấy poster của video",
+      "group": "media-read",
+      "actor": "Chủ sở hữu video",
+      "support": [
+        "storage"
+      ],
+      "goal": "Lấy ảnh poster của video đã xử lý.",
+      "preconditions": "Đúng owner; asset VIDEO, READY, chưa xóa và có PosterObjectKey.",
+      "steps": [
+        "Gọi media/{mediaId}/poster/access.",
+        "Server kiểm tra owner, trạng thái và PosterObjectKey.",
+        "Storage ký URL ảnh; API trả URL poster với media type image, content type image/jpeg và ExpiresAt."
+      ],
+      "alternatives": [
+        "Sai owner: 403. Asset thiếu, không phải video, chưa READY, đã xóa hoặc thiếu poster: 404."
+      ],
+      "postconditions": "Có URL poster để hiển thị video; không thay đổi asset.",
+      "endpoints": [
+        "GET /api/media/{mediaId:guid}/poster/access"
+      ],
+      "tables": [
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/MediaController.cs",
+        "Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-08",
+      "name": "Gắn media vào bài viết",
+      "group": "media-attach",
+      "actor": "Người dùng có quyền đăng hoặc sửa bài",
+      "support": [
+        "posts"
+      ],
+      "goal": "Giữ tham chiếu media nhất quán với các đính kèm bài viết.",
+      "preconditions": "Có quyền ở module Posts; các MediaId thuộc người thực hiện, READY và chưa bị xóa.",
+      "steps": [
+        "Người dùng gửi MediaIds qua API tạo hoặc sửa bài viết.",
+        "PostsUseCase kiểm tra media qua MediaService.ValidatePostMediaAsync.",
+        "Trong giao dịch của Posts, tạo/cập nhật PostMedia và đồng bộ MediaReferences: thêm các cặp mới, gỡ cặp không còn trong danh sách.",
+        "Các bước liên quan hoàn tất rồi commit giao dịch."
+      ],
+      "alternatives": [
+        "Media chưa READY hoặc không tồn tại: từ chối invalid_media; sai chủ sở hữu: media_not_owned.",
+        "Đồng bộ hoặc bước liên quan lỗi: giao dịch của Posts được rollback.",
+        "Xóa bài viết qua Posts gỡ PostMedia và MediaReferences; thao tác đó chưa đồng nghĩa xóa tệp vật lý."
+      ],
+      "postconditions": "PostMedia và MediaReferences phản ánh danh sách đính kèm sau thao tác thành công.",
+      "endpoints": [
+        "POST /api/posts",
+        "PUT /api/posts/{postId:guid}",
+        "DELETE /api/posts/{postId:guid}"
+      ],
+      "tables": [
+        "MediaAssets",
+        "MediaReferences",
+        "Posts",
+        "PostMedia"
+      ],
+      "sources": [
+        "Services/MediaService.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Controllers/PostsController.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-09",
+      "name": "Đổi ảnh đại diện hoặc ảnh bìa",
+      "group": "media-attach",
+      "actor": "Chủ hồ sơ",
+      "support": [
+        "users"
+      ],
+      "goal": "Dùng ảnh đã upload cho avatar hoặc cover và cập nhật tham chiếu hồ sơ.",
+      "preconditions": "Ảnh IMAGE thuộc người gọi, READY, chưa xóa; hồ sơ tồn tại và request Users hợp lệ.",
+      "steps": [
+        "Gửi AvatarMediaId hoặc CoverMediaId đến PATCH users/me.",
+        "UserProfileService kiểm tra ảnh qua ValidateProfileImageAsync.",
+        "Trong giao dịch của Users, đồng bộ ProfileMediaReferences theo Slot AVATAR/COVER, cập nhật UserProfiles và dữ liệu liên quan.",
+        "Commit và trả hồ sơ đã cập nhật."
+      ],
+      "alternatives": [
+        "Dùng video, media chưa READY, sai owner hoặc request hồ sơ sai: từ chối validation.",
+        "Request không truyền ID mới giữ ảnh hiện tại theo xử lý của Users.",
+        "Lỗi bước liên quan trong giao dịch: rollback."
+      ],
+      "postconditions": "Hồ sơ và các Slot tham chiếu ảnh đồng bộ sau cập nhật thành công.",
+      "endpoints": [
+        "PATCH /api/users/me"
+      ],
+      "tables": [
+        "MediaAssets",
+        "ProfileMediaReferences",
+        "UserProfiles",
+        "Posts",
+        "PostMedia",
+        "MediaReferences"
+      ],
+      "sources": [
+        "Services/MediaService.cs",
+        "../Users/Services/UserProfileService.cs",
+        "../Users/Controllers/UserProfileController.cs",
+        "Domain/Entities/ProfileMediaReference.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-10",
+      "name": "Dùng ảnh làm bìa nhóm",
+      "group": "media-attach",
+      "actor": "Người dùng có quyền cập nhật nhóm",
+      "support": [
+        "groups"
+      ],
+      "goal": "Kiểm tra và duy trì liên kết ảnh bìa do module Groups sử dụng.",
+      "preconditions": "Groups cho phép cập nhật; media là ảnh READY, chưa xóa, thuộc người thao tác.",
+      "steps": [
+        "Gửi CoverMediaId trong cập nhật nhóm.",
+        "Groups kiểm tra quyền và gọi ValidateGroupCoverImageAsync.",
+        "SynchronizeGroupCoverReferenceAsync thêm hoặc thay thế tham chiếu của nhóm theo media mong muốn; media null gỡ tham chiếu khi luồng gọi yêu cầu.",
+        "Groups lưu thay đổi theo luồng cập nhật của module đó."
+      ],
+      "alternatives": [
+        "Media không hợp lệ, không thuộc người gọi hoặc là video: từ chối.",
+        "Tham chiếu đã đúng ID: không tạo trùng.",
+        "Không đủ quyền nhóm: module Groups từ chối trước cập nhật."
+      ],
+      "postconditions": "GroupCoverMediaReferences và dữ liệu bìa nhóm được cập nhật qua luồng Groups.",
+      "endpoints": [
+        "PATCH /api/groups/{groupId:guid}"
+      ],
+      "tables": [
+        "MediaAssets",
+        "GroupCoverMediaReferences",
+        "Groups"
+      ],
+      "sources": [
+        "Services/MediaService.cs",
+        "../Groups/Services/GroupsService.cs",
+        "../Groups/Controllers/GroupsController.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-11",
+      "name": "Dùng ảnh cho trang",
+      "group": "media-attach",
+      "actor": "Người dùng có quyền cập nhật media của trang",
+      "support": [
+        "pages"
+      ],
+      "goal": "Kiểm tra và đồng bộ ảnh đại diện, ảnh bìa mà module Pages sử dụng.",
+      "preconditions": "Pages cho phép thao tác; media IMAGE thuộc người gọi, READY và chưa xóa.",
+      "steps": [
+        "Gửi các MediaId qua API cập nhật ảnh trang.",
+        "Pages kiểm tra quyền và gọi ValidatePageImageAsync.",
+        "SynchronizePageReferencesAsync lập danh sách Slot mong muốn, gỡ tham chiếu cũ và thêm tham chiếu mới.",
+        "Pages lưu dữ liệu avatar/cover theo luồng của module đó."
+      ],
+      "alternatives": [
+        "Media không hợp lệ, video hoặc sai chủ sở hữu: từ chối.",
+        "Slot đã trỏ tới cùng media: giữ tham chiếu hiện có.",
+        "Không đủ quyền trang: Pages từ chối thao tác."
+      ],
+      "postconditions": "PageMediaReferences phản ánh các ảnh trang sau cập nhật thành công.",
+      "endpoints": [
+        "PATCH /api/pages/{pageId:guid}/media"
+      ],
+      "tables": [
+        "MediaAssets",
+        "PageMediaReferences",
+        "Pages"
+      ],
+      "sources": [
+        "Services/MediaService.cs",
+        "../Pages/Services/PagesService.cs",
+        "../Pages/Controllers/PagesController.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-12",
+      "name": "Yêu cầu xóa media",
+      "group": "media-delete",
+      "actor": "Chủ sở hữu media",
+      "goal": "Đánh dấu media không còn sử dụng để worker xóa các tệp tương ứng.",
+      "preconditions": "Đã đăng nhập, đúng owner; media READY và không còn tham chiếu trong các module liên quan.",
+      "steps": [
+        "Gọi DELETE media/{mediaId}.",
+        "Server kiểm tra owner, trạng thái và tham chiếu tới bài, hồ sơ, nhóm, trang, tin nhắn, hội thoại, story, sự kiện, album.",
+        "Đổi asset sang DELETED và ghi DeletedAtUtc.",
+        "Tạo ObjectDeletion cho tệp gốc cùng tệp đã xử lý và poster nếu có; lưu rồi trả 204."
+      ],
+      "alternatives": [
+        "Asset thiếu: 404; sai owner: 403.",
+        "Media đã DELETED: trả 204. Chưa READY: 409 invalid_media_status.",
+        "Còn tham chiếu: 409 media_is_referenced; asset tiếp tục được giữ."
+      ],
+      "postconditions": "Asset được đánh dấu xóa và có công việc dọn tệp; worker hoàn tất xóa vật lý ở UC-ME-15.",
+      "endpoints": [
+        "DELETE /api/media/{mediaId:guid}"
+      ],
+      "tables": [
+        "MediaAssets",
+        "ObjectDeletions",
+        "MediaReferences",
+        "ProfileMediaReferences",
+        "UserProfiles",
+        "GroupCoverMediaReferences",
+        "Groups",
+        "PageMediaReferences",
+        "Pages",
+        "MessageAttachments",
+        "Conversations",
+        "StoryMediaReferences",
+        "EventCoverMediaReferences",
+        "AlbumMedia"
+      ],
+      "sources": [
+        "Controllers/MediaController.cs",
+        "Services/MediaService.cs",
+        "Domain/Entities/ObjectDeletion.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-13",
+      "name": "Xử lý video trong hàng đợi",
+      "group": "media-video-worker",
+      "actor": "VideoProcessingWorker",
+      "support": [
+        "storage"
+      ],
+      "goal": "Chuẩn hóa video thành MP4, tạo poster và kết thúc job hoặc lên lịch retry.",
+      "preconditions": "VideoProcessingEnabled bật; có job PENDING đến hạn hoặc PROCESSING quá timeout; asset vẫn VIDEO và PROCESSING.",
+      "steps": [
+        "Worker chọn job theo NextAttemptAtUtc và CreatedAtUtc rồi claim bằng ExecuteUpdateAsync có điều kiện; tăng AttemptCount, ghi StartedAtUtc.",
+        "Tải video gốc về thư mục tạm, dùng ffprobe/ffmpeg để kiểm tra, chuẩn hóa MP4 và tạo poster JPEG.",
+        "Upload video đã xử lý và poster lên storage với khóa cố định theo owner và media ID.",
+        "Ghi metadata hợp lệ, chuyển asset READY, job SUCCEEDED cùng CompletedAtUtc; lưu và dọn thư mục tạm."
+      ],
+      "alternatives": [
+        "Worker khác đã claim: bỏ lần xử lý đó. Asset không còn phù hợp: job FAILED.",
+        "Lỗi trước giới hạn retry: job về PENDING với NextAttemptAtUtc và LastError.",
+        "Hết giới hạn: asset và job FAILED, ghi ObjectDeletions cho tệp gốc, processed và poster. Dừng ứng dụng giữ khả năng claim lại job quá timeout."
+      ],
+      "postconditions": "Video ở READY sau thành công; lỗi được ghi nhận và retry hoặc kết thúc theo cấu hình.",
+      "endpoints": [],
+      "tables": [
+        "MediaAssets",
+        "MediaProcessingJobs",
+        "ObjectDeletions"
+      ],
+      "sources": [
+        "Background/VideoProcessingWorker.cs",
+        "Services/FfmpegVideoProcessor.cs",
+        "Services/CloudinaryObjectStorage.cs",
+        "Domain/Entities/MediaProcessingJob.cs",
+        "Config/MediaOptions.cs",
+        "DependencyInjection.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-14",
+      "name": "Dọn upload đã hết hạn",
+      "group": "media-cleanup-worker",
+      "actor": "PendingUploadCleanupWorker",
+      "goal": "Kết thúc upload chưa xác nhận và đưa object vào hàng đợi dọn.",
+      "preconditions": "Có asset PENDING_UPLOAD với UploadExpiresAtUtc không null và đã đến hạn.",
+      "steps": [
+        "Worker quét theo UploadExpiresAtUtc, lấy tối đa CleanupBatchSize.",
+        "Đánh dấu asset FAILED.",
+        "Tạo ObjectDeletion cho ObjectKey của asset và lưu.",
+        "Chờ CleanupIntervalSeconds rồi chạy vòng tiếp theo."
+      ],
+      "alternatives": [
+        "Không có asset đến hạn: chờ vòng tiếp theo.",
+        "Asset có trạng thái khác PENDING_UPLOAD không được chọn. Lỗi một vòng được ghi log và worker tiếp tục ở vòng sau."
+      ],
+      "postconditions": "Upload hết hạn được ghi FAILED; tệp được đưa sang UC-ME-15 để xóa vật lý.",
+      "endpoints": [],
+      "tables": [
+        "MediaAssets",
+        "ObjectDeletions"
+      ],
+      "sources": [
+        "Background/PendingUploadCleanupWorker.cs",
+        "Domain/Entities/MediaAsset.cs",
+        "Config/MediaOptions.cs"
+      ]
+    },
+    {
+      "id": "UC-ME-15",
+      "name": "Xóa tệp vật lý trong hàng đợi",
+      "group": "media-deletion-worker",
+      "actor": "ObjectDeletionWorker",
+      "support": [
+        "storage"
+      ],
+      "goal": "Thực hiện xóa object và ghi lại kết quả hoặc lịch retry.",
+      "preconditions": "Có ObjectDeletion chưa ProcessedAtUtc, chưa FailedAtUtc, NextAttemptAtUtc đến hạn; asset tham chiếu tồn tại.",
+      "steps": [
+        "Worker lấy batch đến hạn theo NextAttemptAtUtc và CreatedAtUtc.",
+        "Xác minh ObjectKey là tệp gốc, khóa processed hoặc khóa poster của asset để chọn media type.",
+        "Gọi storage DeleteAsync với authenticated resource và invalidate.",
+        "Thành công ghi ProcessedAtUtc, xóa LastError và lưu từng job."
+      ],
+      "alternatives": [
+        "Thiếu asset, khóa không khớp hoặc storage lỗi: tăng RetryCount, ghi LastError.",
+        "Chưa hết giới hạn: đặt NextAttemptAtUtc theo delay; đạt giới hạn: ghi FailedAtUtc, job không được tự chọn lại.",
+        "Lỗi một job không chặn các job tiếp theo của batch."
+      ],
+      "postconditions": "Object bị xóa hoặc job ghi nhận retry/thất bại. MediaAsset và hàng công việc vẫn được giữ trong database.",
+      "endpoints": [],
+      "tables": [
+        "MediaAssets",
+        "ObjectDeletions"
+      ],
+      "sources": [
+        "Background/ObjectDeletionWorker.cs",
+        "Services/CloudinaryObjectStorage.cs",
+        "Domain/Entities/ObjectDeletion.cs",
+        "Config/MediaOptions.cs"
+      ]
+    }
+  ],
+  "usecasesTitle": "Chức năng người dùng và tác vụ nền"
+}
+  </script>
+
   <script>
     const catalog = JSON.parse(document.getElementById('catalog').textContent);
     const moduleNav = document.getElementById('module-nav');
@@ -4155,32 +5211,34 @@
             <dl><dt>Mục tiêu</dt><dd>${escapeHtml(uc.goal)}</dd><dt>Tác nhân chính</dt><dd>${escapeHtml(uc.actor)}</dd><dt>Tiền điều kiện</dt><dd>${escapeHtml(uc.preconditions)}</dd><dt>Hậu điều kiện</dt><dd>${escapeHtml(uc.postconditions)}</dd></dl>
             <h3>Luồng chính</h3><ol>${uc.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
             <h3>Luồng thay thế / ngoại lệ</h3><ul>${uc.alternatives.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ul>
-            <h3>API liên quan</h3><ul>${uc.endpoints.map(endpoint => `<li><code>${escapeHtml(endpoint)}</code></li>`).join('')}</ul>
+            <h3>API liên quan</h3><ul>${uc.endpoints.length ? uc.endpoints.map(endpoint => `<li><code>${escapeHtml(endpoint)}</code></li>`).join('') : '<li>Không có API HTTP riêng; thực hiện bằng tác vụ nền.</li>'}</ul>
             <h3>Bảng liên quan</h3><div class="usecase-index">${uc.tables.map(table => catalog.tables[table] ? `<button class="table-link" type="button" data-table="${escapeHtml(table)}">${escapeHtml(table)}</button>` : `<span class="usecase-id" title="Bảng của module liên quan chưa có trong ERD này">${escapeHtml(table)} · module liên quan</span>`).join('')}</div>
             <h3>Nguồn implementation</h3><div class="source-links">${uc.sources.map(source => `<a href="${sourcePrefix}${escapeHtml(source)}">${escapeHtml(source.split('/').pop())}</a>`).join('')}</div>
           </div>
         </details>`).join('')}`;
       document.getElementById('usecases-panel').innerHTML = `
-        <article class="document-card"><span class="module-tag">USE CASE · ${escapeHtml(activeModule.name.toUpperCase())}</span><h2>Người dùng có thể làm gì?</h2>
+        <article class="document-card"><span class="module-tag">USE CASE · ${escapeHtml(activeModule.name.toUpperCase())}</span><h2>${escapeHtml(specification.usecasesTitle || 'Người dùng có thể làm gì?')}</h2>
           <p class="document-intro">${usecases.length} use case, chia theo ${groups.length} nhóm chức năng. Tác nhân và quyền thực hiện được ghi trong từng đặc tả.</p>
           <p class="document-intro">Hình người: tác nhân · Khung: phạm vi ${escapeHtml(activeModule.name)} · Elip: use case · Đường liền: tác nhân tham gia chức năng. Bấm elip để mở đặc tả.</p>
         </article>
         ${groups.map(group => {
           const cases = usecases.filter(uc => uc.group === group.id);
-          const height = 130 + cases.length * 82;
+          const caseSpacing = group.caseSpacing || 82;
+          const height = 130 + cases.length * caseSpacing;
           const actorY = height / 2;
-          const support = actors.filter(actor => cases.some(uc => uc.support?.includes(actor.id)));
-          const supportY = actor => cases.reduce((ys, uc, index) => uc.support?.includes(actor.id) ? [...ys, 116 + index * 82] : ys, []).reduce((sum, y, _, ys) => sum + y / ys.length, 0);
+          const primaryActor = actors.find(actor => actor.id === group.actor);
+          const support = actors.filter(actor => actor.id !== group.actor && cases.some(uc => uc.support?.includes(actor.id)));
+          const supportY = actor => cases.reduce((ys, uc, index) => uc.support?.includes(actor.id) ? [...ys, 116 + index * caseSpacing] : ys, []).reduce((sum, y, _, ys) => sum + y / ys.length, 0);
           return `<article class="document-card"><h2>${escapeHtml(group.name)}</h2><p class="document-intro">${escapeHtml(group.description)}</p>
             <div class="usecase-canvas"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 ${height}" role="group" aria-label="Use case ${escapeHtml(activeModule.name)}: ${escapeHtml(group.name)}">
               <title>${escapeHtml(group.name)}</title><desc>${cases.map(uc => escapeHtml(uc.name)).join('; ')}. Bấm hoặc nhấn Enter trên use case để mở đặc tả.</desc>
               <defs><g id="actor-${group.id}" fill="none" stroke="#456052" stroke-width="2"><circle cy="-35" r="12"/><path d="M0,-23 V15 M-23,-8 H23 M0,15 L-20,43 M0,15 L20,43"/></g></defs>
               <rect x="220" y="18" width="600" height="${height - 36}" rx="12" fill="#fafcfb" stroke="#dbe4dd"/>
               <text x="520" y="49" text-anchor="middle" font-size="14" font-weight="650" fill="#456052">${escapeHtml(activeModule.name)} · ${escapeHtml(group.name)}</text>
-              <g fill="none" stroke="#b4c5ba" stroke-width="1.4">${cases.map((uc, index) => `<path d="M135,${actorY} L335,${116 + index * 82}"/>${(uc.support || []).map(id => `<path d="M705,${116 + index * 82} L905,${supportY(actors.find(actor => actor.id === id))}"/>`).join('')}`).join('')}</g>
-              <use href="#actor-${group.id}" transform="translate(110 ${actorY})"/><text x="110" y="${actorY + 68}" text-anchor="middle" font-size="13" fill="#456052">Người dùng</text>
+              <g fill="none" stroke="#b4c5ba" stroke-width="1.4">${cases.map((uc, index) => `<path d="M135,${actorY} L335,${116 + index * caseSpacing}"/>${(uc.support || []).map(id => `<path d="M705,${116 + index * caseSpacing} L905,${supportY(actors.find(actor => actor.id === id))}"/>`).join('')}`).join('')}</g>
+              <use href="#actor-${group.id}" transform="translate(110 ${actorY})"/><text x="110" y="${actorY + 68}" text-anchor="middle" font-size="13" fill="#456052">${escapeHtml(primaryActor?.name || 'Người dùng')}</text>
               ${support.map(actor => `<use href="#actor-${group.id}" transform="translate(930 ${supportY(actor)})"/><text x="930" y="${supportY(actor) + 67}" text-anchor="middle" font-size="12" fill="#456052">${escapeHtml(actor.name)}</text>`).join('')}
-              ${cases.map((uc, index) => `<g class="uc-node" role="button" tabindex="0" data-usecase="${uc.id}" aria-label="${uc.id}: ${escapeHtml(uc.name)}"><ellipse cx="520" cy="${116 + index * 82}" rx="185" ry="31" fill="#fff" stroke="#8aa997" stroke-width="1.5"/><text x="520" y="${109 + index * 82}" text-anchor="middle" font-size="10" fill="#748079">${uc.id}</text><text x="520" y="${127 + index * 82}" text-anchor="middle" font-size="14" font-weight="550" fill="#253b32">${escapeHtml(uc.name)}</text></g>`).join('')}
+              ${cases.map((uc, index) => `<g class="uc-node" role="button" tabindex="0" data-usecase="${uc.id}" aria-label="${uc.id}: ${escapeHtml(uc.name)}"><ellipse cx="520" cy="${116 + index * caseSpacing}" rx="185" ry="31" fill="#fff" stroke="#8aa997" stroke-width="1.5"/><text x="520" y="${109 + index * caseSpacing}" text-anchor="middle" font-size="10" fill="#748079">${uc.id}</text><text x="520" y="${127 + index * caseSpacing}" text-anchor="middle" font-size="14" font-weight="550" fill="#253b32">${escapeHtml(uc.name)}</text></g>`).join('')}
             </svg></div>
           </article>`;
         }).join('')}`;
