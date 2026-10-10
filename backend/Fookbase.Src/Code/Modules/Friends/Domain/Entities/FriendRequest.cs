@@ -49,14 +49,8 @@ public sealed class FriendRequest
     [Column("UserId1")]
     public Guid User1Id { get; private set; }
 
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User User1 { get; private set; } = null!;
-
     [Column("UserId2")]
     public Guid User2Id { get; private set; }
-
-    [DeleteBehavior(DeleteBehavior.Restrict)]
-    public User User2 { get; private set; } = null!;
 
     public FriendRequestStatus Status { get; private set; }
 
