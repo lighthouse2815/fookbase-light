@@ -650,6 +650,13 @@
       "description": "Gửi tin nhắn và lịch sử client tới nhà cung cấp AI được cấu hình, trả câu trả lời và model đã dùng.",
       "tables": [],
       "diagram": null
+    },
+    {
+      "id": "games",
+      "name": "Games",
+      "description": "Phòng Flappy Bird/Jumping, chủ phòng, vòng chơi chung và trạng thái người chơi qua SignalR.",
+      "tables": [],
+      "diagram": null
     }
   ],
   "tables": {
@@ -16504,6 +16511,309 @@
         "Services/AiChatService.cs",
         "Config/AiChatOptions.cs",
         "DependencyInjection.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <script id="games-specification" type="application/json">
+{
+  "title": "Phòng chơi và đồng bộ realtime",
+  "purpose": "Phòng Flappy Bird/Jumping, chủ phòng, vòng chơi chung và trạng thái người chơi qua SignalR.",
+  "scope": "Games không có entity, bảng score/room hoặc HTTP controller riêng. Đối chiếu GameRoomService, GameRoomHub, FlappyBirdHub, JumpingHub và DI. Hai hub /hubs/flappy-bird, /hubs/jumping có xác thực; room/membership/round lưu trong bộ nhớ, keyed singleton riêng theo game.",
+  "usecasesTitle": "Phòng chơi và đồng bộ realtime",
+  "groups": [
+    {
+      "id": "games-rooms",
+      "name": "Phòng và thành viên",
+      "actor": "user",
+      "description": "Tạo, tham gia, tra lại membership, rời và xử lý disconnect."
+    },
+    {
+      "id": "games-rounds",
+      "name": "Vòng chơi",
+      "actor": "user",
+      "description": "Host tạo RoundId/seed và thời điểm bắt đầu."
+    },
+    {
+      "id": "games-players",
+      "name": "Trạng thái người chơi",
+      "actor": "user",
+      "description": "Kiểm tra payload và gửi trạng thái tới peers trong cùng vòng."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Games không có entity, bảng score/room hoặc HTTP controller riêng. Đối chiếu GameRoomService, GameRoomHub, FlappyBirdHub, JumpingHub và DI. Hai hub /hubs/flappy-bird, /hubs/jumping có xác thực; room/membership/round lưu trong bộ nhớ, keyed singleton riêng theo game."
+    }
+  ],
+  "rules": [
+    {
+      "text": "Hai hub đều Authorize, user lấy từ sub GUID. GameRoomHub chuyển GameRoomException thành HubException. Invocation còn chịu AccountModerationHubFilter chung; không có REST API tạo phòng/ghi score.",
+      "source": "Hubs/GameRoomHub.cs"
+    },
+    {
+      "text": "DI tạo keyed singleton GameRoomService cho flappy-bird và jumping; room namespaces tách biệt. Dictionary rooms và roomCodeByConnectionId được bảo vệ bằng lock; không có persistence/backplane trong service này.",
+      "source": "DependencyInjection.cs"
+    },
+    {
+      "text": "Mã phòng ngẫu nhiên 6 ký tự từ ABCDEFGHJKLMNPQRSTUVWXYZ23456789 và kiểm tra không trùng trong instance. Join trim/uppercase, yêu cầu 6 ASCII chữ/số; mã không có trong game hiện tại trả HubException.",
+      "source": "Services/GameRoomService.cs"
+    },
+    {
+      "text": "Mỗi connection chỉ ở một phòng; mỗi user có thể nhiều connection, PlayerCount đếm connections chứ không distinct user. Không có giới hạn số player/room hoặc yêu cầu friendship trong GameRoomService.",
+      "source": "Services/GameRoomService.cs"
+    },
+    {
+      "text": "Create trả GameRoomMembership(Code, IsHost, PlayerCount, Round, HostUserId), thêm SignalR group gameId:code. Join thêm connection, thêm group và phát RoomUpdated tới cả group.",
+      "source": "Hubs/GameRoomHub.cs"
+    },
+    {
+      "text": "RejoinRoom chỉ GetMembership theo connection hiện tại, trả null nếu chưa có; không khôi phục membership của connection cũ sau reconnect. Client với connectionId mới phải JoinRoom lại nếu phòng còn tồn tại.",
+      "source": "Hubs/GameRoomHub.cs"
+    },
+    {
+      "text": "Leave/disconnect xóa mapping và connection khỏi Players; phòng rỗng bị xóa. Nếu không còn connection của owner user, chuyển owner sang user của connection đầu còn lại. Phát PlayerLeft(ConnectionId) và RoomUpdated.",
+      "source": "Services/GameRoomService.cs"
+    },
+    {
+      "text": "StartRound chỉ HostUserId; mỗi lần tạo RoundId mới, seed ngẫu nhiên int không âm và StartsAtUtc=TimeProvider UTC+3 giây. Vòng cũ bị thay; không yêu cầu phase over hay xác nhận tất cả người chơi trước khi bắt đầu.",
+      "source": "Services/GameRoomService.cs"
+    },
+    {
+      "text": "Player update chỉ phát nếu connection có phòng và RoundId khớp vòng hiện tại. Gửi Clients.OthersInGroup PlayerUpdated, không gửi lại caller, không lưu trạng thái/score hoặc kiểm chứng mô phỏng game phía server.",
+      "source": "Hubs/GameRoomHub.cs"
+    },
+    {
+      "text": "Flappy: BirdY finite 13..451, Velocity finite -650..650, Score 0..10000, Phase playing/over. Payload sai bị bỏ qua. Event chứa ConnectionId/BirdY/Velocity/Phase/Score; RoundId chỉ dùng kiểm tra vào room hiện tại.",
+      "source": "Hubs/FlappyBirdHub.cs"
+    },
+    {
+      "text": "Jumping: Height finite 0..220, Score 0..100000, Phase playing/over. Event gồm ConnectionId, Username từ unique_name (fallback Bạn chơi), RoundId/Height/Phase/Score; payload sai bị bỏ qua.",
+      "source": "Hubs/JumpingHub.cs"
+    },
+    {
+      "text": "Restart instance mất room/round/membership. PlayerLeft/RoomUpdated là thông báo realtime, không có outbox hoặc lịch sử phục hồi trong database. Không tự ghi leaderboard hay kết quả trận từ các score client gửi.",
+      "source": "Services/GameRoomService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-GA-01",
+      "name": "Tạo phòng chơi",
+      "group": "games-rooms",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tạo room cho game hiện tại.",
+      "preconditions": "Hub được xác thực, connection chưa ở room.",
+      "steps": [
+        "Gọi CreateRoom; kiểm tra GUID actor và mapping connection.",
+        "Sinh mã 6 ký tự, tạo room owner=actor, thêm connection.",
+        "Thêm SignalR group gameId:code và trả membership."
+      ],
+      "alternatives": [
+        "Connection đã ở room: HubException.",
+        "Claim GUID thiếu/sai: HubException Unauthenticated user."
+      ],
+      "postconditions": "Room một connection, chưa có Round.",
+      "endpoints": [
+        "SignalR /hubs/flappy-bird · CreateRoom()",
+        "SignalR /hubs/jumping · CreateRoom()"
+      ],
+      "tables": [],
+      "sources": [
+        "Hubs/GameRoomHub.cs",
+        "Services/GameRoomService.cs",
+        "DependencyInjection.cs"
+      ]
+    },
+    {
+      "id": "UC-GA-02",
+      "name": "Tham gia phòng chơi",
+      "group": "games-rooms",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Vào room bằng mã.",
+      "preconditions": "Connection chưa ở room, mã tồn tại trong game/instance hiện tại.",
+      "steps": [
+        "Gọi JoinRoom(code), trim/uppercase và validate 6 ASCII chữ/số.",
+        "Thêm connection vào Players và mapping.",
+        "Thêm SignalR group, phát RoomUpdated; trả membership với Round nếu có."
+      ],
+      "alternatives": [
+        "Mã sai định dạng, không tồn tại hoặc connection đang ở room: HubException.",
+        "Không yêu cầu người chơi là bạn bè; mã hợp lệ quyết định room được tìm."
+      ],
+      "postconditions": "Connection active trong room, PlayerCount tăng.",
+      "endpoints": [
+        "SignalR /hubs/flappy-bird · JoinRoom(roomCode)",
+        "SignalR /hubs/jumping · JoinRoom(roomCode)"
+      ],
+      "tables": [],
+      "sources": [
+        "Hubs/GameRoomHub.cs",
+        "Services/GameRoomService.cs"
+      ]
+    },
+    {
+      "id": "UC-GA-03",
+      "name": "Tra lại membership hiện tại",
+      "group": "games-rooms",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Đọc membership theo connection.",
+      "preconditions": "Connection còn được hub xác thực.",
+      "steps": [
+        "Gọi RejoinRoom.",
+        "Service tra roomCodeByConnectionId và rooms.",
+        "Trả GameRoomMembership hoặc null."
+      ],
+      "alternatives": [
+        "ConnectionId mới sau reconnect không tự có membership.",
+        "Room đã xóa/mapping thiếu: null."
+      ],
+      "postconditions": "Không thêm player hoặc phục hồi connection cũ.",
+      "endpoints": [
+        "SignalR /hubs/flappy-bird · RejoinRoom()",
+        "SignalR /hubs/jumping · RejoinRoom()"
+      ],
+      "tables": [],
+      "sources": [
+        "Hubs/GameRoomHub.cs",
+        "Services/GameRoomService.cs"
+      ]
+    },
+    {
+      "id": "UC-GA-04",
+      "name": "Rời phòng chơi",
+      "group": "games-rooms",
+      "actor": "Người chơi trong room",
+      "goal": "Rời room và cập nhật host/count.",
+      "preconditions": "Connection có room nếu có.",
+      "steps": [
+        "Gọi LeaveRoom; service xóa mapping/player.",
+        "Xóa room nếu rỗng hoặc chuyển owner khi owner user không còn connection.",
+        "RemoveFromGroupAsync, phát PlayerLeft và RoomUpdated."
+      ],
+      "alternatives": [
+        "Không có room: bỏ qua, không lỗi.",
+        "Chuyển owner tự động theo connection đầu còn lại, không bỏ phiếu."
+      ],
+      "postconditions": "Connection rời, room có thể bị xóa.",
+      "endpoints": [
+        "SignalR /hubs/flappy-bird · LeaveRoom()",
+        "SignalR /hubs/jumping · LeaveRoom()"
+      ],
+      "tables": [],
+      "sources": [
+        "Hubs/GameRoomHub.cs",
+        "Services/GameRoomService.cs"
+      ]
+    },
+    {
+      "id": "UC-GA-05",
+      "name": "Dọn membership khi disconnect",
+      "group": "games-rooms",
+      "actor": "Vòng đời SignalR",
+      "goal": "Gỡ connection đã ngắt.",
+      "preconditions": "Hub nhận OnDisconnectedAsync.",
+      "steps": [
+        "Service LeaveRoom bằng connectionId.",
+        "Nếu còn room/update, phát PlayerLeft và RoomUpdated.",
+        "Gọi base disconnect."
+      ],
+      "alternatives": [
+        "Không còn mapping: không phát thêm update.",
+        "Reconnect mới không tự phục hồi player cũ."
+      ],
+      "postconditions": "Không còn player của connection này; room rỗng được bỏ.",
+      "endpoints": [
+        "SignalR /hubs/flappy-bird · OnDisconnectedAsync",
+        "SignalR /hubs/jumping · OnDisconnectedAsync"
+      ],
+      "tables": [],
+      "sources": [
+        "Hubs/GameRoomHub.cs",
+        "Services/GameRoomService.cs"
+      ]
+    },
+    {
+      "id": "UC-GA-06",
+      "name": "Bắt đầu vòng chơi",
+      "group": "games-rounds",
+      "actor": "Chủ phòng",
+      "goal": "Tạo vòng có seed/thời điểm chung.",
+      "preconditions": "Connection có room, user là HostUserId.",
+      "steps": [
+        "Gọi StartRound.",
+        "Service tạo GUID round, seed ngẫu nhiên và StartsAtUtc=now+3s.",
+        "Phát RoundStarted tới group gồm caller."
+      ],
+      "alternatives": [
+        "Chưa vào room/không phải host: HubException.",
+        "Gọi lại hợp lệ tạo vòng mới, thay vòng cũ."
+      ],
+      "postconditions": "Room.Round mới, client nhận cùng seed/time.",
+      "endpoints": [
+        "SignalR /hubs/flappy-bird · StartRound()",
+        "SignalR /hubs/jumping · StartRound()"
+      ],
+      "tables": [],
+      "sources": [
+        "Hubs/GameRoomHub.cs",
+        "Services/GameRoomService.cs"
+      ]
+    },
+    {
+      "id": "UC-GA-07",
+      "name": "Đồng bộ người chơi Flappy",
+      "group": "games-players",
+      "actor": "Người chơi Flappy Bird",
+      "goal": "Gửi trạng thái hiện tại cho peers.",
+      "preconditions": "Connection có room Flappy, RoundId hiện tại, payload trong giới hạn.",
+      "steps": [
+        "Gọi UpdatePlayer với RoundId/BirdY/Velocity/Phase/Score.",
+        "Reject giá trị non-finite, sai phạm vi hoặc phase.",
+        "Kiểm tra room/round, phát PlayerUpdated tới OthersInGroup."
+      ],
+      "alternatives": [
+        "Payload sai, không có room hoặc RoundId cũ: bỏ qua, không phát event."
+      ],
+      "postconditions": "Không persist score hoặc xác nhận kết quả từ server.",
+      "endpoints": [
+        "SignalR /hubs/flappy-bird · UpdatePlayer(FlappyBirdPlayerUpdate)"
+      ],
+      "tables": [],
+      "sources": [
+        "Hubs/FlappyBirdHub.cs",
+        "Hubs/GameRoomHub.cs",
+        "Services/GameRoomService.cs"
+      ]
+    },
+    {
+      "id": "UC-GA-08",
+      "name": "Đồng bộ người chơi Jumping",
+      "group": "games-players",
+      "actor": "Người chơi Jumping",
+      "goal": "Gửi height/phase/score cho peers.",
+      "preconditions": "Connection có room Jumping, RoundId hiện tại, payload trong giới hạn.",
+      "steps": [
+        "Gọi UpdatePlayer với RoundId/Height/Phase/Score.",
+        "Reject non-finite/ngoài phạm vi/sai phase.",
+        "Ghép Username từ claim hoặc fallback; kiểm tra room/round, phát PlayerUpdated tới OthersInGroup."
+      ],
+      "alternatives": [
+        "Payload sai hoặc vòng không khớp: bỏ qua."
+      ],
+      "postconditions": "Không persist score/leaderboard.",
+      "endpoints": [
+        "SignalR /hubs/jumping · UpdatePlayer(JumpingPlayerUpdate)"
+      ],
+      "tables": [],
+      "sources": [
+        "Hubs/JumpingHub.cs",
+        "Hubs/GameRoomHub.cs",
+        "Services/GameRoomService.cs"
       ]
     }
   ]
