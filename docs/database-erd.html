@@ -581,6 +581,27 @@
         "source": "flowchart LR\n    Conversations[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Conversations</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId1'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>UserId1</code></td><td class='column-type'>uuid?</td></tr><tr data-column='UserId2'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>UserId2</code></td><td class='column-type'>uuid?</td></tr><tr data-column='PhotoMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>PhotoMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='Title'><td class='identity-keys' /><td><code class='' title=''>Title</code></td><td class='column-type'>varchar(120)?</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='LastMessageAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastMessageAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    ConversationParticipants[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>ConversationParticipants</th></tr></thead><tbody><tr data-column='ConversationId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>ConversationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='LastReadMessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>LastReadMessageId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='LastDeliveredMessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>LastDeliveredMessageId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Role'><td class='identity-keys' /><td><code class='' title=''>Role</code></td><td class='column-type'>integer</td></tr><tr data-column='JoinedAtUtc'><td class='identity-keys' /><td><code class='' title=''>JoinedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='LeftAtUtc'><td class='identity-keys' /><td><code class='' title=''>LeftAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='LastReadMessageCreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastReadMessageCreatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='LastReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='MutedUntilUtc'><td class='identity-keys' /><td><code class='' title=''>MutedUntilUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ArchivedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ArchivedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Nickname'><td class='identity-keys' /><td><code class='' title=''>Nickname</code></td><td class='column-type'>varchar(80)?</td></tr></tbody></table>\"]\n    ConversationReadCursors[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>ConversationReadCursors</th></tr></thead><tbody><tr data-column='ConversationId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>ConversationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='LastReadMessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>LastReadMessageId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='LastReadMessageCreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastReadMessageCreatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='LastReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>LastReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    Messages[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>Messages</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ConversationId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ConversationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SenderUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>SenderUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReplyToMessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReplyToMessageId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='StoryId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>StoryId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='Content'><td class='identity-keys' /><td><code class='' title=''>Content</code></td><td class='column-type'>varchar(5000)?</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='EditedAtUtc'><td class='identity-keys' /><td><code class='' title=''>EditedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>ReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    MessageAttachments[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>MessageAttachments</th></tr></thead><tbody><tr data-column='MessageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MessageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    MessageReactions[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>MessageReactions</th></tr></thead><tbody><tr data-column='MessageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MessageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    MessageNotifications[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>MessageNotifications</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='RecipientUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>RecipientUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ConversationId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ConversationId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MessageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MessageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>ReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    Stories[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>Stories</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Caption'><td class='identity-keys' /><td><code class='' title=''>Caption</code></td><td class='column-type'>varchar(2200)?</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>ExpiresAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"UserId1 · 0..1 → 0..N\"| Conversations\n    AspNetUsers -->|\"UserId2 · 0..1 → 0..N\"| Conversations\n    MediaAssets -->|\"PhotoMediaId · 0..1 → 0..N\"| Conversations\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| ConversationParticipants\n    Conversations -->|\"ConversationId · 1 → 0..N\"| ConversationParticipants\n    Messages -->|\"LastDeliveredMessageId · 0..1 → 0..N\"| ConversationParticipants\n    Messages -->|\"LastReadMessageId · 0..1 → 0..N\"| ConversationParticipants\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| ConversationReadCursors\n    Conversations -->|\"ConversationId · 1 → 0..N\"| ConversationReadCursors\n    Messages -->|\"LastReadMessageId · 0..1 → 0..N\"| ConversationReadCursors\n    AspNetUsers -->|\"SenderUserId · 1 → 0..N\"| Messages\n    Conversations -->|\"ConversationId · 1 → 0..N\"| Messages\n    Messages -->|\"ReplyToMessageId · 0..1 → 0..N\"| Messages\n    Stories -->|\"StoryId · 0..1 → 0..N\"| Messages\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| MessageAttachments\n    Messages -->|\"MessageId · 1 → 0..N\"| MessageAttachments\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| MessageReactions\n    Messages -->|\"MessageId · 1 → 0..N\"| MessageReactions\n    AspNetUsers -->|\"RecipientUserId · 1 → 0..N\"| MessageNotifications\n    Conversations -->|\"ConversationId · 1 → 0..N\"| MessageNotifications\n    Messages -->|\"MessageId · 1 → 0..N\"| MessageNotifications",
         "note": "7 bảng Messages, 3 bảng tham chiếu, 95 cột và 21 FK. Cặp direct, ảnh, reply, story và cursor nullable được ghi rõ. ReplyToMessageId tự tham chiếu Messages; cursor trỏ Messages bằng FK RESTRICT. Mỗi bảng principal/tham chiếu chỉ xuất hiện một lần."
       }
+    },
+    {
+      "id": "notifications",
+      "name": "Notifications",
+      "description": "Thông báo bền vững theo người nhận, trạng thái đọc, SignalR và thiết bị/receipt Expo push.",
+      "tables": [
+        "Notifications",
+        "PushDevices",
+        "PushDeliveryReceipts"
+      ],
+      "diagram": {
+        "template": "overview-notifications",
+        "tables": [
+          "Notifications",
+          "PushDevices",
+          "PushDeliveryReceipts",
+          "AspNetUsers"
+        ],
+        "source": "flowchart LR\n    Notifications[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Notifications</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='RecipientUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>RecipientUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ActorUserId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='EntityType'><td class='identity-keys' /><td><code class='' title=''>EntityType</code></td><td class='column-type'>integer?</td></tr><tr data-column='EntityId'><td class='identity-keys' /><td><code class='' title=''>EntityId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='IsRead'><td class='identity-keys' /><td><code class='' title=''>IsRead</code></td><td class='column-type'>boolean</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>ReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PushDevices[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>PushDevices</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ExpoPushToken'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ExpoPushToken</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='RegisteredAtUtc'><td class='identity-keys' /><td><code class='' title=''>RegisteredAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DisabledAtUtc'><td class='identity-keys' /><td><code class='' title=''>DisabledAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PushDeliveryReceipts[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>PushDeliveryReceipts</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='PushDeviceId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>PushDeviceId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ExpoReceiptId'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ExpoReceiptId</code></td><td class='column-type'>varchar(64)</td></tr><tr data-column='AvailableAtUtc'><td class='identity-keys' /><td><code class='' title=''>AvailableAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='CheckedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CheckedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='CheckAttempts'><td class='identity-keys' /><td><code class='' title=''>CheckAttempts</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"ActorUserId · 0..1 → 0..N\"| Notifications\n    AspNetUsers -->|\"RecipientUserId · 1 → 0..N\"| Notifications\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| PushDevices\n    PushDevices -->|\"PushDeviceId · 1 → 0..N\"| PushDeliveryReceipts",
+        "note": "3 bảng Notifications, 1 bảng tham chiếu, 37 cột và 4 FK. EntityType/EntityId không có FK tới nội dung. Notifications khác MessageNotifications. Receipt FK tới PushDevices CASCADE; actor của notification nullable."
+      }
     }
   ],
   "tables": {
@@ -6550,6 +6571,284 @@
       "purpose": "Tin chưa đọc của recipient trong conversation.",
       "module": "messages",
       "note": "UNIQUE (RecipientUserId, MessageId); recipient RESTRICT, conversation/message CASCADE. Mark read đồng bộ ReadAtUtc; tách bảng Notifications tổng quát."
+    },
+    "Notifications": {
+      "name": "Notifications",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "RecipientUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "ActorUserId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Type",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "EntityType",
+          "type": "integer",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "EntityId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "IsRead",
+          "type": "boolean",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "ReadAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "ActorUserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "RecipientUserId",
+            "ActorUserId",
+            "Type",
+            "EntityType",
+            "EntityId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "RecipientUserId",
+            "CreatedAtUtc",
+            "Id"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "RecipientUserId",
+            "IsRead",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "ActorUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "RecipientUserId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Thông báo người dùng",
+      "purpose": "Recipient/actor, loại, entity liên quan và trạng thái đọc.",
+      "module": "notifications",
+      "note": "Recipient FK RESTRICT; actor nullable FK RESTRICT. EntityType/EntityId nullable không có FK đa hình. Index dedupe không UNIQUE. Refresh unread đổi CreatedAtUtc; MarkRead chỉ ghi lần đầu."
+    },
+    "PushDevices": {
+      "name": "PushDevices",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "ExpoPushToken",
+          "type": "character varying(255)",
+          "nullable": false,
+          "keys": [
+            "UK"
+          ]
+        },
+        {
+          "name": "RegisteredAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "DisabledAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "ExpoPushToken"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "UserId",
+            "DisabledAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Thiết bị Expo push",
+      "purpose": "Token của tài khoản và thời gian đăng ký/vô hiệu.",
+      "module": "notifications",
+      "note": "ExpoPushToken UNIQUE, tối đa 255. UserId FK RESTRICT. Register có thể chuyển token sang actor và bật lại; Unregister đặt DisabledAtUtc, không xóa hàng."
+    },
+    "PushDeliveryReceipts": {
+      "name": "PushDeliveryReceipts",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "PushDeviceId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "ExpoReceiptId",
+          "type": "character varying(64)",
+          "nullable": false,
+          "keys": [
+            "UK"
+          ]
+        },
+        {
+          "name": "AvailableAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CheckedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "CheckAttempts",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "CheckedAtUtc",
+            "AvailableAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "ExpoReceiptId"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "PushDeviceId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "PushDevices",
+          "fields": [
+            "PushDeviceId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Receipt gửi push",
+      "purpose": "Ticket Expo, lịch kiểm tra, attempts và thời gian hoàn tất.",
+      "module": "notifications",
+      "note": "PushDeviceId FK CASCADE; ExpoReceiptId UNIQUE, tối đa 64. Ticket mới tới hạn sau 15 phút; retry thiếu kết quả sau 5 phút, CheckAttempts>=12 kết thúc. CheckedAtUtc nullable."
     }
   }
 }
@@ -14024,6 +14323,438 @@
         "Services/MessagesService.cs",
         "Hubs/MessagesHub.cs",
         "Services/MessagesPresenceService.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <template id="overview-notifications"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-notifications" width="1684.1" height="754.0" viewBox="0 0 1684.1 754.0" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Notifications" data-layout="notifications"><title>Notifications · 3 bảng chính, 1 bảng tham chiếu và 4 FK</title><desc>EntityType/EntityId không có FK tới nội dung. Notifications khác MessageNotifications. Receipt FK tới PushDevices CASCADE; actor của notification nullable.</desc><style>
+#svg-overview-notifications { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-notifications .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-notifications .node .label { color: #233044; }
+#svg-overview-notifications .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-notifications .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-notifications .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-notifications .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-notifications .identity-table code { font: inherit; }
+#svg-overview-notifications .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-notifications .identity-keys { text-align: center; }
+#svg-overview-notifications .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-notifications .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-notifications .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-notifications .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-notifications .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-notifications .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-notifications .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-notifications .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+</style><defs><marker id="notifications-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="notifications-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M410.42,238.4 C487.54,228.95 577.16,217.97 655,208.43" id="L_AspNetUsers_Notifications_ActorUserId" data-id="L_AspNetUsers_Notifications_ActorUserId" data-principal="AspNetUsers" data-dependent="Notifications" data-fields="ActorUserId" data-kind="fk" class="relation" marker-start="url(#notifications-one)" marker-end="url(#notifications-many)"><title>AspNetUsers (0..1) → Notifications (0..N) · ActorUserId · Restrict</title></path><path d="M410.34,257.94 C494.3,256.53999999999996 575.26,255.2 575.26,255.2 C575.26,255.2 610.13,246.17 654.86,234.58" id="L_AspNetUsers_Notifications_RecipientUserId" data-id="L_AspNetUsers_Notifications_RecipientUserId" data-principal="AspNetUsers" data-dependent="Notifications" data-fields="RecipientUserId" data-kind="fk" class="relation" marker-start="url(#notifications-one)" marker-end="url(#notifications-many)"><title>AspNetUsers (1) → Notifications (0..N) · RecipientUserId · Restrict</title></path><path d="M410.42,315.71 C487.54,338.59 577.16,365.17 655,388.26" id="L_AspNetUsers_PushDevices_UserId" data-id="L_AspNetUsers_PushDevices_UserId" data-principal="AspNetUsers" data-dependent="PushDevices" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#notifications-one)" marker-end="url(#notifications-many)"><title>AspNetUsers (1) → PushDevices (0..N) · UserId · Restrict</title></path><path d="M1032.48,445 C1106.53,445 1191.91,445 1266.68,445" id="L_PushDevices_PushDeliveryReceipts_PushDeviceId" data-id="L_PushDevices_PushDeliveryReceipts_PushDeviceId" data-principal="PushDevices" data-dependent="PushDeliveryReceipts" data-fields="PushDeviceId" data-kind="fk" class="relation" marker-start="url(#notifications-one)" marker-end="url(#notifications-many)"><title>PushDevices (1) → PushDeliveryReceipts (0..N) · PushDeviceId · Cascade</title></path></g><g class="edgeLabels"><text x="536.13" y="215.15" text-anchor="middle" class="relation-label">ActorUserId</text><text x="640.0595999999999" y="222.53" text-anchor="middle" class="cardinality">0..N</text><text x="432.1996" y="230.05" text-anchor="middle" class="cardinality">0..1</text><text x="536.13" y="251.9" text-anchor="middle" class="relation-label">RecipientUserId</text><text x="640.0595999999999" y="250" text-anchor="middle" class="cardinality">0..N</text><text x="430.13" y="251.61" text-anchor="middle" class="cardinality">1</text><text x="536.13" y="338.68" text-anchor="middle" class="relation-label">UserId</text><text x="640.0595999999999" y="396.89" text-anchor="middle" class="cardinality">0..N</text><text x="432.18" y="315.76" text-anchor="middle" class="cardinality">1</text><text x="1153.19" y="441.7" text-anchor="middle" class="relation-label">PushDeviceId</text><text x="1251.8996" y="457.6" text-anchor="middle" class="cardinality">0..N</text><text x="1052.42" y="439" text-anchor="middle" class="cardinality">1</text></g><g class="nodes"><g class="node default" data-table="Notifications" role="button" tabindex="0" aria-label="Xem chi tiết bảng Notifications" transform="translate(847.2596, 185.0008)"><rect class="basic label-container" x="-185.0" y="-125.0" width="370" height="250" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-185.0, -125.0)"><foreignObject width="370" height="250"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:250px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">Notifications</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="RecipientUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">RecipientUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="ActorUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ActorUserId</code></td><td class="column-type">uuid?</td></tr><tr data-column="Type"><td class="identity-keys" /><td><code class="" title="">Type</code></td><td class="column-type">integer</td></tr><tr data-column="EntityType"><td class="identity-keys" /><td><code class="" title="">EntityType</code></td><td class="column-type">integer?</td></tr><tr data-column="EntityId"><td class="identity-keys" /><td><code class="" title="">EntityId</code></td><td class="column-type">uuid?</td></tr><tr data-column="IsRead"><td class="identity-keys" /><td><code class="" title="">IsRead</code></td><td class="column-type">boolean</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="ReadAtUtc"><td class="identity-keys" /><td><code class="" title="">ReadAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PushDevices" role="button" tabindex="0" aria-label="Xem chi tiết bảng PushDevices" transform="translate(847.2596, 444.9996)"><rect class="basic label-container" x="-185.0" y="-77.0" width="370" height="154" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-185.0, -77.0)"><foreignObject width="370" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">PushDevices</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="ExpoPushToken"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ExpoPushToken</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="RegisteredAtUtc"><td class="identity-keys" /><td><code class="" title="">RegisteredAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DisabledAtUtc"><td class="identity-keys" /><td><code class="" title="">DisabledAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PushDeliveryReceipts" role="button" tabindex="0" aria-label="Xem chi tiết bảng PushDeliveryReceipts" transform="translate(1459.0996, 445.0008)"><rect class="basic label-container" x="-185.0" y="-89.0" width="370" height="178" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-185.0, -89.0)"><foreignObject width="370" height="178"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:178px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">PushDeliveryReceipts</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="PushDeviceId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">PushDeviceId</code></td><td class="column-type">uuid</td></tr><tr data-column="ExpoReceiptId"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ExpoReceiptId</code></td><td class="column-type">varchar(64)</td></tr><tr data-column="AvailableAtUtc"><td class="identity-keys" /><td><code class="" title="">AvailableAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="CheckedAtUtc"><td class="identity-keys" /><td><code class="" title="">CheckedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="CheckAttempts"><td class="identity-keys" /><td><code class="" title="">CheckAttempts</code></td><td class="column-type">integer</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(224.99960000000002, 260.9996)"><rect class="basic label-container" x="-185.0" y="-221.0" width="370" height="442" rx="5" ry="5" style="stroke:#94a3b8" /><g class="label" transform="translate(-185.0, -221.0)"><foreignObject width="370" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e6edf4;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(40, 589.0)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="notifications-specification" type="application/json">
+{
+  "title": "Thông báo, realtime và push",
+  "purpose": "Thông báo bền vững theo người nhận, trạng thái đọc, SignalR và thiết bị/receipt Expo push.",
+  "scope": "Đối chiếu 3 entity, 6 endpoint NotificationsController, NotificationService, PushNotificationService, PushReceiptWorker và NotificationsHub. API/hub yêu cầu đăng nhập. Các module nghiệp vụ queue/lưu rồi publish; push hiện được gọi từ luồng tin nhắn, không phải mọi notification tổng quát.",
+  "usecasesTitle": "Thông báo, realtime và push",
+  "groups": [
+    {
+      "id": "notifications-inbox",
+      "name": "Hộp thông báo",
+      "actor": "user",
+      "description": "Đọc danh sách, đếm chưa đọc và đánh dấu đã đọc."
+    },
+    {
+      "id": "notifications-devices",
+      "name": "Thiết bị push",
+      "actor": "user",
+      "description": "Đăng ký hoặc vô hiệu hóa Expo token cho Zola."
+    },
+    {
+      "id": "notifications-realtime",
+      "name": "Queue và SignalR",
+      "actor": "user",
+      "description": "Tạo/gộp thông báo rồi phát tới đúng người nhận."
+    },
+    {
+      "id": "notifications-delivery",
+      "name": "Gửi push và receipt",
+      "actor": "user",
+      "description": "Gửi thông báo tin mới và kiểm tra receipt nền."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Đối chiếu 3 entity, 6 endpoint NotificationsController, NotificationService, PushNotificationService, PushReceiptWorker và NotificationsHub. API/hub yêu cầu đăng nhập. Các module nghiệp vụ queue/lưu rồi publish; push hiện được gọi từ luồng tin nhắn, không phải mọi notification tổng quát."
+    }
+  ],
+  "rules": [
+    {
+      "text": "6 endpoint đều Authorize; claim sub phải GUID. API chỉ lấy dữ liệu RecipientUserId hoặc UserId của người gọi, không cho chọn recipient khác.",
+      "source": "Controllers/NotificationsController.cs"
+    },
+    {
+      "text": "Notification có recipient FK RESTRICT, actor nullable FK RESTRICT; EntityType/EntityId nullable là liên kết nghiệp vụ đa hình, không có FK tới đối tượng nội dung. IsRead và ReadAtUtc lưu trạng thái đọc.",
+      "source": "Domain/Entities/Notification.cs"
+    },
+    {
+      "text": "QueueAsync bỏ thông báo actor=recipient. Nếu actor/entityType/entityId đều có, tìm unread cùng recipient/actor/type/entity để Refresh CreatedAtUtc; chưa có tạo mới. Index nhóm này không UNIQUE, nên dedupe không được database bảo đảm dưới race.",
+      "source": "Services/NotificationService.cs"
+    },
+    {
+      "text": "QueueAsync chỉ track entity, không tự SaveChanges/Publish. Module gọi phải lưu, transaction nếu cần, rồi publish. Publish dùng CanSurfaceAsync và NotificationReceived tới Clients.User(recipient GUID); lỗi realtime bị bắt, không xóa notification đã lưu.",
+      "source": "Services/NotificationService.cs"
+    },
+    {
+      "text": "Danh sách mặc định 20, limit 1..100, before theo NotificationCursor. Query CreatedAtUtc/Id giảm dần rồi CanSurfaceAsync lọc từng notification tới limit+1; NextCursor theo notification hiển thị cuối. UnreadCount cũng chỉ đếm thông báo còn được phép hiển thị.",
+      "source": "DTOs/Requests/NotificationPageRequest.cs"
+    },
+    {
+      "text": "CanSurfaceAsync kiểm tra chặn actor/recipient, trừ notification nội dung PAGE; sau đó kiểm tra tồn tại/quyền của friend request, post/comment, group/request/invite, story, page/role invite và event. Đối tượng bị xóa hoặc mất quyền có thể khiến notification ẩn mà hàng DB vẫn giữ.",
+      "source": "Services/NotificationService.cs"
+    },
+    {
+      "text": "Story của chính recipient vẫn có thể hiển thị sau hết hạn; người khác cần story chưa hết hạn, privacy đủ và không chặn. Event invitation chỉ PENDING đúng người nhận trong event PUBLISHED; thông báo event update/cancel dùng event chưa xóa, không DRAFT và privacy/participant/invite.",
+      "source": "Services/NotificationService.cs"
+    },
+    {
+      "text": "Response ghép thông tin actor từ UserProfiles và ParentEntityId cho comment→post, event invite→event, group invite/request→group, page role invite→page; PageUsername hỗ trợ điều hướng. API không coi EntityId là một FK chung.",
+      "source": "Services/NotificationService.cs"
+    },
+    {
+      "text": "MarkRead cần notification thuộc người gọi; đã đọc thì giữ ReadAtUtc ban đầu. MarkAllRead đánh dấu mọi unread thuộc recipient kể cả notification đang bị CanSurfaceAsync ẩn. Không phát event read/unread-count riêng trong hai luồng này.",
+      "source": "Services/NotificationService.cs"
+    },
+    {
+      "text": "Push token bắt buộc, tối đa 255, đúng ExponentPushToken[...] hoặc ExpoPushToken[...] theo regex. PushDevices.ExpoPushToken UNIQUE toàn hệ thống. Register tìm theo token, chuyển UserId sang người đăng ký mới và bật lại DisabledAtUtc=null.",
+      "source": "DTOs/Requests/PushTokenRequest.cs"
+    },
+    {
+      "text": "Unregister chỉ đúng cặp actor/token, đặt DisabledAtUtc thay vì xóa; không tìm thấy vẫn thành công. PushDevice.UserId RESTRICT; receipt.PushDeviceId CASCADE; ExpoReceiptId UNIQUE, tối đa 64 ký tự.",
+      "source": "Domain/Entities/PushDevice.cs"
+    },
+    {
+      "text": "SendMessageAsync chỉ khi PushNotifications.Enabled và có recipients/devices active. Payload Zola với nội dung chung \"Bạn có một tin nhắn mới.\" và conversationId; không đưa nội dung tin riêng tư vào payload này.",
+      "source": "Services/PushNotificationService.cs"
+    },
+    {
+      "text": "Expo trả ticket ok/id thì lưu PushDeliveryReceipt với AvailableAtUtc=now+15 phút. DeviceNotRegistered vô hiệu hóa token. HTTP/JSON/timeout/DbUpdateException chỉ log và giữ tin nhắn; chưa có outbox retry bền vững cho push request thất bại.",
+      "source": "Services/PushNotificationService.cs"
+    },
+    {
+      "text": "Receipt worker chạy ngay rồi theo ReceiptCheckIntervalMinutes (mặc định 15, hợp lệ 1..60), chỉ khi Enabled. Mỗi lần lấy tối đa 1000 receipt chưa check đã tới hạn, gửi danh sách ID tới Expo.",
+      "source": "Services/PushReceiptWorker.cs"
+    },
+    {
+      "text": "Receipt có kết quả thì MarkChecked; DeviceNotRegistered vô hiệu thiết bị. ID chưa có kết quả RetryAt sau 5 phút và tăng CheckAttempts; khi CheckAttempts>=12 đánh dấu đã check. HTTP lỗi giữ receipt chưa check để lần sau thử lại.",
+      "source": "Services/PushNotificationService.cs"
+    },
+    {
+      "text": "NotificationsHub chỉ Authorize, không có phương thức client tự tạo thông báo. /hubs/notifications là kênh nhận NotificationReceived; danh sách đã lưu qua REST là nguồn dữ liệu khi reconnect.",
+      "source": "Hubs/NotificationsHub.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-NO-01",
+      "name": "Đọc hộp thông báo",
+      "group": "notifications-inbox",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy trang notification còn được phép xem.",
+      "preconditions": "NotificationPageRequest hợp lệ.",
+      "steps": [
+        "Lọc RecipientUserId=actor và before.",
+        "Sắp CreatedAtUtc/Id giảm, CanSurfaceAsync loại thông báo không hợp lệ.",
+        "Ghép actor/parent entity, trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400 validation_failed; claim không hợp lệ: 401.",
+        "Thông báo bị ẩn giữ trong DB; không có kết quả trả Items rỗng."
+      ],
+      "postconditions": "Không tự đánh dấu đọc.",
+      "endpoints": [
+        "GET /api/notifications"
+      ],
+      "tables": [
+        "Notifications",
+        "UserProfiles",
+        "BlockedUsers",
+        "Posts",
+        "Comments",
+        "Stories",
+        "Events",
+        "Groups",
+        "Pages"
+      ],
+      "sources": [
+        "Controllers/NotificationsController.cs",
+        "Services/NotificationService.cs",
+        "DTOs/Requests/NotificationPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-02",
+      "name": "Đếm thông báo chưa đọc",
+      "group": "notifications-inbox",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Đếm unread còn hiển thị được.",
+      "preconditions": "Claim actor hợp lệ.",
+      "steps": [
+        "Lấy notification thuộc actor chưa đọc.",
+        "CanSurfaceAsync kiểm tra từng hàng.",
+        "Trả 200 NotificationCountResponse."
+      ],
+      "alternatives": [
+        "Không có unread hợp lệ: count=0; thiếu xác thực: 401."
+      ],
+      "postconditions": "Không đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/notifications/unread-count"
+      ],
+      "tables": [
+        "Notifications",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/NotificationsController.cs",
+        "Services/NotificationService.cs",
+        "DTOs/Responses/NotificationCountResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-03",
+      "name": "Đánh dấu thông báo đã đọc",
+      "group": "notifications-inbox",
+      "actor": "Người nhận",
+      "goal": "Đánh dấu một notification của mình.",
+      "preconditions": "Đăng nhập; notification thuộc actor.",
+      "steps": [
+        "Tìm đúng Id/RecipientUserId.",
+        "MarkRead ghi thời gian nếu chưa đọc, SaveChanges.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Không tồn tại hoặc thuộc người khác: 404 notification_not_found.",
+        "Đã đọc: giữ thời gian cũ và vẫn thành công."
+      ],
+      "postconditions": "IsRead=true.",
+      "endpoints": [
+        "POST /api/notifications/{notificationId:guid}/read"
+      ],
+      "tables": [
+        "Notifications"
+      ],
+      "sources": [
+        "Controllers/NotificationsController.cs",
+        "Services/NotificationService.cs",
+        "Domain/Entities/Notification.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-04",
+      "name": "Đánh dấu tất cả đã đọc",
+      "group": "notifications-inbox",
+      "actor": "Người nhận",
+      "goal": "Đánh dấu toàn bộ unread của mình.",
+      "preconditions": "Đăng nhập.",
+      "steps": [
+        "Lấy mọi unread theo recipient.",
+        "MarkRead cùng thời gian UTC, lưu nếu có hàng.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Không có hàng: vẫn 204.",
+        "Thông báo đang ẩn bởi quyền/chặn cũng được đánh dấu."
+      ],
+      "postconditions": "Recipient không còn unread ở DB tại lần xử lý.",
+      "endpoints": [
+        "POST /api/notifications/read-all"
+      ],
+      "tables": [
+        "Notifications"
+      ],
+      "sources": [
+        "Controllers/NotificationsController.cs",
+        "Services/NotificationService.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-05",
+      "name": "Đăng ký thiết bị Zola",
+      "group": "notifications-devices",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Gắn và bật token Expo.",
+      "preconditions": "PushTokenRequest đúng định dạng/độ dài.",
+      "steps": [
+        "Tìm token UNIQUE.",
+        "Chưa có tạo PushDevice; có thì Register đổi UserId và RegisteredAtUtc, DisabledAtUtc=null.",
+        "SaveChanges, trả 204."
+      ],
+      "alternatives": [
+        "Token sai: 400 validation_failed; thiếu xác thực: 401.",
+        "Token đã gắn tài khoản khác được chuyển sang actor theo implementation."
+      ],
+      "postconditions": "Token active cho tài khoản hiện tại.",
+      "endpoints": [
+        "POST /api/notifications/push-tokens/zola"
+      ],
+      "tables": [
+        "PushDevices"
+      ],
+      "sources": [
+        "Controllers/NotificationsController.cs",
+        "Services/PushNotificationService.cs",
+        "DTOs/Requests/PushTokenRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-06",
+      "name": "Hủy đăng ký thiết bị Zola",
+      "group": "notifications-devices",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Vô hiệu hóa token của mình.",
+      "preconditions": "PushTokenRequest hợp lệ.",
+      "steps": [
+        "Tìm đúng UserId/token.",
+        "Nếu có Disable ghi thời gian, lưu.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Không có cặp actor/token: vẫn 204.",
+        "Token sai: 400 validation_failed."
+      ],
+      "postconditions": "Giữ device/receipts, bỏ khỏi tập thiết bị gửi push.",
+      "endpoints": [
+        "DELETE /api/notifications/push-tokens/zola"
+      ],
+      "tables": [
+        "PushDevices"
+      ],
+      "sources": [
+        "Controllers/NotificationsController.cs",
+        "Services/PushNotificationService.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-07",
+      "name": "Queue hoặc gộp notification",
+      "group": "notifications-realtime",
+      "actor": "Module nghiệp vụ",
+      "goal": "Track thông báo trước khi lưu.",
+      "preconditions": "Có recipient, type và dữ liệu actor/entity tùy loại.",
+      "steps": [
+        "Nếu actor=recipient trả null.",
+        "Tìm unread cùng bộ recipient/actor/type/entity khi có đủ trường.",
+        "Refresh hàng có sẵn hoặc Add notification mới, trả entity cho caller."
+      ],
+      "alternatives": [
+        "Thiếu actor/entity vẫn có thể tạo hàng mới nhưng không áp dụng dedupe theo bộ trường.",
+        "Queue không tự lưu; caller chịu trách nhiệm SaveChanges/transaction."
+      ],
+      "postconditions": "Entity tracked, chưa tự publish.",
+      "endpoints": [
+        "Service NotificationService.QueueAsync"
+      ],
+      "tables": [
+        "Notifications"
+      ],
+      "sources": [
+        "Services/NotificationService.cs",
+        "Domain/Entities/Notification.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-08",
+      "name": "Phát và nhận realtime",
+      "group": "notifications-realtime",
+      "actor": "Module nghiệp vụ và người nhận",
+      "goal": "Gửi NotificationReceived sau lưu.",
+      "preconditions": "Notification đã lưu; người nhận kết nối hub có xác thực.",
+      "steps": [
+        "Caller gọi PublishAsync.",
+        "CanSurfaceAsync kiểm tra quyền hiển thị.",
+        "Ghép response, gửi Clients.User(recipient) NotificationReceived.",
+        "Người nhận đồng bộ danh sách REST khi reconnect."
+      ],
+      "alternatives": [
+        "Không còn quyền: không phát event.",
+        "Lỗi SignalR bị bắt; notification bền vững vẫn còn."
+      ],
+      "postconditions": "Không tạo receipt đọc hoặc bảo đảm client đã nhận.",
+      "endpoints": [
+        "SignalR /hubs/notifications · NotificationReceived"
+      ],
+      "tables": [
+        "Notifications",
+        "UserProfiles"
+      ],
+      "sources": [
+        "Services/NotificationService.cs",
+        "Hubs/NotificationsHub.cs",
+        "../../../Program.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-09",
+      "name": "Gửi push tin nhắn",
+      "group": "notifications-delivery",
+      "actor": "Luồng gửi Messages",
+      "goal": "Gửi Expo push chung tới thiết bị active.",
+      "preconditions": "Push Enabled; có recipients và device chưa disabled.",
+      "steps": [
+        "Lấy devices, tạo payload chung với conversationId.",
+        "POST tới endpoint Expo cấu hình.",
+        "DeviceNotRegistered disable device; ticket ok lưu receipt tới hạn sau 15 phút.",
+        "SaveChanges."
+      ],
+      "alternatives": [
+        "Disabled/không có thiết bị: bỏ qua.",
+        "HTTP/JSON/timeout/DB lỗi: log; không có outbox retry request gửi trong luồng hiện tại."
+      ],
+      "postconditions": "Có receipt khi nhận ticket hợp lệ, tin nhắn vẫn lưu độc lập.",
+      "endpoints": [
+        "Service PushNotificationService.SendMessageAsync"
+      ],
+      "tables": [
+        "PushDevices",
+        "PushDeliveryReceipts"
+      ],
+      "sources": [
+        "Services/PushNotificationService.cs",
+        "Config/PushNotificationOptions.cs",
+        "../Messages/Services/MessagesService.cs"
+      ]
+    },
+    {
+      "id": "UC-NO-10",
+      "name": "Kiểm tra receipt push",
+      "group": "notifications-delivery",
+      "actor": "PushReceiptWorker",
+      "goal": "Theo dõi kết quả Expo và token hết hiệu lực.",
+      "preconditions": "Enabled; receipt chưa check tới AvailableAtUtc.",
+      "steps": [
+        "Worker chạy ngay rồi theo timer cấu hình.",
+        "Lấy tối đa 1000 receipt, POST các ExpoReceiptId.",
+        "Có kết quả MarkChecked và disable DeviceNotRegistered.",
+        "Chưa có kết quả: retry 5 phút, tăng attempts; sau ngưỡng 12 đánh dấu checked."
+      ],
+      "alternatives": [
+        "HTTP/JSON/timeout/DB lỗi: log, receipt vẫn được thử ở chu kỳ sau.",
+        "Dừng ứng dụng: worker xử lý cancellation; Enabled=false không chạy."
+      ],
+      "postconditions": "Receipt có checked time hoặc lịch retry, token lỗi bị disabled.",
+      "endpoints": [
+        "Background PushReceiptWorker / CheckReceiptsAsync"
+      ],
+      "tables": [
+        "PushDeliveryReceipts",
+        "PushDevices"
+      ],
+      "sources": [
+        "Services/PushNotificationService.cs",
+        "Services/PushReceiptWorker.cs",
+        "Domain/Entities/PushDeliveryReceipt.cs"
       ]
     }
   ]
