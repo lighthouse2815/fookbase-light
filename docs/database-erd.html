@@ -636,6 +636,13 @@
       "description": "Tìm người, nhóm, trang, bài viết, reel, sự kiện và gợi ý nhanh theo quyền của người xem.",
       "tables": [],
       "diagram": null
+    },
+    {
+      "id": "memories",
+      "name": "Memories",
+      "description": "Đọc bài profile của chính mình đăng cùng ngày/tháng trong các năm trước.",
+      "tables": [],
+      "diagram": null
     }
   ],
   "tables": {
@@ -16234,6 +16241,95 @@
         "Services/SearchService.cs",
         "DTOs/Requests/SearchSuggestionsRequest.cs",
         "DTOs/Responses/SearchSuggestionsResponse.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <script id="memories-specification" type="application/json">
+{
+  "title": "Kỷ niệm hôm nay",
+  "purpose": "Đọc bài profile của chính mình đăng cùng ngày/tháng trong các năm trước.",
+  "scope": "Memories không có bảng riêng. Đối chiếu GET /api/memories/today, MemoriesService và response; dữ liệu lấy từ Posts, các phản hồi/tương tác/media được PostsService nạp. API yêu cầu đăng nhập và claim sub GUID, không cho chọn owner khác.",
+  "usecasesTitle": "Kỷ niệm hôm nay",
+  "groups": [
+    {
+      "id": "memories-today",
+      "name": "Xem kỷ niệm",
+      "actor": "user",
+      "description": "Nhóm bài cũ theo năm và số năm đã qua."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Memories không có bảng riêng. Đối chiếu GET /api/memories/today, MemoriesService và response; dữ liệu lấy từ Posts, các phản hồi/tương tác/media được PostsService nạp. API yêu cầu đăng nhập và claim sub GUID, không cho chọn owner khác."
+    }
+  ],
+  "rules": [
+    {
+      "text": "GET today chịu Authorize; claim sub không phải GUID trả 401. OwnerUserId lấy từ token; API không có query để đọc kỷ niệm của người khác.",
+      "source": "Controllers/MemoriesController.cs"
+    },
+    {
+      "text": "Today lấy TimeProvider.GetLocalNow(), không nhận timezone từ client. Điều kiện ngày/tháng đối chiếu trực tiếp CreatedAtUtc.Month/Day; không có chuyển lịch theo múi giờ người dùng trong request.",
+      "source": "Services/MemoriesService.cs"
+    },
+    {
+      "text": "Chỉ Posts của owner, ContainerType PROFILE, PostType STANDARD, chưa xóa, CreatedAtUtc.Year < năm hôm nay và cùng Month/Day. Không lấy REEL, PostShares hay container GROUP/PAGE/EVENT.",
+      "source": "Services/MemoriesService.cs"
+    },
+    {
+      "text": "Sắp CreatedAtUtc giảm và lấy tối đa 100 trước khi nhóm; không có cursor/offset hoặc lịch sử lưu kỷ niệm riêng. Nếu quá 100, các bài cũ hơn bị bỏ khỏi response lần này.",
+      "source": "Services/MemoriesService.cs"
+    },
+    {
+      "text": "LoadResponsesAsync với ownerUserId nạp PostResponse hiện tại gồm media và tương tác. Years sắp năm giảm; mỗi nhóm có Year, YearsAgo=today.Year-Year và Items. Date trả MM-DD.",
+      "source": "DTOs/Responses/MemoryYearResponse.cs"
+    },
+    {
+      "text": "Không có bài hợp lệ trả 200 Date cùng Years=[]; không tự tạo bài kỷ niệm, lượt xem hoặc chia sẻ. Ngày 29/02 chỉ khớp dữ liệu ngày/tháng tương ứng, không có fallback sang 28/02 hoặc 01/03.",
+      "source": "Services/MemoriesService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-MM-01",
+      "name": "Xem kỷ niệm hôm nay",
+      "group": "memories-today",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Đọc bài của mình cùng ngày/tháng trong năm trước.",
+      "preconditions": "Claim sub GUID hợp lệ; dữ liệu bài profile cũ nếu có.",
+      "steps": [
+        "Lấy owner từ token và ngày hiện tại qua TimeProvider.GetLocalNow.",
+        "Lọc bài PROFILE STANDARD của owner, chưa xóa, cùng tháng/ngày và năm trước.",
+        "Lấy tối đa 100 theo CreatedAtUtc giảm, nạp PostResponse.",
+        "Nhóm theo năm giảm, tính YearsAgo và trả 200 MemoryTodayResponse."
+      ],
+      "alternatives": [
+        "Thiếu/sai xác thực: 401.",
+        "Không có bài: Years rỗng; không có phân trang bổ sung."
+      ],
+      "postconditions": "Không ghi dữ liệu, tạo bài hoặc đánh dấu kỷ niệm đã đọc.",
+      "endpoints": [
+        "GET /api/memories/today"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaAssets",
+        "PostReactions",
+        "Comments",
+        "UserProfiles"
+      ],
+      "sources": [
+        "Controllers/MemoriesController.cs",
+        "Services/MemoriesService.cs",
+        "DTOs/Responses/MemoryTodayResponse.cs",
+        "DTOs/Responses/MemoryYearResponse.cs",
+        "../Posts/Services/PostsService.cs"
       ]
     }
   ]
