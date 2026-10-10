@@ -45,15 +45,15 @@
     .map-header { padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #edf1ee; }
     .map-header h2 { font-size: 14px; font-weight: 620; margin: 0; }
     .map-header p { margin: 3px 0 0; font-size: 11px; color: var(--muted); }
-    .zoom-controls { display: flex; align-items: center; gap: 4px; }
+    .zoom-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
     .zoom-controls button { background: #fff; border: 1px solid var(--line); color: #4c6155; border-radius: 6px; height: 30px; min-width: 30px; padding: 2px 7px; }
     .zoom-controls output { font-size: 11px; color: var(--muted); min-width: 44px; text-align: center; }
     .zoom-controls .fit { margin-left: 8px; font-size: 11px; padding-inline: 10px; }
     .viewport { position: relative; height: calc(100dvh - 280px); min-height: 500px; overflow: hidden; background: #fff; cursor: grab; touch-action: none; user-select: none; }
     .viewport.is-dragging, .viewport.is-dragging .node { cursor: grabbing; }
     .diagram { position: absolute; inset: 0; }
-    .diagram svg { display: block; height: auto; max-width: none !important; transform-origin: 0 0; }
-    .diagram .node { cursor: pointer; }
+    .diagram svg { display: block; height: auto; max-width: none !important; transform-origin: 0 0; overflow: visible; }
+    .diagram .node { cursor: grab; }
     .diagram .node:hover .basic { stroke: #419063 !important; stroke-width: 2.5px !important; }
     .diagram .node.selected .basic { stroke: #2c8755 !important; stroke-width: 3px !important; }
     .map-note { margin: 0; padding: 14px 22px; background: #fafcfb; border-top: 1px solid #edf1ee; font-size: 12px; color: #6d7d72; }
@@ -154,6 +154,7 @@
             <button id="zoom-in" type="button" aria-label="Phóng to">+</button>
             <button id="actual-size" class="fit" type="button">100%</button>
             <button id="fit" class="fit" type="button">Vừa khung</button>
+            <button id="reset-layout" class="fit" type="button">Đặt lại bố cục</button>
           </div>
         </div>
         <div id="viewport" class="viewport"><div id="diagram" class="diagram" role="region" aria-labelledby="module-title" tabindex="0"></div></div>
@@ -161,7 +162,7 @@
       </section>
       <div class="under-map">
         <div class="legend"><span class="pk-column">PK · khóa chính</span><span class="fk-column">FK · khóa ngoại</span><span class="pk-column fk-column">PK + FK</span><span><i></i>Quan hệ FK</span><span><i class="dashed"></i>Liên kết nghiệp vụ</span><span><i class="reference"></i>Bảng tham chiếu</span><span>? = nullable · UK = unique</span><span>0..N: không hoặc nhiều · timestamptz: timestamp with time zone</span></div>
-        <span>Lăn chuột để zoom · Giữ chuột trái để kéo · Bấm bảng để xem chi tiết.</span>
+        <span>Lăn chuột để zoom · Kéo bảng để đổi vị trí · Kéo vùng trống để di chuyển sơ đồ · Bấm bảng để xem chi tiết.</span>
       </div>
       <footer><span>EF Core model · chưa đối chiếu database đang chạy</span><a href="../backend/Fookbase.Src/Code/Persistence/Migrations/FookbaseDbContextModelSnapshot.cs">Nguồn schema · 4253ca5a</a><span>Mở được offline</span></footer>
     </main>
@@ -1733,6 +1734,9 @@
     let panY = 0;
     let drag = null;
     let suppressClick = false;
+    const layouts = new Map();
+    let nodes = new Map();
+    let edges = [];
 
     function normalized(value) {
       return value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
@@ -1752,11 +1756,66 @@
       }
       const overview = activeModule.diagram;
       diagram.replaceChildren(document.getElementById(overview.template).content.cloneNode(true));
+      prepareLayout();
       document.getElementById('view-title').textContent = 'Tổng quan toàn bộ module ' + activeModule.name;
       const references = overview.tables.length - activeModule.tables.length;
       document.getElementById('view-count').textContent = `${activeModule.tables.length} bảng trong module${references ? ' + ' + references + ' bảng tham chiếu' : ''} · Hiển thị đầy đủ thuộc tính`;
       document.getElementById('view-note').textContent = overview.note;
       fit();
+    }
+
+    function prepareLayout() {
+      nodes = new Map([...diagram.querySelectorAll('[data-table]')].map(element => {
+        const { e: x, f: y } = element.transform.baseVal.consolidate().matrix;
+        const { width, height } = element.querySelector('.basic').getBBox();
+        return [element.dataset.table, { element, x, y, originalX: x, originalY: y, width, height }];
+      }));
+      const pairs = [...nodes].flatMap(([sourceName, source]) => [...nodes].map(([targetName, target]) => ({ prefix: `L_${sourceName}_${targetName}_`, source, target })));
+      const labels = new Map([...diagram.querySelectorAll('.edgeLabels [data-id]')].map(element => [element.dataset.id, element.closest('g.edgeLabel')]));
+      edges = [...diagram.querySelectorAll('.edgePaths > path')].map(path => {
+        const label = labels.get(path.dataset.id);
+        return {
+          path, label,
+          labelTransform: label?.getAttribute('transform') || '',
+          ...pairs.find(pair => path.dataset.id.startsWith(pair.prefix)),
+          loop: [...nodes].find(([name]) => path.dataset.id.startsWith(`${name}-cyclic-special-`))?.[1]
+        };
+      });
+      for (const [name, position] of layouts.get(activeModule.id) || []) moveTable(nodes.get(name), position.x, position.y);
+    }
+
+    function moveTable(node, x, y) {
+      node.x = x;
+      node.y = y;
+      node.element.setAttribute('transform', `translate(${x}, ${y})`);
+      for (const edge of edges) {
+        if (edge.loop === node) {
+          const offset = `translate(${x - node.originalX}, ${y - node.originalY})`;
+          edge.path.setAttribute('transform', offset);
+          edge.label?.setAttribute('transform', `${offset} ${edge.labelTransform}`);
+        } else if (edge.source === node || edge.target === node) {
+          const { source, target, path, label } = edge;
+          const parallel = edges.filter(other => other.source === source && other.target === target);
+          const lane = (parallel.indexOf(edge) - (parallel.length - 1) / 2) * 24;
+          const horizontal = Math.abs(target.x - source.x) / (source.width + target.width) >= Math.abs(target.y - source.y) / (source.height + target.height);
+          const direction = Math.sign(horizontal ? target.x - source.x : target.y - source.y) || 1;
+          let start, end, middle;
+          if (horizontal) {
+            const offset = Math.max(-Math.min(source.height, target.height) / 3, Math.min(lane, Math.min(source.height, target.height) / 3));
+            start = { x: source.x + direction * source.width / 2, y: source.y + offset };
+            end = { x: target.x - direction * (target.width / 2 + 4), y: target.y + offset };
+            middle = { x: (start.x + end.x) / 2 + lane, y: (start.y + end.y) / 2 };
+            path.setAttribute('d', `M${start.x},${start.y} H${middle.x} V${end.y} H${end.x}`);
+          } else {
+            const offset = Math.max(-Math.min(source.width, target.width) / 3, Math.min(lane, Math.min(source.width, target.width) / 3));
+            start = { x: source.x + offset, y: source.y + direction * source.height / 2 };
+            end = { x: target.x + offset, y: target.y - direction * (target.height / 2 + 4) };
+            middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 + lane };
+            path.setAttribute('d', `M${start.x},${start.y} V${middle.y} H${end.x} V${end.y}`);
+          }
+          label?.setAttribute('transform', `translate(${middle.x}, ${middle.y})`);
+        }
+      }
     }
 
     function applyZoom() {
@@ -1780,10 +1839,16 @@
     function fit() {
       const svg = diagram.querySelector('svg');
       if (!svg) return;
+      const content = svg.querySelector(':scope > g').getBBox();
+      const viewBox = svg.viewBox.baseVal;
+      const left = Math.min(viewBox.x, content.x - 8);
+      const top = Math.min(viewBox.y, content.y - 8);
+      const width = Math.max(viewBox.x + viewBox.width, content.x + content.width + 8) - left;
+      const height = Math.max(viewBox.y + viewBox.height, content.y + content.height + 8) - top;
       const padding = innerWidth <= 800 ? 40 : 80;
-      zoom = Math.max(.05, Math.min(1, (viewport.clientWidth - padding) / svg.viewBox.baseVal.width, (viewport.clientHeight - padding) / svg.viewBox.baseVal.height));
-      panX = (viewport.clientWidth - svg.viewBox.baseVal.width * zoom) / 2;
-      panY = (viewport.clientHeight - svg.viewBox.baseVal.height * zoom) / 2;
+      zoom = Math.max(.05, Math.min(1, (viewport.clientWidth - padding) / width, (viewport.clientHeight - padding) / height));
+      panX = (viewport.clientWidth - width * zoom) / 2 - (left - viewBox.x) * zoom;
+      panY = (viewport.clientHeight - height * zoom) / 2 - (top - viewBox.y) * zoom;
       applyZoom();
     }
 
@@ -1836,7 +1901,9 @@
     viewport.addEventListener('pointerdown', event => {
       if (!event.isPrimary || event.button !== 0) return;
       suppressClick = false;
-      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, panX, panY, moved: false };
+      const node = nodes.get(event.target.closest('[data-table]')?.dataset.table);
+      const point = node ? new DOMPoint(event.clientX, event.clientY).matrixTransform(node.element.parentElement.getScreenCTM().inverse()) : null;
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, panX, panY, node, offsetX: point ? point.x - node.x : 0, offsetY: point ? point.y - node.y : 0, moved: false };
     });
     viewport.addEventListener('pointermove', event => {
       if (!drag || drag.id !== event.pointerId) return;
@@ -1849,13 +1916,22 @@
         viewport.setPointerCapture(event.pointerId);
         viewport.classList.add('is-dragging');
       }
-      panX = drag.panX + dx;
-      panY = drag.panY + dy;
-      applyZoom();
+      if (drag.node) {
+        const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(drag.node.element.parentElement.getScreenCTM().inverse());
+        moveTable(drag.node, point.x - drag.offsetX, point.y - drag.offsetY);
+      } else {
+        panX = drag.panX + dx;
+        panY = drag.panY + dy;
+        applyZoom();
+      }
     });
     function endDrag(event) {
       if (!drag || drag.id !== event.pointerId) return;
       suppressClick = drag.moved;
+      if (drag.node && drag.moved) {
+        if (!layouts.has(activeModule.id)) layouts.set(activeModule.id, new Map());
+        layouts.get(activeModule.id).set(drag.node.element.dataset.table, { x: drag.node.x, y: drag.node.y });
+      }
       drag = null;
       viewport.classList.remove('is-dragging');
       if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
@@ -1872,6 +1948,10 @@
     document.getElementById('zoom-in').addEventListener('click', () => zoomAt(zoom + .15));
     document.getElementById('zoom-out').addEventListener('click', () => zoomAt(zoom - .15));
     document.getElementById('fit').addEventListener('click', fit);
+    document.getElementById('reset-layout').addEventListener('click', () => {
+      layouts.delete(activeModule.id);
+      renderModule(activeModule.id);
+    });
     document.getElementById('actual-size').addEventListener('click', () => zoomAt(1));
     window.addEventListener('resize', fit);
 
