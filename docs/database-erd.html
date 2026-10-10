@@ -49,9 +49,10 @@
     .zoom-controls button { background: #fff; border: 1px solid var(--line); color: #4c6155; border-radius: 6px; height: 30px; min-width: 30px; padding: 2px 7px; }
     .zoom-controls output { font-size: 11px; color: var(--muted); min-width: 44px; text-align: center; }
     .zoom-controls .fit { margin-left: 8px; font-size: 11px; padding-inline: 10px; }
-    .viewport { height: calc(100dvh - 280px); min-height: 500px; overflow: auto; background: #fff; }
-    .diagram { display: flex; align-items: center; justify-content: center; min-height: 100%; min-width: 100%; width: max-content; padding: 40px; }
-    .diagram svg { display: block; height: auto; max-width: none !important; }
+    .viewport { position: relative; height: calc(100dvh - 280px); min-height: 500px; overflow: hidden; background: #fff; cursor: grab; touch-action: none; user-select: none; }
+    .viewport.is-dragging, .viewport.is-dragging .node { cursor: grabbing; }
+    .diagram { position: absolute; inset: 0; }
+    .diagram svg { display: block; height: auto; max-width: none !important; transform-origin: 0 0; }
     .diagram .node { cursor: pointer; }
     .diagram .node:hover .basic { stroke: #419063 !important; stroke-width: 2.5px !important; }
     .diagram .node.selected .basic { stroke: #2c8755 !important; stroke-width: 3px !important; }
@@ -110,7 +111,6 @@
       .secondary-button { font-size: 11px; padding: 7px 10px; }
       .map-header { padding: 14px; flex-wrap: wrap; }
       .viewport { height: 420px; min-height: 0; }
-      .diagram { padding: 20px; }
       .map-note { padding: 13px 14px; font-size: 11px; }
       .under-map { font-size: 10px; }
       .inspector { width: min(440px, 100%); }
@@ -120,8 +120,8 @@
       .app { display: block; }
       main { padding: 0; }
       .viewport { height: auto; min-height: 0; overflow: visible; }
-      .diagram { width: 100%; padding: 10px; }
-      .diagram svg { width: 100% !important; }
+      .diagram { position: static; width: 100%; padding: 10px; }
+      .diagram svg { width: 100% !important; transform: none !important; }
       body { background: #fff; }
     }
   </style>
@@ -157,8 +157,8 @@
         <p id="view-note" class="map-note"></p>
       </section>
       <div class="under-map">
-        <div class="legend"><span><i></i>FK</span><span><i class="dashed"></i>Liên kết nghiệp vụ</span><span><i class="reference"></i>Bảng tham chiếu</span><span>0..N: không hoặc nhiều · timestamptz: timestamp with time zone</span></div>
-        <span>? = nullable · PK / FK / UK · Bấm vào bảng để xem index.</span>
+        <div class="legend"><span><i></i>FK</span><span><i class="dashed"></i>Liên kết nghiệp vụ</span><span><i class="reference"></i>Bảng tham chiếu</span><span>? = nullable · PK / FK / UK</span><span>0..N: không hoặc nhiều · timestamptz: timestamp with time zone</span></div>
+        <span>Lăn chuột để zoom · Giữ chuột trái để kéo · Bấm bảng để xem chi tiết.</span>
       </div>
       <footer><span>EF Core model · chưa đối chiếu database đang chạy</span><a href="../backend/Fookbase.Src/Code/Persistence/Migrations/FookbaseDbContextModelSnapshot.cs">Nguồn schema · 4253ca5a</a><span>Mở được offline</span></footer>
     </main>
@@ -1726,6 +1726,10 @@
     const listDialog = document.getElementById('list-dialog');
     let activeModule;
     let zoom = 1;
+    let panX = 0;
+    let panY = 0;
+    let drag = null;
+    let suppressClick = false;
 
     function normalized(value) {
       return value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
@@ -1754,8 +1758,20 @@
 
     function applyZoom() {
       const svg = diagram.querySelector('svg');
-      svg.style.width = svg.viewBox.baseVal.width * zoom + 'px';
+      svg.style.width = svg.viewBox.baseVal.width + 'px';
+      svg.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
       document.getElementById('zoom-value').value = Math.round(zoom * 100) + '%';
+    }
+
+    function zoomAt(nextZoom, clientX, clientY) {
+      const bounds = viewport.getBoundingClientRect();
+      const x = (clientX ?? bounds.left + bounds.width / 2) - bounds.left;
+      const y = (clientY ?? bounds.top + bounds.height / 2) - bounds.top;
+      nextZoom = Math.max(.05, Math.min(2, nextZoom));
+      panX = x - (x - panX) * nextZoom / zoom;
+      panY = y - (y - panY) * nextZoom / zoom;
+      zoom = nextZoom;
+      applyZoom();
     }
 
     function fit() {
@@ -1763,8 +1779,9 @@
       if (!svg) return;
       const padding = innerWidth <= 800 ? 40 : 80;
       zoom = Math.max(.05, Math.min(1, (viewport.clientWidth - padding) / svg.viewBox.baseVal.width, (viewport.clientHeight - padding) / svg.viewBox.baseVal.height));
+      panX = (viewport.clientWidth - svg.viewBox.baseVal.width * zoom) / 2;
+      panY = (viewport.clientHeight - svg.viewBox.baseVal.height * zoom) / 2;
       applyZoom();
-      viewport.scrollTo(0, 0);
     }
 
     function showTable(name) {
@@ -1807,10 +1824,52 @@
       const node = event.target.closest('[data-table]');
       if (node) { event.preventDefault(); showTable(node.dataset.table); }
     });
-    document.getElementById('zoom-in').addEventListener('click', () => { zoom = Math.min(2, zoom + .15); applyZoom(); });
-    document.getElementById('zoom-out').addEventListener('click', () => { zoom = Math.max(.05, zoom - .15); applyZoom(); });
+    viewport.addEventListener('wheel', event => {
+      if (!event.deltaY) return;
+      event.preventDefault();
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1;
+      zoomAt(zoom * Math.exp(-event.deltaY * unit * .0015), event.clientX, event.clientY);
+    }, { passive: false });
+    viewport.addEventListener('pointerdown', event => {
+      if (!event.isPrimary || event.button !== 0) return;
+      suppressClick = false;
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, panX, panY, moved: false };
+    });
+    viewport.addEventListener('pointermove', event => {
+      if (!drag || drag.id !== event.pointerId) return;
+      if (!event.buttons) { endDrag(event); return; }
+      const dx = event.clientX - drag.x;
+      const dy = event.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+      if (!drag.moved) {
+        drag.moved = true;
+        viewport.setPointerCapture(event.pointerId);
+        viewport.classList.add('is-dragging');
+      }
+      panX = drag.panX + dx;
+      panY = drag.panY + dy;
+      applyZoom();
+    });
+    function endDrag(event) {
+      if (!drag || drag.id !== event.pointerId) return;
+      suppressClick = drag.moved;
+      drag = null;
+      viewport.classList.remove('is-dragging');
+      if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+    }
+    viewport.addEventListener('pointerup', endDrag);
+    viewport.addEventListener('pointercancel', endDrag);
+    viewport.addEventListener('lostpointercapture', endDrag);
+    viewport.addEventListener('click', event => {
+      if (!suppressClick) return;
+      suppressClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    }, true);
+    document.getElementById('zoom-in').addEventListener('click', () => zoomAt(zoom + .15));
+    document.getElementById('zoom-out').addEventListener('click', () => zoomAt(zoom - .15));
     document.getElementById('fit').addEventListener('click', fit);
-    document.getElementById('actual-size').addEventListener('click', () => { zoom = 1; applyZoom(); viewport.scrollTo(0, 0); });
+    document.getElementById('actual-size').addEventListener('click', () => zoomAt(1));
     window.addEventListener('resize', fit);
 
     document.getElementById('module-search').addEventListener('input', event => {
