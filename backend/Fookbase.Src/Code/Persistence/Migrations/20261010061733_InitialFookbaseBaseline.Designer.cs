@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Fookbase.Api.Code.Persistence.Migrations
+namespace Fookbase.Api.Persistence.Migrations
 {
     [DbContext(typeof(FookbaseDbContext))]
-    [Migration("20260920172052_AddPostTextBackground")]
-    partial class AddPostTextBackground
+    [Migration("20261010061733_InitialFookbaseBaseline")]
+    partial class InitialFookbaseBaseline
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -67,17 +67,20 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ModeratorUserId");
+
+                    b.HasIndex("ReportId");
+
                     b.HasIndex("SubjectUserId", "CreatedAtUtc");
 
                     b.HasIndex("TargetType", "TargetId", "CreatedAtUtc");
 
-                    b.ToTable("ModerationActions", (string)null);
+                    b.ToTable("ModerationActions");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.UserModerationState", b =>
                 {
                     b.Property<Guid>("UserId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("DisabledAtUtc")
@@ -94,7 +97,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("UserId");
 
-                    b.ToTable("UserModerationStates", (string)null);
+                    b.ToTable("UserModerationStates");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.Event", b =>
@@ -159,19 +162,22 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CoverMediaId");
+
+                    b.HasIndex("CreatedByUserId");
+
                     b.HasIndex("HostType", "HostId", "StartsAtUtc")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
                     b.HasIndex("Status", "Privacy", "StartsAtUtc")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
-                    b.ToTable("Events", (string)null);
+                    b.ToTable("Events");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", b =>
                 {
                     b.Property<Guid>("EventId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("AttachedAtUtc")
@@ -184,7 +190,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("EventCoverMediaReferences", (string)null);
+                    b.ToTable("EventCoverMediaReferences");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventInvitation", b =>
@@ -213,12 +219,14 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InviterUserId");
+
                     b.HasIndex("EventId", "InviteeUserId")
                         .HasFilter("\"Status\" = 0");
 
                     b.HasIndex("InviteeUserId", "Status", "CreatedAtUtc");
 
-                    b.ToTable("EventInvitations", (string)null);
+                    b.ToTable("EventInvitations");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventParticipant", b =>
@@ -239,7 +247,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "Status");
 
-                    b.ToTable("EventParticipants", (string)null);
+                    b.ToTable("EventParticipants");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.BlockedUser", b =>
@@ -247,17 +255,18 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.Property<Guid>("BlockerUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("BlockedUserId")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("BlockedAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("BlockedUserId");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("BlockerUserId", "BlockedUserId");
+                    b.HasKey("BlockerUserId", "BlockedAccountId");
 
-                    b.HasIndex("BlockedUserId");
+                    b.HasIndex("BlockedAccountId");
 
-                    b.ToTable("BlockedUsers", null, t =>
+                    b.ToTable("BlockedUsers", t =>
                         {
                             t.HasCheckConstraint("CK_BlockedUsers_DifferentUsers", "\"BlockerUserId\" <> \"BlockedUserId\"");
                         });
@@ -289,9 +298,13 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("FriendRequestId");
+
                     b.HasIndex("RecipientUserId", "ReadAtUtc", "CreatedAtUtc");
 
-                    b.ToTable("FriendNotifications", (string)null);
+                    b.ToTable("FriendNotifications");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendRequest", b =>
@@ -315,24 +328,27 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("UserId1")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("User1Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId1");
 
-                    b.Property<Guid>("UserId2")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("User2Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId1", "UserId2")
-                        .IsUnique()
-                        .HasDatabaseName("UX_FriendRequests_PendingPair")
-                        .HasFilter("\"Status\" = 0");
+                    b.HasIndex("User2Id");
 
                     b.HasIndex("ReceiverUserId", "Status", "CreatedAtUtc");
 
                     b.HasIndex("SenderUserId", "Status", "CreatedAtUtc");
 
-                    b.ToTable("FriendRequests", null, t =>
+                    b.HasIndex(new[] { "User1Id", "User2Id" }, "UX_FriendRequests_PendingPair")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 0");
+
+                    b.ToTable("FriendRequests", t =>
                         {
                             t.HasCheckConstraint("CK_FriendRequests_CanonicalPair", "\"UserId1\" < \"UserId2\"");
 
@@ -349,22 +365,24 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId1")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("User1Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId1");
 
-                    b.Property<Guid>("UserId2")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("User2Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId1");
+                    b.HasIndex("User1Id");
 
-                    b.HasIndex("UserId2");
+                    b.HasIndex("User2Id");
 
-                    b.HasIndex("UserId1", "UserId2")
+                    b.HasIndex("User1Id", "User2Id")
                         .IsUnique();
 
-                    b.ToTable("Friendships", null, t =>
+                    b.ToTable("Friendships", t =>
                         {
                             t.HasCheckConstraint("CK_Friendships_CanonicalPair", "\"UserId1\" < \"UserId2\"");
                         });
@@ -389,7 +407,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("FollowingUserId", "FollowedAtUtc", "FollowerUserId");
 
-                    b.ToTable("UserFollows", null, t =>
+                    b.ToTable("UserFollows", t =>
                         {
                             t.HasCheckConstraint("CK_UserFollows_DifferentUsers", "\"FollowerUserId\" <> \"FollowingUserId\"");
                         });
@@ -430,19 +448,20 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CoverMediaId");
+
                     b.HasIndex("OwnerUserId", "CreatedAtUtc")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
                     b.HasIndex("Privacy", "Name")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
-                    b.ToTable("Groups", (string)null);
+                    b.ToTable("Groups");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupCoverMediaReference", b =>
                 {
                     b.Property<Guid>("GroupId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("AttachedAtUtc")
@@ -455,7 +474,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("GroupCoverMediaReferences", (string)null);
+                    b.ToTable("GroupCoverMediaReferences");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupInvite", b =>
@@ -484,13 +503,15 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InviterUserId");
+
                     b.HasIndex("GroupId", "InviteeUserId")
                         .IsUnique()
                         .HasFilter("\"Status\" = 0");
 
                     b.HasIndex("InviteeUserId", "Status", "CreatedAtUtc");
 
-                    b.ToTable("GroupInvites", (string)null);
+                    b.ToTable("GroupInvites");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupJoinRequest", b =>
@@ -519,13 +540,17 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("RequesterUserId");
+
+                    b.HasIndex("RespondedByUserId");
+
                     b.HasIndex("GroupId", "RequesterUserId")
                         .IsUnique()
                         .HasFilter("\"Status\" = 0");
 
                     b.HasIndex("GroupId", "Status", "CreatedAtUtc");
 
-                    b.ToTable("GroupJoinRequests", (string)null);
+                    b.ToTable("GroupJoinRequests");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupMember", b =>
@@ -548,7 +573,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "GroupId");
 
-                    b.ToTable("GroupMembers", (string)null);
+                    b.ToTable("GroupMembers");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupRule", b =>
@@ -576,7 +601,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("GroupId", "SortOrder", "Id");
 
-                    b.ToTable("GroupRules", (string)null);
+                    b.ToTable("GroupRules");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.AuthSession", b =>
@@ -608,10 +633,10 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "ExpiresAtUtc");
 
-                    b.ToTable("AuthSessions", (string)null);
+                    b.ToTable("AuthSessions");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.ExternalLoginCompletion", b =>
+            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.ExternalLoginTicket", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -654,7 +679,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.Property<int>("Purpose")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -664,10 +689,10 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.HasIndex("CodeHash", "ExpiresAtUtc")
                         .IsUnique();
 
-                    b.ToTable("ExternalLoginCompletions", (string)null);
+                    b.ToTable("ExternalLoginTickets");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.PasswordResetChallenge", b =>
+            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.PasswordResetOtp", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -681,11 +706,6 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.Property<DateTimeOffset?>("ConsumedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Contact")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -695,24 +715,29 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.Property<int>("FailedAttemptCount")
                         .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset>("ResendAvailableAtUtc")
+                    b.Property<DateTimeOffset>("NextResendAllowedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.Property<int>("SendCount")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset>("SendLimitWindowStartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("WindowStartedAtUtc")
-                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("PasswordResetChallenges", (string)null);
+                    b.ToTable("PasswordResetOtps");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.RefreshToken", b =>
@@ -733,7 +758,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("SessionId")
+                    b.Property<Guid>("SessionId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("TokenHash")
@@ -755,7 +780,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "ExpiresAt");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.RegistrationChallenge", b =>
@@ -805,18 +830,18 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTimeOffset>("NextResendAllowedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
-                    b.Property<DateTimeOffset>("ResendAvailableAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("SendCount")
                         .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset>("WindowStartedAtUtc")
+                    b.Property<DateTimeOffset>("SendLimitWindowStartedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -824,7 +849,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.HasIndex("Contact")
                         .IsUnique();
 
-                    b.ToTable("RegistrationChallenges", (string)null);
+                    b.ToTable("RegistrationChallenges");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.TwoFactorLoginChallenge", b =>
@@ -857,7 +882,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "ExpiresAtUtc");
 
-                    b.ToTable("TwoFactorLoginChallenges", (string)null);
+                    b.ToTable("TwoFactorLoginChallenges");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.User", b =>
@@ -884,9 +909,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -1022,7 +1045,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("Status", "UploadExpiresAtUtc");
 
-                    b.ToTable("MediaAssets", (string)null);
+                    b.ToTable("MediaAssets");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaProcessingJob", b =>
@@ -1063,7 +1086,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("Status", "NextAttemptAtUtc", "CreatedAtUtc");
 
-                    b.ToTable("MediaProcessingJobs", (string)null);
+                    b.ToTable("MediaProcessingJobs");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaReference", b =>
@@ -1081,7 +1104,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("MediaReferences", (string)null);
+                    b.ToTable("MediaReferences");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ObjectDeletion", b =>
@@ -1119,9 +1142,11 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MediaId");
+
                     b.HasIndex("ProcessedAtUtc", "FailedAtUtc", "NextAttemptAtUtc", "CreatedAtUtc");
 
-                    b.ToTable("ObjectDeletions", (string)null);
+                    b.ToTable("ObjectDeletions");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ProfileMediaReference", b =>
@@ -1142,7 +1167,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("ProfileMediaReferences", (string)null);
+                    b.ToTable("ProfileMediaReferences");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Conversation", b =>
@@ -1167,20 +1192,26 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("UserId1")
-                        .HasColumnType("uuid");
+                    b.Property<Guid?>("User1Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId1");
 
-                    b.Property<Guid?>("UserId2")
-                        .HasColumnType("uuid");
+                    b.Property<Guid?>("User2Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("UserId2");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PhotoMediaId");
+
+                    b.HasIndex("User2Id");
+
                     b.HasIndex("LastMessageAtUtc", "Id");
 
-                    b.HasIndex("UserId1", "UserId2")
+                    b.HasIndex("User1Id", "User2Id")
                         .IsUnique();
 
-                    b.ToTable("Conversations", (string)null);
+                    b.ToTable("Conversations");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationParticipant", b =>
@@ -1224,11 +1255,15 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("ConversationId", "UserId");
 
+                    b.HasIndex("LastDeliveredMessageId");
+
+                    b.HasIndex("LastReadMessageId");
+
                     b.HasIndex("ConversationId", "UserId");
 
                     b.HasIndex("UserId", "ConversationId");
 
-                    b.ToTable("ConversationParticipants", (string)null);
+                    b.ToTable("ConversationParticipants");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationReadCursor", b =>
@@ -1250,9 +1285,11 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("ConversationId", "UserId");
 
+                    b.HasIndex("LastReadMessageId");
+
                     b.HasIndex("UserId", "ConversationId");
 
-                    b.ToTable("ConversationReadCursors", (string)null);
+                    b.ToTable("ConversationReadCursors");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", b =>
@@ -1296,11 +1333,13 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("ReplyToMessageId");
 
+                    b.HasIndex("SenderUserId");
+
                     b.HasIndex("StoryId");
 
                     b.HasIndex("ConversationId", "CreatedAtUtc", "Id");
 
-                    b.ToTable("Messages", (string)null);
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageAttachment", b =>
@@ -1321,7 +1360,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.HasIndex("MessageId", "SortOrder")
                         .IsUnique();
 
-                    b.ToTable("MessageAttachments", (string)null);
+                    b.ToTable("MessageAttachments");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageNotification", b =>
@@ -1347,12 +1386,16 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ConversationId");
+
+                    b.HasIndex("MessageId");
+
                     b.HasIndex("RecipientUserId", "MessageId")
                         .IsUnique();
 
                     b.HasIndex("RecipientUserId", "ReadAtUtc", "CreatedAtUtc");
 
-                    b.ToTable("MessageNotifications", (string)null);
+                    b.ToTable("MessageNotifications");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageReaction", b =>
@@ -1374,9 +1417,11 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("MessageId", "UserId");
 
+                    b.HasIndex("UserId");
+
                     b.HasIndex("MessageId", "Type");
 
-                    b.ToTable("MessageReactions", (string)null);
+                    b.ToTable("MessageReactions");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Notifications.Entities.Notification", b =>
@@ -1411,13 +1456,80 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ActorUserId");
+
                     b.HasIndex("RecipientUserId", "CreatedAtUtc", "Id");
 
                     b.HasIndex("RecipientUserId", "IsRead", "CreatedAtUtc");
 
                     b.HasIndex("RecipientUserId", "ActorUserId", "Type", "EntityType", "EntityId");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Notifications.Entities.PushDeliveryReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AvailableAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CheckAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("CheckedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExpoReceiptId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("PushDeviceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpoReceiptId")
+                        .IsUnique();
+
+                    b.HasIndex("PushDeviceId");
+
+                    b.HasIndex("CheckedAtUtc", "AvailableAtUtc");
+
+                    b.ToTable("PushDeliveryReceipts");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Notifications.Entities.PushDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DisabledAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExpoPushToken")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("RegisteredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpoPushToken")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "DisabledAtUtc");
+
+                    b.ToTable("PushDevices");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.Page", b =>
@@ -1468,6 +1580,10 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AvatarMediaId");
+
+                    b.HasIndex("CoverMediaId");
+
                     b.HasIndex("Username")
                         .IsUnique()
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
@@ -1478,7 +1594,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.HasIndex("Status", "Name", "Id")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
-                    b.ToTable("Pages", (string)null);
+                    b.ToTable("Pages");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageFollower", b =>
@@ -1496,7 +1612,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "FollowedAtUtc");
 
-                    b.ToTable("PageFollowers", (string)null);
+                    b.ToTable("PageFollowers");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageMediaReference", b =>
@@ -1517,7 +1633,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("PageMediaReferences", (string)null);
+                    b.ToTable("PageMediaReferences");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageMember", b =>
@@ -1543,7 +1659,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "PageId");
 
-                    b.ToTable("PageMembers", (string)null);
+                    b.ToTable("PageMembers");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageRoleInvitation", b =>
@@ -1575,13 +1691,15 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InviterUserId");
+
                     b.HasIndex("PageId", "InviteeUserId")
                         .IsUnique()
                         .HasFilter("\"Status\" = 0");
 
                     b.HasIndex("InviteeUserId", "Status", "CreatedAtUtc");
 
-                    b.ToTable("PageRoleInvitations", (string)null);
+                    b.ToTable("PageRoleInvitations");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.AlbumMedia", b =>
@@ -1608,7 +1726,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("AlbumId", "SortOrder", "MediaId");
 
-                    b.ToTable("AlbumMedia", (string)null);
+                    b.ToTable("AlbumMedia");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", b =>
@@ -1653,7 +1771,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.HasIndex("OwnerUserId", "CreatedAtUtc", "Id")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
-                    b.ToTable("PhotoAlbums", (string)null);
+                    b.ToTable("PhotoAlbums");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>
@@ -1693,7 +1811,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("AuthorUserId", "DeletedAtUtc", "CreatedAtUtc", "PostId");
 
-                    b.ToTable("Comments", (string)null);
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.CommentReaction", b =>
@@ -1715,9 +1833,11 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("CommentId", "UserId");
 
+                    b.HasIndex("UserId");
+
                     b.HasIndex("CommentId", "Type");
 
-                    b.ToTable("CommentReactions", (string)null);
+                    b.ToTable("CommentReactions");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentMention", b =>
@@ -1743,7 +1863,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("SourceType", "SourceId", "MentionedUserId");
 
-                    b.ToTable("ContentMentions", (string)null);
+                    b.ToTable("ContentMentions");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentReport", b =>
@@ -1786,7 +1906,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("TargetType", "TargetId", "Status", "CreatedAtUtc");
 
-                    b.ToTable("ContentReports", (string)null);
+                    b.ToTable("ContentReports");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Hashtag", b =>
@@ -1813,7 +1933,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.HasIndex("NormalizedName")
                         .IsUnique();
 
-                    b.ToTable("Hashtags", (string)null);
+                    b.ToTable("Hashtags");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Post", b =>
@@ -1881,7 +2001,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.HasIndex("PostType", "AuthorUserId", "CreatedAtUtc", "Id")
                         .HasFilter("\"DeletedAtUtc\" IS NULL");
 
-                    b.ToTable("Posts", (string)null);
+                    b.ToTable("Posts");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostHashtag", b =>
@@ -1896,7 +2016,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("HashtagId", "PostId");
 
-                    b.ToTable("PostHashtags", (string)null);
+                    b.ToTable("PostHashtags");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostMedia", b =>
@@ -1912,10 +2032,12 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("PostId", "MediaId");
 
+                    b.HasIndex("MediaId");
+
                     b.HasIndex("PostId", "SortOrder")
                         .IsUnique();
 
-                    b.ToTable("PostMedia", (string)null);
+                    b.ToTable("PostMedia");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostReaction", b =>
@@ -1941,7 +2063,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "CreatedAtUtc", "PostId");
 
-                    b.ToTable("PostReactions", (string)null);
+                    b.ToTable("PostReactions");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostSave", b =>
@@ -1961,7 +2083,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("UserId", "SavedAtUtc", "PostId");
 
-                    b.ToTable("PostSaves", (string)null);
+                    b.ToTable("PostSaves");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostShare", b =>
@@ -2000,7 +2122,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("DestinationType", "DestinationId", "DeletedAtUtc", "CreatedAtUtc", "Id");
 
-                    b.ToTable("PostShares", (string)null);
+                    b.ToTable("PostShares");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Reels.Entities.ReelView", b =>
@@ -2035,7 +2157,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("ReelPostId", "Completed", "ViewedAtUtc");
 
-                    b.ToTable("ReelViews", (string)null);
+                    b.ToTable("ReelViews");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.Story", b =>
@@ -2074,7 +2196,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("AuthorUserId", "ExpiresAtUtc", "CreatedAtUtc", "Id");
 
-                    b.ToTable("Stories", (string)null);
+                    b.ToTable("Stories");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryMediaReference", b =>
@@ -2092,7 +2214,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("StoryMediaReferences", (string)null);
+                    b.ToTable("StoryMediaReferences");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryReaction", b =>
@@ -2111,9 +2233,11 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("StoryId", "UserId");
 
+                    b.HasIndex("UserId");
+
                     b.HasIndex("StoryId", "CreatedAtUtc");
 
-                    b.ToTable("StoryReactions", (string)null);
+                    b.ToTable("StoryReactions");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryView", b =>
@@ -2133,7 +2257,7 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasIndex("StoryId", "ViewedAtUtc", "ViewerUserId");
 
-                    b.ToTable("StoryViews", (string)null);
+                    b.ToTable("StoryViews");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Users.Entities.UserPrivacySettings", b =>
@@ -2162,13 +2286,12 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("UserId");
 
-                    b.ToTable("UserPrivacySettings", (string)null);
+                    b.ToTable("UserPrivacySettings");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Users.Entities.UserProfile", b =>
                 {
                     b.Property<Guid>("UserId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("AvatarMediaId")
@@ -2239,10 +2362,14 @@ namespace Fookbase.Api.Code.Persistence.Migrations
 
                     b.HasKey("UserId");
 
+                    b.HasIndex("AvatarMediaId");
+
+                    b.HasIndex("CoverMediaId");
+
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("UserProfiles", (string)null);
+                    b.ToTable("UserProfiles");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -2375,187 +2502,1145 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.ExternalLoginCompletion", b =>
+            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ModerationAction", b =>
                 {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", null)
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ModeratorUser")
                         .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.PasswordResetChallenge", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("ModeratorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-                });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.RefreshToken", null)
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.ContentReport", "Report")
                         .WithMany()
-                        .HasForeignKey("ReplacedByTokenId")
+                        .HasForeignKey("ReportId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.AuthSession", null)
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "SubjectUser")
                         .WithMany()
-                        .HasForeignKey("SessionId")
+                        .HasForeignKey("SubjectUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ModeratorUser");
+
+                    b.Navigation("Report");
+
+                    b.Navigation("SubjectUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.UserModerationState", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithOne("ModerationState")
+                        .HasForeignKey("Fookbase.Api.Modules.Admin.Entities.UserModerationState", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.Event", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "CoverMedia")
+                        .WithMany()
+                        .HasForeignKey("CoverMediaId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", null)
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "CreatedByUser")
                         .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CoverMedia");
+
+                    b.Navigation("CreatedByUser");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", b =>
+            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", b =>
                 {
-                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", null)
-                        .WithMany()
-                        .HasForeignKey("ReplyToMessageId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", null)
-                        .WithMany()
-                        .HasForeignKey("StoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageAttachment", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", null)
-                        .WithMany()
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageReaction", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", null)
-                        .WithMany()
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Comment", null)
-                        .WithMany()
-                        .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", null)
-                        .WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.CommentReaction", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Comment", null)
-                        .WithMany()
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentMention", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("MentionedUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostHashtag", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Hashtag", null)
-                        .WithMany()
-                        .HasForeignKey("HashtagId")
+                    b.HasOne("Fookbase.Api.Modules.Events.Entities.Event", "Event")
+                        .WithOne("CoverMediaReference")
+                        .HasForeignKey("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", "EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", null)
-                        .WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostMedia", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", null)
-                        .WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostReaction", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", null)
-                        .WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostSave", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", null)
-                        .WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostShare", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", null)
-                        .WithMany()
-                        .HasForeignKey("OriginalPostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryMediaReference", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", null)
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
                         .WithMany()
                         .HasForeignKey("MediaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", null)
-                        .WithMany()
-                        .HasForeignKey("StoryId")
+                    b.Navigation("Event");
+
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventInvitation", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Events.Entities.Event", "Event")
+                        .WithMany("Invitations")
+                        .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "InviteeUser")
+                        .WithMany()
+                        .HasForeignKey("InviteeUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "InviterUser")
+                        .WithMany()
+                        .HasForeignKey("InviterUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("InviteeUser");
+
+                    b.Navigation("InviterUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventParticipant", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Events.Entities.Event", "Event")
+                        .WithMany("Participants")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.BlockedUser", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "BlockedAccount")
+                        .WithMany()
+                        .HasForeignKey("BlockedAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "BlockerUser")
+                        .WithMany()
+                        .HasForeignKey("BlockerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BlockedAccount");
+
+                    b.Navigation("BlockerUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendNotification", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ActorUser")
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Friends.Entities.FriendRequest", "FriendRequest")
+                        .WithMany("Notifications")
+                        .HasForeignKey("FriendRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "RecipientUser")
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ActorUser");
+
+                    b.Navigation("FriendRequest");
+
+                    b.Navigation("RecipientUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendRequest", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ReceiverUser")
+                        .WithMany()
+                        .HasForeignKey("ReceiverUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "SenderUser")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User1")
+                        .WithMany()
+                        .HasForeignKey("User1Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User2")
+                        .WithMany()
+                        .HasForeignKey("User2Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ReceiverUser");
+
+                    b.Navigation("SenderUser");
+
+                    b.Navigation("User1");
+
+                    b.Navigation("User2");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.Friendship", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User1")
+                        .WithMany()
+                        .HasForeignKey("User1Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User2")
+                        .WithMany()
+                        .HasForeignKey("User2Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User1");
+
+                    b.Navigation("User2");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.UserFollow", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "FollowerUser")
+                        .WithMany()
+                        .HasForeignKey("FollowerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "FollowingUser")
+                        .WithMany()
+                        .HasForeignKey("FollowingUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FollowerUser");
+
+                    b.Navigation("FollowingUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.Group", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "CoverMedia")
+                        .WithMany()
+                        .HasForeignKey("CoverMediaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "OwnerUser")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CoverMedia");
+
+                    b.Navigation("OwnerUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupCoverMediaReference", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Groups.Entities.Group", "Group")
+                        .WithOne("CoverMediaReference")
+                        .HasForeignKey("Fookbase.Api.Modules.Groups.Entities.GroupCoverMediaReference", "GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupInvite", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Groups.Entities.Group", "Group")
+                        .WithMany("Invites")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "InviteeUser")
+                        .WithMany()
+                        .HasForeignKey("InviteeUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "InviterUser")
+                        .WithMany()
+                        .HasForeignKey("InviterUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("InviteeUser");
+
+                    b.Navigation("InviterUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupJoinRequest", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Groups.Entities.Group", "Group")
+                        .WithMany("JoinRequests")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "RequesterUser")
+                        .WithMany()
+                        .HasForeignKey("RequesterUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "RespondedByUser")
+                        .WithMany()
+                        .HasForeignKey("RespondedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Group");
+
+                    b.Navigation("RequesterUser");
+
+                    b.Navigation("RespondedByUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupMember", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Groups.Entities.Group", "Group")
+                        .WithMany("Members")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupRule", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Groups.Entities.Group", "Group")
+                        .WithMany("Rules")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.AuthSession", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.ExternalLoginTicket", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.PasswordResetOtp", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.RefreshToken", "ReplacedByToken")
+                        .WithMany()
+                        .HasForeignKey("ReplacedByTokenId");
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.AuthSession", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReplacedByToken");
+
+                    b.Navigation("Session");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.TwoFactorLoginChallenge", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaProcessingJob", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithOne("ProcessingJob")
+                        .HasForeignKey("Fookbase.Api.Modules.Media.Entities.MediaProcessingJob", "MediaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaReference", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany("PostReferences")
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "Post")
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ObjectDeletion", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany("ObjectDeletions")
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ProfileMediaReference", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany("ProfileReferences")
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Conversation", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "PhotoMedia")
+                        .WithMany()
+                        .HasForeignKey("PhotoMediaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User1")
+                        .WithMany()
+                        .HasForeignKey("User1Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User2")
+                        .WithMany()
+                        .HasForeignKey("User2Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("PhotoMedia");
+
+                    b.Navigation("User1");
+
+                    b.Navigation("User2");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationParticipant", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Conversation", "Conversation")
+                        .WithMany("Participants")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", "LastDeliveredMessage")
+                        .WithMany()
+                        .HasForeignKey("LastDeliveredMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", "LastReadMessage")
+                        .WithMany()
+                        .HasForeignKey("LastReadMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("LastDeliveredMessage");
+
+                    b.Navigation("LastReadMessage");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationReadCursor", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Conversation", "Conversation")
+                        .WithMany("ReadCursors")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", "LastReadMessage")
+                        .WithMany()
+                        .HasForeignKey("LastReadMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("LastReadMessage");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", "ReplyToMessage")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "SenderUser")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("ReplyToMessage");
+
+                    b.Navigation("SenderUser");
+
+                    b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageAttachment", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", "Message")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+
+                    b.Navigation("Message");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageNotification", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Conversation", "Conversation")
+                        .WithMany("Notifications")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", "Message")
+                        .WithMany("Notifications")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "RecipientUser")
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Message");
+
+                    b.Navigation("RecipientUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.MessageReaction", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", "Message")
+                        .WithMany("Reactions")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Notifications.Entities.Notification", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ActorUser")
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "RecipientUser")
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ActorUser");
+
+                    b.Navigation("RecipientUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Notifications.Entities.PushDeliveryReceipt", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Notifications.Entities.PushDevice", "PushDevice")
+                        .WithMany("DeliveryReceipts")
+                        .HasForeignKey("PushDeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PushDevice");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Notifications.Entities.PushDevice", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.Page", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "AvatarMedia")
+                        .WithMany()
+                        .HasForeignKey("AvatarMediaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "CoverMedia")
+                        .WithMany()
+                        .HasForeignKey("CoverMediaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AvatarMedia");
+
+                    b.Navigation("CoverMedia");
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageFollower", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Pages.Entities.Page", "Page")
+                        .WithMany("Followers")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Page");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageMediaReference", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Pages.Entities.Page", "Page")
+                        .WithMany("MediaReferences")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+
+                    b.Navigation("Page");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageMember", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Pages.Entities.Page", "Page")
+                        .WithMany("Members")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Page");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageRoleInvitation", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "InviteeUser")
+                        .WithMany()
+                        .HasForeignKey("InviteeUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "InviterUser")
+                        .WithMany()
+                        .HasForeignKey("InviterUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Pages.Entities.Page", "Page")
+                        .WithMany("RoleInvitations")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InviteeUser");
+
+                    b.Navigation("InviterUser");
+
+                    b.Navigation("Page");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.AlbumMedia", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", "Album")
+                        .WithMany("MediaItems")
+                        .HasForeignKey("AlbumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Album");
+
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "OwnerUser")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OwnerUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "AuthorUser")
+                        .WithMany()
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Comment", "ParentComment")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "Post")
+                        .WithMany("Comments")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuthorUser");
+
+                    b.Navigation("ParentComment");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.CommentReaction", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Comment", "Comment")
+                        .WithMany("Reactions")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentMention", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "MentionedUser")
+                        .WithMany()
+                        .HasForeignKey("MentionedUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MentionedUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentReport", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ReporterUser")
+                        .WithMany()
+                        .HasForeignKey("ReporterUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ReporterUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Post", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "AuthorUser")
+                        .WithMany()
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AuthorUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostHashtag", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Hashtag", "Hashtag")
+                        .WithMany("Posts")
+                        .HasForeignKey("HashtagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "Post")
+                        .WithMany("Hashtags")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Hashtag");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostMedia", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "Post")
+                        .WithMany("MediaItems")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostReaction", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "Post")
+                        .WithMany("Reactions")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostSave", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "Post")
+                        .WithMany("Saves")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostShare", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "OriginalPost")
+                        .WithMany("Shares")
+                        .HasForeignKey("OriginalPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "SharingUser")
+                        .WithMany()
+                        .HasForeignKey("SharingUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OriginalPost");
+
+                    b.Navigation("SharingUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Reels.Entities.ReelView", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "ReelPost")
+                        .WithMany()
+                        .HasForeignKey("ReelPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ViewerUser")
+                        .WithMany()
+                        .HasForeignKey("ViewerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ReelPost");
+
+                    b.Navigation("ViewerUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.Story", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "AuthorUser")
+                        .WithMany()
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AuthorUser");
+
+                    b.Navigation("Media");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryMediaReference", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", "Story")
+                        .WithOne("MediaReference")
+                        .HasForeignKey("Fookbase.Api.Modules.Stories.Entities.StoryMediaReference", "StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Media");
+
+                    b.Navigation("Story");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryReaction", b =>
                 {
-                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", null)
-                        .WithMany()
+                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", "Story")
+                        .WithMany("Reactions")
                         .HasForeignKey("StoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryView", b =>
                 {
-                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", null)
-                        .WithMany()
+                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", "Story")
+                        .WithMany("Views")
                         .HasForeignKey("StoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ViewerUser")
+                        .WithMany()
+                        .HasForeignKey("ViewerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+
+                    b.Navigation("ViewerUser");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Users.Entities.UserProfile", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "AvatarMedia")
+                        .WithMany()
+                        .HasForeignKey("AvatarMediaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "CoverMedia")
+                        .WithMany()
+                        .HasForeignKey("CoverMediaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
+                        .WithOne("Profile")
+                        .HasForeignKey("Fookbase.Api.Modules.Users.Entities.UserProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AvatarMedia");
+
+                    b.Navigation("CoverMedia");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -2607,6 +3692,128 @@ namespace Fookbase.Api.Code.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.Event", b =>
+                {
+                    b.Navigation("CoverMediaReference");
+
+                    b.Navigation("Invitations");
+
+                    b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendRequest", b =>
+                {
+                    b.Navigation("Notifications");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.Group", b =>
+                {
+                    b.Navigation("CoverMediaReference");
+
+                    b.Navigation("Invites");
+
+                    b.Navigation("JoinRequests");
+
+                    b.Navigation("Members");
+
+                    b.Navigation("Rules");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Identity.Entities.User", b =>
+                {
+                    b.Navigation("ModerationState");
+
+                    b.Navigation("Profile");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaAsset", b =>
+                {
+                    b.Navigation("ObjectDeletions");
+
+                    b.Navigation("PostReferences");
+
+                    b.Navigation("ProcessingJob");
+
+                    b.Navigation("ProfileReferences");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Conversation", b =>
+                {
+                    b.Navigation("Messages");
+
+                    b.Navigation("Notifications");
+
+                    b.Navigation("Participants");
+
+                    b.Navigation("ReadCursors");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Notifications");
+
+                    b.Navigation("Reactions");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Notifications.Entities.PushDevice", b =>
+                {
+                    b.Navigation("DeliveryReceipts");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.Page", b =>
+                {
+                    b.Navigation("Followers");
+
+                    b.Navigation("MediaReferences");
+
+                    b.Navigation("Members");
+
+                    b.Navigation("RoleInvitations");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Photos.Entities.PhotoAlbum", b =>
+                {
+                    b.Navigation("MediaItems");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>
+                {
+                    b.Navigation("Reactions");
+
+                    b.Navigation("Replies");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Hashtag", b =>
+                {
+                    b.Navigation("Posts");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Post", b =>
+                {
+                    b.Navigation("Comments");
+
+                    b.Navigation("Hashtags");
+
+                    b.Navigation("MediaItems");
+
+                    b.Navigation("Reactions");
+
+                    b.Navigation("Saves");
+
+                    b.Navigation("Shares");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.Story", b =>
+                {
+                    b.Navigation("MediaReference");
+
+                    b.Navigation("Reactions");
+
+                    b.Navigation("Views");
                 });
 #pragma warning restore 612, 618
         }

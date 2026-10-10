@@ -128,6 +128,13 @@ BACKUP_DIR=/srv/fookbase-backups bash scripts/backup-postgres.sh
 docker compose -f compose.yml -f compose.prod.yml build api
 ```
 
+Trước lần deploy đầu tiên sau khi gộp 53 migration thành baseline
+`20261010061733_InitialFookbaseBaseline`, backup, kiểm tra đủ lịch sử cũ và chạy
+`scripts/baseline-migrations.sql` theo [hướng dẫn chuyển lịch sử](migration-history.md#database-hiện-có).
+Bước này chỉ thêm bản ghi lịch sử, giữ nguyên schema và dữ liệu.
+Chuẩn bị database trước khi push kích hoạt deploy tự động hoặc chạy workflow thủ công.
+Database mới chỉ cần chạy migration bình thường.
+
 Chạy migration một lần trước khi đổi traffic. `Database__ApplyMigrationsOnStartup=false` trong production để tránh race khi sau này có replica:
 
 Image runtime không có EF tool; dùng SDK container hoặc deployment job có `dotnet-ef` cho migration, ví dụ:
