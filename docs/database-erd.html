@@ -99,6 +99,44 @@
     .table-list-button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; text-align: left; border: 0; border-bottom: 1px solid #edf1ec; background: none; padding: 12px 8px; color: var(--ink); }
     .table-list-button b { font-size: 12px; overflow-wrap: anywhere; }
     .table-list-button small { font-size: 10px; color: var(--muted); }
+    .module-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+    .module-tab { border: 0; border-bottom: 3px solid transparent; padding: 11px 18px; background: none; color: var(--muted); font-size: 13px; }
+    .module-tab[aria-selected=true] { color: var(--green); border-bottom-color: var(--green); font-weight: 650; }
+    .document-panel { display: grid; gap: 20px; }
+    .document-card { padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: #fff; min-width: 0; }
+    .document-card h2 { font-size: 19px; letter-spacing: -.3px; margin: 0 0 8px; }
+    .document-card h3 { font-size: 14px; margin: 24px 0 10px; }
+    .document-card p { margin: 8px 0; }
+    .document-intro { color: var(--muted); font-size: 12px; }
+    .document-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .document-meta span, .usecase-id { background: var(--soft); color: var(--green); border-radius: 5px; padding: 4px 8px; font-size: 11px; }
+    .document-card table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    .document-card th, .document-card td { border-bottom: 1px solid var(--line); padding: 12px 10px; vertical-align: top; }
+    .document-card th { font-weight: 600; color: var(--muted); }
+    .document-card ul, .document-card ol { padding-left: 21px; font-size: 12px; }
+    .document-card li { margin: 8px 0; }
+    .usecase-index { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .usecase-index button, .table-link { border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; background: #fafcfb; color: var(--green); font-size: 11px; text-align: left; }
+    .usecase-detail { border: 1px solid var(--line); border-radius: 9px; background: #fff; scroll-margin-top: 20px; }
+    .usecase-detail summary { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 16px 20px; font-size: 13px; list-style: none; }
+    .usecase-detail summary::after { content: '+'; margin-left: auto; color: var(--muted); font-size: 20px; }
+    .usecase-detail[open] summary { border-bottom: 1px solid var(--line); }
+    .usecase-detail[open] summary::after { content: '−'; }
+    summary:focus-visible { outline: 3px solid #70b48a; outline-offset: 3px; }
+    .usecase-content { padding: 4px 20px 20px; font-size: 12px; }
+    .usecase-content h3 { font-size: 12px; margin: 20px 0 8px; }
+    .usecase-content dl { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; margin: 16px 0; }
+    .usecase-content dt { color: var(--muted); }
+    .usecase-content dd { margin: 0; overflow-wrap: anywhere; }
+    .usecase-content ul, .usecase-content ol { padding-left: 20px; margin: 0; }
+    .usecase-content li { margin: 7px 0; }
+    .usecase-content code, .source-links a { overflow-wrap: anywhere; }
+    .source-links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; font-size: 11px; }
+    .usecase-canvas { overflow-x: auto; margin-top: 20px; }
+    .usecase-canvas svg { display: block; width: 100%; min-width: 740px; height: auto; }
+    .usecase-canvas .uc-node { cursor: pointer; }
+    .usecase-canvas .uc-node:hover ellipse, .usecase-canvas .uc-node:focus ellipse { stroke: var(--green); stroke-width: 3px; fill: var(--soft); }
+    .usecase-canvas .uc-node:focus { outline: none; }
     @media (max-width: 800px) {
       .app { grid-template-columns: minmax(0, 1fr); }
       .sidebar { height: auto; position: static; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -120,15 +158,24 @@
       .map-note { padding: 13px 14px; font-size: 11px; }
       .under-map { font-size: 10px; }
       .inspector { width: min(440px, 100%); }
+      .module-tabs { margin-bottom: 18px; }
+      .module-tab { padding: 10px 14px; }
+      .document-card { padding: 18px 16px; }
+      .usecase-detail summary { padding: 14px; gap: 8px; }
+      .usecase-content { padding: 4px 14px 16px; }
+      .usecase-content dl { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+      .usecase-content dd { margin-bottom: 8px; }
     }
     @media print {
-      .sidebar, .zoom-controls, .secondary-button, footer { display: none !important; }
+      .sidebar, .zoom-controls, .secondary-button, .module-tabs, .usecase-index, footer { display: none !important; }
       .app { display: block; }
       main { padding: 0; }
       .viewport { height: auto; min-height: 0; overflow: visible; }
       .diagram { position: static; width: 100%; padding: 10px; }
       .diagram svg { width: 100% !important; transform: none !important; }
       body { background: #fff; }
+      .document-card, .usecase-detail { break-inside: avoid; }
+      .usecase-canvas svg { min-width: 0; }
     }
   </style>
 </head>
@@ -148,6 +195,12 @@
         <div><h1 id="module-title">Users</h1><p id="module-description" class="module-description"></p></div>
         <button id="open-list" class="secondary-button" type="button">Tìm bảng</button>
       </header>
+      <div id="module-tabs" class="module-tabs" role="tablist" aria-label="Tài liệu module Identity" hidden>
+        <button id="tab-erd" class="module-tab" type="button" role="tab" aria-selected="true" aria-controls="erd-panel" data-view="erd">ERD</button>
+        <button id="tab-specification" class="module-tab" type="button" role="tab" aria-selected="false" aria-controls="specification-panel" tabindex="-1" data-view="specification">Đặc tả</button>
+        <button id="tab-usecases" class="module-tab" type="button" role="tab" aria-selected="false" aria-controls="usecases-panel" tabindex="-1" data-view="usecases">Use case</button>
+      </div>
+      <div id="erd-panel" role="tabpanel" aria-labelledby="tab-erd">
       <section class="map-card" aria-label="Sơ đồ quan hệ">
         <div class="map-header">
           <div><h2 id="view-title"></h2><p id="view-count"></p></div>
@@ -166,6 +219,9 @@
         <div class="legend"><span class="pk-column">PK · khóa chính</span><span class="fk-column">FK · khóa ngoại</span><span class="pk-column fk-column">PK + FK</span><span><i></i>Quan hệ FK</span><span><i class="dashed"></i>Liên kết nghiệp vụ</span><span><i class="reference"></i>Bảng tham chiếu</span><span>? = nullable · UK = unique</span><span>0..N: không hoặc nhiều · timestamptz: timestamp with time zone</span></div>
         <span>Lăn chuột để zoom · Giữ chuột trái để kéo · Bấm bảng để xem chi tiết.</span>
       </div>
+      </div>
+      <section id="specification-panel" class="document-panel" role="tabpanel" aria-labelledby="tab-specification" hidden></section>
+      <section id="usecases-panel" class="document-panel" role="tabpanel" aria-labelledby="tab-usecases" hidden></section>
       <footer><span>EF Core model · chưa đối chiếu database đang chạy</span><a href="../backend/Fookbase.Src/Code/Persistence/Migrations/FookbaseDbContextModelSnapshot.cs">Nguồn schema · 6ecd46cf</a><span>Mở được offline</span></footer>
     </main>
   </div>
@@ -3214,6 +3270,200 @@
   }
 }
   </script>
+  <!-- Đặc tả Identity được đối chiếu Controller, Service và Entity; dùng chung dữ liệu cho hai tab. -->
+  <script id="identity-specification" type="application/json">
+{
+  "purpose": "Identity quản lý tài khoản, xác minh danh tính và cấp phiên truy cập cho Fookbase Light. Module hỗ trợ email hoặc số điện thoại, đăng nhập Google và xác thực hai bước.",
+  "scope": "Đặc tả phản ánh các API và service đang có. Tạo hồ sơ và quyền riêng tư gọi sang Users; trạng thái đình chỉ hoặc cấm tài khoản được kiểm tra qua Admin. Role và claim dùng ASP.NET Core Identity; API quản trị thuộc module Admin.",
+  "groups": [
+    {"id": "onboarding", "name": "Gia nhập và khôi phục", "description": "Đăng ký, gửi lại OTP, xác minh email và lấy lại quyền truy cập tài khoản."},
+    {"id": "authentication", "name": "Đăng nhập và duy trì phiên", "description": "Đăng nhập bằng mật khẩu hoặc Google, hoàn tất 2FA, gia hạn và kết thúc phiên."},
+    {"id": "security", "name": "Bảo mật tài khoản", "description": "Các chức năng yêu cầu đăng nhập: đổi mật khẩu, quản lý phiên, cấu hình 2FA và xem trạng thái tài khoản."}
+  ],
+  "actors": [
+    {"id": "guest", "name": "Khách", "role": "Chưa đăng nhập; đăng ký, đăng nhập hoặc khôi phục tài khoản. Có thể hoàn tất xác minh bằng mã hoặc liên kết hợp lệ."},
+    {"id": "account", "name": "Chủ tài khoản", "role": "Đã đăng nhập; xem tài khoản, quản lý phiên và thiết lập bảo mật. Quyền truy cập dựa trên danh tính của chính tài khoản."},
+    {"id": "contact", "name": "Email / SMS", "role": "Dịch vụ bên ngoài gửi OTP đăng ký, SMS khôi phục mật khẩu hoặc liên kết email."},
+    {"id": "google", "name": "Google", "role": "Nhà cung cấp danh tính bên ngoài; trả thông tin tài khoản Google và email đã xác minh."},
+    {"id": "authenticator", "name": "Ứng dụng TOTP", "role": "Tạo mã xác thực hai bước khi thiết lập hoặc đăng nhập; người dùng nhập mã vào Fookbase."}
+  ],
+  "rules": [
+    {"text": "Mật khẩu tối thiểu 8 ký tự. Cấu hình hiện tại không bắt buộc chữ hoa, chữ thường, chữ số hoặc ký tự đặc biệt.", "source": "DependencyInjection.cs"},
+    {"text": "Đăng ký yêu cầu từ 13 tuổi trở lên, thông tin hợp lệ và email hoặc số điện thoại chưa được sử dụng. Tài khoản chỉ được tạo sau khi xác minh OTP.", "source": "Services/RegistrationChallengeService.cs"},
+    {"text": "OTP đăng ký và khôi phục qua SMS có 6 chữ số, hiệu lực 10 phút, tối đa 5 lần nhập sai; chờ ít nhất 1 phút để gửi lại và tối đa 5 lần gửi trong cửa sổ 1 giờ. Mỗi mã mới thay thế mã trước.", "source": "Services/OtpService.cs"},
+    {"text": "Sai mật khẩu 5 lần dẫn đến khóa tạm thời 15 phút theo cấu hình Identity. Đăng nhập còn kiểm tra tài khoản hoạt động và trạng thái kiểm duyệt của Admin.", "source": "DependencyInjection.cs"},
+    {"text": "Challenge đăng nhập 2FA và ticket hoàn tất Google có hiệu lực 5 phút và chỉ được sử dụng một lần. Tài khoản bật 2FA chỉ được cấp phiên sau khi xác minh thành công.", "source": "Services/AuthenticationService.cs"},
+    {"text": "Refresh token được lưu dưới dạng mã băm và được thay thế mỗi lần gia hạn. Phiên AuthSessions có hiệu lực 30 ngày; thời hạn access token và refresh token lấy từ cấu hình JWT.", "source": "Services/JwtTokenService.cs"},
+    {"text": "Google chỉ khả dụng khi được cấu hình; ticket gắn với client và mục đích cụ thể. Liên kết vào tài khoản đã tồn tại phải kiểm tra mật khẩu và hoàn tất 2FA nếu tài khoản đã bật.", "source": "Services/GoogleAuthenticationService.cs"},
+    {"text": "Đổi mật khẩu thu hồi toàn bộ phiên đang hoạt động rồi cấp một phiên mới. Khôi phục mật khẩu thu hồi refresh token đang hoạt động. Tắt 2FA thu hồi toàn bộ phiên đang hoạt động.", "source": "Services/AccountSecurityService.cs"}
+  ],
+  "usecases": [
+    {
+      "id": "UC-ID-01", "name": "Đăng ký tài khoản", "group": "onboarding", "support": ["contact"],
+      "goal": "Tạo tài khoản đã xác minh email hoặc số điện thoại và bắt đầu phiên đăng nhập.",
+      "actor": "Khách", "preconditions": "Có email hoặc số điện thoại hợp lệ chưa được sử dụng; từ 13 tuổi; thông tin cá nhân và mật khẩu hợp lệ; kênh gửi OTP khả dụng.",
+      "steps": ["Gửi thông tin đăng ký đến registration/start. Hệ thống kiểm tra dữ liệu, băm mật khẩu và tạo hoặc cập nhật RegistrationChallenge.", "Hệ thống gửi OTP, trả ChallengeId, thời điểm hết hạn và thời điểm được gửi lại mã.", "Khách nhập OTP và gửi registration/verify. Hệ thống kiểm tra, tiêu thụ challenge và kiểm tra lại email hoặc số điện thoại đã tồn tại hay chưa.", "Trong cùng giao dịch, tạo User, hồ sơ và quyền riêng tư mặc định; đánh dấu kênh liên hệ đã xác minh và cấp phiên đăng nhập."],
+      "alternatives": ["Thông tin hoặc mật khẩu không hợp lệ, chưa đủ tuổi hoặc trùng liên hệ: từ chối đăng ký.", "Gửi OTP thất bại hoặc vượt giới hạn gửi: trả lỗi; chưa tạo tài khoản.", "OTP sai, hết hạn, đã dùng hoặc quá số lần thử: từ chối xác minh.", "Tạo tài khoản hoặc dữ liệu phụ thất bại: giao dịch được rollback."],
+      "postconditions": "Tài khoản, UserProfile, UserPrivacySettings và phiên được tạo thành công; challenge đã sử dụng. Khi xác minh thất bại không tạo tài khoản mới.",
+      "endpoints": ["POST /api/auth/registration/start", "POST /api/auth/registration/verify"],
+      "tables": ["RegistrationChallenges", "AspNetUsers", "AuthSessions", "RefreshTokens", "UserProfiles", "UserPrivacySettings"],
+      "sources": ["Controllers/RegistrationController.cs", "Services/RegistrationChallengeService.cs", "Services/OtpService.cs"]
+    },
+    {
+      "id": "UC-ID-02", "name": "Gửi lại OTP đăng ký", "group": "onboarding", "support": ["contact"],
+      "goal": "Nhận OTP mới cho yêu cầu đăng ký đang chờ xác minh.",
+      "actor": "Khách", "preconditions": "Có ChallengeId chưa được sử dụng, chưa hết hạn; đã qua thời gian chờ và chưa vượt giới hạn gửi.",
+      "steps": ["Gửi ChallengeId đến registration/resend.", "Hệ thống tạo mã mới, cập nhật hash của OTP, gia hạn hiệu lực 10 phút và đặt thời điểm gửi lại tiếp theo.", "Gửi OTP mới qua kênh liên hệ của challenge và trả thông tin thời hạn."],
+      "alternatives": ["Challenge không tồn tại, đã dùng, hết hạn hoặc chưa đến thời điểm gửi lại: từ chối.", "Đã gửi 5 lần trong cửa sổ 1 giờ hoặc kênh gửi lỗi: trả lỗi."],
+      "postconditions": "OTP mới thay thế OTP trước; bộ đếm lần nhập sai được đặt lại. Tài khoản vẫn chưa được tạo.",
+      "endpoints": ["POST /api/auth/registration/resend"], "tables": ["RegistrationChallenges"],
+      "sources": ["Controllers/RegistrationController.cs", "Services/OtpService.cs", "Domain/Entities/RegistrationChallenge.cs"]
+    },
+    {
+      "id": "UC-ID-03", "name": "Xác minh email", "group": "onboarding", "support": ["contact"],
+      "goal": "Xác nhận quyền sở hữu email của tài khoản hiện có.",
+      "actor": "Chủ tài khoản yêu cầu gửi liên kết; người giữ liên kết hợp lệ hoàn tất xác minh", "preconditions": "Yêu cầu gửi email cần đăng nhập bằng tài khoản hoạt động có email; hoàn tất xác minh cần email và token hợp lệ.",
+      "steps": ["Chủ tài khoản yêu cầu email/verification.", "Hệ thống tạo token xác minh bằng UserManager và gửi liên kết qua email.", "Người dùng mở liên kết và gửi email cùng token đến email/verify; hệ thống xác nhận email."],
+      "alternatives": ["Email đã xác minh: yêu cầu gửi lại kết thúc thành công mà không gửi email mới.", "Dịch vụ email không khả dụng hoặc gửi thất bại: trả lỗi.", "Token hoặc email không hợp lệ, tài khoản không tồn tại hoặc không hoạt động: từ chối xác minh."],
+      "postconditions": "EmailConfirmed của tài khoản được cập nhật khi token hợp lệ.",
+      "endpoints": ["POST /api/auth/email/verification", "POST /api/auth/email/verify"], "tables": ["AspNetUsers"],
+      "sources": ["Controllers/EmailVerificationController.cs", "Services/AccountSecurityService.cs"]
+    },
+    {
+      "id": "UC-ID-04", "name": "Đăng nhập bằng mật khẩu", "group": "authentication",
+      "goal": "Xác thực bằng email hoặc số điện thoại và mật khẩu.",
+      "actor": "Khách có tài khoản", "preconditions": "Tài khoản tồn tại, đang hoạt động, không bị khóa tạm thời và không bị đình chỉ hoặc cấm bởi Admin.",
+      "steps": ["Gửi identifier là email hoặc số điện thoại cùng mật khẩu đến auth/login.", "Hệ thống tìm tài khoản, kiểm tra trạng thái và mật khẩu; đặt lại bộ đếm đăng nhập sai khi mật khẩu đúng.", "Nếu tài khoản chưa bật 2FA, tạo AuthSession và refresh token, trả thông tin người dùng, role và access token."],
+      "alternatives": ["Sai mật khẩu: tăng bộ đếm thất bại; sai 5 lần có thể khóa 15 phút. Tài khoản không khả dụng hoặc sai thông tin: trả lỗi xác thực.", "Đã bật 2FA: trả challenge có hiệu lực 5 phút; tiếp tục UC-ID-07 để được cấp phiên."],
+      "postconditions": "Đã cấp phiên đăng nhập hoặc đang chờ hoàn tất 2FA. Nhánh chờ 2FA chưa cấp token truy cập.",
+      "endpoints": ["POST /api/auth/login"], "tables": ["AspNetUsers", "AspNetRoles", "AspNetUserRoles", "TwoFactorLoginChallenges", "AuthSessions", "RefreshTokens"],
+      "sources": ["Controllers/AuthenticationController.cs", "Services/AuthenticationService.cs", "DependencyInjection.cs"]
+    },
+    {
+      "id": "UC-ID-05", "name": "Đăng nhập Google", "group": "authentication", "support": ["google"],
+      "goal": "Đăng nhập bằng danh tính Google; tạo tài khoản nếu email chưa tồn tại.",
+      "actor": "Khách sử dụng Google", "preconditions": "Google đã được bật cho client; Google trả email đã xác minh. Mobile cần state và PKCE hợp lệ.",
+      "steps": ["Client kiểm tra nhà cung cấp và bắt đầu OAuth Google bằng endpoint phù hợp cho web hoặc mobile.", "Sau callback, hệ thống đọc danh tính Google: dùng tài khoản đã liên kết; hoặc tạo tài khoản, hồ sơ, quyền riêng tư và liên kết Google nếu email chưa tồn tại.", "Tạo ExternalLoginTicket gắn với client, có hiệu lực 5 phút; trả mã hoàn tất về client.", "Client đổi mã qua exchange. Hệ thống tiêu thụ ticket và cấp phiên; nếu tài khoản bật 2FA thì trả challenge để tiếp tục UC-ID-07."],
+      "alternatives": ["Email đã có tài khoản nhưng chưa liên kết Google: yêu cầu UC-ID-06.", "Google chưa cấu hình, client không được hỗ trợ, danh tính không hợp lệ hoặc ticket hết hạn, đã dùng, sai client: từ chối.", "Mobile có verifier hoặc state không hợp lệ: không hoàn tất đăng nhập."],
+      "postconditions": "Đã cấp phiên hoặc challenge 2FA; ticket đã được sử dụng. Tài khoản mới được tạo trong nhánh email chưa tồn tại.",
+      "endpoints": ["GET /api/auth/providers", "GET /api/auth/google/start", "GET /api/auth/google/callback", "POST /api/auth/google/exchange", "GET /api/auth/google/mobile/start", "GET /api/auth/google/mobile/callback", "POST /api/auth/google/mobile/exchange"],
+      "tables": ["AspNetUsers", "AspNetUserLogins", "ExternalLoginTickets", "TwoFactorLoginChallenges", "AuthSessions", "RefreshTokens", "UserProfiles", "UserPrivacySettings"],
+      "sources": ["Controllers/GoogleController.cs", "Controllers/GoogleMobileController.cs", "Services/GoogleAuthenticationService.cs", "Services/GoogleMobileFlow.cs"]
+    },
+    {
+      "id": "UC-ID-06", "name": "Liên kết Google", "group": "authentication", "support": ["google"],
+      "goal": "Liên kết danh tính Google vào tài khoản đã tồn tại có cùng email.",
+      "actor": "Chủ tài khoản đang hoàn tất đăng nhập Google", "preconditions": "Có ticket Google mục đích LINK_EXISTING, đúng client, chưa dùng và chưa hết hạn; biết mật khẩu của tài khoản đang hoạt động.",
+      "steps": ["Gửi mã hoàn tất và mật khẩu đến google/link hoặc google/mobile/link; mobile kèm verifier.", "Hệ thống kiểm tra ticket, trạng thái tài khoản và mật khẩu rồi tiêu thụ ticket.", "Nếu chưa bật 2FA, thêm Google vào AspNetUserLogins và cấp phiên. Nếu đã bật 2FA, lưu danh tính Google đang chờ trong challenge và tiếp tục UC-ID-07."],
+      "alternatives": ["Sai mật khẩu: từ chối và tăng số lần đăng nhập sai.", "Ticket sai mục đích, sai client, hết hạn, đã dùng hoặc tài khoản bị khóa, đình chỉ: từ chối.", "Thêm liên kết Google thất bại: trả lỗi google_link_failed."],
+      "postconditions": "Google đã liên kết và phiên được cấp; hoặc đang chờ 2FA, liên kết chỉ hoàn tất sau khi xác minh thành công.",
+      "endpoints": ["POST /api/auth/google/link", "POST /api/auth/google/mobile/link"],
+      "tables": ["AspNetUsers", "AspNetUserLogins", "ExternalLoginTickets", "TwoFactorLoginChallenges", "AuthSessions", "RefreshTokens"],
+      "sources": ["Controllers/GoogleController.cs", "Controllers/GoogleMobileController.cs", "Services/GoogleAuthenticationService.cs", "Services/AuthenticationService.cs"]
+    },
+    {
+      "id": "UC-ID-07", "name": "Hoàn tất đăng nhập 2FA", "group": "authentication", "support": ["authenticator"],
+      "goal": "Hoàn tất bước xác minh thứ hai trước khi cấp phiên đăng nhập.",
+      "actor": "Người dùng đã vượt qua bước đăng nhập đầu tiên", "preconditions": "Có challenge 2FA chưa dùng, chưa hết hạn; tài khoản hoạt động và vẫn bật 2FA.",
+      "steps": ["Gửi challenge cùng mã TOTP hoặc mã dự phòng đến auth/2fa/verify.", "Hệ thống xác minh mã; mã dự phòng hợp lệ được sử dụng một lần.", "Hoàn tất liên kết Google đang chờ nếu có, tiêu thụ challenge và cấp phiên cùng các token."],
+      "alternatives": ["Challenge không hợp lệ, hết hạn, đã dùng hoặc tài khoản không khả dụng: từ chối.", "Mã TOTP hoặc mã dự phòng không hợp lệ: trả lỗi và chưa cấp phiên.", "Liên kết Google đang chờ thất bại: không hoàn tất đăng nhập."],
+      "postconditions": "Challenge đã sử dụng; phiên đăng nhập được cấp. Mã dự phòng đã sử dụng không dùng lại được.",
+      "endpoints": ["POST /api/auth/2fa/verify"], "tables": ["AspNetUsers", "AspNetUserTokens", "AspNetUserLogins", "TwoFactorLoginChallenges", "AuthSessions", "RefreshTokens"],
+      "sources": ["Controllers/TwoFactorController.cs", "Services/AuthenticationService.cs", "Domain/Entities/TwoFactorLoginChallenge.cs"]
+    },
+    {
+      "id": "UC-ID-08", "name": "Gia hạn đăng nhập", "group": "authentication",
+      "goal": "Duy trì phiên bằng cách cấp access token và refresh token mới.",
+      "actor": "Chủ tài khoản thông qua client", "preconditions": "Có refresh token chưa bị thu hồi, chưa hết hạn; phiên tương ứng còn hoạt động và tài khoản khả dụng.",
+      "steps": ["Client gửi refresh token trong body hoặc qua cookie được hỗ trợ đến auth/refresh.", "Hệ thống tra hash của token, kiểm tra tài khoản và phiên.", "Trong giao dịch, tạo refresh token thay thế, thu hồi token cũ và ghi ReplacedByTokenId.", "Cập nhật lần hoạt động của phiên và trả token mới cùng thông tin tài khoản, role."],
+      "alternatives": ["Token hoặc phiên không hợp lệ, hết hạn, bị thu hồi hay tài khoản không khả dụng: từ chối gia hạn.", "Hai yêu cầu cùng sử dụng token cũ: chỉ một lần thay thế thành công; yêu cầu còn lại bị từ chối."],
+      "postconditions": "Refresh token cũ không còn sử dụng được; token mới thuộc cùng phiên. Gia hạn không kéo dài ExpiresAtUtc của AuthSession.",
+      "endpoints": ["POST /api/auth/refresh"], "tables": ["AspNetUsers", "AspNetRoles", "AspNetUserRoles", "AuthSessions", "RefreshTokens"],
+      "sources": ["Controllers/AuthenticationController.cs", "Services/AuthenticationService.cs", "Common/AuthenticationCookie.cs"]
+    },
+    {
+      "id": "UC-ID-09", "name": "Đăng xuất", "group": "authentication",
+      "goal": "Kết thúc phiên tương ứng với refresh token được gửi.",
+      "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Đã xác thực và có refresh token thuộc chính tài khoản.",
+      "steps": ["Gửi yêu cầu auth/logout kèm refresh token qua body hoặc cookie được hỗ trợ.", "Hệ thống xác định phiên của token, thu hồi phiên và refresh token đang hoạt động trong phiên.", "Xóa cookie refresh của transport hiện tại và trả kết quả thành công."],
+      "alternatives": ["Thiếu token, token không tồn tại hoặc không thuộc tài khoản: từ chối.", "Chưa xác thực: endpoint không cho phép thực hiện."],
+      "postconditions": "Phiên bị thu hồi; không thể tiếp tục gia hạn bằng refresh token của phiên đó.",
+      "endpoints": ["POST /api/auth/logout"], "tables": ["AuthSessions", "RefreshTokens"],
+      "sources": ["Controllers/AuthenticationController.cs", "Services/AuthenticationService.cs", "Common/AuthenticationCookie.cs"]
+    },
+    {
+      "id": "UC-ID-10", "name": "Khôi phục mật khẩu", "group": "onboarding", "support": ["contact"],
+      "goal": "Đặt mật khẩu mới khi không nhớ mật khẩu hiện tại.",
+      "actor": "Khách có quyền truy cập email hoặc số điện thoại của tài khoản", "preconditions": "Liên hệ hợp lệ; tài khoản hoạt động và kênh gửi khả dụng để nhận mã hoặc liên kết; mật khẩu mới hợp lệ.",
+      "steps": ["Gửi identifier đến password/forgot. Nếu tài khoản hoạt động, email nhận liên kết reset; số điện thoại nhận OTP SMS.", "Gửi identifier, mật khẩu mới và xác nhận cùng token email hoặc code SMS đến password/reset.", "Hệ thống xác minh, cập nhật mật khẩu và thu hồi mọi refresh token đang hoạt động; nhánh SMS tiêu thụ OTP trong cùng giao dịch."],
+      "alternatives": ["Tài khoản không tồn tại hoặc không hoạt động: yêu cầu forgot trả thành công chung mà không gửi mã hoặc liên kết.", "Kênh gửi không khả dụng, vượt giới hạn SMS hoặc chưa được gửi lại: trả lỗi.", "Token hoặc OTP sai, hết hạn, đã dùng; mật khẩu không hợp lệ hoặc xác nhận không khớp: từ chối reset."],
+      "postconditions": "Mật khẩu được thay đổi và refresh token đang hoạt động bị thu hồi. Không cấp phiên mới; người dùng đăng nhập lại.",
+      "endpoints": ["POST /api/auth/password/forgot", "POST /api/auth/password/reset"], "tables": ["AspNetUsers", "PasswordResetOtps", "RefreshTokens"],
+      "sources": ["Controllers/PasswordController.cs", "Services/AccountSecurityService.cs", "Services/OtpService.cs"]
+    },
+    {
+      "id": "UC-ID-11", "name": "Đổi mật khẩu", "group": "security",
+      "goal": "Thay mật khẩu hiện tại và cấp lại phiên cho tài khoản.",
+      "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Tài khoản hoạt động; biết mật khẩu hiện tại; mật khẩu mới hợp lệ và khớp xác nhận.",
+      "steps": ["Gửi mật khẩu hiện tại, mật khẩu mới và xác nhận đến password/change.", "Hệ thống kiểm tra dữ liệu và dùng UserManager để đổi mật khẩu.", "Thu hồi toàn bộ phiên đang hoạt động cùng refresh token liên quan; tạo một phiên mới và trả token mới."],
+      "alternatives": ["Mật khẩu hiện tại sai, dữ liệu thiếu, mật khẩu mới không đạt yêu cầu hoặc xác nhận không khớp: từ chối."],
+      "postconditions": "Mật khẩu mới có hiệu lực; phiên cũ bị thu hồi; client nhận một phiên mới.",
+      "endpoints": ["POST /api/auth/password/change"], "tables": ["AspNetUsers", "AuthSessions", "RefreshTokens"],
+      "sources": ["Controllers/PasswordController.cs", "Services/AccountSecurityService.cs", "Services/AuthenticationService.cs"]
+    },
+    {
+      "id": "UC-ID-12", "name": "Quản lý phiên đăng nhập", "group": "security",
+      "goal": "Xem và thu hồi các phiên đăng nhập của chính tài khoản.",
+      "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Đã xác thực; session cần thu hồi thuộc chính tài khoản.",
+      "steps": ["Gọi GET auth/sessions để xem các phiên còn hoạt động, sắp xếp theo lần hoạt động gần nhất và đánh dấu phiên hiện tại từ claim sid.", "Người dùng chọn thu hồi một phiên hoặc tất cả phiên khác.", "Hệ thống thu hồi AuthSession và refresh token đang hoạt động của các phiên được chọn."],
+      "alternatives": ["Session không tồn tại hoặc thuộc tài khoản khác: trả lỗi không tìm thấy.", "Không còn phiên khác: revoke-others kết thúc thành công mà không thay đổi dữ liệu.", "Không có claim sid hợp lệ: revoke-others thu hồi toàn bộ phiên đang hoạt động."],
+      "postconditions": "Các phiên được chọn không còn hoạt động; refresh token liên quan không thể gia hạn.",
+      "endpoints": ["GET /api/auth/sessions", "DELETE /api/auth/sessions/{sessionId:guid}", "POST /api/auth/sessions/revoke-others"], "tables": ["AuthSessions", "RefreshTokens"],
+      "sources": ["Controllers/SessionsController.cs", "Services/AuthenticationService.cs"]
+    },
+    {
+      "id": "UC-ID-13", "name": "Bật xác thực hai bước", "group": "security", "support": ["authenticator"],
+      "goal": "Thiết lập mã TOTP và bật yêu cầu xác minh thứ hai khi đăng nhập.",
+      "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Tài khoản hoạt động; có ứng dụng hỗ trợ TOTP.",
+      "steps": ["Gọi 2fa/setup để tạo lại authenticator key và nhận URI otpauth.", "Thêm key hoặc URI vào ứng dụng TOTP, nhập mã đang hiển thị và gửi 2fa/enable.", "Hệ thống xác minh mã, bật TwoFactorEnabled và trả 10 mã dự phòng để người dùng lưu lại."],
+      "alternatives": ["Không tạo được key, mã TOTP sai hoặc bật 2FA thất bại: trả lỗi.", "Gọi setup lần nữa tạo lại key; cần dùng key mới để lấy mã xác minh."],
+      "postconditions": "2FA được bật; lần đăng nhập tiếp theo cần hoàn tất UC-ID-07. Mã dự phòng do UserManager quản lý.",
+      "endpoints": ["POST /api/auth/2fa/setup", "POST /api/auth/2fa/enable"], "tables": ["AspNetUsers", "AspNetUserTokens"],
+      "sources": ["Controllers/TwoFactorController.cs", "Services/AccountSecurityService.cs"]
+    },
+    {
+      "id": "UC-ID-14", "name": "Tắt xác thực hai bước", "group": "security",
+      "goal": "Gỡ yêu cầu xác minh hai bước của tài khoản.",
+      "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Tài khoản hoạt động và cung cấp đúng mật khẩu hiện tại.",
+      "steps": ["Gửi mật khẩu hiện tại đến 2fa/disable.", "Hệ thống kiểm tra mật khẩu, tắt TwoFactorEnabled và tạo lại authenticator key.", "Thu hồi toàn bộ phiên đang hoạt động và refresh token của các phiên đó."],
+      "alternatives": ["Thiếu hoặc sai mật khẩu: từ chối.", "Tài khoản chỉ có Google và chưa có mật khẩu không đáp ứng được kiểm tra mật khẩu hiện tại."],
+      "postconditions": "2FA được tắt; các phiên đang hoạt động bị thu hồi. Không cấp phiên thay thế trong thao tác này.",
+      "endpoints": ["POST /api/auth/2fa/disable"], "tables": ["AspNetUsers", "AspNetUserTokens", "AuthSessions", "RefreshTokens"],
+      "sources": ["Controllers/TwoFactorController.cs", "Services/AccountSecurityService.cs"]
+    },
+    {
+      "id": "UC-ID-15", "name": "Tạo lại mã dự phòng", "group": "security",
+      "goal": "Thay bộ mã dự phòng dùng để hoàn tất đăng nhập 2FA.",
+      "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Tài khoản hoạt động và đã bật 2FA.",
+      "steps": ["Gọi 2fa/recovery-codes/regenerate.", "Hệ thống tạo bộ 10 mã dự phòng mới qua UserManager và trả về cho người dùng lưu lại."],
+      "alternatives": ["Tài khoản không hoạt động hoặc chưa bật 2FA: trả lỗi two_factor_not_enabled."],
+      "postconditions": "Bộ mã mới thay thế bộ mã cũ; từng mã chỉ sử dụng một lần khi xác minh 2FA.",
+      "endpoints": ["POST /api/auth/2fa/recovery-codes/regenerate"], "tables": ["AspNetUsers", "AspNetUserTokens"],
+      "sources": ["Controllers/TwoFactorController.cs", "Services/AccountSecurityService.cs"]
+    },
+    {
+      "id": "UC-ID-16", "name": "Xem tài khoản và bảo mật", "group": "security",
+      "goal": "Xem danh tính, role và trạng thái bảo mật hiện tại của tài khoản.",
+      "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Đã xác thực bằng tài khoản đang hoạt động.",
+      "steps": ["Gọi auth/me để nhận thông tin tài khoản, trạng thái xác minh liên hệ và danh sách role.", "Gọi auth/security để xem 2FA có được bật hay không, số mã dự phòng còn lại và số phiên đang hoạt động."],
+      "alternatives": ["Chưa xác thực hoặc tài khoản không hoạt động: từ chối truy cập."],
+      "postconditions": "Trả thông tin hiện tại của chính tài khoản; thao tác chỉ đọc.",
+      "endpoints": ["GET /api/auth/me", "GET /api/auth/security"], "tables": ["AspNetUsers", "AspNetRoles", "AspNetUserRoles", "AspNetUserTokens", "AuthSessions"],
+      "sources": ["Controllers/AuthenticationController.cs", "Controllers/TwoFactorController.cs", "Services/AuthenticationService.cs", "Services/AccountSecurityService.cs"]
+    }
+  ]
+}
+  </script>
   <template id="overview-identity"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-identity" width="1810" height="1240" viewBox="0 0 1810 1240" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Identity" data-layout="identity"><title>Identity · 13 bảng và các quan hệ khóa ngoại</title><desc>AspNetUsers ở giữa, các bảng xác thực xung quanh và các bảng phân quyền phía dưới. RegistrationChallenges đứng độc lập trước khi tài khoản được tạo.</desc><style>
 #svg-overview-identity { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
 #svg-overview-identity .node .basic { fill: #fff; stroke-width: 1.3px; }
@@ -3309,6 +3559,8 @@
     const viewport = document.getElementById('viewport');
     const inspector = document.getElementById('table-dialog');
     const listDialog = document.getElementById('list-dialog');
+    const moduleTabs = document.getElementById('module-tabs');
+    const identitySpecification = JSON.parse(document.getElementById('identity-specification').textContent);
     let activeModule;
     let zoom = 1;
     let panX = 0;
@@ -3339,7 +3591,111 @@
       const references = overview.tables.length - activeModule.tables.length;
       document.getElementById('view-count').textContent = `${activeModule.tables.length} bảng trong module${references ? ' + ' + references + ' bảng tham chiếu' : ''} · Hiển thị đầy đủ thuộc tính`;
       document.getElementById('view-note').textContent = overview.note;
+      moduleTabs.hidden = moduleId !== 'identity';
+      selectView('erd');
       fit();
+    }
+
+    function selectView(view) {
+      for (const button of moduleTabs.querySelectorAll('[data-view]')) {
+        const selected = button.dataset.view === view;
+        button.setAttribute('aria-selected', String(selected));
+        button.tabIndex = selected ? 0 : -1;
+        document.getElementById(button.getAttribute('aria-controls')).hidden = !selected;
+      }
+      document.getElementById('open-list').hidden = view !== 'erd';
+      if (view === 'erd') requestAnimationFrame(fit);
+    }
+
+    function openUsecase(id) {
+      const detail = document.getElementById(id);
+      if (!detail) return;
+      selectView('specification');
+      detail.open = true;
+      detail.querySelector('summary').focus({ preventScroll: true });
+      detail.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+
+    function renderIdentityDocumentation() {
+      const { usecases, groups, actors, rules } = identitySpecification;
+      document.getElementById('specification-panel').innerHTML = `
+        <article class="document-card">
+          <span class="module-tag">ĐẶC TẢ MODULE · IDENTITY</span>
+          <h2>Tài khoản và xác thực</h2>
+          <p>${escapeHtml(identitySpecification.purpose)}</p>
+          <p class="document-intro">${escapeHtml(identitySpecification.scope)}</p>
+          <div class="document-meta"><span>${usecases.length} use case</span><span>8 controller xác thực</span><span>${catalog.modules.find(module => module.id === 'identity').tables.length} bảng Identity</span><span>Đối chiếu source code · bản để duyệt</span></div>
+          <h3>Tác nhân</h3>
+          <div class="table-scroll"><table><thead><tr><th>Tác nhân</th><th>Vai trò</th></tr></thead><tbody>${actors.map(actor => `<tr><td>${escapeHtml(actor.name)}</td><td>${escapeHtml(actor.role)}</td></tr>`).join('')}</tbody></table></div>
+          <h3>Quy tắc nghiệp vụ</h3>
+          <ul>${rules.map(rule => `<li>${escapeHtml(rule.text)} <a href="../backend/Fookbase.Src/Code/Modules/Identity/${escapeHtml(rule.source)}">Nguồn</a></li>`).join('')}</ul>
+          <h3>Danh mục use case</h3>
+          <p class="document-intro">Bấm một chức năng để xem điều kiện, luồng xử lý, ngoại lệ, API và bảng liên quan.</p>
+          <div class="usecase-index">${usecases.map(uc => `<button type="button" data-usecase="${uc.id}">${uc.id} · ${escapeHtml(uc.name)}</button>`).join('')}</div>
+        </article>
+        ${usecases.map(uc => `<details class="usecase-detail" id="${uc.id}">
+          <summary><span class="usecase-id">${uc.id}</span><strong>${escapeHtml(uc.name)}</strong></summary>
+          <div class="usecase-content">
+            <dl><dt>Mục tiêu</dt><dd>${escapeHtml(uc.goal)}</dd><dt>Tác nhân chính</dt><dd>${escapeHtml(uc.actor)}</dd><dt>Tiền điều kiện</dt><dd>${escapeHtml(uc.preconditions)}</dd><dt>Hậu điều kiện</dt><dd>${escapeHtml(uc.postconditions)}</dd></dl>
+            <h3>Luồng chính</h3><ol>${uc.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
+            <h3>Luồng thay thế / ngoại lệ</h3><ul>${uc.alternatives.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ul>
+            <h3>API liên quan</h3><ul>${uc.endpoints.map(endpoint => `<li><code>${escapeHtml(endpoint)}</code></li>`).join('')}</ul>
+            <h3>Bảng liên quan</h3><div class="usecase-index">${uc.tables.map(table => `<button class="table-link" type="button" data-table="${escapeHtml(table)}">${escapeHtml(table)}</button>`).join('')}</div>
+            <h3>Nguồn implementation</h3><div class="source-links">${uc.sources.map(source => `<a href="../backend/Fookbase.Src/Code/Modules/Identity/${escapeHtml(source)}">${escapeHtml(source.split('/').pop())}</a>`).join('')}</div>
+          </div>
+        </details>`).join('')}`;
+      document.getElementById('usecases-panel').innerHTML = `
+        <article class="document-card"><span class="module-tag">USE CASE · IDENTITY</span><h2>Người dùng có thể làm gì?</h2>
+          <p class="document-intro">${usecases.length} use case, chia theo ba nhóm chức năng. Người dùng bao gồm khách và chủ tài khoản; quyền thực hiện được ghi trong từng đặc tả.</p>
+          <p class="document-intro">Hình người: tác nhân · Khung: phạm vi Identity · Elip: use case · Đường liền: tác nhân tham gia chức năng. Bấm elip để mở đặc tả.</p>
+        </article>
+        ${groups.map(group => {
+          const cases = usecases.filter(uc => uc.group === group.id);
+          const height = 130 + cases.length * 82;
+          const actorY = height / 2;
+          const support = actors.filter(actor => cases.some(uc => uc.support?.includes(actor.id)));
+          const supportY = actor => cases.reduce((ys, uc, index) => uc.support?.includes(actor.id) ? [...ys, 116 + index * 82] : ys, []).reduce((sum, y, _, ys) => sum + y / ys.length, 0);
+          return `<article class="document-card"><h2>${escapeHtml(group.name)}</h2><p class="document-intro">${escapeHtml(group.description)}</p>
+            <div class="usecase-canvas"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 ${height}" role="group" aria-label="Use case Identity: ${escapeHtml(group.name)}">
+              <title>${escapeHtml(group.name)}</title><desc>${cases.map(uc => escapeHtml(uc.name)).join('; ')}. Bấm hoặc nhấn Enter trên use case để mở đặc tả.</desc>
+              <defs><g id="actor-${group.id}" fill="none" stroke="#456052" stroke-width="2"><circle cy="-35" r="12"/><path d="M0,-23 V15 M-23,-8 H23 M0,15 L-20,43 M0,15 L20,43"/></g></defs>
+              <rect x="220" y="18" width="600" height="${height - 36}" rx="12" fill="#fafcfb" stroke="#dbe4dd"/>
+              <text x="520" y="49" text-anchor="middle" font-size="14" font-weight="650" fill="#456052">Identity · ${escapeHtml(group.name)}</text>
+              <g fill="none" stroke="#b4c5ba" stroke-width="1.4">${cases.map((uc, index) => `<path d="M135,${actorY} L335,${116 + index * 82}"/>${(uc.support || []).map(id => `<path d="M705,${116 + index * 82} L905,${supportY(actors.find(actor => actor.id === id))}"/>`).join('')}`).join('')}</g>
+              <use href="#actor-${group.id}" transform="translate(110 ${actorY})"/><text x="110" y="${actorY + 68}" text-anchor="middle" font-size="13" fill="#456052">Người dùng</text>
+              ${support.map(actor => `<use href="#actor-${group.id}" transform="translate(930 ${supportY(actor)})"/><text x="930" y="${supportY(actor) + 67}" text-anchor="middle" font-size="12" fill="#456052">${escapeHtml(actor.name)}</text>`).join('')}
+              ${cases.map((uc, index) => `<g class="uc-node" role="button" tabindex="0" data-usecase="${uc.id}" aria-label="${uc.id}: ${escapeHtml(uc.name)}"><ellipse cx="520" cy="${116 + index * 82}" rx="185" ry="31" fill="#fff" stroke="#8aa997" stroke-width="1.5"/><text x="520" y="${109 + index * 82}" text-anchor="middle" font-size="10" fill="#748079">${uc.id}</text><text x="520" y="${127 + index * 82}" text-anchor="middle" font-size="14" font-weight="550" fill="#253b32">${escapeHtml(uc.name)}</text></g>`).join('')}
+            </svg></div>
+          </article>`;
+        }).join('')}`;
+    }
+
+    moduleTabs.addEventListener('click', event => {
+      const button = event.target.closest('[data-view]');
+      if (button) selectView(button.dataset.view);
+    });
+    moduleTabs.addEventListener('keydown', event => {
+      const buttons = [...moduleTabs.querySelectorAll('[data-view]')];
+      const current = buttons.indexOf(document.activeElement);
+      if (current < 0 || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+      buttons[next].focus();
+      selectView(buttons[next].dataset.view);
+    });
+    for (const panel of document.querySelectorAll('.document-panel')) {
+      panel.addEventListener('click', event => {
+        const usecase = event.target.closest('[data-usecase]');
+        const table = event.target.closest('[data-table]');
+        if (usecase) openUsecase(usecase.dataset.usecase);
+        if (table) showTable(table.dataset.table);
+      });
+      panel.addEventListener('keydown', event => {
+        const node = event.target.closest('g[data-usecase]');
+        if (!node || !['Enter', ' '].includes(event.key)) return;
+        event.preventDefault();
+        openUsecase(node.dataset.usecase);
+      });
     }
 
     function straightenConnections() {
@@ -3398,6 +3754,7 @@
     }
 
     function fit() {
+      if (document.getElementById('erd-panel').hidden) return;
       const svg = diagram.querySelector('svg');
       if (!svg) return;
       const padding = innerWidth <= 800 ? 40 : 80;
@@ -3542,6 +3899,7 @@
       if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
     });
     inspector.addEventListener('close', () => { for (const node of diagram.querySelectorAll('.selected')) node.classList.remove('selected'); });
+    renderIdentityDocumentation();
     renderModule(catalog.defaultModule);
   </script>
 </body>
