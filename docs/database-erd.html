@@ -3273,6 +3273,7 @@
   <!-- Đặc tả Identity được đối chiếu Controller, Service và Entity; dùng chung dữ liệu cho hai tab. -->
   <script id="identity-specification" type="application/json">
 {
+  "title": "Tài khoản và xác thực",
   "purpose": "Identity quản lý tài khoản, xác minh danh tính và cấp phiên truy cập cho Fookbase Light. Module hỗ trợ email hoặc số điện thoại, đăng nhập Google và xác thực hai bước.",
   "scope": "Đặc tả phản ánh các API và service đang có. Tạo hồ sơ và quyền riêng tư gọi sang Users; trạng thái đình chỉ hoặc cấm tài khoản được kiểm tra qua Admin. Role và claim dùng ASP.NET Core Identity; API quản trị thuộc module Admin.",
   "groups": [
@@ -3464,6 +3465,132 @@
   ]
 }
   </script>
+  <script id="users-specification" type="application/json">
+{
+  "title": "Hồ sơ cá nhân và quyền riêng tư",
+  "purpose": "Users cung cấp hồ sơ công khai, cập nhật thông tin cá nhân, cài đặt quyền riêng tư, lịch sinh nhật bạn bè và các API quan hệ trên trang cá nhân.",
+  "scope": "Hai bảng thuộc module là UserProfiles và UserPrivacySettings. Xác thực do Identity cung cấp; media gọi Media và Photos; quan hệ bạn bè, theo dõi và chặn dùng FriendsService. Đổi avatar hoặc ảnh bìa có thể tạo bài viết qua Posts.",
+  "groups": [
+    {"id": "profiles", "name": "Hồ sơ cá nhân", "description": "Xem, tìm kiếm, cập nhật hồ sơ và lấy ảnh đại diện hoặc ảnh bìa."},
+    {"id": "privacy", "name": "Quyền riêng tư và sinh nhật", "description": "Thiết lập quyền hiển thị và xem sinh nhật của bạn bè đủ điều kiện."},
+    {"id": "relationships", "name": "Quan hệ trên trang cá nhân", "description": "Theo dõi và xem danh sách quan hệ; các thao tác được xử lý bởi FriendsService."}
+  ],
+  "actors": [
+    {"id": "guest", "name": "Khách", "role": "Được xem và tìm kiếm hồ sơ, lấy avatar hoặc ảnh bìa qua các API công khai."},
+    {"id": "owner", "name": "Chủ hồ sơ", "role": "Đã đăng nhập; cập nhật hồ sơ và quyền riêng tư của chính mình."},
+    {"id": "viewer", "name": "Người dùng", "role": "Đã đăng nhập; xem sinh nhật bạn bè, theo dõi và truy cập danh sách quan hệ theo quyền hiển thị."}
+  ],
+  "rules": [
+    {"text": "API xem và tìm kiếm hồ sơ chỉ lấy tài khoản đang hoạt động. Khi người xem đã đăng nhập, hồ sơ bị chặn theo một trong hai chiều bị loại khỏi kết quả.", "source": "Services/UserProfileService.cs"},
+    {"text": "Tìm kiếm theo tên hiển thị, không phân biệt hoa thường; offset không âm và limit từ 1 đến 50. Không có query thì trả danh sách được phép xem.", "source": "Services/UserProfileService.cs"},
+    {"text": "Cập nhật hồ sơ là PATCH: trường null giữ giá trị hiện tại; chuỗi tùy chọn được chuẩn hóa. Ngày sinh không được ở tương lai; Website phải là HTTP hoặc HTTPS.", "source": "DTOs/Requests/UpdateUserProfileRequest.cs"},
+    {"text": "Avatar và ảnh bìa phải là media ảnh hợp lệ của chính người dùng. Thay ảnh đồng bộ tham chiếu media, album hệ thống và bài viết cập nhật ảnh trong giao dịch.", "source": "Services/UserProfileService.cs"},
+    {"text": "Quyền riêng tư mặc định: bài viết PUBLIC, lời mời EVERYONE, danh sách bạn bè và theo dõi PUBLIC. Cài đặt được tạo khi chưa tồn tại; PATCH chỉ thay các giá trị được cung cấp.", "source": "Domain/Entities/UserPrivacySettings.cs"},
+    {"text": "Ngày sinh đầy đủ chỉ trả cho chủ hồ sơ. Người xem đã đăng nhập có thể nhận tháng/ngày theo PUBLIC hoặc FRIENDS; mặc định BirthdayVisibility là ONLY_ME.", "source": "Services/UserProfileService.cs"},
+    {"text": "Sinh nhật chỉ lấy từ bạn bè hoạt động, có ngày sinh, không đặt ONLY_ME và không bị chặn. Upcoming mặc định 7 ngày, cho phép 1 đến 30 ngày, không gồm hôm nay; ngày 29/2 được quy về ngày cuối tháng 2 khi cần.", "source": "Services/UserProfileService.cs"},
+    {"text": "Theo dõi và xem danh sách quan hệ tuân thủ chặn hai chiều và quyền PUBLIC, FRIENDS hoặc ONLY_ME. Chủ danh sách được xem danh sách của mình.", "source": "../Friends/Services/FriendsService.cs"}
+  ],
+  "usecases": [
+    {
+      "id": "UC-US-01", "name": "Xem hồ sơ", "group": "profiles",
+      "goal": "Xem hồ sơ của bản thân hoặc người dùng khác.", "actor": "Khách hoặc người dùng; chủ hồ sơ cho API me",
+      "preconditions": "Hồ sơ và tài khoản đang hoạt động; API me yêu cầu đăng nhập. Người xem đã đăng nhập không bị chặn với chủ hồ sơ.",
+      "steps": ["Gọi users/{userId} hoặc users/me.", "Hệ thống truy vấn hồ sơ, số lượng theo dõi và trạng thái quan hệ của người xem.", "Trả thông tin công khai; chỉ chủ hồ sơ nhận ngày sinh đầy đủ và cài đặt hiển thị sinh nhật."],
+      "alternatives": ["Hồ sơ không tồn tại, tài khoản không hoạt động hoặc bị chặn: trả không tìm thấy.", "Không đủ quyền xem sinh nhật: dữ liệu sinh nhật được ẩn; thông tin hồ sơ còn lại vẫn có thể được trả."],
+      "postconditions": "Trả hồ sơ phù hợp với người xem; không thay đổi dữ liệu.",
+      "endpoints": ["GET /api/users/{userId:guid}", "GET /api/users/me"],
+      "tables": ["UserProfiles", "AspNetUsers", "UserFollows", "Friendships", "FriendRequests", "BlockedUsers"],
+      "sources": ["Controllers/UserProfileController.cs", "Services/UserProfileService.cs"]
+    },
+    {
+      "id": "UC-US-02", "name": "Tìm kiếm hồ sơ", "group": "profiles",
+      "goal": "Tìm người dùng theo tên hiển thị.", "actor": "Khách hoặc người dùng", "preconditions": "offset không âm; limit từ 1 đến 50.",
+      "steps": ["Gửi query, offset và limit đến users/search.", "Hệ thống lọc tên hiển thị, tài khoản hoạt động và điều kiện chặn; sắp xếp theo tên.", "Trả trang hồ sơ cùng offset, limit và tổng số kết quả."],
+      "alternatives": ["Phân trang không hợp lệ: trả lỗi.", "Query trống: bỏ điều kiện tên. Không có kết quả: trả danh sách rỗng."],
+      "postconditions": "Trả danh sách hồ sơ được phép xem; không thay đổi dữ liệu.",
+      "endpoints": ["GET /api/users/search"], "tables": ["UserProfiles", "AspNetUsers", "BlockedUsers", "UserFollows", "Friendships", "FriendRequests"],
+      "sources": ["Controllers/UserProfileController.cs", "Services/UserProfileService.cs"]
+    },
+    {
+      "id": "UC-US-03", "name": "Cập nhật hồ sơ", "group": "profiles",
+      "goal": "Thay đổi thông tin cá nhân, avatar, ảnh bìa hoặc quyền hiển thị sinh nhật.", "actor": "Chủ hồ sơ đã đăng nhập",
+      "preconditions": "Hồ sơ tồn tại; thông tin hợp lệ; media mới là ảnh thuộc người dùng, sẵn sàng sử dụng và chưa bị xóa.",
+      "steps": ["Gửi các trường cần thay đổi đến PATCH users/me.", "Hệ thống kiểm tra ngày sinh, độ dài, Website và media.", "Cập nhật hồ sơ và tham chiếu media; thêm ảnh vào album hệ thống. Nếu avatar hoặc ảnh bìa thay đổi, tạo bài viết với quyền riêng tư mặc định.", "Commit giao dịch và trả hồ sơ đã cập nhật."],
+      "alternatives": ["Ngày sinh tương lai, Website hoặc media không hợp lệ: trả lỗi validation.", "Hồ sơ không tồn tại: trả không tìm thấy. Đồng bộ dữ liệu phụ thất bại: rollback giao dịch.", "Trường null giữ nguyên; gửi lại cùng media không tạo bài viết cập nhật ảnh mới."],
+      "postconditions": "Hồ sơ và các dữ liệu liên quan được cập nhật nhất quán; UpdatedAt được ghi lại.",
+      "endpoints": ["PATCH /api/users/me"], "tables": ["UserProfiles", "MediaAssets", "UserPrivacySettings", "Posts", "PostMedia", "PhotoAlbums", "AlbumMedia", "MediaReferences"],
+      "sources": ["Controllers/UserProfileController.cs", "DTOs/Requests/UpdateUserProfileRequest.cs", "Services/UserProfileService.cs", "../Media/Services/MediaService.cs", "../Photos/Services/PhotosService.cs"]
+    },
+    {
+      "id": "UC-US-04", "name": "Xem avatar và ảnh bìa", "group": "profiles",
+      "goal": "Nhận URL đọc của ảnh đại diện hoặc ảnh bìa đã gắn media.", "actor": "Khách hoặc người dùng", "preconditions": "Hồ sơ có AvatarMediaId hoặc CoverMediaId; media được phép đọc.",
+      "steps": ["Gọi users/{userId}/avatar hoặc users/{userId}/cover.", "Hệ thống lấy media ID từ hồ sơ, nhờ MediaService tạo URL đọc và trả redirect đến URL đó."],
+      "alternatives": ["Không có media ID hoặc không tạo được URL đọc: trả 404.", "Endpoint này lấy media trực tiếp; điều kiện chặn của API xem hồ sơ không được áp dụng tại đây."],
+      "postconditions": "Client được chuyển hướng tới media hợp lệ; không thay đổi hồ sơ.",
+      "endpoints": ["GET /api/users/{userId:guid}/avatar", "GET /api/users/{userId:guid}/cover"], "tables": ["UserProfiles", "AspNetUsers", "MediaAssets"],
+      "sources": ["Controllers/UserProfileController.cs", "Services/UserProfileService.cs", "../Media/Services/MediaService.cs"]
+    },
+    {
+      "id": "UC-US-05", "name": "Xem quyền riêng tư", "group": "privacy",
+      "goal": "Xem bốn cài đặt quyền riêng tư của tài khoản.", "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Đã xác thực.",
+      "steps": ["Gọi GET privacy.", "Hệ thống tìm cài đặt theo UserId; nếu chưa tồn tại thì tạo các giá trị mặc định.", "Trả quyền riêng tư bài viết, chính sách lời mời, quyền hiển thị bạn bè và theo dõi."],
+      "alternatives": ["Chưa đăng nhập: từ chối truy cập."], "postconditions": "Trả cài đặt hiện tại; một bản ghi mặc định có thể được tạo nếu thiếu.",
+      "endpoints": ["GET /api/privacy"], "tables": ["UserPrivacySettings", "AspNetUsers"],
+      "sources": ["Controllers/PrivacySettingsController.cs", "Services/UserPrivacySettingsService.cs", "Domain/Entities/UserPrivacySettings.cs"]
+    },
+    {
+      "id": "UC-US-06", "name": "Cập nhật quyền riêng tư", "group": "privacy",
+      "goal": "Chọn quyền mặc định cho bài viết và giới hạn tương tác hoặc hiển thị quan hệ.", "actor": "Chủ tài khoản đã đăng nhập", "preconditions": "Các giá trị enum được cung cấp phải được hỗ trợ.",
+      "steps": ["Gửi các cài đặt cần thay đổi đến PATCH privacy.", "Hệ thống kiểm tra enum, tạo cài đặt nếu thiếu và cập nhật các trường được cung cấp.", "Lưu UpdatedAtUtc và trả cài đặt sau thay đổi."],
+      "alternatives": ["Giá trị không được hỗ trợ: từ chối toàn bộ cập nhật.", "Trường không được cung cấp hoặc chuỗi trống giữ nguyên giá trị hiện có."],
+      "postconditions": "Cài đặt mới được lưu; thay đổi DefaultPostPrivacy không sửa quyền của các bài viết đã tồn tại.",
+      "endpoints": ["PATCH /api/privacy"], "tables": ["UserPrivacySettings"],
+      "sources": ["Controllers/PrivacySettingsController.cs", "DTOs/Requests/UpdatePrivacySettingsRequest.cs", "Services/UserPrivacySettingsService.cs"]
+    },
+    {
+      "id": "UC-US-07", "name": "Xem sinh nhật bạn bè", "group": "privacy",
+      "goal": "Xem bạn bè có sinh nhật hôm nay hoặc trong các ngày sắp tới.", "actor": "Người dùng đã đăng nhập", "preconditions": "Upcoming nhận days từ 1 đến 30; mặc định 7 ngày.",
+      "steps": ["Gọi birthdays/today hoặc birthdays/upcoming.", "Hệ thống lấy bạn bè hoạt động có ngày sinh, không bị chặn và cho phép hiển thị sinh nhật.", "Lọc theo ngày hiện tại hoặc khoảng sắp tới, sắp xếp và trả tháng/ngày sinh."],
+      "alternatives": ["days không hợp lệ: trả lỗi. Không có bạn bè đủ điều kiện: trả danh sách rỗng.", "Sinh ngày 29/2 trong năm không nhuận: dùng ngày cuối tháng 2 để tính dịp sinh nhật."],
+      "postconditions": "Trả sinh nhật được phép hiển thị; không trả năm sinh của bạn bè.",
+      "endpoints": ["GET /api/birthdays/today", "GET /api/birthdays/upcoming"], "tables": ["UserProfiles", "AspNetUsers", "Friendships", "BlockedUsers"],
+      "sources": ["Controllers/BirthdaysController.cs", "Services/UserProfileService.cs"]
+    },
+    {
+      "id": "UC-US-08", "name": "Theo dõi người dùng", "group": "relationships",
+      "goal": "Tạo quan hệ theo dõi một chiều trên trang cá nhân.", "actor": "Người dùng đã đăng nhập", "preconditions": "Đích khác bản thân, có tài khoản hoạt động và hồ sơ; không bị chặn ở cả hai chiều.",
+      "steps": ["Gọi POST users/{userId}/follow.", "FriendsService kiểm tra đích và điều kiện chặn, tạo UserFollow trong giao dịch.", "Nếu hai người chưa là bạn, gửi thông báo theo dõi qua Notifications sau commit."],
+      "alternatives": ["Đã theo dõi: trả thành công mà không tạo trùng.", "Tự theo dõi, đích không đủ điều kiện hoặc bị chặn: từ chối."], "postconditions": "Quan hệ theo dõi được tạo; không tự tạo quan hệ bạn bè.",
+      "endpoints": ["POST /api/users/{userId:guid}/follow"], "tables": ["UserFollows", "AspNetUsers", "UserProfiles", "Friendships", "BlockedUsers", "Notifications"],
+      "sources": ["Controllers/UserRelationshipsController.cs", "../Friends/Services/FriendsService.cs"]
+    },
+    {
+      "id": "UC-US-09", "name": "Bỏ theo dõi người dùng", "group": "relationships",
+      "goal": "Xóa quan hệ theo dõi do chính người dùng tạo.", "actor": "Người dùng đã đăng nhập", "preconditions": "Đích khác bản thân.",
+      "steps": ["Gọi DELETE users/{userId}/follow.", "FriendsService khóa cặp người dùng và xóa quan hệ theo dõi của người gọi nếu tồn tại."],
+      "alternatives": ["Chưa theo dõi: thao tác vẫn thành công.", "Đích là bản thân: từ chối."], "postconditions": "Không còn theo dõi theo chiều người gọi đến đích; các quan hệ khác giữ nguyên.",
+      "endpoints": ["DELETE /api/users/{userId:guid}/follow"], "tables": ["UserFollows"],
+      "sources": ["Controllers/UserRelationshipsController.cs", "../Friends/Services/FriendsService.cs"]
+    },
+    {
+      "id": "UC-US-10", "name": "Xem danh sách theo dõi", "group": "relationships",
+      "goal": "Xem người theo dõi hoặc người được theo dõi của một tài khoản.", "actor": "Người dùng đã đăng nhập", "preconditions": "Chủ danh sách hoạt động, có hồ sơ; không bị chặn; được phép theo FollowListVisibility. limit từ 1 đến 100.",
+      "steps": ["Gọi users/{userId}/followers hoặc following với cursor và limit.", "FriendsService kiểm tra quyền PUBLIC, FRIENDS hoặc chủ danh sách; xác minh cursor theo người xem, chủ danh sách và loại danh sách.", "Lọc hồ sơ đủ điều kiện, sắp xếp theo thời điểm theo dõi và trả trang cùng NextCursor."],
+      "alternatives": ["Không được phép xem hoặc đích không hợp lệ: trả không tìm thấy.", "Cursor hoặc limit không hợp lệ: từ chối. Không có quan hệ: trả trang rỗng."], "postconditions": "Trả danh sách được phép xem; không thay đổi quan hệ.",
+      "endpoints": ["GET /api/users/{userId:guid}/followers", "GET /api/users/{userId:guid}/following"], "tables": ["UserFollows", "UserProfiles", "AspNetUsers", "UserPrivacySettings", "Friendships", "BlockedUsers"],
+      "sources": ["Controllers/UserRelationshipsController.cs", "../Friends/Services/FriendsService.cs", "../Friends/DTOs/Requests/FollowPageRequest.cs"]
+    },
+    {
+      "id": "UC-US-11", "name": "Xem bạn bè trên hồ sơ", "group": "relationships",
+      "goal": "Xem danh sách bạn bè của một tài khoản theo cài đặt hiển thị.", "actor": "Người dùng đã đăng nhập", "preconditions": "Chủ danh sách hoạt động và có hồ sơ; không bị chặn; có quyền theo FriendListVisibility. offset không âm, limit từ 1 đến 100.",
+      "steps": ["Gọi users/{userId}/friends với offset và limit.", "FriendsService kiểm tra quyền hiển thị, lấy quan hệ Friendship và trả trang danh sách bạn bè."],
+      "alternatives": ["Không được phép xem hoặc đích không hợp lệ: trả không tìm thấy.", "Phân trang không hợp lệ: trả lỗi validation."], "postconditions": "Trả trang bạn bè phù hợp với quyền của người xem.",
+      "endpoints": ["GET /api/users/{userId:guid}/friends"], "tables": ["Friendships", "AspNetUsers", "UserProfiles", "UserPrivacySettings", "BlockedUsers"],
+      "sources": ["Controllers/UserRelationshipsController.cs", "../Friends/Services/FriendsService.cs", "../Friends/DTOs/Requests/FriendPageRequest.cs"]
+    }
+  ]
+}
+  </script>
   <template id="overview-identity"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-identity" width="1810" height="1240" viewBox="0 0 1810 1240" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Identity" data-layout="identity"><title>Identity · 13 bảng và các quan hệ khóa ngoại</title><desc>AspNetUsers ở giữa, các bảng xác thực xung quanh và các bảng phân quyền phía dưới. RegistrationChallenges đứng độc lập trước khi tài khoản được tạo.</desc><style>
 #svg-overview-identity { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
 #svg-overview-identity .node .basic { fill: #fff; stroke-width: 1.3px; }
@@ -3560,7 +3687,10 @@
     const inspector = document.getElementById('table-dialog');
     const listDialog = document.getElementById('list-dialog');
     const moduleTabs = document.getElementById('module-tabs');
-    const identitySpecification = JSON.parse(document.getElementById('identity-specification').textContent);
+    const specifications = Object.fromEntries(catalog.modules.flatMap(module => {
+      const source = document.getElementById(module.id + '-specification');
+      return source ? [[module.id, JSON.parse(source.textContent)]] : [];
+    }));
     let activeModule;
     let zoom = 1;
     let panX = 0;
@@ -3591,7 +3721,10 @@
       const references = overview.tables.length - activeModule.tables.length;
       document.getElementById('view-count').textContent = `${activeModule.tables.length} bảng trong module${references ? ' + ' + references + ' bảng tham chiếu' : ''} · Hiển thị đầy đủ thuộc tính`;
       document.getElementById('view-note').textContent = overview.note;
-      moduleTabs.hidden = moduleId !== 'identity';
+      moduleTabs.hidden = !specifications[moduleId];
+      moduleTabs.setAttribute('aria-label', 'Tài liệu module ' + activeModule.name);
+      if (specifications[moduleId]) renderDocumentation();
+      else for (const panel of document.querySelectorAll('.document-panel')) panel.replaceChildren();
       selectView('erd');
       fit();
     }
@@ -3616,19 +3749,22 @@
       detail.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
 
-    function renderIdentityDocumentation() {
-      const { usecases, groups, actors, rules } = identitySpecification;
+    function renderDocumentation() {
+      const specification = specifications[activeModule.id];
+      const { usecases, groups, actors, rules } = specification;
+      const sourcePrefix = '../backend/Fookbase.Src/Code/Modules/' + activeModule.name + '/';
+      const controllerCount = new Set(usecases.flatMap(uc => uc.sources).filter(source => source.startsWith('Controllers/'))).size;
       document.getElementById('specification-panel').innerHTML = `
         <article class="document-card">
-          <span class="module-tag">ĐẶC TẢ MODULE · IDENTITY</span>
-          <h2>Tài khoản và xác thực</h2>
-          <p>${escapeHtml(identitySpecification.purpose)}</p>
-          <p class="document-intro">${escapeHtml(identitySpecification.scope)}</p>
-          <div class="document-meta"><span>${usecases.length} use case</span><span>8 controller xác thực</span><span>${catalog.modules.find(module => module.id === 'identity').tables.length} bảng Identity</span><span>Đối chiếu source code · bản để duyệt</span></div>
+          <span class="module-tag">ĐẶC TẢ MODULE · ${escapeHtml(activeModule.name.toUpperCase())}</span>
+          <h2>${escapeHtml(specification.title)}</h2>
+          <p>${escapeHtml(specification.purpose)}</p>
+          <p class="document-intro">${escapeHtml(specification.scope)}</p>
+          <div class="document-meta"><span>${usecases.length} use case</span><span>${controllerCount} controller</span><span>${activeModule.tables.length} bảng ${escapeHtml(activeModule.name)}</span><span>Đối chiếu source code · bản để duyệt</span></div>
           <h3>Tác nhân</h3>
           <div class="table-scroll"><table><thead><tr><th>Tác nhân</th><th>Vai trò</th></tr></thead><tbody>${actors.map(actor => `<tr><td>${escapeHtml(actor.name)}</td><td>${escapeHtml(actor.role)}</td></tr>`).join('')}</tbody></table></div>
           <h3>Quy tắc nghiệp vụ</h3>
-          <ul>${rules.map(rule => `<li>${escapeHtml(rule.text)} <a href="../backend/Fookbase.Src/Code/Modules/Identity/${escapeHtml(rule.source)}">Nguồn</a></li>`).join('')}</ul>
+          <ul>${rules.map(rule => `<li>${escapeHtml(rule.text)} <a href="${sourcePrefix}${escapeHtml(rule.source)}">Nguồn</a></li>`).join('')}</ul>
           <h3>Danh mục use case</h3>
           <p class="document-intro">Bấm một chức năng để xem điều kiện, luồng xử lý, ngoại lệ, API và bảng liên quan.</p>
           <div class="usecase-index">${usecases.map(uc => `<button type="button" data-usecase="${uc.id}">${uc.id} · ${escapeHtml(uc.name)}</button>`).join('')}</div>
@@ -3640,13 +3776,13 @@
             <h3>Luồng chính</h3><ol>${uc.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
             <h3>Luồng thay thế / ngoại lệ</h3><ul>${uc.alternatives.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ul>
             <h3>API liên quan</h3><ul>${uc.endpoints.map(endpoint => `<li><code>${escapeHtml(endpoint)}</code></li>`).join('')}</ul>
-            <h3>Bảng liên quan</h3><div class="usecase-index">${uc.tables.map(table => `<button class="table-link" type="button" data-table="${escapeHtml(table)}">${escapeHtml(table)}</button>`).join('')}</div>
-            <h3>Nguồn implementation</h3><div class="source-links">${uc.sources.map(source => `<a href="../backend/Fookbase.Src/Code/Modules/Identity/${escapeHtml(source)}">${escapeHtml(source.split('/').pop())}</a>`).join('')}</div>
+            <h3>Bảng liên quan</h3><div class="usecase-index">${uc.tables.map(table => catalog.tables[table] ? `<button class="table-link" type="button" data-table="${escapeHtml(table)}">${escapeHtml(table)}</button>` : `<span class="usecase-id" title="Bảng của module liên quan chưa có trong ERD này">${escapeHtml(table)} · module liên quan</span>`).join('')}</div>
+            <h3>Nguồn implementation</h3><div class="source-links">${uc.sources.map(source => `<a href="${sourcePrefix}${escapeHtml(source)}">${escapeHtml(source.split('/').pop())}</a>`).join('')}</div>
           </div>
         </details>`).join('')}`;
       document.getElementById('usecases-panel').innerHTML = `
-        <article class="document-card"><span class="module-tag">USE CASE · IDENTITY</span><h2>Người dùng có thể làm gì?</h2>
-          <p class="document-intro">${usecases.length} use case, chia theo ba nhóm chức năng. Người dùng bao gồm khách và chủ tài khoản; quyền thực hiện được ghi trong từng đặc tả.</p>
+        <article class="document-card"><span class="module-tag">USE CASE · ${escapeHtml(activeModule.name.toUpperCase())}</span><h2>Người dùng có thể làm gì?</h2>
+          <p class="document-intro">${usecases.length} use case, chia theo ${groups.length} nhóm chức năng. Tác nhân và quyền thực hiện được ghi trong từng đặc tả.</p>
           <p class="document-intro">Hình người: tác nhân · Khung: phạm vi Identity · Elip: use case · Đường liền: tác nhân tham gia chức năng. Bấm elip để mở đặc tả.</p>
         </article>
         ${groups.map(group => {
@@ -3656,11 +3792,11 @@
           const support = actors.filter(actor => cases.some(uc => uc.support?.includes(actor.id)));
           const supportY = actor => cases.reduce((ys, uc, index) => uc.support?.includes(actor.id) ? [...ys, 116 + index * 82] : ys, []).reduce((sum, y, _, ys) => sum + y / ys.length, 0);
           return `<article class="document-card"><h2>${escapeHtml(group.name)}</h2><p class="document-intro">${escapeHtml(group.description)}</p>
-            <div class="usecase-canvas"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 ${height}" role="group" aria-label="Use case Identity: ${escapeHtml(group.name)}">
+            <div class="usecase-canvas"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 ${height}" role="group" aria-label="Use case ${escapeHtml(activeModule.name)}: ${escapeHtml(group.name)}">
               <title>${escapeHtml(group.name)}</title><desc>${cases.map(uc => escapeHtml(uc.name)).join('; ')}. Bấm hoặc nhấn Enter trên use case để mở đặc tả.</desc>
               <defs><g id="actor-${group.id}" fill="none" stroke="#456052" stroke-width="2"><circle cy="-35" r="12"/><path d="M0,-23 V15 M-23,-8 H23 M0,15 L-20,43 M0,15 L20,43"/></g></defs>
               <rect x="220" y="18" width="600" height="${height - 36}" rx="12" fill="#fafcfb" stroke="#dbe4dd"/>
-              <text x="520" y="49" text-anchor="middle" font-size="14" font-weight="650" fill="#456052">Identity · ${escapeHtml(group.name)}</text>
+              <text x="520" y="49" text-anchor="middle" font-size="14" font-weight="650" fill="#456052">${escapeHtml(activeModule.name)} · ${escapeHtml(group.name)}</text>
               <g fill="none" stroke="#b4c5ba" stroke-width="1.4">${cases.map((uc, index) => `<path d="M135,${actorY} L335,${116 + index * 82}"/>${(uc.support || []).map(id => `<path d="M705,${116 + index * 82} L905,${supportY(actors.find(actor => actor.id === id))}"/>`).join('')}`).join('')}</g>
               <use href="#actor-${group.id}" transform="translate(110 ${actorY})"/><text x="110" y="${actorY + 68}" text-anchor="middle" font-size="13" fill="#456052">Người dùng</text>
               ${support.map(actor => `<use href="#actor-${group.id}" transform="translate(930 ${supportY(actor)})"/><text x="930" y="${supportY(actor) + 67}" text-anchor="middle" font-size="12" fill="#456052">${escapeHtml(actor.name)}</text>`).join('')}
@@ -3899,7 +4035,6 @@
       if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
     });
     inspector.addEventListener('close', () => { for (const node of diagram.querySelectorAll('.selected')) node.classList.remove('selected'); });
-    renderIdentityDocumentation();
     renderModule(catalog.defaultModule);
   </script>
 </body>
