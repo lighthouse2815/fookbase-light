@@ -16353,6 +16353,7 @@
   <script id="ai-specification" type="application/json">
 {
   "title": "Trò chuyện AI và fallback",
+  "note": "Bổ sung nếu còn hạn",
   "purpose": "Gửi tin nhắn và lịch sử client tới nhà cung cấp AI được cấu hình, trả câu trả lời và model đã dùng.",
   "scope": "Ai không có entity, bảng conversation hoặc memory riêng. Đối chiếu POST /api/ai/chat, AiChatService, AiChatOptions, validation và DI HttpClient. API yêu cầu đăng nhập, claim sub GUID, rate-limit ai-chat. Không truy vấn dữ liệu mạng xã hội để tạo context trong service hiện tại.",
   "usecasesTitle": "Trò chuyện AI và fallback",
@@ -16520,6 +16521,7 @@
   <script id="games-specification" type="application/json">
 {
   "title": "Phòng chơi và đồng bộ realtime",
+  "note": "Bổ sung nếu còn hạn",
   "purpose": "Phòng Flappy Bird/Jumping, chủ phòng, vòng chơi chung và trạng thái người chơi qua SignalR.",
   "scope": "Games không có entity, bảng score/room hoặc HTTP controller riêng. Đối chiếu GameRoomService, GameRoomHub, FlappyBirdHub, JumpingHub và DI. Hai hub /hubs/flappy-bird, /hubs/jumping có xác thực; room/membership/round lưu trong bộ nhớ, keyed singleton riêng theo game.",
   "usecasesTitle": "Phòng chơi và đồng bộ realtime",
@@ -16907,6 +16909,7 @@
           <h2>${escapeHtml(specification.title)}</h2>
           <p>${escapeHtml(specification.purpose)}</p>
           <p class="document-intro">${escapeHtml(specification.scope)}</p>
+          ${specification.note ? `<p class="document-intro" data-module-note><strong>Ghi chú:</strong> ${escapeHtml(specification.note)}</p>` : ''}
           <div class="document-meta"><span>${usecases.length} use case</span><span>${controllerCount} controller</span><span>${activeModule.tables.length} bảng ${escapeHtml(activeModule.name)}</span><span>Đối chiếu source code · bản để duyệt</span></div>
           <h3>Tác nhân</h3>
           <div class="table-scroll"><table><thead><tr><th>Tác nhân</th><th>Vai trò</th></tr></thead><tbody>${actors.map(actor => `<tr><td>${escapeHtml(actor.name)}</td><td>${escapeHtml(actor.role)}</td></tr>`).join('')}</tbody></table></div>
@@ -16930,6 +16933,7 @@
       document.getElementById('usecases-panel').innerHTML = `
         <article class="document-card"><span class="module-tag">USE CASE · ${escapeHtml(activeModule.name.toUpperCase())}</span><h2>${escapeHtml(specification.usecasesTitle || 'Người dùng có thể làm gì?')}</h2>
           <p class="document-intro">${usecases.length} use case, chia theo ${groups.length} nhóm chức năng. Tác nhân và quyền thực hiện được ghi trong từng đặc tả.</p>
+          ${specification.note ? `<p class="document-intro" data-module-note><strong>Ghi chú:</strong> ${escapeHtml(specification.note)}</p>` : ''}
           <p class="document-intro">Hình người: tác nhân · Khung: phạm vi ${escapeHtml(activeModule.name)} · Elip: use case · Đường liền: tác nhân tham gia chức năng. Bấm elip để mở đặc tả.</p>
         </article>
         ${groups.map(group => {
