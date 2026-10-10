@@ -1,0 +1,410 @@
+FOOKBASE LIGHT — DANH SÁCH NHỮNG THỨ NÊN SỬA
+Review kiến trúc, code, database, bảo mật, frontend/mobile và vận hành
+Ngày đánh giá: 10/10/2026 (Asia/Ho_Chi_Minh)
+Repository: https://github.com/lighthouse2815/fookbase-light
+Branch: main
+Commit đã kiểm tra: 862dd518cacaf9ad641a68790c89cdf95e9d063c
+
+====================================================================
+0. PHẠM VI, PHƯƠNG PHÁP VÀ CÁCH ĐỌC
+====================================================================
+
+- Đã duyệt cây Git GitHub gồm 1.113 file (không bị cắt), tương ứng khoảng 31,2 MB tổng dung lượng file trong tree; kiểm tra cơ cấu của backend, các web client, mobile, CI/CD, Compose, tài liệu và migration.
+- Đã đọc/đối chiếu nội dung các file đại diện trọng yếu: Program.cs, DbContext, authentication, OTP, admin moderation, posts, friends, groups, messages, media, feed, search, realtime, notifications, games, deployment scripts, package.json, session/API client ở nhiều frontend và các tài liệu vận hành.
+- KHÔNG khẳng định đã đọc từng dòng của cả 1.113 file; nhiều file là migration designer, package lock, tài sản hình ảnh hoặc tài liệu HTML. Đây là REVIEW TĨNH, không phải chứng nhận đã audit hết mọi nhánh logic.
+- KHÔNG chạy dotnet build, npm build, test integration, load test, scan CVE hoặc khai thác động; GitHub connector đọc mã nguồn được nhưng môi trường chạy thử không có checkout GitHub để kiểm chứng thực thi.
+- Mỗi mục được phân loại:
+  [XÁC NHẬN] = tồn tại điều kiện/thiết kế nêu trong source. Không nhất thiết đã chứng minh có exploit hoặc sự cố thực tế.
+  [CẦN TEST] = rủi ro hợp lý, cần test để xác nhận có bug/runtime impact.
+  [CẢI TIẾN] = nợ kỹ thuật/khuyến nghị, không phải bug chắc chắn.
+- P0 = sửa trước khi mở production có dữ liệu nhạy cảm / trước đợt deploy mới;
+  P1 = ưu tiên trong sprint gần nhất; P2 = trung hạn; P3 = tùy quy mô và mục tiêu.
+- TẤT CẢ các đề xuất là backlog review, không có file code nào trên repository bị sửa hoặc commit trong đợt này.
+
+====================================================================
+1. P0 — ƯU TIÊN CAO NHẤT
+====================================================================
+
+[FB-001] [P0] [XÁC NHẬN] DEPLOY TỰ ĐỘNG TỪ MAIN NHƯNG CI KIỂM THỬ KHÔNG TỰ CHẠY
+Vị trí:
+  .github/workflows/ci.yml (đầu file: chỉ workflow_dispatch)
+  .github/workflows/deploy-ec2.yml (dòng 3-6: push main; dòng 52-56: deploy)
+  scripts/deploy-ec2.sh (dòng 40-50: apply EF migration rồi recreate API)
+Hiện trạng: mỗi push vào main kích hoạt deploy EC2. Workflow CI chính chỉ kích hoạt bằng tay; không có job check cần pass trước deploy.
+Vì sao cần sửa: code sai hoặc migration không tương thích có thể đến production trước khi được test. Lỗi runtime hay mất dữ liệu khó rollback khi schema đã thay đổi.
+Cách sửa: kích hoạt CI trên pull_request và push; thiết lập protected branch/check bắt buộc; deploy chỉ từ commit đã pass CI, tốt hơn là artifact/image được build sẵn và gắn SHA. Thêm phê duyệt môi trường production nếu phù hợp.
+Tiêu chí hoàn thành: PR có test fail không được merge/deploy; commit main chỉ deploy sau khi toàn bộ check bắt buộc pass; chứng minh bằng workflow test giả lập.
+
+[FB-002] [P0] [XÁC NHẬN] CLOUDINARY SIGNED DELIVERY URL KHÔNG CÓ TTL THỰC 5 PHÚT
+Vị trí:
+  backend/Fookbase.Src/Code/Modules/Media/Services/CloudinaryObjectStorage.cs (40-47)
+  backend/Fookbase.Src/Code/Modules/Media/Services/MediaService.cs (140-169, 171-194)
+  backend/Fookbase.Src/Code/Modules/Media/Config/MediaOptions.cs (10)
+Hiện trạng: signed URL được tạo bằng .Signed(true) nhưng không chứa expiration; MediaService tự trả ExpiresAt=now+5min.
+Vì sao cần sửa: ExpiresAt trong JSON không khiến Cloudinary từ chối URL sau 5 phút. Ai lưu/chia sẻ URL có thể tiếp tục truy cập media private dù API đã thay đổi quyền xem. Trường hợp ảnh riêng tư, tin nhắn, story là đặc biệt quan trọng.
+Cách sửa: dùng cơ chế Cloudinary có kiểm tra thời hạn thực (private_download_url expires_at, hoặc token-based access nếu tài khoản hỗ trợ); xác định trade-off CDN/băng thông. Với media nhạy cảm cần đánh giá proxy streaming có kiểm tra quyền mỗi lần hoặc access-token TTL phù hợp.
+Tiêu chí hoàn thành: test URL tại T+0 hợp lệ và T+TTL+delta bị Cloudinary từ chối; test thu hồi quyền truy cập và kiểm soát cache.
+Tài liệu nhà cung cấp:
+  https://cloudinary.com/documentation/control_access_to_media
+  https://cloudinary.com/documentation/delivery_url_signatures
+
+====================================================================
+2. P1 — BẢO MẬT, TÍNH ĐÚNG ĐẮN, DỮ LIỆU VÀ ĐỘ TIN CẬY
+====================================================================
+
+[FB-003] [P1] [XÁC NHẬN] TEST BỊ LOẠI KHỎI GIT, CLONE MỚI KHÔNG CHẠY ĐƯỢC TEST
+Vị trí: .gitignore (/**/tests/, *.test.*, *Tests.cs, backend/Fookbase.Test...), README.md (mô tả test chỉ giữ local), frontend/web/package.json (script test trỏ vào tests/*).
+Vì sao cần sửa: code có thể build/lint pass nhưng bug phân quyền, race condition, media privacy hay session rotation không được phát hiện tự động; đồng đội/CI không tái lập được bằng một fresh clone.
+Cách sửa: theo dõi bộ test không chứa secrets trong repo, xóa rule ignore quá rộng; dùng DB/test credential disposable, docker compose test. CI chạy unit + integration + web component/e2e tối thiểu.
+Tiêu chí: clone mới + 1 lệnh chạy được test; CI có pass/fail thật với PR giả lập gây regression.
+
+[FB-004] [P1] [XÁC NHẬN] MESSENGER GHI DB RỒI PHÁT SIGNALR TRONG CÙNG HTTP REQUEST
+Vị trí: backend/Fookbase.Src/Code/Modules/Messages/Services/MessagesService.cs (250-301, đặc biệt 289-300).
+Hiện trạng: SaveChangesAsync rồi xây response, SendAsync tới từng client, sau đó push. Gửi realtime lỗi có thể làm request fail mặc dù message đã persist; crash giữa các bước làm thiếu sự kiện.
+Vì sao cần sửa: client retry có thể tạo message trùng; các máy nhận không được event dù DB đã lưu; trạng thái success/failure trả về không tương ứng với trạng thái lưu bền vững.
+Cách sửa: lưu message + outbox event trong cùng transaction; worker đọc outbox và publish retry; client đồng bộ dữ liệu khi reconnect; không phụ thuộc SignalR thành công để xem gửi message là thành công.
+Tiêu chí: cố ý ngắt SignalR sau DB commit, HTTP vẫn cho kết quả lưu bền vững và event được phát lại sau khi hệ thống hồi phục.
+
+[FB-005] [P1] [XÁC NHẬN] KHÔNG CÓ CLIENT MESSAGE ID CHỐNG GỬI TRÙNG
+Vị trí:
+  backend/Fookbase.Src/Code/Modules/Messages/DTOs/Requests/SendMessageRequest.cs
+  backend/Fookbase.Src/Code/Modules/Messages/Domain/Entities/Message.cs
+  backend/Fookbase.Src/Code/Modules/Messages/Services/MessagesService.cs (276-289)
+Hiện trạng: server luôn tạo Message(Guid.NewGuid()) và request không có idempotency key từ client.
+Vì sao cần sửa: mất response hoặc timeout khiến client retry gửi hai tin giống nhau; tình huống này đặc biệt dễ xảy ra trên mạng di động.
+Cách sửa: client tạo ClientMessageId UUID; server UNIQUE(SenderUserId, ConversationId, ClientMessageId) hoặc unique theo actor; retry cùng ID trả cùng message; xử lý unique violation song song.
+Tiêu chí: 2-10 request đồng thời cùng ClientMessageId chỉ tạo đúng 1 row, mọi request hợp lệ nhận cùng server MessageId.
+
+[FB-006] [P1] [XÁC NHẬN] ĐÁNH DẤU DELIVERED TRƯỚC KHI TIN ĐƯỢC DELIVER
+Vị trí:
+  MessagesService.cs (282-289, recipient.MarkDelivered trước SaveChanges)
+  Modules/Messages/Domain/Entities/ConversationParticipant.cs (MarkDelivered, LastDeliveredMessageId)
+Hiện trạng: server cập nhật LastDeliveredMessageId khi ghi message; khi đó recipient có thể offline và SignalR chưa hề gửi thành công.
+Vì sao cần sửa: chỉ báo “đã nhận” dễ sai; dữ liệu delivery bị đánh đồng với việc đã tạo notification trên server.
+Cách sửa: phân biệt persisted/queued/delivered/read; delivered chỉ cập nhật khi thiết bị nhận ACK hoặc định nghĩa lại cột thành LastEnqueuedMessageId và cập nhật UI đúng nghĩa.
+Tiêu chí: recipient offline không được hiển thị delivered; ACK từ client cập nhật cursor đúng thứ tự.
+
+[FB-007] [P1] [XÁC NHẬN] NHÓM CHAT TẠO N+1 QUERY VÀ PHÁT EVENT THEO TỪNG RECIPIENT
+Vị trí: MessagesService.cs (290-300).
+Hiện trạng: mỗi người nhận lại tải access snapshot, build MessageResponse, build ConversationResponse và gửi 2 sự kiện.
+Vì sao cần sửa: nhóm càng đông, thời gian gửi càng dài, tăng truy vấn DB và nguy cơ timeout request; coupling thời gian phản hồi với số người nhận.
+Cách sửa: batch load relationship/visibility, thiết kế payload chung + riêng tư phần cần thiết; fanout background, giới hạn số người tham gia theo nhu cầu; đo query count.
+Tiêu chí: với nhóm 50 người, latency và số SQL query tăng có kiểm soát; không thực hiện một vòng DB query độc lập cho từng recipient.
+
+[FB-008] [P1] [CẦN TEST] RACE GIỮA GẮN MEDIA VÀ XÓA MEDIA
+Vị trí: MediaService.cs (401-424 SynchronizePostReferences, 551-632 DeleteAsync); PostsUseCase.cs (transaction attach).
+Hiện trạng: DeleteAsync kiểm tra nhiều bảng reference bằng AnyAsync rồi cập nhật Status và enqueue xóa. Flow gắn media nằm ở request/transaction khác; chưa thấy lock asset chung ở cả 2 hướng.
+Vì sao cần sửa: request A có thể thấy media chưa gắn, request B đồng thời gắn vào post trước khi A xóa object. FK bảo vệ tham chiếu DB không đương nhiên bảo vệ trạng thái object storage.
+Cách sửa: đồng bộ hóa attach/delete bằng lock theo MediaId, hoặc UPDATE có điều kiện/điểm kiểm tra trong transaction serializable; thiết kế state transition và unique constraints nhất quán.
+Tiêu chí: stress test attach/delete cùng một media; không có post hợp lệ trỏ tới object đã xóa.
+
+[FB-009] [P1] [XÁC NHẬN] HASH OTP 6 CHỮ SỐ BẰNG SHA-256 THUẦN, DỄ DÒ OFFLINE NẾU DB RÒ RỈ
+Vị trí: backend/Fookbase.Src/Code/Modules/Identity/Services/OtpService.cs (CreateCode, Hash, Verify*).
+Hiện trạng: OTP chỉ 1 triệu khả năng và SHA256(code) không có secret từ server. Attacker có bản dump bảng OTP có thể brute-force mọi mã còn hiệu lực rất nhanh.
+Vì sao cần sửa: hash không có khóa không bảo vệ hiệu quả dữ liệu entropy thấp; giới hạn thử online không giúp chống dò offline.
+Cách sửa: HMAC-SHA256 với secret server riêng/pepper, ràng buộc hash theo purpose/challengeId; luân chuyển secret có chiến lược; vẫn giữ attempts/expiry và không log OTP.
+Tiêu chí: chỉ với dump DB, không thể xác minh mã OTP bằng cách thử tối đa 1 triệu giá trị khi không có server secret.
+
+[FB-010] [P1] [CẦN TEST] GỬI OTP TRƯỚC KHI COMMIT TRẠNG THÁI RESEND
+Vị trí: OtpService.cs (ResendRegistrationAsync: SendRegistrationCodeAsync trước SaveChangesAsync).
+Hiện trạng: mã mới đã gửi ra SMTP/SMS trước khi SaveChanges thành công. Nếu save conflict/fail, user nhận mã mà server không lưu được; có thể vẫn nhận mã cũ là mã hợp lệ.
+Vì sao cần sửa: side effect bên ngoài DB không nằm trong transaction nên mất tính nhất quán; khó xử lý khi hệ thống bận/lỗi mạng.
+Cách sửa: persist challenge trước, tạo email/SMS outbox rồi gửi sau; nếu cần đồng bộ, trả trạng thái queued và monitor delivery. Test resend song song và failure injection.
+Tiêu chí: không gửi một OTP chưa được persist hợp lệ; không tạo 2 mã active mâu thuẫn khi resend đồng thời.
+
+[FB-011] [P1] [XÁC NHẬN] ACCOUNT MODERATION BỎ QUA HẦU HẾT GET/HEAD
+Vị trí: Modules/Identity/Middleware/AccountModerationMiddleware.cs (10-16).
+Hiện trạng: user bị suspended/disabled chỉ bị middleware chặn với một số write request; GET, HEAD, OPTIONS bỏ qua; hub filter kiểm tra InvokeMethod nhưng khác request đọc HTTP.
+Vì sao cần sửa: nếu chính sách của hệ thống là đình chỉ hoàn toàn thì user đang có access JWT vẫn xem dữ liệu riêng tư được qua endpoint GET. Nếu chính sách chỉ là read-only suspension thì code phù hợp, nhưng yêu cầu phải ghi rõ.
+Cách sửa: định nghĩa rõ Disabled/Suspended/ReadOnly; thiết kế authorization policy chung cho API và hubs, ngoại lệ có chủ đích cho endpoint logout/appeal; test quyền khi trạng thái thay đổi.
+Tiêu chí: ma trận GET/POST/SignalR với Active, Suspended, Disabled khớp chính sách chính thức.
+
+[FB-012] [P1] [CẦN TEST] THU HỒI REFRESH TOKEN KHÔNG TỰ HỦY ACCESS JWT ĐÃ PHÁT HÀNH
+Vị trí: Program.cs (JwtBearer signature/lifetime), Modules/Identity/Services/AuthenticationService.cs (Logout, RevokeSession), AccountSecurityService.cs (reset password, change password).
+Hiện trạng: JWT được validate bằng signature/issuer/audience/lifetime; chưa thấy middleware chung validate AuthSession/SecurityStamp trên mỗi request.
+Vì sao cần sửa: logout, reset mật khẩu, cấm tài khoản/thu hồi phiên có thể vẫn để access JWT cũ dùng được đến khi hết hạn (~15 phút). Đây là rủi ro tùy SLA bảo mật, không nhất thiết là bug trong mô hình JWT stateless.
+Cách sửa: xác định SLA revocation; nếu cần tức thì, dùng session version/security stamp, lookup/cache revocation cho endpoint nhạy cảm; kiểm tra SignalR connection sống lâu.
+Tiêu chí: thực hiện revoke rồi gọi API/Hub với JWT cũ cho kết quả đúng với SLA mong muốn.
+
+[FB-013] [P1] [CẦN TEST] HAI TAB CÙNG REFRESH TOKEN CÓ THỂ ĐUA NHAU
+Vị trí: frontend/web/src/api/client.ts (44-84), frontend/admin/src/api/client.ts, frontend/zola-light/src/api.ts; backend AuthenticationService.cs (RefreshAsync, RotateRefreshTokenAsync).
+Hiện trạng: refreshPromise chỉ đồng bộ request trong cùng tab; nhiều tab dùng chung cookie refresh xoay token trên backend. Không thấy BroadcastChannel/storage-based cross-tab lock.
+Vì sao cần sửa: 2 tab cùng refresh có thể khiến 1 request rotate thành công, 1 request nhận 401 và clear session cục bộ; UX đăng xuất ngẫu nhiên hoặc state lệch.
+Cách sửa: phối hợp refresh giữa tab (BroadcastChannel/Web Locks hoặc leader), đồng bộ logout/login qua storage; xử lý rotation race và cookie mới theo generation.
+Tiêu chí: mở 3 tab, ép refresh đồng thời 100 lượt không mất phiên trái ý muốn; logout ở một tab làm tất cả tab cập nhật.
+
+[FB-014] [P1] [XÁC NHẬN] THIẾU CSP RÕ RÀNG TRONG CÁC CONFIG ĐƯỢC KIỂM TRA, ACCESS JWT WEB LƯU LOCALSTORAGE
+Vị trí: Shared/Security/SecurityHeadersMiddleware.cs; frontend/web/public/_headers; frontend/web/src/auth/session.ts; frontend/admin/src/session.ts; frontend/zola-light/src/api.ts.
+Hiện trạng: middleware có HSTS, nosniff, referrer-policy nhưng không có CSP; access JWT được lưu localStorage. Tài liệu production cho phép reverse proxy thêm CSP nhưng repo không đảm bảo đang có.
+Vì sao cần sửa: nếu XSS xảy ra trên một SPA, script độc có thể lấy access token. CSP giảm một phần bề mặt tấn công; localStorage không chống XSS.
+Cách sửa: xác thực header CSP thực tế tại public domain, triển khai CSP report-only trước (script-src, connect-src cho SignalR/API/Cloudinary), loại inline script hoặc dùng hash/nonce; kiểm tra sanitization khi render rich text; cân nhắc access token trong memory.
+Tiêu chí: browser nhận CSP production, test CSP reports, không phá SEO script/SignalR/Cloudinary; có threat model XSS/token.
+
+[FB-015] [P1] [XÁC NHẬN] PUSH THÔNG BÁO KHÔNG CÓ HÀNG ĐỢI PERSIST CHO THAO TÁC GỬI
+Vị trí: MessagesService.cs (300); Modules/Notifications/Services/PushNotificationService.cs (48-113).
+Hiện trạng: gọi HTTP Expo sau khi message đã lưu; khi HTTP lỗi chỉ log warning và bỏ qua lần gửi; có receipt retry riêng, nhưng không có persistent outbox retry cho request push thất bại trước lúc nhận ticket.
+Vì sao cần sửa: push có thể mất khi Expo/network tạm lỗi, dù message lưu thành công; không theo dõi số lần thử và backlog.
+Cách sửa: PushOutbox entity/job (MessageId + recipient + dedupe), retry/backoff và DLQ/terminal failure; phân biệt delivery ticket và actual push receipt.
+Tiêu chí: ngắt Expo trong lúc gửi, khôi phục network rồi job tự gửi lại, không tạo push trùng ngoài chính sách.
+
+[FB-016] [P1] [XÁC NHẬN] KẾ HOẠCH BACKUP MEDIA CLOUDINARY CHƯA HOÀN CHỈNH
+Vị trí: docs/backup-restore.md (30-33, 36-40).
+Hiện trạng: PostgreSQL có script backup/restore; tài liệu tự xác nhận chưa có script xuất/khôi phục asset Cloudinary; metadata DB và media không có snapshot nhất quán.
+Vì sao cần sửa: khôi phục DB mà mất media tạo post/tin nhắn có record nhưng object không còn; khôi phục thảm họa chưa đạt RPO/RTO thực.
+Cách sửa: chính sách backup media, inventory cloud object, export/dedicated backup theo dịch vụ/gói, test restore cùng manifest/metadata; cân nhắc PITR PostgreSQL, backup key ring.
+Tiêu chí: khôi phục được DB + media vào môi trường sạch và mở được album/reel/message đại diện.
+
+[FB-017] [P1] [CẦN TEST] VIDEO 500 MB, FFMPEG VÀ GIỚI HẠN RAM EC2 768 MB
+Vị trí: MediaOptions.cs (MaximumVideoSizeBytes 500 MB), VideoProcessingWorker.cs (download + ffmpeg), compose.ec2.yml (API 768m), compose.prod.yml (1g).
+Hiện trạng: cùng API process chạy request, websocket, video worker; một video có thể tới 500 MB, xử lý vào temp disk, ffmpeg có thêm overhead bộ nhớ/CPU.
+Vì sao cần sửa: rủi ro OOMKilled, nghẽn CPU/disk/IO làm API không phục vụ được; con số giới hạn file không đồng nghĩa với giới hạn memory.
+Cách sửa: load test video ở sát ngưỡng; đặt cgroup memory/CPU, temp disk quota, giám sát worker; cân nhắc giảm max size, tách worker thành process/container riêng khi cần.
+Tiêu chí: xử lý file giới hạn mà API không bị OOM và health/latency không vượt mục tiêu.
+
+====================================================================
+3. P2 — KIẾN TRÚC, SCALE, HIỆU NĂNG VÀ CHẤT LƯỢNG SOURCE
+====================================================================
+
+[FB-018] [P2] [CẢI TIẾN] KIẾN TRÚC LÀ MODULAR MONOLITH, KHÔNG PHẢI MICROSERVICES ĐỘC LẬP
+Vị trí: backend/Fookbase.Src/Program.cs, ModuleServiceCollectionExtensions.cs, Persistence/FookbaseDbContext.cs, compose.yml.
+Hiện trạng: một ASP.NET Core API, một FookbaseDbContext, một PostgreSQL schema/database cho tất cả module.
+Vì sao cần sửa nếu mục tiêu là microservices: các module không deploy/scale/version DB độc lập; thay đổi bảng Identity có thể ảnh hưởng Users/Posts; không có boundary qua contract/event giữa service.
+Cách sửa: KHÔNG viết lại gấp thành microservices. Giữ modular monolith trước; áp quy tắc module boundaries, giảm phụ thuộc chéo, định nghĩa contract. Chỉ tách Media/Realtime/Search khi có chỉ số vận hành yêu cầu.
+Tiêu chí: có ADR mô tả lựa chọn kiến trúc và điều kiện khi nào tách service.
+
+[FB-019] [P2] [XÁC NHẬN] SERVICE FILE QUÁ LỚN, TRÁCH NHIỆM CHỒNG CHÉO
+Vị trí: PostsService.cs (~1.581 dòng), FriendsService.cs (~1.222), GroupsService.cs (~1.173), SearchService.cs (~846), MessagesService.cs (~751), FeedService.cs (~748).
+Vì sao cần sửa: khó đọc/test một use case, dễ tạo regression, review PR trở nên mệt và dependency giữa module phình to.
+Cách sửa: tách theo nghiệp vụ Create/Update/Delete/Read, quyền truy cập thành policy/query chuyên biệt; giữ transaction orchestration trong use case. Tách từ vùng có test, không chia file cơ học cho đủ đẹp.
+Tiêu chí: mỗi class có trách nhiệm rõ và test độc lập; không tăng số vòng DI vô cớ.
+
+[FB-020] [P2] [XÁC NHẬN] FRONTEND COMPONENT QUÁ LỚN, KHÓ TÁI SỬ DỤNG
+Vị trí: frontend/web/src/pages/profile/ProfilePage.tsx (~1.131 dòng); LivePostCard.tsx (~753); frontend/web/src/layout/TopNavbar.tsx (~54 KB); frontend/zola-light/src/App.tsx (~716 dòng/61 KB).
+Vì sao cần sửa: business logic, UI, async state và modal trong một component dễ ảnh hưởng lẫn nhau; test/UX refinement tốn thời gian.
+Cách sửa: tách logic hooks, view components và API adapters theo use case; lưu ý React state boundaries tránh rerender toàn trang. Không ưu tiên refactor hơn P0/P1.
+Tiêu chí: component con test được, UI regressions được cover; build/lint và screenshot test pass.
+
+[FB-021] [P2] [XÁC NHẬN] DUPLICATE CODE GIỮA MOBILE VÀ ZOLA-MOBILE
+Vị trí:
+  frontend/mobile/src/api/client.ts = frontend/zola-mobile/src/api/client.ts (giống hệt)
+  frontend/mobile/src/api/messages.ts = frontend/zola-mobile/src/api/messages.ts (giống hệt)
+  frontend/mobile/src/realtime/RealtimeProvider.tsx = frontend/zola-mobile/src/realtime/RealtimeProvider.tsx (giống hệt)
+  auth/session.ts chỉ khác rất ít.
+Vì sao cần sửa: sửa 1 bug ở auth/realtime phải sửa 2 nơi; dễ lệch behavior/security giữa ứng dụng.
+Cách sửa: trích xuất gói nội bộ @fookbase/api-client, @fookbase/mobile-auth, shared types/hook nhưng giữ branding và AppState khác biệt ở app.
+Tiêu chí: thay đổi shared logic được kiểm chứng trên cả 2 app; mỗi app vẫn build riêng được.
+
+[FB-022] [P2] [CẦN TEST] FE ZOLA LIGHT CÓ RACE KHI TÌM KIẾM NGƯỜI DÙNG
+Vị trí: frontend/zola-light/src/App.tsx (khoảng 236-266: setTimeout + searchUsers().then(setUsers)).
+Hiện trạng: debounce 250ms nhưng không hủy request cũ hoặc check request sequence trước setUsers; response đến không đúng thứ tự có thể đè kết quả từ query mới.
+Vì sao cần sửa: autocomplete hiển thị người không thuộc từ khóa mới; người dùng có thể chọn sai người để chat.
+Cách sửa: AbortController nếu API hỗ trợ hoặc monotonically increasing request sequence; xóa loading/error đúng query.
+Tiêu chí: mô phỏng mạng chậm, gõ A->AB->ABC, kết quả cuối luôn ứng với ABC.
+
+[FB-023] [P2] [XÁC NHẬN] REALTIME PRESENCE VÀ GAME ROOM CHỈ LƯU TRONG RAM MỘT INSTANCE
+Vị trí: MessagesPresenceService.cs (ConcurrentDictionary); GameRoomService.cs (Dictionary và lock), Program.cs MapHub.
+Vì sao cần sửa khi scale: hai instance không thấy nhau online/room; rolling restart xóa room; connection/session đi qua server khác lệch trạng thái.
+Cách sửa: khi scale đa instance, Redis + SignalR scale-out/backplane/managed service; TTL, reconnect, ownership semantics cho room.
+Tiêu chí: 2 instance qua LB, user khác instance vẫn thấy trạng thái online, chat/game cùng room.
+
+[FB-024] [P2] [XÁC NHẬN] GAME CHẤP NHẬN SCORE/TRẠNG THÁI TỪ CLIENT
+Vị trí: Modules/Games/Hubs/JumpingHub.cs (12-25), FlappyBirdHub.cs (11-25).
+Hiện trạng: chỉ validate range/phasing; Score/Height/BirdY được client gửi và server broadcast, không có authoritative simulation/anti-cheat.
+Vì sao cần sửa nếu có đua/rank/phần thưởng: người chơi sửa packet để gửi score cao giả; leaderboard/đua không công bằng.
+Cách sửa: client gửi input, server authoritative hoặc server validate physics/time progression và state transition; giới hạn tần suất gửi và chống replay.
+Tiêu chí: sửa payload score 99999/teleport bị từ chối hoặc không được tính kết quả chính thức.
+
+[FB-025] [P2] [CẦN TEST] THIẾU CHỐT GIỚI HẠN RIÊNG CHO HUB UPDATEPLAYER/TYPING
+Vị trí: JumpingHub.cs, FlappyBirdHub.cs, MessagesHub.cs, Program.cs (rate limiter HTTP).
+Hiện trạng: không thấy per-hub-method update throttling trong các hub; Global rate limiter cho kết nối HTTP không mặc nhiên giới hạn từng invocation SignalR sau khi kết nối.
+Vì sao cần sửa: client cố ý spam UpdatePlayer/Typing rất nhanh có thể tăng broadcast và CPU đến toàn room.
+Cách sửa: sliding/fixed-window throttle theo ConnectionId/userId/gameId; validate payload delta, disconnect hoặc drop khi quá ngưỡng.
+Tiêu chí: flood thousands invocation/sec không làm CPU hay latency game room tăng đột biến.
+
+[FB-026] [P2] [CẦN TEST] THIẾT KẾ FEED CẦN BENCHMARK Ở QUY MÔ DỮ LIỆU LỚN
+Vị trí: FeedService.cs (49-132, 214-305), FeedRankingOptions.cs (CandidateLimitPerSource 100), DbContext indexes.
+Hiện trạng: feed load nhiều nguồn profile/group/page/share/suggestions, ranking/cursor, có nhiều query và candidate lists. Code có keyset trước bounded window, đây là điểm tốt.
+Vì sao cần sửa nếu data tăng: nhiều nguồn × danh sách bạn bè/nhóm lớn có thể gây query planning, memory pressure và latency p95 cao; không thể suy từ source rằng hiện đang chậm.
+Cách sửa: tạo synthetic DB với 100k/1M posts; EXPLAIN ANALYZE query top, đo p95; điều chỉnh index/query/limit dựa trên số liệu thực.
+Tiêu chí: có baseline p50/p95, SQL query count, memory và explain plans; thay đổi trước/sau chứng minh hiệu quả.
+
+[FB-027] [P2] [CẦN TEST] TÌM KIẾM MESSAGE ILIKE '%QUERY%' CẦN KIỂM TRA INDEX
+Vị trí: Modules/Messages/Services/MessagesService.cs (khoảng dòng 469) dùng EF.Functions.ILike(message.Content, $"%{query}%").
+Vì sao cần sửa nếu dữ liệu lớn: contains-search có thể scan nhiều row nếu chưa có trigram/FTS index phù hợp cho Message.Content.
+Cách sửa: rà migration/index thực tế; EXPLAIN ANALYZE; dùng pg_trgm GIN hoặc FTS, kết hợp conversation filter và phân trang.
+Tiêu chí: query thực tế vẫn ổn trên số lượng message mục tiêu, không suy đoán thiếu index khi chưa đối chiếu schema production.
+
+[FB-028] [P2] [CẦN TEST] HAI BẢNG POSTMEDIA VÀ MEDIAREFERENCES CẦN KIỂM TRA ĐỒNG BỘ
+Vị trí: FookbaseDbContext.cs (PostMedia + MediaReferences), PostsUseCase.cs, MediaService.SynchronizePostReferencesAsync.
+Hiện trạng: PostMedia lưu thứ tự attachment, MediaReferences dùng để kiểm soát deletion. Code đang đồng bộ trong use case transaction ở nhiều luồng nhưng có hai nguồn biểu diễn việc gắn media.
+Vì sao cần sửa nếu thiếu một đường cập nhật: có post attachment nhưng không có reference => xóa nhầm object, hoặc stale reference => chặn xóa mãi.
+Cách sửa: kiểm toán MỌI luồng tạo/sửa/xóa post (group/page/reel/event/photo), thêm invariant/assertion query và integration tests; cân nhắc nguồn dữ liệu duy nhất hoặc trigger/constraint nếu hợp lý.
+Tiêu chí: query đối soát 2 bảng sau test CRUD và concurrent không có drift trái quy tắc.
+
+[FB-029] [P2] [CẦN TEST] WORKER RETRY VÀ TRẠNG THÁI TERMINAL FAILED CẦN CÔNG CỤ VẬN HÀNH
+Vị trí: ObjectDeletionWorker.cs (24-58), VideoProcessingWorker.cs (45-145), MediaOptions.cs retry limits.
+Hiện trạng: worker có retry và điều kiện claim tốt, nhưng job có thể rơi vào trạng thái FAILED cuối cùng; source chưa có dashboard/alert hoặc thủ tục operator requeue được kiểm chứng.
+Vì sao cần sửa: asset không xóa được để lại chi phí/rủi ro lưu media, video không hoàn thành mà không ai biết.
+Cách sửa: metrics retry/terminal failures, queue depth, requeue command có audit và guard, SOP cleanup; kiểm thử mất kết nối khi upload/delete.
+Tiêu chí: tạo lỗi cố ý và nhận alert; operator requeue/reconcile thành công, không xóa nhầm object.
+
+[FB-030] [P2] [XÁC NHẬN] CLOUDINARY LÀ MỘT PHẦN CỦA /HEALTH/READY
+Vị trí: Program.cs (health registration), CloudinaryHealthCheck.cs (PingAsync), docs/production-deployment.md.
+Vì sao nên xem lại: Cloudinary gián đoạn có thể khiến readiness fail cả API, kể cả các endpoint profile/text/login vẫn hoạt động; hệ thống có thể bị load balancer loại bỏ hoàn toàn tùy cấu hình.
+Cách sửa: thiết kế degraded mode; phân biệt readiness tối thiểu (DB và khả năng nhận request) với dependency health (media) trong dashboard; kiểm tra timeout của Ping.
+Tiêu chí: giả lập Cloudinary outage, endpoint không dùng media vẫn phục vụ theo yêu cầu SLA và alert vẫn phát.
+
+[FB-031] [P2] [CẢI TIẾN] BỔ SUNG OBSERVABILITY VÀ SLI/SLO, KHÔNG CHỈ REQUEST LOG
+Vị trí: Shared/Observability/RequestLoggingMiddleware.cs; Program.cs; các worker.
+Hiện trạng: có request ID/method/path/status/duration và structured log — rất tốt — nhưng chưa xác minh dashboard metrics/traces/alert chuẩn hóa trong repo.
+Vì sao cần sửa: khi phát sinh slow SQL, 429 bất thường, media-processing retry, failure SignalR, production incident khó tìm bottleneck.
+Cách sửa: OpenTelemetry traces/metrics (HTTP, EF/Npgsql, worker, external calls) + dashboard p95/error rate/queue depth + cảnh báo có ngưỡng; tuyệt đối scrub token/PII.
+Tiêu chí: trace được luồng request→DB→Cloudinary/Expo, test cảnh báo endpoint 5xx, job failed.
+
+[FB-032] [P2] [CẢI TIẾN] KIẾN TRÚC DATABASE DÙNG CHUNG CẦN QUY ƯỚC OWNERSHIP MODULE
+Vị trí: Persistence/FookbaseDbContext.cs, Modules/*/Data/Configurations, Persistence/Migrations/*.
+Hiện trạng: một DbContext chứa nhiều DbSet cross-module; migrations cùng một pipeline. Đây là hợp lý cho modular monolith, nhưng boundary có thể bị suy yếu vì service module A truy vấn thẳng mọi bảng của B.
+Vì sao cần sửa: nhiều developer/feature có thể sửa invariant của module khác mà không đi qua API/policy; rất khó tách service sau này.
+Cách sửa: thiết lập dependency rules, shared interfaces/query contracts, module ownership của bảng; test architecture có thể dùng ArchUnitNET/NetArchTest; tránh refactor mù quáng FK đang hữu ích.
+Tiêu chí: có bảng mapping module→aggregate/tables, linter/test phát hiện dependency forbidden.
+
+====================================================================
+4. P3 — CHUẨN HÓA DÀI HẠN VÀ CÁC ĐẦU VIỆC NÊN CÂN NHẮC
+====================================================================
+
+[FB-033] [P3] [CẢI TIẾN] NÊN THÊM TEST CROSS-CLIENT CHO AUTH VÀ MEDIA
+Vị trí: frontend/web, frontend/admin, frontend/zola-light, frontend/mobile, frontend/zola-mobile.
+Vì sao: cùng backend nhưng có cookie transport khác, SecureStore khác, reauthentication/reconnect khác; một sửa đổi auth có thể làm hỏng client còn lại.
+Cách làm: contract tests cho login/refresh/logout/media URL; smoke test 5 client; permission matrix; test 2FA, Google, offline/online và network failure.
+
+[FB-034] [P3] [CẢI TIẾN] THIẾT LẬP CONVENTION CHO API RESPONSE/ERROR VÀ VERSIONING
+Vị trí: Shared/Common/ApiResponse.cs, Shared/ErrorHandling/*, Modules/*/Controllers, frontend/*/api/*.
+Hiện trạng: các controller khác nhau dùng ApplicationResult, ProblemDetails, ApiResponse tùy endpoint; cần tránh client phải viết quá nhiều xử lý exception khác nhau.
+Vì sao: khi mở mobile app có vòng đời release chậm hơn web, thay đổi API breaking rất khó quản lý.
+Cách làm: thống nhất shape success/error/correlationId cho endpoint mới, OpenAPI contract, client generation nếu phù hợp, chiến lược API versioning khi breaking.
+
+[FB-035] [P3] [CẢI TIẾN] HOÀN THIỆN QUY TRÌNH RELEASE/MIGRATION/ROLLBACK
+Vị trí: scripts/deploy-ec2.sh, docs/migration-history.md, docs/production-deployment.md.
+Vì sao: hiện có tag image previous nhưng rollback production còn thủ công và migration đã chạy trước restart API; schema destructive change có thể khiến image cũ không chạy được.
+Cách làm: expand/contract migration, two-phase deploy cho đổi schema, artifact immutable bằng commit SHA, automated smoke và rollback rule; diễn tập restore staging.
+
+[FB-036] [P3] [CẢI TIẾN] QUALITY GATES CHO FE: A11Y, E2E, PERF BUDGET
+Vị trí: frontend/web, frontend/admin, frontend/zola-light, package.json, CI.
+Vì sao: lint+TypeScript+build không kiểm tra được keyboard navigation, modal focus, mobile responsive, ảnh lớn/reel performance hay luồng post thực tế.
+Cách làm: Playwright smoke (login, post privacy, like/comment, messaging, report, story), axe-core accessibility, Lighthouse/Web Vitals budget, bundle analysis cho Three.js/game routes.
+
+[FB-037] [P3] [CẢI TIẾN] TỰ ĐỘNG ĐÁNH GIÁ CVE/DEPENDENCY, SBOM VÀ IMAGE SCAN
+Vị trí: backend/Fookbase.Src/Fookbase.Api.csproj, frontend/*/package-lock.json, Dockerfile, CI.
+Vì sao: lockfile và package versions có thể phát sinh CVE mới theo thời gian; chỉ xem phiên bản không thể kết luận có lỗ hổng tại ngày review.
+Cách làm: chạy dotnet list package --vulnerable, npm audit theo môi trường build, Dependabot/Renovate và image scanning, ghi chính sách exception/upgrade.
+Tiêu chí: báo cáo CVE có bằng chứng từ advisory, không chặn vì false positives không liên quan.
+
+====================================================================
+5. NHỮNG ĐIỂM ĐANG TỐT — KHÔNG NÊN ĐẬP ĐI LÀM LẠI
+====================================================================
+
+- Tổ chức module theo domain Identity, Users, Posts, Friends, Feed, Messages, Media, Groups, Pages, Stories, v.v. tương đối rõ.
+- PostsUseCase đã bao transaction khi tạo/sửa post và đồng bộ media references; hướng này đúng với modular monolith.
+- Refresh token có random mạnh, hash trước khi lưu và conditional update khi rotate; race trong cùng refresh-token row được xử lý tốt hơn kiểu load+save đơn giản.
+- FriendsService dùng transaction và PostgreSQL advisory lock cho cặp user ở các luồng quan trọng.
+- Media kiểm tra ownership, status, file signature/magic prefix, size; Cloudinary authenticated assets; có background retry/cleanup.
+- Database có các indexes và cấu hình EF Core theo module; Feed có keyset frontier và giới hạn candidate.
+- Security: cấu hình JWT issuer/audience/key/lifetime; production validation CORS/hosts; HSTS/nosniff; rate limit; cookie refresh HttpOnly; user non-root trong Docker; DataProtection key ring persistent.
+- Mobile refresh token dùng Expo SecureStore thay vì AsyncStorage/plain localStorage.
+- Có migration history, deploy và restore runbook, health endpoints và request logging.
+
+====================================================================
+6. THỨ TỰ TRIỂN KHAI ĐỀ XUẤT (THEO PR NHỎ, KIỂM CHỨNG RỒI COMMIT)
+====================================================================
+
+Giai đoạn A — an toàn triển khai:
+  A1. FB-003 đưa test lên Git, tạo bộ test smoke bảo mật tối thiểu.
+  A2. FB-001 bật CI gate trước deploy (tránh làm đứt deploy hiện tại bằng cách thiết kế phụ thuộc rõ).
+  A3. FB-002 khắc phục expiry của Cloudinary + test quyền và TTL.
+  A4. FB-035 lập kế hoạch migration/backward compatibility và rollback.
+
+Giai đoạn B — correctness nhắn tin & auth:
+  B1. FB-005 idempotency clientMessageId.
+  B2. FB-006 chuẩn hóa delivered/ack/read semantics.
+  B3. FB-004 thêm outbox/fanout/reconciliation cho message.
+  B4. FB-007 batch gửi group chat; FB-015 push retry bền vững.
+  B5. FB-011/012/013 policy suspension, revoke SLA, multi-tab auth.
+  B6. FB-009/010 OTP hash và resend consistency.
+
+Giai đoạn C — dữ liệu/media/vận hành:
+  C1. FB-008 concurrent attach/delete media.
+  C2. FB-028 đối soát PostMedia/MediaReferences.
+  C3. FB-016 backup/restore media; FB-017 benchmark FFmpeg.
+  C4. FB-029/030/031 dashboards worker, dependencies, tracing.
+
+Giai đoạn D — scale/duy trì:
+  D1. FB-019/020 tách các class lớn từng use case.
+  D2. FB-021 chia sẻ API/auth/realtime package giữa 2 mobile app.
+  D3. FB-022 stale search; FB-023 realtime multi-instance; FB-024/025 game anti-cheat/throttle.
+  D4. FB-026/027 tối ưu SQL dựa trên đo đạc; FB-018/032 chốt module boundaries.
+  D5. FB-033/034/036/037 chất lượng dài hạn.
+
+Nguyên tắc làm: 1 issue/PR nhỏ; ghi before/after behavior; test pass; tạo commit rõ ràng. Không refactor kiến trúc lớn trước khi giải quyết P0/P1.
+
+====================================================================
+7. MA TRẬN TEST BẮT BUỘC ĐỂ XÁC NHẬN CÁC RỦI RO
+====================================================================
+
+SECURITY / AUTH:
+ [ ] Cookie refresh, SameSite/Secure qua proxy HTTPS thật
+ [ ] Login/refresh/logout trên web/admin/zola-light/mobile/zola-mobile
+ [ ] JWT cũ sau logout, reset password, ban/suspend theo policy
+ [ ] 3 browser tab refresh đồng thời và logout liên tab
+ [ ] OTP resend concurrent; offline DB/SMTP fail; failed-attempt threshold
+ [ ] Signed media URL sau 5 phút; thu hồi quyền; cache/CDN
+
+MESSAGE / REALTIME:
+ [ ] Gửi 10 request cùng ClientMessageId chỉ ghi 1 message
+ [ ] Tắt SignalR đúng lúc DB commit, API không làm ghi trùng
+ [ ] Recipient offline: delivered cursor không tăng sai
+ [ ] Nhóm 50 người, đo SQL query count và latency
+ [ ] Thử Expo fail/429/timeouts và khôi phục retry
+ [ ] 2 API instance: presence, notifications, room consistency
+
+MEDIA / POST:
+ [ ] 100 race attach-delete cùng media (không tạo dangling reference)
+ [ ] Khớp PostMedia/MediaReferences với Page/Group/Reel/Event/Album
+ [ ] Video MP4/WebM tại ngưỡng dung lượng, OOM/disk budget, retry
+ [ ] Backup-restore PostgreSQL + Cloudinary đầy đủ
+
+DEPLOY / OPERATIONS:
+ [ ] PR có test fail không deploy
+ [ ] Migration không tương thích bị chặn ở staging
+ [ ] Deploy lỗi, rollback app và dữ liệu có SOP diễn tập
+ [ ] Ngắt Cloudinary khi các API text/login vẫn còn phục vụ theo SLA
+ [ ] Smoke test sau deploy trên public domain và route app
+
+FE / MOBILE:
+ [ ] Tìm kiếm với response out-of-order, tránh stale data
+ [ ] Keyboard/focus/ARIA cho modal/story/reactions
+ [ ] Thiết bị mất mạng/reconnect/reload vẫn giữ trạng thái session hợp lệ
+ [ ] Load test feed/search và kiểm tra N+1 SQL thực tế
+
+====================================================================
+8. NGUỒN / ĐƯỜNG DẪN CHÍNH
+====================================================================
+
+GitHub repo:
+ https://github.com/lighthouse2815/fookbase-light/tree/862dd518cacaf9ad641a68790c89cdf95e9d063c
+
+CI / deployment:
+ https://github.com/lighthouse2815/fookbase-light/blob/main/.github/workflows/ci.yml
+ https://github.com/lighthouse2815/fookbase-light/blob/main/.github/workflows/deploy-ec2.yml
+ https://github.com/lighthouse2815/fookbase-light/blob/main/scripts/deploy-ec2.sh
+
+Security / media:
+ https://github.com/lighthouse2815/fookbase-light/blob/main/backend/Fookbase.Src/Code/Modules/Media/Services/CloudinaryObjectStorage.cs
+ https://github.com/lighthouse2815/fookbase-light/blob/main/backend/Fookbase.Src/Code/Modules/Identity/Services/OtpService.cs
+ https://github.com/lighthouse2815/fookbase-light/blob/main/backend/Fookbase.Src/Code/Modules/Identity/Middleware/AccountModerationMiddleware.cs
+ https://cloudinary.com/documentation/control_access_to_media
+
+Messenger:
+ https://github.com/lighthouse2815/fookbase-light/blob/main/backend/Fookbase.Src/Code/Modules/Messages/Services/MessagesService.cs
+ https://github.com/lighthouse2815/fookbase-light/blob/main/backend/Fookbase.Src/Code/Modules/Messages/Domain/Entities/ConversationParticipant.cs
+
+Lưu ý cuối: Đây là đánh giá theo commit cố định phía trên. Nếu repository thay đổi sau thời điểm này, phải đối chiếu lại vị trí dòng và trạng thái issue; không đánh dấu “đã sửa” chỉ vì có PR mà chưa chạy test.
