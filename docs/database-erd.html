@@ -1775,11 +1775,48 @@
       }
       const overview = activeModule.diagram;
       diagram.replaceChildren(document.getElementById(overview.template).content.cloneNode(true));
+      straightenConnections();
       document.getElementById('view-title').textContent = 'Tổng quan toàn bộ module ' + activeModule.name;
       const references = overview.tables.length - activeModule.tables.length;
       document.getElementById('view-count').textContent = `${activeModule.tables.length} bảng trong module${references ? ' + ' + references + ' bảng tham chiếu' : ''} · Hiển thị đầy đủ thuộc tính`;
       document.getElementById('view-note').textContent = overview.note;
       fit();
+    }
+
+    function straightenConnections() {
+      const nodes = [...diagram.querySelectorAll('[data-table]')].map(element => {
+        const { e: x, f: y } = element.transform.baseVal.consolidate().matrix;
+        const { width, height } = element.querySelector('.basic').getBBox();
+        return { name: element.dataset.table, x, y, width, height };
+      });
+      const paths = [...diagram.querySelectorAll('.edgePaths > path')];
+      const labels = new Map([...diagram.querySelectorAll('.edgeLabels [data-id]')].map(element => [element.dataset.id, element.closest('g.edgeLabel')]));
+      function boundary(node, dx, dy, offsetX, offsetY) {
+        const distance = Math.min(
+          dx ? (node.width / 2 - Math.sign(dx) * offsetX) / Math.abs(dx) : Infinity,
+          dy ? (node.height / 2 - Math.sign(dy) * offsetY) / Math.abs(dy) : Infinity
+        );
+        return { x: node.x + offsetX + dx * distance, y: node.y + offsetY + dy * distance };
+      }
+      for (const source of nodes) for (const target of nodes) {
+        if (source === target) continue;
+        const connections = paths.filter(path => path.dataset.id.startsWith(`L_${source.name}_${target.name}_`));
+        if (!connections.length) continue;
+        const length = Math.hypot(target.x - source.x, target.y - source.y);
+        const dx = (target.x - source.x) / length;
+        const dy = (target.y - source.y) / length;
+        connections.forEach((path, index) => {
+          // Các FK cùng nối một cặp bảng dùng các đoạn thẳng song song.
+          const limit = Math.min(source.width, source.height, target.width, target.height) / 4;
+          const lane = Math.max(-limit, Math.min(limit, (index - (connections.length - 1) / 2) * 32));
+          const start = boundary(source, dx, dy, -dy * lane, dx * lane);
+          const end = boundary(target, -dx, -dy, -dy * lane, dx * lane);
+          end.x -= dx * 4;
+          end.y -= dy * 4;
+          path.setAttribute('d', `M${start.x},${start.y} L${end.x},${end.y}`);
+          labels.get(path.dataset.id)?.setAttribute('transform', `translate(${(start.x + end.x) / 2}, ${(start.y + end.y) / 2})`);
+        });
+      }
     }
 
     function applyZoom() {
