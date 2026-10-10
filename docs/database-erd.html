@@ -1907,7 +1907,7 @@
       for (const node of diagram.querySelectorAll('[data-table]')) {
         const selected = node.dataset.table === name;
         node.classList.toggle('selected', selected);
-        if (selected) inspector.style.backgroundColor = getComputedStyle(node.querySelector('th')).backgroundColor;
+        if (selected) inspector.style.backgroundColor = `color-mix(in srgb, ${getComputedStyle(node.querySelector('th')).backgroundColor} 60%, white)`;
       }
       inspector.showModal();
     }
