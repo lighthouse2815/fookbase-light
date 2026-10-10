@@ -427,6 +427,30 @@
         "source": "flowchart LR\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    PhotoAlbums[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>PhotoAlbums</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='OwnerUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Name'><td class='identity-keys' /><td><code class='' title=''>Name</code></td><td class='column-type'>varchar(160)</td></tr><tr data-column='Description'><td class='identity-keys' /><td><code class='' title=''>Description</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='AlbumType'><td class='identity-keys' /><td><code class='' title=''>AlbumType</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AlbumMedia[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>AlbumMedia</th></tr></thead><tbody><tr data-column='AlbumId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>AlbumId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Caption'><td class='identity-keys' /><td><code class='' title=''>Caption</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>bigint</td></tr><tr data-column='AddedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AddedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"OwnerUserId · 1 → 0..N\"| PhotoAlbums\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| AlbumMedia\n    PhotoAlbums -->|\"AlbumId · 1 → 0..N\"| AlbumMedia\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
         "note": "2 bảng Photos và 2 bảng tham chiếu, mỗi bảng xuất hiện một lần với đầy đủ cột; 3 FK dùng nét liền. PhotoAlbums.OwnerUserId và AlbumMedia.MediaId RESTRICT; AlbumMedia.AlbumId CASCADE khi xóa vật lý album. UNIQUE (OwnerUserId, AlbumType) chỉ áp dụng với album hệ thống chưa xóa. Quy tắc quyền xem và một album custom cho mỗi ảnh được mô tả trong đặc tả."
       }
+    },
+    {
+      "id": "stories",
+      "name": "Stories",
+      "description": "Tin ảnh/video, thời gian hết hạn, lượt xem, cảm xúc và trả lời tin.",
+      "tables": [
+        "Stories",
+        "StoryMediaReferences",
+        "StoryViews",
+        "StoryReactions"
+      ],
+      "diagram": {
+        "template": "overview-stories",
+        "tables": [
+          "Stories",
+          "StoryMediaReferences",
+          "StoryViews",
+          "StoryReactions",
+          "AspNetUsers",
+          "MediaAssets"
+        ],
+        "source": "flowchart LR\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Stories[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>Stories</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Caption'><td class='identity-keys' /><td><code class='' title=''>Caption</code></td><td class='column-type'>varchar(2200)?</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>ExpiresAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    StoryViews[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>StoryViews</th></tr></thead><tbody><tr data-column='StoryId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>StoryId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ViewerUserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>ViewerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ViewedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ViewedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    StoryReactions[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>StoryReactions</th></tr></thead><tbody><tr data-column='StoryId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>StoryId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    StoryMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>StoryMediaReferences</th></tr></thead><tbody><tr data-column='StoryId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>StoryId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"AuthorUserId · 1 → 0..N\"| Stories\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| Stories\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| StoryMediaReferences\n    Stories -->|\"StoryId · 1 → 0..1\"| StoryMediaReferences\n    AspNetUsers -->|\"ViewerUserId · 1 → 0..N\"| StoryViews\n    Stories -->|\"StoryId · 1 → 0..N\"| StoryViews\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| StoryReactions\n    Stories -->|\"StoryId · 1 → 0..N\"| StoryReactions\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
+        "note": "4 bảng Stories và 2 bảng tham chiếu, mỗi bảng xuất hiện một lần với đầy đủ cột; 8 FK dùng đường thẳng. StoryMediaReferences.StoryId là PK kiêm FK nên quan hệ là 1 → 0..1. FK tới Users/Media dùng RESTRICT; FK của các bảng phụ thuộc tới Stories dùng CASCADE khi xóa vật lý tin. DELETE qua API chỉ xóa mềm tin và xóa hàng tham chiếu media; hết hạn không tự xóa hàng."
+      }
     }
   ],
   "tables": {
@@ -3809,6 +3833,315 @@
       "purpose": "Liên kết album với media, kèm chú thích, thứ tự và ngày thêm.",
       "module": "photos",
       "note": "PK ghép (AlbumId, MediaId). AlbumId → PhotoAlbums CASCADE; MediaId → MediaAssets RESTRICT. Một ảnh có thể xuất hiện trong nhiều album theo schema; quy tắc một album custom đang hoạt động cho mỗi ảnh được kiểm tra trong PhotosService, không phải UNIQUE MediaId. SortOrder là bigint, được cấp MAX+1 khi thêm; chưa có API sắp xếp lại. Caption nullable, tối đa 1000 ký tự."
+    },
+    "Stories": {
+      "name": "Stories",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "AuthorUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Caption",
+          "type": "character varying(2200)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "Privacy",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "ExpiresAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "DeletedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "AuthorUserId",
+            "ExpiresAtUtc",
+            "CreatedAtUtc",
+            "Id"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "ExpiresAtUtc",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "AuthorUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Tin ảnh/video",
+      "purpose": "Tin có tác giả, media, quyền riêng tư và thời gian hết hạn.",
+      "module": "stories",
+      "note": "Privacy dùng PostPrivacy: PUBLIC=0, FRIENDS=1, ONLY_ME=2; API nhận public, friends, onlyMe. Caption nullable, tối đa 2200 ký tự. AuthorUserId và MediaId có FK RESTRICT. LifetimeHours mặc định 24, lưu thành ExpiresAtUtc khi tạo. DELETE qua API là xóa mềm và xóa StoryMediaReferences; vẫn giữ views/reactions. Hết hạn chỉ ảnh hưởng truy vấn, không tự xóa dữ liệu."
+    },
+    "StoryMediaReferences": {
+      "name": "StoryMediaReferences",
+      "columns": [
+        {
+          "name": "StoryId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "AttachedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "StoryId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Stories",
+          "fields": [
+            "StoryId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Tham chiếu media của tin",
+      "purpose": "Hàng tham chiếu giữ media đang được tin sử dụng.",
+      "module": "stories",
+      "note": "StoryId là PK kiêm FK, không tự sinh giá trị: Stories (1) → StoryMediaReferences (0..1), CASCADE khi xóa vật lý tin. MediaId → MediaAssets RESTRICT và không UNIQUE. Khi tạo tin, service gán MediaId giống Stories.MediaId; database không có constraint buộc hai giá trị bằng nhau. DELETE tin xóa hàng này, hết hạn vẫn giữ để phục vụ archive."
+    },
+    "StoryViews": {
+      "name": "StoryViews",
+      "columns": [
+        {
+          "name": "StoryId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "ViewerUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "ViewedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "StoryId",
+        "ViewerUserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "StoryId",
+            "ViewedAtUtc",
+            "ViewerUserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "ViewerUserId",
+            "ViewedAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "ViewerUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Stories",
+          "fields": [
+            "StoryId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Lượt xem tin",
+      "purpose": "Mỗi người một hàng, lưu thời điểm xem gần nhất.",
+      "module": "stories",
+      "note": "PK ghép (StoryId, ViewerUserId); StoryId → Stories CASCADE, ViewerUserId → AspNetUsers RESTRICT. Xem lại cập nhật ViewedAtUtc, không tạo hàng mới. Tác giả không được tính lượt xem. GET tin và cảm xúc không tự ghi lượt xem; cần gọi POST view."
+    },
+    "StoryReactions": {
+      "name": "StoryReactions",
+      "columns": [
+        {
+          "name": "StoryId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Type",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "StoryId",
+        "UserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "StoryId",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "UserId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Stories",
+          "fields": [
+            "StoryId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Cảm xúc với tin",
+      "purpose": "Một cảm xúc hiện tại cho mỗi người trên mỗi tin.",
+      "module": "stories",
+      "note": "PK ghép (StoryId, UserId); StoryId → Stories CASCADE, UserId → AspNetUsers RESTRICT. Type: LIKE=0, LOVE=1, HAHA=2, WOW=3, SAD=4, ANGRY=5. Đổi cảm xúc cập nhật Type và CreatedAtUtc. Không được react tin của mình; đặt/đổi cảm xúc thông báo chủ tin, gỡ cảm xúc không thu hồi notification."
     }
   }
 }
@@ -5981,6 +6314,658 @@
         "Services/PhotosService.cs",
         "Domain/Entities/PhotoAlbum.cs",
         "../Posts/Services/PostsService.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <template id="overview-stories"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-stories" width="1460" height="920" viewBox="0 0 1460 920" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Stories" data-layout="stories"><title>Stories · 4 bảng chính, 2 bảng tham chiếu và 8 FK</title><desc>Stories ở trung tâm, AspNetUsers bên trái và MediaAssets bên phải. StoryViews phía trên Users, StoryMediaReferences phía trên Media, StoryReactions phía dưới Stories. Sáu bảng hiển thị đủ cột và mỗi bảng chỉ xuất hiện một lần. Tám FK dùng đường thẳng; mỗi tin có tối đa một StoryMediaReference.</desc><style>
+#svg-overview-stories { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-stories .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-stories .node .label { color: #233044; }
+#svg-overview-stories .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-stories .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-stories .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-stories .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-stories .identity-table code { font: inherit; }
+#svg-overview-stories .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-stories .identity-keys { text-align: center; }
+#svg-overview-stories .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-stories .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-stories .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-stories .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-stories .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-stories .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-stories .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-stories .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+
+#svg-overview-stories .reference-caption { font: 12px Arial, sans-serif; fill: #748079; }
+</style><defs><marker id="stories-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="stories-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M370.00,385.00 L550.00,385.00" id="L_AspNetUsers_Stories_AuthorUserId" data-id="L_AspNetUsers_Stories_AuthorUserId" data-principal="AspNetUsers" data-dependent="Stories" data-fields="AuthorUserId" data-kind="fk" class="relation" marker-start="url(#stories-one)" marker-end="url(#stories-many)"><title>AspNetUsers (1) → Stories (0..N) · AuthorUserId · Restrict</title></path><path d="M1080.00,440.00 L900.00,440.00" id="L_MediaAssets_Stories_MediaId" data-id="L_MediaAssets_Stories_MediaId" data-principal="MediaAssets" data-dependent="Stories" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#stories-one)" marker-end="url(#stories-many)"><title>MediaAssets (1) → Stories (0..N) · MediaId · Restrict</title></path><path d="M1255.00,210.00 L1255.00,126.00" id="L_MediaAssets_StoryMediaReferences_MediaId" data-id="L_MediaAssets_StoryMediaReferences_MediaId" data-principal="MediaAssets" data-dependent="StoryMediaReferences" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#stories-one)" marker-end="url(#stories-many)"><title>MediaAssets (1) → StoryMediaReferences (0..N) · MediaId · Restrict</title></path><path d="M900.00,305.00 L1080.00,95.00" id="L_Stories_StoryMediaReferences_StoryId" data-id="L_Stories_StoryMediaReferences_StoryId" data-principal="Stories" data-dependent="StoryMediaReferences" data-fields="StoryId" data-kind="fk" class="relation" marker-start="url(#stories-one)" marker-end="url(#stories-many)"><title>Stories (1) → StoryMediaReferences (0..1) · StoryId · Cascade</title></path><path d="M195.00,235.00 L195.00,126.00" id="L_AspNetUsers_StoryViews_ViewerUserId" data-id="L_AspNetUsers_StoryViews_ViewerUserId" data-principal="AspNetUsers" data-dependent="StoryViews" data-fields="ViewerUserId" data-kind="fk" class="relation" marker-start="url(#stories-one)" marker-end="url(#stories-many)"><title>AspNetUsers (1) → StoryViews (0..N) · ViewerUserId · Restrict</title></path><path d="M550.00,300.00 L370.00,95.00" id="L_Stories_StoryViews_StoryId" data-id="L_Stories_StoryViews_StoryId" data-principal="Stories" data-dependent="StoryViews" data-fields="StoryId" data-kind="fk" class="relation" marker-start="url(#stories-one)" marker-end="url(#stories-many)"><title>Stories (1) → StoryViews (0..N) · StoryId · Cascade</title></path><path d="M370.00,615.00 L550.00,740.00" id="L_AspNetUsers_StoryReactions_UserId" data-id="L_AspNetUsers_StoryReactions_UserId" data-principal="AspNetUsers" data-dependent="StoryReactions" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#stories-one)" marker-end="url(#stories-many)"><title>AspNetUsers (1) → StoryReactions (0..N) · UserId · Restrict</title></path><path d="M725.00,511.00 L725.00,685.00" id="L_Stories_StoryReactions_StoryId" data-id="L_Stories_StoryReactions_StoryId" data-principal="Stories" data-dependent="StoryReactions" data-fields="StoryId" data-kind="fk" class="relation" marker-start="url(#stories-one)" marker-end="url(#stories-many)"><title>Stories (1) → StoryReactions (0..N) · StoryId · Cascade</title></path></g><g class="edgeLabels"><text x="398.00" y="401.00" class="cardinality" text-anchor="middle">1</text><text x="522.00" y="377.00" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="375.00" class="relation-label" text-anchor="middle">AuthorUserId</text><text x="1052.00" y="432.00" class="cardinality" text-anchor="middle">1</text><text x="928.00" y="456.00" class="cardinality" text-anchor="middle">0..N</text><text x="990.00" y="430.00" class="relation-label" text-anchor="middle">MediaId</text><text x="1267.00" y="186.00" class="cardinality" text-anchor="middle">1</text><text x="1243.00" y="158.00" class="cardinality" text-anchor="middle">0..N</text><text x="1271.00" y="158.00" class="relation-label" text-anchor="start">MediaId</text><text x="927.33" y="295.55" class="cardinality" text-anchor="middle">1</text><text x="1052.67" y="112.45" class="cardinality" text-anchor="middle">0..1</text><text x="990.00" y="190.00" class="relation-label" text-anchor="middle">StoryId</text><text x="207.00" y="211.00" class="cardinality" text-anchor="middle">1</text><text x="183.00" y="158.00" class="cardinality" text-anchor="middle">0..N</text><text x="211.00" y="170.50" class="relation-label" text-anchor="start">ViewerUserId</text><text x="538.50" y="275.04" class="cardinality" text-anchor="middle">1</text><text x="392.00" y="127.96" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="187.50" class="relation-label" text-anchor="middle">StoryId</text><text x="386.15" y="644.83" class="cardinality" text-anchor="middle">1</text><text x="528.00" y="718.17" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="667.50" class="relation-label" text-anchor="middle">UserId</text><text x="713.00" y="543.00" class="cardinality" text-anchor="middle">1</text><text x="737.00" y="661.00" class="cardinality" text-anchor="middle">0..N</text><text x="741.00" y="588.00" class="relation-label" text-anchor="start">StoryId</text><text x="20.00" y="217.00" class="reference-caption" text-anchor="start">Identity · bảng tham chiếu</text><text x="550.00" y="267.00" class="reference-caption" text-anchor="start">Stories · bảng trong module</text><text x="1080.00" y="192.00" class="reference-caption" text-anchor="start">Media · bảng tham chiếu</text></g><g class="nodes"><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(195.0, 456.0)"><rect class="basic label-container" x="-175.0" y="-221.0" width="350" height="442" rx="5" ry="5" style="stroke:#54a7eb" /><g class="label" transform="translate(-175.0, -221.0)"><foreignObject width="350" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#d6eaff;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Stories" role="button" tabindex="0" aria-label="Xem chi tiết bảng Stories" transform="translate(725.0, 398.0)"><rect class="basic label-container" x="-175.0" y="-113.0" width="350" height="226" rx="5" ry="5" style="stroke:#e5a11b" /><g class="label" transform="translate(-175.0, -113.0)"><foreignObject width="350" height="226"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:226px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fff0c2;color:#182437">Stories</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AuthorUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">AuthorUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="Caption"><td class="identity-keys" /><td><code class="" title="">Caption</code></td><td class="column-type">varchar(2200)?</td></tr><tr data-column="Privacy"><td class="identity-keys" /><td><code class="" title="">Privacy</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="ExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">ExpiresAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="StoryViews" role="button" tabindex="0" aria-label="Xem chi tiết bảng StoryViews" transform="translate(195.0, 73.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">StoryViews</th></tr></thead><tbody><tr data-column="StoryId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">StoryId</code></td><td class="column-type">uuid</td></tr><tr data-column="ViewerUserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">ViewerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="ViewedAtUtc"><td class="identity-keys" /><td><code class="" title="">ViewedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="StoryReactions" role="button" tabindex="0" aria-label="Xem chi tiết bảng StoryReactions" transform="translate(725.0, 750.0)"><rect class="basic label-container" x="-175.0" y="-65.0" width="350" height="130" rx="5" ry="5" style="stroke:#f15362" /><g class="label" transform="translate(-175.0, -65.0)"><foreignObject width="350" height="130"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:130px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#ffd3d8;color:#182437">StoryReactions</th></tr></thead><tbody><tr data-column="StoryId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">StoryId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Type"><td class="identity-keys" /><td><code class="" title="">Type</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="StoryMediaReferences" role="button" tabindex="0" aria-label="Xem chi tiết bảng StoryMediaReferences" transform="translate(1255.0, 73.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">StoryMediaReferences</th></tr></thead><tbody><tr data-column="StoryId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">StoryId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="AttachedAtUtc"><td class="identity-keys" /><td><code class="" title="">AttachedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(1255.0, 467.0)"><rect class="basic label-container" x="-175.0" y="-257.0" width="350" height="514" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -257.0)"><foreignObject width="350" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(20, 740)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="stories-specification" type="application/json">
+{
+  "title": "Tin đang hoạt động, lượt xem và kho lưu trữ",
+  "purpose": "Stories cho phép đăng tin bằng ảnh hoặc video đã sẵn sàng, duyệt tin, ghi nhận lượt xem, thả cảm xúc, trả lời qua tin nhắn và xem lại tin hết hạn của mình.",
+  "scope": "Bao phủ 4 entity Stories và 12 endpoint của StoriesController. ERD hiển thị đầy đủ Stories, StoryMediaReferences, StoryViews, StoryReactions cùng AspNetUsers và MediaAssets, mỗi bảng một lần. Friends cung cấp quyền xem theo bạn bè/chặn; Messages xử lý trả lời; Notifications xử lý cảm xúc. Các bảng tích hợp được nêu trong đặc tả. Thời gian hết hạn được kiểm tra khi truy vấn; module không có worker tự xóa tin khi hết hạn.",
+  "usecasesTitle": "Đăng tin, xem tin và tương tác",
+  "groups": [
+    {
+      "id": "stories-author",
+      "name": "Quản lý tin của mình",
+      "actor": "author",
+      "description": "Tạo, xóa mềm tin, xem kho tin hết hạn và danh sách người đã xem."
+    },
+    {
+      "id": "stories-read",
+      "name": "Duyệt và mở tin",
+      "actor": "viewer",
+      "caseSpacing": 132,
+      "description": "Duyệt khay tin, mở chi tiết và lấy URL đọc media hoặc poster. Quyền truy cập được kiểm tra theo từng thao tác."
+    },
+    {
+      "id": "stories-interact",
+      "name": "Lượt xem và tương tác",
+      "actor": "viewer",
+      "caseSpacing": 132,
+      "description": "Ghi nhận lần xem gần nhất, đặt/gỡ cảm xúc và trả lời tin bằng Messages."
+    }
+  ],
+  "actors": [
+    {
+      "id": "author",
+      "name": "Chủ tin",
+      "role": "Đã đăng nhập; đăng media của mình, xóa tin, xem kho lưu trữ và danh sách người xem tin của mình."
+    },
+    {
+      "id": "viewer",
+      "name": "Người xem",
+      "role": "Đã đăng nhập; xem và tương tác khi tin còn hiệu lực, đủ quyền riêng tư và không bị chặn."
+    },
+    {
+      "id": "friends",
+      "name": "Module Friends",
+      "role": "GetAccessSnapshotAsync cung cấp bạn bè và danh sách chặn theo cả hai chiều để Stories kiểm tra truy cập."
+    },
+    {
+      "id": "media",
+      "name": "Module Media",
+      "role": "Kiểm tra media thuộc người đăng, READY, chưa xóa; cấp URL đọc ảnh/video hoặc poster video."
+    },
+    {
+      "id": "notifications",
+      "name": "Notifications",
+      "role": "Tạo/làm mới thông báo STORY_REACTION cho chủ tin, rồi phát thông báo sau khi lưu."
+    },
+    {
+      "id": "messages",
+      "name": "Module Messages",
+      "role": "Tạo hoặc dùng lại hội thoại DIRECT, kiểm tra chính sách nhắn tin và lưu lời trả lời với Message.StoryId."
+    }
+  ],
+  "rules": [
+    {
+      "text": "Cả 12 endpoint StoriesController yêu cầu đăng nhập; claim sub phải parse được thành GUID. Thiếu xác thực hoặc claim hợp lệ trả 401.",
+      "source": "Controllers/StoriesController.cs"
+    },
+    {
+      "text": "Caption tùy chọn, tối đa 2200 ký tự sau trim; chuỗi trống trở thành null, giữ xuống dòng bên trong. Privacy nhận public, friends, onlyMe, không phân biệt hoa thường và trim khoảng trắng; only_me không được StoriesService chấp nhận. Giá trị lưu: PUBLIC=0, FRIENDS=1, ONLY_ME=2.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "ExpiresAtUtc được đặt bằng thời điểm tạo cộng Stories.LifetimeHours, mặc định 24 giờ. Cấu hình hợp lệ từ 1 đến 168 giờ; thay đổi cấu hình không tính lại ExpiresAtUtc của các hàng đã tạo.",
+      "source": "Config/StoriesOptions.cs"
+    },
+    {
+      "text": "Media phải thuộc người đăng, READY và chưa xóa. IMAGE được chấp nhận trực tiếp. VIDEO cần ProcessedObjectKey, PosterObjectKey, DurationMs, Width và Height; duration không vượt MaximumStoryVideoDurationMs, mặc định 60000 ms và có thể cấu hình.",
+      "source": "../Media/Services/MediaService.cs"
+    },
+    {
+      "text": "Tạo Stories và StoryMediaReferences trong cùng transaction. Stories có FK RESTRICT tới tác giả và media. StoryMediaReferences.StoryId là PK kiêm FK CASCADE, nên mỗi tin có tối đa một hàng tham chiếu; MediaId RESTRICT về MediaAssets.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "StoryMediaReferences.MediaId và Stories.MediaId được gán cùng giá trị trong luồng tạo tin. Database có hai FK riêng tới MediaAssets, không có constraint buộc hai cột ở hai bảng phải bằng nhau. Khi xóa vật lý tin, CASCADE chỉ xóa các hàng phụ thuộc Stories.",
+      "source": "Domain/Entities/StoryMediaReference.cs"
+    },
+    {
+      "text": "Khay tin chỉ gồm tin của chính mình và bạn bè, chưa xóa, ExpiresAtUtc > now; bạn bè chỉ thấy PUBLIC/FRIENDS và phải không bị chặn. Tin PUBLIC của người lạ không tự xuất hiện trong khay, nhưng có thể truy cập trực tiếp khi biết Id và không bị chặn.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "Khay gom theo tác giả; tin trong mỗi nhóm theo CreatedAtUtc/Id tăng dần. Nhóm có tin chưa xem xếp trước, tiếp đến nhóm của chính mình trong cùng mức chưa xem, rồi thời điểm tin mới nhất giảm dần.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "Chi tiết, ghi nhận xem, đặt/gỡ cảm xúc và trả lời yêu cầu tin chưa hết hạn, kể cả với chủ tin. PUBLIC cho người đăng nhập không bị chặn; FRIENDS cần bạn bè; ONLY_ME chỉ chủ tin. Tin thiếu, đã xóa, hết hạn hoặc không đủ quyền trả 404 story_not_found.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "Chủ tin xem tin hết hạn qua archive và vẫn lấy URL media/poster của tin chưa xóa qua media/access. Người khác không được mở media của tin hết hạn. Hết hạn không tự xóa StoryMediaReferences, StoryViews, StoryReactions hoặc tệp.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "DELETE tin chỉ dành cho tác giả, kể cả tin đã hết hạn: ghi DeletedAtUtc và xóa StoryMediaReferences. StoryViews, StoryReactions và Stories.MediaId được giữ. MediaAsset cùng tệp không bị xóa trong thao tác này; xóa media riêng còn phụ thuộc các tham chiếu khác.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "StoryViews có PK (StoryId, ViewerUserId), mỗi người xem một hàng. Xem lại cập nhật ViewedAtUtc; chủ tin gọi view nhận thành công nhưng không tạo lượt xem. GET chi tiết/khay và thả cảm xúc không tự ghi lượt xem.",
+      "source": "Domain/Entities/StoryView.cs"
+    },
+    {
+      "text": "Chỉ chủ tin chưa bị xóa được xem danh sách viewers, kể cả tin đã hết hạn. Sắp ViewedAtUtc/ViewerUserId giảm dần, kèm cảm xúc hiện tại của từng người xem. ViewerCount chỉ có trong response gửi chủ tin, còn người khác nhận null.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "StoryReactions có PK (StoryId, UserId); một người có một cảm xúc mỗi tin. Type: LIKE=0, LOVE=1, HAHA=2, WOW=3, SAD=4, ANGRY=5. Đổi cảm xúc cập nhật Type và CreatedAtUtc. Chủ tin không được thả cảm xúc vào tin của mình.",
+      "source": "Domain/Entities/StoryReaction.cs"
+    },
+    {
+      "text": "Đặt/đổi cảm xúc queue thông báo STORY_REACTION tới chủ tin, lưu database rồi publish. Notifications làm mới thông báo cùng người gửi, người nhận, loại và entity nếu còn chưa đọc. Gỡ cảm xúc không xóa lượt xem hoặc thu hồi thông báo; không có cảm xúc vẫn trả 204 khi đủ quyền truy cập tin.",
+      "source": "../Notifications/Services/NotificationService.cs"
+    },
+    {
+      "text": "Trả lời tin yêu cầu nội dung không trống, tối đa 5000 ký tự sau trim và không được trả lời tin của mình. Messages áp dụng chính sách DIRECT: hai người phải là bạn bè, không chặn; quyền xem tin PUBLIC không tự cho phép gửi tin nhắn.",
+      "source": "../Messages/Services/MessagesService.cs"
+    },
+    {
+      "text": "Archive và viewers mặc định limit=30, giới hạn 1–100; sai limit trả 400 invalid_pagination. Cursor rỗng là trang đầu; cursor không giải mã Base64Url/JSON được trả invalid_story_archive_cursor hoặc invalid_story_viewer_cursor.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "LoadResponsesAsync lọc media không READY, đã xóa hoặc video thiếu khóa processed/poster khỏi khay/archive. Các luồng trả một StoryResponse đang lấy phần tử đầu của danh sách; trường hợp media bị lọc hết chưa được xử lý thành lỗi nghiệp vụ riêng trong code hiện tại.",
+      "source": "Services/StoriesService.cs"
+    },
+    {
+      "text": "media/access và media/poster/access trả JSON với Url, ExpiresAtUtc, MediaType, ContentType, không redirect. Poster chỉ được cấp cho VIDEO READY có PosterObjectKey. URL hết hạn trong response được tính theo cấu hình Media.",
+      "source": "../Media/Services/MediaService.cs"
+    },
+    {
+      "text": "Các FK của StoryViews và StoryReactions tới Stories dùng CASCADE, tới AspNetUsers dùng RESTRICT. Không có API PATCH tin để sửa caption hoặc privacy sau khi đăng trong controller hiện tại.",
+      "source": "Controllers/StoriesController.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-ST-01",
+      "name": "Đăng tin",
+      "group": "stories-author",
+      "support": [
+        "media"
+      ],
+      "goal": "Tạo tin từ ảnh hoặc video đã upload và sẵn sàng của chính mình.",
+      "actor": "Chủ tin",
+      "preconditions": "Đã đăng nhập; MediaId khác Guid.Empty, media thuộc người gọi và đáp ứng điều kiện Stories.",
+      "steps": [
+        "Gửi MediaId, Caption tùy chọn và Privacy.",
+        "Kiểm tra request, caption/privacy và gọi Media.ValidateStoryMediaAsync.",
+        "Đặt CreatedAtUtc=now, ExpiresAtUtc=now + LifetimeHours.",
+        "Lưu Stories và StoryMediaReferences trong một transaction.",
+        "Commit rồi trả 201, Location /api/stories/{id} và StoryResponse."
+      ],
+      "alternatives": [
+        "MediaId rỗng, thiếu privacy hoặc caption quá dài: 400 validation_failed.",
+        "Privacy ngoài public/friends/onlyMe: 400 invalid_story_privacy; kiểm tra caption tại service trả invalid_story_caption.",
+        "Media không READY/đã xóa/thiếu: 409 invalid_story_media; sai chủ sở hữu: 403 media_not_owned.",
+        "Video thiếu dữ liệu xử lý: 409 invalid_story_video; quá giới hạn thời lượng: 400 invalid_story_duration.",
+        "Lưu transaction lỗi: rollback; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Có tin và một hàng StoryMediaReferences; chưa tạo StoryView hoặc StoryReaction.",
+      "endpoints": [
+        "POST /api/stories"
+      ],
+      "tables": [
+        "Stories",
+        "StoryMediaReferences",
+        "MediaAssets",
+        "AspNetUsers",
+        "UserProfiles"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "DTOs/Requests/CreateStoryRequest.cs",
+        "Services/StoriesService.cs",
+        "Common/StoryNormalization.cs",
+        "Config/StoriesOptions.cs",
+        "../Media/Services/MediaService.cs",
+        "../Media/Config/MediaOptions.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-02",
+      "name": "Xóa tin",
+      "group": "stories-author",
+      "goal": "Xóa mềm tin của mình và giải phóng hàng tham chiếu media của tin.",
+      "actor": "Chủ tin",
+      "preconditions": "Đã đăng nhập; tin tồn tại, chưa bị xóa và thuộc người gọi; tin có thể đang hoạt động hoặc đã hết hạn.",
+      "steps": [
+        "Gửi yêu cầu DELETE theo StoryId.",
+        "Tìm tin và xác minh AuthorUserId.",
+        "Ghi DeletedAtUtc, xóa StoryMediaReferences theo StoryId.",
+        "Lưu tin và trả 204."
+      ],
+      "alternatives": [
+        "Tin thiếu hoặc đã xóa: 404 story_not_found.",
+        "Không phải tác giả: 403 story_delete_forbidden.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Tin bị ẩn cả ở khay, chi tiết, archive và đường dẫn media. Views/reactions còn trong database; metadata và tệp media được giữ.",
+      "endpoints": [
+        "DELETE /api/stories/{storyId:guid}"
+      ],
+      "tables": [
+        "Stories",
+        "StoryMediaReferences",
+        "StoryViews",
+        "StoryReactions",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "Domain/Entities/Story.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-03",
+      "name": "Xem kho tin hết hạn",
+      "group": "stories-author",
+      "goal": "Xem lại tin hết hạn chưa bị xóa của mình theo trang.",
+      "actor": "Chủ tin",
+      "preconditions": "Đã đăng nhập; limit hợp lệ, cursor tùy chọn giải mã được.",
+      "steps": [
+        "Gửi cursor tùy chọn và limit mặc định 30.",
+        "Lọc AuthorUserId=người gọi, DeletedAtUtc=null và ExpiresAtUtc <= now.",
+        "Áp dụng cursor CreatedAtUtc/Id giảm dần, lấy limit + 1 ứng viên.",
+        "Tạo response với media hợp lệ, lượt xem và cảm xúc.",
+        "Trả 200 với Items, NextCursor; chủ tin dùng media/access để mở media tin đã hết hạn."
+      ],
+      "alternatives": [
+        "limit ngoài 1–100: 400 invalid_pagination; cursor sai: 400 invalid_story_archive_cursor.",
+        "Không có tin hết hạn: Items rỗng, NextCursor=null.",
+        "Media không còn hợp lệ bị lọc khỏi Items; cursor được tính từ trang ứng viên, nên Items có thể ít hơn limit.",
+        "GET /api/stories/{id} vẫn trả 404 với tin hết hạn, kể cả chủ tin; sử dụng archive để đọc tin đó."
+      ],
+      "postconditions": "Không đổi dữ liệu; chỉ trả tin hết hạn của chính người gọi.",
+      "endpoints": [
+        "GET /api/stories/archive"
+      ],
+      "tables": [
+        "Stories",
+        "MediaAssets",
+        "StoryViews",
+        "StoryReactions",
+        "UserProfiles"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "DTOs/Responses/StoryArchivePageResponse.cs",
+        "DTOs/Responses/StoryResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-04",
+      "name": "Xem danh sách người xem",
+      "group": "stories-author",
+      "goal": "Lấy danh sách những người đã xem tin của mình, kèm lần xem gần nhất và cảm xúc hiện tại.",
+      "actor": "Chủ tin",
+      "preconditions": "Đã đăng nhập; tin thuộc người gọi và chưa bị xóa; chấp nhận tin đã hết hạn.",
+      "steps": [
+        "Gửi StoryId, cursor tùy chọn và limit mặc định 30.",
+        "Kiểm tra phân trang, sự tồn tại của tin và tác giả.",
+        "Lấy StoryViews theo ViewedAtUtc/ViewerUserId giảm dần, sau cursor.",
+        "Ghép UserProfiles và StoryReactions cho những người trong trang.",
+        "Trả 200 với Items và NextCursor; hồ sơ thiếu dùng unknown/Unknown."
+      ],
+      "alternatives": [
+        "Sai limit: 400 invalid_pagination; cursor sai: 400 invalid_story_viewer_cursor.",
+        "Tin thiếu/đã xóa: 404 story_not_found; không phải tác giả: 403 story_viewers_forbidden.",
+        "Chưa có lượt xem: Items rỗng, NextCursor=null."
+      ],
+      "postconditions": "Trả mỗi người một hàng theo PK StoryViews; không tạo lượt xem mới.",
+      "endpoints": [
+        "GET /api/stories/{storyId:guid}/viewers"
+      ],
+      "tables": [
+        "Stories",
+        "StoryViews",
+        "StoryReactions",
+        "UserProfiles",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "DTOs/Responses/StoryViewersPageResponse.cs",
+        "DTOs/Responses/StoryViewerResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-05",
+      "name": "Duyệt khay tin",
+      "group": "stories-read",
+      "support": [
+        "friends"
+      ],
+      "goal": "Xem tin còn hiệu lực của mình và bạn bè, ưu tiên nhóm có tin chưa xem.",
+      "actor": "Người xem",
+      "preconditions": "Đã đăng nhập.",
+      "steps": [
+        "Gửi GET /api/stories.",
+        "Lấy snapshot bạn bè và chặn từ Friends.",
+        "Lọc tin chưa xóa, chưa hết hạn của mình và bạn bè đủ quyền PUBLIC/FRIENDS.",
+        "Tạo response, gom theo tác giả; tin trong nhóm theo CreatedAtUtc/Id tăng dần.",
+        "Xếp nhóm có tin chưa xem trước, sau đó ưu tiên chính mình trong cùng mức và thời điểm tin mới nhất; trả 200."
+      ],
+      "alternatives": [
+        "Bạn bè bị chặn hai chiều hoặc tin ONLY_ME của người khác không xuất hiện.",
+        "Tin PUBLIC của người lạ không được đưa vào khay.",
+        "Media không còn READY hoặc video thiếu khóa processed/poster bị lọc khỏi response.",
+        "Không có tin hợp lệ: Items rỗng; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Không ghi StoryViews; client gọi endpoint view khi cần ghi nhận xem.",
+      "endpoints": [
+        "GET /api/stories"
+      ],
+      "tables": [
+        "Stories",
+        "StoryViews",
+        "StoryReactions",
+        "MediaAssets",
+        "UserProfiles",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "../Friends/Services/FriendsService.cs",
+        "DTOs/Responses/StoryTrayResponse.cs",
+        "DTOs/Responses/StoryTrayAuthorResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-06",
+      "name": "Xem chi tiết tin",
+      "group": "stories-read",
+      "support": [
+        "friends"
+      ],
+      "goal": "Đọc tin đang hoạt động, metadata media, trạng thái đã xem và cảm xúc.",
+      "actor": "Người xem",
+      "preconditions": "Đã đăng nhập; tin chưa xóa, chưa hết hạn và đủ quyền xem; media có thể tạo StoryResponse.",
+      "steps": [
+        "Gửi StoryId.",
+        "Kiểm tra tin và CanAccessAsync: tác giả hoặc privacy/bạn bè/chặn phù hợp.",
+        "Nạp hồ sơ tác giả, media, views/reactions.",
+        "Trả 200 với StoryResponse; ViewerCount chỉ gửi tác giả, CanManage xác định người gọi là tác giả."
+      ],
+      "alternatives": [
+        "Tin thiếu/đã xóa/hết hạn/không đủ quyền hoặc bị chặn: 404 story_not_found.",
+        "Người lạ được xem tin PUBLIC còn hạn nếu không bị chặn, dù tin không có trong khay của họ.",
+        "Media bị lọc hết: code hiện tại chưa xử lý danh sách response rỗng trước khi lấy phần tử đầu.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Trả thông tin tin; thao tác GET không tự ghi lượt xem.",
+      "endpoints": [
+        "GET /api/stories/{storyId:guid}"
+      ],
+      "tables": [
+        "Stories",
+        "StoryViews",
+        "StoryReactions",
+        "MediaAssets",
+        "UserProfiles",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "../Friends/Services/FriendsService.cs",
+        "DTOs/Responses/StoryResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-07",
+      "name": "Lấy URL media của tin",
+      "group": "stories-read",
+      "support": [
+        "friends",
+        "media"
+      ],
+      "goal": "Lấy URL đọc ảnh hoặc video của tin sau khi kiểm tra quyền truy cập.",
+      "actor": "Người xem; chủ tin có thể mở media của tin hết hạn",
+      "preconditions": "Đã đăng nhập; tin chưa xóa; người xem khác phải đủ quyền và tin còn hạn; Media cấp được URL đọc.",
+      "steps": [
+        "Gửi StoryId tới media/access.",
+        "Kiểm tra CanAccessAsync với allowExpiredForAuthor=true.",
+        "Gọi Media.CreateReadUrlAsync bằng Stories.MediaId.",
+        "Trả 200 JSON với MediaId, Url, ExpiresAtUtc, MediaType và ContentType."
+      ],
+      "alternatives": [
+        "Tin thiếu/đã xóa/không đủ quyền hoặc media không đọc được: 404 story_not_found.",
+        "Tin hết hạn: chỉ tác giả được phép; người khác nhận 404.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "URL đọc được cấp, database không thay đổi; client mở URL từ JSON.",
+      "endpoints": [
+        "GET /api/stories/{storyId:guid}/media/access"
+      ],
+      "tables": [
+        "Stories",
+        "MediaAssets",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "../Media/Services/MediaService.cs",
+        "DTOs/Responses/StoryMediaAccessResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-08",
+      "name": "Lấy URL poster video",
+      "group": "stories-read",
+      "support": [
+        "friends",
+        "media"
+      ],
+      "goal": "Lấy URL ảnh poster của video trong tin.",
+      "actor": "Người xem; chủ tin có thể mở poster của tin hết hạn",
+      "preconditions": "Đã đăng nhập; có quyền mở media tin; media VIDEO, READY, chưa xóa và có PosterObjectKey.",
+      "steps": [
+        "Gửi StoryId tới media/poster/access.",
+        "Kiểm tra quyền tin, cho phép tác giả mở tin hết hạn chưa xóa.",
+        "Gọi Media.CreatePosterReadUrlAsync.",
+        "Trả 200 JSON với URL poster, hạn URL, MediaType và ContentType theo kết quả Media."
+      ],
+      "alternatives": [
+        "Media là ảnh, thiếu poster, không READY hoặc đã xóa: 404 story_not_found.",
+        "Tin không đủ quyền, đã xóa hoặc hết hạn đối với người khác: 404.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Client nhận URL poster; không tạo media hoặc lượt xem mới.",
+      "endpoints": [
+        "GET /api/stories/{storyId:guid}/media/poster/access"
+      ],
+      "tables": [
+        "Stories",
+        "MediaAssets",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "../Media/Services/MediaService.cs",
+        "DTOs/Responses/StoryMediaAccessResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-09",
+      "name": "Ghi nhận lượt xem",
+      "group": "stories-interact",
+      "goal": "Ghi nhận hoặc làm mới lần xem gần nhất của người xem đối với tin còn hiệu lực.",
+      "actor": "Người xem",
+      "preconditions": "Đã đăng nhập; có quyền truy cập tin chưa xóa, chưa hết hạn.",
+      "steps": [
+        "Gửi POST theo StoryId tới view.",
+        "Kiểm tra tin và quyền xem.",
+        "Nếu người gọi là tác giả, trả thành công ngay.",
+        "Với người khác, tạo StoryView mới hoặc cập nhật ViewedAtUtc của cặp hiện có.",
+        "Lưu và trả 204."
+      ],
+      "alternatives": [
+        "Tin thiếu, hết hạn, đã xóa, bị chặn hoặc không đủ quyền: 404 story_not_found.",
+        "Gọi nhiều lần cập nhật một hàng, không tăng số người xem riêng biệt.",
+        "Chủ tin không được tính vào ViewerCount; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Người xem khác có một hàng theo PK (StoryId, ViewerUserId); phản ánh lần xem gần nhất, không tạo cảm xúc.",
+      "endpoints": [
+        "POST /api/stories/{storyId:guid}/view"
+      ],
+      "tables": [
+        "Stories",
+        "StoryViews",
+        "AspNetUsers",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "Domain/Entities/StoryView.cs",
+        "../Friends/Services/FriendsService.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-10",
+      "name": "Đặt hoặc đổi cảm xúc",
+      "group": "stories-interact",
+      "support": [
+        "notifications"
+      ],
+      "goal": "Đặt một cảm xúc vào tin của người khác và thông báo tới chủ tin.",
+      "actor": "Người xem",
+      "preconditions": "Đã đăng nhập; tin của người khác đang hoạt động và đủ quyền truy cập; Type hợp lệ.",
+      "steps": [
+        "Gửi Type thuộc like/love/haha/wow/sad/angry.",
+        "Parse cảm xúc, kiểm tra quyền tin và không phải tin của mình.",
+        "Tạo StoryReaction hoặc đổi Type và CreatedAtUtc của cặp StoryId/UserId.",
+        "Queue thông báo STORY_REACTION, lưu rồi publish nếu có notification.",
+        "Trả 200 StoryResponse với ViewerReaction và ReactionCount hiện tại."
+      ],
+      "alternatives": [
+        "Thiếu Type: 400 validation_failed; loại không hợp lệ: 400 invalid_story_reaction.",
+        "Tin của mình: 403 cannot_react_to_own_story.",
+        "Tin thiếu, hết hạn, đã xóa hoặc mất quyền: 404 story_not_found.",
+        "Đổi cảm xúc giữ một hàng; notification chưa đọc tương ứng được làm mới, không tự ghi StoryView."
+      ],
+      "postconditions": "Có một cảm xúc hiện tại theo PK; thông báo được lưu/phát theo Notifications.",
+      "endpoints": [
+        "POST /api/stories/{storyId:guid}/reaction"
+      ],
+      "tables": [
+        "Stories",
+        "StoryReactions",
+        "AspNetUsers",
+        "Notifications",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "DTOs/Requests/SetStoryReactionRequest.cs",
+        "Services/StoriesService.cs",
+        "Domain/Entities/StoryReaction.cs",
+        "Domain/Enums/StoryReactionType.cs",
+        "../Notifications/Services/NotificationService.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-11",
+      "name": "Gỡ cảm xúc",
+      "group": "stories-interact",
+      "goal": "Xóa cảm xúc hiện tại của mình khỏi một tin có thể truy cập.",
+      "actor": "Người xem",
+      "preconditions": "Đã đăng nhập; tin đang hoạt động và có quyền truy cập.",
+      "steps": [
+        "Gửi DELETE tới reaction của StoryId.",
+        "Kiểm tra tin và quyền truy cập.",
+        "Tìm cặp StoryId/UserId; nếu có, xóa hàng và lưu.",
+        "Trả 204, kể cả khi chưa có cảm xúc."
+      ],
+      "alternatives": [
+        "Tin thiếu, hết hạn, đã xóa, bị chặn hoặc mất quyền: 404 story_not_found.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Không còn StoryReaction của người gọi; StoryView và thông báo đã phát không bị xóa.",
+      "endpoints": [
+        "DELETE /api/stories/{storyId:guid}/reaction"
+      ],
+      "tables": [
+        "Stories",
+        "StoryReactions",
+        "StoryViews",
+        "Notifications",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "Services/StoriesService.cs",
+        "Domain/Entities/StoryReaction.cs"
+      ]
+    },
+    {
+      "id": "UC-ST-12",
+      "name": "Trả lời tin bằng tin nhắn",
+      "group": "stories-interact",
+      "support": [
+        "messages"
+      ],
+      "goal": "Gửi lời trả lời tin vào hội thoại trực tiếp với tác giả.",
+      "actor": "Người xem",
+      "preconditions": "Đã đăng nhập; tin của người khác còn hạn, đủ quyền; có quan hệ bạn bè đáp ứng chính sách DIRECT; Content hợp lệ.",
+      "steps": [
+        "Gửi Content không trống, tối đa 5000 ký tự sau trim.",
+        "Stories kiểm tra quyền truy cập và từ chối trả lời tin của mình.",
+        "Gọi Messages.SendStoryReplyAsync; tìm hoặc tạo hội thoại DIRECT theo chính sách bạn bè/chặn.",
+        "Messages lưu tin nhắn TEXT với StoryId, cập nhật hội thoại, thông báo tin nhắn và phát tới người nhận.",
+        "Trả 201 MessageResponse với Location tới tin nhắn trong hội thoại."
+      ],
+      "alternatives": [
+        "Content thiếu, trắng hoặc quá dài: 400 validation_failed.",
+        "Tin của mình: 403 cannot_reply_to_own_story.",
+        "Tin thiếu, hết hạn, đã xóa hoặc mất quyền: 404 story_not_found.",
+        "Xem được tin PUBLIC nhưng chưa là bạn bè: 403 messaging_requires_friendship; lỗi hội thoại/nhắn tin được chuyển từ Messages.",
+        "Khi tin hết hạn, bị xóa hoặc người đọc mất quyền, Messages hiển thị tham chiếu story không khả dụng."
+      ],
+      "postconditions": "Tin nhắn được lưu trong Messages với StoryId; không tạo entity StoryReply hoặc FK mới trong module Stories.",
+      "endpoints": [
+        "POST /api/stories/{storyId:guid}/reply"
+      ],
+      "tables": [
+        "Stories",
+        "Messages",
+        "Conversations",
+        "ConversationParticipants",
+        "ConversationReadCursors",
+        "MessageNotifications",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/StoriesController.cs",
+        "DTOs/Requests/CreateStoryReplyRequest.cs",
+        "Services/StoriesService.cs",
+        "../Messages/Services/MessagesService.cs",
+        "../Messages/Domain/Entities/Message.cs"
       ]
     }
   ]
