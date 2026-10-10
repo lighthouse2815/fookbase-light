@@ -451,6 +451,27 @@
         "source": "flowchart LR\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Stories[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>Stories</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Caption'><td class='identity-keys' /><td><code class='' title=''>Caption</code></td><td class='column-type'>varchar(2200)?</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>ExpiresAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    StoryViews[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>StoryViews</th></tr></thead><tbody><tr data-column='StoryId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>StoryId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ViewerUserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>ViewerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ViewedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ViewedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    StoryReactions[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>StoryReactions</th></tr></thead><tbody><tr data-column='StoryId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>StoryId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    StoryMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>StoryMediaReferences</th></tr></thead><tbody><tr data-column='StoryId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>StoryId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"AuthorUserId · 1 → 0..N\"| Stories\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| Stories\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| StoryMediaReferences\n    Stories -->|\"StoryId · 1 → 0..1\"| StoryMediaReferences\n    AspNetUsers -->|\"ViewerUserId · 1 → 0..N\"| StoryViews\n    Stories -->|\"StoryId · 1 → 0..N\"| StoryViews\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| StoryReactions\n    Stories -->|\"StoryId · 1 → 0..N\"| StoryReactions\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
         "note": "4 bảng Stories và 2 bảng tham chiếu, mỗi bảng xuất hiện một lần với đầy đủ cột; 8 FK dùng đường thẳng. StoryMediaReferences.StoryId là PK kiêm FK nên quan hệ là 1 → 0..1. FK tới Users/Media dùng RESTRICT; FK của các bảng phụ thuộc tới Stories dùng CASCADE khi xóa vật lý tin. DELETE qua API chỉ xóa mềm tin và xóa hàng tham chiếu media; hết hạn không tự xóa hàng."
       }
+    },
+    {
+      "id": "reels",
+      "name": "Reels",
+      "description": "Video ngắn dùng Posts, feed forYou/following, thống kê lượt xem và tương tác.",
+      "tables": [
+        "ReelViews"
+      ],
+      "diagram": {
+        "template": "overview-reels",
+        "tables": [
+          "ReelViews",
+          "Posts",
+          "AspNetUsers",
+          "PostMedia",
+          "MediaAssets",
+          "MediaReferences"
+        ],
+        "source": "flowchart LR\n    ReelViews[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>ReelViews</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReelPostId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReelPostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ViewerUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ViewerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='WatchDurationMs'><td class='identity-keys' /><td><code class='' title=''>WatchDurationMs</code></td><td class='column-type'>integer</td></tr><tr data-column='Completed'><td class='identity-keys' /><td><code class='' title=''>Completed</code></td><td class='column-type'>boolean</td></tr><tr data-column='Replayed'><td class='identity-keys' /><td><code class='' title=''>Replayed</code></td><td class='column-type'>boolean</td></tr><tr data-column='ViewedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ViewedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Posts[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>Posts</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Content'><td class='identity-keys' /><td><code class='' title=''>Content</code></td><td class='column-type'>varchar(10000)</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerType'><td class='identity-keys' /><td><code class='' title=''>ContainerType</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerId'><td class='identity-keys' /><td><code class='' title=''>ContainerId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostType'><td class='identity-keys' /><td><code class='' title=''>PostType</code></td><td class='column-type'>integer</td></tr><tr data-column='TextBackground'><td class='identity-keys' /><td><code class='' title=''>TextBackground</code></td><td class='column-type'>varchar(32)?</td></tr><tr data-column='IsPinned'><td class='identity-keys' /><td><code class='' title=''>IsPinned</code></td><td class='column-type'>boolean</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PostMedia[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>PostMedia</th></tr></thead><tbody><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    MediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>MediaReferences</th></tr></thead><tbody><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"ViewerUserId · 1 → 0..N\"| ReelViews\n    Posts -->|\"ReelPostId · 1 → 0..N\"| ReelViews\n    AspNetUsers -->|\"AuthorUserId · 1 → 0..N\"| Posts\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| PostMedia\n    Posts -->|\"PostId · 1 → 0..N\"| PostMedia\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| MediaReferences\n    Posts -->|\"PostId · 1 → 0..N\"| MediaReferences\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,Posts,PostMedia,MediaAssets,MediaReferences ref",
+        "note": "Reels sở hữu ReelViews; 5 bảng còn lại là tham chiếu và đều hiển thị đủ cột, mỗi bảng một lần. Reel là Posts với PostType=REEL, ContainerType=PROFILE; không có bảng Reels riêng. Sơ đồ có 7 FK: 2 FK của ReelViews và 5 FK của các bảng dùng chung. ReelViews không UNIQUE theo người xem; mỗi lần xem tạo một hàng mới. CASCADE áp dụng khi xóa vật lý Posts; xóa qua API là xóa mềm."
+      }
     }
   ],
   "tables": {
@@ -4142,6 +4163,106 @@
       "purpose": "Một cảm xúc hiện tại cho mỗi người trên mỗi tin.",
       "module": "stories",
       "note": "PK ghép (StoryId, UserId); StoryId → Stories CASCADE, UserId → AspNetUsers RESTRICT. Type: LIKE=0, LOVE=1, HAHA=2, WOW=3, SAD=4, ANGRY=5. Đổi cảm xúc cập nhật Type và CreatedAtUtc. Không được react tin của mình; đặt/đổi cảm xúc thông báo chủ tin, gỡ cảm xúc không thu hồi notification."
+    },
+    "ReelViews": {
+      "name": "ReelViews",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "ReelPostId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "ViewerUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "WatchDurationMs",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Completed",
+          "type": "boolean",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Replayed",
+          "type": "boolean",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "ViewedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "ReelPostId",
+            "Completed",
+            "ViewedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "ReelPostId",
+            "ViewedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "ViewerUserId",
+            "ViewedAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "ViewerUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Posts",
+          "fields": [
+            "ReelPostId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Lần xem reel",
+      "purpose": "Một hàng cho mỗi lần xem video reel, có thời gian xem và cờ hoàn thành/xem lại.",
+      "module": "reels",
+      "note": "PK Id; ReelPostId → Posts CASCADE, ViewerUserId → AspNetUsers RESTRICT. Các FK required, không UNIQUE theo cặp reel/người xem. Mỗi request tạo Id mới, gồm cả lượt của tác giả và xem lại. WatchDurationMs là integer dương, không vượt thời lượng video theo API; Completed/Replayed do client gửi. ViewCount đếm hàng, CompletionCount đếm Completed=true. FK tới Posts không kiểm tra PostType; ReelsService kiểm tra REEL/PROFILE khi ghi view."
     }
   }
 }
@@ -6966,6 +7087,689 @@
         "Services/StoriesService.cs",
         "../Messages/Services/MessagesService.cs",
         "../Messages/Domain/Entities/Message.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <template id="overview-reels"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-reels" width="1460" height="950" viewBox="0 0 1460 950" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Reels" data-layout="reels"><title>Reels · 1 bảng chính, 5 bảng tham chiếu và 7 FK</title><desc>ReelViews là bảng riêng của Reels, nối tới Posts và AspNetUsers. Reel là một Post REEL trên PROFILE, gắn video qua PostMedia và giữ MediaReferences. Sáu bảng hiển thị đủ cột, không lặp Users/Media; bảy FK dùng đường thẳng đi theo các khoảng trống. Mỗi lượt xem tạo một hàng riêng; không có bảng Reels hoặc constraint riêng theo PostType.</desc><style>
+#svg-overview-reels { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-reels .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-reels .node .label { color: #233044; }
+#svg-overview-reels .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-reels .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-reels .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-reels .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-reels .identity-table code { font: inherit; }
+#svg-overview-reels .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-reels .identity-keys { text-align: center; }
+#svg-overview-reels .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-reels .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-reels .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-reels .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-reels .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-reels .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-reels .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-reels .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+
+#svg-overview-reels .reference-caption { font: 12px Arial, sans-serif; fill: #748079; }
+</style><defs><marker id="reels-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="reels-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M195.00,415.00 L195.00,222.00" id="L_AspNetUsers_ReelViews_ViewerUserId" data-id="L_AspNetUsers_ReelViews_ViewerUserId" data-principal="AspNetUsers" data-dependent="ReelViews" data-fields="ViewerUserId" data-kind="fk" class="relation" marker-start="url(#reels-one)" marker-end="url(#reels-many)"><title>AspNetUsers (1) → ReelViews (0..N) · ViewerUserId · Restrict</title></path><path d="M550.00,290.00 L370.00,115.00" id="L_Posts_ReelViews_ReelPostId" data-id="L_Posts_ReelViews_ReelPostId" data-principal="Posts" data-dependent="ReelViews" data-fields="ReelPostId" data-kind="fk" class="relation" marker-start="url(#reels-one)" marker-end="url(#reels-many)"><title>Posts (1) → ReelViews (0..N) · ReelPostId · Cascade</title></path><path d="M370.00,515.00 L550.00,455.00" id="L_AspNetUsers_Posts_AuthorUserId" data-id="L_AspNetUsers_Posts_AuthorUserId" data-principal="AspNetUsers" data-dependent="Posts" data-fields="AuthorUserId" data-kind="fk" class="relation" marker-start="url(#reels-one)" marker-end="url(#reels-many)"><title>AspNetUsers (1) → Posts (0..N) · AuthorUserId · Restrict</title></path><path d="M1255.00,415.00 L1255.00,126.00" id="L_MediaAssets_PostMedia_MediaId" data-id="L_MediaAssets_PostMedia_MediaId" data-principal="MediaAssets" data-dependent="PostMedia" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#reels-one)" marker-end="url(#reels-many)"><title>MediaAssets (1) → PostMedia (0..N) · MediaId · Restrict</title></path><path d="M900.00,265.00 L1080.00,85.00" id="L_Posts_PostMedia_PostId" data-id="L_Posts_PostMedia_PostId" data-principal="Posts" data-dependent="PostMedia" data-fields="PostId" data-kind="fk" class="relation" marker-start="url(#reels-one)" marker-end="url(#reels-many)"><title>Posts (1) → PostMedia (0..N) · PostId · Cascade</title></path><path d="M1080.00,850.00 L900.00,850.00" id="L_MediaAssets_MediaReferences_MediaId" data-id="L_MediaAssets_MediaReferences_MediaId" data-principal="MediaAssets" data-dependent="MediaReferences" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#reels-one)" marker-end="url(#reels-many)"><title>MediaAssets (1) → MediaReferences (0..N) · MediaId · Restrict</title></path><path d="M725.00,557.00 L725.00,785.00" id="L_Posts_MediaReferences_PostId" data-id="L_Posts_MediaReferences_PostId" data-principal="Posts" data-dependent="MediaReferences" data-fields="PostId" data-kind="fk" class="relation" marker-start="url(#reels-one)" marker-end="url(#reels-many)"><title>Posts (1) → MediaReferences (0..N) · PostId · Cascade</title></path></g><g class="edgeLabels"><text x="207.00" y="391.00" class="cardinality" text-anchor="middle">1</text><text x="183.00" y="254.00" class="cardinality" text-anchor="middle">0..N</text><text x="211.00" y="308.50" class="relation-label" text-anchor="start">ViewerUserId</text><text x="538.29" y="265.88" class="cardinality" text-anchor="middle">1</text><text x="392.00" y="147.12" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="192.50" class="relation-label" text-anchor="middle">ReelPostId</text><text x="400.36" y="521.53" class="cardinality" text-anchor="middle">1</text><text x="519.64" y="456.47" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="475.00" class="relation-label" text-anchor="middle">AuthorUserId</text><text x="1267.00" y="391.00" class="cardinality" text-anchor="middle">1</text><text x="1243.00" y="158.00" class="cardinality" text-anchor="middle">0..N</text><text x="1271.00" y="260.50" class="relation-label" text-anchor="start">MediaId</text><text x="928.28" y="257.69" class="cardinality" text-anchor="middle">1</text><text x="1051.72" y="100.31" class="cardinality" text-anchor="middle">0..N</text><text x="990.00" y="165.00" class="relation-label" text-anchor="middle">PostId</text><text x="1052.00" y="842.00" class="cardinality" text-anchor="middle">1</text><text x="928.00" y="866.00" class="cardinality" text-anchor="middle">0..N</text><text x="990.00" y="840.00" class="relation-label" text-anchor="middle">MediaId</text><text x="713.00" y="589.00" class="cardinality" text-anchor="middle">1</text><text x="737.00" y="761.00" class="cardinality" text-anchor="middle">0..N</text><text x="741.00" y="661.00" class="relation-label" text-anchor="start">PostId</text><text x="20.00" y="397.00" class="reference-caption" text-anchor="start">Identity · bảng tham chiếu</text><text x="550.00" y="217.00" class="reference-caption" text-anchor="start">Posts · bảng tham chiếu</text><text x="1080.00" y="397.00" class="reference-caption" text-anchor="start">Media · bảng tham chiếu</text><text x="550.00" y="767.00" class="reference-caption" text-anchor="start">Media · bảng tham chiếu</text></g><g class="nodes"><g class="node default" data-table="ReelViews" role="button" tabindex="0" aria-label="Xem chi tiết bảng ReelViews" transform="translate(195.0, 121.0)"><rect class="basic label-container" x="-175.0" y="-101.0" width="350" height="202" rx="5" ry="5" style="stroke:#f15362" /><g class="label" transform="translate(-175.0, -101.0)"><foreignObject width="350" height="202"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:202px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#ffd3d8;color:#182437">ReelViews</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ReelPostId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ReelPostId</code></td><td class="column-type">uuid</td></tr><tr data-column="ViewerUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ViewerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="WatchDurationMs"><td class="identity-keys" /><td><code class="" title="">WatchDurationMs</code></td><td class="column-type">integer</td></tr><tr data-column="Completed"><td class="identity-keys" /><td><code class="" title="">Completed</code></td><td class="column-type">boolean</td></tr><tr data-column="Replayed"><td class="identity-keys" /><td><code class="" title="">Replayed</code></td><td class="column-type">boolean</td></tr><tr data-column="ViewedAtUtc"><td class="identity-keys" /><td><code class="" title="">ViewedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(195.0, 636.0)"><rect class="basic label-container" x="-175.0" y="-221.0" width="350" height="442" rx="5" ry="5" style="stroke:#54a7eb" /><g class="label" transform="translate(-175.0, -221.0)"><foreignObject width="350" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#d6eaff;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Posts" role="button" tabindex="0" aria-label="Xem chi tiết bảng Posts" transform="translate(725.0, 396.0)"><rect class="basic label-container" x="-175.0" y="-161.0" width="350" height="322" rx="5" ry="5" style="stroke:#e5a11b" /><g class="label" transform="translate(-175.0, -161.0)"><foreignObject width="350" height="322"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:322px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fff0c2;color:#182437">Posts</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AuthorUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">AuthorUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Content"><td class="identity-keys" /><td><code class="" title="">Content</code></td><td class="column-type">varchar(10000)</td></tr><tr data-column="Privacy"><td class="identity-keys" /><td><code class="" title="">Privacy</code></td><td class="column-type">integer</td></tr><tr data-column="ContainerType"><td class="identity-keys" /><td><code class="" title="">ContainerType</code></td><td class="column-type">integer</td></tr><tr data-column="ContainerId"><td class="identity-keys" /><td><code class="" title="">ContainerId</code></td><td class="column-type">uuid</td></tr><tr data-column="PostType"><td class="identity-keys" /><td><code class="" title="">PostType</code></td><td class="column-type">integer</td></tr><tr data-column="TextBackground"><td class="identity-keys" /><td><code class="" title="">TextBackground</code></td><td class="column-type">varchar(32)?</td></tr><tr data-column="IsPinned"><td class="identity-keys" /><td><code class="" title="">IsPinned</code></td><td class="column-type">boolean</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PostMedia" role="button" tabindex="0" aria-label="Xem chi tiết bảng PostMedia" transform="translate(1255.0, 73.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">PostMedia</th></tr></thead><tbody><tr data-column="PostId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PostId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="SortOrder"><td class="identity-keys" /><td><code class="" title="">SortOrder</code></td><td class="column-type">integer</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(1255.0, 672.0)"><rect class="basic label-container" x="-175.0" y="-257.0" width="350" height="514" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -257.0)"><foreignObject width="350" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaReferences" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaReferences" transform="translate(725.0, 838.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">MediaReferences</th></tr></thead><tbody><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="PostId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PostId</code></td><td class="column-type">uuid</td></tr><tr data-column="AttachedAtUtc"><td class="identity-keys" /><td><code class="" title="">AttachedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(550, 20)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="reels-specification" type="application/json">
+{
+  "title": "Video reel, feed và thống kê lượt xem",
+  "purpose": "Reels đăng video ngắn đã xử lý, cung cấp feed forYou/following, chi tiết reel, URL video/poster và ghi nhận lượt xem. Nội dung, quyền riêng tư và tương tác dùng lại Posts.",
+  "scope": "Module có một bảng riêng ReelViews; mỗi reel là Posts với PostType=REEL và ContainerType=PROFILE, không có bảng Reels riêng. ERD giữ đầy đủ ReelViews, Posts, AspNetUsers, PostMedia, MediaAssets, MediaReferences. Bao phủ 6 endpoint ReelsController và các luồng xóa, cảm xúc, bình luận, lưu, chia sẻ, báo cáo qua Posts. Các bảng tương tác và quan hệ bạn bè được nêu trong đặc tả; tiếp tục dùng mapping hiện có.",
+  "usecasesTitle": "Đăng reel, khám phá và tương tác",
+  "groups": [
+    {
+      "id": "reels-author",
+      "name": "Đăng và xóa reel",
+      "actor": "author",
+      "caseSpacing": 132,
+      "description": "Đăng một video đã xử lý qua Reels và xóa reel của mình qua Posts."
+    },
+    {
+      "id": "reels-feed",
+      "name": "Khám phá reel",
+      "actor": "viewer",
+      "description": "Feed forYou xếp theo điểm tương tác; following lọc tác giả đang theo dõi; chi tiết PUBLIC cho phép khách đọc."
+    },
+    {
+      "id": "reels-media",
+      "name": "Mở video và ghi nhận xem",
+      "actor": "viewer",
+      "description": "Lấy URL video/poster và ghi từng lần xem, thời gian xem, hoàn thành hoặc xem lại."
+    },
+    {
+      "id": "reels-social",
+      "name": "Tương tác qua Posts",
+      "actor": "viewer",
+      "description": "Reel dùng PostReactions, Comments, PostSaves, PostShares và ContentReports như nội dung Posts."
+    }
+  ],
+  "actors": [
+    {
+      "id": "author",
+      "name": "Chủ reel",
+      "role": "Đã đăng nhập; đăng video thuộc mình và xóa reel của mình."
+    },
+    {
+      "id": "viewer",
+      "name": "Người xem",
+      "role": "Đã đăng nhập để xem feed, lấy URL media, ghi nhận xem hoặc tương tác. Khách chỉ đọc chi tiết reel PUBLIC qua API Reels; quyền API Posts được kiểm tra riêng."
+    },
+    {
+      "id": "friends",
+      "name": "Module Friends",
+      "role": "Cung cấp snapshot bạn bè và chặn hai chiều cho PostVisibility; UserFollows dùng để lọc/ranking feed."
+    },
+    {
+      "id": "media",
+      "name": "Module Media",
+      "role": "Kiểm tra video READY đã xử lý thuộc tác giả, đồng bộ MediaReferences và cấp URL video/poster."
+    },
+    {
+      "id": "posts",
+      "name": "Module Posts",
+      "role": "Lưu nội dung reel, hashtag/mention, xử lý xóa và các API tương tác dùng chung."
+    }
+  ],
+  "rules": [
+    {
+      "text": "Trong 6 endpoint ReelsController, chỉ GET /api/reels/{reelId} có AllowAnonymous. Các endpoint còn lại yêu cầu đăng nhập và claim sub là GUID. Khách đọc chi tiết PUBLIC; người đã xác thực nhưng sub không hợp lệ nhận 401.",
+      "source": "Controllers/ReelsController.cs"
+    },
+    {
+      "text": "Không có entity/bảng Reels riêng: CreateAsync tạo Posts với PostType.REEL=1, ContainerType.PROFILE=0, ContainerId=AuthorUserId. Reel.Id là Posts.Id. Caption lưu trong Posts.Content, trim và tối đa 10000 ký tự; null trở thành chuỗi rỗng và được phép đăng cùng video.",
+      "source": "Services/ReelsService.cs"
+    },
+    {
+      "text": "CreateReelRequest yêu cầu Privacy hợp lệ theo PostPrivacy và VideoMediaId khác Guid.Empty. PUBLIC=0, FRIENDS=1, ONLY_ME=2; response trả public/friends/onlyMe. Validation dùng EnumText nên chấp nhận các tên enum tương ứng, gồm only_me.",
+      "source": "DTOs/Requests/CreateReelRequest.cs"
+    },
+    {
+      "text": "Video phải thuộc người đăng, VIDEO, READY, chưa xóa, có khóa processed/poster không trống và DurationMs/Width/Height. Thời lượng từ MinimumReelDurationMs tới MaximumReelDurationMs, mặc định 1000–180000 ms, có thể cấu hình.",
+      "source": "../Media/Services/MediaService.cs"
+    },
+    {
+      "text": "Tạo reel trong transaction: Posts, đúng một PostMedia với SortOrder=0, đồng bộ hashtag/mention qua SocialInteractionsService và MediaReferences. Database PostMedia vẫn cho nhiều media theo schema chung; giới hạn một video là hành vi của luồng tạo reel, không phải UNIQUE PostId.",
+      "source": "Services/ReelsService.cs"
+    },
+    {
+      "text": "ReelViews có PK Id; ReelPostId → Posts CASCADE, ViewerUserId → AspNetUsers RESTRICT. Cả hai FK required và không unique. FK tới Posts không có constraint kiểm tra PostType=REEL; service kiểm tra loại nội dung khi ghi view.",
+      "source": "Entities/ReelView.cs"
+    },
+    {
+      "text": "Mỗi lần gọi views tạo một Id mới, không gộp theo người xem. Tác giả được ghi view của reel mình. ViewCount đếm mọi hàng, CompletionCount đếm hàng Completed=true; Replayed và WatchDurationMs được lưu nhưng không tự thay đổi cách đếm.",
+      "source": "Services/ReelsService.cs"
+    },
+    {
+      "text": "WatchDurationMs phải dương theo DTO và không vượt DurationMs của video theo service. Completed/Replayed là cờ do client gửi; service không suy ra Completed từ thời gian xem hoặc kiểm tra tính nhất quán của hai cờ.",
+      "source": "DTOs/Requests/CreateReelViewRequest.cs"
+    },
+    {
+      "text": "GET reel và feed không tự ghi lượt xem; client gọi POST views khi cần. Trạng thái video được kiểm tra bằng ReelMediaQuery: VIDEO READY chưa xóa, các khóa processed/poster và metadata khác null.",
+      "source": "Services/ReelMediaQuery.cs"
+    },
+    {
+      "text": "Quyền xem dùng PostVisibility: chỉ PROFILE chưa xóa; tác giả được xem; người khác không bị chặn và PUBLIC hoặc FRIENDS có quan hệ bạn bè; ONLY_ME chỉ tác giả. Khách chỉ PUBLIC. Nội dung hoặc video không đủ điều kiện trả 404 reel_not_found.",
+      "source": "../Posts/Services/PostVisibility.cs"
+    },
+    {
+      "text": "Feed mặc định forYou, limit=20, giới hạn 1–50. Mode hợp lệ forYou/following, không phân biệt hoa thường; mode rỗng là forYou. Sai mode/limit trả 400 validation_failed tại DTO, cursor không hợp lệ trả 400 invalid_reel_cursor.",
+      "source": "DTOs/Requests/ReelFeedRequest.cs"
+    },
+    {
+      "text": "forYou chấm điểm theo người xem: đang follow tác giả +100, đã react reel +40, đã bình luận chưa xóa +25, có lượt Completed -80, đã có bất kỳ lượt xem -15. Các điều kiện chỉ kiểm tra tồn tại, không nhân theo số lượt; sau điểm giảm dần là CreatedAtUtc/Id giảm dần.",
+      "source": "Services/ReelsService.cs"
+    },
+    {
+      "text": "following chỉ lấy reel đủ quyền của tác giả đang được UserFollows theo dõi; không áp dụng điểm forYou, sắp CreatedAtUtc/Id giảm dần. Follow không thay thế quyền riêng tư FRIENDS hoặc điều kiện không bị chặn.",
+      "source": "Services/ReelsService.cs"
+    },
+    {
+      "text": "Cursor dùng Base64Url của score:ticks:Id, hỗ trợ cursor cũ ticks:Id với score=0. forYou so điểm rồi thời gian/Id; following chỉ so thời gian/Id. Cursor không gắn với mode hay người xem; điểm có thể thay đổi khi quan hệ/tương tác thay đổi.",
+      "source": "Services/ReelsService.cs"
+    },
+    {
+      "text": "URL video và poster được trả dưới dạng JSON có Url/ExpiresAtUtc/MediaType/ContentType, không redirect. Response reel dùng AccessPath tương đối và ContentType video/mp4; URL storage do Media cấp sau khi kiểm tra quyền và video READY.",
+      "source": "Controllers/ReelsController.cs"
+    },
+    {
+      "text": "Không có API sửa reel trong ReelsController. PUT /api/posts/{id} với reel bị PostsService từ chối bằng 409 invalid_post_type; không mô tả chức năng sửa thành công khi code chưa hỗ trợ.",
+      "source": "../Posts/Services/PostsService.cs"
+    },
+    {
+      "text": "Xóa reel qua DELETE /api/posts/{id}: PostsUseCase dùng transaction, xóa mềm Posts, xóa PostMedia và MediaReferences. ReelViews cùng các tương tác vẫn được giữ; CASCADE của ReelViews chỉ xảy ra khi xóa vật lý Posts. MediaAsset và tệp không bị xóa trong thao tác này.",
+      "source": "../Posts/Services/PostsUseCase.cs"
+    },
+    {
+      "text": "Cảm xúc, bình luận, lưu và chia sẻ dùng API Posts với reelId làm postId. CommentCount chỉ đếm comment chưa xóa; ReactionCount tổng theo type; ViewerReaction, ViewerHasSaved, ViewerFollowsAuthor phản ánh người xem. Khách đọc chi tiết nhận các trạng thái cá nhân mặc định.",
+      "source": "Services/ReelsService.cs"
+    },
+    {
+      "text": "Báo cáo reel dùng TargetType=POST, TargetId=reelId. ReportsService kiểm tra nội dung PROFILE tồn tại, chưa xóa và không phải nội dung của người báo cáo; nhánh PROFILE hiện không áp dụng PostVisibility như API đọc reel.",
+      "source": "../Posts/Services/ReportsService.cs"
+    },
+    {
+      "text": "MediaReferences ngăn xóa tệp đang gắn vào reel. AspNetUsers, Posts, PostMedia, MediaAssets và MediaReferences là bảng tham chiếu từ các module đã có, không được tính là bảng sở hữu của Reels.",
+      "source": "../Media/Services/MediaService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-RE-01",
+      "name": "Đăng reel",
+      "group": "reels-author",
+      "support": [
+        "media"
+      ],
+      "goal": "Đăng một video đã xử lý thành reel trên trang cá nhân.",
+      "actor": "Chủ reel",
+      "preconditions": "Đã đăng nhập; video thuộc người gọi, READY và đầy đủ dữ liệu xử lý, thời lượng trong giới hạn.",
+      "steps": [
+        "Gửi Caption tùy chọn, Privacy và VideoMediaId.",
+        "DTO kiểm tra caption tối đa 10000 ký tự sau trim, enum privacy và MediaId khác rỗng.",
+        "Media.ValidateReelVideoAsync kiểm tra video và chủ sở hữu.",
+        "Trong transaction, tạo Posts REEL trên PROFILE, một PostMedia SortOrder=0, đồng bộ hashtag/mention và MediaReferences.",
+        "Commit rồi trả 201 ReelResponse và Location /api/reels/{id}."
+      ],
+      "alternatives": [
+        "Request không hợp lệ: 400 validation_failed; chưa đăng nhập: 401.",
+        "Video không READY/đủ dữ liệu hoặc không phải video: 409 invalid_reel_video; sai chủ: 403 media_not_owned.",
+        "Ngoài giới hạn thời lượng: 400 invalid_reel_duration.",
+        "Lỗi đồng bộ tham chiếu hoặc lưu dữ liệu: rollback transaction."
+      ],
+      "postconditions": "Có Posts REEL, một PostMedia và tham chiếu media; chưa có ReelView.",
+      "endpoints": [
+        "POST /api/reels"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaAssets",
+        "MediaReferences",
+        "PostHashtags",
+        "Hashtags",
+        "ContentMentions",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/ReelsController.cs",
+        "DTOs/Requests/CreateReelRequest.cs",
+        "Services/ReelsService.cs",
+        "../Media/Services/MediaService.cs",
+        "../Media/Config/MediaOptions.cs",
+        "../Posts/Services/SocialInteractionsService.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-02",
+      "name": "Xóa reel của mình",
+      "group": "reels-author",
+      "support": [
+        "posts"
+      ],
+      "goal": "Xóa mềm reel của mình bằng luồng xóa nội dung Posts.",
+      "actor": "Chủ reel",
+      "preconditions": "Đã đăng nhập; Posts REEL chưa xóa, thuộc người gọi.",
+      "steps": [
+        "Gửi DELETE Posts với postId là reelId.",
+        "Posts kiểm tra nội dung và quyền chủ sở hữu.",
+        "Ghi DeletedAtUtc, xóa PostMedia; PostsUseCase xóa MediaReferences trong cùng transaction.",
+        "Commit và trả 204."
+      ],
+      "alternatives": [
+        "Nội dung thiếu hoặc đã xóa: 404 post_not_found; sai chủ: 403 forbidden.",
+        "Lỗi lưu hoặc đồng bộ tham chiếu: rollback; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Reel không còn ở feed/chi tiết/access; ReelViews và dữ liệu tương tác được giữ, media không tự bị xóa.",
+      "endpoints": [
+        "DELETE /api/posts/{postId:guid}"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaReferences",
+        "ReelViews",
+        "MediaAssets"
+      ],
+      "sources": [
+        "../Posts/Controllers/PostsController.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-03",
+      "name": "Xem feed forYou",
+      "group": "reels-feed",
+      "support": [
+        "friends"
+      ],
+      "goal": "Lấy reel đủ quyền được xếp theo các tín hiệu tương tác của người xem.",
+      "actor": "Người xem đã đăng nhập",
+      "preconditions": "Đã đăng nhập; mode/limit và cursor hợp lệ.",
+      "steps": [
+        "Gửi mode=forYou hoặc bỏ mode, cursor tùy chọn, limit mặc định 20.",
+        "Lấy snapshot bạn bè/chặn, lọc Posts REEL đủ quyền và có video READY.",
+        "Tính điểm follow/react/comment/Completed/view theo công thức hiện tại.",
+        "Áp dụng cursor, sắp Score/CreatedAtUtc/Id giảm dần và lấy limit + 1.",
+        "Trả 200 Items và NextCursor, kèm thống kê và trạng thái tương tác."
+      ],
+      "alternatives": [
+        "Mode không hợp lệ hoặc limit ngoài 1–50: 400 validation_failed; cursor sai: 400 invalid_reel_cursor.",
+        "Không có reel đủ quyền/video hợp lệ: Items rỗng, NextCursor=null.",
+        "Các reel đã xem vẫn có thể xuất hiện với điểm thấp hơn, không bị loại hoàn toàn.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Trả trang reel theo ranking, không tự tạo ReelViews.",
+      "endpoints": [
+        "GET /api/reels"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaAssets",
+        "ReelViews",
+        "UserFollows",
+        "PostReactions",
+        "Comments",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/ReelsController.cs",
+        "DTOs/Requests/ReelFeedRequest.cs",
+        "Services/ReelsService.cs",
+        "Services/ReelMediaQuery.cs",
+        "../Posts/Services/PostVisibility.cs",
+        "../Friends/Services/FriendsService.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-04",
+      "name": "Xem feed following",
+      "group": "reels-feed",
+      "support": [
+        "friends"
+      ],
+      "goal": "Lấy reel từ những tác giả người xem đang theo dõi.",
+      "actor": "Người xem đã đăng nhập",
+      "preconditions": "Đã đăng nhập; mode=following, limit 1–50, cursor tùy chọn hợp lệ.",
+      "steps": [
+        "Gửi GET /api/reels?mode=following.",
+        "Lọc reel đủ quyền/video READY và AuthorUserId có trong UserFollows của người gọi.",
+        "Áp dụng cursor CreatedAtUtc/Id, sắp giảm dần và lấy limit + 1.",
+        "Trả 200 Items và NextCursor; điểm trong cursor mới bằng 0."
+      ],
+      "alternatives": [
+        "Đang follow nhưng chưa là bạn bè không được xem FRIENDS; bị chặn hoặc ONLY_ME của người khác cũng bị lọc.",
+        "Không có tác giả đang follow hoặc reel đủ điều kiện: trang rỗng.",
+        "Sai mode/limit: 400 validation_failed; cursor sai: 400 invalid_reel_cursor; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Không áp dụng ranking forYou và không ghi lượt xem.",
+      "endpoints": [
+        "GET /api/reels"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaAssets",
+        "UserFollows",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/ReelsController.cs",
+        "DTOs/Requests/ReelFeedRequest.cs",
+        "Services/ReelsService.cs",
+        "../Posts/Services/PostVisibility.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-05",
+      "name": "Xem chi tiết reel",
+      "group": "reels-feed",
+      "support": [
+        "friends"
+      ],
+      "goal": "Đọc nội dung, tác giả, metadata video và thống kê của một reel.",
+      "actor": "Người xem hoặc khách",
+      "preconditions": "Reel PROFILE chưa xóa, có video READY; viewer đủ quyền hoặc khách xem PUBLIC.",
+      "steps": [
+        "Gửi reelId; controller cho phép viewerId=null khi không có phiên đăng nhập.",
+        "Lọc Posts REEL PROFILE với video READY và kiểm tra PostVisibility.",
+        "Nạp tác giả, comment/reaction counts, lượt xem, trạng thái lưu/follow và mentions.",
+        "Trả 200 ReelResponse với các AccessPath tương đối của video/poster."
+      ],
+      "alternatives": [
+        "Không phải REEL, đã xóa, video không đủ điều kiện hoặc mất quyền: 404 reel_not_found.",
+        "Khách không được xem FRIENDS/ONLY_ME; người đăng nhập bị chặn nhận 404.",
+        "Người đã xác thực có sub không hợp lệ: 401."
+      ],
+      "postconditions": "GET không tự ghi lượt xem; khách vẫn cần đăng nhập để gọi các API video/access, poster/access hoặc views.",
+      "endpoints": [
+        "GET /api/reels/{reelId:guid}"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaAssets",
+        "AspNetUsers",
+        "UserProfiles",
+        "ReelViews",
+        "Comments",
+        "PostReactions",
+        "PostSaves",
+        "UserFollows",
+        "ContentMentions"
+      ],
+      "sources": [
+        "Controllers/ReelsController.cs",
+        "Services/ReelsService.cs",
+        "Services/ReelMediaQuery.cs",
+        "DTOs/Responses/ReelResponse.cs",
+        "../Posts/Services/PostVisibility.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-06",
+      "name": "Lấy URL video reel",
+      "group": "reels-media",
+      "support": [
+        "media"
+      ],
+      "goal": "Lấy URL phát video reel đã xử lý sau khi kiểm tra quyền.",
+      "actor": "Người xem đã đăng nhập",
+      "preconditions": "Đã đăng nhập; có quyền xem reel PROFILE chưa xóa và có video READY.",
+      "steps": [
+        "Gửi reelId tới video/access.",
+        "Kiểm tra loại nội dung, quyền theo PostVisibility và video qua PostMedia.",
+        "Gọi Media.CreateReadUrlAsync.",
+        "Trả 200 JSON với MediaId, Url, ExpiresAtUtc, MediaType và ContentType."
+      ],
+      "alternatives": [
+        "Reel/video thiếu, đã xóa, không READY hoặc mất quyền: 404 reel_not_found.",
+        "Media không cấp được URL: 404 reel_not_found; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Client nhận URL video để mở; database không thay đổi.",
+      "endpoints": [
+        "GET /api/reels/{reelId:guid}/video/access"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaAssets",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/ReelsController.cs",
+        "Services/ReelsService.cs",
+        "Services/ReelMediaQuery.cs",
+        "../Media/Services/MediaService.cs",
+        "DTOs/Responses/ReelMediaAccessResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-07",
+      "name": "Lấy URL poster reel",
+      "group": "reels-media",
+      "support": [
+        "media"
+      ],
+      "goal": "Lấy URL ảnh poster của video reel.",
+      "actor": "Người xem đã đăng nhập",
+      "preconditions": "Đã đăng nhập; reel đủ quyền và video READY có poster.",
+      "steps": [
+        "Gửi reelId tới poster/access.",
+        "Kiểm tra quyền và tìm video hợp lệ của reel.",
+        "Gọi Media.CreatePosterReadUrlAsync.",
+        "Trả 200 JSON gồm URL poster và thời hạn URL."
+      ],
+      "alternatives": [
+        "Không còn reel/video hợp lệ, mất quyền hoặc không cấp được poster: 404 reel_not_found.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Không tạo thêm asset hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/reels/{reelId:guid}/poster/access"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/ReelsController.cs",
+        "Services/ReelsService.cs",
+        "../Media/Services/MediaService.cs",
+        "DTOs/Responses/ReelMediaAccessResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-08",
+      "name": "Ghi nhận lần xem reel",
+      "group": "reels-media",
+      "goal": "Lưu một lần xem cùng thời gian xem và các cờ hoàn thành/xem lại.",
+      "actor": "Người xem đã đăng nhập, gồm cả tác giả",
+      "preconditions": "Đã đăng nhập; đủ quyền xem reel, video READY và WatchDurationMs dương không vượt DurationMs.",
+      "steps": [
+        "Gửi WatchDurationMs, Completed và Replayed.",
+        "DTO kiểm tra thời gian dương; service kiểm tra reel, quyền và video.",
+        "Từ chối thời gian xem vượt DurationMs.",
+        "Tạo ReelView với Id mới, ReelPostId, ViewerUserId và ViewedAtUtc hiện tại.",
+        "Lưu và trả 204."
+      ],
+      "alternatives": [
+        "Thời gian 0/âm: 400 validation_failed; vượt thời lượng: 400 invalid_watch_duration.",
+        "Reel/video thiếu hoặc không đủ quyền: 404 reel_not_found; chưa đăng nhập: 401.",
+        "Xem lại hoặc tác giả xem reel của mình vẫn tạo hàng mới; không có dedup theo viewer.",
+        "Completed/Replayed được lưu như client gửi, không tự tính lại từ WatchDurationMs."
+      ],
+      "postconditions": "ViewCount tăng một; CompletionCount tăng một nếu Completed=true; dữ liệu có thể ảnh hưởng ranking forYou lần đọc sau.",
+      "endpoints": [
+        "POST /api/reels/{reelId:guid}/views"
+      ],
+      "tables": [
+        "ReelViews",
+        "Posts",
+        "AspNetUsers",
+        "PostMedia",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/ReelsController.cs",
+        "DTOs/Requests/CreateReelViewRequest.cs",
+        "Services/ReelsService.cs",
+        "Entities/ReelView.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-09",
+      "name": "Đặt hoặc gỡ cảm xúc",
+      "group": "reels-social",
+      "support": [
+        "posts"
+      ],
+      "goal": "Dùng cảm xúc Posts cho reel, phản ánh vào ReelResponse và ranking.",
+      "actor": "Người xem đã đăng nhập",
+      "preconditions": "Đã đăng nhập; Posts của reel chưa xóa và người gọi có quyền tương tác.",
+      "steps": [
+        "Gửi PUT reaction với type hợp lệ, hoặc DELETE reaction theo postId=reelId.",
+        "Posts kiểm tra quyền truy cập và loại cảm xúc.",
+        "Thêm/đổi hoặc gỡ PostReaction của người gọi; lưu và xử lý thông báo theo luồng Posts.",
+        "Trả 200 PostResponse; lần đọc ReelResponse sau phản ánh ViewerReaction và ReactionCounts."
+      ],
+      "alternatives": [
+        "Loại cảm xúc không hợp lệ: 400; reel không thể truy cập: lỗi nội dung theo Posts.",
+        "Thiếu cảm xúc khi gỡ được xử lý theo Posts; không tạo ReelView."
+      ],
+      "postconditions": "PostReactions thay đổi, không có bảng ReelReactions riêng.",
+      "endpoints": [
+        "PUT /api/posts/{postId:guid}/reaction",
+        "DELETE /api/posts/{postId:guid}/reaction"
+      ],
+      "tables": [
+        "Posts",
+        "PostReactions",
+        "Notifications"
+      ],
+      "sources": [
+        "../Posts/Controllers/PostReactionsController.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs",
+        "Services/ReelsService.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-10",
+      "name": "Đọc và viết bình luận",
+      "group": "reels-social",
+      "support": [
+        "posts"
+      ],
+      "goal": "Dùng hệ thống Comments để đọc, bình luận hoặc trả lời bình luận trên reel.",
+      "actor": "Người xem; thao tác ghi cần đăng nhập",
+      "preconditions": "Reel có thể truy cập qua Posts; nội dung comment không trống, tối đa 5000 ký tự khi tạo.",
+      "steps": [
+        "GET danh sách comments hoặc POST comment với postId=reelId.",
+        "Posts kiểm tra quyền và parentCommentId nếu có.",
+        "Lưu Comment, xử lý metadata/thông báo theo Posts hoặc trả trang bình luận.",
+        "POST trả 201 CommentResponse; GET trả 200; CommentCount trong ReelResponse đếm các comment chưa xóa."
+      ],
+      "alternatives": [
+        "Nội dung trống/quá dài hoặc parent không hợp lệ: lỗi validation của Posts.",
+        "Nội dung thiếu/đã xóa hoặc mất quyền: lỗi truy cập nội dung; ghi không đăng nhập: 401.",
+        "Đọc comments PUBLIC có thể cho phép khách theo CommentsController; không tự tạo ReelView."
+      ],
+      "postconditions": "Comments/metadata liên quan thay đổi khi ghi; không có bảng bình luận Reels riêng.",
+      "endpoints": [
+        "GET /api/posts/{postId:guid}/comments",
+        "POST /api/posts/{postId:guid}/comments"
+      ],
+      "tables": [
+        "Posts",
+        "Comments",
+        "ContentMentions",
+        "Notifications"
+      ],
+      "sources": [
+        "../Posts/Controllers/CommentsController.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs",
+        "Services/ReelsService.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-11",
+      "name": "Lưu hoặc bỏ lưu reel",
+      "group": "reels-social",
+      "support": [
+        "posts"
+      ],
+      "goal": "Đánh dấu reel để xem lại qua chức năng lưu Posts.",
+      "actor": "Người xem đã đăng nhập",
+      "preconditions": "Đã đăng nhập; khi lưu, reel chưa xóa và đủ quyền xem.",
+      "steps": [
+        "Gửi POST hoặc DELETE save với postId=reelId.",
+        "Khi lưu, SocialInteractions kiểm tra quyền và thêm PostSave nếu chưa có.",
+        "Khi bỏ lưu, xóa hàng thuộc người gọi nếu có.",
+        "Trả 204; ReelResponse sau phản ánh ViewerHasSaved."
+      ],
+      "alternatives": [
+        "Lưu lặp hoặc bỏ lưu khi không có hàng đều thành công.",
+        "Khi lưu, nội dung thiếu hoặc không đủ quyền: 404 post_not_found; chưa đăng nhập: 401."
+      ],
+      "postconditions": "PostSaves thay đổi; bỏ lưu không phụ thuộc việc còn có quyền xem reel.",
+      "endpoints": [
+        "POST /api/posts/{postId:guid}/save",
+        "DELETE /api/posts/{postId:guid}/save"
+      ],
+      "tables": [
+        "Posts",
+        "PostSaves"
+      ],
+      "sources": [
+        "../Posts/Controllers/SavedPostsController.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/SocialInteractionsService.cs",
+        "Services/ReelsService.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-12",
+      "name": "Chia sẻ reel",
+      "group": "reels-social",
+      "support": [
+        "posts"
+      ],
+      "goal": "Tạo một chia sẻ tham chiếu reel qua cơ chế PostShares.",
+      "actor": "Người xem đã đăng nhập",
+      "preconditions": "Đã đăng nhập; reel gốc đủ quyền và người gọi có quyền chia sẻ tới đích.",
+      "steps": [
+        "Gửi destinationType profile/group/page, destinationId và caption tùy chọn tới shares.",
+        "Posts kiểm tra reel gốc, dữ liệu đích và quyền ghi vào đích.",
+        "Tạo PostShare tham chiếu Posts.Id của reel, xử lý thông báo tới tác giả.",
+        "Trả 201 PostShareResponse với Location của chia sẻ."
+      ],
+      "alternatives": [
+        "Đích/caption không hợp lệ: 400; không được ghi vào đích: 403 share_destination_forbidden.",
+        "Reel thiếu hoặc không đủ quyền: 404 post_not_found; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Có PostShare, không tạo bản sao video và không có entity ReelShare riêng.",
+      "endpoints": [
+        "POST /api/posts/{postId:guid}/shares"
+      ],
+      "tables": [
+        "Posts",
+        "PostShares",
+        "Notifications"
+      ],
+      "sources": [
+        "../Posts/Controllers/PostSharesController.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/SocialInteractionsService.cs"
+      ]
+    },
+    {
+      "id": "UC-RE-13",
+      "name": "Báo cáo reel",
+      "group": "reels-social",
+      "support": [
+        "posts"
+      ],
+      "goal": "Gửi nội dung reel cho luồng kiểm duyệt bằng báo cáo Posts.",
+      "actor": "Người dùng đã đăng nhập",
+      "preconditions": "Biết reelId; Posts của reel tồn tại, chưa xóa và không phải nội dung của người gọi; Reason hợp lệ.",
+      "steps": [
+        "Gửi Reason và Details tùy chọn, tối đa 500 ký tự sau trim.",
+        "Reports kiểm tra nội dung, quyền sở hữu và dữ liệu báo cáo.",
+        "Kiểm tra người gọi chưa báo cáo TargetType.POST/TargetId này.",
+        "Tạo ContentReport PENDING và trả 201 cùng Location."
+      ],
+      "alternatives": [
+        "Nội dung thiếu/đã xóa: 404 report_target_not_found; tự báo cáo hoặc dữ liệu sai: 400 validation_failed.",
+        "Đã báo cáo: 409 already_reported; chưa đăng nhập: 401.",
+        "Đối với reel PROFILE, ReportsService hiện không kiểm tra PostVisibility như API đọc; giữ đúng hành vi này trong đặc tả."
+      ],
+      "postconditions": "Có ContentReport, reel không tự bị xóa sau khi báo cáo.",
+      "endpoints": [
+        "POST /api/reports/posts/{postId:guid}"
+      ],
+      "tables": [
+        "Posts",
+        "ContentReports"
+      ],
+      "sources": [
+        "../Posts/Controllers/ReportsController.cs",
+        "../Posts/DTOs/Requests/CreateReportRequest.cs",
+        "../Posts/Services/ReportsService.cs",
+        "../Posts/Domain/Entities/ContentReport.cs"
       ]
     }
   ]
