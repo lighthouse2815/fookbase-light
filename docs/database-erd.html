@@ -407,6 +407,26 @@
         "source": "flowchart LR\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    MediaProcessingJobs[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>MediaProcessingJobs</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span><span class='identity-key uk'>UK</span></td><td><code class='fk-column' title='FK, UK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='AttemptCount'><td class='identity-keys' /><td><code class='' title=''>AttemptCount</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='NextAttemptAtUtc'><td class='identity-keys' /><td><code class='' title=''>NextAttemptAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='StartedAtUtc'><td class='identity-keys' /><td><code class='' title=''>StartedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='CompletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CompletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='LastError'><td class='identity-keys' /><td><code class='' title=''>LastError</code></td><td class='column-type'>varchar(2000)?</td></tr></tbody></table>\"]\n    ObjectDeletions[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>ObjectDeletions</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ObjectKey'><td class='identity-keys' /><td><code class='' title=''>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NextAttemptAtUtc'><td class='identity-keys' /><td><code class='' title=''>NextAttemptAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='FailedAtUtc'><td class='identity-keys' /><td><code class='' title=''>FailedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='RetryCount'><td class='identity-keys' /><td><code class='' title=''>RetryCount</code></td><td class='column-type'>integer</td></tr><tr data-column='LastError'><td class='identity-keys' /><td><code class='' title=''>LastError</code></td><td class='column-type'>varchar(2000)?</td></tr></tbody></table>\"]\n    MediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>MediaReferences</th></tr></thead><tbody><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    ProfileMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>ProfileMediaReferences</th></tr></thead><tbody><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Slot'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Slot</code></td><td class='column-type'>integer</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Posts[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>Posts</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Content'><td class='identity-keys' /><td><code class='' title=''>Content</code></td><td class='column-type'>varchar(10000)</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerType'><td class='identity-keys' /><td><code class='' title=''>ContainerType</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerId'><td class='identity-keys' /><td><code class='' title=''>ContainerId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostType'><td class='identity-keys' /><td><code class='' title=''>PostType</code></td><td class='column-type'>integer</td></tr><tr data-column='TextBackground'><td class='identity-keys' /><td><code class='' title=''>TextBackground</code></td><td class='column-type'>varchar(32)?</td></tr><tr data-column='IsPinned'><td class='identity-keys' /><td><code class='' title=''>IsPinned</code></td><td class='column-type'>boolean</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| MediaReferences\n    Posts -->|\"PostId · 1 → 0..N\"| MediaReferences\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| ProfileMediaReferences\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| ProfileMediaReferences\n    MediaAssets -->|\"MediaId · 1 → 0..1\"| MediaProcessingJobs\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| ObjectDeletions\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,Posts ref",
         "note": "5 bảng Media và 2 bảng tham chiếu, mỗi bảng hiển thị một lần với đầy đủ cột. MediaAssets ở trung tâm, 6 FK dùng nét liền. MediaProcessingJobs.MediaId có UNIQUE (1 → 0..1); MediaAssets.OwnerUserId không có FK. Các bảng sử dụng media ở module khác được nêu trong đặc tả."
       }
+    },
+    {
+      "id": "photos",
+      "name": "Photos",
+      "description": "Album ảnh, quyền xem, chú thích và lịch sử ảnh hồ sơ, ảnh bài viết.",
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia"
+      ],
+      "diagram": {
+        "template": "overview-photos",
+        "tables": [
+          "PhotoAlbums",
+          "AlbumMedia",
+          "AspNetUsers",
+          "MediaAssets"
+        ],
+        "source": "flowchart LR\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    PhotoAlbums[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>PhotoAlbums</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='OwnerUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Name'><td class='identity-keys' /><td><code class='' title=''>Name</code></td><td class='column-type'>varchar(160)</td></tr><tr data-column='Description'><td class='identity-keys' /><td><code class='' title=''>Description</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='AlbumType'><td class='identity-keys' /><td><code class='' title=''>AlbumType</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AlbumMedia[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>AlbumMedia</th></tr></thead><tbody><tr data-column='AlbumId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>AlbumId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Caption'><td class='identity-keys' /><td><code class='' title=''>Caption</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>bigint</td></tr><tr data-column='AddedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AddedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"OwnerUserId · 1 → 0..N\"| PhotoAlbums\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| AlbumMedia\n    PhotoAlbums -->|\"AlbumId · 1 → 0..N\"| AlbumMedia\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
+        "note": "2 bảng Photos và 2 bảng tham chiếu, mỗi bảng xuất hiện một lần với đầy đủ cột; 3 FK dùng nét liền. PhotoAlbums.OwnerUserId và AlbumMedia.MediaId RESTRICT; AlbumMedia.AlbumId CASCADE khi xóa vật lý album. UNIQUE (OwnerUserId, AlbumType) chỉ áp dụng với album hệ thống chưa xóa. Quy tắc quyền xem và một album custom cho mỗi ảnh được mô tả trong đặc tả."
+      }
     }
   ],
   "tables": {
@@ -3612,6 +3632,183 @@
       "purpose": "Lưu yêu cầu xóa một object trên storage cho media bị xóa, upload hết hạn hoặc video xử lý thất bại. ObjectDeletionWorker thực thi và ghi kết quả.",
       "module": "media",
       "note": "MediaId là FK tới MediaAssets, dùng Restrict. Một asset có thể có nhiều công việc cho tệp gốc, processed hoặc poster. ProcessedAtUtc ghi thành công; FailedAtUtc ghi hết retry; RetryCount và NextAttemptAtUtc lưu lịch thử lại."
+    },
+    "PhotoAlbums": {
+      "name": "PhotoAlbums",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "OwnerUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Name",
+          "type": "character varying(160)",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Description",
+          "type": "character varying(2000)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "Privacy",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "AlbumType",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "UpdatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "DeletedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "OwnerUserId",
+            "AlbumType"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "OwnerUserId",
+            "CreatedAtUtc",
+            "Id"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "OwnerUserId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Album ảnh",
+      "purpose": "Album tự tạo và album hệ thống, chủ sở hữu và quyền riêng tư.",
+      "module": "photos",
+      "note": "Privacy: PUBLIC=0, FRIENDS=1, ONLY_ME=2. AlbumType: CUSTOM=0, PROFILE_PICTURES=1, COVER_PHOTOS=2, TIMELINE_PHOTOS=3. UNIQUE (OwnerUserId, AlbumType) chỉ áp dụng với DeletedAtUtc IS NULL AND AlbumType <> 0; index danh sách cũng lọc DeletedAtUtc IS NULL. DELETE qua API chỉ xóa mềm, giữ AlbumMedia; CASCADE ở bảng liên kết chỉ áp dụng khi xóa vật lý album."
+    },
+    "AlbumMedia": {
+      "name": "AlbumMedia",
+      "columns": [
+        {
+          "name": "AlbumId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Caption",
+          "type": "character varying(1000)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "SortOrder",
+          "type": "bigint",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "AddedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "AlbumId",
+        "MediaId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "AlbumId",
+            "SortOrder",
+            "MediaId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "PhotoAlbums",
+          "fields": [
+            "AlbumId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Ảnh trong album",
+      "purpose": "Liên kết album với media, kèm chú thích, thứ tự và ngày thêm.",
+      "module": "photos",
+      "note": "PK ghép (AlbumId, MediaId). AlbumId → PhotoAlbums CASCADE; MediaId → MediaAssets RESTRICT. Một ảnh có thể xuất hiện trong nhiều album theo schema; quy tắc một album custom đang hoạt động cho mỗi ảnh được kiểm tra trong PhotosService, không phải UNIQUE MediaId. SortOrder là bigint, được cấp MAX+1 khi thêm; chưa có API sắp xếp lại. Caption nullable, tối đa 1000 ký tự."
     }
   }
 }
@@ -5112,6 +5309,681 @@
     }
   ],
   "usecasesTitle": "Chức năng người dùng và tác vụ nền"
+}
+  </script>
+
+  <template id="overview-photos"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-photos" width="1460" height="900" viewBox="0 0 1460 900" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Photos" data-layout="photos"><title>Photos · 2 bảng chính, 2 bảng tham chiếu và 3 FK</title><desc>PhotoAlbums và AlbumMedia đặt thành một cột ở trung tâm. AspNetUsers nối với chủ album bên trái; MediaAssets nối với ảnh trong album bên phải. Bốn bảng hiển thị đầy đủ cột, mỗi bảng chỉ xuất hiện một lần; ba FK dùng đường thẳng. UNIQUE chủ sở hữu và loại album có điều kiện, không áp dụng với album custom.</desc><style>
+#svg-overview-photos { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-photos .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-photos .node .label { color: #233044; }
+#svg-overview-photos .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-photos .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-photos .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-photos .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-photos .identity-table code { font: inherit; }
+#svg-overview-photos .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-photos .identity-keys { text-align: center; }
+#svg-overview-photos .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-photos .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-photos .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-photos .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-photos .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-photos .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-photos .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-photos .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+
+#svg-overview-photos .reference-caption { font: 12px Arial, sans-serif; fill: #748079; }
+</style><defs><marker id="photos-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="photos-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M370.00,180.00 L550.00,180.00" id="L_AspNetUsers_PhotoAlbums_OwnerUserId" data-id="L_AspNetUsers_PhotoAlbums_OwnerUserId" data-principal="AspNetUsers" data-dependent="PhotoAlbums" data-fields="OwnerUserId" data-kind="fk" class="relation" marker-start="url(#photos-one)" marker-end="url(#photos-many)"><title>AspNetUsers (1) → PhotoAlbums (0..N) · OwnerUserId · Restrict</title></path><path d="M1080.00,550.00 L900.00,550.00" id="L_MediaAssets_AlbumMedia_MediaId" data-id="L_MediaAssets_AlbumMedia_MediaId" data-principal="MediaAssets" data-dependent="AlbumMedia" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#photos-one)" marker-end="url(#photos-many)"><title>MediaAssets (1) → AlbumMedia (0..N) · MediaId · Restrict</title></path><path d="M725.00,320.00 L725.00,480.00" id="L_PhotoAlbums_AlbumMedia_AlbumId" data-id="L_PhotoAlbums_AlbumMedia_AlbumId" data-principal="PhotoAlbums" data-dependent="AlbumMedia" data-fields="AlbumId" data-kind="fk" class="relation" marker-start="url(#photos-one)" marker-end="url(#photos-many)"><title>PhotoAlbums (1) → AlbumMedia (0..N) · AlbumId · Cascade</title></path></g><g class="edgeLabels"><text x="398.00" y="196.00" class="cardinality" text-anchor="middle">1</text><text x="522.00" y="172.00" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="170.00" class="relation-label" text-anchor="middle">OwnerUserId</text><text x="1052.00" y="542.00" class="cardinality" text-anchor="middle">1</text><text x="928.00" y="566.00" class="cardinality" text-anchor="middle">0..N</text><text x="990.00" y="540.00" class="relation-label" text-anchor="middle">MediaId</text><text x="713.00" y="352.00" class="cardinality" text-anchor="middle">1</text><text x="737.00" y="456.00" class="cardinality" text-anchor="middle">0..N</text><text x="741.00" y="390.00" class="relation-label" text-anchor="start">AlbumId</text><text x="20.00" y="22.00" class="reference-caption" text-anchor="start">Identity · bảng tham chiếu</text><text x="550.00" y="52.00" class="reference-caption" text-anchor="start">Photos · bảng trong module</text><text x="1080.00" y="332.00" class="reference-caption" text-anchor="start">Media · bảng tham chiếu</text></g><g class="nodes"><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(195.0, 261.0)"><rect class="basic label-container" x="-175.0" y="-221.0" width="350" height="442" rx="5" ry="5" style="stroke:#54a7eb" /><g class="label" transform="translate(-175.0, -221.0)"><foreignObject width="350" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#d6eaff;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PhotoAlbums" role="button" tabindex="0" aria-label="Xem chi tiết bảng PhotoAlbums" transform="translate(725.0, 195.0)"><rect class="basic label-container" x="-175.0" y="-125.0" width="350" height="250" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -125.0)"><foreignObject width="350" height="250"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:250px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">PhotoAlbums</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="OwnerUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Name"><td class="identity-keys" /><td><code class="" title="">Name</code></td><td class="column-type">varchar(160)</td></tr><tr data-column="Description"><td class="identity-keys" /><td><code class="" title="">Description</code></td><td class="column-type">varchar(2000)?</td></tr><tr data-column="Privacy"><td class="identity-keys" /><td><code class="" title="">Privacy</code></td><td class="column-type">integer</td></tr><tr data-column="AlbumType"><td class="identity-keys" /><td><code class="" title="">AlbumType</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="AlbumMedia" role="button" tabindex="0" aria-label="Xem chi tiết bảng AlbumMedia" transform="translate(725.0, 557.0)"><rect class="basic label-container" x="-175.0" y="-77.0" width="350" height="154" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-175.0, -77.0)"><foreignObject width="350" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">AlbumMedia</th></tr></thead><tbody><tr data-column="AlbumId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">AlbumId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="Caption"><td class="identity-keys" /><td><code class="" title="">Caption</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="SortOrder"><td class="identity-keys" /><td><code class="" title="">SortOrder</code></td><td class="column-type">bigint</td></tr><tr data-column="AddedAtUtc"><td class="identity-keys" /><td><code class="" title="">AddedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(1255.0, 607.0)"><rect class="basic label-container" x="-175.0" y="-257.0" width="350" height="514" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -257.0)"><foreignObject width="350" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(20, 600)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="photos-specification" type="application/json">
+{
+  "title": "Album ảnh, quyền xem và lịch sử ảnh hệ thống",
+  "purpose": "Photos quản lý album tự tạo, ảnh trong album và lịch sử ảnh đại diện, ảnh bìa, ảnh bài viết trên trang cá nhân. Quyền xem được kiểm tra theo chủ sở hữu, quyền riêng tư, quan hệ bạn bè và chặn tài khoản.",
+  "scope": "Đối chiếu 2 entity Photos, 11 endpoint của PhotoAlbumsController, PhotosService, PhotoAccessService và các luồng tích hợp Users, Posts, Media. ERD giữ đầy đủ cột của PhotoAlbums, AlbumMedia, AspNetUsers và MediaAssets. Friendships, BlockedUsers và UserProfiles được tra cứu khi kiểm tra quyền hoặc ảnh hồ sơ; các bảng đó được nêu trong đặc tả. Album giữ tham chiếu tới media đã upload; Photos không upload hoặc xóa tệp vật lý.",
+  "usecasesTitle": "Quản lý album và lịch sử ảnh",
+  "groups": [
+    {
+      "id": "photos-manage",
+      "name": "Quản lý album tự tạo",
+      "actor": "owner",
+      "description": "Chủ album tạo, sửa thông tin, đổi quyền riêng tư hoặc xóa mềm album custom."
+    },
+    {
+      "id": "photos-albums",
+      "name": "Xem album",
+      "actor": "viewer",
+      "description": "Xem danh sách và chi tiết album khi có quyền truy cập."
+    },
+    {
+      "id": "photos-membership",
+      "name": "Quản lý ảnh trong album",
+      "actor": "owner",
+      "description": "Thêm ảnh vào album custom; sửa chú thích hoặc gỡ ảnh trong album của mình."
+    },
+    {
+      "id": "photos-read",
+      "name": "Xem ảnh",
+      "actor": "viewer",
+      "description": "Duyệt ảnh theo cursor, xem chi tiết và mở tệp qua URL đọc do Media cấp."
+    },
+    {
+      "id": "photos-system",
+      "name": "Lịch sử ảnh hệ thống",
+      "actor": "system",
+      "caseSpacing": 132,
+      "description": "Users và Posts gọi Photos đồng bộ ngay trong luồng cập nhật hồ sơ hoặc tạo bài viết; không có API tạo album hệ thống riêng."
+    }
+  ],
+  "actors": [
+    {
+      "id": "owner",
+      "name": "Chủ album",
+      "role": "Đã đăng nhập; tạo album và quản lý album thuộc OwnerUserId của mình. Quyền chỉnh sửa album custom khác với quyền sửa chú thích hoặc gỡ ảnh."
+    },
+    {
+      "id": "viewer",
+      "name": "Người xem",
+      "role": "Chủ sở hữu hoặc người đã đăng nhập có quyền xem album. Implementation hiện tại từ chối người chưa đăng nhập, kể cả album public."
+    },
+    {
+      "id": "system",
+      "name": "Hệ thống",
+      "role": "PhotosService tự tạo album hệ thống khi cần và lưu liên kết ảnh hợp lệ từ các luồng tích hợp."
+    },
+    {
+      "id": "media",
+      "name": "Module Media",
+      "role": "Cấp URL đọc cho media READY, chưa bị xóa; ngăn xóa media khi còn AlbumMedia tham chiếu."
+    },
+    {
+      "id": "users",
+      "name": "Module Users",
+      "role": "Gọi AddSystemMediaAsync khi cập nhật AvatarMediaId hoặc CoverMediaId của hồ sơ."
+    },
+    {
+      "id": "posts",
+      "name": "Module Posts",
+      "role": "Gọi AddSystemMediaAsync cho ảnh khi tạo bài viết STANDARD trên PROFILE và luồng cho phép thêm vào timeline album."
+    }
+  ],
+  "rules": [
+    {
+      "text": "API ghi yêu cầu đăng nhập và claim sub hợp lệ. API đọc có AllowAnonymous, nhưng PhotoAccessService từ chối viewerId null; album public vẫn không được mở cho khách chưa đăng nhập theo code hiện tại.",
+      "source": "Controllers/PhotoAlbumsController.cs"
+    },
+    {
+      "text": "Chủ album luôn được xem. Người khác phải đăng nhập và không có chặn theo cả hai chiều: PUBLIC cho phép xem, FRIENDS cần Friendship, ONLY_ME từ chối. Album thiếu, đã xóa hoặc không có quyền trả 404 album_not_found; danh sách lọc bỏ album không được phép xem.",
+      "source": "Services/PhotoAccessService.cs"
+    },
+    {
+      "text": "Privacy lưu integer: PUBLIC=0, FRIENDS=1, ONLY_ME=2. AlbumType lưu integer: CUSTOM=0, PROFILE_PICTURES=1, COVER_PHOTOS=2, TIMELINE_PHOTOS=3.",
+      "source": "Domain/Enums/PhotoAlbumType.cs"
+    },
+    {
+      "text": "Tên bắt buộc, tối đa 160 ký tự sau trim; mô tả tối đa 2000. Privacy nhận public, friends, only_me và tên enum tương ứng. Response dùng ToApiName().ToLowerInvariant(), ví dụ onlyme, profilepictures, coverphotos, timelinephotos.",
+      "source": "DTOs/Requests/CreatePhotoAlbumRequest.cs"
+    },
+    {
+      "text": "Tạo qua API luôn là CUSTOM. Chỉ chủ album custom còn hoạt động được đổi tên, mô tả, privacy hoặc xóa album. CanManage chỉ đúng với chủ album CUSTOM; album hệ thống không cho sửa thông tin, xóa album hoặc thêm ảnh trực tiếp qua API.",
+      "source": "Services/PhotosService.cs"
+    },
+    {
+      "text": "DELETE album là xóa mềm: ghi DeletedAtUtc và UpdatedAtUtc, giữ AlbumMedia cùng MediaAsset. FK AlbumMedia.AlbumId CASCADE chỉ có tác dụng khi xóa vật lý bản ghi PhotoAlbums.",
+      "source": "Domain/Entities/PhotoAlbum.cs"
+    },
+    {
+      "text": "UNIQUE (OwnerUserId, AlbumType) chỉ áp dụng khi DeletedAtUtc IS NULL AND AlbumType <> 0: mỗi chủ sở hữu có tối đa một album hệ thống đang hoạt động theo từng loại; không giới hạn số album custom. Index danh sách album cũng lọc DeletedAtUtc IS NULL.",
+      "source": "Domain/Entities/PhotoAlbum.cs"
+    },
+    {
+      "text": "Thêm vào album custom chỉ nhận IMAGE, READY, chưa bị xóa và thuộc người gọi. Không được thêm lại cùng cặp (AlbumId, MediaId); một ảnh chỉ được thuộc một album custom đang hoạt động theo kiểm tra service. Database không có UNIQUE MediaId toàn cục và vẫn cho một media thuộc các album hệ thống khác.",
+      "source": "Services/PhotosService.cs"
+    },
+    {
+      "text": "AlbumMedia có PK ghép (AlbumId, MediaId). AlbumId CASCADE về PhotoAlbums, MediaId RESTRICT về MediaAssets; PhotoAlbums.OwnerUserId RESTRICT về AspNetUsers. SortOrder là bigint, được cấp MAX + 1 khi thêm; chưa có API sắp xếp lại ảnh.",
+      "source": "Domain/Entities/AlbumMedia.cs"
+    },
+    {
+      "text": "Caption tối đa 1000 ký tự sau trim; null hoặc chỉ có khoảng trắng trở thành null. Chủ album được sửa caption của cả album custom và album hệ thống.",
+      "source": "DTOs/Requests/UpdateAlbumMediaRequest.cs"
+    },
+    {
+      "text": "Gỡ ảnh chỉ xóa AlbumMedia, giữ tệp và metadata media. Nếu media đang là avatar hoặc cover của UserProfiles, trả 409 active_profile_media; phải thay ảnh hồ sơ đang dùng trước khi gỡ khỏi lịch sử.",
+      "source": "Services/PhotosService.cs"
+    },
+    {
+      "text": "Phân trang mặc định 20, limit từ 1 đến 100. Album sắp theo CreatedAtUtc rồi Id giảm dần; ảnh theo SortOrder rồi MediaId tăng dần. Cursor không giải mã được bị bỏ qua, không sinh lỗi invalid_cursor.",
+      "source": "Services/PhotosService.cs"
+    },
+    {
+      "text": "Danh sách album yêu cầu UserProfiles của chủ sở hữu tồn tại và lọc quyền xem. PhotoCount đếm tất cả AlbumMedia, PreviewUrl lấy hàng đầu theo SortOrder/MediaId; danh sách ảnh chỉ trả IMAGE, READY, chưa bị xóa, nên số ảnh hiển thị có thể khác PhotoCount.",
+      "source": "Services/PhotosService.cs"
+    },
+    {
+      "text": "Chi tiết ảnh và /access kiểm tra quyền album, liên kết AlbumMedia rồi gọi Media.CreateReadUrlAsync. /access trả 302 tới URL tệp; Media không cấp URL nếu asset thiếu, không READY, đã xóa hoặc thiếu object key.",
+      "source": "../Media/Services/MediaService.cs"
+    },
+    {
+      "text": "Album hệ thống được tạo khi phát sinh ảnh hợp lệ, mặc định PUBLIC. Users thêm lịch sử avatar/cover; Posts thêm ảnh của bài STANDARD trên PROFILE khi addToTimelinePhotos bật. Privacy của album hệ thống không lấy từ privacy bài viết.",
+      "source": "Services/PhotosService.cs"
+    },
+    {
+      "text": "Mọi AlbumMedia còn tồn tại đều chặn DELETE media với media_is_referenced, kể cả liên kết trong album đã xóa mềm. Xóa mềm album không giải phóng tham chiếu tới tệp.",
+      "source": "../Media/Services/MediaService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-PH-01",
+      "name": "Tạo album",
+      "group": "photos-manage",
+      "goal": "Tạo album custom với tên, mô tả và quyền riêng tư do chủ sở hữu chọn.",
+      "actor": "Chủ album",
+      "preconditions": "Đã đăng nhập bằng tài khoản tồn tại; tên và privacy hợp lệ.",
+      "steps": [
+        "Gửi Name, Description tùy chọn và Privacy.",
+        "Controller kiểm tra dữ liệu request; service parse privacy.",
+        "Tạo PhotoAlbum CUSTOM với Id mới, OwnerUserId là người gọi và thời gian UTC.",
+        "Lưu album và trả 201 cùng Location, thông tin album, PhotoCount và CanManage=true."
+      ],
+      "alternatives": [
+        "Thiếu tên/privacy, tên dài quá 160 hoặc mô tả quá 2000 ký tự: 400 validation_failed.",
+        "Privacy không hợp lệ tại service: 400 invalid_album_privacy.",
+        "Chưa đăng nhập hoặc thiếu claim sub hợp lệ: 401."
+      ],
+      "postconditions": "PhotoAlbums có một album CUSTOM mới, chưa có AlbumMedia; media không được upload trong thao tác này.",
+      "endpoints": [
+        "POST /api/albums"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AspNetUsers",
+        "AlbumMedia"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "DTOs/Requests/CreatePhotoAlbumRequest.cs",
+        "Services/PhotosService.cs",
+        "Domain/Entities/PhotoAlbum.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-02",
+      "name": "Sửa album và quyền riêng tư",
+      "group": "photos-manage",
+      "goal": "Cập nhật tên, mô tả và privacy của album custom đang hoạt động.",
+      "actor": "Chủ album",
+      "preconditions": "Đã đăng nhập; album CUSTOM thuộc người gọi, chưa bị xóa.",
+      "steps": [
+        "Gửi Name, Description và Privacy mới tới album.",
+        "Kiểm tra request và tìm album đang hoạt động theo Id, OwnerUserId.",
+        "UpdateCustom trim nội dung, cập nhật privacy và UpdatedAtUtc.",
+        "Lưu và trả 200 với thông tin album hiện tại."
+      ],
+      "alternatives": [
+        "Thiếu album, sai chủ sở hữu hoặc đã xóa: 404 album_not_found.",
+        "Album hệ thống: 409 system_album_restricted.",
+        "Dữ liệu request không hợp lệ: 400; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Thông tin và quyền xem album được cập nhật; CreatedAtUtc và các liên kết ảnh được giữ.",
+      "endpoints": [
+        "PATCH /api/albums/{albumId:guid}"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "DTOs/Requests/UpdatePhotoAlbumRequest.cs",
+        "Services/PhotosService.cs",
+        "Domain/Entities/PhotoAlbum.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-03",
+      "name": "Xóa mềm album",
+      "group": "photos-manage",
+      "goal": "Ẩn album custom khỏi các truy vấn album đang hoạt động.",
+      "actor": "Chủ album",
+      "preconditions": "Đã đăng nhập; album CUSTOM đang hoạt động thuộc người gọi.",
+      "steps": [
+        "Gửi yêu cầu xóa album.",
+        "Tìm album còn hoạt động và thuộc người gọi.",
+        "DeleteCustom ghi DeletedAtUtc và UpdatedAtUtc.",
+        "Lưu và trả 204."
+      ],
+      "alternatives": [
+        "Album hệ thống: 409 system_album_restricted.",
+        "Album thiếu, đã xóa hoặc thuộc người khác: 404 album_not_found.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Album không còn được xem hoặc sửa qua API. AlbumMedia và MediaAssets vẫn tồn tại; tham chiếu vẫn chặn xóa media.",
+      "endpoints": [
+        "DELETE /api/albums/{albumId:guid}"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "Services/PhotosService.cs",
+        "Domain/Entities/PhotoAlbum.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-04",
+      "name": "Xem danh sách album",
+      "group": "photos-albums",
+      "goal": "Lấy các album của một người dùng mà người xem có quyền truy cập.",
+      "actor": "Người xem",
+      "preconditions": "Chủ sở hữu có UserProfiles; viewer đăng nhập để các album có thể vượt qua kiểm tra quyền.",
+      "steps": [
+        "Gửi userId cùng cursor tùy chọn và limit, mặc định 20.",
+        "Kiểm tra limit và sự tồn tại của UserProfiles.",
+        "Lấy album chưa xóa theo CreatedAtUtc/Id giảm dần, sau cursor nếu hợp lệ; đọc tối đa limit × 3 + 1 ứng viên.",
+        "Lọc từng album theo chủ sở hữu, privacy, Friendship và chặn hai chiều.",
+        "Trả 200 với Items, PhotoCount, PreviewUrl và NextCursor khi còn nhiều album được phép trong tập ứng viên."
+      ],
+      "alternatives": [
+        "limit ngoài 1–100: 400 invalid_limit; không có hồ sơ chủ sở hữu: 404 album_not_found.",
+        "Cursor sai định dạng bị bỏ qua.",
+        "Không đăng nhập hoặc không có album đủ quyền: Items rỗng; không trả 401 cho API đọc này.",
+        "Do lọc quyền trên tập ứng viên hữu hạn, trang có thể chưa đủ limit dù phía sau còn album."
+      ],
+      "postconditions": "Chỉ thông tin album được phép xuất hiện; không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/users/{userId:guid}/albums"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "UserProfiles",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "Services/PhotosService.cs",
+        "Services/PhotoAccessService.cs",
+        "DTOs/Responses/PhotoAlbumSummaryResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-05",
+      "name": "Xem chi tiết album",
+      "group": "photos-albums",
+      "goal": "Đọc thông tin album, số ảnh, ảnh xem trước và khả năng quản lý album.",
+      "actor": "Người xem",
+      "preconditions": "Album chưa xóa; viewer là chủ hoặc người đăng nhập có quyền xem.",
+      "steps": [
+        "Gửi albumId.",
+        "Tìm album đang hoạt động và kiểm tra CanViewAsync.",
+        "Đếm AlbumMedia, lấy liên kết ảnh đầu tiên theo SortOrder/MediaId làm PreviewUrl.",
+        "Trả 200 với thông tin, loại album, privacy và CanManage chỉ đúng với chủ album CUSTOM."
+      ],
+      "alternatives": [
+        "Album thiếu, đã xóa, bị chặn hoặc không đủ quyền: 404 album_not_found.",
+        "Viewer chưa đăng nhập: 404, kể cả album PUBLIC.",
+        "Album không có ảnh: PhotoCount=0, PreviewUrl=null."
+      ],
+      "postconditions": "Trả metadata album; CanManage không quyết định quyền sửa caption hoặc gỡ ảnh của album hệ thống.",
+      "endpoints": [
+        "GET /api/albums/{albumId:guid}"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "Services/PhotosService.cs",
+        "Services/PhotoAccessService.cs",
+        "DTOs/Responses/PhotoAlbumResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-06",
+      "name": "Thêm ảnh vào album",
+      "group": "photos-membership",
+      "goal": "Gắn một ảnh đã upload và sẵn sàng vào album custom của mình.",
+      "actor": "Chủ album",
+      "preconditions": "Đã đăng nhập; album CUSTOM đang hoạt động thuộc người gọi; media IMAGE, READY, chưa xóa và thuộc người gọi.",
+      "steps": [
+        "Gửi MediaId khác Guid.Empty tới album.",
+        "Kiểm tra chủ album, loại CUSTOM và trạng thái, quyền sở hữu MediaAsset.",
+        "Kiểm tra cặp AlbumId/MediaId chưa có và ảnh chưa thuộc album custom đang hoạt động khác.",
+        "Tạo AlbumMedia với SortOrder bằng MAX + 1, AddedAtUtc hiện tại và Caption=null.",
+        "Lưu và trả 201, Location cùng AccessUrl tương đối của ảnh trong album."
+      ],
+      "alternatives": [
+        "Album thiếu, đã xóa hoặc sai chủ: 404; album hệ thống: 409 system_album_restricted.",
+        "Media thiếu hoặc sai chủ sở hữu: 403 media_not_owned; không phải ảnh READY hoặc đã xóa: 409 invalid_media.",
+        "Trùng cặp: 409 album_media_exists; ảnh trong album custom khác còn hoạt động: 409 custom_album_membership_exists.",
+        "MediaId rỗng: 400 validation_failed; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Có một liên kết AlbumMedia mới; không sao chép tệp và không cập nhật UpdatedAtUtc của album trong luồng hiện tại.",
+      "endpoints": [
+        "POST /api/albums/{albumId:guid}/media"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "DTOs/Requests/AddAlbumMediaRequest.cs",
+        "Services/PhotosService.cs",
+        "Domain/Entities/AlbumMedia.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-07",
+      "name": "Sửa chú thích ảnh",
+      "group": "photos-membership",
+      "goal": "Cập nhật hoặc xóa caption của một ảnh trong album của mình.",
+      "actor": "Chủ album",
+      "preconditions": "Đã đăng nhập; album đang hoạt động thuộc người gọi; liên kết AlbumMedia tồn tại, với cả album custom hoặc hệ thống.",
+      "steps": [
+        "Gửi Caption tùy chọn.",
+        "Kiểm tra album còn hoạt động và thuộc người gọi, tìm cặp AlbumId/MediaId.",
+        "Trim caption; null hoặc khoảng trắng được lưu thành null.",
+        "Lưu và trả 200 với AlbumMediaResponse."
+      ],
+      "alternatives": [
+        "Caption quá 1000 ký tự sau trim: 400 validation_failed.",
+        "Thiếu album, liên kết, đã xóa hoặc sai chủ: 404 album_not_found.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Caption thay đổi; SortOrder, AddedAtUtc và UpdatedAtUtc của album được giữ.",
+      "endpoints": [
+        "PATCH /api/albums/{albumId:guid}/media/{mediaId:guid}"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "DTOs/Requests/UpdateAlbumMediaRequest.cs",
+        "Services/PhotosService.cs",
+        "Domain/Entities/AlbumMedia.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-08",
+      "name": "Gỡ ảnh khỏi album",
+      "group": "photos-membership",
+      "goal": "Xóa một liên kết ảnh khỏi album custom hoặc album hệ thống của mình.",
+      "actor": "Chủ album",
+      "preconditions": "Đã đăng nhập; album đang hoạt động thuộc người gọi và có AlbumMedia; media không đang là avatar/cover của hồ sơ người gọi.",
+      "steps": [
+        "Gửi yêu cầu xóa cặp AlbumId/MediaId.",
+        "Tìm album thuộc người gọi, liên kết ảnh và kiểm tra AvatarMediaId/CoverMediaId của UserProfiles.",
+        "Xóa AlbumMedia và lưu.",
+        "Trả 204; tệp và MediaAsset được giữ."
+      ],
+      "alternatives": [
+        "Ảnh đang làm avatar hoặc cover: 409 active_profile_media.",
+        "Album thiếu, đã xóa, sai chủ hoặc thiếu liên kết: 404 album_not_found.",
+        "Chưa đăng nhập: 401; album hệ thống vẫn cho gỡ nếu ảnh không còn được dùng trên hồ sơ."
+      ],
+      "postconditions": "Liên kết album bị xóa. Muốn xóa media phải gọi Media riêng và đáp ứng kiểm tra các tham chiếu còn lại.",
+      "endpoints": [
+        "DELETE /api/albums/{albumId:guid}/media/{mediaId:guid}"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "UserProfiles",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "Services/PhotosService.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-09",
+      "name": "Duyệt ảnh trong album",
+      "group": "photos-read",
+      "goal": "Lấy trang ảnh sẵn sàng hiển thị theo thứ tự trong album.",
+      "actor": "Người xem",
+      "preconditions": "Album đang hoạt động; viewer là chủ hoặc người đăng nhập có quyền xem.",
+      "steps": [
+        "Gửi albumId, cursor tùy chọn và limit mặc định 20.",
+        "Kiểm tra limit, album và quyền xem.",
+        "Join AlbumMedia với MediaAssets, chỉ lấy IMAGE, READY, DeletedAtUtc=null.",
+        "Áp dụng cursor hợp lệ, sắp SortOrder/MediaId tăng dần và lấy limit + 1 hàng.",
+        "Trả 200 với Items gồm caption, thứ tự, ngày thêm, AccessUrl và NextCursor nếu còn hàng."
+      ],
+      "alternatives": [
+        "limit ngoài 1–100: 400 invalid_limit; cursor không giải mã được bị bỏ qua.",
+        "Album thiếu, đã xóa, viewer chưa đăng nhập hoặc không có quyền: 404 album_not_found.",
+        "Không có ảnh hợp lệ: Items rỗng và NextCursor=null."
+      ],
+      "postconditions": "Trả một trang ảnh, không cấp trực tiếp URL storage và không đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/albums/{albumId:guid}/media"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "MediaAssets",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "Services/PhotosService.cs",
+        "Services/PhotoAccessService.cs",
+        "DTOs/Responses/AlbumMediaResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-10",
+      "name": "Xem chi tiết ảnh",
+      "group": "photos-read",
+      "support": [
+        "media"
+      ],
+      "goal": "Đọc thông tin một ảnh gắn với album và lấy URL đọc tệp.",
+      "actor": "Người xem",
+      "preconditions": "Có quyền xem album đang hoạt động; liên kết AlbumMedia tồn tại và Media có thể cấp URL đọc.",
+      "steps": [
+        "Gửi AlbumId và MediaId.",
+        "Kiểm tra album, quyền xem và cặp AlbumMedia.",
+        "Gọi Media.CreateReadUrlAsync để lấy URL tệp cho asset READY, chưa bị xóa.",
+        "Trả 200 với MediaId, AlbumId, OwnerUserId, Caption, AddedAtUtc và Url."
+      ],
+      "alternatives": [
+        "Album thiếu, đã xóa, không có quyền hoặc thiếu liên kết: 404 album_not_found.",
+        "Media không cấp được URL do thiếu asset, trạng thái hoặc object key không hợp lệ: 404 album_not_found.",
+        "Viewer chưa đăng nhập: 404; chủ sở hữu album cũng phải đi qua kiểm tra media đọc được."
+      ],
+      "postconditions": "Trả thông tin cùng URL đọc; không chuyển quyền sở hữu media.",
+      "endpoints": [
+        "GET /api/albums/{albumId:guid}/media/{mediaId:guid}"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "MediaAssets",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "Services/PhotosService.cs",
+        "Services/PhotoAccessService.cs",
+        "../Media/Services/MediaService.cs",
+        "DTOs/Responses/PhotoDetailResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-11",
+      "name": "Mở tệp ảnh",
+      "group": "photos-read",
+      "support": [
+        "media"
+      ],
+      "goal": "Mở ảnh qua đường dẫn album sau khi kiểm tra quyền tại thời điểm truy cập.",
+      "actor": "Người xem",
+      "preconditions": "Có quyền xem album và ảnh liên kết có URL đọc hợp lệ.",
+      "steps": [
+        "Mở AccessUrl hoặc PreviewUrl dạng /api/albums/{albumId}/media/{mediaId}/access.",
+        "Controller gọi GetPhotoAsync với người xem hiện tại.",
+        "Kiểm tra album, liên kết và lấy URL từ Media.",
+        "Trả 302 Redirect tới URL tệp."
+      ],
+      "alternatives": [
+        "Mất quyền, chưa đăng nhập, album đã xóa, thiếu liên kết hoặc media không đọc được: 404 album_not_found.",
+        "Ảnh xem trước có liên kết nhưng asset không READY hoặc đã xóa cũng có thể trả 404."
+      ],
+      "postconditions": "Client được chuyển tới URL đọc do Media cấp; database không thay đổi.",
+      "endpoints": [
+        "GET /api/albums/{albumId:guid}/media/{mediaId:guid}/access"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "MediaAssets",
+        "Friendships",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/PhotoAlbumsController.cs",
+        "Services/PhotosService.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-12",
+      "name": "Lưu lịch sử ảnh đại diện",
+      "group": "photos-system",
+      "support": [
+        "users"
+      ],
+      "goal": "Tự lưu ảnh đại diện được cung cấp trong cập nhật hồ sơ vào album PROFILE_PICTURES.",
+      "actor": "Hệ thống, được Module Users gọi trong thao tác của chủ hồ sơ",
+      "preconditions": "Luồng cập nhật hồ sơ đã xác thực chủ sở hữu, kiểm tra media và đồng bộ tham chiếu hồ sơ; AvatarMediaId được cung cấp.",
+      "steps": [
+        "Users cập nhật UserProfiles và gọi AddSystemMediaAsync với loại PROFILE_PICTURES.",
+        "Photos kiểm tra media là IMAGE, READY, chưa xóa và thuộc chủ hồ sơ.",
+        "Tìm hoặc tạo album hệ thống Profile pictures với privacy PUBLIC.",
+        "Nếu cặp AlbumId/MediaId chưa tồn tại, thêm AlbumMedia với SortOrder=MAX+1 và lưu."
+      ],
+      "alternatives": [
+        "Media không hợp lệ: AddSystemMediaAsync bỏ qua, không tạo liên kết.",
+        "Ảnh đã có trong album: không thêm lại.",
+        "Tạo album trùng UNIQUE do đồng thời: đọc lại album đã tồn tại; lỗi FK hoặc lỗi database khác không được xử lý như trùng album.",
+        "Caption và gỡ lịch sử thực hiện qua API ảnh; ảnh đại diện đang dùng không được gỡ."
+      ],
+      "postconditions": "Ảnh hợp lệ có mặt trong lịch sử avatar; album tạo khi cần, chỉ có một PROFILE_PICTURES đang hoạt động cho chủ sở hữu.",
+      "endpoints": [
+        "PATCH /api/users/me"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "MediaAssets",
+        "UserProfiles",
+        "ProfileMediaReferences",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Services/PhotosService.cs",
+        "Domain/Entities/PhotoAlbum.cs",
+        "../Users/Services/UserProfileService.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-13",
+      "name": "Lưu lịch sử ảnh bìa",
+      "group": "photos-system",
+      "support": [
+        "users"
+      ],
+      "goal": "Tự lưu ảnh bìa được cung cấp trong cập nhật hồ sơ vào album COVER_PHOTOS.",
+      "actor": "Hệ thống, được Module Users gọi trong thao tác của chủ hồ sơ",
+      "preconditions": "Chủ hồ sơ đã đăng nhập; CoverMediaId được cung cấp và luồng Users đã kiểm tra, đồng bộ media hồ sơ.",
+      "steps": [
+        "Users cập nhật hồ sơ và gọi AddSystemMediaAsync với COVER_PHOTOS.",
+        "Kiểm tra ảnh thuộc chủ hồ sơ, READY và chưa xóa.",
+        "Tìm hoặc tạo album Cover photos với privacy PUBLIC.",
+        "Thêm cặp AlbumId/MediaId chưa có, cấp SortOrder cuối album và lưu."
+      ],
+      "alternatives": [
+        "Media không đáp ứng điều kiện: bỏ qua; ảnh đã có trong album: không thêm lại.",
+        "Trùng UNIQUE khi tạo album hệ thống: đọc lại album đã có.",
+        "Gỡ ảnh đang là cover của UserProfiles bị từ chối; thay ảnh bìa trước khi gỡ lịch sử."
+      ],
+      "postconditions": "Ảnh bìa được lưu trong album hệ thống khi hợp lệ; không có API tạo COVER_PHOTOS trực tiếp.",
+      "endpoints": [
+        "PATCH /api/users/me"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "MediaAssets",
+        "UserProfiles",
+        "ProfileMediaReferences",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Services/PhotosService.cs",
+        "Domain/Entities/PhotoAlbum.cs",
+        "../Users/Services/UserProfileService.cs"
+      ]
+    },
+    {
+      "id": "UC-PH-14",
+      "name": "Lưu ảnh bài viết vào album",
+      "group": "photos-system",
+      "support": [
+        "posts"
+      ],
+      "goal": "Tập hợp ảnh từ bài viết STANDARD trên trang cá nhân vào TIMELINE_PHOTOS.",
+      "actor": "Hệ thống, được Module Posts gọi trong thao tác tạo bài viết",
+      "preconditions": "Luồng tạo bài viết có ContainerType=PROFILE, PostType=STANDARD, addToTimelinePhotos=true; media đã được Posts kiểm tra.",
+      "steps": [
+        "Posts lưu bài viết và PostMedia, rồi gọi AddSystemMediaAsync cho từng mediaId.",
+        "Photos chỉ nhận IMAGE, READY, chưa xóa và thuộc tác giả.",
+        "Tìm hoặc tạo album Timeline photos với privacy PUBLIC.",
+        "Thêm ảnh chưa có với SortOrder=MAX+1; không tạo thêm liên kết cho ảnh trùng."
+      ],
+      "alternatives": [
+        "Media video hoặc không hợp lệ bị bỏ qua trong Photos.",
+        "Bài trong GROUP/PAGE hoặc luồng tắt addToTimelinePhotos không thực hiện nhánh này.",
+        "Album hệ thống không nhận privacy bài viết; bài only_me cũng không làm đổi privacy album TIMELINE_PHOTOS.",
+        "Sửa/xóa bài viết không tự gỡ AlbumMedia trong luồng được mô tả này."
+      ],
+      "postconditions": "Ảnh hợp lệ xuất hiện trong album hệ thống của tác giả; PostMedia và AlbumMedia là các liên kết độc lập tới MediaAssets.",
+      "endpoints": [
+        "POST /api/posts"
+      ],
+      "tables": [
+        "PhotoAlbums",
+        "AlbumMedia",
+        "MediaAssets",
+        "Posts",
+        "PostMedia",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Services/PhotosService.cs",
+        "Domain/Entities/PhotoAlbum.cs",
+        "../Posts/Services/PostsService.cs"
+      ]
+    }
+  ]
 }
   </script>
 
