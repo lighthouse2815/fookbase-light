@@ -602,6 +602,26 @@
         "source": "flowchart LR\n    Notifications[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Notifications</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='RecipientUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>RecipientUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ActorUserId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Type'><td class='identity-keys' /><td><code class='' title=''>Type</code></td><td class='column-type'>integer</td></tr><tr data-column='EntityType'><td class='identity-keys' /><td><code class='' title=''>EntityType</code></td><td class='column-type'>integer?</td></tr><tr data-column='EntityId'><td class='identity-keys' /><td><code class='' title=''>EntityId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='IsRead'><td class='identity-keys' /><td><code class='' title=''>IsRead</code></td><td class='column-type'>boolean</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ReadAtUtc'><td class='identity-keys' /><td><code class='' title=''>ReadAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PushDevices[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>PushDevices</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ExpoPushToken'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ExpoPushToken</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='RegisteredAtUtc'><td class='identity-keys' /><td><code class='' title=''>RegisteredAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DisabledAtUtc'><td class='identity-keys' /><td><code class='' title=''>DisabledAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PushDeliveryReceipts[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>PushDeliveryReceipts</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='PushDeviceId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>PushDeviceId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ExpoReceiptId'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ExpoReceiptId</code></td><td class='column-type'>varchar(64)</td></tr><tr data-column='AvailableAtUtc'><td class='identity-keys' /><td><code class='' title=''>AvailableAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='CheckedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CheckedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='CheckAttempts'><td class='identity-keys' /><td><code class='' title=''>CheckAttempts</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"ActorUserId · 0..1 → 0..N\"| Notifications\n    AspNetUsers -->|\"RecipientUserId · 1 → 0..N\"| Notifications\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| PushDevices\n    PushDevices -->|\"PushDeviceId · 1 → 0..N\"| PushDeliveryReceipts",
         "note": "3 bảng Notifications, 1 bảng tham chiếu, 37 cột và 4 FK. EntityType/EntityId không có FK tới nội dung. Notifications khác MessageNotifications. Receipt FK tới PushDevices CASCADE; actor của notification nullable."
       }
+    },
+    {
+      "id": "admin",
+      "name": "Admin",
+      "description": "Dashboard, tài khoản, báo cáo nội dung, lịch sử xử lý và trạng thái kiểm duyệt.",
+      "tables": [
+        "ModerationActions",
+        "UserModerationStates"
+      ],
+      "diagram": {
+        "template": "overview-admin",
+        "tables": [
+          "ModerationActions",
+          "UserModerationStates",
+          "AspNetUsers",
+          "ContentReports"
+        ],
+        "source": "flowchart LR\n    ModerationActions[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>ModerationActions</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ModeratorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ModeratorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SubjectUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>SubjectUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReportId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReportId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='TargetType'><td class='identity-keys' /><td><code class='' title=''>TargetType</code></td><td class='column-type'>integer</td></tr><tr data-column='TargetId'><td class='identity-keys' /><td><code class='' title=''>TargetId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActionType'><td class='identity-keys' /><td><code class='' title=''>ActionType</code></td><td class='column-type'>integer</td></tr><tr data-column='Reason'><td class='identity-keys' /><td><code class='' title=''>Reason</code></td><td class='column-type'>varchar(500)</td></tr><tr data-column='InternalNote'><td class='identity-keys' /><td><code class='' title=''>InternalNote</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>ExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    UserModerationStates[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>UserModerationStates</th></tr></thead><tbody><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='WarningCount'><td class='identity-keys' /><td><code class='' title=''>WarningCount</code></td><td class='column-type'>integer</td></tr><tr data-column='SuspendedUntilUtc'><td class='identity-keys' /><td><code class='' title=''>SuspendedUntilUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DisabledAtUtc'><td class='identity-keys' /><td><code class='' title=''>DisabledAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    ContentReports[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>ContentReports</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReporterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReporterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='TargetType'><td class='identity-keys' /><td><code class='' title=''>TargetType</code></td><td class='column-type'>integer</td></tr><tr data-column='TargetId'><td class='identity-keys' /><td><code class='' title=''>TargetId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Reason'><td class='identity-keys' /><td><code class='' title=''>Reason</code></td><td class='column-type'>integer</td></tr><tr data-column='Details'><td class='identity-keys' /><td><code class='' title=''>Details</code></td><td class='column-type'>varchar(500)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ResolvedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ResolvedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"ModeratorUserId · 1 → 0..N\"| ModerationActions\n    AspNetUsers -->|\"SubjectUserId · 1 → 0..N\"| ModerationActions\n    ContentReports -->|\"ReportId · 0..1 → 0..N\"| ModerationActions\n    AspNetUsers -->|\"UserId · 1 → 0..1\"| UserModerationStates",
+        "note": "2 bảng Admin, 2 bảng tham chiếu, 42 cột và 4 FK. ContentReports thuộc Posts; ReportId nullable. TargetId không có FK đa hình. UserModerationStates.UserId là PK kiêm FK với AspNetUsers (1 → 0..1)."
+      }
     }
   ],
   "tables": {
@@ -6849,6 +6869,199 @@
       "purpose": "Ticket Expo, lịch kiểm tra, attempts và thời gian hoàn tất.",
       "module": "notifications",
       "note": "PushDeviceId FK CASCADE; ExpoReceiptId UNIQUE, tối đa 64. Ticket mới tới hạn sau 15 phút; retry thiếu kết quả sau 5 phút, CheckAttempts>=12 kết thúc. CheckedAtUtc nullable."
+    },
+    "ModerationActions": {
+      "name": "ModerationActions",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "ModeratorUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "SubjectUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "ReportId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "TargetType",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "TargetId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "ActionType",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Reason",
+          "type": "character varying(500)",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "InternalNote",
+          "type": "character varying(2000)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "ExpiresAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "ModeratorUserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "ReportId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "SubjectUserId",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "TargetType",
+            "TargetId",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "ModeratorUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "SubjectUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "ContentReports",
+          "fields": [
+            "ReportId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Lịch sử kiểm duyệt",
+      "purpose": "Moderator, subject, report/target, action, lý do và thời hạn.",
+      "module": "admin",
+      "note": "ModeratorUserId/SubjectUserId FK RESTRICT; ReportId nullable FK ContentReports RESTRICT. TargetType/TargetId là nghiệp vụ, không có FK đa hình. Reason <=500, InternalNote <=2000; index theo target và subject/thời gian."
+    },
+    "UserModerationStates": {
+      "name": "UserModerationStates",
+      "columns": [
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "WarningCount",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "SuspendedUntilUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "DisabledAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "UpdatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "UserId"
+      ],
+      "indexes": [],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Trạng thái kiểm duyệt tài khoản",
+      "purpose": "WarningCount, suspension, disabled và updated time của user.",
+      "module": "admin",
+      "note": "UserId PK/FK CASCADE tới AspNetUsers: 1→0..1. SuspendedUntilUtc/DisabledAtUtc nullable và độc lập. State khác User.IsActive; Enable không tự gỡ suspension. Không cần job xóa trạng thái đã hết thời hạn."
     }
   }
 }
@@ -14755,6 +14968,700 @@
         "Services/PushNotificationService.cs",
         "Services/PushReceiptWorker.cs",
         "Domain/Entities/PushDeliveryReceipt.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <template id="overview-admin"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-admin" width="1076.53" height="1010.0" viewBox="0 0 1076.53 1010.0" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Admin" data-layout="admin"><title>Admin · 2 bảng chính, 2 bảng tham chiếu và 4 FK</title><desc>ContentReports thuộc Posts; ReportId nullable. TargetId không có FK đa hình. UserModerationStates.UserId là PK kiêm FK với AspNetUsers (1 → 0..1).</desc><style>
+#svg-overview-admin { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-admin .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-admin .node .label { color: #233044; }
+#svg-overview-admin .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-admin .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-admin .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-admin .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-admin .identity-table code { font: inherit; }
+#svg-overview-admin .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-admin .identity-keys { text-align: center; }
+#svg-overview-admin .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-admin .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-admin .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-admin .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-admin .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-admin .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-admin .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-admin .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+</style><defs><marker id="admin-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="admin-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M410.42,328.92 C488.89,357.82 580.38,391.51 659.55,420.66" id="L_AspNetUsers_ModerationActions_ModeratorUserId" data-id="L_AspNetUsers_ModerationActions_ModeratorUserId" data-principal="AspNetUsers" data-dependent="ModerationActions" data-fields="ModeratorUserId" data-kind="fk" class="relation" marker-start="url(#admin-one)" marker-end="url(#admin-many)"><title>AspNetUsers (1) → ModerationActions (0..N) · ModeratorUserId · Restrict</title></path><path d="M410.14,367.13 C458.29,394.89 497,417.2 497,417.2 C497,417.2 575.79,433.65 658.98,451.01" id="L_AspNetUsers_ModerationActions_SubjectUserId" data-id="L_AspNetUsers_ModerationActions_SubjectUserId" data-principal="AspNetUsers" data-dependent="ModerationActions" data-fields="SubjectUserId" data-kind="fk" class="relation" marker-start="url(#admin-one)" marker-end="url(#admin-many)"><title>AspNetUsers (1) → ModerationActions (0..N) · SubjectUserId · Restrict</title></path><path d="M410.42,613.62 C488.73,591.8 580.01,566.37 659.07,544.3399999999999" id="L_ContentReports_ModerationActions_ReportId" data-id="L_ContentReports_ModerationActions_ReportId" data-principal="ContentReports" data-dependent="ModerationActions" data-fields="ReportId" data-kind="fk" class="relation" marker-start="url(#admin-one)" marker-end="url(#admin-many)"><title>ContentReports (0..1) → ModerationActions (0..N) · ReportId · Restrict</title></path><path d="M410.42,245.05 C488.73,238.28 580.01,230.39 659.07,223.55" id="L_AspNetUsers_UserModerationStates_UserId" data-id="L_AspNetUsers_UserModerationStates_UserId" data-principal="AspNetUsers" data-dependent="UserModerationStates" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#admin-one)" marker-end="url(#admin-many)"><title>AspNetUsers (1) → UserModerationStates (0..1) · UserId · Cascade</title></path></g><g class="edgeLabels"><text x="538.27" y="358.93" text-anchor="middle" class="relation-label">ModeratorUserId</text><text x="644.27" y="428.25" text-anchor="middle" class="cardinality">0..N</text><text x="432.35" y="330.38" text-anchor="middle" class="cardinality">1</text><text x="538.27" y="413.9" text-anchor="middle" class="relation-label">SubjectUserId</text><text x="644.3295999999999" y="460.86" text-anchor="middle" class="cardinality">0..N</text><text x="432.05" y="372.33" text-anchor="middle" class="cardinality">1</text><text x="538.27" y="564.28" text-anchor="middle" class="relation-label">ReportId</text><text x="644.3295999999999" y="559.97" text-anchor="middle" class="cardinality">0..N</text><text x="432.1996" y="602.61" text-anchor="middle" class="cardinality">0..1</text><text x="538.27" y="227.47" text-anchor="middle" class="relation-label">UserId</text><text x="644.3295999999999" y="237.22" text-anchor="middle" class="cardinality">0..1</text><text x="429.49" y="237.37" text-anchor="middle" class="cardinality">1</text></g><g class="nodes"><g class="node default" data-table="ModerationActions" role="button" tabindex="0" aria-label="Xem chi tiết bảng ModerationActions" transform="translate(851.5296, 490.9996)"><rect class="basic label-container" x="-185.0" y="-149.0" width="370" height="298" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-185.0, -149.0)"><foreignObject width="370" height="298"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:298px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">ModerationActions</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ModeratorUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ModeratorUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="SubjectUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">SubjectUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="ReportId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ReportId</code></td><td class="column-type">uuid?</td></tr><tr data-column="TargetType"><td class="identity-keys" /><td><code class="" title="">TargetType</code></td><td class="column-type">integer</td></tr><tr data-column="TargetId"><td class="identity-keys" /><td><code class="" title="">TargetId</code></td><td class="column-type">uuid</td></tr><tr data-column="ActionType"><td class="identity-keys" /><td><code class="" title="">ActionType</code></td><td class="column-type">integer</td></tr><tr data-column="Reason"><td class="identity-keys" /><td><code class="" title="">Reason</code></td><td class="column-type">varchar(500)</td></tr><tr data-column="InternalNote"><td class="identity-keys" /><td><code class="" title="">InternalNote</code></td><td class="column-type">varchar(2000)?</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="ExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">ExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="UserModerationStates" role="button" tabindex="0" aria-label="Xem chi tiết bảng UserModerationStates" transform="translate(851.5296, 206.9996)"><rect class="basic label-container" x="-185.0" y="-77.0" width="370" height="154" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-185.0, -77.0)"><foreignObject width="370" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">UserModerationStates</th></tr></thead><tbody><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="WarningCount"><td class="identity-keys" /><td><code class="" title="">WarningCount</code></td><td class="column-type">integer</td></tr><tr data-column="SuspendedUntilUtc"><td class="identity-keys" /><td><code class="" title="">SuspendedUntilUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DisabledAtUtc"><td class="identity-keys" /><td><code class="" title="">DisabledAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(224.99960000000002, 260.9996)"><rect class="basic label-container" x="-185.0" y="-221.0" width="370" height="442" rx="5" ry="5" style="stroke:#94a3b8" /><g class="label" transform="translate(-185.0, -221.0)"><foreignObject width="370" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e6edf4;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="ContentReports" role="button" tabindex="0" aria-label="Xem chi tiết bảng ContentReports" transform="translate(224.99960000000002, 665.0008)"><rect class="basic label-container" x="-185.0" y="-125.0" width="370" height="250" rx="5" ry="5" style="stroke:#94a3b8" /><g class="label" transform="translate(-185.0, -125.0)"><foreignObject width="370" height="250"><div xmlns="http://www.w3.org/1999/xhtml" style="width:370px;height:250px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e6edf4;color:#182437">ContentReports</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ReporterUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">ReporterUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="TargetType"><td class="identity-keys" /><td><code class="" title="">TargetType</code></td><td class="column-type">integer</td></tr><tr data-column="TargetId"><td class="identity-keys" /><td><code class="" title="">TargetId</code></td><td class="column-type">uuid</td></tr><tr data-column="Reason"><td class="identity-keys" /><td><code class="" title="">Reason</code></td><td class="column-type">integer</td></tr><tr data-column="Details"><td class="identity-keys" /><td><code class="" title="">Details</code></td><td class="column-type">varchar(500)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="ResolvedAtUtc"><td class="identity-keys" /><td><code class="" title="">ResolvedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(40, 845.0)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="admin-specification" type="application/json">
+{
+  "title": "Quản trị và kiểm duyệt",
+  "purpose": "Dashboard, tài khoản, báo cáo nội dung, lịch sử xử lý và trạng thái kiểm duyệt.",
+  "scope": "Đối chiếu 2 entity, 18 endpoint AdminController, AdministrationService/UseCase, ModerationService và middleware kiểm duyệt. Mọi API yêu cầu policy Admin (role Admin); bảng ContentReports thuộc Posts. TargetType/TargetId là liên kết nghiệp vụ, không có FK đa hình.",
+  "usecasesTitle": "Quản trị và kiểm duyệt",
+  "groups": [
+    {
+      "id": "admin-dashboard",
+      "name": "Tổng quan và tài khoản",
+      "actor": "user",
+      "description": "Dashboard, tìm tài khoản và trạng thái hoạt động legacy."
+    },
+    {
+      "id": "admin-reports",
+      "name": "Báo cáo và xử lý nội dung",
+      "actor": "user",
+      "description": "Hàng đợi, chi tiết, cập nhật status, dismiss/remove/warn/suspend theo report."
+    },
+    {
+      "id": "admin-accounts",
+      "name": "Trạng thái kiểm duyệt",
+      "actor": "user",
+      "description": "Cảnh cáo, đình chỉ, vô hiệu hóa/bật lại, xem state và history."
+    },
+    {
+      "id": "admin-content",
+      "name": "Xóa bài trực tiếp",
+      "actor": "user",
+      "description": "Xóa mềm bài qua use case quản trị có transaction media."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Quản trị viên",
+      "role": "Đối chiếu 2 entity, 18 endpoint AdminController, AdministrationService/UseCase, ModerationService và middleware kiểm duyệt. Mọi API yêu cầu policy Admin (role Admin); bảng ContentReports thuộc Posts. TargetType/TargetId là liên kết nghiệp vụ, không có FK đa hình."
+    }
+  ],
+  "rules": [
+    {
+      "text": "18 endpoint dùng Authorize(Policy=Admin). Policy yêu cầu role Admin; không cấp quyền theo email. Actor xử lý lấy User.GetUserId; không phải vai trò owner/admin của Groups hoặc Pages.",
+      "source": "Controllers/AdminController.cs"
+    },
+    {
+      "text": "ModerationActions ghi moderator, subject, report tùy chọn, target đa hình, action, reason, InternalNote và expires. Moderator/Subject FK RESTRICT; ReportId nullable FK ContentReports RESTRICT; TargetId không có FK chung. Reason tối đa 500, InternalNote tối đa 2000.",
+      "source": "Domain/Entities/ModerationAction.cs"
+    },
+    {
+      "text": "UserModerationState.UserId là PK/FK tới AspNetUsers, quan hệ 1→0..1 và CASCADE. WarningCount tăng theo cảnh cáo; SuspendedUntilUtc và DisabledAtUtc độc lập, nullable; UpdatedAtUtc giữ lần đổi gần nhất. Hết hạn suspension dựa vào thời gian, không cần job xóa hàng.",
+      "source": "Domain/Entities/UserModerationState.cs"
+    },
+    {
+      "text": "Dashboard trả tổng/active users, bài chưa xóa, report PENDING, activity đủ 30 ngày UTC kể cả ngày không dữ liệu, và count theo từng report status. Cửa sổ today-29 đến cuối ngày UTC hiện tại; không dùng timezone client để nhóm dữ liệu.",
+      "source": "Services/AdministrationUseCase.cs"
+    },
+    {
+      "text": "GET users tìm Email/UserName trim/lowercase, offset>=0, limit 1..100 mặc định 20; sắp CreatedAt giảm rồi Id tăng. Response ghép role và UserModerationState. Không có API cấp role Admin trong module này.",
+      "source": "Services/AdministrationService.cs"
+    },
+    {
+      "text": "PATCH user/status chỉ đổi User.IsActive, cấm đổi chính actor hoặc tài khoản có role Admin. Lỗi update trả 409 user_update_failed. Luồng này không ghi moderation action, không đổi UserModerationState hoặc revoke session; response cập nhật không nạp moderation state.",
+      "source": "Services/AdministrationService.cs"
+    },
+    {
+      "text": "GET reports: có Cursor hoặc TargetType thì dùng queue cursor; không có cả hai dùng offset legacy. Queue lọc status/target và sắp CreatedAtUtc/Id tăng (cũ trước); legacy sắp giảm. Limit mặc định 20, 1..100; Cursor qua ModerationCursor.",
+      "source": "Controllers/AdminController.cs"
+    },
+    {
+      "text": "ReportStatus PENDING=0/REVIEWED=1/RESOLVED=2/DISMISSED=3. PATCH status chỉ nhận reviewed/resolved/dismissed, cập nhật ResolvedAtUtc theo entity; không tự thêm ModerationActions.",
+      "source": "DTOs/Requests/UpdateReportStatusRequest.cs"
+    },
+    {
+      "text": "GetReport trả preview, subject (user hoặc tác giả post), số report cùng target và tối đa 20 actions mới nhất của report hoặc subject. Các luồng hiện hỗ trợ target USER/POST; enum action REMOVE_COMMENT/REMOVE_STORY chưa có endpoint tương ứng.",
+      "source": "Services/ModerationService.cs"
+    },
+    {
+      "text": "Dismiss tìm action DISMISS_REPORT đã có của report và trả lại nếu có; lần đầu đổi report DISMISSED và thêm action. Không có UNIQUE index cho dedupe này; target phải còn xác định được.",
+      "source": "Services/ModerationService.cs"
+    },
+    {
+      "text": "Remove-content theo report chỉ nhận target POST, xóa mềm bài nếu chưa xóa, đổi report REVIEWED, thêm REMOVE_POST và queue ACCOUNT_WARNING. Luồng gọi PostsService trực tiếp và không gọi Media.RemovePostReferencesAsync; khác DELETE admin/posts qua AdministrationUseCase.",
+      "source": "Services/ModerationService.cs"
+    },
+    {
+      "text": "Warn trực tiếp hoặc từ report tăng WarningCount, ghi WARN_USER, report nếu có chuyển REVIEWED, queue ACCOUNT_WARNING actor=null và publish sau lưu. Gọi lại có thể tăng thêm warning, không áp dụng dedupe action.",
+      "source": "Services/ModerationService.cs"
+    },
+    {
+      "text": "Suspend cấm chính actor, cần user tồn tại. SuspendedUntilUtc trong tương lai không quá 365 ngày được ưu tiên; nếu không có cần DurationHours 1..8760. State.Suspend, action SUSPEND_USER với ExpiresAtUtc, revoke AuthSessions/RefreshTokens còn hiệu lực rồi lưu.",
+      "source": "Common/CustomValidationAttributes.cs"
+    },
+    {
+      "text": "Disable/Enable moderation cấm chính actor và cần user tồn tại; Disable đặt DisabledAtUtc, ghi action và revoke session/token. Enable chỉ xóa DisabledAtUtc, giữ WarningCount và suspension; không đổi User.IsActive của endpoint legacy.",
+      "source": "Services/ModerationService.cs"
+    },
+    {
+      "text": "POST users/{userId}/unsuspend gọi UnsuspendUserAsync, xóa SuspendedUntilUtc và ghi UNSUSPEND_USER; giữ DisabledAtUtc. Enable không tự xóa suspension, hai thao tác độc lập.",
+      "source": "Services/ModerationService.cs"
+    },
+    {
+      "text": "GetState chưa có hàng trả state mặc định nhưng không lưu; không kiểm tra user tồn tại. History lọc SubjectUserId, sắp CreatedAtUtc/Id giảm, limit 1..100 và cursor; không có history trả trang rỗng.",
+      "source": "Services/ModerationService.cs"
+    },
+    {
+      "text": "AccountModerationService không khả dụng nếu DisabledAtUtc có giá trị hoặc SuspendedUntilUtc>now. Middleware HTTP bỏ qua GET/HEAD/OPTIONS, người chưa xác thực, /api/admin và /api/auth; chặn write khác bằng 403 account_unavailable. Hub filter chặn invocation khi state không khả dụng.",
+      "source": "../Identity/Middleware/AccountModerationMiddleware.cs"
+    },
+    {
+      "text": "DELETE admin/posts xóa mềm qua PostsService và bỏ MediaReferences trong transaction, không tự ghi report/action. Các thao tác moderation revoke token không được hiểu là hủy mọi JWT access đã phát hành tức thì.",
+      "source": "Services/AdministrationUseCase.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-AD-01",
+      "name": "Xem dashboard",
+      "group": "admin-dashboard",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đọc tổng quan và activity 30 ngày.",
+      "preconditions": "Policy Admin cho phép.",
+      "steps": [
+        "Đếm tài khoản/active, bài còn hoạt động và report PENDING.",
+        "Aggregate users/posts/reports theo UTC trong 30 ngày, bù ngày rỗng.",
+        "Trả 200 AdminDashboardResponse."
+      ],
+      "alternatives": [
+        "Chưa đăng nhập: 401; thiếu role Admin: 403."
+      ],
+      "postconditions": "Không đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/admin/dashboard"
+      ],
+      "tables": [
+        "AspNetUsers",
+        "Posts",
+        "ContentReports"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/AdministrationUseCase.cs",
+        "Services/AdministrationService.cs",
+        "../Posts/Services/ReportsService.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-02",
+      "name": "Tìm tài khoản",
+      "group": "admin-dashboard",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Tìm Email/UserName và đọc role/state.",
+      "preconditions": "AdminUserPageRequest hợp lệ.",
+      "steps": [
+        "Trim/lowercase query và lọc tài khoản.",
+        "Sắp CreatedAt/Id, offset/limit, ghép role/state.",
+        "Trả 200 PagedResponse."
+      ],
+      "alternatives": [
+        "Pagination sai: 400 validation_failed; không có kết quả: Items rỗng."
+      ],
+      "postconditions": "Không đổi tài khoản.",
+      "endpoints": [
+        "GET /api/admin/users"
+      ],
+      "tables": [
+        "AspNetUsers",
+        "AspNetUserRoles",
+        "AspNetRoles",
+        "UserModerationStates"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/AdministrationService.cs",
+        "DTOs/Requests/AdminUserPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-03",
+      "name": "Đổi trạng thái hoạt động tài khoản",
+      "group": "admin-dashboard",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Cập nhật User.IsActive legacy.",
+      "preconditions": "Actor khác target; target tồn tại và không có role Admin; IsActive bắt buộc.",
+      "steps": [
+        "Kiểm tra actor/target và role được bảo vệ.",
+        "Enable/Disable User nếu khác trạng thái, UserManager.UpdateAsync.",
+        "Trả 200 AdminUserResponse."
+      ],
+      "alternatives": [
+        "Tự đổi hoặc target Admin: 403 admin_action_forbidden.",
+        "User thiếu: 404 user_not_found; lưu thất bại: 409 user_update_failed."
+      ],
+      "postconditions": "IsActive đổi; moderation state và session không đổi bởi luồng này.",
+      "endpoints": [
+        "PATCH /api/admin/users/{userId:guid}/status"
+      ],
+      "tables": [
+        "AspNetUsers",
+        "AspNetUserRoles"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/AdministrationService.cs",
+        "DTOs/Requests/UpdateUserStatusRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-04",
+      "name": "Đọc danh sách báo cáo",
+      "group": "admin-reports",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Xem report theo cursor hoặc offset.",
+      "preconditions": "AdminReportPageRequest hợp lệ.",
+      "steps": [
+        "Có Cursor hoặc TargetType: GetQueueAsync lọc/sắp cũ trước.",
+        "Không có cả hai: ReportsService legacy offset mới trước.",
+        "Nạp preview/count khi queue, trả 200 response theo nhánh."
+      ],
+      "alternatives": [
+        "Enum/cursor/limit sai: 400 validation_failed.",
+        "Không có report phù hợp: trang rỗng."
+      ],
+      "postconditions": "Không đổi report; kiểu response phụ thuộc nhánh.",
+      "endpoints": [
+        "GET /api/admin/reports"
+      ],
+      "tables": [
+        "ContentReports",
+        "Posts",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "../Posts/Services/ReportsService.cs",
+        "DTOs/Requests/AdminReportPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-05",
+      "name": "Cập nhật trạng thái báo cáo",
+      "group": "admin-reports",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đặt reviewed/resolved/dismissed.",
+      "preconditions": "Report tồn tại, status hợp lệ khác pending.",
+      "steps": [
+        "Parse status, tìm report.",
+        "UpdateStatus và lưu.",
+        "Trả 200 ModerationReportResponse."
+      ],
+      "alternatives": [
+        "Report thiếu: 404 report_target_not_found; status sai: 400 validation_failed."
+      ],
+      "postconditions": "Status đổi; không tự thêm action.",
+      "endpoints": [
+        "PATCH /api/admin/reports/{reportId:guid}/status"
+      ],
+      "tables": [
+        "ContentReports"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "../Posts/Services/ReportsService.cs",
+        "DTOs/Requests/UpdateReportStatusRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-06",
+      "name": "Xem chi tiết báo cáo",
+      "group": "admin-reports",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đọc target, subject và lịch sử liên quan.",
+      "preconditions": "Report tồn tại.",
+      "steps": [
+        "Tìm report, xác định user hoặc author post.",
+        "Lấy preview, count cùng target và tối đa 20 actions mới nhất.",
+        "Trả 200 ReportDetailResponse."
+      ],
+      "alternatives": [
+        "Report thiếu: 404 moderation_target_not_found.",
+        "Target đã mất có thể làm preview/subject null."
+      ],
+      "postconditions": "Không đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/admin/reports/{reportId:guid}"
+      ],
+      "tables": [
+        "ContentReports",
+        "ModerationActions",
+        "AspNetUsers",
+        "Posts"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "DTOs/Responses/ReportDetailResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-07",
+      "name": "Bác bỏ báo cáo",
+      "group": "admin-reports",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đánh dấu report không vi phạm.",
+      "preconditions": "Report tồn tại và subject còn xác định được.",
+      "steps": [
+        "Tìm action DISMISS_REPORT cũ, trả lại nếu có.",
+        "Nếu chưa có, đổi report DISMISSED, ghi action với reason/default và note.",
+        "SaveChanges, trả 200 ModerationActionResponse."
+      ],
+      "alternatives": [
+        "Report/target thiếu: 404 moderation_target_not_found; reason/note sai: 400 validation_failed.",
+        "Dedupe bằng truy vấn service, không có constraint unique."
+      ],
+      "postconditions": "Có action dismiss và report DISMISSED.",
+      "endpoints": [
+        "POST /api/admin/reports/{reportId:guid}/dismiss"
+      ],
+      "tables": [
+        "ContentReports",
+        "ModerationActions",
+        "Posts",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "DTOs/Requests/DismissReportRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-08",
+      "name": "Gỡ nội dung bị báo cáo",
+      "group": "admin-reports",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Xóa mềm bài POST và ghi xử lý report.",
+      "preconditions": "Report target POST và post còn tồn tại.",
+      "steps": [
+        "Tìm report/post, DeletePostForModerationAsync nếu chưa xóa.",
+        "Đổi report REVIEWED, thêm REMOVE_POST và queue ACCOUNT_WARNING.",
+        "Lưu, publish notification, trả 200 action."
+      ],
+      "alternatives": [
+        "Report/target không hợp lệ: 404 moderation_target_not_found.",
+        "Xóa bài thất bại: 400 moderation_validation_failed; request sai: 400 validation_failed."
+      ],
+      "postconditions": "Bài xóa mềm, PostMedia bị bỏ; luồng này không tự RemovePostReferencesAsync.",
+      "endpoints": [
+        "POST /api/admin/reports/{reportId:guid}/remove-content"
+      ],
+      "tables": [
+        "ContentReports",
+        "Posts",
+        "PostMedia",
+        "ModerationActions",
+        "Notifications"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "../Posts/Services/PostsService.cs",
+        "DTOs/Requests/ModerationReasonRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-09",
+      "name": "Cảnh cáo từ báo cáo",
+      "group": "admin-reports",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Cảnh cáo subject của report.",
+      "preconditions": "Report tồn tại và subject user xác định được.",
+      "steps": [
+        "Tìm report/user hoặc author post.",
+        "Tạo/lấy state, tăng warning, report REVIEWED, ghi WARN_USER.",
+        "Queue ACCOUNT_WARNING, lưu rồi publish, trả 200 action."
+      ],
+      "alternatives": [
+        "Report/target thiếu: 404 moderation_target_not_found; request sai: 400 validation_failed.",
+        "Gọi lại có thể tăng warning thêm."
+      ],
+      "postconditions": "Có warning và action liên kết report.",
+      "endpoints": [
+        "POST /api/admin/reports/{reportId:guid}/warn-user"
+      ],
+      "tables": [
+        "ContentReports",
+        "UserModerationStates",
+        "ModerationActions",
+        "Notifications",
+        "Posts",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "DTOs/Requests/ModerationReasonRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-10",
+      "name": "Đình chỉ từ báo cáo",
+      "group": "admin-reports",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đình chỉ subject của report trong thời hạn.",
+      "preconditions": "Report có SubjectUserId; thời hạn hợp lệ; không tự đình chỉ.",
+      "steps": [
+        "GetReport xác định subject.",
+        "SuspendUserAsync tạo/cập nhật state và action SUSPEND_USER.",
+        "Revoke AuthSessions/RefreshTokens còn hiệu lực, lưu, trả 200 action."
+      ],
+      "alternatives": [
+        "Report thiếu: 404; subject null: 404; tự đình chỉ: 403 moderation_action_forbidden.",
+        "Thời hạn sai: 400 validation_failed."
+      ],
+      "postconditions": "State bị suspend; action hiện không gắn ReportId trong SuspendUserAsync.",
+      "endpoints": [
+        "POST /api/admin/reports/{reportId:guid}/suspend-user"
+      ],
+      "tables": [
+        "ContentReports",
+        "UserModerationStates",
+        "ModerationActions",
+        "AuthSessions",
+        "RefreshTokens"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "DTOs/Requests/SuspendUserRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-11",
+      "name": "Xem trạng thái kiểm duyệt",
+      "group": "admin-accounts",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đọc WarningCount, suspension và disabled time.",
+      "preconditions": "Policy Admin cho phép.",
+      "steps": [
+        "Tìm UserModerationState theo UserId.",
+        "Chưa có hàng: trả state mặc định không lưu.",
+        "Trả 200 UserModerationStateResponse."
+      ],
+      "alternatives": [
+        "UserId không tồn tại cũng có thể nhận state mặc định do chưa kiểm tra Users."
+      ],
+      "postconditions": "Không tạo hàng mới.",
+      "endpoints": [
+        "GET /api/admin/users/{userId:guid}/moderation-state"
+      ],
+      "tables": [
+        "UserModerationStates"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-12",
+      "name": "Xem lịch sử kiểm duyệt",
+      "group": "admin-accounts",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đọc actions theo subject.",
+      "preconditions": "ModerationHistoryRequest hợp lệ.",
+      "steps": [
+        "Lọc SubjectUserId và cursor.",
+        "Sắp CreatedAtUtc/Id giảm dần, lấy limit+1.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400 validation_failed; không có action: Items rỗng."
+      ],
+      "postconditions": "Không đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/admin/users/{userId:guid}/moderation-history"
+      ],
+      "tables": [
+        "ModerationActions"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "DTOs/Requests/ModerationHistoryRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-13",
+      "name": "Cảnh cáo tài khoản",
+      "group": "admin-accounts",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Tăng warning và lưu action trực tiếp.",
+      "preconditions": "User tồn tại; reason/note hợp lệ.",
+      "steps": [
+        "GetOrCreateState, Warn và ghi WARN_USER không có report.",
+        "Queue ACCOUNT_WARNING actor=null, lưu rồi publish.",
+        "Trả 200 action."
+      ],
+      "alternatives": [
+        "User thiếu: 404 moderation_target_not_found; request sai: 400 validation_failed.",
+        "Luồng warning không có kiểm tra cấm chính actor như suspend/disable."
+      ],
+      "postconditions": "WarningCount tăng; không tự đình chỉ.",
+      "endpoints": [
+        "POST /api/admin/users/{userId:guid}/warn"
+      ],
+      "tables": [
+        "UserModerationStates",
+        "ModerationActions",
+        "Notifications",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "DTOs/Requests/ModerationReasonRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-14",
+      "name": "Đình chỉ tài khoản",
+      "group": "admin-accounts",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đặt thời hạn suspension trực tiếp.",
+      "preconditions": "User tồn tại, actor khác target, thời hạn hợp lệ.",
+      "steps": [
+        "Chọn SuspendedUntilUtc nếu gửi, nếu không now+DurationHours.",
+        "Set state, ghi SUSPEND_USER/ExpiresAtUtc.",
+        "Revoke session/token, lưu, trả 200 action."
+      ],
+      "alternatives": [
+        "Tự đình chỉ: 403 moderation_action_forbidden; user thiếu: 404 moderation_target_not_found.",
+        "Thời hạn phải trong 365 ngày hoặc 1..8760 giờ: 400 validation_failed."
+      ],
+      "postconditions": "Suspension có hiệu lực tới thời hạn, không xóa dữ liệu user.",
+      "endpoints": [
+        "POST /api/admin/users/{userId:guid}/suspend"
+      ],
+      "tables": [
+        "UserModerationStates",
+        "ModerationActions",
+        "AuthSessions",
+        "RefreshTokens"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "DTOs/Requests/SuspendUserRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-15",
+      "name": "Vô hiệu hóa kiểm duyệt",
+      "group": "admin-accounts",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Đặt DisabledAtUtc và revoke phiên.",
+      "preconditions": "User tồn tại, actor khác target.",
+      "steps": [
+        "GetOrCreateState và Disable.",
+        "Ghi DISABLE_USER, revoke sessions/refresh tokens.",
+        "Lưu, trả 200 action."
+      ],
+      "alternatives": [
+        "Tự vô hiệu: 403 moderation_action_forbidden; user thiếu: 404 moderation_target_not_found."
+      ],
+      "postconditions": "DisabledAtUtc có giá trị; User.IsActive không đổi bởi luồng này.",
+      "endpoints": [
+        "POST /api/admin/users/{userId:guid}/disable"
+      ],
+      "tables": [
+        "UserModerationStates",
+        "ModerationActions",
+        "AuthSessions",
+        "RefreshTokens"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-16",
+      "name": "Bật lại trạng thái kiểm duyệt",
+      "group": "admin-accounts",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Xóa DisabledAtUtc.",
+      "preconditions": "User tồn tại, actor khác target.",
+      "steps": [
+        "GetOrCreateState và Enable.",
+        "Ghi ENABLE_USER, lưu và trả 200 action."
+      ],
+      "alternatives": [
+        "Tự thay đổi: 403 moderation_action_forbidden; user thiếu: 404 moderation_target_not_found.",
+        "Suspension còn hiệu lực vẫn giữ; không bật User.IsActive."
+      ],
+      "postconditions": "DisabledAtUtc=null, các state khác giữ nguyên.",
+      "endpoints": [
+        "POST /api/admin/users/{userId:guid}/enable"
+      ],
+      "tables": [
+        "UserModerationStates",
+        "ModerationActions"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-17",
+      "name": "Xóa bài trực tiếp bởi Admin",
+      "group": "admin-content",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Xóa mềm bài và bỏ tham chiếu media.",
+      "preconditions": "Bài chưa xóa và policy Admin cho phép.",
+      "steps": [
+        "AdministrationUseCase mở transaction.",
+        "PostsService.DeletePostForModerationAsync xóa mềm bài và PostMedia.",
+        "Media.RemovePostReferencesAsync bỏ references, commit.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Bài thiếu/đã xóa: lỗi Posts 404; lỗi xử lý rollback."
+      ],
+      "postconditions": "Bài ẩn và references được bỏ; không tự thêm action/report.",
+      "endpoints": [
+        "DELETE /api/admin/posts/{postId:guid}"
+      ],
+      "tables": [
+        "Posts",
+        "PostMedia",
+        "MediaReferences"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/AdministrationUseCase.cs",
+        "../Posts/Services/PostsService.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-AD-18",
+      "name": "Gỡ đình chỉ tài khoản",
+      "group": "admin-accounts",
+      "actor": "Quản trị viên role Admin",
+      "goal": "Xóa SuspendedUntilUtc.",
+      "preconditions": "User tồn tại, moderator khác user; policy Admin cho phép.",
+      "steps": [
+        "Gọi UnsuspendUserAsync, ReverseAccountActionAsync.",
+        "Xóa suspension, thêm UNSUSPEND_USER và lưu."
+      ],
+      "alternatives": [
+        "Tự đổi: 403 moderation_action_forbidden; user thiếu: 404 moderation_target_not_found.",
+        "Request reason/note không hợp lệ: 400 validation_failed."
+      ],
+      "postconditions": "SuspendedUntilUtc=null, DisabledAtUtc giữ nguyên.",
+      "endpoints": [
+        "POST /api/admin/users/{userId:guid}/unsuspend"
+      ],
+      "tables": [
+        "UserModerationStates",
+        "ModerationActions"
+      ],
+      "sources": [
+        "Controllers/AdminController.cs",
+        "Services/ModerationService.cs",
+        "DTOs/Requests/ModerationReasonRequest.cs"
       ]
     }
   ]
