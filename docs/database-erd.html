@@ -622,6 +622,13 @@
         "source": "flowchart LR\n    ModerationActions[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>ModerationActions</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ModeratorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ModeratorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SubjectUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>SubjectUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReportId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReportId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='TargetType'><td class='identity-keys' /><td><code class='' title=''>TargetType</code></td><td class='column-type'>integer</td></tr><tr data-column='TargetId'><td class='identity-keys' /><td><code class='' title=''>TargetId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActionType'><td class='identity-keys' /><td><code class='' title=''>ActionType</code></td><td class='column-type'>integer</td></tr><tr data-column='Reason'><td class='identity-keys' /><td><code class='' title=''>Reason</code></td><td class='column-type'>varchar(500)</td></tr><tr data-column='InternalNote'><td class='identity-keys' /><td><code class='' title=''>InternalNote</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>ExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    UserModerationStates[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>UserModerationStates</th></tr></thead><tbody><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='WarningCount'><td class='identity-keys' /><td><code class='' title=''>WarningCount</code></td><td class='column-type'>integer</td></tr><tr data-column='SuspendedUntilUtc'><td class='identity-keys' /><td><code class='' title=''>SuspendedUntilUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DisabledAtUtc'><td class='identity-keys' /><td><code class='' title=''>DisabledAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    ContentReports[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e6edf4;color:#182437'>ContentReports</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReporterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReporterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='TargetType'><td class='identity-keys' /><td><code class='' title=''>TargetType</code></td><td class='column-type'>integer</td></tr><tr data-column='TargetId'><td class='identity-keys' /><td><code class='' title=''>TargetId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Reason'><td class='identity-keys' /><td><code class='' title=''>Reason</code></td><td class='column-type'>integer</td></tr><tr data-column='Details'><td class='identity-keys' /><td><code class='' title=''>Details</code></td><td class='column-type'>varchar(500)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='ResolvedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ResolvedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"ModeratorUserId · 1 → 0..N\"| ModerationActions\n    AspNetUsers -->|\"SubjectUserId · 1 → 0..N\"| ModerationActions\n    ContentReports -->|\"ReportId · 0..1 → 0..N\"| ModerationActions\n    AspNetUsers -->|\"UserId · 1 → 0..1\"| UserModerationStates",
         "note": "2 bảng Admin, 2 bảng tham chiếu, 42 cột và 4 FK. ContentReports thuộc Posts; ReportId nullable. TargetId không có FK đa hình. UserModerationStates.UserId là PK kiêm FK với AspNetUsers (1 → 0..1)."
       }
+    },
+    {
+      "id": "feed",
+      "name": "Feed",
+      "description": "Tổng hợp bài viết, reel và chia sẻ theo quan hệ, container, quyền xem và xếp hạng.",
+      "tables": [],
+      "diagram": null
     }
   ],
   "tables": {
@@ -15668,6 +15675,192 @@
 }
   </script>
 
+  <script id="feed-specification" type="application/json">
+{
+  "title": "Bảng tin cá nhân và following",
+  "purpose": "Tổng hợp bài viết, reel và chia sẻ theo quan hệ, container, quyền xem và xếp hạng.",
+  "scope": "Feed không có entity hoặc bảng riêng. Đối chiếu 2 API FeedController, FeedService và FeedRankingOptions; dùng dữ liệu Posts/Reels, Friends, Groups, Pages, Media và Users. Mọi API yêu cầu đăng nhập và claim sub GUID. Cursor và snapshot nằm trong token được Data Protection bảo vệ, không persist bảng session feed.",
+  "usecasesTitle": "Bảng tin cá nhân và following",
+  "groups": [
+    {
+      "id": "feed-home",
+      "name": "Bảng tin cá nhân",
+      "actor": "user",
+      "description": "Nguồn organic và gợi ý công khai theo quota."
+    },
+    {
+      "id": "feed-following",
+      "name": "Bảng tin following",
+      "actor": "user",
+      "description": "Cùng nguồn organic, không chèn nội dung gợi ý."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Feed không có entity hoặc bảng riêng. Đối chiếu 2 API FeedController, FeedService và FeedRankingOptions; dùng dữ liệu Posts/Reels, Friends, Groups, Pages, Media và Users. Mọi API yêu cầu đăng nhập và claim sub GUID. Cursor và snapshot nằm trong token được Data Protection bảo vệ, không persist bảng session feed."
+    }
+  ],
+  "rules": [
+    {
+      "text": "GET /api/feed và /following đều Authorize. Limit mặc định 20, từ 1..50. FormatException từ limit/cursor trả 400 invalid_feed_cursor; thiếu claim sub GUID trả 401.",
+      "source": "Controllers/FeedController.cs"
+    },
+    {
+      "text": "Không có bảng Feed. Nguồn PROFILE theo PostVisibility, GROUP từ nhóm đã tham gia, PAGE từ trang đang follow và đã PUBLISHED; STANDARD hoặc REEL có media READY hợp lệ. Post/Event container EVENT không thuộc các nguồn organic hiện tại.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "Organic PROFILE gồm bài của mình, profile đang follow và là bạn, profile đang follow không phải bạn nhưng bài PUBLIC. Shares gồm profile của mình/bạn, GROUP mình tham gia, PAGE đang follow; kiểm tra quyền nội dung gốc khi nạp share.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "Mỗi request dựng lại snapshot bạn bè, follow và chặn; cursor cũ không giữ quyền đã bị thu hồi. Bài chưa xóa, container active và quyền hiện tại vẫn cần hợp lệ; AsOfUtc giới hạn nội dung mới xuất hiện sau snapshot.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "Home chèn gợi ý sau số organic cấu hình (mặc định 4); gợi ý là REEL PUBLIC từ tác giả chưa follow khác mình, tối đa tuổi 7 ngày mặc định, cùng STANDARD PROFILE PUBLIC từ tác giả chưa follow. Không có organic/credit phù hợp thì không tự biến feed thành danh sách gợi ý đầy đủ.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "Following không chèn suggestions và dùng BaseAffinity=0; RankCandidatesAsync vẫn áp dụng tín hiệu creator/source/watch/engagement nên không khẳng định following chỉ xếp thời gian. Các nguồn organic group/page vẫn có trong following.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "Home BaseAffinity mặc định: own 8, friend 6, followed nonfriend 5, group 4, page 3, suggested 1; mỗi điểm bù tuổi 6 giờ. Tín hiệu tương tác lấy trong lookback mặc định 60 ngày, có caps và trọng số cấu hình.",
+      "source": "Config/FeedRankingOptions.cs"
+    },
+    {
+      "text": "Score kết hợp base/creator/source/watch affinity theo FreshnessHoursPerPoint, engagement reactions/comments/shares theo EngagementMinutesPerPoint và trừ tuổi tính tới AsOfUtc. Thứ tự Score, CreatedAtUtc, SortId đều giảm; signal query aggregate PostgreSQL theo nhóm thay vì truy vấn riêng từng candidate.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "Quota gợi ý/creator gần nhất giữ qua cursor, organic và suggestion có frontier riêng. Không chọn lại cùng creator gợi ý liền trước; mỗi nguồn lấy window giới hạn CandidateLimitPerSource mặc định 100, hợp lệ 51..500.",
+      "source": "Config/FeedRankingOptions.cs"
+    },
+    {
+      "text": "Cursor version 2 là JSON được IDataProtector Protect; purpose gắn user GUID, home/following và hash cấu hình ranking. Dùng cho người khác/mode khác hoặc đổi cấu hình sẽ không unprotect hợp lệ. Cursor null mở snapshot UTC mới, precision microsecond; chuỗi rỗng là lỗi.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "Cursor dài 1..8192, kiểm tra version, thời gian UTC không tương lai/trước UnixEpoch, position và quota. Response có AsOfUtc và NextCursor theo item cuối được chọn nếu còn lookahead; không có trạng thái feed được lưu vào database.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "FeedItem có ContentType standardPost/reel/share và ContainerType profile/group/page. PAGE hiển thị tác giả bằng danh tính trang; share dùng Id/time/caption của share, kèm bài gốc trong FeedShareResponse. Reel có đường dẫn video/access và poster/access, không nhúng object key.",
+      "source": "Services/FeedService.cs"
+    },
+    {
+      "text": "BuildItemsAsync có thể bỏ candidate thiếu profile/container/media sau chọn trang; Items có thể ít hơn limit dù NextCursor được tính từ tập selection. GET feed không tự tăng ReelViews hoặc tạo reaction/read state.",
+      "source": "Services/FeedService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-FE-01",
+      "name": "Xem bảng tin cá nhân",
+      "group": "feed-home",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Đọc nội dung theo quan hệ và gợi ý.",
+      "preconditions": "Claim GUID hợp lệ; cursor đúng user/mode/cấu hình; limit 1..50.",
+      "steps": [
+        "Gửi cursor/limit tùy chọn; null tạo snapshot AsOfUtc mới.",
+        "Nạp quan hệ hiện tại, lọc các nguồn profile/group/page và shares theo quyền.",
+        "Rank candidates theo score và snapshot; home chèn suggestions theo quota.",
+        "Chọn limit+1, xây FeedItemResponse với container/media/tương tác; trả 200 Items/NextCursor/AsOfUtc.",
+        "Trang tiếp theo gửi NextCursor, quyền được kiểm tra lại."
+      ],
+      "alternatives": [
+        "Thiếu xác thực: 401; limit/cursor sai hoặc dùng nhầm user/mode: 400 invalid_feed_cursor.",
+        "Không có nguồn hợp lệ: Items rỗng và cursor có thể null.",
+        "Candidate mất container/media có thể bị bỏ lúc xây response."
+      ],
+      "postconditions": "Không ghi dữ liệu; cùng AsOfUtc khi dùng cursor tiếp theo.",
+      "endpoints": [
+        "GET /api/feed"
+      ],
+      "tables": [
+        "Posts",
+        "PostShares",
+        "PostReactions",
+        "Comments",
+        "PostSaves",
+        "ReelViews",
+        "PostMedia",
+        "MediaAssets",
+        "UserFollows",
+        "Friendships",
+        "BlockedUsers",
+        "Groups",
+        "GroupMembers",
+        "Pages",
+        "PageFollowers",
+        "UserProfiles"
+      ],
+      "sources": [
+        "Controllers/FeedController.cs",
+        "Services/FeedService.cs",
+        "Config/FeedRankingOptions.cs",
+        "../Posts/Services/PostVisibility.cs",
+        "../Groups/Services/GroupPostAccessService.cs",
+        "../Pages/Services/PagePostAccessService.cs"
+      ]
+    },
+    {
+      "id": "UC-FE-02",
+      "name": "Xem bảng tin following",
+      "group": "feed-following",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Đọc nguồn organic không chèn gợi ý.",
+      "preconditions": "Claim GUID hợp lệ; cursor đúng user/mode/cấu hình; limit 1..50.",
+      "steps": [
+        "Gửi cursor/limit tùy chọn; null tạo snapshot AsOfUtc mới.",
+        "Nạp quan hệ hiện tại, lọc các nguồn profile/group/page và shares theo quyền.",
+        "Đặt base affinity 0, rank organic; bỏ suggestions.",
+        "Chọn limit+1, xây FeedItemResponse với container/media/tương tác; trả 200 Items/NextCursor/AsOfUtc.",
+        "Trang tiếp theo gửi NextCursor, quyền được kiểm tra lại."
+      ],
+      "alternatives": [
+        "Thiếu xác thực: 401; limit/cursor sai hoặc dùng nhầm user/mode: 400 invalid_feed_cursor.",
+        "Không có nguồn hợp lệ: Items rỗng và cursor có thể null.",
+        "Candidate mất container/media có thể bị bỏ lúc xây response."
+      ],
+      "postconditions": "Không ghi dữ liệu; cùng AsOfUtc khi dùng cursor tiếp theo.",
+      "endpoints": [
+        "GET /api/feed/following"
+      ],
+      "tables": [
+        "Posts",
+        "PostShares",
+        "PostReactions",
+        "Comments",
+        "PostSaves",
+        "ReelViews",
+        "PostMedia",
+        "MediaAssets",
+        "UserFollows",
+        "Friendships",
+        "BlockedUsers",
+        "Groups",
+        "GroupMembers",
+        "Pages",
+        "PageFollowers",
+        "UserProfiles"
+      ],
+      "sources": [
+        "Controllers/FeedController.cs",
+        "Services/FeedService.cs",
+        "Config/FeedRankingOptions.cs",
+        "../Posts/Services/PostVisibility.cs",
+        "../Groups/Services/GroupPostAccessService.cs",
+        "../Pages/Services/PagePostAccessService.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
   <script>
     const catalog = JSON.parse(document.getElementById('catalog').textContent);
     const moduleNav = document.getElementById('module-nav');
@@ -15704,21 +15897,27 @@
         button.setAttribute('aria-current', String(button.dataset.module === moduleId));
       }
       const overview = activeModule.diagram;
-      diagram.replaceChildren(document.getElementById(overview.template).content.cloneNode(true));
-      straightenConnections();
-      document.getElementById('view-title').textContent = 'Tổng quan toàn bộ module ' + activeModule.name;
-      const references = overview.tables.length - activeModule.tables.length;
-      document.getElementById('view-count').textContent = `${activeModule.tables.length} bảng trong module${references ? ' + ' + references + ' bảng tham chiếu' : ''} · Hiển thị đầy đủ thuộc tính`;
-      document.getElementById('view-note').textContent = overview.note;
+      document.getElementById('tab-erd').hidden = !overview;
+      if (overview) {
+        diagram.replaceChildren(document.getElementById(overview.template).content.cloneNode(true));
+        straightenConnections();
+        document.getElementById('view-title').textContent = 'Tổng quan toàn bộ module ' + activeModule.name;
+        const references = overview.tables.length - activeModule.tables.length;
+        document.getElementById('view-count').textContent = `${activeModule.tables.length} bảng trong module${references ? ' + ' + references + ' bảng tham chiếu' : ''} · Hiển thị đầy đủ thuộc tính`;
+        document.getElementById('view-note').textContent = overview.note;
+      } else {
+        diagram.replaceChildren();
+      }
       moduleTabs.hidden = !specifications[moduleId];
       moduleTabs.setAttribute('aria-label', 'Tài liệu module ' + activeModule.name);
       if (specifications[moduleId]) renderDocumentation();
       else for (const panel of document.querySelectorAll('.document-panel')) panel.replaceChildren();
-      selectView('erd');
-      fit();
+      selectView(overview ? 'erd' : 'specification');
+      if (overview) fit();
     }
 
     function selectView(view) {
+      if (view === 'erd' && !activeModule.diagram) view = 'specification';
       for (const button of moduleTabs.querySelectorAll('[data-view]')) {
         const selected = button.dataset.view === view;
         button.setAttribute('aria-selected', String(selected));
@@ -15802,7 +16001,7 @@
       if (button) selectView(button.dataset.view);
     });
     moduleTabs.addEventListener('keydown', event => {
-      const buttons = [...moduleTabs.querySelectorAll('[data-view]')];
+      const buttons = [...moduleTabs.querySelectorAll('[data-view]')].filter(button => !button.hidden);
       const current = buttons.indexOf(document.activeElement);
       if (current < 0 || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
       event.preventDefault();
