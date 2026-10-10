@@ -500,6 +500,32 @@
         "source": "flowchart LR\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Groups[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Groups</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='OwnerUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='CoverMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CoverMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Name'><td class='identity-keys' /><td><code class='' title=''>Name</code></td><td class='column-type'>varchar(120)</td></tr><tr data-column='Description'><td class='identity-keys' /><td><code class='' title=''>Description</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    GroupMembers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>GroupMembers</th></tr></thead><tbody><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Role'><td class='identity-keys' /><td><code class='' title=''>Role</code></td><td class='column-type'>integer</td></tr><tr data-column='JoinedAtUtc'><td class='identity-keys' /><td><code class='' title=''>JoinedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    GroupJoinRequests[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>GroupJoinRequests</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='RequesterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>RequesterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='RespondedByUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>RespondedByUserId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    GroupInvites[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>GroupInvites</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviteeUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviteeUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    GroupRules[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>GroupRules</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Title'><td class='identity-keys' /><td><code class='' title=''>Title</code></td><td class='column-type'>varchar(200)</td></tr><tr data-column='Description'><td class='identity-keys' /><td><code class='' title=''>Description</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    GroupCoverMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>GroupCoverMediaReferences</th></tr></thead><tbody><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"OwnerUserId · 1 → 0..N\"| Groups\n    MediaAssets -->|\"CoverMediaId · 0..1 → 0..N\"| Groups\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| GroupMembers\n    Groups -->|\"GroupId · 1 → 0..N\"| GroupMembers\n    AspNetUsers -->|\"RequesterUserId · 1 → 0..N\"| GroupJoinRequests\n    AspNetUsers -->|\"RespondedByUserId · 0..1 → 0..N\"| GroupJoinRequests\n    Groups -->|\"GroupId · 1 → 0..N\"| GroupJoinRequests\n    AspNetUsers -->|\"InviteeUserId · 1 → 0..N\"| GroupInvites\n    AspNetUsers -->|\"InviterUserId · 1 → 0..N\"| GroupInvites\n    Groups -->|\"GroupId · 1 → 0..N\"| GroupInvites\n    Groups -->|\"GroupId · 1 → 0..N\"| GroupRules\n    Groups -->|\"GroupId · 1 → 0..1\"| GroupCoverMediaReferences\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| GroupCoverMediaReferences\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
         "note": "6 bảng Groups và 2 bảng tham chiếu hiển thị đủ cột, mỗi bảng một lần; 13 FK dùng đường thẳng. CoverMediaId và RespondedByUserId nullable (0..1 ở đầu principal). GroupCoverMediaReferences.GroupId là PK kiêm FK (1 → 0..1). Unique index của lời mời/yêu cầu chỉ áp dụng Status=PENDING. Posts của nhóm dùng ContainerId theo nghiệp vụ, không có FK tới Groups; các luồng bài viết nằm trong đặc tả."
       }
+    },
+    {
+      "id": "pages",
+      "name": "Pages",
+      "description": "Trang, trạng thái xuất bản, vai trò quản trị, lời mời, theo dõi và nội dung.",
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageRoleInvitations",
+        "PageFollowers",
+        "PageMediaReferences"
+      ],
+      "diagram": {
+        "template": "overview-pages",
+        "tables": [
+          "Pages",
+          "PageMembers",
+          "PageRoleInvitations",
+          "PageFollowers",
+          "PageMediaReferences",
+          "AspNetUsers",
+          "MediaAssets"
+        ],
+        "source": "flowchart LR\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Pages[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Pages</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AvatarMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AvatarMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='CoverMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CoverMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='CreatedByUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CreatedByUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Name'><td class='identity-keys' /><td><code class='' title=''>Name</code></td><td class='column-type'>varchar(120)</td></tr><tr data-column='Username'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>Username</code></td><td class='column-type'>citext</td></tr><tr data-column='Category'><td class='identity-keys' /><td><code class='' title=''>Category</code></td><td class='column-type'>varchar(80)</td></tr><tr data-column='Bio'><td class='identity-keys' /><td><code class='' title=''>Bio</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PageMembers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>PageMembers</th></tr></thead><tbody><tr data-column='PageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Role'><td class='identity-keys' /><td><code class='' title=''>Role</code></td><td class='column-type'>integer</td></tr><tr data-column='JoinedAtUtc'><td class='identity-keys' /><td><code class='' title=''>JoinedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PageRoleInvitations[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>PageRoleInvitations</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='PageId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>PageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviteeUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviteeUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Role'><td class='identity-keys' /><td><code class='' title=''>Role</code></td><td class='column-type'>integer</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PageFollowers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>PageFollowers</th></tr></thead><tbody><tr data-column='PageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='FollowedAtUtc'><td class='identity-keys' /><td><code class='' title=''>FollowedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    PageMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>PageMediaReferences</th></tr></thead><tbody><tr data-column='PageId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PageId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Slot'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Slot</code></td><td class='column-type'>integer</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"CreatedByUserId · 1 → 0..N\"| Pages\n    MediaAssets -->|\"AvatarMediaId · 0..1 → 0..N\"| Pages\n    MediaAssets -->|\"CoverMediaId · 0..1 → 0..N\"| Pages\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| PageMembers\n    Pages -->|\"PageId · 1 → 0..N\"| PageMembers\n    AspNetUsers -->|\"InviteeUserId · 1 → 0..N\"| PageRoleInvitations\n    AspNetUsers -->|\"InviterUserId · 1 → 0..N\"| PageRoleInvitations\n    Pages -->|\"PageId · 1 → 0..N\"| PageRoleInvitations\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| PageFollowers\n    Pages -->|\"PageId · 1 → 0..N\"| PageFollowers\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| PageMediaReferences\n    Pages -->|\"PageId · 1 → 0..N\"| PageMediaReferences\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
+        "note": "5 bảng Pages và 2 bảng tham chiếu giữ đủ 69 cột, mỗi bảng một lần; 12 FK dùng đường thẳng. AvatarMediaId/CoverMediaId nullable (0..1 ở đầu MediaAssets); PK ghép của các bảng phụ không tạo quan hệ 1–1 với Pages. Username UNIQUE chỉ trên trang chưa xóa; lời mời UNIQUE chỉ khi PENDING. Owner nằm trong PageMembers.Role; CreatedByUserId giữ người tạo. Posts.ContainerId là liên kết nghiệp vụ, không có FK tới Pages."
+      }
     }
   ],
   "tables": {
@@ -4822,6 +4848,483 @@
       "purpose": "Hàng tham chiếu bảo vệ ảnh bìa khỏi bị xóa khi đang được nhóm dùng.",
       "module": "groups",
       "note": "GroupId là PK kiêm FK CASCADE: Groups (1) → GroupCoverMediaReferences (0..1). MediaId → MediaAssets RESTRICT và không UNIQUE. Service đồng bộ với Groups.CoverMediaId; database không buộc hai MediaId ở hai bảng phải bằng nhau. Gỡ cover hoặc xóa mềm nhóm sẽ xóa hàng tham chiếu này."
+    },
+    "Pages": {
+      "name": "Pages",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "Name",
+          "type": "character varying(120)",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Username",
+          "type": "citext",
+          "nullable": false,
+          "keys": [
+            "UK"
+          ]
+        },
+        {
+          "name": "Category",
+          "type": "character varying(80)",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Bio",
+          "type": "character varying(2000)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "AvatarMediaId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "CoverMediaId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Status",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedByUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "UpdatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "DeletedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "AvatarMediaId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "CoverMediaId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "CreatedByUserId",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "Status",
+            "Name",
+            "Id"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "Username"
+          ],
+          "unique": true
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "CreatedByUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "AvatarMediaId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "CoverMediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Trang cộng đồng",
+      "purpose": "Thông tin trang, người tạo ban đầu, trạng thái xuất bản và hai vị trí media.",
+      "module": "pages",
+      "note": "Status: PUBLISHED=0, UNPUBLISHED=1; tạo mới UNPUBLISHED. Username citext, UNIQUE chỉ khi DeletedAtUtc IS NULL; (Status, Name, Id) và (CreatedByUserId, CreatedAtUtc) cũng lọc trang chưa xóa. CreatedByUserId là người tạo, không phải owner hiện tại; chuyển sở hữu chỉ đổi PageMembers.Role. AvatarMediaId/CoverMediaId nullable, FK RESTRICT. Xóa qua API là xóa mềm và bỏ hai MediaId/PageMediaReferences; giữ các hàng thành viên, follower, lời mời và bài viết. Posts.ContainerId là liên kết nghiệp vụ, không có FK tới Pages."
+    },
+    "PageMembers": {
+      "name": "PageMembers",
+      "columns": [
+        {
+          "name": "PageId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Role",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "JoinedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "UpdatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "PageId",
+        "UserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "PageId",
+            "Role"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "UserId",
+            "PageId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Pages",
+          "fields": [
+            "PageId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Thành viên quản trị trang",
+      "purpose": "Membership và vai trò quản trị của mỗi tài khoản trong trang.",
+      "module": "pages",
+      "note": "PK ghép (PageId, UserId); PageId → Pages CASCADE, UserId → AspNetUsers RESTRICT. Role: OWNER=0, ADMIN=1, EDITOR=2, MODERATOR=3. Service chuyển owner bằng đổi hai membership trong transaction; database không có UNIQUE cho role OWNER. Người theo dõi không tự thành thành viên; các API quản lý membership hiện không kiểm tra trang đã xóa mềm."
+    },
+    "PageRoleInvitations": {
+      "name": "PageRoleInvitations",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "PageId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "InviterUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "InviteeUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Role",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Status",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "RespondedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "InviteeUserId",
+            "Status",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "InviterUserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "PageId",
+            "InviteeUserId"
+          ],
+          "unique": true
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "InviteeUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "InviterUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Pages",
+          "fields": [
+            "PageId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Lời mời quản trị trang",
+      "purpose": "Lời mời tới tài khoản nhận vai trò quản trị, kèm người gửi và lịch sử phản hồi.",
+      "module": "pages",
+      "note": "Status: PENDING=0, ACCEPTED=1, DECLINED=2, CANCELLED=3. UNIQUE (PageId, InviteeUserId) chỉ khi Status=0. Chỉ mời ADMIN/EDITOR/MODERATOR; owner chuyển bằng API riêng. Không có cột hết hạn/API hủy dù enum có CANCELLED. PageId CASCADE; InviterUserId/InviteeUserId đều FK RESTRICT tới cùng AspNetUsers. RespondedAtUtc nullable."
+    },
+    "PageFollowers": {
+      "name": "PageFollowers",
+      "columns": [
+        {
+          "name": "PageId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "FollowedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "PageId",
+        "UserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "UserId",
+            "FollowedAtUtc"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Pages",
+          "fields": [
+            "PageId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Người theo dõi trang",
+      "purpose": "Một hàng cho tài khoản theo dõi trang, độc lập với vai trò quản trị.",
+      "module": "pages",
+      "note": "PK ghép (PageId, UserId); PageId → Pages CASCADE, UserId → AspNetUsers RESTRICT. Index (UserId, FollowedAtUtc) phục vụ danh sách following. Follow cần trang PUBLISHED chưa xóa; Unfollow xóa nếu có và trả 204. Theo dõi không cấp quyền quản trị hoặc xem trang UNPUBLISHED."
+    },
+    "PageMediaReferences": {
+      "name": "PageMediaReferences",
+      "columns": [
+        {
+          "name": "PageId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Slot",
+          "type": "integer",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "AttachedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "PageId",
+        "Slot"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Pages",
+          "fields": [
+            "PageId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Tham chiếu ảnh trang",
+      "purpose": "Hàng tham chiếu bảo vệ ảnh đại diện hoặc ảnh bìa của trang khi đang được sử dụng.",
+      "module": "pages",
+      "note": "PK ghép (PageId, Slot); Slot AVATAR=0, COVER=1. PageId → Pages CASCADE, MediaId → MediaAssets RESTRICT; MediaId không UNIQUE. Mỗi slot tối đa một hàng. Service đồng bộ với Pages.AvatarMediaId/CoverMediaId trong transaction, database không buộc hai nơi bằng nhau. Gỡ ảnh/xóa mềm trang xóa hàng tham chiếu, không xóa object media."
     }
   }
 }
@@ -9486,6 +9989,1165 @@
         "../Posts/Services/PostsService.cs",
         "../Friends/Services/FriendsService.cs",
         "DTOs/Responses/GroupFeedItemResponse.cs"
+      ],
+      "support": [
+        "posts"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <template id="overview-pages"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-pages" width="2030" height="1040" viewBox="0 0 2030 1040" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Pages" data-layout="pages"><title>Pages · 5 bảng chính, 2 bảng tham chiếu và 12 FK</title><desc>Pages ở trung tâm, AspNetUsers bên trái và MediaAssets bên phải. Các bảng membership, lời mời và follower ở giữa Users và Pages; tham chiếu media ở trên MediaAssets. Bảy bảng giữ đủ cột, không lặp bảng principal. Mười hai FK dùng đường thẳng; hai FK media nullable. Posts.ContainerId không có FK tới Pages.</desc><style>
+#svg-overview-pages { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-pages .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-pages .node .label { color: #233044; }
+#svg-overview-pages .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-pages .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-pages .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-pages .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-pages .identity-table code { font: inherit; }
+#svg-overview-pages .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-pages .identity-keys { text-align: center; }
+#svg-overview-pages .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-pages .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-pages .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-pages .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-pages .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-pages .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-pages .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-pages .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+
+#svg-overview-pages .reference-caption { font: 12px Arial, sans-serif; fill: #748079; }
+</style><defs><marker id="pages-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="pages-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M370.00,620.00 L1100.00,620.00" id="L_AspNetUsers_Pages_CreatedByUserId" data-id="L_AspNetUsers_Pages_CreatedByUserId" data-principal="AspNetUsers" data-dependent="Pages" data-fields="CreatedByUserId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>AspNetUsers (1) → Pages (0..N) · CreatedByUserId · Restrict</title></path><path d="M1650.00,550.00 L1450.00,560.00" id="L_MediaAssets_Pages_AvatarMediaId" data-id="L_MediaAssets_Pages_AvatarMediaId" data-principal="MediaAssets" data-dependent="Pages" data-fields="AvatarMediaId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>MediaAssets (0..1) → Pages (0..N) · AvatarMediaId · Restrict</title></path><path d="M1650.00,680.00 L1450.00,635.00" id="L_MediaAssets_Pages_CoverMediaId" data-id="L_MediaAssets_Pages_CoverMediaId" data-principal="MediaAssets" data-dependent="Pages" data-fields="CoverMediaId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>MediaAssets (0..1) → Pages (0..N) · CoverMediaId · Restrict</title></path><path d="M370.00,480.00 L550.00,475.00" id="L_AspNetUsers_PageMembers_UserId" data-id="L_AspNetUsers_PageMembers_UserId" data-principal="AspNetUsers" data-dependent="PageMembers" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>AspNetUsers (1) → PageMembers (0..N) · UserId · Restrict</title></path><path d="M1100.00,470.00 L900.00,475.00" id="L_Pages_PageMembers_PageId" data-id="L_Pages_PageMembers_PageId" data-principal="Pages" data-dependent="PageMembers" data-fields="PageId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>Pages (1) → PageMembers (0..N) · PageId · Cascade</title></path><path d="M370.00,400.00 L550.00,205.00" id="L_AspNetUsers_PageRoleInvitations_InviteeUserId" data-id="L_AspNetUsers_PageRoleInvitations_InviteeUserId" data-principal="AspNetUsers" data-dependent="PageRoleInvitations" data-fields="InviteeUserId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>AspNetUsers (1) → PageRoleInvitations (0..N) · InviteeUserId · Restrict</title></path><path d="M370.00,330.00 L550.00,95.00" id="L_AspNetUsers_PageRoleInvitations_InviterUserId" data-id="L_AspNetUsers_PageRoleInvitations_InviterUserId" data-principal="AspNetUsers" data-dependent="PageRoleInvitations" data-fields="InviterUserId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>AspNetUsers (1) → PageRoleInvitations (0..N) · InviterUserId · Restrict</title></path><path d="M1100.00,420.00 L900.00,230.00" id="L_Pages_PageRoleInvitations_PageId" data-id="L_Pages_PageRoleInvitations_PageId" data-principal="Pages" data-dependent="PageRoleInvitations" data-fields="PageId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>Pages (1) → PageRoleInvitations (0..N) · PageId · Cascade</title></path><path d="M370.00,700.00 L550.00,740.00" id="L_AspNetUsers_PageFollowers_UserId" data-id="L_AspNetUsers_PageFollowers_UserId" data-principal="AspNetUsers" data-dependent="PageFollowers" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>AspNetUsers (1) → PageFollowers (0..N) · UserId · Restrict</title></path><path d="M1100.00,675.00 L900.00,730.00" id="L_Pages_PageFollowers_PageId" data-id="L_Pages_PageFollowers_PageId" data-principal="Pages" data-dependent="PageFollowers" data-fields="PageId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>Pages (1) → PageFollowers (0..N) · PageId · Cascade</title></path><path d="M1825.00,450.00 L1825.00,240.00" id="L_MediaAssets_PageMediaReferences_MediaId" data-id="L_MediaAssets_PageMediaReferences_MediaId" data-principal="MediaAssets" data-dependent="PageMediaReferences" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>MediaAssets (1) → PageMediaReferences (0..N) · MediaId · Restrict</title></path><path d="M1450.00,420.00 L1650.00,170.00" id="L_Pages_PageMediaReferences_PageId" data-id="L_Pages_PageMediaReferences_PageId" data-principal="Pages" data-dependent="PageMediaReferences" data-fields="PageId" data-kind="fk" class="relation" marker-start="url(#pages-one)" marker-end="url(#pages-many)"><title>Pages (1) → PageMediaReferences (0..N) · PageId · Cascade</title></path></g><g class="edgeLabels"><text x="398.00" y="636.00" class="cardinality" text-anchor="middle">1</text><text x="1072.00" y="612.00" class="cardinality" text-anchor="middle">0..N</text><text x="735.00" y="610.00" class="relation-label" text-anchor="middle">CreatedByUserId</text><text x="1621.44" y="543.41" class="cardinality" text-anchor="middle">0..1</text><text x="1478.56" y="574.59" class="cardinality" text-anchor="middle">0..N</text><text x="1550.00" y="545.00" class="relation-label" text-anchor="middle">AvatarMediaId</text><text x="1625.32" y="666.15" class="cardinality" text-anchor="middle">0..1</text><text x="1474.68" y="656.85" class="cardinality" text-anchor="middle">0..N</text><text x="1550.00" y="647.50" class="relation-label" text-anchor="middle">CoverMediaId</text><text x="398.32" y="495.22" class="cardinality" text-anchor="middle">1</text><text x="521.68" y="467.78" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="467.50" class="relation-label" text-anchor="middle">UserId</text><text x="1071.71" y="462.70" class="cardinality" text-anchor="middle">1</text><text x="928.29" y="490.30" class="cardinality" text-anchor="middle">0..N</text><text x="1000.00" y="462.50" class="relation-label" text-anchor="middle">PageId</text><text x="397.81" y="391.56" class="cardinality" text-anchor="middle">1</text><text x="522.19" y="221.44" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="292.50" class="relation-label" text-anchor="middle">InviteeUserId</text><text x="396.55" y="319.07" class="cardinality" text-anchor="middle">1</text><text x="523.45" y="113.93" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="202.50" class="relation-label" text-anchor="middle">InviterUserId</text><text x="1087.97" y="396.02" class="cardinality" text-anchor="middle">1</text><text x="922.00" y="261.98" class="cardinality" text-anchor="middle">0..N</text><text x="1000.00" y="315.00" class="relation-label" text-anchor="middle">PageId</text><text x="394.73" y="721.79" class="cardinality" text-anchor="middle">1</text><text x="525.27" y="726.21" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="710.00" class="relation-label" text-anchor="middle">UserId</text><text x="1069.82" y="674.85" class="cardinality" text-anchor="middle">1</text><text x="930.18" y="738.15" class="cardinality" text-anchor="middle">0..N</text><text x="1000.00" y="692.50" class="relation-label" text-anchor="middle">PageId</text><text x="1837.00" y="426.00" class="cardinality" text-anchor="middle">1</text><text x="1813.00" y="272.00" class="cardinality" text-anchor="middle">0..N</text><text x="1841.00" y="335.00" class="relation-label" text-anchor="start">MediaId</text><text x="1476.86" y="409.63" class="cardinality" text-anchor="middle">1</text><text x="1623.14" y="188.37" class="cardinality" text-anchor="middle">0..N</text><text x="1550.00" y="285.00" class="relation-label" text-anchor="middle">PageId</text><text x="20.00" y="282.00" class="reference-caption" text-anchor="start">Identity · bảng tham chiếu</text><text x="1100.00" y="362.00" class="reference-caption" text-anchor="start">Pages · bảng trong module</text><text x="1650.00" y="432.00" class="reference-caption" text-anchor="start">Media · bảng tham chiếu</text></g><g class="nodes"><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(195.0, 521.0)"><rect class="basic label-container" x="-175.0" y="-221.0" width="350" height="442" rx="5" ry="5" style="stroke:#54a7eb" /><g class="label" transform="translate(-175.0, -221.0)"><foreignObject width="350" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#d6eaff;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Pages" role="button" tabindex="0" aria-label="Xem chi tiết bảng Pages" transform="translate(1275.0, 541.0)"><rect class="basic label-container" x="-175.0" y="-161.0" width="350" height="322" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -161.0)"><foreignObject width="350" height="322"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:322px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">Pages</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AvatarMediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">AvatarMediaId</code></td><td class="column-type">uuid?</td></tr><tr data-column="CoverMediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">CoverMediaId</code></td><td class="column-type">uuid?</td></tr><tr data-column="CreatedByUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">CreatedByUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Name"><td class="identity-keys" /><td><code class="" title="">Name</code></td><td class="column-type">varchar(120)</td></tr><tr data-column="Username"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">Username</code></td><td class="column-type">citext</td></tr><tr data-column="Category"><td class="identity-keys" /><td><code class="" title="">Category</code></td><td class="column-type">varchar(80)</td></tr><tr data-column="Bio"><td class="identity-keys" /><td><code class="" title="">Bio</code></td><td class="column-type">varchar(2000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PageMembers" role="button" tabindex="0" aria-label="Xem chi tiết bảng PageMembers" transform="translate(725.0, 477.0)"><rect class="basic label-container" x="-175.0" y="-77.0" width="350" height="154" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -77.0)"><foreignObject width="350" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">PageMembers</th></tr></thead><tbody><tr data-column="PageId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PageId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Role"><td class="identity-keys" /><td><code class="" title="">Role</code></td><td class="column-type">integer</td></tr><tr data-column="JoinedAtUtc"><td class="identity-keys" /><td><code class="" title="">JoinedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PageRoleInvitations" role="button" tabindex="0" aria-label="Xem chi tiết bảng PageRoleInvitations" transform="translate(725.0, 133.0)"><rect class="basic label-container" x="-175.0" y="-113.0" width="350" height="226" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-175.0, -113.0)"><foreignObject width="350" height="226"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:226px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">PageRoleInvitations</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="PageId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">PageId</code></td><td class="column-type">uuid</td></tr><tr data-column="InviterUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">InviterUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="InviteeUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">InviteeUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Role"><td class="identity-keys" /><td><code class="" title="">Role</code></td><td class="column-type">integer</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="RespondedAtUtc"><td class="identity-keys" /><td><code class="" title="">RespondedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PageFollowers" role="button" tabindex="0" aria-label="Xem chi tiết bảng PageFollowers" transform="translate(725.0, 733.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#ed5998" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fbd7e7;color:#182437">PageFollowers</th></tr></thead><tbody><tr data-column="PageId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PageId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="FollowedAtUtc"><td class="identity-keys" /><td><code class="" title="">FollowedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="PageMediaReferences" role="button" tabindex="0" aria-label="Xem chi tiết bảng PageMediaReferences" transform="translate(1825.0, 175.0)"><rect class="basic label-container" x="-175.0" y="-65.0" width="350" height="130" rx="5" ry="5" style="stroke:#f15362" /><g class="label" transform="translate(-175.0, -65.0)"><foreignObject width="350" height="130"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:130px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#ffd3d8;color:#182437">PageMediaReferences</th></tr></thead><tbody><tr data-column="PageId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">PageId</code></td><td class="column-type">uuid</td></tr><tr data-column="Slot"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Slot</code></td><td class="column-type">integer</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="AttachedAtUtc"><td class="identity-keys" /><td><code class="" title="">AttachedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(1825.0, 707.0)"><rect class="basic label-container" x="-175.0" y="-257.0" width="350" height="514" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -257.0)"><foreignObject width="350" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(20, 840)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="pages-specification" type="application/json">
+{
+  "title": "Trang, vai trò quản trị và nội dung",
+  "purpose": "Pages quản lý trang, xuất bản/ẩn trang, ảnh đại diện và ảnh bìa, người theo dõi, lời mời quản trị, vai trò và bài viết của trang.",
+  "scope": "Đối chiếu 5 entity Pages, 24 endpoint PagesController, PagesService, PagePostAccessService và 3 luồng sửa/xóa nội dung qua Posts. ERD hiển thị đầy đủ 5 bảng chính cùng AspNetUsers và MediaAssets, mỗi bảng một lần. Bài viết lưu ở Posts với ContainerType=PAGE và ContainerId=pageId; ContainerId là liên kết nghiệp vụ, không có FK tới Pages. Media, Posts, Users và Notifications hỗ trợ các luồng tích hợp.",
+  "usecasesTitle": "Quản lý trang và nội dung của trang",
+  "groups": [
+    {
+      "id": "pages-general",
+      "name": "Tìm và quản lý trang",
+      "actor": "user",
+      "description": "Tạo, đọc, sửa, xóa mềm, xuất bản hoặc ẩn trang; xem trang đang quản lý và khám phá trang đã xuất bản."
+    },
+    {
+      "id": "pages-following",
+      "name": "Theo dõi trang",
+      "actor": "user",
+      "description": "Theo dõi, bỏ theo dõi và xem danh sách trang đang theo dõi. Theo dõi không cấp vai trò quản trị."
+    },
+    {
+      "id": "pages-media",
+      "name": "Ảnh đại diện và ảnh bìa",
+      "actor": "user",
+      "description": "Owner/admin đặt hoặc gỡ ảnh; người đủ quyền xem mở ảnh qua đường dẫn redirect tới Media."
+    },
+    {
+      "id": "pages-members",
+      "name": "Vai trò và quyền sở hữu",
+      "actor": "user",
+      "description": "Thành viên xem danh sách quản trị; owner/admin quản lý vai trò theo phạm vi quyền, owner chuyển quyền sở hữu."
+    },
+    {
+      "id": "pages-invitations",
+      "name": "Lời mời quản trị",
+      "actor": "user",
+      "description": "Owner/admin mời tài khoản quản trị; người nhận xem, chấp nhận hoặc từ chối lời mời đang chờ."
+    },
+    {
+      "id": "pages-posts",
+      "name": "Bài viết và kiểm duyệt",
+      "actor": "user",
+      "description": "Đọc/đăng bài qua Pages; sửa, xóa bài và gỡ bình luận qua Posts. Quyền được nêu riêng theo từng thao tác."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Khách đọc trang đã xuất bản, khám phá, bài viết và media công khai. Tài khoản đăng nhập tạo trang, theo dõi hoặc phản hồi lời mời; quyền quản trị được kiểm tra riêng."
+    },
+    {
+      "id": "owner",
+      "name": "Owner",
+      "role": "OWNER=0 trong PageMembers. Sửa thông tin/media, mời và quản lý các vai trò không phải owner, chuyển quyền sở hữu, xuất bản/ẩn hoặc xóa trang, đăng/sửa/xóa bài và gỡ bình luận."
+    },
+    {
+      "id": "admin",
+      "name": "Admin",
+      "role": "ADMIN=1. Sửa thông tin/media, đăng/sửa/xóa bài và gỡ bình luận; chỉ mời, đổi vai trò hoặc gỡ editor/moderator. Không quản lý owner/admin khác, xuất bản/ẩn, xóa trang hoặc chuyển sở hữu."
+    },
+    {
+      "id": "editor",
+      "name": "Editor",
+      "role": "EDITOR=2. Đọc trang chưa xuất bản, danh sách quản trị, đăng/sửa/xóa bài. Không có quyền quản lý trang, vai trò hoặc gỡ bình luận của người khác chỉ từ vai trò editor."
+    },
+    {
+      "id": "moderator",
+      "name": "Moderator",
+      "role": "MODERATOR=3. Đọc trang chưa xuất bản và danh sách quản trị; gỡ bình luận qua Posts. Luồng sửa/xóa bài hiện dùng CanCreatePostAsync nên moderator không được sửa/xóa bài của người khác."
+    },
+    {
+      "id": "media",
+      "name": "Module Media",
+      "role": "Kiểm tra ảnh READY thuộc người thao tác, đồng bộ PageMediaReferences/MediaReferences và cấp URL đọc ảnh/đính kèm."
+    },
+    {
+      "id": "posts",
+      "name": "Module Posts",
+      "role": "Lưu bài PAGE, PostMedia và metadata; xử lý chỉnh sửa/xóa mềm bài viết, bình luận theo PagePostAccessService."
+    },
+    {
+      "id": "notifications",
+      "name": "Notifications",
+      "role": "Queue PAGE_ROLE_INVITE với EntityType PAGE_ROLE_INVITATION cùng lời mời, publish sau SaveChangesAsync."
+    }
+  ],
+  "rules": [
+    {
+      "text": "PagesController có 24 endpoint: 5 AllowAnonymous (chi tiết trang, discover, posts, avatar, cover), 19 yêu cầu Authorize và claim sub là GUID. API đọc công khai vẫn kiểm tra trạng thái trang và membership khi cần.",
+      "source": "Controllers/PagesController.cs"
+    },
+    {
+      "text": "Tạo trang cùng membership OWNER trong transaction; Status ban đầu UNPUBLISHED=1. PUBLISHED=0. Chỉ owner được publish/unpublish hoặc xóa mềm trang; gọi lại publish/unpublish vẫn thành công và cập nhật UpdatedAtUtc.",
+      "source": "Domain/Entities/Page.cs"
+    },
+    {
+      "text": "Name bắt buộc, tối đa 120 ký tự; Category bắt buộc, tối đa 80; Bio tùy chọn tối đa 2000. Chuỗi được trim; Bio trắng thành null. Username chuyển lowercase, từ 3 đến 50 ký tự, chỉ a-z, 0-9, dấu chấm và gạch dưới.",
+      "source": "Common/PageNormalization.cs"
+    },
+    {
+      "text": "Username không nhận tên dành riêng như admin, api, auth, feed, groups, pages, posts, media, messages, reels, stories, users, settings, support, system, health. Username lưu citext; unique index chỉ khi DeletedAtUtc IS NULL nên có thể tái sử dụng sau xóa mềm. Create/Update ánh xạ DbUpdateException thành 409 page_username_taken.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "Trang chưa xóa ở trạng thái PUBLISHED cho mọi người đọc; UNPUBLISHED chỉ PageMembers được xem. PageFollowers hoặc lời mời PENDING không cấp quyền xem trang chưa xuất bản. API đọc chi tiết/media/posts trả 404 page_not_found nếu không có quyền.",
+      "source": "Services/PagePostAccessService.cs"
+    },
+    {
+      "text": "PageMembers có PK (PageId, UserId); vai trò OWNER=0, ADMIN=1, EDITOR=2, MODERATOR=3. CreatedByUserId là người tạo ban đầu, không đổi khi chuyển owner. Quyền sở hữu thực tế do Role=OWNER; database không có unique index buộc mỗi trang chỉ một owner.",
+      "source": "Domain/Entities/PageMember.cs"
+    },
+    {
+      "text": "Owner/admin sửa thông tin và media. Owner quản lý admin/editor/moderator; admin chỉ quản lý editor/moderator và không đổi vai trò của admin khác. Không thể mời hoặc gán OWNER qua API role; phải chuyển sở hữu cho membership có sẵn. Role được parse không phân biệt hoa/thường, Enum.TryParse cũng chấp nhận chuỗi số 1..3.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "Transfer ownership đổi owner cũ thành ADMIN, người được chọn thành OWNER trong transaction; không đổi CreatedByUserId. Chọn chính mình trả 204 không đổi dữ liệu; đích chưa là thành viên trả 400 new_owner_must_be_member.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "GetMembers, ChangeMemberRole, RemoveMember và TransferOwnership kiểm tra membership/role nhưng hiện không kiểm tra Pages.DeletedAtUtc. Vì xóa mềm giữ membership, các luồng này vẫn có thể thao tác membership của trang đã xóa. Đặc tả ghi hành vi hiện tại; không coi các API quản lý này là bằng chứng trang còn hiển thị.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "GetMembers yêu cầu người gọi là thành viên; trả 403 nếu không có membership, kể cả trang không tồn tại. Danh sách join UserProfiles để lấy Username/DisplayName, sắp JoinedAtUtc rồi UserId giảm dần.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "PageFollowers có PK (PageId, UserId). Follow chỉ trang PUBLISHED chưa xóa, không thêm hàng nếu đã theo dõi, trả 204; Unfollow xóa hàng nếu có và luôn trả 204, không kiểm tra trang còn tồn tại. Theo dõi không tạo PageMember và không có thông báo follow trong luồng này.",
+      "source": "Domain/Entities/PageFollower.cs"
+    },
+    {
+      "text": "PATCH media cho owner/admin đặt hoặc gỡ AVATAR=0 và COVER=1. Không gửi MediaId giữ ảnh cũ; RemoveAvatar/RemoveCover chọn null. Request cấm vừa gửi ID vừa remove cùng slot, ID rỗng không hợp lệ.",
+      "source": "DTOs/Requests/SetPageMediaRequest.cs"
+    },
+    {
+      "text": "Ảnh gửi mới phải là MediaAssets IMAGE, READY, chưa xóa và thuộc chính owner/admin đang thao tác; không dùng quyền của người tạo trang thay cho quyền sở hữu media. Đổi ảnh và đồng bộ PageMediaReferences trong transaction; không tạo bài thông báo cập nhật ảnh trong luồng Pages.",
+      "source": "../Media/Services/MediaService.cs"
+    },
+    {
+      "text": "PageMediaReferences có PK (PageId, Slot), tối đa một hàng mỗi slot; MediaId không unique. PageId FK CASCADE, MediaId FK RESTRICT. Pages.AvatarMediaId/CoverMediaId nullable cũng có FK RESTRICT; service đồng bộ giữa hai nơi, không có constraint buộc các ID bằng nhau.",
+      "source": "Domain/Entities/PageMediaReference.cs"
+    },
+    {
+      "text": "Avatar/CoverUrl trong PageResponse là đường dẫn tương đối /api/pages/{id}/avatar hoặc cover. Endpoint kiểm tra quyền trang, gọi Media.CreateReadUrlAsync và trả 302 Redirect; thiếu ảnh hoặc URL đọc không cấp được trả 404. Pages không có endpoint media/access riêng.",
+      "source": "Controllers/PagesController.cs"
+    },
+    {
+      "text": "Xóa trang là xóa mềm: ghi DeletedAtUtc/UpdatedAtUtc, đặt AvatarMediaId/CoverMediaId=null và xóa PageMediaReferences trong transaction. PageMembers, PageFollowers, PageRoleInvitations, Posts và tệp media được giữ; CASCADE chỉ chạy khi xóa vật lý Pages.",
+      "source": "Domain/Entities/Page.cs"
+    },
+    {
+      "text": "PageRoleInvitations: PENDING=0, ACCEPTED=1, DECLINED=2, CANCELLED=3. Unique (PageId, InviteeUserId) chỉ khi Status=0. Enum có CANCELLED nhưng PagesController không có API hủy; không có cột hết hạn hoặc cơ chế tự hết hạn.",
+      "source": "Domain/Entities/PageRoleInvitation.cs"
+    },
+    {
+      "text": "Mời cần đúng quyền gán vai trò, trang chưa xóa, tài khoản nhận tồn tại, chưa là thành viên và chưa có lời mời PENDING. InviterUserId/InviteeUserId FK RESTRICT; PageId CASCADE. Queue PAGE_ROLE_INVITE, SaveChanges cùng lời mời rồi PublishAsync; không kiểm tra quan hệ bạn bè/chặn trong luồng mời.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "Invitations/mine chỉ lọc người nhận và Status=PENDING, hiện không lọc trang đã xóa. Accept/decline kiểm tra trang chưa xóa; chỉ người nhận được phản hồi PENDING. Accept tạo membership với Role lưu trong lời mời và chuyển ACCEPTED trong transaction; decline chỉ chuyển DECLINED, cả hai ghi RespondedAtUtc.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "Phân trang mặc định limit=20, từ 1 đến 50; ngoài khoảng trả 400 invalid_pagination. Cursor Base64 chuẩn của ticks:GUID cho mine, following, members, invitations và posts; discover dùng Base64(Base64(Name):GUID). Cursor sai định dạng trả 400 invalid_cursor; chuỗi trắng là trang đầu. Timestamp ticks ngoài phạm vi DateTime chưa được catch trong decoder, nên không khẳng định mọi cursor lỗi đều trả 400.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "Mine lấy trang chưa xóa mà người gọi quản lý, gồm cả UNPUBLISHED; sắp CreatedAtUtc/Id giảm dần. Following chỉ PUBLISHED chưa xóa, sắp FollowedAtUtc/Id giảm dần. Discover chỉ PUBLISHED chưa xóa, tìm Name/Username/Category bằng ILIKE với query sau trim, sắp Name/Id tăng dần.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "Giới hạn response hiện tại: ToResponsesAsync dùng roles.GetValueOrDefault(page.Id); trong following/discover với người xem không có membership, giá trị mặc định OWNER có thể khiến ViewerRole=\"owner\". API chi tiết dùng nullable role đúng. Quyền server lấy trực tiếp từ PageMembers, không dựa vào ViewerRole của response.",
+      "source": "Services/PagesService.cs"
+    },
+    {
+      "text": "GetPosts kiểm tra quyền trang rồi chỉ lấy bài PAGE, ContainerId=pageId, STANDARD chưa xóa; phân trang CreatedAtUtc/Id giảm dần. Tạo bài cần OWNER/ADMIN/EDITOR trong trang chưa xóa, không yêu cầu trang đã PUBLISHED. Posts lưu Privacy=PUBLIC, ContainerType.PAGE=2; quyền đọc thực tế theo trạng thái trang.",
+      "source": "Services/PagePostAccessService.cs"
+    },
+    {
+      "text": "CreatePostRequest gửi tới Pages chỉ sử dụng Content và MediaIds; Privacy/PostType/TextBackground không được truyền vào CreatePagePostAsync. PostsUseCase validate nội dung/media thuộc người thao tác, tạo bài, PostMedia/MediaReferences và metadata trong transaction.",
+      "source": "../Posts/Services/PostsUseCase.cs"
+    },
+    {
+      "text": "Sửa/xóa bài PAGE qua Posts cho tác giả hoặc người có CanCreatePostAsync (OWNER/ADMIN/EDITOR); moderator không được sửa/xóa bài của người khác. Khi sửa bài PAGE, Privacy bị ép PUBLIC. CanModeratePostAsync gồm OWNER/ADMIN/MODERATOR được dùng để gỡ bình luận qua CanModerateCommentAsync.",
+      "source": "../Posts/Services/PostsService.cs"
+    },
+    {
+      "text": "FK bảng phụ tới Pages dùng CASCADE; FK tới AspNetUsers/MediaAssets dùng RESTRICT. Pages có 3 index lọc DeletedAtUtc IS NULL: Username UNIQUE, (Status, Name, Id), (CreatedByUserId, CreatedAtUtc). Unique index lời mời PENDING vẫn cho phép lưu lịch sử đã phản hồi.",
+      "source": "../../Persistence/FookbaseDbContext.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-PA-01",
+      "name": "Tạo trang",
+      "group": "pages-general",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tạo trang mới và trở thành owner.",
+      "preconditions": "Đã đăng nhập; Name, Username, Category và Bio hợp lệ.",
+      "steps": [
+        "Gửi CreatePageRequest.",
+        "Trim dữ liệu, lowercase Username, kiểm tra định dạng và tên dành riêng.",
+        "Tạo Pages UNPUBLISHED và PageMembers OWNER cùng transaction.",
+        "Commit, trả 201 PageResponse và Location /api/pages/{id}."
+      ],
+      "alternatives": [
+        "Request không hợp lệ: 400 validation_failed; normalization lỗi: 400 invalid_page.",
+        "Tên dành riêng: 400 reserved_page_username; username đã dùng/lỗi DbUpdateException: 409 page_username_taken.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Trang chưa xuất bản có một owner; chưa có media hoặc follower.",
+      "endpoints": [
+        "POST /api/pages"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Requests/CreatePageRequest.cs",
+        "Common/PageNormalization.cs",
+        "Domain/Entities/Page.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-02",
+      "name": "Xem thông tin trang",
+      "group": "pages-general",
+      "actor": "Người xem hoặc khách",
+      "goal": "Đọc trang bằng GUID hoặc Username.",
+      "preconditions": "Trang chưa xóa; PUBLISHED hoặc người xem có membership.",
+      "steps": [
+        "Gửi idOrUsername; GUID tìm theo Id, chuỗi khác trim/lowercase tìm Username.",
+        "Nếu chưa xuất bản, kiểm tra PageMembers của người xem.",
+        "Đếm follower, lấy IsFollowing và ViewerRole nullable.",
+        "Trả 200 PageResponse với AvatarUrl/CoverUrl tương đối hoặc null."
+      ],
+      "alternatives": [
+        "Trang thiếu/đã xóa/UNPUBLISHED mà không là thành viên: 404 page_not_found.",
+        "Follow hoặc lời mời PENDING chưa đủ quyền xem UNPUBLISHED."
+      ],
+      "postconditions": "Không đổi dữ liệu; đọc chi tiết trả ViewerRole=null nếu không có membership.",
+      "endpoints": [
+        "GET /api/pages/{idOrUsername}"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageFollowers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Services/PagePostAccessService.cs",
+        "DTOs/Responses/PageResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-03",
+      "name": "Sửa thông tin trang",
+      "group": "pages-general",
+      "actor": "Owner hoặc admin",
+      "goal": "Đổi tên, username, danh mục và giới thiệu.",
+      "preconditions": "Đã đăng nhập; trang chưa xóa; role OWNER/ADMIN; request đầy đủ và hợp lệ.",
+      "steps": [
+        "Gửi Name, Username, Category, Bio trong UpdatePageRequest.",
+        "Chuẩn hóa dữ liệu, kiểm tra trang và role.",
+        "Cập nhật thông tin/UpdatedAtUtc, SaveChangesAsync.",
+        "Trả 200 PageResponse."
+      ],
+      "alternatives": [
+        "Trang thiếu/đã xóa: 404 page_not_found; sai role: 403 forbidden.",
+        "Request/normalization sai: 400; tên dành riêng: 400 reserved_page_username.",
+        "Username trùng/lỗi DbUpdateException: 409 page_username_taken."
+      ],
+      "postconditions": "Thông tin thay đổi; trạng thái xuất bản và media giữ nguyên.",
+      "endpoints": [
+        "PATCH /api/pages/{pageId:guid}"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageFollowers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Requests/UpdatePageRequest.cs",
+        "Common/PageNormalization.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-04",
+      "name": "Xóa trang",
+      "group": "pages-general",
+      "actor": "Owner",
+      "goal": "Xóa mềm trang và bỏ tham chiếu ảnh.",
+      "preconditions": "Đã đăng nhập; trang chưa xóa; người gọi là OWNER.",
+      "steps": [
+        "Gửi DELETE pageId.",
+        "Kiểm tra trang và role OWNER.",
+        "Trong transaction ghi DeletedAtUtc/UpdatedAtUtc, xóa hai MediaId và đồng bộ PageMediaReferences về rỗng.",
+        "Commit, trả 204."
+      ],
+      "alternatives": [
+        "Trang thiếu/đã xóa: 404 page_not_found; không phải owner: 403 forbidden.",
+        "Lỗi lưu/đồng bộ khiến transaction không hoàn tất."
+      ],
+      "postconditions": "Trang/media/posts không còn được đọc qua quyền trang; giữ membership, follower, lời mời, bài viết và object media.",
+      "endpoints": [
+        "DELETE /api/pages/{pageId:guid}"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageMediaReferences",
+        "PageFollowers",
+        "PageRoleInvitations",
+        "Posts"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Domain/Entities/Page.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-05",
+      "name": "Xuất bản trang",
+      "group": "pages-general",
+      "actor": "Owner",
+      "goal": "Cho mọi người đọc trang và nội dung.",
+      "preconditions": "Đã đăng nhập; trang chưa xóa; Role OWNER.",
+      "steps": [
+        "Gửi POST publish.",
+        "Kiểm tra trang và role OWNER.",
+        "Đặt Status=PUBLISHED=0, cập nhật UpdatedAtUtc và lưu.",
+        "Trả 200 PageResponse."
+      ],
+      "alternatives": [
+        "Trang thiếu/đã xóa: 404 page_not_found; role khác: 403 forbidden.",
+        "Đã xuất bản: vẫn trả thành công và cập nhật thời gian."
+      ],
+      "postconditions": "Trang xuất hiện trong discover và được follow/đọc công khai.",
+      "endpoints": [
+        "POST /api/pages/{pageId:guid}/publish"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageFollowers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Domain/Entities/Page.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-06",
+      "name": "Ẩn trang",
+      "group": "pages-general",
+      "actor": "Owner",
+      "goal": "Chuyển trang sang chưa xuất bản.",
+      "preconditions": "Đã đăng nhập; trang chưa xóa; Role OWNER.",
+      "steps": [
+        "Gửi POST unpublish.",
+        "Kiểm tra trang và role OWNER.",
+        "Đặt Status=UNPUBLISHED=1, cập nhật UpdatedAtUtc và lưu.",
+        "Trả 200 PageResponse."
+      ],
+      "alternatives": [
+        "Trang thiếu/đã xóa: 404 page_not_found; role khác: 403 forbidden.",
+        "Trang đã UNPUBLISHED: vẫn thành công và cập nhật thời gian."
+      ],
+      "postconditions": "Chỉ thành viên quản trị đọc được trang/nội dung; các follower hiện có được giữ.",
+      "endpoints": [
+        "POST /api/pages/{pageId:guid}/unpublish"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageFollowers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Domain/Entities/Page.cs",
+        "Services/PagePostAccessService.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-07",
+      "name": "Xem trang đang quản lý",
+      "group": "pages-general",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy trang mình có membership.",
+      "preconditions": "Đã đăng nhập; limit và cursor timeline hợp lệ.",
+      "steps": [
+        "Gửi cursor/limit tùy chọn tới mine.",
+        "Join PageMembers theo UserId với Pages chưa xóa.",
+        "Lấy limit+1, sắp CreatedAtUtc/Id giảm dần; nạp follower count và role.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Limit ngoài 1..50: 400 invalid_pagination; cursor sai định dạng: 400 invalid_cursor.",
+        "Không có membership: Items rỗng."
+      ],
+      "postconditions": "Danh sách gồm mọi vai trò quản trị, cả PUBLISHED và UNPUBLISHED.",
+      "endpoints": [
+        "GET /api/pages/mine"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageFollowers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Responses/PageCursorPageResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-08",
+      "name": "Khám phá trang",
+      "group": "pages-general",
+      "actor": "Người xem hoặc khách",
+      "goal": "Tìm trang đã xuất bản.",
+      "preconditions": "Limit và cursor theo Name hợp lệ; không cần đăng nhập.",
+      "steps": [
+        "Gửi query/cursor/limit tùy chọn.",
+        "Lọc PUBLISHED chưa xóa, ILIKE Name/Username/Category với query sau trim.",
+        "Sắp Name/Id tăng dần, lấy limit+1 và nạp các response.",
+        "Trả 200 Items/NextCursor theo Name của trang cuối."
+      ],
+      "alternatives": [
+        "Limit ngoài khoảng: 400 invalid_pagination; cursor sai định dạng: 400 invalid_cursor.",
+        "Không có kết quả: Items rỗng; UNPUBLISHED bị loại.",
+        "ViewerRole trong danh sách hiện có thể thành owner khi không có membership do GetValueOrDefault; xem quy tắc response."
+      ],
+      "postconditions": "Không thay đổi dữ liệu, quyền hoặc follow.",
+      "endpoints": [
+        "GET /api/pages/discover"
+      ],
+      "tables": [
+        "Pages",
+        "PageFollowers",
+        "PageMembers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Responses/PageCursorPageResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-09",
+      "name": "Theo dõi trang",
+      "group": "pages-following",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Theo dõi trang đã xuất bản.",
+      "preconditions": "Đã đăng nhập; trang PUBLISHED chưa xóa.",
+      "steps": [
+        "Gửi POST follow.",
+        "Kiểm tra trang đã xuất bản.",
+        "Nếu chưa có PageFollower tương ứng, thêm với FollowedAtUtc và lưu.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Trang thiếu/đã xóa/UNPUBLISHED: 404 page_not_found, kể cả người gọi là quản trị.",
+        "Đã theo dõi: trả 204 không thêm bản ghi."
+      ],
+      "postconditions": "Một follower cho cặp PageId/UserId; không tạo membership.",
+      "endpoints": [
+        "POST /api/pages/{pageId:guid}/follow"
+      ],
+      "tables": [
+        "Pages",
+        "PageFollowers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Domain/Entities/PageFollower.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-10",
+      "name": "Bỏ theo dõi trang",
+      "group": "pages-following",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Xóa follow của mình.",
+      "preconditions": "Đã đăng nhập; không yêu cầu trang còn tồn tại hoặc đã xuất bản.",
+      "steps": [
+        "Gửi DELETE follow.",
+        "ExecuteDeleteAsync PageFollowers theo PageId và UserId người gọi.",
+        "Trả 204 dù không có hàng để xóa."
+      ],
+      "alternatives": [
+        "Chưa đăng nhập hoặc claim sub sai: 401.",
+        "Trang thiếu/đã xóa hoặc chưa follow: vẫn trả 204."
+      ],
+      "postconditions": "Người gọi không còn follow trang; membership giữ nguyên.",
+      "endpoints": [
+        "DELETE /api/pages/{pageId:guid}/follow"
+      ],
+      "tables": [
+        "PageFollowers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-11",
+      "name": "Xem trang đang theo dõi",
+      "group": "pages-following",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Đọc danh sách follow đang hiển thị.",
+      "preconditions": "Đã đăng nhập; limit và cursor timeline hợp lệ.",
+      "steps": [
+        "Gửi cursor/limit tới following.",
+        "Join PageFollowers của người gọi với Pages PUBLISHED chưa xóa.",
+        "Sắp FollowedAtUtc/Id giảm dần, lấy limit+1.",
+        "Trả 200 Items/NextCursor theo FollowedAtUtc."
+      ],
+      "alternatives": [
+        "Limit/cursor sai: 400 invalid_pagination hoặc invalid_cursor.",
+        "Follow tới trang ẩn/đã xóa được giữ trong DB nhưng không xuất hiện.",
+        "ViewerRole có thể sai thành owner nếu không có membership; không dùng response này để cấp quyền."
+      ],
+      "postconditions": "Không thay đổi trạng thái follow.",
+      "endpoints": [
+        "GET /api/pages/following"
+      ],
+      "tables": [
+        "Pages",
+        "PageFollowers",
+        "PageMembers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Responses/PageCursorPageResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-12",
+      "name": "Đặt hoặc gỡ ảnh trang",
+      "group": "pages-media",
+      "actor": "Owner hoặc admin",
+      "goal": "Cập nhật ảnh đại diện và ảnh bìa.",
+      "preconditions": "Đã đăng nhập; trang chưa xóa; Role OWNER/ADMIN; ID mới là ảnh READY thuộc người thao tác.",
+      "steps": [
+        "Gửi AvatarMediaId/CoverMediaId và RemoveAvatar/RemoveCover tùy chọn.",
+        "Validate request và từng ID mới phân biệt; giữ slot không gửi, remove chọn null.",
+        "Trong transaction cập nhật Pages và đồng bộ PageMediaReferences theo slot.",
+        "Commit, trả 200 PageResponse."
+      ],
+      "alternatives": [
+        "Request vừa gửi ID vừa remove cùng slot hoặc GUID rỗng: 400 validation_failed.",
+        "Trang thiếu: 404 page_not_found; role sai: 403 forbidden.",
+        "Media không READY/đã xóa/thiếu: 400 invalid_media; không thuộc người gọi: 403 media_not_owned; không phải ảnh: 400 invalid_page_media_type."
+      ],
+      "postconditions": "Mỗi slot tối đa một tham chiếu; không xóa object media hoặc tự tạo bài thông báo ảnh.",
+      "endpoints": [
+        "PATCH /api/pages/{pageId:guid}/media"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageMediaReferences",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Requests/SetPageMediaRequest.cs",
+        "Common/CustomValidationAttributes.cs",
+        "../Media/Services/MediaService.cs"
+      ],
+      "support": [
+        "media"
+      ]
+    },
+    {
+      "id": "UC-PA-13",
+      "name": "Mở ảnh đại diện trang",
+      "group": "pages-media",
+      "actor": "Người xem hoặc khách",
+      "goal": "Mở avatar qua API kiểm tra quyền trang.",
+      "preconditions": "Trang chưa xóa, đủ quyền xem, có AvatarMediaId và Media cấp được URL.",
+      "steps": [
+        "Gửi GET avatar.",
+        "Kiểm tra quyền PUBLISHED hoặc membership và lấy AvatarMediaId.",
+        "Gọi Media.CreateReadUrlAsync.",
+        "Trả 302 Redirect tới URL ảnh."
+      ],
+      "alternatives": [
+        "Trang không xem được hoặc thiếu avatar: 404 page_not_found.",
+        "Media không cấp được URL: 404."
+      ],
+      "postconditions": "Không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/pages/{pageId:guid}/avatar"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Services/PagePostAccessService.cs",
+        "../Media/Services/MediaService.cs"
+      ],
+      "support": [
+        "media"
+      ]
+    },
+    {
+      "id": "UC-PA-14",
+      "name": "Mở ảnh bìa trang",
+      "group": "pages-media",
+      "actor": "Người xem hoặc khách",
+      "goal": "Mở cover qua API kiểm tra quyền trang.",
+      "preconditions": "Trang chưa xóa, đủ quyền xem, có CoverMediaId và Media cấp được URL.",
+      "steps": [
+        "Gửi GET cover.",
+        "Kiểm tra quyền PUBLISHED hoặc membership và lấy CoverMediaId.",
+        "Gọi Media.CreateReadUrlAsync.",
+        "Trả 302 Redirect tới URL ảnh."
+      ],
+      "alternatives": [
+        "Trang không xem được hoặc thiếu cover: 404 page_not_found.",
+        "Media không cấp được URL: 404."
+      ],
+      "postconditions": "Không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/pages/{pageId:guid}/cover"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Services/PagePostAccessService.cs",
+        "../Media/Services/MediaService.cs"
+      ],
+      "support": [
+        "media"
+      ]
+    },
+    {
+      "id": "UC-PA-15",
+      "name": "Xem danh sách quản trị",
+      "group": "pages-members",
+      "actor": "Thành viên quản trị của trang",
+      "goal": "Đọc tài khoản và vai trò trong PageMembers.",
+      "preconditions": "Đã đăng nhập; có membership; limit/cursor timeline hợp lệ. Luồng hiện không kiểm tra trang đã xóa.",
+      "steps": [
+        "Gửi GET members với cursor/limit.",
+        "Kiểm tra IsMemberAsync theo PageId/UserId.",
+        "Join UserProfiles, sắp JoinedAtUtc/UserId giảm dần.",
+        "Trả 200 Items/NextCursor gồm Username, DisplayName, Role và JoinedAtUtc."
+      ],
+      "alternatives": [
+        "Không có membership: 403 forbidden; trang không tồn tại cũng đi qua kiểm tra này.",
+        "Limit/cursor sai: 400 invalid_pagination hoặc invalid_cursor."
+      ],
+      "postconditions": "Không đổi membership; cả owner/admin/editor/moderator được đọc.",
+      "endpoints": [
+        "GET /api/pages/{pageId:guid}/members"
+      ],
+      "tables": [
+        "PageMembers",
+        "UserProfiles"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Services/PagePostAccessService.cs",
+        "DTOs/Responses/PageMemberResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-16",
+      "name": "Đổi vai trò quản trị",
+      "group": "pages-members",
+      "actor": "Owner hoặc admin trong phạm vi quyền",
+      "goal": "Đổi vai trò của thành viên có sẵn.",
+      "preconditions": "Đã đăng nhập; actor được gán role đích và quản lý role hiện tại. Luồng hiện không kiểm tra trang đã xóa.",
+      "steps": [
+        "Gửi role admin/editor/moderator, parse và kiểm tra CanManageRole.",
+        "Tìm membership đích; cấm đổi OWNER, admin không được đổi ADMIN.",
+        "ChangeRole, ghi UpdatedAtUtc và lưu.",
+        "Nạp UserProfiles, trả 200 PageMemberResponse."
+      ],
+      "alternatives": [
+        "Role không hợp lệ hoặc OWNER: 400 invalid_page_role.",
+        "Quyền không đủ/đích OWNER hoặc admin đổi admin: 403 forbidden.",
+        "Membership đích thiếu: 404 page_not_found."
+      ],
+      "postconditions": "Role đổi; JoinedAtUtc giữ nguyên; không chuyển sở hữu qua endpoint này.",
+      "endpoints": [
+        "PATCH /api/pages/{pageId:guid}/members/{userId:guid}/role"
+      ],
+      "tables": [
+        "PageMembers",
+        "UserProfiles"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Requests/ChangePageMemberRoleRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-17",
+      "name": "Gỡ thành viên quản trị",
+      "group": "pages-members",
+      "actor": "Owner hoặc admin trong phạm vi quyền",
+      "goal": "Xóa membership quản trị.",
+      "preconditions": "Đã đăng nhập; owner gỡ role khác OWNER, admin chỉ gỡ EDITOR/MODERATOR. Luồng hiện không kiểm tra trang đã xóa.",
+      "steps": [
+        "Gửi DELETE membership theo userId.",
+        "Đọc role của actor và membership đích.",
+        "Cấm gỡ OWNER; kiểm tra CanRemoveMember.",
+        "Xóa PageMember, lưu và trả 204."
+      ],
+      "alternatives": [
+        "Đích không có membership: 404 page_not_found.",
+        "Đích OWNER hoặc quyền gỡ không đủ: 403 forbidden.",
+        "Editor/moderator không có endpoint rời trang dành riêng và không tự gỡ bằng quyền của role này."
+      ],
+      "postconditions": "Membership đích bị xóa; follow và bài viết cũ giữ nguyên.",
+      "endpoints": [
+        "DELETE /api/pages/{pageId:guid}/members/{userId:guid}"
+      ],
+      "tables": [
+        "PageMembers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Services/PagePostAccessService.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-18",
+      "name": "Chuyển quyền sở hữu",
+      "group": "pages-members",
+      "actor": "Owner",
+      "goal": "Chuyển OWNER sang thành viên có sẵn.",
+      "preconditions": "Đã đăng nhập; actor có Role OWNER; UserId đích có PageMember. Luồng hiện không kiểm tra trang đã xóa.",
+      "steps": [
+        "Gửi TransferPageOwnershipRequest.",
+        "Kiểm tra actor OWNER và membership đích.",
+        "Trong transaction đổi actor thành ADMIN và đích thành OWNER với cùng thời gian.",
+        "Commit, trả 204."
+      ],
+      "alternatives": [
+        "Actor không phải OWNER: 403 forbidden; đích chưa là thành viên: 400 new_owner_must_be_member.",
+        "Đích là chính actor: 204 không thay đổi.",
+        "Lỗi lưu khiến transaction rollback."
+      ],
+      "postconditions": "Vai trò sở hữu đổi; CreatedByUserId giữ người tạo ban đầu.",
+      "endpoints": [
+        "POST /api/pages/{pageId:guid}/transfer-ownership"
+      ],
+      "tables": [
+        "PageMembers",
+        "Pages"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Requests/TransferPageOwnershipRequest.cs",
+        "Domain/Entities/PageMember.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-19",
+      "name": "Mời tài khoản quản trị",
+      "group": "pages-invitations",
+      "actor": "Owner hoặc admin trong phạm vi quyền",
+      "goal": "Gửi lời mời kèm vai trò quản trị.",
+      "preconditions": "Đã đăng nhập; actor được gán Role yêu cầu; trang chưa xóa; người nhận tồn tại và chưa là thành viên.",
+      "steps": [
+        "Gửi UserId và Role admin/editor/moderator.",
+        "Kiểm tra role, trang, người nhận, membership và lời mời PENDING trùng.",
+        "Tạo PageRoleInvitation PENDING, queue PAGE_ROLE_INVITE.",
+        "SaveChanges cùng thông báo, publish nếu có; trả 201 PageRoleInvitationResponse và Location."
+      ],
+      "alternatives": [
+        "Role không hợp lệ: 400 invalid_page_role; không đủ quyền: 403 forbidden; trang đã xóa: 404 page_not_found.",
+        "Tài khoản nhận thiếu: 400 invitee_not_found; đã quản trị: 409 already_page_member; lời mời PENDING trùng: 409 page_invitation_pending.",
+        "Owner/admin không tự mời mình vì đã có membership; không kiểm tra bạn bè/chặn trong luồng này."
+      ],
+      "postconditions": "Có lời mời PENDING; membership chưa tạo, chưa cấp quyền xem UNPUBLISHED.",
+      "endpoints": [
+        "POST /api/pages/{pageId:guid}/invitations"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "PageRoleInvitations",
+        "AspNetUsers",
+        "Notifications"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Requests/CreatePageRoleInvitationRequest.cs",
+        "../Notifications/Services/NotificationService.cs"
+      ],
+      "support": [
+        "notifications"
+      ]
+    },
+    {
+      "id": "UC-PA-20",
+      "name": "Xem lời mời nhận được",
+      "group": "pages-invitations",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Đọc lời mời PENDING gửi tới mình.",
+      "preconditions": "Đã đăng nhập; limit/cursor timeline hợp lệ.",
+      "steps": [
+        "Gửi GET invitations/mine.",
+        "Lọc InviteeUserId bằng actor và Status=PENDING.",
+        "Sắp CreatedAtUtc/Id giảm dần, lấy limit+1.",
+        "Trả 200 Items/NextCursor với Role và Status dạng lowercase."
+      ],
+      "alternatives": [
+        "Limit/cursor sai: 400 invalid_pagination hoặc invalid_cursor.",
+        "Lời mời đã xử lý không hiển thị; lời mời tới trang đã xóa vẫn có thể hiển thị vì chưa lọc Pages."
+      ],
+      "postconditions": "Không thay đổi lời mời hoặc membership.",
+      "endpoints": [
+        "GET /api/pages/invitations/mine"
+      ],
+      "tables": [
+        "PageRoleInvitations"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "DTOs/Responses/PageRoleInvitationResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-21",
+      "name": "Chấp nhận lời mời quản trị",
+      "group": "pages-invitations",
+      "actor": "Người nhận lời mời",
+      "goal": "Nhận vai trò ghi trong lời mời.",
+      "preconditions": "Đã đăng nhập; là InviteeUserId của PENDING; trang chưa xóa; chưa có membership.",
+      "steps": [
+        "Gửi POST accept theo inviteId.",
+        "Tìm PENDING đúng người nhận và kiểm tra trang chưa xóa.",
+        "Trong transaction thêm PageMember với Role trong lời mời, chuyển ACCEPTED và ghi RespondedAtUtc.",
+        "Commit, trả 200 PageRoleInvitationResponse."
+      ],
+      "alternatives": [
+        "Lời mời thiếu/đã xử lý/không phải người nhận hoặc trang đã xóa: 404 page_not_found.",
+        "Đã có membership hoặc DbUpdateException: 409 already_page_member; transaction rollback."
+      ],
+      "postconditions": "Người nhận thành quản trị, có quyền đọc UNPUBLISHED theo membership; lời mời ACCEPTED.",
+      "endpoints": [
+        "POST /api/pages/invitations/{inviteId:guid}/accept"
+      ],
+      "tables": [
+        "PageRoleInvitations",
+        "PageMembers",
+        "Pages"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Domain/Entities/PageRoleInvitation.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-22",
+      "name": "Từ chối lời mời quản trị",
+      "group": "pages-invitations",
+      "actor": "Người nhận lời mời",
+      "goal": "Từ chối vai trò được mời.",
+      "preconditions": "Đã đăng nhập; là InviteeUserId của PENDING; trang chưa xóa.",
+      "steps": [
+        "Gửi POST decline theo inviteId.",
+        "Tìm PENDING đúng người nhận và kiểm tra trang chưa xóa.",
+        "Trong transaction chuyển DECLINED, ghi RespondedAtUtc.",
+        "Commit, trả 200 PageRoleInvitationResponse."
+      ],
+      "alternatives": [
+        "Lời mời thiếu/đã xử lý/không phải người nhận hoặc trang đã xóa: 404 page_not_found.",
+        "Không tạo membership hoặc thông báo phản hồi riêng trong luồng này."
+      ],
+      "postconditions": "Lời mời DECLINED; có thể nhận lời mời mới vì unique chỉ áp dụng PENDING.",
+      "endpoints": [
+        "POST /api/pages/invitations/{inviteId:guid}/decline"
+      ],
+      "tables": [
+        "PageRoleInvitations",
+        "Pages"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Domain/Entities/PageRoleInvitation.cs"
+      ]
+    },
+    {
+      "id": "UC-PA-23",
+      "name": "Đọc bài viết của trang",
+      "group": "pages-posts",
+      "actor": "Người xem hoặc khách",
+      "goal": "Lấy timeline bài STANDARD của trang.",
+      "preconditions": "Trang chưa xóa, đủ quyền đọc; limit/cursor timeline hợp lệ.",
+      "steps": [
+        "Gửi GET posts với cursor/limit.",
+        "CanViewPageAsync kiểm tra PUBLISHED hoặc membership.",
+        "Lọc Posts PAGE, ContainerId=pageId, STANDARD chưa xóa; sắp CreatedAtUtc/Id giảm dần.",
+        "Nạp PostResponse qua PostsService, trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Trang thiếu/ẩn với người ngoài/đã xóa: 404 page_not_found.",
+        "Limit/cursor sai: 400 invalid_pagination hoặc invalid_cursor."
+      ],
+      "postconditions": "Không thay đổi bài hoặc ghi lượt xem tự động.",
+      "endpoints": [
+        "GET /api/pages/{pageId:guid}/posts"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "Posts",
+        "PostMedia",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Services/PagePostAccessService.cs",
+        "../Posts/Services/PostsService.cs",
+        "DTOs/Responses/PageTimelineResponse.cs"
+      ],
+      "support": [
+        "posts"
+      ]
+    },
+    {
+      "id": "UC-PA-24",
+      "name": "Đăng bài trên trang",
+      "group": "pages-posts",
+      "actor": "Owner, admin hoặc editor",
+      "goal": "Tạo bài PAGE kèm media tùy chọn.",
+      "preconditions": "Đã đăng nhập; trang chưa xóa; OWNER/ADMIN/EDITOR; nội dung/media hợp lệ và thuộc người thao tác.",
+      "steps": [
+        "Gửi CreatePostRequest; Pages chỉ lấy Content và MediaIds.",
+        "CanCreatePostAsync kiểm tra quyền; PostsUseCase validate nội dung và media.",
+        "Trong transaction tạo Posts STANDARD, PUBLIC, PAGE=2 và ContainerId=pageId, đồng bộ PostMedia/MediaReferences cùng metadata.",
+        "Commit, trả 201 PostResponse và Location /api/posts/{id}."
+      ],
+      "alternatives": [
+        "Không đủ quyền hoặc trang không hoạt động: 403 forbidden; kiểm tra tiếp trong PostsUseCase có mã page_post_forbidden.",
+        "Request/nội dung/media sai hoặc không thuộc người gọi: lỗi validation/Media, không hoàn tất transaction.",
+        "Trang UNPUBLISHED vẫn được đăng bài; moderator không được đăng bằng vai trò này."
+      ],
+      "postconditions": "Bài PAGE mới có tác giả là người thao tác; quyền đọc theo trạng thái trang.",
+      "endpoints": [
+        "POST /api/pages/{pageId:guid}/posts"
+      ],
+      "tables": [
+        "Pages",
+        "PageMembers",
+        "Posts",
+        "PostMedia",
+        "MediaReferences",
+        "MediaAssets",
+        "ContentMentions",
+        "Hashtags",
+        "PostHashtags"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "Services/PagePostAccessService.cs",
+        "../Posts/DTOs/Requests/CreatePostRequest.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs"
+      ],
+      "support": [
+        "posts"
+      ]
+    },
+    {
+      "id": "UC-PA-25",
+      "name": "Sửa bài viết của trang",
+      "group": "pages-posts",
+      "actor": "Tác giả hoặc owner/admin/editor có quyền",
+      "goal": "Cập nhật bài PAGE qua Posts.",
+      "preconditions": "Đã đăng nhập; bài STANDARD chưa xóa; là tác giả hoặc CanCreatePostAsync của trang; request/media hợp lệ.",
+      "steps": [
+        "Gửi UpdatePostRequest tới PostsController.",
+        "PostsUseCase validate request/media, PostsService kiểm tra tác giả hoặc CanCreatePostAsync.",
+        "Cập nhật bài và tham chiếu media/metadata trong transaction; Privacy PAGE ép PUBLIC.",
+        "Trả 200 PostResponse."
+      ],
+      "alternatives": [
+        "Bài thiếu/đã xóa: 404; người không đủ quyền: 403; không phải STANDARD: lỗi invalid_post_type.",
+        "Moderator không được sửa bài của người khác; media mới vẫn phải vượt qua kiểm tra sở hữu.",
+        "Quyền tác giả là nhánh riêng; không suy diễn mọi thao tác sửa đều yêu cầu membership hiện tại."
+      ],
+      "postconditions": "Bài và media thay đổi; ContainerId tiếp tục là liên kết nghiệp vụ tới trang.",
+      "endpoints": [
+        "PUT /api/posts/{postId:guid}"
+      ],
+      "tables": [
+        "Posts",
+        "PageMembers",
+        "Pages",
+        "PostMedia",
+        "MediaReferences",
+        "MediaAssets",
+        "ContentMentions",
+        "PostHashtags"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "../Posts/Controllers/PostsController.cs",
+        "../Posts/DTOs/Requests/UpdatePostRequest.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs"
+      ],
+      "support": [
+        "posts"
+      ]
+    },
+    {
+      "id": "UC-PA-26",
+      "name": "Xóa bài viết của trang",
+      "group": "pages-posts",
+      "actor": "Tác giả hoặc owner/admin/editor có quyền",
+      "goal": "Xóa mềm bài PAGE qua Posts.",
+      "preconditions": "Đã đăng nhập; bài chưa xóa; là tác giả hoặc CanCreatePostAsync của trang.",
+      "steps": [
+        "Gửi DELETE postId tới PostsController.",
+        "PostsService kiểm tra bài và quyền tác giả hoặc CanCreatePostAsync.",
+        "Xóa mềm bài, bỏ PostMedia và MediaReferences theo luồng PostsUseCase; metadata ContentMentions/PostHashtags được giữ.",
+        "Commit, trả 204."
+      ],
+      "alternatives": [
+        "Bài thiếu/đã xóa: 404; người không đủ quyền: 403.",
+        "Moderator không được xóa bài của người khác chỉ vì CanModeratePostAsync; luồng xóa hiện gọi CanCreatePostAsync."
+      ],
+      "postconditions": "Bài ẩn khỏi timeline; trang và object media không bị xóa theo thao tác này.",
+      "endpoints": [
+        "DELETE /api/posts/{postId:guid}"
+      ],
+      "tables": [
+        "Posts",
+        "PageMembers",
+        "Pages",
+        "PostMedia",
+        "MediaReferences",
+        "ContentMentions",
+        "PostHashtags"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "../Posts/Controllers/PostsController.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs"
+      ],
+      "support": [
+        "posts"
+      ]
+    },
+    {
+      "id": "UC-PA-27",
+      "name": "Gỡ bình luận trên trang",
+      "group": "pages-posts",
+      "actor": "Tác giả bình luận hoặc owner/admin/moderator",
+      "goal": "Xóa mềm bình luận qua Posts.",
+      "preconditions": "Đã đăng nhập; bình luận chưa xóa; là tác giả hoặc CanModerateCommentAsync trên bài PAGE chưa xóa trong trang hoạt động.",
+      "steps": [
+        "Gửi DELETE commentId tới CommentsController.",
+        "Tìm bình luận; nếu không phải tác giả, kiểm tra CanModerateCommentAsync.",
+        "Role OWNER/ADMIN/MODERATOR của trang hoạt động cho phép gỡ bình luận người khác.",
+        "Ghi DeletedAtUtc, lưu và trả 204."
+      ],
+      "alternatives": [
+        "Bình luận thiếu/đã xóa: 404; không đủ quyền: 403.",
+        "Editor không được gỡ bình luận người khác bằng vai trò editor; vẫn được xóa bình luận của mình."
+      ],
+      "postconditions": "Bình luận xóa mềm; bài viết và vai trò trang giữ nguyên.",
+      "endpoints": [
+        "DELETE /api/posts/comments/{commentId:guid}"
+      ],
+      "tables": [
+        "Comments",
+        "Posts",
+        "Pages",
+        "PageMembers"
+      ],
+      "sources": [
+        "Controllers/PagesController.cs",
+        "Services/PagesService.cs",
+        "../Posts/Controllers/CommentsController.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs",
+        "Services/PagePostAccessService.cs"
       ],
       "support": [
         "posts"
