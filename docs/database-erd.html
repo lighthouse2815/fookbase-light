@@ -1904,7 +1904,11 @@
       document.getElementById('foreign-keys').innerHTML = table.relations.map(relation => `<li><code>${escapeHtml(relation.fields.join(', '))}</code> → <code>${escapeHtml(relation.target)}</code><br><span class="column-type">Khi xóa: ${escapeHtml(relation.delete)}</span></li>`).join('') || '<li>Không có FK được khai báo trong model.</li>';
       document.getElementById('indexes').innerHTML = table.indexes.map(index => `<li>${index.unique ? '<span class="key">UNIQUE</span> ' : ''}<code>${escapeHtml(index.fields.join(', '))}</code></li>`).join('');
       document.getElementById('index-section').hidden = !table.indexes.length;
-      for (const node of diagram.querySelectorAll('[data-table]')) node.classList.toggle('selected', node.dataset.table === name);
+      for (const node of diagram.querySelectorAll('[data-table]')) {
+        const selected = node.dataset.table === name;
+        node.classList.toggle('selected', selected);
+        if (selected) inspector.style.backgroundColor = getComputedStyle(node.querySelector('th')).backgroundColor;
+      }
       inspector.showModal();
     }
 
