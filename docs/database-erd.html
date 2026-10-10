@@ -472,6 +472,34 @@
         "source": "flowchart LR\n    ReelViews[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>ReelViews</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ReelPostId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ReelPostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='ViewerUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>ViewerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='WatchDurationMs'><td class='identity-keys' /><td><code class='' title=''>WatchDurationMs</code></td><td class='column-type'>integer</td></tr><tr data-column='Completed'><td class='identity-keys' /><td><code class='' title=''>Completed</code></td><td class='column-type'>boolean</td></tr><tr data-column='Replayed'><td class='identity-keys' /><td><code class='' title=''>Replayed</code></td><td class='column-type'>boolean</td></tr><tr data-column='ViewedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ViewedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Posts[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>Posts</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AuthorUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>AuthorUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Content'><td class='identity-keys' /><td><code class='' title=''>Content</code></td><td class='column-type'>varchar(10000)</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerType'><td class='identity-keys' /><td><code class='' title=''>ContainerType</code></td><td class='column-type'>integer</td></tr><tr data-column='ContainerId'><td class='identity-keys' /><td><code class='' title=''>ContainerId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostType'><td class='identity-keys' /><td><code class='' title=''>PostType</code></td><td class='column-type'>integer</td></tr><tr data-column='TextBackground'><td class='identity-keys' /><td><code class='' title=''>TextBackground</code></td><td class='column-type'>varchar(32)?</td></tr><tr data-column='IsPinned'><td class='identity-keys' /><td><code class='' title=''>IsPinned</code></td><td class='column-type'>boolean</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    PostMedia[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>PostMedia</th></tr></thead><tbody><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    MediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>MediaReferences</th></tr></thead><tbody><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PostId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>PostId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"ViewerUserId · 1 → 0..N\"| ReelViews\n    Posts -->|\"ReelPostId · 1 → 0..N\"| ReelViews\n    AspNetUsers -->|\"AuthorUserId · 1 → 0..N\"| Posts\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| PostMedia\n    Posts -->|\"PostId · 1 → 0..N\"| PostMedia\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| MediaReferences\n    Posts -->|\"PostId · 1 → 0..N\"| MediaReferences\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,Posts,PostMedia,MediaAssets,MediaReferences ref",
         "note": "Reels sở hữu ReelViews; 5 bảng còn lại là tham chiếu và đều hiển thị đủ cột, mỗi bảng một lần. Reel là Posts với PostType=REEL, ContainerType=PROFILE; không có bảng Reels riêng. Sơ đồ có 7 FK: 2 FK của ReelViews và 5 FK của các bảng dùng chung. ReelViews không UNIQUE theo người xem; mỗi lần xem tạo một hàng mới. CASCADE áp dụng khi xóa vật lý Posts; xóa qua API là xóa mềm."
       }
+    },
+    {
+      "id": "groups",
+      "name": "Groups",
+      "description": "Nhóm public/private, thành viên, vai trò, lời mời, yêu cầu tham gia và nội quy.",
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupJoinRequests",
+        "GroupInvites",
+        "GroupRules",
+        "GroupCoverMediaReferences"
+      ],
+      "diagram": {
+        "template": "overview-groups",
+        "tables": [
+          "Groups",
+          "GroupMembers",
+          "GroupJoinRequests",
+          "GroupInvites",
+          "GroupRules",
+          "GroupCoverMediaReferences",
+          "AspNetUsers",
+          "MediaAssets"
+        ],
+        "source": "flowchart LR\n    AspNetUsers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#d6eaff;color:#182437'>AspNetUsers</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='AccessFailedCount'><td class='identity-keys' /><td><code class='' title=''>AccessFailedCount</code></td><td class='column-type'>integer</td></tr><tr data-column='ConcurrencyStamp'><td class='identity-keys' /><td><code class='' title=''>ConcurrencyStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='CreatedAt'><td class='identity-keys' /><td><code class='' title=''>CreatedAt</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='Email'><td class='identity-keys' /><td><code class='' title=''>Email</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='EmailConfirmed'><td class='identity-keys' /><td><code class='' title=''>EmailConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='IsActive'><td class='identity-keys' /><td><code class='' title=''>IsActive</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnabled'><td class='identity-keys' /><td><code class='' title=''>LockoutEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='LockoutEnd'><td class='identity-keys' /><td><code class='' title=''>LockoutEnd</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='NormalizedEmail'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedEmail</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='NormalizedUserName'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>NormalizedUserName</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='PasswordHash'><td class='identity-keys' /><td><code class='' title=''>PasswordHash</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumber'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>PhoneNumber</code></td><td class='column-type'>text?</td></tr><tr data-column='PhoneNumberConfirmed'><td class='identity-keys' /><td><code class='' title=''>PhoneNumberConfirmed</code></td><td class='column-type'>boolean</td></tr><tr data-column='SecurityStamp'><td class='identity-keys' /><td><code class='' title=''>SecurityStamp</code></td><td class='column-type'>text?</td></tr><tr data-column='TwoFactorEnabled'><td class='identity-keys' /><td><code class='' title=''>TwoFactorEnabled</code></td><td class='column-type'>boolean</td></tr><tr data-column='UserName'><td class='identity-keys' /><td><code class='' title=''>UserName</code></td><td class='column-type'>varchar(256)?</td></tr></tbody></table>\"]\n    Groups[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cdf5df;color:#182437'>Groups</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='OwnerUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='CoverMediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>CoverMediaId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Name'><td class='identity-keys' /><td><code class='' title=''>Name</code></td><td class='column-type'>varchar(120)</td></tr><tr data-column='Description'><td class='identity-keys' /><td><code class='' title=''>Description</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='Privacy'><td class='identity-keys' /><td><code class='' title=''>Privacy</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='UpdatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UpdatedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    GroupMembers[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>GroupMembers</th></tr></thead><tbody><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='UserId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>UserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Role'><td class='identity-keys' /><td><code class='' title=''>Role</code></td><td class='column-type'>integer</td></tr><tr data-column='JoinedAtUtc'><td class='identity-keys' /><td><code class='' title=''>JoinedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    GroupJoinRequests[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#e7d7fc;color:#182437'>GroupJoinRequests</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='RequesterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>RequesterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='RespondedByUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>RespondedByUserId</code></td><td class='column-type'>uuid?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    GroupInvites[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fbd7e7;color:#182437'>GroupInvites</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviterUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviterUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='InviteeUserId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>InviteeUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='RespondedAtUtc'><td class='identity-keys' /><td><code class='' title=''>RespondedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr></tbody></table>\"]\n    GroupRules[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#fff0c2;color:#182437'>GroupRules</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='Title'><td class='identity-keys' /><td><code class='' title=''>Title</code></td><td class='column-type'>varchar(200)</td></tr><tr data-column='Description'><td class='identity-keys' /><td><code class='' title=''>Description</code></td><td class='column-type'>varchar(2000)?</td></tr><tr data-column='SortOrder'><td class='identity-keys' /><td><code class='' title=''>SortOrder</code></td><td class='column-type'>integer</td></tr></tbody></table>\"]\n    GroupCoverMediaReferences[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#ffd3d8;color:#182437'>GroupCoverMediaReferences</th></tr></thead><tbody><tr data-column='GroupId'><td class='identity-keys'><span class='identity-key pk'>PK</span><span class='identity-key fk'>FK</span></td><td><code class='pk-column fk-column' title='PK, FK'>GroupId</code></td><td class='column-type'>uuid</td></tr><tr data-column='MediaId'><td class='identity-keys'><span class='identity-key fk'>FK</span></td><td><code class='fk-column' title='FK'>MediaId</code></td><td class='column-type'>uuid</td></tr><tr data-column='AttachedAtUtc'><td class='identity-keys' /><td><code class='' title=''>AttachedAtUtc</code></td><td class='column-type'>timestamptz</td></tr></tbody></table>\"]\n    MediaAssets[\"<table class='identity-table'><colgroup><col style='width:60px' /><col /><col style='width:96px' /></colgroup><thead><tr><th colspan='3' style='background:#cfe8ff;color:#182437'>MediaAssets</th></tr></thead><tbody><tr data-column='Id'><td class='identity-keys'><span class='identity-key pk'>PK</span></td><td><code class='pk-column' title='PK'>Id</code></td><td class='column-type'>uuid</td></tr><tr data-column='ActualSizeBytes'><td class='identity-keys' /><td><code class='' title=''>ActualSizeBytes</code></td><td class='column-type'>bigint?</td></tr><tr data-column='ContentType'><td class='identity-keys' /><td><code class='' title=''>ContentType</code></td><td class='column-type'>varchar(100)</td></tr><tr data-column='CreatedAtUtc'><td class='identity-keys' /><td><code class='' title=''>CreatedAtUtc</code></td><td class='column-type'>timestamptz</td></tr><tr data-column='DeclaredSizeBytes'><td class='identity-keys' /><td><code class='' title=''>DeclaredSizeBytes</code></td><td class='column-type'>bigint</td></tr><tr data-column='DeletedAtUtc'><td class='identity-keys' /><td><code class='' title=''>DeletedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='DurationMs'><td class='identity-keys' /><td><code class='' title=''>DurationMs</code></td><td class='column-type'>bigint?</td></tr><tr data-column='Height'><td class='identity-keys' /><td><code class='' title=''>Height</code></td><td class='column-type'>integer?</td></tr><tr data-column='MediaType'><td class='identity-keys' /><td><code class='' title=''>MediaType</code></td><td class='column-type'>integer</td></tr><tr data-column='ObjectKey'><td class='identity-keys'><span class='identity-key uk'>UK</span></td><td><code class='' title='UK'>ObjectKey</code></td><td class='column-type'>varchar(256)</td></tr><tr data-column='OriginalFileName'><td class='identity-keys' /><td><code class='' title=''>OriginalFileName</code></td><td class='column-type'>varchar(255)</td></tr><tr data-column='OwnerUserId'><td class='identity-keys' /><td><code class='' title=''>OwnerUserId</code></td><td class='column-type'>uuid</td></tr><tr data-column='PosterObjectKey'><td class='identity-keys' /><td><code class='' title=''>PosterObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessedAtUtc'><td class='identity-keys' /><td><code class='' title=''>ProcessedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='ProcessedObjectKey'><td class='identity-keys' /><td><code class='' title=''>ProcessedObjectKey</code></td><td class='column-type'>varchar(256)?</td></tr><tr data-column='ProcessingError'><td class='identity-keys' /><td><code class='' title=''>ProcessingError</code></td><td class='column-type'>varchar(1000)?</td></tr><tr data-column='Status'><td class='identity-keys' /><td><code class='' title=''>Status</code></td><td class='column-type'>integer</td></tr><tr data-column='UploadExpiresAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadExpiresAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='UploadedAtUtc'><td class='identity-keys' /><td><code class='' title=''>UploadedAtUtc</code></td><td class='column-type'>timestamptz?</td></tr><tr data-column='Width'><td class='identity-keys' /><td><code class='' title=''>Width</code></td><td class='column-type'>integer?</td></tr></tbody></table>\"]\n    AspNetUsers -->|\"OwnerUserId · 1 → 0..N\"| Groups\n    MediaAssets -->|\"CoverMediaId · 0..1 → 0..N\"| Groups\n    AspNetUsers -->|\"UserId · 1 → 0..N\"| GroupMembers\n    Groups -->|\"GroupId · 1 → 0..N\"| GroupMembers\n    AspNetUsers -->|\"RequesterUserId · 1 → 0..N\"| GroupJoinRequests\n    AspNetUsers -->|\"RespondedByUserId · 0..1 → 0..N\"| GroupJoinRequests\n    Groups -->|\"GroupId · 1 → 0..N\"| GroupJoinRequests\n    AspNetUsers -->|\"InviteeUserId · 1 → 0..N\"| GroupInvites\n    AspNetUsers -->|\"InviterUserId · 1 → 0..N\"| GroupInvites\n    Groups -->|\"GroupId · 1 → 0..N\"| GroupInvites\n    Groups -->|\"GroupId · 1 → 0..N\"| GroupRules\n    Groups -->|\"GroupId · 1 → 0..1\"| GroupCoverMediaReferences\n    MediaAssets -->|\"MediaId · 1 → 0..N\"| GroupCoverMediaReferences\n    classDef ref fill:#f6f8fa,stroke:#cad3dd,stroke-width:1px,color:#566776\n    class AspNetUsers,MediaAssets ref",
+        "note": "6 bảng Groups và 2 bảng tham chiếu hiển thị đủ cột, mỗi bảng một lần; 13 FK dùng đường thẳng. CoverMediaId và RespondedByUserId nullable (0..1 ở đầu principal). GroupCoverMediaReferences.GroupId là PK kiêm FK (1 → 0..1). Unique index của lời mời/yêu cầu chỉ áp dụng Status=PENDING. Posts của nhóm dùng ContainerId theo nghiệp vụ, không có FK tới Groups; các luồng bài viết nằm trong đặc tả."
+      }
     }
   ],
   "tables": {
@@ -4263,6 +4291,537 @@
       "purpose": "Một hàng cho mỗi lần xem video reel, có thời gian xem và cờ hoàn thành/xem lại.",
       "module": "reels",
       "note": "PK Id; ReelPostId → Posts CASCADE, ViewerUserId → AspNetUsers RESTRICT. Các FK required, không UNIQUE theo cặp reel/người xem. Mỗi request tạo Id mới, gồm cả lượt của tác giả và xem lại. WatchDurationMs là integer dương, không vượt thời lượng video theo API; Completed/Replayed do client gửi. ViewCount đếm hàng, CompletionCount đếm Completed=true. FK tới Posts không kiểm tra PostType; ReelsService kiểm tra REEL/PROFILE khi ghi view."
+    },
+    "Groups": {
+      "name": "Groups",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "Name",
+          "type": "character varying(120)",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Description",
+          "type": "character varying(2000)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "Privacy",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "OwnerUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "CoverMediaId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "UpdatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "DeletedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "CoverMediaId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "OwnerUserId",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "Privacy",
+            "Name"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "OwnerUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "CoverMediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Nhóm cộng đồng",
+      "purpose": "Nhóm public/private, chủ sở hữu và ảnh bìa.",
+      "module": "groups",
+      "note": "Privacy: PUBLIC=0, PRIVATE=1. OwnerUserId có FK RESTRICT; CoverMediaId nullable có FK RESTRICT, không UNIQUE. Index (Privacy, Name) và (OwnerUserId, CreatedAtUtc) lọc DeletedAtUtc IS NULL. Xóa qua API là xóa mềm, đặt CoverMediaId=null và bỏ GroupCoverMediaReferences; giữ memberships/lịch sử/nội quy/bài viết. Posts.ContainerId của bài GROUP là liên kết nghiệp vụ, không có FK tới Groups."
+    },
+    "GroupMembers": {
+      "name": "GroupMembers",
+      "columns": [
+        {
+          "name": "GroupId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "UserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "Role",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "JoinedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "GroupId",
+        "UserId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "GroupId",
+            "Role"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "UserId",
+            "GroupId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "UserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Groups",
+          "fields": [
+            "GroupId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Thành viên nhóm",
+      "purpose": "Một membership cho mỗi người trong nhóm, kèm vai trò và thời gian tham gia.",
+      "module": "groups",
+      "note": "PK ghép (GroupId, UserId). GroupId → Groups CASCADE, UserId → AspNetUsers RESTRICT. Role: OWNER=0, ADMIN=1, MODERATOR=2, MEMBER=3. Chuyển owner đồng bộ Role và Groups.OwnerUserId bằng service; database không có UNIQUE riêng cho Role OWNER. Thông tin hồ sơ thành viên lấy từ Users khi đọc."
+    },
+    "GroupJoinRequests": {
+      "name": "GroupJoinRequests",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "GroupId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "RequesterUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "RespondedByUserId",
+          "type": "uuid",
+          "nullable": true,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Status",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "RespondedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "GroupId",
+            "RequesterUserId"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "GroupId",
+            "Status",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "RequesterUserId"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "RespondedByUserId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "RequesterUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "RespondedByUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Groups",
+          "fields": [
+            "GroupId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Yêu cầu tham gia",
+      "purpose": "Lịch sử yêu cầu vào nhóm private và người duyệt.",
+      "module": "groups",
+      "note": "Status: PENDING=0, APPROVED=1, DECLINED=2. UNIQUE (GroupId, RequesterUserId) chỉ khi Status=0, không cấm lịch sử đã xử lý. RespondedByUserId nullable, có FK tới AspNetUsers; RespondedAtUtc nullable. GroupId CASCADE; cả hai FK người dùng RESTRICT."
+    },
+    "GroupInvites": {
+      "name": "GroupInvites",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "GroupId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "InviterUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "InviteeUserId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Status",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "CreatedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "RespondedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": true,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "GroupId",
+            "InviteeUserId"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "InviteeUserId",
+            "Status",
+            "CreatedAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "InviterUserId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "InviteeUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "AspNetUsers",
+          "fields": [
+            "InviterUserId"
+          ],
+          "delete": "Restrict"
+        },
+        {
+          "target": "Groups",
+          "fields": [
+            "GroupId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Lời mời vào nhóm",
+      "purpose": "Lời mời do thành viên gửi tới tài khoản khác.",
+      "module": "groups",
+      "note": "Status: PENDING=0, ACCEPTED=1, DECLINED=2. UNIQUE (GroupId, InviteeUserId) chỉ khi Status=0. InviterUserId và InviteeUserId đều là FK RESTRICT tới cùng một AspNetUsers; GroupId CASCADE. Chỉ người được mời phản hồi PENDING; không có cột hết hạn."
+    },
+    "GroupRules": {
+      "name": "GroupRules",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK"
+          ]
+        },
+        {
+          "name": "GroupId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "Title",
+          "type": "character varying(200)",
+          "nullable": false,
+          "keys": []
+        },
+        {
+          "name": "Description",
+          "type": "character varying(2000)",
+          "nullable": true,
+          "keys": []
+        },
+        {
+          "name": "SortOrder",
+          "type": "integer",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "Id"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "GroupId",
+            "SortOrder",
+            "Id"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "Groups",
+          "fields": [
+            "GroupId"
+          ],
+          "delete": "Cascade"
+        }
+      ],
+      "label": "Nội quy nhóm",
+      "purpose": "Tiêu đề, mô tả và thứ tự hiển thị nội quy.",
+      "module": "groups",
+      "note": "GroupId → Groups CASCADE. Title bắt buộc, tối đa 200 ký tự; Description nullable tối đa 2000. SortOrder integer không UNIQUE, đọc theo SortOrder rồi Id tăng dần. Owner/admin quản lý; xóa nội quy qua API là xóa vật lý hàng này."
+    },
+    "GroupCoverMediaReferences": {
+      "name": "GroupCoverMediaReferences",
+      "columns": [
+        {
+          "name": "GroupId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "PK",
+            "FK"
+          ]
+        },
+        {
+          "name": "MediaId",
+          "type": "uuid",
+          "nullable": false,
+          "keys": [
+            "FK"
+          ]
+        },
+        {
+          "name": "AttachedAtUtc",
+          "type": "timestamp with time zone",
+          "nullable": false,
+          "keys": []
+        }
+      ],
+      "pk": [
+        "GroupId"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "MediaId"
+          ],
+          "unique": false
+        }
+      ],
+      "relations": [
+        {
+          "target": "Groups",
+          "fields": [
+            "GroupId"
+          ],
+          "delete": "Cascade"
+        },
+        {
+          "target": "MediaAssets",
+          "fields": [
+            "MediaId"
+          ],
+          "delete": "Restrict"
+        }
+      ],
+      "label": "Tham chiếu ảnh bìa nhóm",
+      "purpose": "Hàng tham chiếu bảo vệ ảnh bìa khỏi bị xóa khi đang được nhóm dùng.",
+      "module": "groups",
+      "note": "GroupId là PK kiêm FK CASCADE: Groups (1) → GroupCoverMediaReferences (0..1). MediaId → MediaAssets RESTRICT và không UNIQUE. Service đồng bộ với Groups.CoverMediaId; database không buộc hai MediaId ở hai bảng phải bằng nhau. Gỡ cover hoặc xóa mềm nhóm sẽ xóa hàng tham chiếu này."
     }
   }
 }
@@ -7770,6 +8329,1166 @@
         "../Posts/DTOs/Requests/CreateReportRequest.cs",
         "../Posts/Services/ReportsService.cs",
         "../Posts/Domain/Entities/ContentReport.cs"
+      ]
+    }
+  ]
+}
+  </script>
+
+  <template id="overview-groups"><svg xmlns="http://www.w3.org/2000/svg" id="svg-overview-groups" width="1990" height="1050" viewBox="0 0 1990 1050" class="flowchart" role="group" aria-label="Sơ đồ toàn bộ module Groups" data-layout="groups"><title>Groups · 6 bảng chính, 2 bảng tham chiếu và 13 FK</title><desc>Groups ở trung tâm bên phải, AspNetUsers bên trái. Các bảng membership, yêu cầu và lời mời ở giữa hai principal; nội quy phía trên Groups, tham chiếu cover nối với MediaAssets bên phải. Tám bảng giữ đầy đủ cột, mỗi bảng xuất hiện một lần, không chia Users thành nhiều bản sao. Mười ba FK dùng đường thẳng; có hai FK nullable và một bảng tham chiếu dùng PK chung.</desc><style>
+#svg-overview-groups { font-family: Arial, sans-serif; font-size: 13px; color: #233044; }
+#svg-overview-groups .node .basic { fill: #fff; stroke-width: 1.3px; }
+#svg-overview-groups .node .label { color: #233044; }
+#svg-overview-groups .identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font: 13px/1 Arial, sans-serif; }
+#svg-overview-groups .identity-table th { height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; white-space: nowrap; }
+#svg-overview-groups .identity-table td { height: 24px; padding: 0 6px; border-top: 1px solid #e7edf5; white-space: nowrap; vertical-align: middle; }
+#svg-overview-groups .identity-table td + td { border-left: 1px solid #edf1f6; }
+#svg-overview-groups .identity-table code { font: inherit; }
+#svg-overview-groups .identity-table .column-type { display: table-cell; margin: 0; color: #64748b; font-size: 12px; }
+#svg-overview-groups .identity-keys { text-align: center; }
+#svg-overview-groups .identity-key { display: inline-block; min-width: 20px; padding: 3px 2px; margin: 0 1px; border-radius: 3px; font-size: 9px; line-height: 1; font-weight: 700; }
+#svg-overview-groups .identity-key.pk { background: #ffcbd1; color: #8f2434; }
+#svg-overview-groups .identity-key.fk { background: #e4d7ff; color: #633aad; }
+#svg-overview-groups .identity-key.uk { background: #e9f3ea; color: #447b51; }
+#svg-overview-groups .relation { fill: none; stroke: #405069; stroke-width: 1.4; stroke-linejoin: round; }
+#svg-overview-groups .cardinality { font: 12px Arial, sans-serif; fill: #233044; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-groups .relation-label { font: 11px Arial, sans-serif; fill: #64748b; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+#svg-overview-groups .identity-note { font: 12px Arial, sans-serif; fill: #89617a; }
+
+#svg-overview-groups .reference-caption { font: 12px Arial, sans-serif; fill: #748079; }
+</style><defs><marker id="groups-one" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L8,5 L0,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker><marker id="groups-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M8,0 L0,5 L8,10" fill="#fff" stroke="#405069" stroke-width="1.2" /></marker></defs><g class="edgePaths"><path d="M370.00,685.00 L1080.00,685.00" id="L_AspNetUsers_Groups_OwnerUserId" data-id="L_AspNetUsers_Groups_OwnerUserId" data-principal="AspNetUsers" data-dependent="Groups" data-fields="OwnerUserId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>AspNetUsers (1) → Groups (0..N) · OwnerUserId · Restrict</title></path><path d="M1610.00,730.00 L1430.00,600.00" id="L_MediaAssets_Groups_CoverMediaId" data-id="L_MediaAssets_Groups_CoverMediaId" data-principal="MediaAssets" data-dependent="Groups" data-fields="CoverMediaId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>MediaAssets (0..1) → Groups (0..N) · CoverMediaId · Restrict</title></path><path d="M370.00,545.00 L550.00,550.00" id="L_AspNetUsers_GroupMembers_UserId" data-id="L_AspNetUsers_GroupMembers_UserId" data-principal="AspNetUsers" data-dependent="GroupMembers" data-fields="UserId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>AspNetUsers (1) → GroupMembers (0..N) · UserId · Restrict</title></path><path d="M1080.00,525.00 L900.00,575.00" id="L_Groups_GroupMembers_GroupId" data-id="L_Groups_GroupMembers_GroupId" data-principal="Groups" data-dependent="GroupMembers" data-fields="GroupId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>Groups (1) → GroupMembers (0..N) · GroupId · Cascade</title></path><path d="M370.00,350.00 L550.00,145.00" id="L_AspNetUsers_GroupJoinRequests_RequesterUserId" data-id="L_AspNetUsers_GroupJoinRequests_RequesterUserId" data-principal="AspNetUsers" data-dependent="GroupJoinRequests" data-fields="RequesterUserId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>AspNetUsers (1) → GroupJoinRequests (0..N) · RequesterUserId · Restrict</title></path><path d="M370.00,420.00 L550.00,220.00" id="L_AspNetUsers_GroupJoinRequests_RespondedByUserId" data-id="L_AspNetUsers_GroupJoinRequests_RespondedByUserId" data-principal="AspNetUsers" data-dependent="GroupJoinRequests" data-fields="RespondedByUserId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>AspNetUsers (0..1) → GroupJoinRequests (0..N) · RespondedByUserId · Restrict</title></path><path d="M1080.00,475.00 L900.00,230.00" id="L_Groups_GroupJoinRequests_GroupId" data-id="L_Groups_GroupJoinRequests_GroupId" data-principal="Groups" data-dependent="GroupJoinRequests" data-fields="GroupId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>Groups (1) → GroupJoinRequests (0..N) · GroupId · Cascade</title></path><path d="M370.00,745.00 L550.00,990.00" id="L_AspNetUsers_GroupInvites_InviteeUserId" data-id="L_AspNetUsers_GroupInvites_InviteeUserId" data-principal="AspNetUsers" data-dependent="GroupInvites" data-fields="InviteeUserId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>AspNetUsers (1) → GroupInvites (0..N) · InviteeUserId · Restrict</title></path><path d="M370.00,700.00 L550.00,875.00" id="L_AspNetUsers_GroupInvites_InviterUserId" data-id="L_AspNetUsers_GroupInvites_InviterUserId" data-principal="AspNetUsers" data-dependent="GroupInvites" data-fields="InviterUserId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>AspNetUsers (1) → GroupInvites (0..N) · InviterUserId · Restrict</title></path><path d="M1080.00,690.00 L900.00,930.00" id="L_Groups_GroupInvites_GroupId" data-id="L_Groups_GroupInvites_GroupId" data-principal="Groups" data-dependent="GroupInvites" data-fields="GroupId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>Groups (1) → GroupInvites (0..N) · GroupId · Cascade</title></path><path d="M1255.00,450.00 L1255.00,194.00" id="L_Groups_GroupRules_GroupId" data-id="L_Groups_GroupRules_GroupId" data-principal="Groups" data-dependent="GroupRules" data-fields="GroupId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>Groups (1) → GroupRules (0..N) · GroupId · Cascade</title></path><path d="M1430.00,490.00 L1610.00,250.00" id="L_Groups_GroupCoverMediaReferences_GroupId" data-id="L_Groups_GroupCoverMediaReferences_GroupId" data-principal="Groups" data-dependent="GroupCoverMediaReferences" data-fields="GroupId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>Groups (1) → GroupCoverMediaReferences (0..1) · GroupId · Cascade</title></path><path d="M1785.00,490.00 L1785.00,296.00" id="L_MediaAssets_GroupCoverMediaReferences_MediaId" data-id="L_MediaAssets_GroupCoverMediaReferences_MediaId" data-principal="MediaAssets" data-dependent="GroupCoverMediaReferences" data-fields="MediaId" data-kind="fk" class="relation" marker-start="url(#groups-one)" marker-end="url(#groups-many)"><title>MediaAssets (1) → GroupCoverMediaReferences (0..N) · MediaId · Restrict</title></path></g><g class="edgeLabels"><text x="398.00" y="701.00" class="cardinality" text-anchor="middle">1</text><text x="1052.00" y="677.00" class="cardinality" text-anchor="middle">0..N</text><text x="725.00" y="675.00" class="relation-label" text-anchor="middle">OwnerUserId</text><text x="1588.00" y="707.88" class="cardinality" text-anchor="middle">0..1</text><text x="1452.00" y="630.12" class="cardinality" text-anchor="middle">0..N</text><text x="1520.00" y="655.00" class="relation-label" text-anchor="middle">CoverMediaId</text><text x="397.66" y="561.77" class="cardinality" text-anchor="middle">1</text><text x="522.34" y="541.23" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="537.50" class="relation-label" text-anchor="middle">UserId</text><text x="1049.81" y="524.93" class="cardinality" text-anchor="middle">1</text><text x="930.19" y="583.07" class="cardinality" text-anchor="middle">0..N</text><text x="990.00" y="540.00" class="relation-label" text-anchor="middle">GroupId</text><text x="397.49" y="340.88" class="cardinality" text-anchor="middle">1</text><text x="522.51" y="162.12" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="237.50" class="relation-label" text-anchor="middle">RequesterUserId</text><text x="397.65" y="411.22" class="cardinality" text-anchor="middle">0..1</text><text x="522.35" y="236.78" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="310.00" class="relation-label" text-anchor="middle">RespondedByUserId</text><text x="1068.50" y="449.33" class="cardinality" text-anchor="middle">1</text><text x="922.00" y="263.67" class="cardinality" text-anchor="middle">0..N</text><text x="990.00" y="342.50" class="relation-label" text-anchor="middle">GroupId</text><text x="381.50" y="778.67" class="cardinality" text-anchor="middle">1</text><text x="528.00" y="964.33" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="857.50" class="relation-label" text-anchor="middle">InviteeUserId</text><text x="381.71" y="732.12" class="cardinality" text-anchor="middle">1</text><text x="528.00" y="850.88" class="cardinality" text-anchor="middle">0..N</text><text x="460.00" y="777.50" class="relation-label" text-anchor="middle">InviterUserId</text><text x="1053.60" y="709.20" class="cardinality" text-anchor="middle">1</text><text x="926.40" y="918.80" class="cardinality" text-anchor="middle">0..N</text><text x="990.00" y="800.00" class="relation-label" text-anchor="middle">GroupId</text><text x="1267.00" y="426.00" class="cardinality" text-anchor="middle">1</text><text x="1243.00" y="226.00" class="cardinality" text-anchor="middle">0..N</text><text x="1271.00" y="312.00" class="relation-label" text-anchor="start">GroupId</text><text x="1456.40" y="478.80" class="cardinality" text-anchor="middle">1</text><text x="1583.60" y="269.20" class="cardinality" text-anchor="middle">0..1</text><text x="1520.00" y="360.00" class="relation-label" text-anchor="middle">GroupId</text><text x="1797.00" y="466.00" class="cardinality" text-anchor="middle">1</text><text x="1773.00" y="328.00" class="cardinality" text-anchor="middle">0..N</text><text x="1801.00" y="383.00" class="relation-label" text-anchor="start">MediaId</text><text x="20.00" y="312.00" class="reference-caption" text-anchor="start">Identity · bảng tham chiếu</text><text x="1080.00" y="432.00" class="reference-caption" text-anchor="start">Groups · bảng trong module</text><text x="1610.00" y="472.00" class="reference-caption" text-anchor="start">Media · bảng tham chiếu</text></g><g class="nodes"><g class="node default" data-table="AspNetUsers" role="button" tabindex="0" aria-label="Xem chi tiết bảng AspNetUsers" transform="translate(195.0, 551.0)"><rect class="basic label-container" x="-175.0" y="-221.0" width="350" height="442" rx="5" ry="5" style="stroke:#54a7eb" /><g class="label" transform="translate(-175.0, -221.0)"><foreignObject width="350" height="442"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:442px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#d6eaff;color:#182437">AspNetUsers</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="AccessFailedCount"><td class="identity-keys" /><td><code class="" title="">AccessFailedCount</code></td><td class="column-type">integer</td></tr><tr data-column="ConcurrencyStamp"><td class="identity-keys" /><td><code class="" title="">ConcurrencyStamp</code></td><td class="column-type">text?</td></tr><tr data-column="CreatedAt"><td class="identity-keys" /><td><code class="" title="">CreatedAt</code></td><td class="column-type">timestamptz</td></tr><tr data-column="Email"><td class="identity-keys" /><td><code class="" title="">Email</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="EmailConfirmed"><td class="identity-keys" /><td><code class="" title="">EmailConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="IsActive"><td class="identity-keys" /><td><code class="" title="">IsActive</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnabled"><td class="identity-keys" /><td><code class="" title="">LockoutEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="LockoutEnd"><td class="identity-keys" /><td><code class="" title="">LockoutEnd</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="NormalizedEmail"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedEmail</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="NormalizedUserName"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">NormalizedUserName</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="PasswordHash"><td class="identity-keys" /><td><code class="" title="">PasswordHash</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumber"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">PhoneNumber</code></td><td class="column-type">text?</td></tr><tr data-column="PhoneNumberConfirmed"><td class="identity-keys" /><td><code class="" title="">PhoneNumberConfirmed</code></td><td class="column-type">boolean</td></tr><tr data-column="SecurityStamp"><td class="identity-keys" /><td><code class="" title="">SecurityStamp</code></td><td class="column-type">text?</td></tr><tr data-column="TwoFactorEnabled"><td class="identity-keys" /><td><code class="" title="">TwoFactorEnabled</code></td><td class="column-type">boolean</td></tr><tr data-column="UserName"><td class="identity-keys" /><td><code class="" title="">UserName</code></td><td class="column-type">varchar(256)?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="Groups" role="button" tabindex="0" aria-label="Xem chi tiết bảng Groups" transform="translate(1255.0, 575.0)"><rect class="basic label-container" x="-175.0" y="-125.0" width="350" height="250" rx="5" ry="5" style="stroke:#20a566" /><g class="label" transform="translate(-175.0, -125.0)"><foreignObject width="350" height="250"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:250px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cdf5df;color:#182437">Groups</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="OwnerUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="CoverMediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">CoverMediaId</code></td><td class="column-type">uuid?</td></tr><tr data-column="Name"><td class="identity-keys" /><td><code class="" title="">Name</code></td><td class="column-type">varchar(120)</td></tr><tr data-column="Description"><td class="identity-keys" /><td><code class="" title="">Description</code></td><td class="column-type">varchar(2000)?</td></tr><tr data-column="Privacy"><td class="identity-keys" /><td><code class="" title="">Privacy</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="UpdatedAtUtc"><td class="identity-keys" /><td><code class="" title="">UpdatedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="GroupMembers" role="button" tabindex="0" aria-label="Xem chi tiết bảng GroupMembers" transform="translate(725.0, 565.0)"><rect class="basic label-container" x="-175.0" y="-65.0" width="350" height="130" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -65.0)"><foreignObject width="350" height="130"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:130px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">GroupMembers</th></tr></thead><tbody><tr data-column="GroupId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">GroupId</code></td><td class="column-type">uuid</td></tr><tr data-column="UserId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">UserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Role"><td class="identity-keys" /><td><code class="" title="">Role</code></td><td class="column-type">integer</td></tr><tr data-column="JoinedAtUtc"><td class="identity-keys" /><td><code class="" title="">JoinedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="GroupJoinRequests" role="button" tabindex="0" aria-label="Xem chi tiết bảng GroupJoinRequests" transform="translate(725.0, 151.0)"><rect class="basic label-container" x="-175.0" y="-101.0" width="350" height="202" rx="5" ry="5" style="stroke:#8c52db" /><g class="label" transform="translate(-175.0, -101.0)"><foreignObject width="350" height="202"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:202px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#e7d7fc;color:#182437">GroupJoinRequests</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="GroupId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">GroupId</code></td><td class="column-type">uuid</td></tr><tr data-column="RequesterUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">RequesterUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="RespondedByUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">RespondedByUserId</code></td><td class="column-type">uuid?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="RespondedAtUtc"><td class="identity-keys" /><td><code class="" title="">RespondedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="GroupInvites" role="button" tabindex="0" aria-label="Xem chi tiết bảng GroupInvites" transform="translate(725.0, 921.0)"><rect class="basic label-container" x="-175.0" y="-101.0" width="350" height="202" rx="5" ry="5" style="stroke:#ed5998" /><g class="label" transform="translate(-175.0, -101.0)"><foreignObject width="350" height="202"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:202px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fbd7e7;color:#182437">GroupInvites</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="GroupId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">GroupId</code></td><td class="column-type">uuid</td></tr><tr data-column="InviterUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">InviterUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="InviteeUserId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">InviteeUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="RespondedAtUtc"><td class="identity-keys" /><td><code class="" title="">RespondedAtUtc</code></td><td class="column-type">timestamptz?</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="GroupRules" role="button" tabindex="0" aria-label="Xem chi tiết bảng GroupRules" transform="translate(1255.0, 117.0)"><rect class="basic label-container" x="-175.0" y="-77.0" width="350" height="154" rx="5" ry="5" style="stroke:#e5a11b" /><g class="label" transform="translate(-175.0, -77.0)"><foreignObject width="350" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:154px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#fff0c2;color:#182437">GroupRules</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="GroupId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">GroupId</code></td><td class="column-type">uuid</td></tr><tr data-column="Title"><td class="identity-keys" /><td><code class="" title="">Title</code></td><td class="column-type">varchar(200)</td></tr><tr data-column="Description"><td class="identity-keys" /><td><code class="" title="">Description</code></td><td class="column-type">varchar(2000)?</td></tr><tr data-column="SortOrder"><td class="identity-keys" /><td><code class="" title="">SortOrder</code></td><td class="column-type">integer</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="GroupCoverMediaReferences" role="button" tabindex="0" aria-label="Xem chi tiết bảng GroupCoverMediaReferences" transform="translate(1785.0, 243.0)"><rect class="basic label-container" x="-175.0" y="-53.0" width="350" height="106" rx="5" ry="5" style="stroke:#f15362" /><g class="label" transform="translate(-175.0, -53.0)"><foreignObject width="350" height="106"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:106px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#ffd3d8;color:#182437">GroupCoverMediaReferences</th></tr></thead><tbody><tr data-column="GroupId"><td class="identity-keys"><span class="identity-key pk">PK</span><span class="identity-key fk">FK</span></td><td><code class="pk-column fk-column" title="PK, FK">GroupId</code></td><td class="column-type">uuid</td></tr><tr data-column="MediaId"><td class="identity-keys"><span class="identity-key fk">FK</span></td><td><code class="fk-column" title="FK">MediaId</code></td><td class="column-type">uuid</td></tr><tr data-column="AttachedAtUtc"><td class="identity-keys" /><td><code class="" title="">AttachedAtUtc</code></td><td class="column-type">timestamptz</td></tr></tbody></table></div></foreignObject></g></g><g class="node default" data-table="MediaAssets" role="button" tabindex="0" aria-label="Xem chi tiết bảng MediaAssets" transform="translate(1785.0, 747.0)"><rect class="basic label-container" x="-175.0" y="-257.0" width="350" height="514" rx="5" ry="5" style="stroke:#2196ef" /><g class="label" transform="translate(-175.0, -257.0)"><foreignObject width="350" height="514"><div xmlns="http://www.w3.org/1999/xhtml" style="width:350px;height:514px;overflow:hidden;border-radius:5px"><table class="identity-table"><colgroup><col style="width:60px" /><col /><col style="width:96px" /></colgroup><thead><tr><th colspan="3" style="background:#cfe8ff;color:#182437">MediaAssets</th></tr></thead><tbody><tr data-column="Id"><td class="identity-keys"><span class="identity-key pk">PK</span></td><td><code class="pk-column" title="PK">Id</code></td><td class="column-type">uuid</td></tr><tr data-column="ActualSizeBytes"><td class="identity-keys" /><td><code class="" title="">ActualSizeBytes</code></td><td class="column-type">bigint?</td></tr><tr data-column="ContentType"><td class="identity-keys" /><td><code class="" title="">ContentType</code></td><td class="column-type">varchar(100)</td></tr><tr data-column="CreatedAtUtc"><td class="identity-keys" /><td><code class="" title="">CreatedAtUtc</code></td><td class="column-type">timestamptz</td></tr><tr data-column="DeclaredSizeBytes"><td class="identity-keys" /><td><code class="" title="">DeclaredSizeBytes</code></td><td class="column-type">bigint</td></tr><tr data-column="DeletedAtUtc"><td class="identity-keys" /><td><code class="" title="">DeletedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="DurationMs"><td class="identity-keys" /><td><code class="" title="">DurationMs</code></td><td class="column-type">bigint?</td></tr><tr data-column="Height"><td class="identity-keys" /><td><code class="" title="">Height</code></td><td class="column-type">integer?</td></tr><tr data-column="MediaType"><td class="identity-keys" /><td><code class="" title="">MediaType</code></td><td class="column-type">integer</td></tr><tr data-column="ObjectKey"><td class="identity-keys"><span class="identity-key uk">UK</span></td><td><code class="" title="UK">ObjectKey</code></td><td class="column-type">varchar(256)</td></tr><tr data-column="OriginalFileName"><td class="identity-keys" /><td><code class="" title="">OriginalFileName</code></td><td class="column-type">varchar(255)</td></tr><tr data-column="OwnerUserId"><td class="identity-keys" /><td><code class="" title="">OwnerUserId</code></td><td class="column-type">uuid</td></tr><tr data-column="PosterObjectKey"><td class="identity-keys" /><td><code class="" title="">PosterObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessedAtUtc"><td class="identity-keys" /><td><code class="" title="">ProcessedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="ProcessedObjectKey"><td class="identity-keys" /><td><code class="" title="">ProcessedObjectKey</code></td><td class="column-type">varchar(256)?</td></tr><tr data-column="ProcessingError"><td class="identity-keys" /><td><code class="" title="">ProcessingError</code></td><td class="column-type">varchar(1000)?</td></tr><tr data-column="Status"><td class="identity-keys" /><td><code class="" title="">Status</code></td><td class="column-type">integer</td></tr><tr data-column="UploadExpiresAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadExpiresAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="UploadedAtUtc"><td class="identity-keys" /><td><code class="" title="">UploadedAtUtc</code></td><td class="column-type">timestamptz?</td></tr><tr data-column="Width"><td class="identity-keys" /><td><code class="" title="">Width</code></td><td class="column-type">integer?</td></tr></tbody></table></div></foreignObject></g></g></g><g transform="translate(20, 850)" aria-label="Chú thích khóa và quan hệ"><rect width="270" height="150" rx="6" fill="#f7f9fc" stroke="#d7e0eb" /><text x="14" y="26" font-size="15" font-weight="700" fill="#233044">Chú thích</text><rect x="14" y="40" width="26" height="18" rx="3" fill="#ffcbd1" /><text x="27" y="52" text-anchor="middle" font-size="10" font-weight="700" fill="#8f2434">PK</text><text x="50" y="53" font-size="12" fill="#405069">Khóa chính</text><rect x="14" y="64" width="26" height="18" rx="3" fill="#e4d7ff" /><text x="27" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#633aad">FK</text><text x="50" y="77" font-size="12" fill="#405069">Khóa ngoại</text><rect x="14" y="88" width="26" height="18" rx="3" fill="#e9f3ea" /><text x="27" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#447b51">UK</text><text x="50" y="101" font-size="12" fill="#405069">Unique index một cột</text><text x="14" y="132" font-size="11" fill="#64748b">? = nullable · 0..N = không hoặc nhiều</text></g></svg></template>
+
+  <script id="groups-specification" type="application/json">
+{
+  "title": "Nhóm, thành viên và kiểm duyệt nội dung",
+  "purpose": "Groups quản lý nhóm public/private, tham gia nhóm, lời mời, vai trò thành viên, nội quy, ảnh bìa và bài viết trong nhóm.",
+  "scope": "Đối chiếu 6 entity Groups, 28 endpoint của GroupsController, GroupsService và GroupPostAccessService. ERD giữ đủ cột của 6 bảng chính cùng AspNetUsers và MediaAssets, mỗi bảng một lần. Bài viết nhóm lưu ở Posts với ContainerType=GROUP và ContainerId=groupId; ContainerId là liên kết nghiệp vụ, không phải FK tới Groups. Posts, Media, Friends và Notifications hỗ trợ các luồng tích hợp nêu trong đặc tả.",
+  "usecasesTitle": "Quản lý nhóm và cộng đồng",
+  "groups": [
+    {
+      "id": "groups-general",
+      "name": "Tìm và quản lý nhóm",
+      "actor": "user",
+      "description": "Tạo, xem, khám phá và cập nhật nhóm. Quyền sửa/xóa được ghi riêng trong từng đặc tả."
+    },
+    {
+      "id": "groups-cover",
+      "name": "Đọc ảnh bìa",
+      "actor": "user",
+      "description": "Đường dẫn cover redirect tới ảnh; cover/access trả JSON URL cho người đăng nhập."
+    },
+    {
+      "id": "groups-members",
+      "name": "Tham gia và thành viên",
+      "actor": "user",
+      "description": "Tham gia/rời nhóm, xem thành viên, đổi vai trò hoặc chuyển owner và gỡ thành viên."
+    },
+    {
+      "id": "groups-requests",
+      "name": "Duyệt yêu cầu tham gia",
+      "actor": "user",
+      "description": "Owner, admin hoặc moderator xem, chấp thuận hoặc từ chối yêu cầu PENDING."
+    },
+    {
+      "id": "groups-invites",
+      "name": "Lời mời vào nhóm",
+      "actor": "user",
+      "description": "Thành viên gửi lời mời; người được mời xem, chấp nhận hoặc từ chối."
+    },
+    {
+      "id": "groups-rules",
+      "name": "Nội quy nhóm",
+      "actor": "user",
+      "description": "Đọc nội quy theo quyền xem nhóm; owner/admin tạo, sửa hoặc xóa nội quy."
+    },
+    {
+      "id": "groups-posts",
+      "name": "Bài viết và feed nhóm",
+      "actor": "user",
+      "description": "Đọc bài viết, đăng bài khi là thành viên, gỡ bài bằng quyền kiểm duyệt và xem feed nhóm đã tham gia."
+    }
+  ],
+  "actors": [
+    {
+      "id": "user",
+      "name": "Người dùng",
+      "role": "Khách đọc thông tin công khai; tài khoản đăng nhập tạo nhóm, tham gia hoặc phản hồi lời mời. Các use case ghi rõ vai trò cần thiết."
+    },
+    {
+      "id": "owner",
+      "name": "Owner",
+      "role": "OWNER=0. Quản lý nhóm/nội quy, duyệt yêu cầu và bài viết; được đổi vai trò, chuyển sở hữu, gỡ mọi thành viên khác và xóa nhóm."
+    },
+    {
+      "id": "admin",
+      "name": "Admin",
+      "role": "ADMIN=1. Sửa nhóm/ảnh bìa và nội quy, duyệt yêu cầu, gỡ bài viết; chỉ gỡ thành viên có Role=MEMBER. Không đổi vai trò hoặc xóa nhóm."
+    },
+    {
+      "id": "moderator",
+      "name": "Moderator",
+      "role": "MODERATOR=2. Duyệt yêu cầu và gỡ bài viết; không sửa nhóm/nội quy, đổi vai trò hoặc gỡ thành viên."
+    },
+    {
+      "id": "member",
+      "name": "Thành viên",
+      "role": "MEMBER=3. Đọc nội dung nhóm private, đăng bài, mời người khác và rời nhóm. Owner phải chuyển sở hữu hoặc xóa nhóm trước khi rời."
+    },
+    {
+      "id": "media",
+      "name": "Module Media",
+      "role": "Kiểm tra ảnh bìa/đính kèm thuộc người thao tác, đồng bộ GroupCoverMediaReferences/MediaReferences và cấp URL đọc."
+    },
+    {
+      "id": "posts",
+      "name": "Module Posts",
+      "role": "Lưu bài viết GROUP, metadata/tương tác và xử lý xóa mềm bài viết trong transaction."
+    },
+    {
+      "id": "notifications",
+      "name": "Notifications",
+      "role": "Queue/lưu và publish GROUP_INVITE, GROUP_JOIN_APPROVED sau khi transaction thành công."
+    },
+    {
+      "id": "friends",
+      "name": "Module Friends",
+      "role": "Cung cấp danh sách chặn hai chiều để lọc tác giả bài viết; không thay thế kiểm tra thành viên nhóm."
+    }
+  ],
+  "rules": [
+    {
+      "text": "GroupsController có 28 endpoint. Sáu API AllowAnonymous: chi tiết nhóm, discover, cover, members, rules, posts. API khác yêu cầu đăng nhập và claim sub là GUID; thiếu xác thực trả 401.",
+      "source": "Controllers/GroupsController.cs"
+    },
+    {
+      "text": "Tên nhóm bắt buộc, tối đa 120 ký tự sau trim; mô tả tùy chọn tối đa 2000. Privacy PUBLIC=0, PRIVATE=1. Tạo nhóm và thành viên OWNER trong cùng transaction; MemberCount ban đầu bằng 1.",
+      "source": "DTOs/Requests/CreateGroupRequest.cs"
+    },
+    {
+      "text": "PUBLIC cho mọi người đọc nhóm, thành viên, nội quy và bài viết; PRIVATE chỉ thành viên GroupMembers được đọc. Lời mời hoặc yêu cầu đang chờ chưa cấp quyền xem. CanViewGroupAsync không kiểm tra bạn bè/chặn; tác giả bài viết bị chặn được lọc riêng khi đọc bài.",
+      "source": "Services/GroupPostAccessService.cs"
+    },
+    {
+      "text": "Owner/admin sửa nhóm và nội quy; owner/admin/moderator duyệt yêu cầu, gỡ bài viết; chỉ owner đổi vai trò/chuyển owner hoặc xóa nhóm. Các kiểm tra quản lý dùng Role của GroupMembers và nhóm chưa xóa.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "GroupMembers có PK (GroupId, UserId), nên mỗi người một membership cho mỗi nhóm. Groups.OwnerUserId có FK RESTRICT; service giữ OwnerUserId đồng bộ với Role=OWNER, database không có unique index riêng buộc mỗi nhóm chỉ một Role OWNER.",
+      "source": "Domain/Entities/GroupMember.cs"
+    },
+    {
+      "text": "Join nhóm PUBLIC tạo MEMBER ngay và trả 200 không có body; PRIVATE tạo GroupJoinRequest PENDING và trả 200 kèm response. Đã là thành viên hoặc đã có yêu cầu PENDING tương ứng trả 409.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "GroupJoinRequests: PENDING=0, APPROVED=1, DECLINED=2; UNIQUE (GroupId, RequesterUserId) chỉ khi Status=0. RespondedByUserId nullable, có FK RESTRICT; approve/decline ghi người xử lý và thời gian.",
+      "source": "Domain/Entities/GroupJoinRequest.cs"
+    },
+    {
+      "text": "Approve tạo MEMBER và chuyển yêu cầu APPROVED trong transaction, gửi GROUP_JOIN_APPROVED sau commit. Decline chỉ đổi trạng thái, không tạo membership và không gửi thông báo riêng trong luồng hiện tại.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "Mọi thành viên, gồm MEMBER, đều có thể mời người khác. Không được tự mời, mời tài khoản không tồn tại, người đã là thành viên hoặc người đang có lời mời PENDING. Luồng mời không kiểm tra quan hệ bạn bè/chặn.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "GroupInvites: PENDING=0, ACCEPTED=1, DECLINED=2; UNIQUE (GroupId, InviteeUserId) chỉ khi Status=0. Chỉ InviteeUserId phản hồi PENDING của nhóm chưa xóa; accept thêm MEMBER trong transaction, decline không thêm.",
+      "source": "Domain/Entities/GroupInvite.cs"
+    },
+    {
+      "text": "Owner không được rời hoặc tự hạ vai trò. Chuyển owner qua PATCH role=owner của thành viên khác: owner cũ thành ADMIN, đích thành OWNER, Groups.OwnerUserId đổi trong transaction. Chọn chính mình làm owner là thành công không thay đổi.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "Gỡ thành viên: owner được gỡ người khác không phải OWNER; admin chỉ gỡ MEMBER. Moderator không có quyền gỡ thành viên. Tự gọi DELETE membership trả 400 use_group_leave; phải dùng leave.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "Cập nhật cover cần IMAGE READY chưa xóa và thuộc owner/admin đang thao tác. Bỏ CoverMediaId giữ ảnh cũ; RemoveCover=true chọn null, nhưng CoverMediaId được gửi kèm vẫn phải vượt qua validation media trước.",
+      "source": "DTOs/Requests/UpdateGroupRequest.cs"
+    },
+    {
+      "text": "Ảnh bìa mới khác ảnh hiện tại đồng bộ GroupCoverMediaReferences và tạo bài thông báo cập nhật ảnh trong GROUP cùng transaction; bài có PostMedia/MediaReferences, không thêm vào album timeline. Gỡ ảnh bìa hoặc gửi lại cùng media không tạo bài mới.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "Groups.CoverMediaId nullable và GroupCoverMediaReferences.MediaId có FK riêng RESTRICT tới MediaAssets. GroupCoverMediaReferences.GroupId là PK kiêm FK CASCADE: mỗi nhóm tối đa một hàng tham chiếu. Hai MediaId được service đồng bộ, không có constraint database buộc chúng bằng nhau.",
+      "source": "Domain/Entities/GroupCoverMediaReference.cs"
+    },
+    {
+      "text": "GET cover kiểm tra quyền nhóm rồi trả 302 tới URL ảnh; cover/access cần đăng nhập và trả 200 JSON MediaReadUrlResponse. Thiếu cover, nhóm không xem được hoặc Media không cấp được URL trả 404.",
+      "source": "Controllers/GroupsController.cs"
+    },
+    {
+      "text": "Xóa nhóm là xóa mềm: ghi DeletedAtUtc/UpdatedAtUtc, đặt CoverMediaId=null và xóa GroupCoverMediaReferences trong transaction. Memberships, join requests, invites, rules và Posts được giữ. Nhóm và nội dung không còn được đọc; CASCADE chỉ áp dụng khi xóa vật lý Groups.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "FK từ bảng phụ thuộc tới Groups dùng CASCADE; FK tới Users/Media dùng RESTRICT. Groups có index lọc DeletedAtUtc IS NULL cho (Privacy, Name) và (OwnerUserId, CreatedAtUtc). Các unique index PENDING không cấm lưu lịch sử đã xử lý.",
+      "source": "Domain/Entities/Group.cs"
+    },
+    {
+      "text": "Nội quy: Title bắt buộc, tối đa 200 ký tự; Description tối đa 2000. SortOrder là integer, không có validation cấm số âm hoặc UNIQUE thứ tự trong request/model hiện tại; đọc theo SortOrder rồi Id tăng dần.",
+      "source": "DTOs/Requests/CreateGroupRuleRequest.cs"
+    },
+    {
+      "text": "Phân trang dùng GroupPageRequest: mặc định 20, limit từ 1 tới 50. Cursor Base64Url của ticks:Id; rỗng là trang đầu, cursor sai trả 400 validation_failed qua ValidGroupCursor. Nhóm, lời mời, yêu cầu và bài viết sắp thời gian/Id giảm dần; thành viên dùng JoinedAtUtc/UserId.",
+      "source": "Common/GroupCursor.cs"
+    },
+    {
+      "text": "Discover chỉ nhóm PUBLIC đang hoạt động, tìm chuỗi theo Name/Description sau trim và lowercase. Mine trả các nhóm người gọi là thành viên. Invites/mine chỉ lời mời PENDING tới người gọi trong nhóm chưa xóa.",
+      "source": "Services/GroupsService.cs"
+    },
+    {
+      "text": "Đăng bài cần membership trong nhóm đang hoạt động. Posts lưu STANDARD, ContainerType.GROUP=1, ContainerId=groupId và Privacy=PUBLIC; quyền đọc thực tế vẫn theo PUBLIC/PRIVATE của Groups. ContainerId không có FK tới Groups, nên không vẽ quan hệ FK giả.",
+      "source": "../Posts/Services/PostsUseCase.cs"
+    },
+    {
+      "text": "Feed nhóm chỉ các nhóm đã tham gia, lọc bài chưa xóa và tác giả bị chặn. Nhóm đã xóa bị loại ở bước ghép GroupResponse sau khi lấy ứng viên, nên Items có thể ít hơn limit dù NextCursor được tính từ trang ứng viên.",
+      "source": "Services/GroupsService.cs"
+    }
+  ],
+  "usecases": [
+    {
+      "id": "UC-GR-01",
+      "name": "Tạo nhóm",
+      "group": "groups-general",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Tạo nhóm public/private và trở thành owner.",
+      "preconditions": "Đã đăng nhập; tên, mô tả và Privacy hợp lệ.",
+      "steps": [
+        "Gửi Name, Description tùy chọn và Privacy.",
+        "Tạo Group và GroupMember OWNER với thời gian UTC hiện tại.",
+        "Lưu cả hai trong transaction, commit.",
+        "Trả 201 GroupResponse và Location; MemberCount=1, ViewerRole=owner."
+      ],
+      "alternatives": [
+        "Dữ liệu request không hợp lệ: 400 validation_failed; chưa đăng nhập: 401."
+      ],
+      "postconditions": "Nhóm mới có owner và một membership, chưa có cover hoặc nội quy.",
+      "endpoints": [
+        "POST /api/groups"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "DTOs/Requests/CreateGroupRequest.cs",
+        "Domain/Entities/Group.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-02",
+      "name": "Xem thông tin nhóm",
+      "group": "groups-general",
+      "actor": "Người xem hoặc khách",
+      "goal": "Đọc thông tin nhóm và số thành viên.",
+      "preconditions": "Nhóm chưa xóa; PUBLIC hoặc người xem có GroupMembers trong PRIVATE.",
+      "steps": [
+        "Gửi groupId.",
+        "CanViewGroupAsync kiểm tra nhóm và quyền.",
+        "Đếm thành viên, lấy vai trò người xem nếu có.",
+        "Trả 200 GroupResponse với CoverUrl tương đối hoặc null."
+      ],
+      "alternatives": [
+        "Nhóm thiếu, đã xóa hoặc không có quyền: 404 group_not_found.",
+        "Lời mời PRIVATE đang chờ không đủ quyền đọc."
+      ],
+      "postconditions": "Không đổi dữ liệu; ViewerRole=null nếu không có membership.",
+      "endpoints": [
+        "GET /api/groups/{groupId:guid}"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "Services/GroupPostAccessService.cs",
+        "DTOs/Responses/GroupResponse.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-03",
+      "name": "Xem nhóm đã tham gia",
+      "group": "groups-general",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy nhóm đang hoạt động mà mình có membership.",
+      "preconditions": "Đã đăng nhập; GroupPageRequest hợp lệ.",
+      "steps": [
+        "Gửi cursor và limit tùy chọn tới mine.",
+        "Join GroupMembers theo UserId với Groups chưa xóa.",
+        "Phân trang CreatedAtUtc/Id giảm dần, nạp MemberCount và Role.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor hoặc limit không hợp lệ: 400 validation_failed; chưa đăng nhập: 401.",
+        "Không có nhóm: Items rỗng."
+      ],
+      "postconditions": "Trả cả nhóm owner/admin/moderator/member của người gọi, không chỉ nhóm sở hữu.",
+      "endpoints": [
+        "GET /api/groups/mine"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "DTOs/Requests/GroupPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-04",
+      "name": "Khám phá nhóm công khai",
+      "group": "groups-general",
+      "actor": "Người xem hoặc khách",
+      "goal": "Tìm nhóm PUBLIC theo tên hoặc mô tả.",
+      "preconditions": "GroupPageRequest hợp lệ; không yêu cầu đăng nhập.",
+      "steps": [
+        "Gửi query tùy chọn, cursor và limit.",
+        "Lọc Groups PUBLIC chưa xóa; tìm Name/Description theo chuỗi lowercase.",
+        "Phân trang thời gian/Id giảm dần, đếm thành viên.",
+        "Trả 200 Items/NextCursor; ViewerRole không được nạp trong luồng discover."
+      ],
+      "alternatives": [
+        "Cursor/limit không hợp lệ: 400 validation_failed.",
+        "Nhóm PRIVATE không xuất hiện; không có kết quả: trang rỗng."
+      ],
+      "postconditions": "Không thay đổi membership hoặc dữ liệu nhóm.",
+      "endpoints": [
+        "GET /api/groups/discover"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "DTOs/Requests/GroupPageRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-05",
+      "name": "Sửa nhóm và ảnh bìa",
+      "group": "groups-general",
+      "actor": "Owner hoặc admin",
+      "goal": "Đổi thông tin nhóm và đặt/gỡ ảnh bìa.",
+      "preconditions": "Đã đăng nhập; nhóm đang hoạt động; người gọi có Role OWNER/ADMIN; media gửi kèm hợp lệ.",
+      "steps": [
+        "Gửi Name, Description, Privacy, CoverMediaId tùy chọn và RemoveCover.",
+        "Kiểm tra vai trò, validate ảnh bìa thuộc người gọi nếu được gửi.",
+        "Cập nhật nhóm và đồng bộ GroupCoverMediaReferences trong transaction.",
+        "Nếu có ảnh bìa mới khác ảnh cũ và không RemoveCover, tạo bài thông báo trong GROUP, PostMedia/MediaReferences và metadata.",
+        "Commit và trả 200 GroupResponse."
+      ],
+      "alternatives": [
+        "Nhóm thiếu/đã xóa: 404 group_not_found; sai vai trò: 403 group_forbidden.",
+        "Request không hợp lệ: 400; media không READY/không phải ảnh hoặc không thuộc người gọi: lỗi Media.",
+        "RemoveCover ưu tiên null nhưng media gửi kèm vẫn được validate; cùng media không tạo bài mới.",
+        "Tạo bài thông báo thất bại: 409 group_cover_post_failed, rollback; lỗi đồng bộ media cũng rollback."
+      ],
+      "postconditions": "Thông tin/cover đổi; ảnh mới có thể có thêm bài thông báo; gỡ cover không xóa tệp.",
+      "endpoints": [
+        "PATCH /api/groups/{groupId:guid}"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupCoverMediaReferences",
+        "MediaAssets",
+        "Posts",
+        "PostMedia",
+        "MediaReferences"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "DTOs/Requests/UpdateGroupRequest.cs",
+        "../Media/Services/MediaService.cs",
+        "../Posts/Services/PostsService.cs"
+      ],
+      "support": [
+        "media"
+      ]
+    },
+    {
+      "id": "UC-GR-06",
+      "name": "Xóa nhóm",
+      "group": "groups-general",
+      "actor": "Owner",
+      "goal": "Xóa mềm nhóm và bỏ tham chiếu ảnh bìa.",
+      "preconditions": "Đã đăng nhập; nhóm chưa xóa; Role của người gọi là OWNER.",
+      "steps": [
+        "Gửi DELETE groupId.",
+        "Kiểm tra nhóm và Role OWNER.",
+        "Trong transaction, ghi DeletedAtUtc/UpdatedAtUtc, đặt CoverMediaId=null và xóa GroupCoverMediaReferences.",
+        "Commit, trả 204."
+      ],
+      "alternatives": [
+        "Nhóm thiếu/đã xóa: 404 group_not_found; admin/moderator/member: 403 group_forbidden.",
+        "Chưa đăng nhập: 401; lỗi lưu/đồng bộ không hoàn tất transaction."
+      ],
+      "postconditions": "Ẩn nhóm và nội dung; giữ các bảng thành viên/lịch sử/nội quy/bài viết cùng tệp media.",
+      "endpoints": [
+        "DELETE /api/groups/{groupId:guid}"
+      ],
+      "tables": [
+        "Groups",
+        "GroupCoverMediaReferences",
+        "GroupMembers",
+        "GroupJoinRequests",
+        "GroupInvites",
+        "GroupRules"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "Domain/Entities/Group.cs",
+        "../Media/Services/MediaService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-07",
+      "name": "Mở ảnh bìa nhóm",
+      "group": "groups-cover",
+      "actor": "Người xem hoặc khách",
+      "goal": "Mở cover qua đường dẫn kiểm tra quyền nhóm.",
+      "preconditions": "Nhóm có cover và đủ quyền xem; Media có thể cấp URL đọc.",
+      "steps": [
+        "Mở /cover.",
+        "Kiểm tra nhóm, quyền và CoverMediaId.",
+        "Gọi Media.CreateReadUrlAsync.",
+        "Trả 302 Redirect tới URL ảnh."
+      ],
+      "alternatives": [
+        "Nhóm không đủ quyền/đã xóa/thiếu cover: 404 group_not_found.",
+        "Media không cấp được URL: 404."
+      ],
+      "postconditions": "Không đổi dữ liệu hoặc tự ghi lượt xem.",
+      "endpoints": [
+        "GET /api/groups/{groupId:guid}/cover"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "../Media/Services/MediaService.cs"
+      ],
+      "support": [
+        "media"
+      ]
+    },
+    {
+      "id": "UC-GR-08",
+      "name": "Lấy URL ảnh bìa",
+      "group": "groups-cover",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Lấy URL và thời hạn đọc ảnh bìa dưới dạng JSON.",
+      "preconditions": "Đã đăng nhập; nhóm có cover và đủ quyền xem.",
+      "steps": [
+        "Gửi /cover/access.",
+        "Kiểm tra người gọi và quyền nhóm.",
+        "Gọi Media.CreateReadUrlAsync.",
+        "Trả 200 MediaReadUrlResponse."
+      ],
+      "alternatives": [
+        "Thiếu nhóm/cover hoặc không đủ quyền: 404 group_not_found; Media không cấp URL: 404.",
+        "Chưa đăng nhập: 401."
+      ],
+      "postconditions": "Client nhận Url/ExpiresAtUtc và metadata do Media cấp.",
+      "endpoints": [
+        "GET /api/groups/{groupId:guid}/cover/access"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "MediaAssets"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "../Media/Services/MediaService.cs"
+      ],
+      "support": [
+        "media"
+      ]
+    },
+    {
+      "id": "UC-GR-09",
+      "name": "Tham gia nhóm",
+      "group": "groups-members",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Vào nhóm PUBLIC hoặc gửi yêu cầu vào PRIVATE.",
+      "preconditions": "Nhóm tồn tại chưa xóa; người gọi chưa là thành viên.",
+      "steps": [
+        "Gửi POST join.",
+        "Kiểm tra membership trong transaction.",
+        "PUBLIC: thêm GroupMember MEMBER; PRIVATE: kiểm tra trùng PENDING rồi tạo GroupJoinRequest.",
+        "Lưu/commit; trả 200 không body với PUBLIC hoặc 200 response PENDING với PRIVATE."
+      ],
+      "alternatives": [
+        "Nhóm thiếu/đã xóa: 404; đã là thành viên: 409 already_group_member.",
+        "PRIVATE đã có PENDING: 409 pending_group_join_request; chưa đăng nhập: 401."
+      ],
+      "postconditions": "PUBLIC có membership ngay; PRIVATE chỉ có yêu cầu đang chờ, chưa có quyền đọc.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/join"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupJoinRequests",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "Domain/Entities/GroupJoinRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-10",
+      "name": "Rời nhóm",
+      "group": "groups-members",
+      "actor": "Thành viên không phải owner",
+      "goal": "Xóa membership của mình khỏi nhóm đang hoạt động.",
+      "preconditions": "Đã đăng nhập; có membership và không có Role OWNER.",
+      "steps": [
+        "Gửi POST leave.",
+        "Kiểm tra membership và nhóm còn hoạt động.",
+        "Từ chối owner; xóa GroupMember của người gọi.",
+        "Lưu và trả 204."
+      ],
+      "alternatives": [
+        "Membership/nhóm không còn hoạt động: 404 group_not_found.",
+        "Owner: 409 owner_cannot_leave; phải chuyển owner hoặc xóa nhóm trước."
+      ],
+      "postconditions": "Không còn membership, mất quyền PRIVATE và quyền đăng bài; bài viết/lịch sử được giữ.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/leave"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-11",
+      "name": "Xem thành viên",
+      "group": "groups-members",
+      "actor": "Người xem hoặc khách",
+      "goal": "Lấy trang thành viên của nhóm đủ quyền xem.",
+      "preconditions": "Nhóm đang hoạt động, PUBLIC hoặc có membership PRIVATE; phân trang hợp lệ.",
+      "steps": [
+        "Kiểm tra CanViewGroupAsync.",
+        "Phân trang GroupMembers theo JoinedAtUtc/UserId giảm dần.",
+        "Nạp Username, DisplayName và đường dẫn avatar từ UserProfiles nếu có.",
+        "Trả 200 Items/NextCursor cùng Role."
+      ],
+      "alternatives": [
+        "Nhóm thiếu/không đủ quyền: 404; cursor/limit sai: 400 validation_failed.",
+        "Không có UserProfiles: các trường hồ sơ của member có thể null."
+      ],
+      "postconditions": "Không thay đổi role hoặc membership.",
+      "endpoints": [
+        "GET /api/groups/{groupId:guid}/members"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "UserProfiles",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "Services/GroupPostAccessService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-12",
+      "name": "Đổi vai trò hoặc chuyển owner",
+      "group": "groups-members",
+      "actor": "Owner",
+      "goal": "Đổi vai trò thành viên, hoặc chuyển quyền sở hữu.",
+      "preconditions": "Đã đăng nhập; nhóm đang hoạt động; người gọi OWNER và đích có membership; Role hợp lệ.",
+      "steps": [
+        "Gửi PATCH role của userId.",
+        "Kiểm tra actor OWNER, target và bảo vệ owner hiện tại.",
+        "Role=owner cho người khác: actor thành ADMIN, target thành OWNER, cập nhật Groups.OwnerUserId trong transaction.",
+        "Vai trò khác: đổi target.Role; owner chọn chính mình làm owner giữ nguyên.",
+        "Lưu/commit, trả 200 GroupMemberResponse."
+      ],
+      "alternatives": [
+        "Nhóm thiếu: 404; actor không OWNER hoặc target thiếu: 403 group_forbidden.",
+        "Owner tự hạ vai trò: 409 owner_cannot_demote; request Role sai: 400."
+      ],
+      "postconditions": "Vai trò đổi; chuyển owner giữ đồng bộ OwnerUserId và hai membership.",
+      "endpoints": [
+        "PATCH /api/groups/{groupId:guid}/members/{userId:guid}/role"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "DTOs/Requests/ChangeGroupMemberRoleRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-13",
+      "name": "Gỡ thành viên",
+      "group": "groups-members",
+      "actor": "Owner hoặc admin theo cấp quyền",
+      "goal": "Xóa membership của người khác khỏi nhóm.",
+      "preconditions": "Nhóm đang hoạt động; target tồn tại; owner gỡ người không OWNER, admin chỉ gỡ MEMBER.",
+      "steps": [
+        "Tìm actor.Role và target membership.",
+        "Từ chối tự gỡ và kiểm tra cấp quyền.",
+        "Xóa GroupMember target.",
+        "Lưu và trả 204."
+      ],
+      "alternatives": [
+        "Target/nhóm thiếu: 404; tự gỡ: 400 use_group_leave.",
+        "Admin gỡ admin/moderator/owner hoặc moderator gỡ thành viên: 403 group_forbidden."
+      ],
+      "postconditions": "Đích mất membership; nội dung và lịch sử của họ được giữ.",
+      "endpoints": [
+        "DELETE /api/groups/{groupId:guid}/members/{userId:guid}"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-14",
+      "name": "Xem yêu cầu tham gia",
+      "group": "groups-requests",
+      "actor": "Owner, admin hoặc moderator",
+      "goal": "Lấy các yêu cầu PENDING để duyệt.",
+      "preconditions": "Đã đăng nhập; CanModerateAsync=true; phân trang hợp lệ.",
+      "steps": [
+        "Kiểm tra nhóm đang hoạt động và role kiểm duyệt.",
+        "Lọc GroupJoinRequests của nhóm với Status=PENDING.",
+        "Phân trang CreatedAtUtc/Id giảm dần.",
+        "Trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Không có quyền hoặc nhóm không hoạt động: 403 group_forbidden.",
+        "Cursor/limit sai: 400 validation_failed; không có yêu cầu: trang rỗng."
+      ],
+      "postconditions": "Không đổi trạng thái hoặc thêm thành viên.",
+      "endpoints": [
+        "GET /api/groups/{groupId:guid}/join-requests"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupJoinRequests"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-15",
+      "name": "Chấp thuận yêu cầu tham gia",
+      "group": "groups-requests",
+      "actor": "Owner, admin hoặc moderator",
+      "goal": "Duyệt PENDING và thêm người yêu cầu vào nhóm.",
+      "preconditions": "Có quyền kiểm duyệt; yêu cầu PENDING thuộc nhóm; người yêu cầu chưa là thành viên.",
+      "steps": [
+        "Kiểm tra quyền, tìm yêu cầu và kiểm tra membership.",
+        "Trong transaction, chuyển APPROVED, ghi RespondedByUserId/RespondedAtUtc.",
+        "Thêm GroupMember MEMBER và queue GROUP_JOIN_APPROVED.",
+        "Lưu/commit, publish notification; trả 200 request response."
+      ],
+      "alternatives": [
+        "Không có quyền/nhóm không hoạt động: 403; yêu cầu không còn PENDING/khác nhóm: 404.",
+        "Requester đã là thành viên: 409 already_group_member."
+      ],
+      "postconditions": "Yêu cầu APPROVED, có membership và thông báo sau commit.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/join-requests/{requestId:guid}/approve"
+      ],
+      "tables": [
+        "GroupJoinRequests",
+        "GroupMembers",
+        "Groups",
+        "Notifications",
+        "AspNetUsers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "../Notifications/Services/NotificationService.cs"
+      ],
+      "support": [
+        "notifications"
+      ]
+    },
+    {
+      "id": "UC-GR-16",
+      "name": "Từ chối yêu cầu tham gia",
+      "group": "groups-requests",
+      "actor": "Owner, admin hoặc moderator",
+      "goal": "Kết thúc một yêu cầu PENDING bằng DECLINED.",
+      "preconditions": "Có quyền kiểm duyệt; yêu cầu PENDING thuộc nhóm đang hoạt động.",
+      "steps": [
+        "Kiểm tra quyền và tìm yêu cầu PENDING.",
+        "Chuyển DECLINED, ghi người xử lý và thời gian.",
+        "Lưu và trả 200 request response."
+      ],
+      "alternatives": [
+        "Không có quyền/nhóm không hoạt động: 403; yêu cầu thiếu/đã xử lý: 404."
+      ],
+      "postconditions": "Không tạo membership hoặc notification riêng; giữ lịch sử yêu cầu.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/join-requests/{requestId:guid}/decline"
+      ],
+      "tables": [
+        "GroupJoinRequests",
+        "GroupMembers",
+        "Groups"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-17",
+      "name": "Mời người vào nhóm",
+      "group": "groups-invites",
+      "actor": "Bất kỳ thành viên nhóm",
+      "goal": "Tạo lời mời PENDING và thông báo tới người được mời.",
+      "preconditions": "Đã đăng nhập; nhóm đang hoạt động; actor có membership; đích tồn tại, chưa là thành viên và chưa có PENDING.",
+      "steps": [
+        "Gửi UserId khác rỗng.",
+        "Kiểm tra không tự mời, nhóm, membership và tài khoản đích.",
+        "Kiểm tra trùng member/lời mời; tạo GroupInvite PENDING và queue GROUP_INVITE trong transaction.",
+        "Lưu/commit, publish; trả 201 cùng Location."
+      ],
+      "alternatives": [
+        "Tự mời: 400 invalid_group_invitee; đích thiếu: 404 group_invitee_not_found.",
+        "Không là thành viên: 403; nhóm thiếu: 404.",
+        "Đã là thành viên: 409 already_group_member; đã có PENDING: 409 pending_group_invite."
+      ],
+      "postconditions": "Có lời mời và notification, chưa cấp membership/quyền PRIVATE cho đích.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/invites"
+      ],
+      "tables": [
+        "GroupInvites",
+        "GroupMembers",
+        "Groups",
+        "AspNetUsers",
+        "Notifications"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "DTOs/Requests/CreateGroupInviteRequest.cs",
+        "../Notifications/Services/NotificationService.cs"
+      ],
+      "support": [
+        "notifications"
+      ]
+    },
+    {
+      "id": "UC-GR-18",
+      "name": "Xem lời mời của mình",
+      "group": "groups-invites",
+      "actor": "Người được mời",
+      "goal": "Lấy lời mời PENDING gửi tới mình trong nhóm chưa xóa.",
+      "preconditions": "Đã đăng nhập; phân trang hợp lệ.",
+      "steps": [
+        "Gửi invites/mine với cursor/limit.",
+        "Join lời mời PENDING có InviteeUserId=actor với nhóm đang hoạt động.",
+        "Phân trang CreatedAtUtc/Id giảm dần, đếm thành viên nhóm.",
+        "Trả 200 invitation response kèm thông tin Group và NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400; chưa đăng nhập: 401; không có lời mời: trang rỗng."
+      ],
+      "postconditions": "Đọc thông tin nhóm trong invitation response không tự thêm membership.",
+      "endpoints": [
+        "GET /api/groups/invites/mine"
+      ],
+      "tables": [
+        "GroupInvites",
+        "Groups",
+        "GroupMembers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-19",
+      "name": "Chấp nhận lời mời",
+      "group": "groups-invites",
+      "actor": "Người được mời",
+      "goal": "Vào nhóm qua lời mời PENDING dành cho mình.",
+      "preconditions": "Đã đăng nhập; đúng InviteeUserId, nhóm chưa xóa; chưa là thành viên.",
+      "steps": [
+        "Tìm invitation theo Id, GroupId, actor và PENDING.",
+        "Kiểm tra membership chưa tồn tại.",
+        "Trong transaction, chuyển ACCEPTED, ghi RespondedAtUtc và thêm MEMBER.",
+        "Lưu/commit, trả 200 invitation response."
+      ],
+      "alternatives": [
+        "Lời mời thiếu/đã xử lý/không dành cho actor hoặc nhóm đã xóa: 404.",
+        "Đã là thành viên: 409 already_group_member."
+      ],
+      "postconditions": "Có membership; giữ invitation ACCEPTED; không tự xử lý yêu cầu tham gia khác đang chờ.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/invites/{inviteId:guid}/accept"
+      ],
+      "tables": [
+        "GroupInvites",
+        "GroupMembers",
+        "Groups"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-20",
+      "name": "Từ chối lời mời",
+      "group": "groups-invites",
+      "actor": "Người được mời",
+      "goal": "Đổi lời mời PENDING dành cho mình sang DECLINED.",
+      "preconditions": "Đã đăng nhập; invitation đúng actor/nhóm và PENDING, nhóm chưa xóa.",
+      "steps": [
+        "Tìm invitation phù hợp.",
+        "Trong transaction, chuyển DECLINED và ghi thời gian phản hồi.",
+        "Lưu/commit, trả 200 invitation response."
+      ],
+      "alternatives": [
+        "Lời mời thiếu, sai người nhận, đã xử lý hoặc nhóm đã xóa: 404 group_not_found."
+      ],
+      "postconditions": "Giữ lịch sử DECLINED, không thêm membership.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/invites/{inviteId:guid}/decline"
+      ],
+      "tables": [
+        "GroupInvites",
+        "Groups"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-21",
+      "name": "Đọc nội quy",
+      "group": "groups-rules",
+      "actor": "Người xem hoặc khách",
+      "goal": "Lấy nội quy theo quyền xem nhóm.",
+      "preconditions": "Nhóm đang hoạt động, PUBLIC hoặc viewer là thành viên PRIVATE.",
+      "steps": [
+        "Kiểm tra CanViewGroupAsync.",
+        "Lấy GroupRules của nhóm theo SortOrder rồi Id tăng dần.",
+        "Trả 200 danh sách nội quy."
+      ],
+      "alternatives": [
+        "Nhóm không thể xem/đã xóa/thiếu: 404; chưa có nội quy: danh sách rỗng."
+      ],
+      "postconditions": "Không đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/groups/{groupId:guid}/rules"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupRules"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "Services/GroupPostAccessService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-22",
+      "name": "Tạo nội quy",
+      "group": "groups-rules",
+      "actor": "Owner hoặc admin",
+      "goal": "Thêm nội quy với thứ tự hiển thị do người quản lý chọn.",
+      "preconditions": "Đã đăng nhập; nhóm đang hoạt động, role OWNER/ADMIN; Title/Description hợp lệ.",
+      "steps": [
+        "Gửi Title, Description và SortOrder.",
+        "CanManageRulesAsync kiểm tra quyền.",
+        "Tạo GroupRule, lưu.",
+        "Trả 201 response cùng Location."
+      ],
+      "alternatives": [
+        "Quyền không hợp lệ hoặc nhóm không hoạt động: 403.",
+        "Title trống/quá 200 hoặc Description quá 2000: 400 validation_failed."
+      ],
+      "postconditions": "Có một GroupRule; SortOrder không phải unique.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/rules"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupRules"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "DTOs/Requests/CreateGroupRuleRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-23",
+      "name": "Sửa nội quy và thứ tự",
+      "group": "groups-rules",
+      "actor": "Owner hoặc admin",
+      "goal": "Đổi tiêu đề, mô tả và SortOrder của nội quy.",
+      "preconditions": "Đã đăng nhập; được quản lý nội quy; rule thuộc nhóm.",
+      "steps": [
+        "Kiểm tra quyền và tìm rule theo GroupId/Id.",
+        "Trim Title, chuẩn hóa Description và đặt SortOrder.",
+        "Lưu, trả 200 response."
+      ],
+      "alternatives": [
+        "Không có quyền/nhóm không hoạt động: 403; rule thiếu/khác nhóm: 404.",
+        "Request text không hợp lệ: 400."
+      ],
+      "postconditions": "Nội quy đổi và có thể đổi vị trí trong lần đọc sau.",
+      "endpoints": [
+        "PATCH /api/groups/{groupId:guid}/rules/{ruleId:guid}"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupRules"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "DTOs/Requests/UpdateGroupRuleRequest.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-24",
+      "name": "Xóa nội quy",
+      "group": "groups-rules",
+      "actor": "Owner hoặc admin",
+      "goal": "Xóa vật lý một hàng nội quy của nhóm.",
+      "preconditions": "Đã đăng nhập; được quản lý nội quy; rule thuộc nhóm.",
+      "steps": [
+        "Kiểm tra quyền, tìm rule theo GroupId/Id.",
+        "Xóa GroupRule, lưu.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Không có quyền/nhóm không hoạt động: 403; rule thiếu/khác nhóm: 404."
+      ],
+      "postconditions": "Rule bị xóa; các SortOrder còn lại không tự đánh số lại.",
+      "endpoints": [
+        "DELETE /api/groups/{groupId:guid}/rules/{ruleId:guid}"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "GroupRules"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs"
+      ]
+    },
+    {
+      "id": "UC-GR-25",
+      "name": "Đọc bài viết trong nhóm",
+      "group": "groups-posts",
+      "actor": "Người xem hoặc khách",
+      "goal": "Lấy trang bài viết nhóm theo quyền PUBLIC/PRIVATE.",
+      "preconditions": "Nhóm chưa xóa; đủ quyền xem và phân trang hợp lệ.",
+      "steps": [
+        "Kiểm tra quyền nhóm.",
+        "Lọc Posts GROUP có ContainerId=groupId, chưa xóa và tác giả không bị viewer chặn.",
+        "Phân trang CreatedAtUtc/Id giảm dần.",
+        "Posts tạo PostResponse; trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Nhóm thiếu/không đủ quyền: 404; cursor/limit sai: 400.",
+        "Khách chỉ xem PUBLIC; bài của tài khoản bị chặn không xuất hiện khi có viewer."
+      ],
+      "postconditions": "Không tạo membership hoặc lượt xem.",
+      "endpoints": [
+        "GET /api/groups/{groupId:guid}/posts"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "Posts",
+        "BlockedUsers",
+        "PostMedia"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "Services/GroupPostAccessService.cs",
+        "../Posts/Services/PostsService.cs",
+        "../Friends/Services/FriendsService.cs"
+      ],
+      "support": [
+        "posts"
+      ]
+    },
+    {
+      "id": "UC-GR-26",
+      "name": "Đăng bài trong nhóm",
+      "group": "groups-posts",
+      "actor": "Bất kỳ thành viên nhóm",
+      "goal": "Tạo bài STANDARD và đính kèm media trong nhóm.",
+      "preconditions": "Đã đăng nhập; nhóm đang hoạt động; actor là thành viên; request Posts/media hợp lệ.",
+      "steps": [
+        "Gửi CreatePostRequest tới posts của nhóm.",
+        "PostsUseCase kiểm tra membership và media thuộc actor, READY.",
+        "Trong transaction, tạo Posts STANDARD/GROUP và PostMedia, đồng bộ MediaReferences cùng metadata.",
+        "Lưu/commit, trả 201 PostResponse với Location /api/posts/{id}."
+      ],
+      "alternatives": [
+        "Nhóm thiếu: 404 group_not_found; không là thành viên: 403 từ Posts.",
+        "Dữ liệu, media hoặc background không hợp lệ: lỗi validation/Media; lỗi transaction rollback.",
+        "Privacy của bài nhóm được lưu PUBLIC nhưng quyền đọc vẫn theo nhóm PRIVATE/PUBLIC."
+      ],
+      "postconditions": "Có bài viết nhóm; không thêm ảnh vào album timeline của người đăng.",
+      "endpoints": [
+        "POST /api/groups/{groupId:guid}/posts"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "Posts",
+        "PostMedia",
+        "MediaReferences",
+        "MediaAssets",
+        "ContentMentions",
+        "PostHashtags"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "../Posts/DTOs/Requests/CreatePostRequest.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs"
+      ],
+      "support": [
+        "posts"
+      ]
+    },
+    {
+      "id": "UC-GR-27",
+      "name": "Gỡ bài viết bằng quyền kiểm duyệt",
+      "group": "groups-posts",
+      "actor": "Owner, admin hoặc moderator",
+      "goal": "Xóa mềm bài của nhóm bằng luồng moderation Posts.",
+      "preconditions": "Đã đăng nhập; CanModerateAsync=true; bài GROUP thuộc nhóm và chưa xóa.",
+      "steps": [
+        "Kiểm tra quyền kiểm duyệt nhóm.",
+        "Tìm Posts theo Id, ContainerType=GROUP, ContainerId=groupId.",
+        "Gọi PostsUseCase.DeletePostForModerationAsync để xóa mềm, gỡ PostMedia/MediaReferences trong transaction.",
+        "Trả 204."
+      ],
+      "alternatives": [
+        "Không được kiểm duyệt/nhóm không hoạt động: 403 group_forbidden.",
+        "Bài thiếu/đã xóa/khác nhóm: 404 group_not_found; lỗi Posts được chuyển tiếp."
+      ],
+      "postconditions": "Bài bị ẩn; comments/reactions được giữ theo luồng Posts, tệp không tự bị xóa.",
+      "endpoints": [
+        "DELETE /api/groups/{groupId:guid}/posts/{postId:guid}"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "Posts",
+        "PostMedia",
+        "MediaReferences"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "../Posts/Services/PostsUseCase.cs",
+        "../Posts/Services/PostsService.cs"
+      ],
+      "support": [
+        "posts"
+      ]
+    },
+    {
+      "id": "UC-GR-28",
+      "name": "Xem feed các nhóm đã tham gia",
+      "group": "groups-posts",
+      "actor": "Người dùng đã đăng nhập",
+      "goal": "Gom bài từ các nhóm mình đang có membership.",
+      "preconditions": "Đã đăng nhập; GroupPageRequest hợp lệ.",
+      "steps": [
+        "Lấy nhóm đã tham gia và danh sách tài khoản bị chặn.",
+        "Lọc bài GROUP chưa xóa, thuộc các nhóm đó và tác giả không bị chặn.",
+        "Phân trang thời gian/Id giảm dần, nạp thông tin nhóm chưa xóa và PostResponse.",
+        "Loại nhóm đã xóa khi ghép dữ liệu, trả 200 Items/NextCursor."
+      ],
+      "alternatives": [
+        "Cursor/limit sai: 400; chưa đăng nhập: 401.",
+        "Bài nhóm đã xóa có thể nằm trong trang ứng viên nhưng bị bỏ khỏi Items; NextCursor vẫn theo ứng viên.",
+        "Không có nhóm/bài hợp lệ: trang rỗng."
+      ],
+      "postconditions": "Trả GroupFeedItemResponse gồm Group và Post, không thay đổi dữ liệu.",
+      "endpoints": [
+        "GET /api/groups/feed"
+      ],
+      "tables": [
+        "Groups",
+        "GroupMembers",
+        "Posts",
+        "BlockedUsers"
+      ],
+      "sources": [
+        "Controllers/GroupsController.cs",
+        "Services/GroupsService.cs",
+        "../Posts/Services/PostsService.cs",
+        "../Friends/Services/FriendsService.cs",
+        "DTOs/Responses/GroupFeedItemResponse.cs"
+      ],
+      "support": [
+        "posts"
       ]
     }
   ]
