@@ -1,29 +1,39 @@
 # ERD trên Cloudflare Pages
 
-Trang ERD: https://fookbase-light-erd.pages.dev/
+Trang ERD: https://fookbase-light-erd-auto.pages.dev/
 
-Project Cloudflare Pages: `fookbase-light-erd`, production branch: `main`.
+Link cũ https://fookbase-light-erd.pages.dev/ chuyển hướng sang trang trên.
+
+Project Cloudflare Pages: `fookbase-light-erd-auto`, kết nối GitHub giống các
+frontend Web, Admin và Zola.
 
 ## Tự động triển khai khi push main
 
-Workflow [Deploy ERD](../.github/workflows/deploy-erd.yml) đóng gói và deploy lên
-Cloudflare Pages mỗi khi push vào `main`. Workflow chạy độc lập với Deploy EC2 và
-cũng có thể chạy thủ công bằng `workflow_dispatch` trên nhánh `main`.
+Cloudflare tự lấy source từ GitHub, đóng gói và deploy mỗi khi push vào `main`.
+Không cần workflow GitHub Actions hay repository secrets cho ERD.
 
-Cấu hình một lần tại repository GitHub → Settings → Secrets and variables →
-Actions → New repository secret:
-
-- `CLOUDFLARE_ACCOUNT_ID`: ID tài khoản chứa project `fookbase-light-erd`.
-- `CLOUDFLARE_API_TOKEN`: API token có quyền **Account → Cloudflare Pages → Edit**,
-  giới hạn cho tài khoản chứa project.
-
-Sau khi thêm secrets, push vào `main` hoặc chạy lại workflow Deploy ERD nếu lần
-chạy đầu tiên báo thiếu credentials. Không đưa token vào source code.
+| Cấu hình Cloudflare Pages | Giá trị |
+| --- | --- |
+| Repository | `lighthouse2815/fookbase-light` |
+| Production branch | `main` |
+| Root directory | Gốc repository |
+| Build command | `node scripts/build-erd-site.mjs` |
+| Build output directory | `dist/erd` |
+| Environment variable | `NODE_VERSION=24` |
+| Production deployments | Bật, mọi push vào `main` |
+| Preview deployments | Tắt |
 
 Mỗi deployment gắn với commit được push; các liên kết source trên ERD cũng cố
-định tại commit đó. Xem trạng thái và liên kết deployment trong tab Actions.
+định tại commit đó. Xem trạng thái trong Cloudflare → Workers & Pages →
+`fookbase-light-erd-auto` → Deployments hoặc check Cloudflare trên commit GitHub.
+Khi cần build lại, dùng **Retry deployment** trong Cloudflare.
 
-Tham khảo [Cloudflare Pages với GitHub Actions](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
+Project cũ `fookbase-light-erd` dùng Direct Upload. Cloudflare không hỗ trợ đổi
+trực tiếp project đó sang Git integration, nên project mới dùng Git integration
+và project cũ chỉ giữ chuyển hướng cho các liên kết đã chia sẻ.
+
+Tham khảo [Cloudflare Pages Git integration](https://developers.cloudflare.com/pages/configuration/git-integration/)
+và [giới hạn chuyển đổi Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/).
 
 ## Triển khai thủ công từ máy local
 
@@ -33,7 +43,7 @@ Chạy từ thư mục gốc repository, sau khi commit và push các cập nh�
 node scripts/build-erd-site.mjs
 npx wrangler@4 login
 npx wrangler@4 pages deploy dist/erd \
-  --project-name fookbase-light-erd \
+  --project-name fookbase-light-erd-auto \
   --branch main \
   --commit-hash "$(git rev-parse HEAD)"
 ```
@@ -45,7 +55,5 @@ Script tạo `dist/erd/index.html` từ `docs/database-erd.html`. Các liên k�
 bỏ qua; chỉ HTML được tải lên Pages. Trang dùng CSS, JavaScript và SVG nhúng sẵn,
 không cần build frontend hay backend.
 
-Project dùng Direct Upload. Workflow GitHub Actions tự upload HTML sau mỗi push
-vào `main`; các lệnh trên dùng khi cần triển khai thủ công.
-
-Tham khảo [Cloudflare Pages Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/).
+Các lệnh trên chỉ dùng khi cần upload thủ công; triển khai thông thường do
+Cloudflare Git integration tự thực hiện sau mỗi push vào `main`.
