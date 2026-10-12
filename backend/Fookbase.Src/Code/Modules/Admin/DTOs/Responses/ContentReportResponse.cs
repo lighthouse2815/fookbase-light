@@ -1,8 +1,7 @@
-namespace Fookbase.Api.Modules.Posts.DTOs.Responses;
+namespace Fookbase.Api.Modules.Admin.DTOs.Responses;
 
-public sealed record ModerationReportResponse(
+public sealed record ContentReportResponse(
     Guid Id,
-    Guid ReporterUserId,
     string TargetType,
     Guid TargetId,
     string Reason,

@@ -30,6 +30,7 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<ExternalLoginTicket> ExternalLoginTickets => Set<ExternalLoginTicket>();
     public DbSet<RegistrationChallenge> RegistrationChallenges => Set<RegistrationChallenge>();
     public DbSet<PasswordResetOtp> PasswordResetOtps => Set<PasswordResetOtp>();
+    public DbSet<ContentReport> ContentReports => Set<ContentReport>();
     public DbSet<ModerationAction> ModerationActions => Set<ModerationAction>();
     public DbSet<UserModerationState> UserModerationStates => Set<UserModerationState>();
 
@@ -115,8 +116,6 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<Hashtag> Hashtags => Set<Hashtag>();
 
     public DbSet<PostHashtag> PostHashtags => Set<PostHashtag>();
-
-    public DbSet<ContentReport> ContentReports => Set<ContentReport>();
 
     public DbSet<ReelView> ReelViews => Set<ReelView>();
 

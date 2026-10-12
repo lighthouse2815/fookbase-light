@@ -1,8 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Admin.Domain.Enums;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Modules.Posts.Domain.Enums;
-using Fookbase.Api.Modules.Posts.Entities;
 using Fookbase.Api.Shared.Common;
 using Microsoft.EntityFrameworkCore;
 

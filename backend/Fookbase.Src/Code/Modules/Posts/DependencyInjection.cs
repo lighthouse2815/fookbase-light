@@ -16,7 +16,6 @@ public static class DependencyInjection
         services.AddScoped<SocialInteractionsService>();
         services.AddScoped<PostsService>();
         services.AddScoped<PostsUseCase>();
-        services.AddScoped<ReportsService>();
         return services;
     }
 }

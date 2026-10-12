@@ -1861,7 +1861,7 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.ToTable("ContentMentions");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentReport", b =>
+            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ContentReport", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2504,7 +2504,7 @@ namespace Fookbase.Api.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.ContentReport", "Report")
+                    b.HasOne("Fookbase.Api.Modules.Admin.Entities.ContentReport", "Report")
                         .WithMany()
                         .HasForeignKey("ReportId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -3384,7 +3384,7 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("MentionedUser");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentReport", b =>
+            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ContentReport", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ReporterUser")
                         .WithMany()

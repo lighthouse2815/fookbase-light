@@ -1,11 +1,11 @@
 using Fookbase.Api.Modules.Identity.Common;
-using Fookbase.Api.Modules.Posts.DTOs.Requests;
-using Fookbase.Api.Modules.Posts.Services;
+using Fookbase.Api.Modules.Admin.DTOs.Requests;
+using Fookbase.Api.Modules.Admin.Services;
 using Fookbase.Api.Shared.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Fookbase.Api.Modules.Posts.Controllers;
+namespace Fookbase.Api.Modules.Admin.Controllers;
 
 [ApiController]
 [Authorize]

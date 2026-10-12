@@ -2,14 +2,17 @@ using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Friends.Services;
 using Fookbase.Api.Modules.Groups.Services;
 using Fookbase.Api.Modules.Pages.Services;
-using Fookbase.Api.Modules.Posts.DTOs.Requests;
+using Fookbase.Api.Modules.Admin.DTOs.Requests;
+using Fookbase.Api.Modules.Admin.DTOs.Responses;
 using Fookbase.Api.Modules.Posts.DTOs.Responses;
+using Fookbase.Api.Modules.Admin.Domain.Enums;
 using Fookbase.Api.Modules.Posts.Domain.Enums;
-using Fookbase.Api.Modules.Posts.Entities;
+using Fookbase.Api.Modules.Admin.Entities;
+using Fookbase.Api.Modules.Posts.Services;
 using Fookbase.Api.Shared.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Posts.Services;
+namespace Fookbase.Api.Modules.Admin.Services;
 
 public sealed class ReportsService(
     FookbaseDbContext dbContext,

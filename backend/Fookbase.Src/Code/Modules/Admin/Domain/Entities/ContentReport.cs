@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Identity.Entities;
-using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Fookbase.Api.Modules.Admin.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
-namespace Fookbase.Api.Modules.Posts.Entities;
+namespace Fookbase.Api.Modules.Admin.Entities;
 
 [Index(nameof(Status), nameof(CreatedAtUtc), nameof(Id))]
 [Index(nameof(ReporterUserId), nameof(TargetType), nameof(TargetId), IsUnique = true)]

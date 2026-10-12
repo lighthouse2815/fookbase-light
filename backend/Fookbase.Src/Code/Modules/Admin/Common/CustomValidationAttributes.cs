@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Fookbase.Api.Modules.Admin.DTOs.Requests;
-using Fookbase.Api.Modules.Posts.Domain.Enums;
+using Fookbase.Api.Modules.Admin.Domain.Enums;
 
 namespace Fookbase.Api.Modules.Admin.Common;
 

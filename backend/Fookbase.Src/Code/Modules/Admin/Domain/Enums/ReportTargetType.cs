@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Posts.Domain.Enums;
+namespace Fookbase.Api.Modules.Admin.Domain.Enums;
 
 public enum ReportTargetType
 {

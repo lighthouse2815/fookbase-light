@@ -1,4 +1,4 @@
-namespace Fookbase.Api.Modules.Posts.DTOs.Responses;
+namespace Fookbase.Api.Modules.Admin.DTOs.Responses;
 
 public sealed record ModerationSummaryResponse(
     int ActivePostCount,
