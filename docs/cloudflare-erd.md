@@ -19,7 +19,7 @@ Không cần workflow GitHub Actions hay repository secrets cho ERD.
 | Root directory | Gốc repository |
 | Build command | `node scripts/build-erd-site.mjs` |
 | Build output directory | `dist/erd` |
-| Environment variable | `NODE_VERSION=24` |
+| Environment variables | `NODE_VERSION=24`, `ERD_REPOSITORY_URL=https://github.com/lighthouse2815/fookbase-light` |
 | Production deployments | Bật, mọi push vào `main` |
 | Preview deployments | Tắt |
 
@@ -27,6 +27,10 @@ Mỗi deployment gắn với commit được push; các liên kết source trên
 định tại commit đó. Xem trạng thái trong Cloudflare → Workers & Pages →
 `fookbase-light-erd-auto` → Deployments hoặc check Cloudflare trên commit GitHub.
 Khi cần build lại, dùng **Retry deployment** trong Cloudflare.
+
+`ERD_REPOSITORY_URL` là cấu hình công khai để tạo liên kết source mà không phụ
+thuộc định dạng remote trong môi trường build Cloudflare. Chạy local không cần
+biến này; script dùng remote `origin` hiện tại.
 
 Project cũ `fookbase-light-erd` dùng Direct Upload. Cloudflare không hỗ trợ đổi
 trực tiếp project đó sang Git integration, nên project mới dùng Git integration

@@ -10,11 +10,11 @@ const git = (...args) => execFileSync('git', args, {
   encoding: 'utf8',
 }).trim();
 
-const repositoryUrl = git('remote', 'get-url', 'origin')
+const repositoryUrl = (process.env.ERD_REPOSITORY_URL ?? git('remote', 'get-url', 'origin'))
   .replace(/^git@github.com:/, 'https://github.com/')
   .replace(/\.git$/, '');
 if (!repositoryUrl.startsWith('https://github.com/')) {
-  throw new Error('Remote origin phải là repository GitHub để tạo liên kết source.');
+  throw new Error('ERD_REPOSITORY_URL hoặc remote origin phải là repository GitHub để tạo liên kết source.');
 }
 
 const revision = git('rev-parse', 'HEAD');
