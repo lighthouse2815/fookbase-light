@@ -277,10 +277,6 @@ public sealed class GroupsService(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         group.Update(request.Name, request.Description, privacy, timeProvider.GetUtcNow());
         group.SetCover(desiredCoverMediaId, timeProvider.GetUtcNow());
-        await mediaService.SynchronizeGroupCoverReferenceAsync(
-            group.Id,
-            desiredCoverMediaId,
-            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         if (coverChanged)
         {
@@ -340,7 +336,6 @@ public sealed class GroupsService(
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         group.Delete(timeProvider.GetUtcNow());
-        await mediaService.SynchronizeGroupCoverReferenceAsync(groupId, null, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return ApplicationResult.Success();

@@ -157,13 +157,6 @@ public sealed class UserProfileService(
                 requestedAvatarMediaId != profile.AvatarMediaId;
             var coverChanged = request.CoverMediaId is { } requestedCoverMediaId &&
                 requestedCoverMediaId != profile.CoverMediaId;
-            var avatarMediaId = request.AvatarMediaId ?? profile.AvatarMediaId;
-            var coverMediaId = request.CoverMediaId ?? profile.CoverMediaId;
-            await mediaService.SynchronizeProfileReferencesAsync(
-                userId,
-                avatarMediaId,
-                coverMediaId,
-                cancellationToken);
             profile.Update(
                 request.DisplayName,
                 request.Bio,

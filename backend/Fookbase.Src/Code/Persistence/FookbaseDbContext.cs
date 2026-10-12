@@ -61,8 +61,6 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<GroupRule> GroupRules => Set<GroupRule>();
 
-    public DbSet<GroupCoverMediaReference> GroupCoverMediaReferences => Set<GroupCoverMediaReference>();
-
     public DbSet<Page> Pages => Set<Page>();
 
     public DbSet<PageMember> PageMembers => Set<PageMember>();
@@ -130,8 +128,6 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
 
     public DbSet<MediaReference> MediaReferences => Set<MediaReference>();
-
-    public DbSet<ProfileMediaReference> ProfileMediaReferences => Set<ProfileMediaReference>();
 
     public DbSet<ObjectDeletion> ObjectDeletions => Set<ObjectDeletion>();
 

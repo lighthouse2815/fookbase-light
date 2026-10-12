@@ -2,7 +2,6 @@ using Fookbase.Api.Modules.Media.Common;
 using Fookbase.Api.Modules.Media.Domain.Enums;
 using Fookbase.Api.Modules.Media.Abstractions;
 using Fookbase.Api.Modules.Media.Config;
-using Fookbase.Api.Modules.Groups.Entities;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Media.DTOs.Requests;
 using Fookbase.Api.Modules.Media.DTOs.Responses;
@@ -425,93 +424,10 @@ public sealed class MediaService(
         return ApplicationResult.Success();
     }
 
-    public async Task SynchronizeProfileReferencesAsync(
-        Guid userId,
-        Guid? avatarMediaId,
-        Guid? coverMediaId,
-        CancellationToken cancellationToken = default)
-    {
-        var desiredMediaIds = new Dictionary<ProfileMediaSlot, Guid>();
-        if (avatarMediaId is not null)
-        {
-            desiredMediaIds[ProfileMediaSlot.AVATAR] = avatarMediaId.Value;
-        }
-
-        if (coverMediaId is not null)
-        {
-            desiredMediaIds[ProfileMediaSlot.COVER] = coverMediaId.Value;
-        }
-
-        var currentReferences = await dbContext.ProfileMediaReferences
-            .Where(reference => reference.UserId == userId)
-            .ToListAsync(cancellationToken);
-        dbContext.ProfileMediaReferences.RemoveRange(currentReferences.Where(reference =>
-            !desiredMediaIds.TryGetValue(reference.Slot, out var desiredMediaId) ||
-            desiredMediaId != reference.MediaId));
-        foreach (var (slot, mediaId) in desiredMediaIds)
-        {
-            if (currentReferences.Any(reference =>
-                    reference.Slot == slot && reference.MediaId == mediaId))
-            {
-                continue;
-            }
-
-            dbContext.ProfileMediaReferences.Add(new ProfileMediaReference(
-                userId,
-                slot,
-                mediaId,
-                timeProvider.GetUtcNow()));
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
-
     public Task RemovePostReferencesAsync(Guid postId, CancellationToken cancellationToken = default) =>
         dbContext.MediaReferences
             .Where(reference => reference.PostId == postId)
             .ExecuteDeleteAsync(cancellationToken);
-
-    public async Task SynchronizeGroupCoverReferenceAsync(
-        Guid groupId,
-        Guid? mediaId,
-        CancellationToken cancellationToken = default)
-    {
-        var currentReference = await dbContext.GroupCoverMediaReferences.SingleOrDefaultAsync(
-            reference => reference.GroupId == groupId,
-            cancellationToken);
-        if (mediaId is null)
-        {
-            if (currentReference is not null)
-            {
-                dbContext.GroupCoverMediaReferences.Remove(currentReference);
-                await dbContext.SaveChangesAsync(cancellationToken);
-            }
-
-            return;
-        }
-
-        if (currentReference is null)
-        {
-            dbContext.GroupCoverMediaReferences.Add(new GroupCoverMediaReference(
-                groupId,
-                mediaId.Value,
-                timeProvider.GetUtcNow()));
-        }
-        else if (currentReference.MediaId != mediaId.Value)
-        {
-            dbContext.GroupCoverMediaReferences.Remove(currentReference);
-            dbContext.GroupCoverMediaReferences.Add(new GroupCoverMediaReference(
-                groupId,
-                mediaId.Value,
-                timeProvider.GetUtcNow()));
-        }
-        else
-        {
-            return;
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
 
     public async Task SynchronizePageReferencesAsync(
         Guid pageId,
@@ -575,14 +491,10 @@ public sealed class MediaService(
 
         var isReferencedByPost = await dbContext.MediaReferences
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
-        var isReferencedByProfile = await dbContext.ProfileMediaReferences
-            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByActiveProfile = await dbContext.UserProfiles.AsNoTracking()
             .AnyAsync(profile =>
                 profile.AvatarMediaId == mediaId || profile.CoverMediaId == mediaId,
                 cancellationToken);
-        var isReferencedByGroupCover = await dbContext.GroupCoverMediaReferences
-            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByActiveGroup = await dbContext.Groups.AsNoTracking()
             .AnyAsync(group => group.CoverMediaId == mediaId && group.DeletedAtUtc == null, cancellationToken);
         var isReferencedByPage = await dbContext.PageMediaReferences
@@ -601,9 +513,7 @@ public sealed class MediaService(
         var isReferencedByAlbum = await dbContext.AlbumMedia.AsNoTracking()
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         if (isReferencedByPost ||
-            isReferencedByProfile ||
             isReferencedByActiveProfile ||
-            isReferencedByGroupCover ||
             isReferencedByActiveGroup ||
             isReferencedByPage ||
             isReferencedByActivePage ||

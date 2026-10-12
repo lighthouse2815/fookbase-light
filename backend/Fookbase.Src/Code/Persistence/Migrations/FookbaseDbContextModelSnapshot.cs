@@ -462,24 +462,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.ToTable("Groups");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupCoverMediaReference", b =>
-                {
-                    b.Property<Guid>("GroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("AttachedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("MediaId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("GroupId");
-
-                    b.HasIndex("MediaId");
-
-                    b.ToTable("GroupCoverMediaReferences");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupInvite", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1150,27 +1132,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasIndex("ProcessedAtUtc", "FailedAtUtc", "NextAttemptAtUtc", "CreatedAtUtc");
 
                     b.ToTable("ObjectDeletions");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ProfileMediaReference", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Slot")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("AttachedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("MediaId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("UserId", "Slot");
-
-                    b.HasIndex("MediaId");
-
-                    b.ToTable("ProfileMediaReferences");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Conversation", b =>
@@ -2712,25 +2673,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("OwnerUser");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupCoverMediaReference", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Groups.Entities.Group", "Group")
-                        .WithOne("CoverMediaReference")
-                        .HasForeignKey("Fookbase.Api.Modules.Groups.Entities.GroupCoverMediaReference", "GroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Group");
-
-                    b.Navigation("Media");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.GroupInvite", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Groups.Entities.Group", "Group")
@@ -2922,25 +2864,6 @@ namespace Fookbase.Api.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Media");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ProfileMediaReference", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
-                        .WithMany("ProfileReferences")
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Media");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Conversation", b =>
@@ -3685,8 +3608,6 @@ namespace Fookbase.Api.Persistence.Migrations
 
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.Group", b =>
                 {
-                    b.Navigation("CoverMediaReference");
-
                     b.Navigation("Invites");
 
                     b.Navigation("JoinRequests");
@@ -3712,8 +3633,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("PostReferences");
 
                     b.Navigation("ProcessingJob");
-
-                    b.Navigation("ProfileReferences");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Conversation", b =>

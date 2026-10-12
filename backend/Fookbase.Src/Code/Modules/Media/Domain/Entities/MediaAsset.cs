@@ -83,9 +83,6 @@ public sealed class MediaAsset
     [InverseProperty(nameof(MediaReference.Media))]
     public ICollection<MediaReference> PostReferences { get; private set; } = new List<MediaReference>();
 
-    [InverseProperty(nameof(ProfileMediaReference.Media))]
-    public ICollection<ProfileMediaReference> ProfileReferences { get; private set; } = new List<ProfileMediaReference>();
-
     [InverseProperty(nameof(ObjectDeletion.Media))]
     public ICollection<ObjectDeletion> ObjectDeletions { get; private set; } = new List<ObjectDeletion>();
 

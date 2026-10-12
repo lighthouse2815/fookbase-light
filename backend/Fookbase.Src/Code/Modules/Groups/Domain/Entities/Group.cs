@@ -70,8 +70,6 @@ public sealed class Group
 
     public ICollection<GroupRule> Rules { get; private set; } = [];
 
-    public GroupCoverMediaReference? CoverMediaReference { get; private set; }
-
     public void Update(string name, string? description, GroupPrivacy privacy, DateTimeOffset updatedAtUtc)
     {
         EnsureActive();
