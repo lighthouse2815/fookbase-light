@@ -8,6 +8,7 @@ namespace Fookbase.Api.Modules.Notifications.Entities;
 [Index(nameof(RecipientUserId), nameof(CreatedAtUtc), nameof(Id))]
 [Index(nameof(RecipientUserId), nameof(IsRead), nameof(CreatedAtUtc))]
 [Index(nameof(RecipientUserId), nameof(ActorUserId), nameof(Type), nameof(EntityType), nameof(EntityId))]
+[Index(nameof(LegacyFriendNotificationId), IsUnique = true)]
 public sealed class Notification
 {
     private Notification()
@@ -34,6 +35,8 @@ public sealed class Notification
 
     [Key]
     public Guid Id { get; private set; }
+
+    public Guid? LegacyFriendNotificationId { get; private set; }
 
     public Guid RecipientUserId { get; private set; }
 

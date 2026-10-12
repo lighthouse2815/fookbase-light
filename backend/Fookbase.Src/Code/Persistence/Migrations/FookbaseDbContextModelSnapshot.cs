@@ -269,41 +269,6 @@ namespace Fookbase.Api.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendNotification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("FriendRequestId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ReadAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RecipientUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActorUserId");
-
-                    b.HasIndex("FriendRequestId");
-
-                    b.HasIndex("RecipientUserId", "ReadAtUtc", "CreatedAtUtc");
-
-                    b.ToTable("FriendNotifications");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1440,6 +1405,9 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("LegacyFriendNotificationId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset?>("ReadAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -1452,6 +1420,9 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ActorUserId");
+
+                    b.HasIndex("LegacyFriendNotificationId")
+                        .IsUnique();
 
                     b.HasIndex("RecipientUserId", "CreatedAtUtc", "Id");
 
@@ -2635,33 +2606,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("BlockerUser");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendNotification", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ActorUser")
-                        .WithMany()
-                        .HasForeignKey("ActorUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Friends.Entities.FriendRequest", "FriendRequest")
-                        .WithMany("Notifications")
-                        .HasForeignKey("FriendRequestId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "RecipientUser")
-                        .WithMany()
-                        .HasForeignKey("RecipientUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ActorUser");
-
-                    b.Navigation("FriendRequest");
-
-                    b.Navigation("RecipientUser");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendRequest", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ReceiverUser")
@@ -3690,11 +3634,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("Invitations");
 
                     b.Navigation("Participants");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Friends.Entities.FriendRequest", b =>
-                {
-                    b.Navigation("Notifications");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Groups.Entities.Group", b =>

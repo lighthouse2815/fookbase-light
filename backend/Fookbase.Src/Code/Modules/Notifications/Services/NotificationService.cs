@@ -185,11 +185,32 @@ public sealed class NotificationService(
         }
     }
 
+    internal IQueryable<Notification> FriendRequestNotifications(Guid recipientUserId) =>
+        dbContext.Notifications.Where(notification =>
+            notification.RecipientUserId == recipientUserId &&
+            notification.ActorUserId != null && notification.EntityId != null &&
+            notification.EntityType == NotificationEntityType.FRIEND_REQUEST &&
+            (notification.Type == NotificationType.FRIEND_REQUEST_RECEIVED ||
+             notification.Type == NotificationType.FRIEND_REQUEST_ACCEPTED));
+
+    internal IQueryable<Notification> VisibleFriendRequestNotifications(Guid recipientUserId) =>
+        FriendRequestNotifications(recipientUserId).Where(notification =>
+            dbContext.FriendRequests.Any(request => request.Id == notification.EntityId) &&
+            !dbContext.BlockedUsers.Any(block =>
+                (block.BlockerUserId == recipientUserId && block.BlockedAccountId == notification.ActorUserId) ||
+                (block.BlockedAccountId == recipientUserId && block.BlockerUserId == notification.ActorUserId)));
+
     private async Task<bool> CanSurfaceAsync(
         Notification notification,
         Guid recipientUserId,
         CancellationToken cancellationToken)
     {
+        if (notification.EntityType == NotificationEntityType.FRIEND_REQUEST)
+        {
+            return await VisibleFriendRequestNotifications(recipientUserId)
+                .AnyAsync(item => item.Id == notification.Id, cancellationToken);
+        }
+
         if (notification.ActorUserId is not null &&
             !await IsPageContentNotificationAsync(notification, cancellationToken) &&
             await dbContext.BlockedUsers.AsNoTracking().AnyAsync(
@@ -205,10 +226,6 @@ public sealed class NotificationService(
 
         return notification.EntityType switch
         {
-            NotificationEntityType.FRIEND_REQUEST => notification.EntityId is not null &&
-                await dbContext.FriendRequests.AsNoTracking().AnyAsync(
-                    request => request.Id == notification.EntityId.Value,
-                    cancellationToken),
             NotificationEntityType.POST => notification.EntityId is not null &&
                 await CanAccessPostAsync(recipientUserId, notification.EntityId.Value, cancellationToken),
             NotificationEntityType.COMMENT => notification.EntityId is not null &&

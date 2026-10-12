@@ -204,16 +204,15 @@ public sealed class FriendsService(
         Guid notificationId,
         CancellationToken cancellationToken = default)
     {
-        var notification = await dbContext.FriendNotifications.SingleOrDefaultAsync(
-            item => item.Id == notificationId && item.RecipientUserId == actorUserId,
+        var notification = await notificationService.FriendRequestNotifications(actorUserId).SingleOrDefaultAsync(
+            item => item.Id == notificationId || item.LegacyFriendNotificationId == notificationId,
             cancellationToken);
         if (notification is null)
         {
             return ApplicationResult.Failure(ToApplicationError(FriendsOperationError.NOTIFICATION_NOT_FOUND));
         }
 
-        notification.MarkRead(timeProvider.GetUtcNow());
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await notificationService.MarkReadAsync(actorUserId, notification.Id, cancellationToken);
         return ApplicationResult.Success();
     }
 
@@ -385,14 +384,7 @@ public sealed class FriendsService(
 
         var now = timeProvider.GetUtcNow();
         var request = new FriendRequest(senderUserId, receiverUserId, now);
-        var notification = new FriendNotification(
-            receiverUserId,
-            senderUserId,
-            request.Id,
-            FriendNotificationType.FRIEND_REQUEST_RECEIVED,
-            now);
         dbContext.FriendRequests.Add(request);
-        dbContext.FriendNotifications.Add(notification);
         var generalNotification = await notificationService.QueueAsync(
             receiverUserId,
             senderUserId,
@@ -403,9 +395,9 @@ public sealed class FriendsService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await PublishNotificationAsync(notification, cancellationToken);
         if (generalNotification is not null)
         {
+            await PublishNotificationAsync(generalNotification, cancellationToken);
             await notificationService.PublishAsync(generalNotification, cancellationToken);
         }
         return ApplicationResult<FriendRequestResponse>.Success(ToResponse(request));
@@ -465,14 +457,7 @@ public sealed class FriendsService(
         var now = timeProvider.GetUtcNow();
         request.Accept(actorUserId, now);
         var friendship = new Friendship(pair.UserId1, pair.UserId2, now);
-        var notification = new FriendNotification(
-            request.SenderUserId,
-            actorUserId,
-            request.Id,
-            FriendNotificationType.FRIEND_REQUEST_ACCEPTED,
-            now);
         dbContext.Friendships.Add(friendship);
-        dbContext.FriendNotifications.Add(notification);
         var follows = await dbContext.UserFollows
             .Where(follow =>
                 (follow.FollowerUserId == request.SenderUserId && follow.FollowingUserId == request.ReceiverUserId) ||
@@ -508,9 +493,9 @@ public sealed class FriendsService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await PublishNotificationAsync(notification, cancellationToken);
         if (generalNotification is not null)
         {
+            await PublishNotificationAsync(generalNotification, cancellationToken);
             await notificationService.PublishAsync(generalNotification, cancellationToken);
         }
         return ApplicationResult<FriendResponse>.Success(
@@ -873,8 +858,8 @@ public sealed class FriendsService(
         int limit,
         CancellationToken cancellationToken = default)
     {
-        var query = dbContext.FriendNotifications.AsNoTracking()
-            .Where(notification => notification.RecipientUserId == userId && notification.ReadAtUtc == null);
+        var query = notificationService.VisibleFriendRequestNotifications(userId).AsNoTracking()
+            .Where(notification => !notification.IsRead);
         var total = await query.CountAsync(cancellationToken);
         var notifications = await query
             .OrderByDescending(notification => notification.CreatedAtUtc)
@@ -1101,19 +1086,19 @@ public sealed class FriendsService(
             request.CreatedAtUtc,
             request.RespondedAtUtc);
 
-    private static FriendNotificationResponse ToResponse(FriendNotification notification) =>
+    private static FriendNotificationResponse ToResponse(Notification notification) =>
         new(
             notification.Id,
-            notification.ActorUserId,
-            notification.FriendRequestId,
-            notification.Type == FriendNotificationType.FRIEND_REQUEST_RECEIVED
+            notification.ActorUserId!.Value,
+            notification.EntityId!.Value,
+            notification.Type == NotificationType.FRIEND_REQUEST_RECEIVED
                 ? "friend_request"
                 : "friend_accepted",
             notification.CreatedAtUtc,
             notification.ReadAtUtc);
 
     private async Task PublishNotificationAsync(
-        FriendNotification notification,
+        Notification notification,
         CancellationToken cancellationToken)
     {
         try

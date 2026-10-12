@@ -58,9 +58,6 @@ public sealed class FriendRequest
 
     public DateTimeOffset? RespondedAtUtc { get; private set; }
 
-    [InverseProperty(nameof(FriendNotification.FriendRequest))]
-    public ICollection<FriendNotification> Notifications { get; } = [];
-
     public void Accept(Guid actorUserId, DateTimeOffset respondedAtUtc)
     {
         EnsureReceiver(actorUserId);
