@@ -182,7 +182,7 @@ public sealed class UserProfileService(
             if (avatarChanged)
             {
                 await CreateProfileMediaPostAsync(
-                    userId, Post.AvatarUpdatedPostContent, request.AvatarMediaId!.Value, cancellationToken);
+                    userId, "đã cập nhật ảnh đại diện.", request.AvatarMediaId!.Value, cancellationToken);
             }
             if (coverChanged)
             {

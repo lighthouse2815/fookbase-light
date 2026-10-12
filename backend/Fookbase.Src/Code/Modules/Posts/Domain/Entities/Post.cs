@@ -16,9 +16,7 @@ namespace Fookbase.Api.Modules.Posts.Entities;
 [Index(nameof(PostType), nameof(AuthorUserId), nameof(CreatedAtUtc), nameof(Id))]
 public sealed class Post
 {
-    public const string AvatarUpdatedPostContent = "đã cập nhật ảnh đại diện.";
     public const string CoverUpdatedPostContent = "đã cập nhật ảnh bìa.";
-
     private Post() { }
 
     public Post(
@@ -119,7 +117,7 @@ public sealed class Post
     }
 
     public static bool IsProfileMediaUpdateContent(string content) =>
-        content is AvatarUpdatedPostContent or CoverUpdatedPostContent;
+        content is "đã cập nhật ảnh đại diện." or "đã cập nhật ảnh bìa.";
 
     public void SetPinned(bool isPinned)
     {
