@@ -7541,8 +7541,8 @@
   <script id="posts-specification" type="application/json">
 {
   "title": "Bài viết và tương tác nội dung",
-  "purpose": "Posts quản lý bài viết, media đính kèm, bình luận, cảm xúc, lưu và chia sẻ bài, mention, hashtag và báo cáo nội dung hoặc người dùng.",
-  "scope": "Đặc tả bao phủ bảy controller thuộc Posts và 12 bảng trong ERD. Tạo bài trên nhóm, trang hoặc sự kiện được điều phối ở các module tương ứng; quyền đọc và tương tác dùng access service của từng nơi. Media, Photos, Friends và Notifications cung cấp các luồng liên quan; duyệt báo cáo nằm ở Admin. API posts/feed là danh sách bài được phép xem, khác endpoint feed tổng hợp của module Feed.",
+  "purpose": "Posts quản lý bài viết, media đính kèm, bình luận, cảm xúc, lưu và chia sẻ bài, mention và hashtag. Luồng gửi báo cáo nội dung hoặc người dùng được trình bày kèm theo; controller và service báo cáo thuộc Admin.",
+  "scope": "Đặc tả đối chiếu sáu controller thuộc Posts và ReportsController thuộc Admin; sơ đồ Posts hiện hiển thị 12 bảng, gồm ContentReports của Admin. Tạo bài trên nhóm, trang hoặc sự kiện được điều phối ở các module tương ứng. Quyền đọc bài và quyền tương tác được kiểm tra riêng theo container. Media, Photos, Friends và Notifications cung cấp các luồng liên quan; gửi và duyệt báo cáo do Admin xử lý. API posts/feed trả danh sách STANDARD được phép xem theo offset/limit, khác endpoint feed tổng hợp của module Feed.",
   "groups": [
     {
       "id": "management",
@@ -7572,7 +7572,7 @@
     {
       "id": "reports",
       "name": "Báo cáo vi phạm",
-      "description": "Gửi báo cáo tài khoản hoặc bài viết để quản trị xem xét."
+      "description": "Gửi báo cáo tài khoản hoặc bài viết qua API reports của Admin để quản trị xem xét."
     }
   ],
   "actors": [
@@ -7594,16 +7594,16 @@
     {
       "id": "page",
       "name": "Người có quyền trên trang",
-      "role": "Quyền sửa/xóa bài và kiểm duyệt bình luận trên PAGE được kiểm tra qua PagePostAccessService."
+      "role": "Sửa bài PAGE cần OWNER, ADMIN hoặc EDITOR; xóa bài PAGE cho phép tác giả hoặc các vai trò này. Xóa bình luận của người khác trên PAGE cần OWNER, ADMIN hoặc MODERATOR."
     }
   ],
   "rules": [
     {
-      "text": "Bài cần nội dung hoặc media; nội dung tối đa 10.000 ký tự. Media không trùng, tối đa theo cấu hình Posts.MaximumAttachments (mặc định 10), phải thuộc người thực hiện và sẵn sàng sử dụng.",
+      "text": "Bài cần nội dung hoặc media; nội dung sau Trim tối đa 10.000 ký tự. Media không trùng, tối đa theo cấu hình Posts.MaximumAttachments (mặc định 10), phải thuộc người thực hiện, ở trạng thái READY và chưa bị xóa; kiểm tra này áp dụng cả khi giữ media cũ trong PUT.",
       "source": "Services/PostsUseCase.cs"
     },
     {
-      "text": "Tạo bài PROFILE không truyền privacy sẽ dùng DefaultPostPrivacy của Users. Có ba mức PUBLIC, FRIENDS, ONLY_ME. Nền chữ chỉ dùng với bài có chữ, không kèm media và tên nền được hỗ trợ.",
+      "text": "Tạo bài PROFILE không truyền privacy hoặc truyền chuỗi trắng sẽ dùng DefaultPostPrivacy của Users. Có ba mức PUBLIC, FRIENDS, ONLY_ME. Khi tạo bài, nền chữ chỉ dùng với nội dung không trống, không kèm media và tên nền được hỗ trợ.",
       "source": "Services/PostsUseCase.cs"
     },
     {
@@ -7611,15 +7611,15 @@
       "source": "Services/PostVisibility.cs"
     },
     {
-      "text": "Sửa bài yêu cầu loại STANDARD và quyền tác giả hoặc quyền quản lý PAGE. Bài GROUP còn kiểm tra quyền đăng trong nhóm; PAGE luôn PUBLIC. Bài cập nhật avatar/ảnh bìa giữ nguyên nội dung và media khi sửa.",
-      "source": "Services/PostsService.cs"
+      "text": "Sửa bài yêu cầu loại STANDARD. Với PAGE, PostsUseCase yêu cầu OWNER, ADMIN hoặc EDITOR ngay cả khi người gọi là tác giả; với container khác phải là tác giả, GROUP còn cần quyền đăng của nhóm. PAGE luôn giữ PUBLIC. Bài cập nhật avatar/ảnh bìa chỉ sửa được privacy nếu giữ nguyên chính xác nội dung và danh sách media theo thứ tự; PUT không nhận TextBackground.",
+      "source": "Services/PostsUseCase.cs"
     },
     {
       "text": "Ghim chỉ áp dụng bài PROFILE của chính tác giả; ghim một bài sẽ bỏ ghim các bài PROFILE đang được ghim khác. Xóa bài là soft delete và gỡ PostMedia cùng tham chiếu media.",
       "source": "Services/PostsService.cs"
     },
     {
-      "text": "Bình luận cần nội dung không trống, tối đa 5.000 ký tự. Bình luận trả lời chỉ trỏ tới bình luận gốc còn tồn tại trong cùng bài; không hỗ trợ trả lời nhiều tầng. Sửa chỉ dành cho tác giả; xóa còn cho phép quyền kiểm duyệt bình luận PAGE.",
+      "text": "Bình luận cần nội dung sau Trim từ 1 đến 5.000 ký tự. Trả lời chỉ trỏ tới bình luận gốc chưa bị xóa trong cùng bài. Tạo bình luận và đặt/gỡ cảm xúc kiểm tra quyền tương tác với bài. Sửa bình luận chỉ kiểm tra tác giả, bình luận và bài chưa bị xóa; không kiểm tra lại quyền đọc hay quyền tham gia. Xóa bình luận cho phép tác giả, hoặc OWNER/ADMIN/MODERATOR trên PAGE; tác giả vẫn có thể xóa bình luận của mình khi bài đã bị xóa.",
       "source": "Services/PostsService.cs"
     },
     {
@@ -7627,20 +7627,40 @@
       "source": "Services/PostsService.cs"
     },
     {
-      "text": "Mention được lưu riêng trong PostMentions và CommentMentions, có FK tới post/comment nguồn; mention trong bài/bình luận chỉ được ghi cho username tồn tại, người được nhắc có thể xem bài và không bị chặn với tác giả thao tác. Hashtag của bài được chuẩn hóa và đồng bộ lại khi nội dung thay đổi.",
+      "text": "Mention được lưu riêng trong PostMentions và CommentMentions, có FK tới nội dung nguồn. Chỉ xét tối đa 20 lần nhắc đầu tiên có cú pháp hợp lệ; username phải có hồ sơ tồn tại, người được nhắc đọc được bài theo SocialInteractionsService và không bị chặn với người thao tác. Mỗi người mới được nhắc có thể nhận một thông báo. Hashtag được chuẩn hóa không phân biệt hoa thường, tối đa 20 tag khác nhau, và đồng bộ lại khi nội dung bài thay đổi.",
       "source": "Services/SocialInteractionsService.cs"
     },
     {
-      "text": "Lưu bài và chia sẻ cần quyền đọc bài gốc. Chia sẻ PROFILE chỉ đến hồ sơ của mình; GROUP/PAGE cần quyền đăng. Chia sẻ tạo PostShare tham chiếu bài gốc, không sao chép thành một Post mới.",
+      "text": "Lưu bài, chia sẻ, đọc bài đã lưu, đọc theo hashtag và phân giải mention dùng quyền đọc của SocialInteractionsService: hỗ trợ PROFILE, GROUP, PAGE; bài EVENT không được hỗ trợ dù API đọc Posts có thể trả bài EVENT. Chia sẻ PROFILE chỉ đến hồ sơ của mình; GROUP/PAGE cần quyền đăng. Chia sẻ tạo PostShare tham chiếu bài gốc; không tạo Post mới và không thay đổi quyền riêng tư của bài gốc.",
       "source": "Services/SocialInteractionsService.cs"
     },
     {
-      "text": "Danh sách offset/limit cho phép limit 1 đến 100. Bài đã lưu và hashtag dùng cursor được bảo vệ theo người xem và mục đích, limit 1 đến 50, lọc lại quyền đọc hiện tại.",
+      "text": "Danh sách offset/limit yêu cầu offset không âm, limit 1 đến 100 (mặc định 20, riêng danh sách người thả cảm xúc mặc định 100). Bài đã lưu và hashtag dùng limit 1 đến 50, mặc định 20; cursor gắn với người xem và mục đích saved hoặc hashtag cụ thể. Mỗi trang lọc lại quyền đọc hiện tại; cursor null hoặc trắng mở trang đầu.",
       "source": "Services/SocialInteractionsService.cs"
     },
     {
       "text": "Báo cáo yêu cầu lý do hợp lệ, chi tiết tối đa 500 ký tự; không báo cáo bản thân hoặc bài của mình. Mỗi người chỉ báo cáo một lần cho mỗi loại đích và ID; báo cáo mới ở trạng thái PENDING.",
-      "source": "Services/ReportsService.cs"
+      "source": "../Admin/Services/ReportsService.cs"
+    },
+    {
+      "text": "Khách đọc được bài PROFILE PUBLIC, bài GROUP trong nhóm PUBLIC và bài PAGE PUBLISHED. Người đăng nhập có thể đọc PAGE chưa PUBLISHED nếu là thành viên trang; danh sách posts/feed và posts/search chỉ lấy PAGE PUBLISHED. Đọc bài EVENT yêu cầu đăng nhập và quyền đọc sự kiện. Tạo bình luận hoặc thả cảm xúc trên GROUP cần thành viên nhóm; trên PAGE cần quyền xem trang; trên EVENT cần CanPostAsync của EventAccessService.",
+      "source": "Services/PostsService.cs"
+    },
+    {
+      "text": "Các nền chữ khi tạo bài gồm purple, pink, midnight, sunset, ocean, neon; tên phải khớp chính xác. PUT giữ nguyên TextBackground đã lưu và không chạy lại ValidateTextBackground khi thay nội dung hoặc media.",
+      "source": "Services/PostsService.cs"
+    },
+    {
+      "text": "Tạo, sửa và xóa bài được PostsUseCase bao trong giao dịch với tham chiếu media và metadata liên quan. Tạo hoặc sửa bình luận lưu Comment trước rồi mới đồng bộ mention; không có giao dịch chung để rollback Comment nếu bước sau thất bại.",
+      "source": "Services/PostsUseCase.cs"
+    },
+    {
+      "text": "NotificationService bỏ qua thông báo cho chính người thao tác và làm mới thông báo chưa đọc cùng người nhận, người thao tác, loại và nội dung đích. Tạo bình luận, đặt cảm xúc bài/bình luận, chia sẻ và mention xử lý thông báo theo quy tắc này; gỡ cảm xúc không tạo thông báo mới.",
+      "source": "../Notifications/Services/NotificationService.cs"
+    },
+    {
+      "text": "Báo cáo bài GROUP kiểm tra CanAccessPostAsync; PAGE kiểm tra CanViewPageAsync. ReportsService hiện không kiểm tra PostVisibility cho PROFILE hoặc EventAccessService cho EVENT, và không lọc PostType, nên báo cáo loại POST có thể trỏ tới REEL. Báo cáo trùng bị từ chối kể cả báo cáo trước đã được xử lý.",
+      "source": "../Admin/Services/ReportsService.cs"
     }
   ],
   "usecases": [
@@ -7654,7 +7674,7 @@
       "steps": [
         "Gửi nội dung, privacy tùy chọn, MediaIds và TextBackground đến POST posts.",
         "Hệ thống lấy quyền riêng tư mặc định nếu thiếu, kiểm tra nội dung và media.",
-        "Trong giao dịch, tạo Post PROFILE và PostMedia theo thứ tự; đồng bộ tham chiếu media, album ảnh timeline, mention và hashtag.",
+        "Trong giao dịch, tạo Post PROFILE loại STANDARD và PostMedia theo thứ tự; chỉ media IMAGE hợp lệ được thêm vào album TIMELINE_PHOTOS; đồng bộ tham chiếu media, mention và hashtag.",
         "Trả bài đã tạo với thông tin tương tác sau khi commit."
       ],
       "alternatives": [
@@ -7683,7 +7703,10 @@
         "Services/PostsUseCase.cs",
         "Services/PostsService.cs",
         "Services/SocialInteractionsService.cs",
-        "DTOs/Requests/CreatePostRequest.cs"
+        "DTOs/Requests/CreatePostRequest.cs",
+        "../Media/Services/MediaService.cs",
+        "../Photos/Services/PhotosService.cs",
+        "../Users/Services/UserPrivacySettingsService.cs"
       ]
     },
     {
@@ -7691,19 +7714,19 @@
       "name": "Sửa bài viết",
       "group": "management",
       "goal": "Thay nội dung, quyền riêng tư hoặc danh sách media của bài STANDARD.",
-      "actor": "Tác giả hoặc người có quyền quản lý PAGE đã đăng nhập",
-      "preconditions": "Bài còn tồn tại, loại STANDARD, người gọi có quyền sửa; dữ liệu mới hợp lệ. Bài GROUP cần quyền đăng của nhóm.",
+      "actor": "Tác giả đã đăng nhập; với PAGE cần OWNER, ADMIN hoặc EDITOR",
+      "preconditions": "Bài chưa bị xóa, loại STANDARD; PROFILE/GROUP/EVENT yêu cầu tác giả, GROUP còn cần quyền đăng; PAGE yêu cầu OWNER/ADMIN/EDITOR kể cả người gọi là tác giả. Privacy bắt buộc; media giữ lại hoặc thêm mới đều phải thuộc người gọi, READY và chưa bị xóa.",
       "steps": [
-        "Gửi PUT posts/{postId} với nội dung, privacy và MediaIds.",
+        "Gửi PUT posts/{postId} với Content, Privacy bắt buộc và toàn bộ MediaIds muốn giữ theo thứ tự; API này không nhận TextBackground.",
         "Hệ thống kiểm tra quyền và media; cập nhật nội dung, thứ tự đính kèm, tham chiếu media, mention và hashtag trong giao dịch.",
         "Trả bài cập nhật sau commit; bài PAGE được giữ PUBLIC."
       ],
       "alternatives": [
         "Không có bài, sai loại hoặc thiếu quyền: từ chối.",
-        "Bài cập nhật ảnh đại diện/ảnh bìa không cho đổi nội dung và danh sách media.",
-        "MediaIds không truyền được controller chuyển thành danh sách rỗng; lỗi đồng bộ làm rollback."
+        "Bài cập nhật ảnh đại diện/ảnh bìa chỉ cho đổi privacy khi nội dung khớp chính xác và media giữ nguyên thứ tự; đổi nội dung/media trả conflict.",
+        "MediaIds không truyền được chuyển thành danh sách rỗng, gỡ toàn bộ đính kèm nếu bài mới vẫn hợp lệ; lỗi đồng bộ làm rollback."
       ],
-      "postconditions": "Bài và metadata được cập nhật, lưu thời điểm sửa; media không còn trong danh sách được gỡ khỏi PostMedia.",
+      "postconditions": "Bài và metadata được cập nhật, lưu UpdatedAtUtc; media bị loại khỏi danh sách được gỡ khỏi PostMedia và MediaReferences. TextBackground giữ nguyên; sửa bài không thêm media mới vào album timeline.",
       "endpoints": [
         "PUT /api/posts/{postId:guid}"
       ],
@@ -7714,13 +7737,22 @@
         "PostMentions",
         "Hashtags",
         "PostHashtags",
-        "MediaReferences"
+        "MediaReferences",
+        "Groups",
+        "GroupMembers",
+        "Pages",
+        "PageMembers",
+        "Notifications"
       ],
       "sources": [
         "Controllers/PostsController.cs",
         "Services/PostsUseCase.cs",
         "Services/PostsService.cs",
-        "DTOs/Requests/UpdatePostRequest.cs"
+        "DTOs/Requests/UpdatePostRequest.cs",
+        "Services/SocialInteractionsService.cs",
+        "../Media/Services/MediaService.cs",
+        "../Groups/Services/GroupPostAccessService.cs",
+        "../Pages/Services/PagePostAccessService.cs"
       ]
     },
     {
@@ -7728,8 +7760,8 @@
       "name": "Xóa bài viết",
       "group": "management",
       "goal": "Gỡ bài khỏi các luồng đọc thông thường.",
-      "actor": "Tác giả hoặc người có quyền quản lý PAGE đã đăng nhập",
-      "preconditions": "Bài chưa bị xóa; có quyền xóa, bao gồm kiểm tra quyền đăng khi bài thuộc GROUP.",
+      "actor": "Tác giả hoặc OWNER/ADMIN/EDITOR trên PAGE đã đăng nhập",
+      "preconditions": "Bài chưa bị xóa; tác giả có quyền xóa, GROUP còn cần quyền đăng. Người khác chỉ được xóa bài PAGE khi có vai trò OWNER/ADMIN/EDITOR; MODERATOR không được cấp quyền qua endpoint này. Endpoint không giới hạn PostType.",
       "steps": [
         "Gửi DELETE posts/{postId}.",
         "Hệ thống kiểm tra quyền, ghi DeletedAtUtc, xóa PostMedia và gỡ tham chiếu media trong giao dịch."
@@ -7745,12 +7777,19 @@
       "tables": [
         "Posts",
         "PostMedia",
-        "MediaReferences"
+        "MediaReferences",
+        "Groups",
+        "GroupMembers",
+        "Pages",
+        "PageMembers"
       ],
       "sources": [
         "Controllers/PostsController.cs",
         "Services/PostsUseCase.cs",
-        "Services/PostsService.cs"
+        "Services/PostsService.cs",
+        "../Media/Services/MediaService.cs",
+        "../Groups/Services/GroupPostAccessService.cs",
+        "../Pages/Services/PagePostAccessService.cs"
       ]
     },
     {
@@ -7765,9 +7804,10 @@
         "Khi ghim, hệ thống bỏ ghim các bài PROFILE khác của tác giả; cập nhật IsPinned và trả bài."
       ],
       "alternatives": [
-        "Bài không tồn tại, không thuộc PROFILE hoặc không phải tác giả: từ chối."
+        "Bài không tồn tại, không thuộc PROFILE hoặc không phải tác giả: từ chối.",
+        "Service không lọc PostType khi ghim, nhưng danh sách posts/users chỉ trả STANDARD; không có unique constraint bảo đảm một bài ghim khi nhiều yêu cầu chạy đồng thời."
       ],
-      "postconditions": "Danh sách bài trên hồ sơ đặt bài ghim trước; mỗi tác giả có tối đa một bài PROFILE đang được ghim.",
+      "postconditions": "Sau một thao tác ghim tuần tự thành công, các bài PROFILE khác của tác giả được bỏ ghim; danh sách posts/users xếp bài STANDARD đang ghim trước. Bỏ ghim không tự chọn bài thay thế.",
       "endpoints": [
         "PUT /api/posts/{postId:guid}/pin",
         "DELETE /api/posts/{postId:guid}/pin"
@@ -7786,10 +7826,10 @@
       "group": "reading",
       "goal": "Đọc nội dung và tóm tắt tương tác của một bài.",
       "actor": "Khách hoặc người dùng",
-      "preconditions": "Bài chưa bị xóa và người xem được phép truy cập theo container, privacy và quan hệ.",
+      "preconditions": "Bài chưa bị xóa và người xem được phép truy cập theo container, privacy và quan hệ; API chi tiết không giới hạn STANDARD nên có thể trả REEL.",
       "steps": [
         "Gọi GET posts/{postId}.",
-        "Hệ thống kiểm tra quyền PROFILE, GROUP, PAGE hoặc EVENT theo access service phù hợp.",
+        "Kiểm tra quyền PROFILE, GROUP, PAGE hoặc EVENT; khách không đọc được EVENT, thành viên PAGE có thể đọc trang chưa PUBLISHED nếu trang chưa bị xóa.",
         "Trả nội dung, media và tóm tắt tương tác theo người xem."
       ],
       "alternatives": [
@@ -7804,20 +7844,30 @@
         "PostMedia",
         "PostReactions",
         "Comments",
-        "CommentReactions",
         "PostSaves",
         "PostShares",
         "PostMentions",
-        "PostHashtags",
-        "Hashtags",
         "Friendships",
-        "BlockedUsers"
+        "BlockedUsers",
+        "UserProfiles",
+        "AspNetUsers",
+        "Groups",
+        "GroupMembers",
+        "Pages",
+        "PageMembers",
+        "Events",
+        "EventParticipants",
+        "EventInvitations"
       ],
       "sources": [
         "Controllers/PostsController.cs",
         "Services/PostsUseCase.cs",
         "Services/PostsService.cs",
-        "Services/PostVisibility.cs"
+        "Services/PostVisibility.cs",
+        "../Groups/Services/GroupPostAccessService.cs",
+        "../Pages/Services/PagePostAccessService.cs",
+        "../Events/Services/EventAccessService.cs",
+        "DTOs/Responses/PostResponse.cs"
       ]
     },
     {
@@ -7829,8 +7879,8 @@
       "preconditions": "offset không âm, limit từ 1 đến 100.",
       "steps": [
         "Gọi posts/feed với offset và limit.",
-        "Hệ thống hợp các bài được phép truy cập từ PROFILE, GROUP, PAGE và EVENT, lọc loại STANDARD.",
-        "Sắp xếp mới nhất trước và trả trang cùng tổng số."
+        "Hợp các bài PROFILE/GROUP/PAGE/EVENT được phép truy cập và lọc STANDARD; nhánh PAGE chỉ lấy trang PUBLISHED, kể cả khi người xem là thành viên trang chưa PUBLISHED.",
+        "Sắp xếp CreatedAtUtc rồi Id giảm dần, áp dụng offset/limit (mặc định 0/20), trả Items và Total."
       ],
       "alternatives": [
         "Phân trang sai: trả lỗi. Không có bài đủ điều kiện: trả trang rỗng."
@@ -7866,7 +7916,7 @@
       "preconditions": "offset không âm, limit từ 1 đến 100.",
       "steps": [
         "Gọi posts/search với query và phân trang.",
-        "Hệ thống lọc tập bài STANDARD được phép xem theo nội dung không phân biệt hoa thường, sắp xếp mới nhất trước và trả trang."
+        "Trim query, tìm chuỗi con trong Content không phân biệt hoa thường trên tập STANDARD như posts/feed, gồm PAGE chỉ khi PUBLISHED; xếp CreatedAtUtc rồi Id giảm dần và trả trang."
       ],
       "alternatives": [
         "Query trống bỏ điều kiện nội dung; không có kết quả trả trang rỗng. Phân trang sai trả lỗi."
@@ -7898,10 +7948,11 @@
       "preconditions": "offset không âm, limit từ 1 đến 100; từng bài phải được phép xem.",
       "steps": [
         "Gọi posts/users/{authorUserId}.",
-        "Hệ thống lọc bài STANDARD thuộc PROFILE của tác giả theo quyền người xem, xếp bài ghim trước rồi mới nhất trước."
+        "Lọc bài STANDARD thuộc PROFILE của tác giả theo quyền người xem; xếp IsPinned, CreatedAtUtc rồi Id giảm dần. REEL không xuất hiện trong danh sách này."
       ],
       "alternatives": [
-        "Không có bài được phép xem: trả trang rỗng. Phân trang sai: trả lỗi."
+        "Không có bài được phép xem: trả trang rỗng. Phân trang sai: trả lỗi.",
+        "authorUserId không có tài khoản vẫn trả trang rỗng; service không kiểm tra riêng sự tồn tại của tác giả."
       ],
       "postconditions": "Trả trang bài trên hồ sơ, giữ nguyên quyền riêng tư từng bài.",
       "endpoints": [
@@ -7950,6 +8001,7 @@
         "Controllers/PostsController.cs",
         "Services/PostsUseCase.cs",
         "Services/PostsService.cs",
+        "../Media/Services/MediaService.cs",
         "../Media/Services/MediaService.cs"
       ]
     },
@@ -7959,15 +8011,16 @@
       "group": "comments",
       "goal": "Thêm bình luận vào bài hoặc trả lời một bình luận gốc.",
       "actor": "Người dùng đã đăng nhập",
-      "preconditions": "Bài tồn tại và được phép tương tác; nội dung không trống, tối đa 5.000 ký tự; bình luận cha nếu có phải là bình luận gốc trong cùng bài.",
+      "preconditions": "Bài chưa bị xóa và được phép tương tác; PROFILE theo privacy/quan hệ, GROUP cần thành viên và không bị chặn với tác giả, PAGE cần quyền xem trang, EVENT cần CanPostAsync. Nội dung sau Trim từ 1 đến 5.000 ký tự; bình luận cha nếu có là bình luận gốc chưa bị xóa trong cùng bài.",
       "steps": [
         "Gửi POST posts/{postId}/comments với nội dung và ParentCommentId tùy chọn.",
         "Hệ thống kiểm tra bài, quyền tương tác và bình luận cha rồi tạo Comment.",
-        "Gửi thông báo bình luận tới tác giả bài và đồng bộ mention đủ điều kiện."
+        "Lưu Comment rồi xử lý thông báo bình luận tới tác giả bài (bỏ qua tự thông báo); sau đó đồng bộ mention đủ điều kiện và trả bình luận đã làm mới."
       ],
       "alternatives": [
         "Bài không có, bị chặn hoặc thiếu quyền tương tác: từ chối.",
-        "Bình luận cha đã xóa, thuộc bài khác hoặc bản thân là trả lời: từ chối; nội dung sai giới hạn trả validation."
+        "Bình luận cha đã xóa, thuộc bài khác hoặc bản thân là trả lời: từ chối; nội dung sai giới hạn trả validation.",
+        "Đồng bộ mention hoặc publish thông báo thất bại không rollback Comment đã được lưu; không có giao dịch chung cho toàn bộ luồng."
       ],
       "postconditions": "Bình luận được lưu cùng ParentCommentId nếu là trả lời; mention được đồng bộ.",
       "endpoints": [
@@ -7986,7 +8039,9 @@
         "Controllers/CommentsController.cs",
         "Services/PostsUseCase.cs",
         "Services/PostsService.cs",
-        "Services/SocialInteractionsService.cs"
+        "Services/SocialInteractionsService.cs",
+        "Services/SocialInteractionsService.cs",
+        "../Notifications/Services/NotificationService.cs"
       ]
     },
     {
@@ -7995,14 +8050,15 @@
       "group": "comments",
       "goal": "Sửa nội dung bình luận do mình tạo.",
       "actor": "Tác giả bình luận đã đăng nhập",
-      "preconditions": "Bình luận chưa bị xóa, bài chứa bình luận chưa bị xóa; nội dung mới không trống, tối đa 5.000 ký tự.",
+      "preconditions": "Người gọi là tác giả; bình luận và bài chưa bị xóa; nội dung mới sau Trim từ 1 đến 5.000 ký tự. Service không kiểm tra lại quyền đọc hoặc quyền tham gia GROUP/PAGE/EVENT khi sửa.",
       "steps": [
         "Gửi PUT posts/comments/{commentId}.",
         "Hệ thống kiểm tra tác giả và bài còn tồn tại, cập nhật nội dung cùng thời điểm sửa.",
         "Đồng bộ lại mention trong bình luận và trả dữ liệu đã cập nhật."
       ],
       "alternatives": [
-        "Không phải tác giả, bình luận hoặc bài đã xóa: từ chối. Nội dung sai giới hạn: trả validation."
+        "Không phải tác giả, bình luận hoặc bài đã xóa: từ chối. Nội dung sai giới hạn: trả validation.",
+        "Comment được lưu trước khi đồng bộ mention; lỗi ở bước mention không rollback nội dung đã sửa."
       ],
       "postconditions": "Nội dung và mention được cập nhật; quan hệ bình luận cha giữ nguyên.",
       "endpoints": [
@@ -8018,7 +8074,8 @@
         "Controllers/CommentsController.cs",
         "Services/PostsUseCase.cs",
         "Services/PostsService.cs",
-        "DTOs/Requests/UpdateCommentRequest.cs"
+        "DTOs/Requests/UpdateCommentRequest.cs",
+        "Services/SocialInteractionsService.cs"
       ]
     },
     {
@@ -8026,8 +8083,8 @@
       "name": "Xóa bình luận",
       "group": "comments",
       "goal": "Gỡ một bình luận khỏi danh sách đọc.",
-      "actor": "Tác giả hoặc người có quyền kiểm duyệt bình luận PAGE",
-      "preconditions": "Đã đăng nhập; bình luận chưa bị xóa và người gọi có quyền xóa.",
+      "actor": "Tác giả bình luận hoặc OWNER/ADMIN/MODERATOR trên PAGE đã đăng nhập",
+      "preconditions": "Bình luận chưa bị xóa. Tác giả được xóa bình luận của mình kể cả khi bài đã bị xóa; người khác cần OWNER/ADMIN/MODERATOR trên PAGE chưa bị xóa và bài PAGE còn tồn tại. EDITOR không được xóa bình luận của người khác qua endpoint này.",
       "steps": [
         "Gửi DELETE posts/comments/{commentId}.",
         "Hệ thống kiểm tra tác giả hoặc quyền PAGE, ghi DeletedAtUtc và lưu."
@@ -8042,12 +8099,14 @@
       "tables": [
         "Comments",
         "Posts",
-        "PageMembers"
+        "PageMembers",
+        "Pages"
       ],
       "sources": [
         "Controllers/CommentsController.cs",
         "Services/PostsService.cs",
         "Domain/Entities/Comment.cs",
+        "../Pages/Services/PagePostAccessService.cs",
         "../Pages/Services/PagePostAccessService.cs"
       ]
     },
@@ -8060,13 +8119,13 @@
       "preconditions": "Được phép xem bài; offset không âm, limit từ 1 đến 100.",
       "steps": [
         "Gọi GET posts/{postId}/comments.",
-        "Hệ thống kiểm tra quyền đọc bài, lấy bình luận chưa bị xóa và sắp xếp thời điểm tạo tăng dần.",
+        "Kiểm tra quyền đọc bài, lấy tất cả bình luận chưa bị xóa (gồm bình luận gốc và trả lời) theo CreatedAtUtc rồi Id tăng dần; áp dụng offset/limit lên danh sách phẳng.",
         "Trả trang bình luận cùng liên kết cha và thông tin cảm xúc."
       ],
       "alternatives": [
         "Bài không có hoặc không được đọc: trả không tìm thấy. Phân trang sai: trả lỗi."
       ],
-      "postconditions": "Trả bình luận được phép đọc; không cập nhật trạng thái.",
+      "postconditions": "Trả danh sách phẳng kèm ParentCommentId và cảm xúc; trả lời chưa bị xóa vẫn được trả khi bình luận cha đã bị soft delete.",
       "endpoints": [
         "GET /api/posts/{postId:guid}/comments"
       ],
@@ -8124,9 +8183,9 @@
       "group": "reactions",
       "goal": "Xem danh sách người đã tương tác cảm xúc với bài.",
       "actor": "Người dùng đã đăng nhập",
-      "preconditions": "Được phép xem bài; offset không âm, limit từ 1 đến 100; Type tùy chọn phải hợp lệ.",
+      "preconditions": "Được phép xem bài; offset không âm, limit 1 đến 100, mặc định 100; query type tùy chọn phải là loại cảm xúc hợp lệ.",
       "steps": [
-        "Gọi posts/{postId}/reactions với bộ lọc Type và phân trang.",
+        "Gọi posts/{postId}/reactions với query type tùy chọn, offset (mặc định 0) và limit (mặc định 100).",
         "Hệ thống loại người bị chặn với người xem, lọc cảm xúc và xếp theo lần tương tác gần nhất.",
         "Trả hồ sơ người phản ứng, loại cảm xúc và trạng thái quan hệ với người xem."
       ],
@@ -8161,7 +8220,7 @@
       "preconditions": "Bình luận và bài chưa bị xóa; có quyền tương tác với bài; Type hợp lệ khi đặt.",
       "steps": [
         "Gửi PUT posts/comments/{commentId}/reaction hoặc DELETE để gỡ.",
-        "Hệ thống kiểm tra bình luận, bài và quyền; tạo, cập nhật hoặc xóa CommentReaction của người gọi rồi trả bình luận."
+        "Kiểm tra bình luận, bài và quyền tương tác; tạo, cập nhật hoặc xóa CommentReaction của người gọi. Khi đặt, xử lý thông báo tới tác giả bình luận (bỏ qua tự thông báo); trả bình luận đã cập nhật."
       ],
       "alternatives": [
         "Bình luận hoặc bài không có, bị chặn, thiếu quyền hoặc Type sai: từ chối.",
@@ -8177,12 +8236,14 @@
         "Comments",
         "Posts",
         "Friendships",
-        "BlockedUsers"
+        "BlockedUsers",
+        "Notifications"
       ],
       "sources": [
         "Controllers/CommentsController.cs",
         "Services/PostsUseCase.cs",
-        "Services/PostsService.cs"
+        "Services/PostsService.cs",
+        "../Notifications/Services/NotificationService.cs"
       ]
     },
     {
@@ -8191,14 +8252,14 @@
       "group": "social",
       "goal": "Thêm hoặc gỡ bài trong bộ sưu tập riêng của mình.",
       "actor": "Người dùng đã đăng nhập",
-      "preconditions": "Khi lưu, bài chưa bị xóa và được phép đọc; bỏ lưu chỉ xử lý PostSave của người gọi.",
+      "preconditions": "Khi lưu, bài chưa bị xóa, thuộc PROFILE/GROUP/PAGE và được phép đọc; STANDARD và REEL đều được hỗ trợ. Bỏ lưu chỉ xử lý PostSave của người gọi, không cần bài còn tồn tại hoặc còn quyền đọc.",
       "steps": [
         "Gửi POST posts/{postId}/save để lưu hoặc DELETE để bỏ lưu.",
         "Hệ thống kiểm tra quyền đọc khi lưu và tạo PostSave nếu thiếu; khi bỏ lưu thì xóa bản ghi của người gọi nếu có."
       ],
       "alternatives": [
         "Đã lưu hoặc chưa có bản ghi khi bỏ lưu: vẫn thành công.",
-        "Không được đọc bài hoặc bài không có khi lưu: trả không tìm thấy."
+        "Không được đọc, không có bài hoặc bài thuộc EVENT khi lưu: trả không tìm thấy."
       ],
       "postconditions": "Trạng thái lưu riêng của người gọi được thay đổi.",
       "endpoints": [
@@ -8226,13 +8287,13 @@
       "preconditions": "limit từ 1 đến 50; cursor hợp lệ cho chính người xem và mục đích saved.",
       "steps": [
         "Gọi posts/saved với cursor và limit.",
-        "Hệ thống quét PostSave mới nhất trước, bỏ bài bị xóa hoặc không còn quyền đọc.",
+        "Quét PostSave theo SavedAtUtc rồi PostId giảm dần; bỏ bài bị xóa hoặc không còn quyền đọc PROFILE/GROUP/PAGE, không trả EVENT; có thể trả STANDARD và REEL.",
         "Trả trang bài và NextCursor nếu còn kết quả."
       ],
       "alternatives": [
         "Cursor hoặc limit sai: trả validation. Không còn bài đọc được: trả trang rỗng."
       ],
-      "postconditions": "Chỉ trả bài đang được phép xem; không tự xóa bản ghi lưu của bài bị ẩn.",
+      "postconditions": "Chỉ trả bài đang được phép xem và NextCursor khi tìm được thêm kết quả hợp lệ; không tự xóa bản ghi lưu của bài bị ẩn.",
       "endpoints": [
         "GET /api/posts/saved"
       ],
@@ -8257,17 +8318,17 @@
       "group": "social",
       "goal": "Tạo chia sẻ tham chiếu một bài gốc đến hồ sơ, nhóm hoặc trang.",
       "actor": "Người dùng đã đăng nhập có quyền đăng tại đích",
-      "preconditions": "Được phép xem bài gốc; DestinationType/Id hợp lệ; PROFILE là hồ sơ của mình, GROUP/PAGE có quyền đăng; caption tối đa 10.000 ký tự.",
+      "preconditions": "Bài gốc chưa bị xóa, thuộc PROFILE/GROUP/PAGE và đọc được; có thể là STANDARD hoặc REEL. DestinationType là profile/group/page, DestinationId khác Guid.Empty; PROFILE là hồ sơ của mình, GROUP/PAGE có quyền đăng; caption sau Trim tối đa 10.000 ký tự.",
       "steps": [
         "Gửi posts/{postId}/shares với đích chia sẻ và caption tùy chọn.",
         "Hệ thống kiểm tra bài gốc và quyền đăng tại đích, tạo PostShare rồi xử lý thông báo cho tác giả bài gốc.",
         "Trả chia sẻ cùng thông tin bài gốc."
       ],
       "alternatives": [
-        "Bài không được đọc hoặc không có: trả không tìm thấy. Đích sai hoặc không có quyền đăng: từ chối.",
+        "Bài không được đọc, không có hoặc thuộc EVENT: trả không tìm thấy. Đích sai hoặc không có quyền đăng: từ chối.",
         "Caption quá dài: trả validation."
       ],
-      "postconditions": "Có PostShare tham chiếu bài gốc; quyền riêng tư và nội dung bài gốc giữ nguyên.",
+      "postconditions": "Tạo PostShare tham chiếu bài gốc, không tạo Post mới; quyền riêng tư và nội dung bài gốc giữ nguyên. Service không chống chia sẻ trùng, mỗi lần gọi thành công tạo một PostShare mới.",
       "endpoints": [
         "POST /api/posts/{postId:guid}/shares"
       ],
@@ -8284,7 +8345,10 @@
         "Controllers/PostSharesController.cs",
         "Services/PostsUseCase.cs",
         "Services/SocialInteractionsService.cs",
-        "DTOs/Requests/CreatePostShareRequest.cs"
+        "DTOs/Requests/CreatePostShareRequest.cs",
+        "DTOs/Requests/CreatePostShareRequest.cs",
+        "../Groups/Services/GroupPostAccessService.cs",
+        "../Pages/Services/PagePostAccessService.cs"
       ]
     },
     {
@@ -8293,11 +8357,11 @@
       "group": "social",
       "goal": "Khám phá bài có cùng hashtag trong phạm vi được phép đọc.",
       "actor": "Khách hoặc người dùng",
-      "preconditions": "Hashtag chuẩn hóa hợp lệ; limit từ 1 đến 50; cursor đúng người xem và hashtag.",
+      "preconditions": "Tag được Trim, bỏ dấu # ở đầu và chuyển chữ thường; dài 1 đến 50, chỉ gồm chữ, số hoặc _. Limit 1 đến 50, mặc định 20; cursor đúng người xem và hashtag.",
       "steps": [
         "Gọi hashtags/{tag}/posts với cursor và limit.",
         "Hệ thống chuẩn hóa tag, tra Hashtags và PostHashtags, lấy bài STANDARD hoặc REEL chưa bị xóa.",
-        "Lọc lại quyền đọc, sắp xếp mới nhất trước và trả trang cùng NextCursor."
+        "Lọc lại quyền đọc PROFILE/GROUP/PAGE (không hỗ trợ EVENT), sắp xếp CreatedAtUtc rồi Id giảm dần và trả Items cùng NextCursor."
       ],
       "alternatives": [
         "Hashtag, cursor hoặc limit sai: trả validation. Không có bài đọc được: trả trang rỗng."
@@ -8332,7 +8396,7 @@
         "Hệ thống kiểm tra đích, dữ liệu và báo cáo trùng; tạo ContentReport loại USER trạng thái PENDING."
       ],
       "alternatives": [
-        "Đích không có, tự báo cáo, dữ liệu sai hoặc đã báo cáo: trả lỗi."
+        "Đích không có: trả 404. Tự báo cáo hoặc dữ liệu sai: trả validation. Đã báo cáo cùng USER/ID, kể cả đã được xử lý: trả 409 already_reported."
       ],
       "postconditions": "Báo cáo được lưu để quản trị xem xét; không tự chặn hoặc khóa tài khoản bị báo cáo.",
       "endpoints": [
@@ -8343,9 +8407,10 @@
         "AspNetUsers"
       ],
       "sources": [
-        "Controllers/ReportsController.cs",
-        "Services/ReportsService.cs",
-        "Domain/Entities/ContentReport.cs"
+        "../Admin/Controllers/ReportsController.cs",
+        "../Admin/Services/ReportsService.cs",
+        "../Admin/Domain/Entities/ContentReport.cs",
+        "../Admin/DTOs/Requests/CreateReportRequest.cs"
       ]
     },
     {
@@ -8354,15 +8419,15 @@
       "group": "reports",
       "goal": "Gửi báo cáo vi phạm về một bài chưa bị xóa.",
       "actor": "Người dùng đã đăng nhập",
-      "preconditions": "Bài tồn tại, không phải bài của mình; GROUP/PAGE thỏa kiểm tra truy cập tương ứng; lý do và chi tiết hợp lệ, chưa có báo cáo trùng.",
+      "preconditions": "Bài chưa bị xóa, không phải bài của người gọi; hỗ trợ STANDARD và REEL. GROUP cần CanAccessPostAsync, PAGE cần CanViewPageAsync; PROFILE/EVENT hiện không kiểm tra quyền đọc. Reason hợp lệ, Details sau Trim tối đa 500 ký tự; chưa có báo cáo POST cùng ID.",
       "steps": [
         "Gửi reports/posts/{postId}.",
-        "Hệ thống kiểm tra bài chưa bị xóa, quyền truy cập GROUP/PAGE nếu áp dụng và tác giả.",
+        "ReportsService của Admin kiểm tra bài chưa bị xóa, quyền đọc GROUP/PAGE nếu áp dụng và tác giả; không kiểm tra PostVisibility cho PROFILE hoặc EventAccessService cho EVENT.",
         "Tạo ContentReport loại POST trạng thái PENDING, trả thông tin báo cáo."
       ],
       "alternatives": [
         "Bài không có, đã xóa hoặc không qua kiểm tra truy cập GROUP/PAGE: trả không tìm thấy.",
-        "Tự báo cáo bài, lý do sai, Details quá dài hoặc đã báo cáo: từ chối."
+        "Tự báo cáo bài, lý do sai hoặc Details quá dài: trả validation. Báo cáo trùng kể cả đã được xử lý: trả 409 already_reported."
       ],
       "postconditions": "Báo cáo được lưu; bài không tự bị xóa hoặc ẩn do thao tác gửi báo cáo.",
       "endpoints": [
@@ -8378,9 +8443,12 @@
         "BlockedUsers"
       ],
       "sources": [
-        "Controllers/ReportsController.cs",
-        "Services/ReportsService.cs",
-        "Domain/Entities/ContentReport.cs"
+        "../Admin/Controllers/ReportsController.cs",
+        "../Admin/Services/ReportsService.cs",
+        "../Admin/Domain/Entities/ContentReport.cs",
+        "../Admin/DTOs/Requests/CreateReportRequest.cs",
+        "../Groups/Services/GroupPostAccessService.cs",
+        "../Pages/Services/PagePostAccessService.cs"
       ]
     }
   ]
