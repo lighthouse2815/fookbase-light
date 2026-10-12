@@ -1352,10 +1352,10 @@ public sealed class PostsService(
         var attachments = await dbContext.PostMedia.AsNoTracking()
             .Where(x => postIds.Contains(x.PostId)).OrderBy(x => x.SortOrder)
             .ToListAsync(cancellationToken);
-        var mentionRows = await dbContext.ContentMentions.AsNoTracking()
-            .Where(mention => mention.SourceType == MentionSourceType.POST && postIds.Contains(mention.SourceId))
+        var mentionRows = await dbContext.PostMentions.AsNoTracking()
+            .Where(mention => postIds.Contains(mention.PostId))
             .Select(mention => new MentionRow(
-                mention.SourceId,
+                mention.PostId,
                 mention.MentionedUserId,
                 mention.StartIndex,
                 mention.Length))
@@ -1508,10 +1508,10 @@ public sealed class PostsService(
                     user => user.Id,
                     user => user.UserName ?? "Người dùng",
                     cancellationToken);
-        var mentionRows = await dbContext.ContentMentions.AsNoTracking()
-            .Where(mention => mention.SourceType == MentionSourceType.COMMENT && commentIds.Contains(mention.SourceId))
+        var mentionRows = await dbContext.CommentMentions.AsNoTracking()
+            .Where(mention => commentIds.Contains(mention.CommentId))
             .Select(mention => new MentionRow(
-                mention.SourceId,
+                mention.CommentId,
                 mention.MentionedUserId,
                 mention.StartIndex,
                 mention.Length))

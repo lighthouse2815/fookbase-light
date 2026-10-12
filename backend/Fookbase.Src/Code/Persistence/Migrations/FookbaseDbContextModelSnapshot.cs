@@ -23,6 +23,49 @@ namespace Fookbase.Api.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ContentReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ReporterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TargetType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReporterUserId", "TargetType", "TargetId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "CreatedAtUtc", "Id");
+
+                    b.HasIndex("TargetType", "TargetId", "Status", "CreatedAtUtc");
+
+                    b.ToTable("ContentReports");
+                });
+
             modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ModerationAction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1780,6 +1823,29 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.CommentMention", b =>
+                {
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("StartIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Length")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("MentionedUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("CommentId", "StartIndex");
+
+                    b.HasIndex("MentionedUserId");
+
+                    b.HasIndex("CommentId", "MentionedUserId");
+
+                    b.ToTable("CommentMentions");
+                });
+
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.CommentReaction", b =>
                 {
                     b.Property<Guid>("CommentId")
@@ -1804,75 +1870,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasIndex("CommentId", "Type");
 
                     b.ToTable("CommentReactions");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentMention", b =>
-                {
-                    b.Property<int>("SourceType")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SourceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("StartIndex")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Length")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("MentionedUserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("SourceType", "SourceId", "StartIndex");
-
-                    b.HasIndex("MentionedUserId");
-
-                    b.HasIndex("SourceType", "SourceId", "MentionedUserId");
-
-                    b.ToTable("ContentMentions");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ContentReport", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Details")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("Reason")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ReporterUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ResolvedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TargetId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TargetType")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReporterUserId", "TargetType", "TargetId")
-                        .IsUnique();
-
-                    b.HasIndex("Status", "CreatedAtUtc", "Id");
-
-                    b.HasIndex("TargetType", "TargetId", "Status", "CreatedAtUtc");
-
-                    b.ToTable("ContentReports");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Hashtag", b =>
@@ -2004,6 +2001,29 @@ namespace Fookbase.Api.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("PostMedia");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostMention", b =>
+                {
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("StartIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Length")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("MentionedUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("PostId", "StartIndex");
+
+                    b.HasIndex("MentionedUserId");
+
+                    b.HasIndex("PostId", "MentionedUserId");
+
+                    b.ToTable("PostMentions");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostReaction", b =>
@@ -2465,6 +2485,17 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ContentReport", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ReporterUser")
+                        .WithMany()
+                        .HasForeignKey("ReporterUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ReporterUser");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ModerationAction", b =>
@@ -3298,6 +3329,25 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("Post");
                 });
 
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.CommentMention", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Comment", "Comment")
+                        .WithMany("Mentions")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "MentionedUser")
+                        .WithMany()
+                        .HasForeignKey("MentionedUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("MentionedUser");
+                });
+
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.CommentReaction", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Posts.Entities.Comment", "Comment")
@@ -3315,28 +3365,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("Comment");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.ContentMention", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "MentionedUser")
-                        .WithMany()
-                        .HasForeignKey("MentionedUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MentionedUser");
-                });
-
-            modelBuilder.Entity("Fookbase.Api.Modules.Admin.Entities.ContentReport", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "ReporterUser")
-                        .WithMany()
-                        .HasForeignKey("ReporterUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ReporterUser");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Post", b =>
@@ -3384,6 +3412,25 @@ namespace Fookbase.Api.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Media");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.PostMention", b =>
+                {
+                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "MentionedUser")
+                        .WithMany()
+                        .HasForeignKey("MentionedUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "Post")
+                        .WithMany("Mentions")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MentionedUser");
 
                     b.Navigation("Post");
                 });
@@ -3712,6 +3759,8 @@ namespace Fookbase.Api.Persistence.Migrations
 
             modelBuilder.Entity("Fookbase.Api.Modules.Posts.Entities.Comment", b =>
                 {
+                    b.Navigation("Mentions");
+
                     b.Navigation("Reactions");
 
                     b.Navigation("Replies");
@@ -3729,6 +3778,8 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("Hashtags");
 
                     b.Navigation("MediaItems");
+
+                    b.Navigation("Mentions");
 
                     b.Navigation("Reactions");
 

@@ -343,10 +343,10 @@ public sealed class ReelsService(
                 .Select(follow => follow.FollowingUserId)
                 .ToListAsync(cancellationToken))
                 .ToHashSet();
-        var mentionRows = await dbContext.ContentMentions.AsNoTracking()
-            .Where(mention => mention.SourceType == MentionSourceType.POST && reelIds.Contains(mention.SourceId))
+        var mentionRows = await dbContext.PostMentions.AsNoTracking()
+            .Where(mention => reelIds.Contains(mention.PostId))
             .Select(mention => new MentionRow(
-                mention.SourceId,
+                mention.PostId,
                 mention.MentionedUserId,
                 mention.StartIndex,
                 mention.Length))

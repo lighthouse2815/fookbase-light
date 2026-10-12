@@ -90,6 +90,8 @@ public sealed class Post
 
     public ICollection<PostMedia> MediaItems { get; private set; } = new List<PostMedia>();
 
+    public ICollection<PostMention> Mentions { get; private set; } = new List<PostMention>();
+
     public ICollection<PostReaction> Reactions { get; private set; } = new List<PostReaction>();
 
     public ICollection<PostSave> Saves { get; private set; } = new List<PostSave>();

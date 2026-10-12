@@ -347,7 +347,7 @@ public sealed class SocialInteractionsService(
         }
 
         await SynchronizeMentionsAsync(
-            MentionSourceType.POST, post.Id, post.Content, actorUserId, post, cancellationToken);
+            NotificationEntityType.POST, post.Id, post.Content, actorUserId, post, cancellationToken);
         await SynchronizeHashtagsAsync(post, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -374,23 +374,36 @@ public sealed class SocialInteractionsService(
         }
 
         await SynchronizeMentionsAsync(
-            MentionSourceType.COMMENT, comment.Id, comment.Content, actorUserId, post, cancellationToken);
+            NotificationEntityType.COMMENT, comment.Id, comment.Content, actorUserId, post, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task SynchronizeMentionsAsync(
-        MentionSourceType sourceType,
+        NotificationEntityType entityType,
         Guid sourceId,
         string content,
         Guid actorUserId,
         Post accessiblePost,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.ContentMentions
-            .Where(mention => mention.SourceType == sourceType && mention.SourceId == sourceId)
-            .ToListAsync(cancellationToken);
-        var previouslyMentioned = existing.Select(mention => mention.MentionedUserId).ToHashSet();
-        dbContext.ContentMentions.RemoveRange(existing);
+        var isPost = entityType == NotificationEntityType.POST;
+        HashSet<Guid> previouslyMentioned;
+        if (isPost)
+        {
+            var existing = await dbContext.PostMentions
+                .Where(mention => mention.PostId == sourceId)
+                .ToListAsync(cancellationToken);
+            previouslyMentioned = existing.Select(mention => mention.MentionedUserId).ToHashSet();
+            dbContext.PostMentions.RemoveRange(existing);
+        }
+        else
+        {
+            var existing = await dbContext.CommentMentions
+                .Where(mention => mention.CommentId == sourceId)
+                .ToListAsync(cancellationToken);
+            previouslyMentioned = existing.Select(mention => mention.MentionedUserId).ToHashSet();
+            dbContext.CommentMentions.RemoveRange(existing);
+        }
 
         var parsed = ParseMentions(content);
         if (parsed.Count == 0)
@@ -430,18 +443,20 @@ public sealed class SocialInteractionsService(
             resolved.Add(new(profile.UserId, mention.StartIndex, mention.Length));
         }
 
-        foreach (var mention in resolved)
+        if (isPost)
         {
-            dbContext.ContentMentions.Add(new ContentMention(
-                sourceType, sourceId, mention.UserId, mention.StartIndex, mention.Length));
+            dbContext.PostMentions.AddRange(resolved.Select(mention => new PostMention(
+                sourceId, mention.UserId, mention.StartIndex, mention.Length)));
+        }
+        else
+        {
+            dbContext.CommentMentions.AddRange(resolved.Select(mention => new CommentMention(
+                sourceId, mention.UserId, mention.StartIndex, mention.Length)));
         }
 
-        var notificationType = sourceType == MentionSourceType.POST
+        var notificationType = isPost
             ? NotificationType.POST_MENTION
             : NotificationType.COMMENT_MENTION;
-        var entityType = sourceType == MentionSourceType.POST
-            ? NotificationEntityType.POST
-            : NotificationEntityType.COMMENT;
         var notifications = new List<Notification>();
         foreach (var recipientUserId in resolved.Select(mention => mention.UserId).Distinct()
                      .Where(userId => !previouslyMentioned.Contains(userId)))

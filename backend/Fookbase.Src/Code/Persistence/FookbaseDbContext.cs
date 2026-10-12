@@ -109,7 +109,9 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<PostShare> PostShares => Set<PostShare>();
 
-    public DbSet<ContentMention> ContentMentions => Set<ContentMention>();
+    public DbSet<PostMention> PostMentions => Set<PostMention>();
+
+    public DbSet<CommentMention> CommentMentions => Set<CommentMention>();
 
     public DbSet<Hashtag> Hashtags => Set<Hashtag>();
 

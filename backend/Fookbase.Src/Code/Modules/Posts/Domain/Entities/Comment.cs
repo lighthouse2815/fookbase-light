@@ -61,6 +61,8 @@ public sealed class Comment
 
     public ICollection<CommentReaction> Reactions { get; private set; } = new List<CommentReaction>();
 
+    public ICollection<CommentMention> Mentions { get; private set; } = new List<CommentMention>();
+
     public void Update(string content, DateTimeOffset updatedAtUtc)
     {
         EnsureActive();
