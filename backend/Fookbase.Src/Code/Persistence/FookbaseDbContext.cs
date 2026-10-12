@@ -49,8 +49,6 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
     public DbSet<Event> Events => Set<Event>();
     public DbSet<EventParticipant> EventParticipants => Set<EventParticipant>();
     public DbSet<EventInvitation> EventInvitations => Set<EventInvitation>();
-    public DbSet<EventCoverMediaReference> EventCoverMediaReferences => Set<EventCoverMediaReference>();
-
     public DbSet<Group> Groups => Set<Group>();
 
     public DbSet<GroupMember> GroupMembers => Set<GroupMember>();

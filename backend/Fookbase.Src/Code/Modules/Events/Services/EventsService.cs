@@ -60,7 +60,6 @@ public sealed class EventsService(
                 status,
                 time.GetUtcNow());
             db.Events.Add(item);
-            await SyncCoverAsync(item.Id, request.CoverMediaId, ct);
             item.SetCover(request.CoverMediaId, time.GetUtcNow());
             await db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
@@ -115,7 +114,6 @@ public sealed class EventsService(
                 time.GetUtcNow());
             var changed = previousDetails != (item.StartsAtUtc, item.EndsAtUtc, item.LocationType, item.LocationName, item.Address, item.OnlineUrl);
             item.SetCover(desired, time.GetUtcNow());
-            await SyncCoverAsync(id, desired, ct);
             var queuedNotifications = changed ? await QueueParticipantNotificationsAsync(item, NotificationType.EVENT_UPDATED, ct) : new List<Notification>();
             await db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
@@ -136,7 +134,6 @@ public sealed class EventsService(
             return Forbidden();
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         item.Delete(time.GetUtcNow());
-        await SyncCoverAsync(id, null, ct);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
         return ApplicationResult.Success();
@@ -382,17 +379,6 @@ public sealed class EventsService(
     {
         var asset = await db.MediaAssets.AsNoTracking().SingleOrDefaultAsync(x => x.Id == mediaId, ct);
         return asset is null || asset.OwnerUserId != actor || asset.MediaType != MediaType.IMAGE || asset.Status != MediaStatus.READY || asset.DeletedAtUtc is not null ? new ApplicationError("invalid_event_cover", "Event cover must be your ready image.", ApplicationErrorType.VALIDATION) : null;
-    }
-    private async Task SyncCoverAsync(Guid eventId, Guid? mediaId, CancellationToken ct)
-    {
-        var old = await db.EventCoverMediaReferences.SingleOrDefaultAsync(x => x.EventId == eventId, ct);
-        if (old is not null)
-            db.EventCoverMediaReferences.Remove(old);
-        if (mediaId is not null)
-            db.EventCoverMediaReferences.Add(new EventCoverMediaReference(
-                eventId,
-                mediaId.Value,
-                time.GetUtcNow()));
     }
     private async Task<List<Notification>> QueueParticipantNotificationsAsync(Event item, NotificationType type, CancellationToken ct)
     {

@@ -508,8 +508,8 @@ public sealed class MediaService(
             .AnyAsync(conversation => conversation.PhotoMediaId == mediaId, cancellationToken);
         var isReferencedByStory = await dbContext.StoryMediaReferences.AsNoTracking()
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
-        var isReferencedByEvent = await dbContext.EventCoverMediaReferences.AsNoTracking()
-            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
+        var isReferencedByEvent = await dbContext.Events.AsNoTracking()
+            .AnyAsync(item => item.CoverMediaId == mediaId && item.DeletedAtUtc == null, cancellationToken);
         var isReferencedByAlbum = await dbContext.AlbumMedia.AsNoTracking()
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         if (isReferencedByPost ||

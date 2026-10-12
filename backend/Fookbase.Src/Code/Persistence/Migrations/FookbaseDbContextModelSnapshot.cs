@@ -215,24 +215,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.ToTable("Events");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", b =>
-                {
-                    b.Property<Guid>("EventId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("AttachedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("MediaId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("EventId");
-
-                    b.HasIndex("MediaId");
-
-                    b.ToTable("EventCoverMediaReferences");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventInvitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2514,25 +2496,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Events.Entities.Event", "Event")
-                        .WithOne("CoverMediaReference")
-                        .HasForeignKey("Fookbase.Api.Modules.Events.Entities.EventCoverMediaReference", "EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Event");
-
-                    b.Navigation("Media");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.EventInvitation", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Events.Entities.Event", "Event")
@@ -3599,8 +3562,6 @@ namespace Fookbase.Api.Persistence.Migrations
 
             modelBuilder.Entity("Fookbase.Api.Modules.Events.Entities.Event", b =>
                 {
-                    b.Navigation("CoverMediaReference");
-
                     b.Navigation("Invitations");
 
                     b.Navigation("Participants");

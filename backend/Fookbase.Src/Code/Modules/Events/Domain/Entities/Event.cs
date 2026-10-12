@@ -103,8 +103,6 @@ public sealed class Event
 
     public ICollection<EventInvitation> Invitations { get; private set; } = new List<EventInvitation>();
 
-    public EventCoverMediaReference? CoverMediaReference { get; private set; }
-
     public void Update(
         string name,
         string? description,
