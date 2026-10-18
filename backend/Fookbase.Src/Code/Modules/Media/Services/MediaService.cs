@@ -395,38 +395,6 @@ public sealed class MediaService(
                 "invalid_page_media_type", "Page avatar and cover media must be images.", ApplicationErrorType.VALIDATION));
     }
 
-    public async Task<ApplicationResult> SynchronizePostReferencesAsync(
-        Guid ownerUserId,
-        Guid postId,
-        IReadOnlyCollection<Guid> mediaIds,
-        CancellationToken cancellationToken = default)
-    {
-        var validation = await ValidatePostMediaAsync(ownerUserId, mediaIds, cancellationToken);
-        if (!validation.Succeeded)
-        {
-            return validation;
-        }
-
-        var currentReferences = await dbContext.MediaReferences
-            .Where(reference => reference.PostId == postId)
-            .ToListAsync(cancellationToken);
-        var desiredMediaIds = mediaIds.ToHashSet();
-        dbContext.MediaReferences.RemoveRange(
-            currentReferences.Where(reference => !desiredMediaIds.Contains(reference.MediaId)));
-        foreach (var mediaId in desiredMediaIds.Except(currentReferences.Select(reference => reference.MediaId)))
-        {
-            dbContext.MediaReferences.Add(new MediaReference(mediaId, postId, timeProvider.GetUtcNow()));
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return ApplicationResult.Success();
-    }
-
-    public Task RemovePostReferencesAsync(Guid postId, CancellationToken cancellationToken = default) =>
-        dbContext.MediaReferences
-            .Where(reference => reference.PostId == postId)
-            .ExecuteDeleteAsync(cancellationToken);
-
     public async Task<ApplicationResult> DeleteAsync(
         Guid ownerUserId,
         Guid mediaId,
@@ -452,7 +420,7 @@ public sealed class MediaService(
                 "invalid_media_status", "Only ready media can be deleted.", ApplicationErrorType.CONFLICT));
         }
 
-        var isReferencedByPost = await dbContext.MediaReferences
+        var isReferencedByPost = await dbContext.PostMedia.AsNoTracking()
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByActiveProfile = await dbContext.UserProfiles.AsNoTracking()
             .AnyAsync(profile =>

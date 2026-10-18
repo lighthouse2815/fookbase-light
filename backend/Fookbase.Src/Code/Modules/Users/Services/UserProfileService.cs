@@ -214,15 +214,8 @@ public sealed class UserProfileService(
             throw new InvalidOperationException("The profile media post could not be created.");
         }
 
-        var references = await mediaService.SynchronizePostReferencesAsync(
-            userId, created.Value!.Id, [mediaId], cancellationToken);
-        if (!references.Succeeded)
-        {
-            throw new InvalidOperationException("The profile media post references could not be synchronized.");
-        }
-
         await socialInteractionsService.SynchronizePostMetadataAsync(
-            created.Value.Id, userId, cancellationToken);
+            created.Value!.Id, userId, cancellationToken);
     }
 
     public async Task<Guid?> GetAvatarMediaIdAsync(

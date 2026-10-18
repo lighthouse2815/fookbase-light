@@ -126,8 +126,6 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
 
-    public DbSet<MediaReference> MediaReferences => Set<MediaReference>();
-
     public DbSet<ObjectDeletion> ObjectDeletions => Set<ObjectDeletion>();
 
     public DbSet<MediaProcessingJob> MediaProcessingJobs => Set<MediaProcessingJob>();

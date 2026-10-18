@@ -61,17 +61,6 @@ public sealed class PostsUseCase(
                 return result;
             }
 
-            var references = await mediaService.SynchronizePostReferencesAsync(
-                actorUserId,
-                result.Value!.Id,
-                mediaIds,
-                cancellationToken);
-            if (!references.Succeeded)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<PostResponse>.Failure(references.Error!);
-            }
-
             await socialInteractionsService.SynchronizePostMetadataAsync(
                 result.Value!.Id, actorUserId, cancellationToken);
             var refreshed = await RefreshPostAsync(actorUserId, result.Value.Id, cancellationToken);
@@ -123,14 +112,6 @@ public sealed class PostsUseCase(
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return result;
-            }
-
-            var references = await mediaService.SynchronizePostReferencesAsync(
-                actorUserId, result.Value!.Id, mediaIds, cancellationToken);
-            if (!references.Succeeded)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<PostResponse>.Failure(references.Error!);
             }
 
             await socialInteractionsService.SynchronizePostMetadataAsync(
@@ -186,14 +167,6 @@ public sealed class PostsUseCase(
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return result;
-            }
-
-            var references = await mediaService.SynchronizePostReferencesAsync(actorUserId, result.Value!.Id, mediaIds,
-                cancellationToken);
-            if (!references.Succeeded)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<PostResponse>.Failure(references.Error!);
             }
 
             await socialInteractionsService.SynchronizePostMetadataAsync(
@@ -252,14 +225,6 @@ public sealed class PostsUseCase(
                 return result;
             }
 
-            var references = await mediaService.SynchronizePostReferencesAsync(
-                actorUserId, postId, mediaIds, cancellationToken);
-            if (!references.Succeeded)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<PostResponse>.Failure(references.Error!);
-            }
-
             await socialInteractionsService.SynchronizePostMetadataAsync(postId, actorUserId, cancellationToken);
             var refreshed = await RefreshPostAsync(actorUserId, postId, cancellationToken);
             if (!refreshed.Succeeded)
@@ -293,7 +258,6 @@ public sealed class PostsUseCase(
                 return result;
             }
 
-            await mediaService.RemovePostReferencesAsync(postId, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult.Success();
         }
@@ -325,7 +289,6 @@ public sealed class PostsUseCase(
                 return result;
             }
 
-            await mediaService.RemovePostReferencesAsync(postId, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult.Success();
         }

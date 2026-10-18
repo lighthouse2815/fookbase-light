@@ -54,14 +54,6 @@ public sealed class ReelsService(
             await dbContext.SaveChangesAsync(cancellationToken);
             await socialInteractionsService.SynchronizePostMetadataAsync(post.Id, actorUserId, cancellationToken);
 
-            var references = await mediaService.SynchronizePostReferencesAsync(
-                actorUserId, post.Id, [videoMediaId], cancellationToken);
-            if (!references.Succeeded)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<ReelResponse>.Failure(references.Error!);
-            }
-
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult<ReelResponse>.Success(
                 (await LoadResponsesAsync([post], actorUserId, cancellationToken))[0]);

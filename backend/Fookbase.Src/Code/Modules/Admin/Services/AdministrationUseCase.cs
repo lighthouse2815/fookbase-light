@@ -1,6 +1,5 @@
 using Fookbase.Api.Modules.Admin.DTOs.Responses;
 using Fookbase.Api.Modules.Admin.Domain.Enums;
-using Fookbase.Api.Modules.Media.Services;
 using Fookbase.Api.Shared.Common;
 using Fookbase.Api.Modules.Posts.Services;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +10,6 @@ public sealed class AdministrationUseCase(
     AdministrationService administrationService,
     ReportsService reportsService,
     PostsService postsService,
-    MediaService mediaService,
     FookbaseDbContext dbContext)
 {
     public async Task<AdminDashboardResponse> GetDashboardAsync(
@@ -79,7 +77,6 @@ public sealed class AdministrationUseCase(
                 return result;
             }
 
-            await mediaService.RemovePostReferencesAsync(postId, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult.Success();
         }

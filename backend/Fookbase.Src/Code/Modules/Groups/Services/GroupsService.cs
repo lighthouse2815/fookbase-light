@@ -295,19 +295,8 @@ public sealed class GroupsService(
                 return Failure<GroupResponse>("group_cover_post_failed", "Could not create the group cover update post.", ApplicationErrorType.CONFLICT);
             }
 
-            var references = await mediaService.SynchronizePostReferencesAsync(
-                actorUserId,
-                post.Value!.Id,
-                [request.CoverMediaId!.Value],
-                cancellationToken);
-            if (!references.Succeeded)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return ApplicationResult<GroupResponse>.Failure(references.Error!);
-            }
-
             await socialInteractionsService.SynchronizePostMetadataAsync(
-                post.Value.Id,
+                post.Value!.Id,
                 actorUserId,
                 cancellationToken);
         }

@@ -317,16 +317,10 @@ public sealed class EventsService(
             await tx.RollbackAsync(ct);
             return ApplicationResult<PostResponse>.Failure(new ApplicationError("post_failed", "Event post could not be created.", ApplicationErrorType.CONFLICT));
         }
-        var refs = await media.SynchronizePostReferencesAsync(actor, created.Value!.Id, ids, ct);
-        if (!refs.Succeeded)
-        {
-            await tx.RollbackAsync(ct);
-            return ApplicationResult<PostResponse>.Failure(refs.Error!);
-        }
-        await interactions.SynchronizePostMetadataAsync(created.Value.Id, actor, ct);
+        await interactions.SynchronizePostMetadataAsync(created.Value!.Id, actor, ct);
         await tx.CommitAsync(ct);
         return ApplicationResult<PostResponse>.Success((await posts.LoadResponsesAsync(
-            [await db.Posts.AsNoTracking().SingleAsync(x => x.Id == created.Value.Id, ct)],
+            [await db.Posts.AsNoTracking().SingleAsync(x => x.Id == created.Value!.Id, ct)],
             actor,
             ct))[0]);
     }

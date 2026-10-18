@@ -80,9 +80,6 @@ public sealed class MediaAsset
     public string? ProcessingError { get; private set; }
     public DateTimeOffset? ProcessedAtUtc { get; private set; }
 
-    [InverseProperty(nameof(MediaReference.Media))]
-    public ICollection<MediaReference> PostReferences { get; private set; } = new List<MediaReference>();
-
     [InverseProperty(nameof(ObjectDeletion.Media))]
     public ICollection<ObjectDeletion> ObjectDeletions { get; private set; } = new List<ObjectDeletion>();
 

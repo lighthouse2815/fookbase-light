@@ -1056,24 +1056,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.ToTable("MediaProcessingJobs");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaReference", b =>
-                {
-                    b.Property<Guid>("MediaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("AttachedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("MediaId", "PostId");
-
-                    b.HasIndex("PostId");
-
-                    b.ToTable("MediaReferences");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ObjectDeletion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2760,25 +2742,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("Media");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaReference", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
-                        .WithMany("PostReferences")
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Posts.Entities.Post", "Post")
-                        .WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Media");
-
-                    b.Navigation("Post");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.ObjectDeletion", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
@@ -3513,8 +3476,6 @@ namespace Fookbase.Api.Persistence.Migrations
             modelBuilder.Entity("Fookbase.Api.Modules.Media.Entities.MediaAsset", b =>
                 {
                     b.Navigation("ObjectDeletions");
-
-                    b.Navigation("PostReferences");
 
                     b.Navigation("ProcessingJob");
                 });
