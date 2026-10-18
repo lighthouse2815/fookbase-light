@@ -81,9 +81,6 @@ public sealed class Conversation
     [InverseProperty(nameof(ConversationParticipant.Conversation))]
     public ICollection<ConversationParticipant> Participants { get; private set; } = new List<ConversationParticipant>();
 
-    [InverseProperty(nameof(ConversationReadCursor.Conversation))]
-    public ICollection<ConversationReadCursor> ReadCursors { get; private set; } = new List<ConversationReadCursor>();
-
     [InverseProperty(nameof(Message.Conversation))]
     public ICollection<Message> Messages { get; private set; } = new List<Message>();
 

@@ -1194,32 +1194,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.ToTable("ConversationParticipants");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationReadCursor", b =>
-                {
-                    b.Property<Guid>("ConversationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("LastReadAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("LastReadMessageCreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("LastReadMessageId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("ConversationId", "UserId");
-
-                    b.HasIndex("LastReadMessageId");
-
-                    b.HasIndex("UserId", "ConversationId");
-
-                    b.ToTable("ConversationReadCursors");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2810,32 +2784,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.ConversationReadCursor", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Conversation", "Conversation")
-                        .WithMany("ReadCursors")
-                        .HasForeignKey("ConversationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Messages.Entities.Message", "LastReadMessage")
-                        .WithMany()
-                        .HasForeignKey("LastReadMessageId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Fookbase.Api.Modules.Identity.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Conversation");
-
-                    b.Navigation("LastReadMessage");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Messages.Entities.Conversation", "Conversation")
@@ -3487,8 +3435,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("Notifications");
 
                     b.Navigation("Participants");
-
-                    b.Navigation("ReadCursors");
                 });
 
             modelBuilder.Entity("Fookbase.Api.Modules.Messages.Entities.Message", b =>

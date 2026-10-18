@@ -50,10 +50,6 @@ public sealed class MessagesService(
             dbContext.ConversationParticipants.AddRange(
                 new ConversationParticipant(conversation.Id, conversation.User1Id!.Value, ConversationParticipantRole.MEMBER, now),
                 new ConversationParticipant(conversation.Id, conversation.User2Id!.Value, ConversationParticipantRole.MEMBER, now));
-            // Kept as a compatibility projection for existing direct chat clients/imports.
-            dbContext.ConversationReadCursors.AddRange(
-                new ConversationReadCursor(conversation.Id, conversation.User1Id.Value),
-                new ConversationReadCursor(conversation.Id, conversation.User2Id.Value));
             try
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -202,9 +198,6 @@ public sealed class MessagesService(
         if (!participant.AdvanceReadCursor(lastRead.Id, lastRead.CreatedAtUtc, now)) return ApplicationResult<bool>.Success(true);
         if (conversation.Type == ConversationType.DIRECT)
         {
-            var legacyCursor = await dbContext.ConversationReadCursors.SingleOrDefaultAsync(cursor => cursor.ConversationId == conversationId && cursor.UserId == actorUserId, cancellationToken);
-            if (legacyCursor is null) { legacyCursor = new ConversationReadCursor(conversationId, actorUserId); dbContext.ConversationReadCursors.Add(legacyCursor); }
-            legacyCursor.AdvanceTo(lastRead.Id, lastRead.CreatedAtUtc, now);
             await dbContext.Messages.Where(message => message.ConversationId == conversationId && message.SenderUserId != actorUserId && message.ReadAtUtc == null &&
                     (message.CreatedAtUtc < lastRead.CreatedAtUtc || (message.CreatedAtUtc == lastRead.CreatedAtUtc && message.Id.CompareTo(lastRead.Id) <= 0)))
                 .ExecuteUpdateAsync(setters => setters.SetProperty(message => message.ReadAtUtc, now), cancellationToken);

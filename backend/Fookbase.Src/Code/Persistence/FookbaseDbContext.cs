@@ -78,8 +78,6 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<Conversation> Conversations => Set<Conversation>();
 
-    public DbSet<ConversationReadCursor> ConversationReadCursors => Set<ConversationReadCursor>();
-
     public DbSet<ConversationParticipant> ConversationParticipants => Set<ConversationParticipant>();
 
     public DbSet<Message> Messages => Set<Message>();
