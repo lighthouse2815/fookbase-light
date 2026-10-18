@@ -467,8 +467,8 @@ public sealed class MediaService(
             .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
         var isReferencedByConversationPhoto = await dbContext.Conversations.AsNoTracking()
             .AnyAsync(conversation => conversation.PhotoMediaId == mediaId, cancellationToken);
-        var isReferencedByStory = await dbContext.StoryMediaReferences.AsNoTracking()
-            .AnyAsync(reference => reference.MediaId == mediaId, cancellationToken);
+        var isReferencedByStory = await dbContext.Stories.AsNoTracking()
+            .AnyAsync(story => story.MediaId == mediaId && story.DeletedAtUtc == null, cancellationToken);
         var isReferencedByEvent = await dbContext.Events.AsNoTracking()
             .AnyAsync(item => item.CoverMediaId == mediaId && item.DeletedAtUtc == null, cancellationToken);
         var isReferencedByAlbum = await dbContext.AlbumMedia.AsNoTracking()

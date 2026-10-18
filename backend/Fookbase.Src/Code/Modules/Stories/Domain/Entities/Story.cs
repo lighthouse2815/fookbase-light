@@ -56,8 +56,6 @@ public sealed class Story
 
     public DateTimeOffset? DeletedAtUtc { get; private set; }
 
-    public StoryMediaReference? MediaReference { get; private set; }
-
     public ICollection<StoryView> Views { get; private set; } = new List<StoryView>();
 
     public ICollection<StoryReaction> Reactions { get; private set; } = new List<StoryReaction>();

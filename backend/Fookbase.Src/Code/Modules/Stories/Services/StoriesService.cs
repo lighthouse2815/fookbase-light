@@ -67,7 +67,6 @@ public sealed class StoriesService(
         try
         {
             dbContext.Stories.Add(story);
-            dbContext.StoryMediaReferences.Add(new StoryMediaReference(story.Id, mediaId, now));
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult<StoryResponse>.Success(
@@ -369,9 +368,6 @@ public sealed class StoriesService(
         }
 
         story.Delete(timeProvider.GetUtcNow());
-        await dbContext.StoryMediaReferences
-            .Where(reference => reference.StoryId == storyId)
-            .ExecuteDeleteAsync(cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         return ApplicationResult.Success();
     }

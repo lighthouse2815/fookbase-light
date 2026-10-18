@@ -120,8 +120,6 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<Story> Stories => Set<Story>();
 
-    public DbSet<StoryMediaReference> StoryMediaReferences => Set<StoryMediaReference>();
-
     public DbSet<StoryView> StoryViews => Set<StoryView>();
 
     public DbSet<StoryReaction> StoryReactions => Set<StoryReaction>();

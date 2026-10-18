@@ -2107,24 +2107,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.ToTable("Stories");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryMediaReference", b =>
-                {
-                    b.Property<Guid>("StoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("AttachedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("MediaId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("StoryId");
-
-                    b.HasIndex("MediaId");
-
-                    b.ToTable("StoryMediaReferences");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryReaction", b =>
                 {
                     b.Property<Guid>("StoryId")
@@ -3376,25 +3358,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("Media");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryMediaReference", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", "Story")
-                        .WithOne("MediaReference")
-                        .HasForeignKey("Fookbase.Api.Modules.Stories.Entities.StoryMediaReference", "StoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Media");
-
-                    b.Navigation("Story");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.StoryReaction", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Stories.Entities.Story", "Story")
@@ -3628,8 +3591,6 @@ namespace Fookbase.Api.Persistence.Migrations
 
             modelBuilder.Entity("Fookbase.Api.Modules.Stories.Entities.Story", b =>
                 {
-                    b.Navigation("MediaReference");
-
                     b.Navigation("Reactions");
 
                     b.Navigation("Views");
