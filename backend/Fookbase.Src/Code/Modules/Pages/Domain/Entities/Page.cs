@@ -82,8 +82,6 @@ public sealed class Page
 
     public ICollection<PageRoleInvitation> RoleInvitations { get; private set; } = new List<PageRoleInvitation>();
 
-    public ICollection<PageMediaReference> MediaReferences { get; private set; } = new List<PageMediaReference>();
-
     public void Update(string name, string username, string category, string? bio, DateTimeOffset updatedAtUtc)
     {
         EnsureActive();

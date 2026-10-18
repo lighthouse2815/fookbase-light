@@ -152,7 +152,6 @@ public sealed class PagesService(
         try
         {
             page.SetMedia(avatarMediaId, coverMediaId, timeProvider.GetUtcNow());
-            await mediaService.SynchronizePageReferencesAsync(pageId, avatarMediaId, coverMediaId, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult<PageResponse>.Success(await ToResponseAsync(page, actorUserId, role, cancellationToken));
@@ -181,7 +180,6 @@ public sealed class PagesService(
         try
         {
             page.Delete(timeProvider.GetUtcNow());
-            await mediaService.SynchronizePageReferencesAsync(pageId, null, null, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return ApplicationResult.Success();

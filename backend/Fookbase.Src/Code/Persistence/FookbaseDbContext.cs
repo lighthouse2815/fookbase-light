@@ -72,8 +72,6 @@ public sealed class FookbaseDbContext(DbContextOptions<FookbaseDbContext> option
 
     public DbSet<PageFollower> PageFollowers => Set<PageFollower>();
 
-    public DbSet<PageMediaReference> PageMediaReferences => Set<PageMediaReference>();
-
     public DbSet<PhotoAlbum> PhotoAlbums => Set<PhotoAlbum>();
 
     public DbSet<AlbumMedia> AlbumMedia => Set<AlbumMedia>();

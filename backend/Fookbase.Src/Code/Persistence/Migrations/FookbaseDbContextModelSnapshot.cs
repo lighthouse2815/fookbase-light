@@ -1567,27 +1567,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.ToTable("PageFollowers");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageMediaReference", b =>
-                {
-                    b.Property<Guid>("PageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Slot")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("AttachedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("MediaId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("PageId", "Slot");
-
-                    b.HasIndex("MediaId");
-
-                    b.ToTable("PageMediaReferences");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageMember", b =>
                 {
                     b.Property<Guid>("PageId")
@@ -3094,25 +3073,6 @@ namespace Fookbase.Api.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageMediaReference", b =>
-                {
-                    b.HasOne("Fookbase.Api.Modules.Media.Entities.MediaAsset", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fookbase.Api.Modules.Pages.Entities.Page", "Page")
-                        .WithMany("MediaReferences")
-                        .HasForeignKey("PageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Media");
-
-                    b.Navigation("Page");
-                });
-
             modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.PageMember", b =>
                 {
                     b.HasOne("Fookbase.Api.Modules.Pages.Entities.Page", "Page")
@@ -3624,8 +3584,6 @@ namespace Fookbase.Api.Persistence.Migrations
             modelBuilder.Entity("Fookbase.Api.Modules.Pages.Entities.Page", b =>
                 {
                     b.Navigation("Followers");
-
-                    b.Navigation("MediaReferences");
 
                     b.Navigation("Members");
 
