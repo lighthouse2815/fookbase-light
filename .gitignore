@@ -32,7 +32,7 @@ pnpm-debug.log*
 .Trash-*
 
 # Local study notes
-abc.txt
+abc.md
 
 # Editors and IDEs
 .vscode/
