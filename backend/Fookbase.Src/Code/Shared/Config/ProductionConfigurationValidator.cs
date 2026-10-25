@@ -15,11 +15,11 @@ public static class ProductionConfigurationValidator
 
         if (string.IsNullOrWhiteSpace(configuration.GetConnectionString("FookbaseDatabase")))
         {
-            throw new InvalidOperationException("ConnectionStrings:FookbaseDatabase is required in Production.");
+            throw new InvalidOperationException("Phải cấu hình ConnectionStrings:FookbaseDatabase trong môi trường Production.");
         }
 
         var jwt = configuration.GetSection(IdentityModuleConstants.ConfigurationSections.Jwt).Get<JwtOptions>()
-            ?? throw new InvalidOperationException("JWT configuration is required in Production.");
+            ?? throw new InvalidOperationException("Phải cấu hình JWT trong môi trường Production.");
         jwt.Validate();
 
         var googleAuthentication = configuration
@@ -32,7 +32,7 @@ public static class ProductionConfigurationValidator
         sms.Validate(production: true);
 
         var cloudinary = configuration.GetSection(CloudinaryOptions.SectionName).Get<CloudinaryOptions>()
-            ?? throw new InvalidOperationException("Cloudinary configuration is required in Production.");
+            ?? throw new InvalidOperationException("Phải cấu hình Cloudinary trong môi trường Production.");
         cloudinary.Validate();
 
         var dataProtection = configuration.GetSection(DataProtectionOptions.SectionName)
@@ -46,13 +46,13 @@ public static class ProductionConfigurationValidator
                 string.IsNullOrWhiteSpace(uri.Host)))
         {
             throw new InvalidOperationException(
-                "Cors:AllowedOrigins must contain explicit HTTPS origins in Production.");
+                "Cors:AllowedOrigins phải chứa danh sách origin HTTPS cụ thể trong môi trường Production.");
         }
 
         var allowedHosts = configuration["AllowedHosts"];
         if (string.IsNullOrWhiteSpace(allowedHosts) || allowedHosts == "*")
         {
-            throw new InvalidOperationException("AllowedHosts must list explicit API hosts in Production.");
+            throw new InvalidOperationException("AllowedHosts phải liệt kê các tên host API cụ thể trong môi trường Production.");
         }
 
         var forwardedHeaders = configuration.GetSection(ForwardedHeadersOptions.SectionName)

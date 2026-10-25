@@ -21,18 +21,18 @@ public sealed class ForwardedHeadersOptions
 
         if (ForwardLimit is < 1 or > 2)
         {
-            throw new InvalidOperationException("ForwardedHeaders:ForwardLimit must be between 1 and 2.");
+            throw new InvalidOperationException("ForwardedHeaders:ForwardLimit phải nằm trong khoảng từ 1 đến 2.");
         }
 
         if (KnownProxies.Length == 0)
         {
             throw new InvalidOperationException(
-                "ForwardedHeaders:KnownProxies is required when forwarded headers are enabled.");
+                "Phải cấu hình ForwardedHeaders:KnownProxies khi bật xử lý header chuyển tiếp.");
         }
 
         if (KnownProxies.Any(proxy => !IPAddress.TryParse(proxy, out _)))
         {
-            throw new InvalidOperationException("ForwardedHeaders:KnownProxies must contain valid IP addresses.");
+            throw new InvalidOperationException("ForwardedHeaders:KnownProxies phải chứa các địa chỉ IP hợp lệ.");
         }
     }
 }

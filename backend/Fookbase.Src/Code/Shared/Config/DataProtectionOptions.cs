@@ -12,13 +12,13 @@ public sealed class DataProtectionOptions
     {
         if (string.IsNullOrWhiteSpace(ApplicationName))
         {
-            throw new InvalidOperationException("The Data Protection application name is required.");
+            throw new InvalidOperationException("Phải cấu hình tên ứng dụng cho Data Protection.");
         }
 
         if (persistentKeyRingRequired && string.IsNullOrWhiteSpace(KeyRingPath))
         {
             throw new InvalidOperationException(
-                "DataProtection:KeyRingPath is required when running in Production.");
+                "Phải cấu hình DataProtection:KeyRingPath khi chạy trong môi trường Production.");
         }
     }
 }
