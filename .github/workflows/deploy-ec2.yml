@@ -1,9 +1,12 @@
-name: Deploy EC2
+name: Backup PostgreSQL theo yêu cầu
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      backup_certificate:
+        description: Chứng chỉ X.509 công khai để mã hóa bản backup tải về
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -13,60 +16,106 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  backup:
     runs-on: [self-hosted, linux, x64, fookbase-production]
-
+    timeout-minutes: 20
     steps:
-      - name: Check out source
-        # v4 uses the Node 20 action runtime supported by the installed EC2 runner.
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        # Keep this compatible with the runner while still installing Node 22 for the build.
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/web/package-lock.json
-
-      - name: Build main web
-        working-directory: frontend/web
+      - name: Sao lưu và kiểm tra khôi phục trong PostgreSQL tạm
+        shell: bash
         env:
-          VITE_SITE_URL: https://www.fookbase.io.vn
-        run: |
-          npm ci
-          npm run build
-
-      - name: Publish release source
-        shell: bash
+          BACKUP_CERTIFICATE: ${{ inputs.backup_certificate }}
         run: |
           set -Eeuo pipefail
-          release_dir=$(mktemp -d)
-          trap 'rm -rf "$release_dir"' EXIT
-          git archive --format=tar "$GITHUB_SHA" | tar -x -C "$release_dir"
-          sudo rsync -a --delete \
-            --exclude '.env.production*' \
-            --exclude 'private/' \
-            "$release_dir/" /srv/fookbase-light/
+          umask 077
+          app_dir=/srv/fookbase-light
+          backup_dir="/srv/fookbase-backups/manual-$(date -u +%Y%m%dT%H%M%SZ)-$GITHUB_RUN_ID"
+          export_dir=$(mktemp -d "$RUNNER_TEMP/fookbase-backup.XXXXXX")
+          verify_id=
+          cleanup() {
+            if [[ -n "$verify_id" ]]; then
+              sudo docker stop --time 5 "$verify_id" >/dev/null
+            fi
+          }
+          trap cleanup EXIT
 
-      - name: Deploy API and apply migrations
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          bash /srv/fookbase-light/scripts/deploy-ec2.sh
+          printf '%s\n' "$BACKUP_CERTIFICATE" > "$export_dir/certificate.pem"
+          openssl x509 -in "$export_dir/certificate.pem" -noout -checkend 0
+          sudo install -d -m 700 -o "$(id -u)" -g "$(id -g)" "$backup_dir"
+          postgres_id=$(sudo docker ps -q \
+            --filter label=com.docker.compose.project=fookbase-light \
+            --filter label=com.docker.compose.service=postgres)
+          [[ "$postgres_id" =~ ^[a-f0-9]+$ ]]
+          image=$(sudo docker inspect --format '{{.Config.Image}}' "$postgres_id")
+          sudo docker exec "$postgres_id" sh -eu -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+          df -h /
 
-      - name: Publish main web
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          tar -C frontend/web/dist -cf - . | sudo tar -xf - -C /var/www/fookbase
-          sudo chown -R www-data:www-data /var/www/fookbase
+          sudo docker exec "$postgres_id" sh -eu -c '
+            exec pg_dump --username "$POSTGRES_USER" --format=custom \
+              --no-owner --no-privileges "$POSTGRES_DB"
+          ' > "$backup_dir/database.dump"
+          test -s "$backup_dir/database.dump"
+          sudo docker exec -i "$postgres_id" pg_restore --list \
+            < "$backup_dir/database.dump" > "$backup_dir/database.contents.txt"
 
-      - name: Verify public deployment
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          for host in www.fookbase.io.vn fookbase.io.vn fookbase-light.duckdns.org; do
-            curl --fail --silent --show-error "https://$host/health/ready"
-            curl --fail --silent --show-error --output /dev/null "https://$host/"
+          sudo cat "$app_dir/.env.production" > "$backup_dir/.env.production"
+          key_dir=$(sudo docker volume inspect \
+            --format '{{.Mountpoint}}' fookbase-light_data-protection-keys)
+          sudo tar -C "$key_dir" -czf - . > "$backup_dir/data-protection-keys.tar.gz"
+          cp "$app_dir"/compose*.yml "$backup_dir/"
+          printf 'Backup UTC: %s\nServer: %s\nImage: %s\nRun: %s\nMedia: Cloudinary assets are not included.\n' \
+            "$(date -u +%FT%TZ)" "$(hostname)" "$image" "$GITHUB_RUN_ID" \
+            > "$backup_dir/manifest.txt"
+
+          verify_id=$(sudo docker run -d --rm --network none --memory 384m --cpus 0.5 \
+            -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=backup_verify "$image")
+          ready=false
+          for attempt in $(seq 1 60); do
+            if sudo docker exec "$verify_id" pg_isready -U postgres -d backup_verify >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            sleep 1
           done
+          [[ "$ready" == true ]]
+          sudo docker exec -i "$verify_id" pg_restore \
+            --username postgres --dbname backup_verify --no-owner --no-privileges \
+            --exit-on-error --single-transaction < "$backup_dir/database.dump"
+          sudo docker exec "$verify_id" psql -U postgres -d backup_verify \
+            --set ON_ERROR_STOP=1 --command '
+              SELECT count(*) AS restored_tables FROM information_schema.tables
+                WHERE table_schema = '\''public'\'' AND table_type = '\''BASE TABLE'\'';
+              SELECT count(*) AS restored_users FROM "AspNetUsers";
+              SELECT count(*) AS restored_posts FROM "Posts";
+            ' > "$backup_dir/restore-verification.txt"
+          cat "$backup_dir/restore-verification.txt"
+          sudo docker stop --time 5 "$verify_id" >/dev/null
+          verify_id=
+          curl --fail --silent --show-error --max-time 30 \
+            https://fookbase-light.duckdns.org/health/ready >/dev/null
+          printf 'Isolated restore passed; production readiness HTTP 200.\n' \
+            >> "$backup_dir/restore-verification.txt"
+          (
+            cd "$backup_dir"
+            sha256sum database.dump data-protection-keys.tar.gz .env.production \
+              compose*.yml manifest.txt restore-verification.txt > SHA256SUMS
+          )
+
+          encrypted_file="fookbase-backup-$GITHUB_RUN_ID.tar.gz.cms"
+          tar -czf - -C "$backup_dir" . | openssl cms -encrypt -binary \
+            -aes-256-cbc -outform DER -out "$export_dir/$encrypted_file" \
+            -recip "$export_dir/certificate.pem" \
+            -keyopt rsa_padding_mode:oaep -keyopt rsa_oaep_md:sha256
+          (cd "$export_dir" && sha256sum "$encrypted_file" > SHA256SUMS)
+          printf 'ENCRYPTED_BACKUP_PATH=%s\n' "$export_dir" >> "$GITHUB_ENV"
+          printf 'Server backup: %s\n' "$backup_dir"
+          du -h "$backup_dir/database.dump" "$export_dir/$encrypted_file"
+
+      - name: Tải lên bản đã mã hóa
+        uses: actions/upload-artifact@v4
+        with:
+          name: fookbase-database-backup-${{ github.run_id }}
+          path: |
+            ${{ env.ENCRYPTED_BACKUP_PATH }}/*.cms
+            ${{ env.ENCRYPTED_BACKUP_PATH }}/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 1
